@@ -1,0 +1,20 @@
+# Grundsatzentscheidungen (ADR-000 … ADR-006)
+
+Dieses Dokument enthält die mit dem Auftraggeber abgestimmten Grundsatzentscheidungen. Sie sind **bindend** für alle weiteren Architektur-Dokumente und für jeden Implementierungs-Agenten. Weicht ein Dokument davon ab, gilt dieses Dokument.
+
+| ADR | Entscheidung | Status | Quelle |
+|---|---|---|---|
+| ADR-000 | Ziel-Stack: **Aspire** (AppHost, ServiceDefaults), **ASP.NET Core** auf **.NET 10 LTS**, **Entity Framework Core 10** mit **Npgsql**, **PostgreSQL** (auch als Vektordatenbank via **pgvector**), **Angular** (aktuelle Major-Version, Stand 10/2026: v22) | akzeptiert | Auftrag |
+| ADR-001 | **Keine Plan-Stufen.** Es gibt genau eine Edition. **Alle** Features der Community Edition **und** aller Bezahl-Editionen (Pro, Business, Enterprise) sind immer aktiv. Kein Lizenzschlüssel, keine Seats, kein Billing, keine Upgrade-Badges/-Modals, keine „Talk to Sales“-CTAs. Wo das Original einen Upsell-Screen zeigt, zeigt die neue Plattform die echte Funktion. Projekt-/Workspace-Feature-*Toggles* (z. B. „Cycles aktivieren“) bleiben erhalten, weil sie fachliche Einstellungen sind, kein Gating. | akzeptiert | Auftraggeber |
+| ADR-002 | **Realtime-Kollaboration in reinem .NET** mit **YDotNet** (Rust-`yrs`-Bindings). Der Server spricht das Yjs-Sync-/Awareness-Protokoll (y-protocols) so, dass der Browser-Client (Tiptap + Yjs + HocuspocusProvider bzw. y-websocket-kompatibler Provider) ohne Node-Dienst arbeitet. Früher technischer Spike ist Pflicht (siehe Roadmap). | akzeptiert | Auftraggeber |
+| ADR-003 | **Greenfield.** Keine Übernahme von Daten aus bestehenden Plane-Instanzen. Das Datenbankschema darf .NET-idiomatisch neu entworfen werden. Fachliche Semantik (Felder, Enums, Regeln) folgt dem Original. | akzeptiert | Auftraggeber |
+| ADR-004 | **Betriebsmodell: Self-hosted inkl. Airgapped.** Keine zwingenden externen Laufzeitabhängigkeiten (keine CDNs, keine Telemetrie nach außen, keine Pflicht-SaaS). Externe Dienste (OAuth-Provider, LLM-Provider, Unsplash, Integrationen wie GitHub/Slack) sind optional und abschaltbar; für AI muss ein lokal betreibbarer Provider (z. B. OpenAI-kompatibler Endpunkt wie Ollama/vLLM) unterstützt werden. Cloud-only-Funktionen (Stripe-Billing, Storage-Quoten pro Plan, Multi-Region) entfallen. | akzeptiert | Auftraggeber |
+| ADR-005 | **UI 1:1 wie das Original.** Pixel- und verhaltensgleiche Nachbildung der Plane-Oberflächen (Web, God-Mode/Admin, Space/Public). Gemessen über visuelle Regressionstests gegen Referenz-Screenshots des Originals. Abweichungen nur durch ADR-001 (Upsell-Elemente entfallen). | akzeptiert | Auftrag |
+| ADR-006 | **Das Original-Repo bleibt neben dem Plan liegen** und ist die maßgebliche Referenz für Verhalten, Texte (i18n), Styles und Edge-Cases. Implementierungs-Agenten lesen immer zuerst das zugehörige Analyse-Dokument in `migration/analysis/` bzw. `migration/features/` und dann den referenzierten Originalcode. | akzeptiert | Auftrag |
+
+## Konsequenzen
+
+- **ADR-001:** Das Entitlement-/Lizenz-Subsystem des Originals (Monitor/Prime, `Instance.edition`, Plan-Matrix, Upgrade-Komponenten in `apps/web/components/license`, `apps/web/components/workspace/billing`, `packages/constants/src/subscription.ts`, `payment.ts`) wird **nicht** portiert. Limits der Pläne (z. B. „5.000 Automationen“, „Page-Versionen 2 Tage“) entfallen bzw. werden zu frei konfigurierbaren Instanz-Einstellungen mit großzügigen Defaults.
+- **ADR-002:** Kein Node.js zur Laufzeit. Der PDF-Export des Live-Servers (heute `@react-pdf/renderer`) wird ebenfalls in .NET umgesetzt.
+- **ADR-003:** Es entfällt die Pflicht zur Tabellen-/Spaltenkompatibilität. Trotzdem werden die **JSON-API-Verträge fachlich am Original orientiert** (Ressourcen, Feldnamen in `snake_case`, Enum-Werte, Fehlercodes), weil das Angular-Frontend die Store-/Service-Logik des Originals 1:1 portiert. Das senkt Übersetzungsfehler und erlaubt Contract-Tests gegen das Original.
+- **ADR-004:** Alle Assets (Fonts, Icons, Emoji-Daten, Editor-Plugins) werden gebündelt ausgeliefert. Container-Images müssen ohne Internetzugang startbar sein.
