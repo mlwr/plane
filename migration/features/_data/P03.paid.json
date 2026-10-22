@@ -1,0 +1,858 @@
+[
+ {
+  "name": "P03-F01 Lizenz-, Seat- und Billing-Mechanik (Monitor/Prime, Lizenzschlüssel, Lizenzdatei, Sync/Delink)",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "Mechanik aller Bezahlpläne der Commercial Edition: Pro/Business = Workspace-Lizenz (Workspace Settings > Billing and plans), Enterprise Grid = Instanz-Lizenz (God Mode > Billing), Airgapped = Lizenzdatei; Free-Plan der Commercial Edition mit 12 freien Seats je Workspace. Entfällt nach ADR-001. Self-hosted-Richtwerte der Matrix: Member limit ~50 (Free/One), ~200 (Pro/Business), Unlimited (Enterprise) (plans.tsx:676-693); Commercial-Pläne laut Docs nur Free, Pro, Business, Enterprise Grid (self-hosting-101.md:54).",
+  "ce_status": "Stub/UI-Hülle im CE",
+  "description": "Lizenzkauf im Prime-Portal prime.plane.so; Aktivierung per Key oder Datei; Sync plan (Plan, Seats, Ablauf, Features); Delink gibt Lizenz frei (an Workspace + Maschine gebunden, MACHINE_SIGNATURE = sha256(licenseServer+licenseDomain+Namespace+Release)); Go-Dienst monitor (prime-monitor, StatefulSet mit PVC) resynchronisiert Lizenzen/Flags alle 300 min, airgapped 'start-airgapped'; Fehlermeldungen 'Your license is invalid or already in use.', 'Payment server is not configured'.",
+  "data_model_hints": "CE: Instance.edition (PLANE_COMMUNITY), is_verified, instance_id. Kein Port (ADR-001). CE berechnet MACHINE_SIGNATURE anders (SHA-256 aus Hostname, MAC, CPU-, Speicher- und Plattendaten) und registriert die Instanz per manage.py register_instance (apps/api/bin/docker-entrypoint-api.sh:10-24). [Verifikation P03]",
+  "api_hints": "Nicht öffentlich; CE-Instanzendpunkt setzt is_activated=true. Nicht portieren.",
+  "ui_hints": "God Mode Billing: 'Billings and plans', 'Activate Enterprise license', Placeholder 'License key', Button 'Activate'; entfällt inkl. Plan-Badge im Settings-Kopf.",
+  "sources": [
+   "DD/self-hosting/manage/manage-licenses/activate-pro-and-business.md",
+   "DD/self-hosting/manage/manage-licenses/activate-enterprise.md",
+   "DD/self-hosting/manage/manage-licenses/activate-airgapped.md",
+   "DD/self-hosting/troubleshoot/license-errors.md",
+   "HC/plane-enterprise/templates/workloads/monitor.stateful.yaml",
+   "HC/plane-enterprise/templates/_helpers.tpl:5-7",
+   "IMG/activate-license/activate-enterprise-plan.webp",
+   "apps/api/plane/license/models/instance.py",
+   "DD/self-hosting/self-hosting-101.md",
+   "apps/api/bin/docker-entrypoint-api.sh",
+   "apps/web/components/workspace/billing/comparison/plans.tsx:676-693"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F02 Feature-Flag-Server (Monitor) und Plan-Synchronisation",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "In jeder Commercial-Installation (Gating-Infrastruktur). Entfällt nach ADR-001.",
+  "ce_status": "fehlt",
+  "description": "API, Silo, PI und Argus fragen FEATURE_FLAG_SERVER_BASE_URL/PAYMENT_SERVER_BASE_URL = http://<rel>-monitor:8080/; Beispiel-Flag PII_SCANNER; PI hat zusätzlich täglichen CELERY_WORKSPACE_PLAN_SYNC; MCP meldet 'not available on your plan'/402.",
+  "data_model_hints": "Fachliche Toggles bleiben als Einstellungen, Lizenz-Flags werden Konstanten.",
+  "api_hints": "Kein HTTP 402 im .NET-API.",
+  "ui_hints": "Angular-Stores: alle Features aktiv.",
+  "sources": [
+   "HC/plane-enterprise/templates/config-secrets/app-env.yaml",
+   "HC/plane-enterprise/templates/config-secrets/argus-env.yaml",
+   "HC/plane-enterprise/templates/config-secrets/pi-api-env.yaml",
+   "DD/self-hosting/manage/health-checks.md",
+   "DD/dev-tools/mcp-server.md"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F03 God-Mode-Erweiterungen (User Management, System Configurations, System Checks)",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "Commercial Edition (alle Pläne); Billing-Seite entfällt (ADR-001).",
+  "ce_status": "teilweise im CE",
+  "description": "User Management: Tabelle Full Name/Display Name/Email/Account Type (User|Instance Admin)/Status (Active|Suspended)/Joining Date, Suche, Aktionen Grant admin access/Remove admin access/Remove, 'Invite members' mit E-Mail+Passwort, 'Generate random password', 'Prompt user to change password after onboarding', keine Einladungsmail; System Configurations > Session settings; System checks (Dienst-/Queue-Erreichbarkeit); Authentication um OIDC/SAML/LDAP erweitert; 'Artificial intelligence (deprecated)'.",
+  "data_model_hints": "CE InstanceAdmin(role=20), User.is_active (Suspended), is_password_reset_required, is_password_autoset.",
+  "api_hints": "CE: api/instances/admins/, admins/<pk>/, configurations/ … ; Commercial-Endpunkte für Nutzerverwaltung nicht öffentlich (Vorschlag GET/POST/PATCH/DELETE /api/instances/users/).",
+  "ui_hints": "Titel 'User Management', Untertitel 'View and manage seats for all the members active in this instance', Nav 'User Management – Instance user management'; EE-Nav: General, Email, Authentication, Workspaces, Billing, User Management, Artificial intelligence (deprecated), Images in Plane.",
+  "sources": [
+   "DD/self-hosting/manage/manage-instance-users.md",
+   "DD/self-hosting/govern/instance-admin.md",
+   "DD/self-hosting/govern/god-mode/session-expiry.md",
+   "IMG/instance-admin/user-management.webp",
+   "HC/plane-enterprise/templates/config-secrets/app-env.yaml",
+   "apps/admin/app/routes.ts",
+   "apps/api/plane/license/urls.py"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F04 SAML-SSO (instanzweit, God Mode)",
+  "cluster": "P03",
+  "tier": "Pro",
+  "tier_details": "Docs-Badges Pro und Business (saml-sso.md:7) – aktuellere, self-hosting-spezifische Quelle; Matrix: One…Enterprise (plans.tsx:1060-1069), ONE_PLAN_FEATURES/FREE_PLAN_UPGRADE_FEATURES „OIDC + SAML for SSO“ (subscription.ts:35,44); One-Plan nicht mehr erhältlich (plans.tsx:1274 isActive false). Widerspruch zu Dok. 20 PF-93 (One) dokumentiert.",
+  "ce_status": "fehlt",
+  "description": "SAML 2.0 SP, HTTP-POST-ACS, kein SP-Signaturzertifikat, NameID emailAddress, Attribute first_name/last_name/email; Felder Entity ID, SSO URL, Logout URL, IdP's name, SAML certificate; Plane-URLs Web /auth/saml/metadata/, /auth/saml/callback/, /auth/saml/logout/ und Mobile /auth/mobile/saml/…; Button 'Continue with <IdP>'; Instanz-Admins können per SSO in den God Mode. CE: kein SAML-Code; nur generische leere Erweiterungspunkte TExtendedInstanceAuthenticationModeKeys = never (packages/types/src/instance/auth-ee.ts) und useExtendedOAuthConfig → oAuthOptions [] (apps/web/hooks/oauth/extended.tsx); Dok. 27 P08-01 wertet sie als Stub. [Verifikation P03]",
+  "data_model_hints": "Verschlüsselte Instanz-Konfiguration; Schlüsselnamen nicht öffentlich (Vorschlag IS_SAML_ENABLED, SAML_ENTITY_ID, SAML_SSO_URL, SAML_LOGOUT_URL, SAML_CERTIFICATE, SAML_PROVIDER_NAME).",
+  "api_hints": "SP-Endpunkte unter /auth/saml/ und /auth/mobile/saml/; Instanz-Config-Flag für Login-Seite (Vorschlag is_saml_enabled, saml_provider_name).",
+  "ui_hints": "Zweispaltig: 'IdP-provided details for Plane' / 'Plane-provided details for your IdP' mit Karten WEB, MOBILE, MAPPING; Buttons 'Save changes', 'Go back'; exakte Hilfetexte im Dokument.",
+  "sources": [
+   "DD/self-hosting/govern/saml-sso.md",
+   "IMG/custom-sso/saml-oauth.png",
+   "apps/web/components/workspace/billing/comparison/plans.tsx:1060",
+   "packages/constants/src/subscription.ts:35,44",
+   "packages/types/src/instance/auth-ee.ts",
+   "apps/web/hooks/oauth/extended.tsx",
+   "DD/self-hosting/self-hosting-101.md:54"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F05 OIDC-SSO (instanzweit, God Mode)",
+  "cluster": "P03",
+  "tier": "Pro",
+  "tier_details": "Docs-Badges Pro und Business (oidc-sso.md:7); Matrix One…Enterprise mit selfHostedOnly: true (plans.tsx:1071-1081); One nicht mehr erhältlich (plans.tsx:1274). Widerspruch zu Dok. 20 PF-93 dokumentiert.",
+  "ce_status": "fehlt",
+  "description": "Authorization-Code-Flow ohne Discovery: Felder Client ID, Client secret, Authorize URL, Token URL, Users' info URL, Logout URL, IdP's name; Pflicht-Claim email; Plane-URLs Origin /auth/oidc/, Callback /auth/oidc/callback/, Logout /auth/oidc/logout/ plus Mobile-Varianten; Basis für IdP Group Sync. CE: kein OIDC-Code, nur die leeren Erweiterungspunkte wie F04. [Verifikation P03]",
+  "data_model_hints": "Instanz-Konfiguration, Client-Secret verschlüsselt (Vorschlag IS_OIDC_ENABLED, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET, OIDC_AUTHORIZE_URL, OIDC_TOKEN_URL, OIDC_USERINFO_URL, OIDC_LOGOUT_URL, OIDC_PROVIDER_NAME).",
+  "api_hints": "/auth/oidc/, /auth/oidc/callback/, /auth/oidc/logout/, /auth/mobile/oidc/…",
+  "ui_hints": "Kopf 'OIDC – Authenticate your users via the OpenID connect protocol.' + Toggle; Hilfetexte und Placeholders exakt im Dokument.",
+  "sources": [
+   "DD/self-hosting/govern/oidc-sso.md",
+   "IMG/custom-sso/oidc-oauth.png",
+   "apps/web/components/workspace/billing/comparison/plans.tsx:1071",
+   "packages/constants/src/subscription.ts:35,44"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F06 Workspace-Identity: Domain-Verifizierung und Workspace-SSO (SAML/OIDC)",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "Plan nicht belegt; Dok. 20 PF-93: One (Matrix SAML/OIDC), Dok. 27 P08-03: unklar; Suchzusammenfassung docs.plane.so/authentication/sso zeigt nur einen „Get Plan“-Button (UNVERIFIZIERT).",
+  "ce_status": "Stub/UI-Hülle im CE",
+  "description": "Workspace Settings > Identity: E-Mail-Domains per DNS-TXT verifizieren (Pending/Verified/Failed, eine Domain nur in einem Workspace), danach SAML oder OIDC konfigurieren; nur ein Provider aktiv (Umschalten deaktiviert den anderen); 'Configure only' / 'Configure and enable'; Setup-Details Web/Mobile.",
+  "data_model_hints": "Vorschlag WorkspaceDomain(domain, txt_record_value, status, verified_at), WorkspaceSsoProvider(provider saml|oidc, config, is_enabled; max. einer aktiv).",
+  "api_hints": "Nicht öffentlich.",
+  "ui_hints": "Alle Texte im i18n-Abschnitt sso (Add domain, Verify your domain mit 4 Schritten, Switch SSO Method to …?). Settings-Navigation „Identity“ – „Configure your domain and enable Single sign-on“ (workspace-settings.json settings.identity), Seitenbeschreibung „Configure your domain to access security features including single sign-on.“ (auth.json:4). [Verifikation P03]",
+  "sources": [
+   "packages/i18n/src/locales/en/auth.json:1-215",
+   "WEB: https://docs.plane.so/authentication/sso",
+   "packages/i18n/src/locales/en/workspace-settings.json (settings.identity)"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F07 LDAP-Authentifizierung",
+  "cluster": "P03",
+  "tier": "Enterprise Grid",
+  "tier_details": "Nur Enterprise (Cloud-Matrix: Enterprise, comingSoon); Docs-Badge Enterprise Grid.",
+  "ce_status": "Stub/UI-Hülle im CE",
+  "description": "Service-Bind (Bind DN/Passwort) → Suche ab User Search Base mit Filter ({username}-Platzhalter, Default (uid={username})) → Bind als Nutzer → Attribute (Default mail,cn,givenName,sn; Mapping mail/userPrincipalName, givenName/cn, sn/cn) → Profil anlegen/aktualisieren; Provider Name (Default LDAP); Speichern validiert Verbindung; Bind-Passwort verschlüsselt (LDAP_BIND_PASSWORD).",
+  "data_model_hints": "Instanz-Konfiguration; Account.provider um ldap erweitern.",
+  "api_hints": "Eigener Login-Endpunkt unter /auth/ (Pfad nicht belegt; Vorschlag POST /auth/ldap/sign-in/ mit username/password).",
+  "ui_hints": "God Mode LDAP-Formular (Server URI, Bind DN, Bind Password, User Search Base, User Search Filter, User Attributes, Provider Name) + Karte 'Authentication Endpoint'; Login 'Continue with {ldapProviderName}', 'Enter your {ldapProviderName} credentials', Feld 'Username'.",
+  "sources": [
+   "DD/self-hosting/govern/ldap.md",
+   "IMG/ldap/ldap-configuration.webp",
+   "IMG/ldap/enable-ldap.webp",
+   "packages/i18n/src/locales/en/auth.json:278-281,361-366",
+   "HC/plane-enterprise/README.md:1688-1699"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F08 IdP Group Sync",
+  "cluster": "P03",
+  "tier": "Enterprise Grid",
+  "tier_details": "Blog: Enterprise Grid; docs.plane.so: Self-hosted Commercial Edition, nur OIDC (SAML/LDAP coming soon).",
+  "ce_status": "Stub/UI-Hülle im CE",
+  "description": "IdP-Gruppen (Claim-Schlüssel Default groups) auf Projekte/Workspace mit Rolle Admin/Member/Guest mappen; Sync on login, Offline sync alle 6 h, Auto remove; Nicht-Mitglieder werden als Member hinzugefügt; Löschen eines Mappings betrifft nur neue Nutzer.",
+  "data_model_hints": "Config(is_enabled, sync_on_login, auto_remove, sync_offline, group_attribute_key, default_workspace_role); Mappings(idp_group_name, role, project xor all_projects).",
+  "api_hints": "12 Endpunkte workspaces/{ws}/group-sync/{config,workspace-mappings,project-mappings}/ (siehe P02).",
+  "ui_hints": "Workspace Settings 'Group syncing' mit Schaltern und Modal 'User group'/'Project'/'Project role'; Texte vollständig im Dokument.",
+  "sources": [
+   "packages/i18n/src/locales/en/workspace-settings.json (group_syncing)",
+   "migration/features/21-paid-api-referenz-developer-docs.md §2.6/§4.8",
+   "WEB: https://docs.plane.so/authentication/group-sync",
+   "WEB: https://plane.so/blog/introducing-granular-access-control-gac-ldap-idp-group-sync"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F09 OAuth Bridge (externe IdP-JWTs als API-Credentials)",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "Plan nicht belegt.",
+  "ce_status": "Stub/UI-Hülle im CE",
+  "description": "Integration validiert extern ausgestellte OIDC/JWT-Tokens (Azure AD, Okta) für Plane-API-Zugriff: Token Providers mit Issuer, JWKS URL (HTTPS), Audience, User claims (erste Übereinstimmung → Plane-E-Mail), erlaubte asymmetrische Algorithmen, JWKS-Cache-TTL (min 60 s, Default 24 h), Rate-Limit je Provider, Test der JWKS-Erreichbarkeit.",
+  "data_model_hints": "TokenProvider(name, issuer, jwks_url, audience[], user_claims[], allowed_algorithms[], jwks_cache_ttl, rate_limit, is_enabled).",
+  "api_hints": "Nicht öffentlich; Nutzung vermutlich Authorization: Bearer <externes JWT> gegen /api/v1/.",
+  "ui_hints": "'Token Providers', 'Add provider', 'Test', 'JWKS Reachable/Unreachable', Formulartexte exakt im Dokument.",
+  "sources": [
+   "packages/i18n/src/locales/en/integration.json (oauth_bridge_integration)"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F10 Domain Security, 2FA/Passkeys, Passwort-Policy",
+  "cluster": "P03",
+  "tier": "Pro",
+  "tier_details": "Cloud-Matrix: Pro/Business/Enterprise ja.",
+  "ce_status": "teilweise im CE",
+  "description": "Nur Matrix-Beschreibungen: erlaubte Login-Domains bzw. Beschränkung auf eine Domain; gerätegebundene 2FA und Passkeys; eigene Passwortrichtlinien. CE-Kern nur für die Passwort-Policy: feste Regel is_password_strong = zxcvbn-Score ≥ 3 (apps/api/plane/authentication/utils/password.py:13-15), ungenutzte Felder User.is_password_expired/is_password_reset_required (user.py:96,101); 2FA, Passkeys und Domain Security fehlen vollständig (Altfeld Instance.whitelist_emails ungenutzt). Feinaufteilung Dok. 27 P08-07…P08-10. [Verifikation P03]",
+  "data_model_hints": "Nicht öffentlich (Spezifikation im Sicherheits-Cluster).",
+  "api_hints": "Nicht öffentlich.",
+  "ui_hints": "Nicht belegt.",
+  "sources": [
+   "apps/web/components/workspace/billing/comparison/plans.tsx:1083-1115",
+   "apps/api/plane/authentication/utils/password.py:13-15",
+   "apps/api/plane/db/models/user.py:96,101",
+   "migration/features/27-paid-sicherheit-admin-lizenz.md P08-07..P08-10"
+  ],
+  "confidence": "niedrig"
+ },
+ {
+  "name": "P03-F11 Advanced Search (OpenSearch)",
+  "cluster": "P03",
+  "tier": "Pro",
+  "tier_details": "Docs-Badge Pro (advanced-search.md:7). Ohne OpenSearch „falls back to Postgres-based search“ (self-hosting-101.md:130).",
+  "ce_status": "teilweise im CE",
+  "description": "Volltext mit Fuzzy, Autocomplete, Multi-Entity über 9 Indizes ({prefix}_issues, _issue_comments, _projects, _cycles, _modules, _pages, _workspaces, _issue_views, _teamspaces); Sync über Django-Signale → Redis-Queue → Celery-Batch alle 5 s; Verwaltung manage_search_index (index rebuild, document index, --background, --vectorize, list); OpenSearch ≥ 2.19. CE: Suche per icontains. CE-Status „teilweise“ begründet durch die Postgres-Basissuche, auf die auch die Commercial Edition ohne OpenSearch zurückfällt; Dok. 20 PF-53, Dok. 21 F20, Dok. 24 P05-31 führen „fehlt“ (Widerspruch dokumentiert). [Verifikation P03]",
+  "data_model_hints": ".NET: tsvector-Spalten (gewichtet) + GIN, pg_trgm, pgvector statt OpenSearch (ADR-004).",
+  "api_hints": "Public API Advanced search (P02 W8: query, filters, limit, workspace_search, project_id); CE: workspaces/<slug>/search/, entity-search/, search-issues/.",
+  "ui_hints": "Power K / Cmd+Ctrl+K wie CE; keine eigene Settings-UI.",
+  "sources": [
+   "DD/self-hosting/govern/advanced-search.md",
+   "IMG/open-search/opensearch-flow.webp",
+   "apps/api/plane/app/views/search/base.py",
+   "migration/features/21-paid-api-referenz-developer-docs.md §4.14",
+   "DD/self-hosting/self-hosting-101.md:130"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F12 Plane AI (PI-Dienst: Chat, Modelle, Voice, Anhänge, Nutzungsbudget)",
+  "cluster": "P03",
+  "tier": "Pro",
+  "tier_details": "Cloud: Credits je bezahltem Seat, nicht gepoolt (WEB: docs.plane.so/ai/plane-ai-credits, Suchzusammenfassung) → ab Pro (so Dok. 20 PF-82, Dok. 28 P09-F33); Self-hosted: Badge „Commercial Edition“ ohne Plan, eigene Provider-Keys (seit v2.4.0). Docs-PR-Entwurf nennt Free 500/Pro 1,000/Business 2,000 Credits (UNVERIFIZIERT). Widerspruch: ai-usage „Kontingent je Workspace“ vs. plane-ai-credits „je Seat“.",
+  "ce_status": "Stub/UI-Hülle im CE",
+  "description": "FastAPI-Dienst pi (api/worker/beat/migrator) mit eigener DB plane_pi, Lesezugriff auf Haupt-DB (FOLLOWER_POSTGRES_URI), Redis-Celery, OpenSearch; Chat in natürlicher Sprache, Duplikaterkennung, Suche über Work Items/Pages/Projekte, Spracheingabe (Groq), Datei-Anhänge, SSE-Streaming; Modelle GPT-5.4/5.2, Claude Sonnet 4.5/4.6 plus ein Custom-LLM (OpenAI-kompatibel oder Bedrock); PI ist OAuth-Client der Plane-API; Nutzungslimits mit 80-%-Warnung; Live-Server-AI-Proxy (AI_OPENAI_*).",
+  "data_model_hints": "PI-Schema nicht öffentlich; Vorschlag ai_chat, ai_message, ai_attachment, ai_usage, ai_provider_config.",
+  "api_hints": "/pi/live/, /pi/ready/, /pi/health/, /pi/api/v1/attachments/, /pi/api/v1/chat/stream-answer/ (SSE), /pi/api/v1/oauth/callback/; sonst nicht öffentlich.",
+  "ui_hints": "Sidebar 'Plane AI' → /{ws}/pi-chat/ (im CE Link ohne Route); Settings 'Plane AI' – 'See your work get smarter and faster with AI …'; God Mode 'Artificial intelligence (deprecated)'.",
+  "sources": [
+   "DD/self-hosting/govern/plane-ai/configure-plane-ai.md",
+   "HC/plane-enterprise/templates/config-secrets/pi-api-env.yaml",
+   "HC/plane-enterprise/templates/ingress-traefik.yaml:113-132",
+   "DD/self-hosting/manage/health-checks.md",
+   "apps/web/components/workspace/sidebar/user-menu.tsx:55-61",
+   "WEB: https://docs.plane.so/ai/ai-usage",
+   "WEB: https://docs.plane.so/ai/plane-ai-credits",
+   "migration/features/28-paid-integrationen-importer-ai.md P09-F33",
+   "DD/self-hosting/govern/plane-ai/configure-plane-ai.md:7"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F13 Semantische Suche, Embeddings, Duplikaterkennung",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "Optionaler Teil von Plane AI (Commercial); ohne Embedding-Modell BM25.",
+  "ce_status": "fehlt",
+  "description": "10 unterstützte Embedding-Modelle (Cohere embed-v4.0/english-v3.0/v2.0, OpenAI ada-002/3-small/3-large, Bedrock Titan v1/v2, Cohere-on-Bedrock english/multilingual v3) mit Dimensionen 1024–4096; OpenSearch-ML-Modell vorhanden (OPENSEARCH_ML_MODEL_ID) oder Auto-Deploy durch pi-migrator; Re-Vektorisierung per manage_search_index --vectorize; Dimensionswechsel erfordert Index-Rebuild.",
+  "data_model_hints": "Vorschlag search_embedding(entity_type, entity_id, chunk_no, content_hash, embedding vector(dim), model_key) mit HNSW (pgvector).",
+  "api_hints": "Duplikat-Endpunkt nicht öffentlich (Vorschlag similar-Endpunkt).",
+  "ui_hints": "Duplikat-Hinweise beim Anlegen nicht belegt.",
+  "sources": [
+   "DD/self-hosting/govern/plane-ai/configure-embedding-model.md",
+   "DD/self-hosting/govern/plane-ai/aws-opensearch-embedding.md",
+   "HC/plane-enterprise/README.md:1701-1740"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F14 Integrations-Framework Silo",
+  "cluster": "P03",
+  "tier": "Pro",
+  "tier_details": "Integrationen ab Pro (Cloud-Matrix, Sektion „Integrations“ mit comingSoon: true, plans.tsx:964-967; PRO_PLAN_FEATURES „Popular integrations“, subscription.ts:31; Docs-Badges Pro).",
+  "ce_status": "Stub/UI-Hülle im CE",
+  "description": "Node-Dienst unter /silo: OAuth zu Drittsystemen, Webhook-Empfang, Sync- und Import-Jobs (Status queued…cancelled), Workspace- und persönliche Connections, Instanz-ENV für Cloud-Connectoren und Workspace-Formulare für Enterprise-Varianten; schreibt in Haupt-DB, signiert API-Aufrufe per SILO_HMAC_SECRET_KEY, Tokens AES-verschlüsselt; als Marketplace-App registriert (reset_marketplace_app_secrets, Redis plane_app_details_github); Health /silo/health/*. CE-Altcode im Frontend: nicht geroutete Seite apps/web/app/(all)/[workspaceSlug]/(settings)/settings/(workspace)/integrations/page.tsx, Komponenten apps/web/components/integration/*, apps/web/components/project/integration-card.tsx, Services apps/web/services/integrations/{integration,github,jira}.service.ts gegen nicht existierende Backend-Pfade (/api/integrations/, …/workspace-integrations/, …/importers/). [Verifikation P03]",
+  "data_model_hints": "CE-Altmodelle ohne Routen: Integration, WorkspaceIntegration (integration/base.py:16,41), GithubRepository, GithubRepositorySync, GithubIssueSync, GithubCommentSync (integration/github.py:14,32,54,73), SlackProjectSync (integration/slack.py:14), Importer(service github|jira, status queued|processing|completed|failed) (importer.py:13-36); Vorschlag integration_connection, integration_entity_mapping, integration_link, import_job, provider_app_config.",
+  "api_hints": "Vollständige Liste belegter /silo/api/…-Routen (GitHub, GHE, GitLab, Bitbucket, Slack, Sentry) im Dokument.",
+  "ui_hints": "Workspace Settings 'Integrations'/'Imports' mit Texten; Fehler-/Statusmeldungen silo_errors, import_status.",
+  "sources": [
+   "HC/plane-enterprise/templates/workloads/silo.deployment.yaml",
+   "HC/plane-enterprise/templates/config-secrets/silo.yaml",
+   "DD/self-hosting/manage/health-checks.md",
+   "DD/self-hosting/govern/integrations/github.md",
+   "packages/i18n/src/locales/en/integration.json",
+   "apps/api/plane/db/models/integration/base.py",
+   "apps/web/components/workspace/billing/comparison/plans.tsx:964-967",
+   "packages/constants/src/subscription.ts:31",
+   "apps/api/plane/db/models/integration/github.py",
+   "apps/web/services/integrations/integration.service.ts",
+   "apps/web/app/routes/core.ts:263-289"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F15 GitHub-Integration (Cloud, Enterprise Cloud, Enterprise Server)",
+  "cluster": "P03",
+  "tier": "Pro",
+  "tier_details": "Integration ab Pro; GitHub-Importer Free/One ohne, Pro+ mit Custom Props.",
+  "ce_status": "Stub/UI-Hülle im CE",
+  "description": "GitHub-App: Org verbinden, persönliches Konto, Repository-Mapping, Project Issue Sync bi-/unidirektional, PR-State-Mapping (DRAFT_MR_OPENED, MR_OPENED, MR_REVIEW_REQUESTED, MR_READY_FOR_MERGE, MR_MERGED, MR_CLOSED, ISSUE_OPEN, ISSUE_CLOSED), Rückwärtsbewegung verhindern; App-Rechte/Events vollständig dokumentiert; Private Key Base64; GHE per Workspace-Formular.",
+  "data_model_hints": "Siehe P03-F14; GHE-Konfig: App ID, App Slug, Base URL, Client ID/Secret, Webhook Secret, Private Key.",
+  "api_hints": "/silo/api/github/auth/callback, …/auth/user/callback, /silo/api/github/github-webhook, /silo/api/oauth/github-enterprise/…, /silo/api/github-enterprise/github-webhook.",
+  "ui_hints": "'GitHub Enterprise Configuration' Formular, 'Connect App'; Sync-Richtungs-Texte exakt im Dokument.",
+  "sources": [
+   "DD/self-hosting/govern/integrations/github.md",
+   "packages/i18n/src/locales/en/integration.json (github_integration, github_enterprise_integration)"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F16 GitLab-Integration (GitLab.com, Self-managed)",
+  "cluster": "P03",
+  "tier": "Pro",
+  "tier_details": "Docs-Badge Pro.",
+  "ce_status": "Stub/UI-Hülle im CE",
+  "description": "OAuth-App (Scopes api, read_api, read_user, read_repository, profile, email), Project Connections für MR-Sync, Pull Request Automation (State je MR-Ereignis), Project Issue Sync; Self-managed per Workspace-Formular (Base URL, App ID, Client Secret, Webhook Secret). CE: nur vollständige UI-Texte gitlab_integration, gitlab_enterprise_integration in packages/i18n/src/locales/en/integration.json, kein Modell, keine Route (korrigiert von „fehlt“; gleich Dok. 28 P09-F06/F07). [Verifikation P03]",
+  "data_model_hints": "Siehe P03-F14.",
+  "api_hints": "/silo/api/gitlab/auth/callback, /silo/api/oauth/gitlab-enterprise/auth/callback.",
+  "ui_hints": "'On draft MR open, set the state to' … sechs Mapping-Zeilen; 'Gitlab Enterprise Configuration'.",
+  "sources": [
+   "DD/self-hosting/govern/integrations/gitlab.md",
+   "packages/i18n/src/locales/en/integration.json (gitlab_integration, gitlab_enterprise_integration)",
+   "packages/i18n/src/locales/en/integration.json"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F17 Bitbucket-Integration (Cloud, Data Center)",
+  "cluster": "P03",
+  "tier": "Pro",
+  "tier_details": "Docs-Badge Pro.",
+  "ce_status": "Stub/UI-Hülle im CE",
+  "description": "Sync von Pull Requests und Commits; Cloud-OAuth-Consumer mit vollständiger Scope-Liste, ENV BITBUCKET_CLIENT_ID/SECRET/WEBHOOK_SECRET; Data Center per Application Link (Projects Admin, Repositories Read/Write/Admin). CE: nur vollständige UI-Texte bitbucket_dc_integration in packages/i18n/src/locales/en/integration.json, kein Modell, keine Route (korrigiert von „fehlt“; gleich Dok. 28 P09-F08). [Verifikation P03]",
+  "data_model_hints": "Siehe P03-F14.",
+  "api_hints": "/silo/api/oauth/bitbucket/auth/callback, /silo/api/oauth/bitbucket-dc/auth/callback.",
+  "ui_hints": "'Bitbucket Data Center – Connect and sync your Bitbucket Data Center repositories with Plane.'",
+  "sources": [
+   "DD/self-hosting/govern/integrations/bitbucket.md",
+   "packages/i18n/src/locales/en/integration.json (bitbucket_dc_integration)",
+   "packages/i18n/src/locales/en/integration.json"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F18 Slack-Integration",
+  "cluster": "P03",
+  "tier": "Pro",
+  "tier_details": "Cloud-Matrix und Docs-Badge Pro.",
+  "ce_status": "Stub/UI-Hülle im CE",
+  "description": "Workspace- und persönliche Verbindung, Thread-Sync, Shortcuts 'Create new issue'/'Link Work Item', Slash-Command /plane, Link-Unfurling, DM-Benachrichtigungen, Projekt-Benachrichtigungen in Kanälen; vollständiges App-Manifest (Scopes, Events, Interaktivität, Token-Rotation).",
+  "data_model_hints": "Projekt↔Kanal-Verbindungen; Siehe P03-F14.",
+  "api_hints": "/silo/api/slack/{team/auth/callback/,user/auth/callback/,events,command/,action/,options/}.",
+  "ui_hints": "'Project Notifications', 'Configure Slack Channel' mit Texten im Dokument.",
+  "sources": [
+   "DD/self-hosting/govern/integrations/slack.md",
+   "packages/i18n/src/locales/en/integration.json (slack_integration)",
+   "apps/api/plane/license/api/views/instance.py:133"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F19 Sentry-Integration",
+  "cluster": "P03",
+  "tier": "Pro",
+  "tier_details": "Docs-Badge Pro.",
+  "ce_status": "Stub/UI-Hülle im CE",
+  "description": "Sentry Public Integration mit Schema (issue-link link/create mit Feldern, alert-rule-action 'Create Plane Work Item or Intake Issue' mit type intake|work_item), Rechte, Webhook-Events created/resolved/assigned/archived/unresolved, State-Mapping in Plane. CE: nur vollständige UI-Texte sentry_integration in packages/i18n/src/locales/en/integration.json, kein Modell, keine Route (korrigiert von „fehlt“; gleich Dok. 28 P09-F12). [Verifikation P03]",
+  "data_model_hints": "State-Mapping je Projekt (resolved/unresolved → State).",
+  "api_hints": "/silo/api/sentry/sentry-webhook/, /silo/api/oauth/sentry/auth/callback, /api/sentry/{issues/link,issues,issues/create,users,priorities,labels,states,modules,cycles,projects,alert-rule}.",
+  "ui_hints": "'State Mapping' Texte und Fehlermeldungen im Dokument.",
+  "sources": [
+   "DD/self-hosting/govern/integrations/sentry.md",
+   "packages/i18n/src/locales/en/integration.json (sentry_integration)",
+   "packages/i18n/src/locales/en/integration.json"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F20 HubSpot-Connector",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "Nur Chart-Konfiguration belegt.",
+  "ce_status": "fehlt",
+  "description": "Silo-Connector mit HUBSPOT_CLIENT_ID/HUBSPOT_CLIENT_SECRET; Funktionsumfang nicht belegt.",
+  "data_model_hints": "Nicht belegt.",
+  "api_hints": "Nicht belegt.",
+  "ui_hints": "Nicht belegt.",
+  "sources": [
+   "HC/plane-enterprise/values.yaml (services.silo.connectors.hubspot)",
+   "HC/plane-enterprise/templates/config-secrets/silo.yaml"
+  ],
+  "confidence": "niedrig"
+ },
+ {
+  "name": "P03-F21 Cursor-Agent-Integration",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "Nur Secret belegt.",
+  "ce_status": "fehlt",
+  "description": "CURSOR_WEBHOOK_SECRET für 'Cursor agent integration' in Silo; Funktion nicht belegt.",
+  "data_model_hints": "Nicht belegt.",
+  "api_hints": "Nicht belegt.",
+  "ui_hints": "Nicht belegt.",
+  "sources": [
+   "HC/plane-enterprise/values.yaml (env.silo_envs.cursor_webhook_secret)",
+   "HC/plane-enterprise/README.md"
+  ],
+  "confidence": "niedrig"
+ },
+ {
+  "name": "P03-F22 Importer (Jira Cloud/Server, Linear, Asana, ClickUp, Notion, Confluence, CSV/Flatfile, GitHub)",
+  "cluster": "P03",
+  "tier": "Pro",
+  "tier_details": "Basis-Import bereits im Free-Plan von Cloud und Commercial Edition (nicht im CE); Jira und GitHub „Without custom props“ (Free/One) vs. „With custom props“ (Pro+) (plans.tsx:940-960); tier = Pro für den vollständigen Import mit Custom Properties; Linear/Asana/ClickUp/Notion/Confluence/CSV ohne Planangabe.",
+  "ce_status": "Stub/UI-Hülle im CE",
+  "description": "Silo-ETL (Pull → Transform → Push) mit Jobstatus; Jira-Server-Paging (50, 1 parallel), Queue celery.importer; Confluence-entities.xml (MinIO idle_timeout); CSV über Flatfile (SaaS).",
+  "data_model_hints": "CE-Altmodell Importer(service github|jira, status, config, data, token); Vorschlag import_job.",
+  "api_hints": "Nicht öffentlich.",
+  "ui_hints": "Workspace Settings 'Imports'; Statusanzeigen laut import_status.",
+  "sources": [
+   "apps/web/components/workspace/billing/comparison/plans.tsx:940-951",
+   "HC/plane-enterprise/templates/config-secrets/silo.yaml",
+   "HC/plane-enterprise/templates/workloads/worker-importers.deployment.yaml",
+   "WEB: https://docs.plane.so/importers/github"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F23 Intake per E-Mail",
+  "cluster": "P03",
+  "tier": "Business",
+  "tier_details": "Cloud-Matrix „Emails For Intake“ ab Business, comingSoon: true (plans.tsx:458-468); Docs-Badge Business (configure-dns-email-service.md:7).",
+  "ce_status": "Stub/UI-Hülle im CE",
+  "description": "SMTP-Dienst email (25/465/587, TLS-Zertifikat, Spam-Wortliste, Domain-Blacklist, Anhang-Limit 10 MB) übergibt Mails an API POST /intake/email/; Projekt-Intake-Adresse z. B. issue+id@<INTAKE_EMAIL_DOMAIN>; DNS A/MX/SPF/DMARC; SMTP_DOMAIN = INTAKE_EMAIL_DOMAIN. CE-Status korrigiert von „teilweise“: nur passive Felder/Enum/Texte, kein E-Mail-Eingang (gleich Dok. 20 PF-37, Dok. 23 WM-46; Dok. 21 F28 „teilweise“). [Verifikation P03]",
+  "data_model_hints": "CE: IntakeIssue.source (Default IN_APP), source_email, external_source (intake.py:76-78), SourceType nur IN_APP; Frontend-Enum EInboxIssueSource IN_APP|FORMS|EMAIL (packages/types/src/inbox.ts:27-31); Serializer geben source_email aus (app/serializers/issue.py:354, api/serializers/intake.py:101) → SourceType.EMAIL ergänzen, Adressvergabe je Projekt, Message-ID für Antworten.",
+  "api_hints": "Intern POST /intake/email/ (Payload nicht öffentlich).",
+  "ui_hints": "CE-Texte der Intake-Quelle: „Email“ – „Collect new work items from anyone who sends an email to a Plane email address.“, Feld „Email ID“ (project-settings.json project_settings.features.intake.email).",
+  "sources": [
+   "DD/self-hosting/govern/configure-dns-email-service.md",
+   "HC/plane-enterprise/templates/workloads/email.deployment.yaml",
+   "HC/plane-enterprise/templates/config-secrets/email-env.yaml",
+   "apps/api/plane/db/models/intake.py:40-78",
+   "packages/types/src/inbox.ts:27-31",
+   "packages/i18n/src/locales/en/project-settings.json (project_settings.features.intake.email)",
+   "apps/web/components/workspace/billing/comparison/plans.tsx:458-468"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F24 Webhooks v2",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "Plan nicht belegt; Screenshot aus Business-Workspace.",
+  "ce_status": "teilweise im CE",
+  "description": "Workspace-Webhooks mit 43 Dot-Events in 14 Gruppen, Payload v2 (delivery_id, event_id, entity_id, entity_type, previous_attributes), Titel-Feld, PQL-/Basic-Filter nur für Work-Item-Events (Fehler ⇒ Zustellung übersprungen), Secret plane_wh_ als CSV-Download, Delivery-Log mit Kennzahlen, Retry 5× mit ~10-min-Backoff bei 5xx/Nichterreichbarkeit, Auto-Disable + E-Mail an den Ersteller, 4xx ohne Retry, kein manueller Retry; v1 deprecated weiter lauffähig. CE (v1) hat bereits: plane_wh_-Secret (webhook.py:17-18), Regenerate-Endpunkt (urls/webhook.py:22), CSV-Download (create-webhook-modal.tsx:79-80, form/secret-key.tsx:80-81), Retry 5× mit retry_backoff=600 und Auto-Disable + E-Mail (webhook_task.py:237-240, 355-364), Log-Endpunkt webhook-logs/<webhook_id>/ (urls/webhook.py:27). CE fehlt: v2-Events/Payload, Titel, Filter, Delivery-Log-UI, Retry auf HTTP-5xx (CE nur bei Netzwerkfehlern). [Verifikation P03]",
+  "data_model_hints": "CE v1: Webhook(url, is_active, secret_key, project, issue, module, cycle, issue_comment Booleans, is_internal, version=\"v1\") (webhook.py:34-45), WebhookLog(… retry_count) (webhook.py:65-82), ProjectWebhook (webhook.py:94); v2: Titel, Event-Abos je Dot-Event, Filter (Basic/PQL), Delivery-Tabelle für Kennzahlen.",
+  "api_hints": "Header Content-Type, User-Agent: Autopilot, X-Plane-Delivery, X-Plane-Event, X-Plane-Signature (HMAC-SHA256 Rohbody); webhook-consumer Queue plane.webhook.",
+  "ui_hints": "'Create webhook' mit 'V1 scopes (deprecated)' und 'V2 scopes' (Baum-Checkboxen); Delivery-Log 'Total deliveries', 'Successful', 'Failed', 'Success rate'.",
+  "sources": [
+   "DD/dev-tools/intro-webhooks.md",
+   "IMG/webhooks/create-webhook.webp",
+   "apps/api/plane/db/models/webhook.py",
+   "apps/api/plane/bgtasks/webhook_task.py",
+   "apps/api/plane/app/urls/webhook.py",
+   "apps/web/components/web-hooks/create-webhook-modal.tsx",
+   "apps/web/components/web-hooks/form/secret-key.tsx",
+   "apps/web/components/web-hooks/utils.ts"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F25 OAuth-App-Plattform (Applications, Consent, Bot-/User-Token, Scopes, Installationen)",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "Commercial Edition und Cloud (Beta): „OAuth application registration is available on Plane Cloud and Plane Commercial Edition; Plane Community Edition does not include it“ (mcp-server-self-host.md:18-20); kein Plan belegt (Suche ohne Planangabe).",
+  "ce_status": "Stub/UI-Hülle im CE",
+  "description": "'Build your own' App mit Setup URL, Redirect URIs, Webhook URL/Secret, Scopes, Enable App Mentions; Bot-Token-Flow (client_credentials + app_installation_id → pln_bot_…, 86400 s) und User-Token-Flow (authorization_code/refresh_token → pln_…/pln_refresh_…); App-Installation mit Bot-User; granulare Scopes, globale read/write auslaufend; Consent-Screen; Marketplace-Felder. CE-Status korrigiert von „fehlt“: vollständige i18n workspace_settings.settings.applications.* und Bot-Felder (User.is_bot, APIToken.user_type) vorhanden, keine Funktion (gleich Dok. 28 P09-F47). [Verifikation P03]",
+  "data_model_hints": "Application(name, slug, descriptions, logo, categories, website, app_maker, setup/configuration/redirect/webhook URLs, webhook_secret, policy URLs, contact_email, authorization_grant_type, is_mentionable, scopes, client_id/secret, is_internal); AppInstallation(app_bot, status installed); Tokens.",
+  "api_hints": "GET /auth/o/authorize-app/, POST /auth/o/token/, GET /auth/o/app-installation/?id=; Bearer gegen /api/v1/.",
+  "ui_hints": "Installed/All/Internal/Third-party/Your apps, Credential-Dialog mit CSV, Regenerate client secret, Consent-Texte exakt im Dokument; 'Supported Plans' entfällt.",
+  "sources": [
+   "DD/dev-tools/build-plane-app/choose-token-flow.md",
+   "DD/dev-tools/build-plane-app/create-oauth-application.md",
+   "DD/dev-tools/build-plane-app/oauth-scopes.md",
+   "DD/dev-tools/build-plane-app/webhooks.md",
+   "packages/i18n/src/locales/en/workspace-settings.json (applications)",
+   "DD/dev-tools/mcp-server-self-host.md:18-20",
+   "DD/dev-tools/mcp-server.md:771-772"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F26 Agents (Agent Runs, Activities, Signals)",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "Beta; Agents zählen nicht als abrechenbare Nutzer.",
+  "ce_status": "Stub/UI-Hülle im CE",
+  "description": "Mentionable OAuth-Apps; @Mention im Work-Item-Kommentar erzeugt AgentRun (Status created, in_progress, awaiting, completed, stopping, stopped, failed, stale nach 5 min) und Activities (prompt, thought, action, response, elicitation, error; ephemer: thought/action/error) mit Signals continue/stop/auth_request/select; Webhooks agent_run_create und agent_run_user_prompt über agent-consumer (Queue plane.agent). CE-Status korrigiert von „fehlt“: einzige Spur Scope-Text applications.scope_description.agents „Access to agents, and all agent related entities“ (gleich Dok. 28 P09-F50). [Verifikation P03]",
+  "data_model_hints": "AgentRun(agent_user, issue, project, workspace, comment, source_comment, creator, status, started/ended/stopped_at, stopped_by, external_link, error_metadata, type comment_thread); AgentRunActivity(type, content, content_metadata, ephemeral, signal, signal_metadata, actor, comment).",
+  "api_hints": "SDK agentRuns.activities.create(workspaceSlug, runId, …); REST-Pfade nicht dokumentiert; Scopes agents.runs:*, agents.run_activities:*.",
+  "ui_hints": "Agent im Mention-Picker; ephemere Activities temporär angezeigt, response/elicitation als Kommentarantwort.",
+  "sources": [
+   "DD/dev-tools/agents/overview.md",
+   "DD/dev-tools/agents/building-an-agent.md",
+   "DD/dev-tools/agents/signals-content-payload.md",
+   "DD/dev-tools/agents/best-practices.md",
+   "HC/plane-enterprise/templates/config-secrets/agent-consumer.yaml",
+   "packages/i18n/src/locales/en/workspace-settings.json (applications.scope_description.agents)"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F27 MCP-Server",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "OAuth-Transport nur Cloud/Commercial (OAuth-App nötig); CE nur stdio/PAT.",
+  "ce_status": "teilweise im CE",
+  "description": "28 Tools/183 Actions, Endpunkte /http/mcp (OAuth), /http/api-key/mcp (PAT + x-workspace-slug), /sse (deprecated), stdio; Plane-OAuth-App mit Redirects /http/auth/callback und /auth/callback, Scopes read/write; Token-Store Redis; Redirect-Allowlist; im EE-Chart unter /mcp mit .well-known-Discovery; eigener Helm-Chart. CE-Status „teilweise“: im CE-Repo kein MCP-Code; der externe MIT-lizenzierte Server ist per stdio/PAT gegen die CE-API nutzbar (mcp-server.md:68,130-132). [Verifikation P03]",
+  "data_model_hints": "OAuth-Tokens im Redis (AES); keine eigenen Tabellen belegt.",
+  "api_hints": "/mcp/http/mcp, /mcp/http/api-key/mcp, /.well-known/oauth-protected-resource/mcp, /.well-known/oauth-authorization-server/mcp.",
+  "ui_hints": "Keine Plane-UI außer OAuth-App-Registrierung und Consent.",
+  "sources": [
+   "DD/dev-tools/mcp-server.md",
+   "DD/dev-tools/mcp-server-self-host.md",
+   "HC/plane-enterprise/templates/config-secrets/mcp-server-env.yaml",
+   "HC/plane-mcp-server/values.yaml"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F28 Plane Runner (Scripts, Functions, geplante Automationen, Transition-Bedingungen)",
+  "cluster": "P03",
+  "tier": "Enterprise Grid",
+  "tier_details": "docs.plane.so: nur Enterprise Grid; Transition Conditions ebenfalls Enterprise Grid.",
+  "ce_status": "Stub/UI-Hülle im CE",
+  "description": "Sandbox für JS/TS-Scripts (Trigger Event, Zeitplan ~5 min, Workflow-Transition pre/post) und Functions; Built-ins getSiblings, getChildren, addComment, addLabel, postToSlack, httpRequest; Outbound-Allowlist je Script; Dienst node-runner (Isolate 128 MB, 10 s Ausführung, 5 s Init, HMAC zur API); Automations-Aktion 'Run Script'.",
+  "data_model_hints": "Vorschlag RunnerScript(language, source, compiled_js, trigger, trigger_config, variables, outbound_allowlist, is_enabled), RunnerFunction, RunnerExecution.",
+  "api_hints": "GET /api/workspaces/{slug}/runnerctl/health/ → {is_available}; Runner intern GET /health; Rest nicht öffentlich.",
+  "ui_hints": "Workspace Settings 'Plane Runner', Überschrift 'Scripts', Button 'New Script'.",
+  "sources": [
+   "HC/plane-enterprise/templates/workloads/runner.deployment.yaml",
+   "HC/plane-enterprise/templates/config-secrets/runner-env.yaml",
+   "DD/self-hosting/manage/health-checks.md",
+   "packages/i18n/src/locales/en/workspace-settings.json (runners)",
+   "packages/i18n/src/locales/en/automation.json:75,96-98",
+   "WEB: https://docs.plane.so/automations/plane-runner"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F29 Automations-Infrastruktur (Outbox, Event-Stream, Automation-Consumer)",
+  "cluster": "P03",
+  "tier": "Pro",
+  "tier_details": "Trigger & Action ab Pro (5 000 Automationen), Decisions & Loops ab Business (10 000), Enterprise unbegrenzt.",
+  "ce_status": "fehlt",
+  "description": "outbox-poller liest Transactional Outbox (Polling 0,25–2, Batch 250, Pool 2–10, Memory-Limit 400 MB) und publiziert an Exchange plane.event_stream; automation-consumer verarbeitet Queue plane.event_stream.automations (Event-Typ issue, Prefetch 10); Aktionen Add comment, Change property, Run Script; Cron-Zeitpläne.",
+  "data_model_hints": "Outbox(aggregate_type, aggregate_id, event_type, payload, occurred_at, published_at, attempts).",
+  "api_hints": "Intern (Queues); fachliche API im Automations-Cluster.",
+  "ui_hints": "Siehe Automations-Cluster.",
+  "sources": [
+   "HC/plane-enterprise/templates/config-secrets/outbox-poller.yaml",
+   "HC/plane-enterprise/templates/config-secrets/automations-consumer.yaml",
+   "apps/web/components/workspace/billing/comparison/plans.tsx:769-805",
+   "packages/i18n/src/locales/en/automation.json"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F30 Hintergrund-Export Pages PDF/DOCX (live-exporter)",
+  "cluster": "P03",
+  "tier": "Pro",
+  "tier_details": "Pro 'One download at a time'; Business/Enterprise 'Queued downloads'; Nested Pages Business 'Word-compatible + other format downloads'.",
+  "ce_status": "teilweise im CE",
+  "description": "live-Image im Modus LIVE_MODE=exporter konsumiert Queue plane-exports, rendert PDF/DOCX (500 MB–2 GB), Status in Redis, Download über EXPORT_DOWNLOAD_BASE_URL; CE: synchroner PDF-Export /pdf-export im Live-Server.",
+  "data_model_hints": "Export-Job im Worker (.NET PDF/DOCX).",
+  "api_hints": "Nicht öffentlich (Job-Status, Download-Redirect).",
+  "ui_hints": "Nicht belegt.",
+  "sources": [
+   "HC/plane-enterprise/templates/workloads/live-exporter.deployment.yaml",
+   "HC/plane-enterprise/templates/config-secrets/live-env.yaml",
+   "apps/web/components/workspace/billing/comparison/plans.tsx:876-932",
+   "apps/live/src/controllers/pdf-export.controller.ts"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F31 draw.io-Diagramme im Wiki-Editor",
+  "cluster": "P03",
+  "tier": "Pro",
+  "tier_details": "Dok. 26 P07-21: Integrationsdoku Pro / Blog Business (Widerspruch); Pro als niedrigere, spezifischere Angabe übernommen.",
+  "ce_status": "fehlt",
+  "description": "Diagramm-Erweiterung bettet draw.io ein; DRAWIO_EMBED_URL lokal (/drawio, makeplane/drawio:v2.5.0), remote oder Fallback diagrams.net-Cloud; CE nur CSS-Selektor .editor-drawio-component. Aktivierung als Integration (Workspace Settings → Integrations → Configure bei draw.io, durch Admin), Slash-Befehl /draw mit Varianten Diagramm (voller Editor) und Board (Whiteboard), Diagramme an der Page gespeichert, nicht Teil der Versionshistorie (WEB: drawio.com/blog/diagrams-in-plane, plane.so/marketplace/drawio – Suchzusammenfassungen, UNVERIFIZIERT; Dok. 26). [Verifikation P03]",
+  "data_model_hints": "Diagramm-XML + SVG-Vorschau (Vorschlag).",
+  "api_hints": "Keine.",
+  "ui_hints": "Editor-Cluster.",
+  "sources": [
+   "HC/plane-enterprise/templates/workloads/drawio.deployment.yaml",
+   "HC/plane-enterprise/templates/config-secrets/app-env.yaml",
+   "packages/editor/src/plugins/drag-handle.ts:32",
+   "migration/features/26-paid-wissen-pages-wiki.md P07-21",
+   "WEB: https://www.drawio.com/blog/diagrams-in-plane",
+   "WEB: https://plane.so/marketplace/drawio"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F32 Link-Vorschauen/Embeds über Iframely",
+  "cluster": "P03",
+  "tier": "Pro",
+  "tier_details": "Doku-Label „Embed Pro“ laut Dok. 26 P07-22.",
+  "ce_status": "Stub/UI-Hülle im CE",
+  "description": "IFRAMELY_URL für API und Live, Dienst makeplane/iframely:v2.5.4 (node server.js, Port 8061) liefert oEmbed/Metadaten für Embeds; benötigt Internetzugriff. CE-Status korrigiert von „fehlt“: Editor-Befehl \"external-embed\" (packages/editor/src/types/editor.ts:68), Drag-Selektor .editor-embed-component, UI-Texte vorhanden, keine Funktion. [Verifikation P03]",
+  "data_model_hints": "Preview-Cache (Vorschlag).",
+  "api_hints": "Intern.",
+  "ui_hints": "CE-Texte externalEmbedComponent (editor.json:27): Block-Menü „Convert to Embed“, „Convert to Link“, „Convert to Rich Card“; Platzhalter „Insert your preferred embed link here, such as YouTube video, Figma design, etc.“, „Enter or paste a link“; Modal „Embed“ – „Works with YouTube, Figma, Google Docs and more“; Fehler „Please enter a valid URL.“",
+  "sources": [
+   "HC/plane-enterprise/templates/workloads/iframely.deployment.yaml",
+   "HC/plane-enterprise/templates/config-secrets/live-env.yaml",
+   "IMG/airgapped/plane-architecture.webp",
+   "packages/i18n/src/locales/en/editor.json:27",
+   "packages/editor/src/types/editor.ts:68",
+   "migration/features/26-paid-wissen-pages-wiki.md P07-22"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F33 Argus – Sensitive-Data-/PII-Scanner",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "Produkt-Flag PII_SCANNER; Commercial-Release v3.2.0 (Changelog „self-hosted“, 10.09.2026); Plan nicht belegt.",
+  "ce_status": "fehlt",
+  "description": "Go-Dienst (1 Replik, Recreate) liest Work Items/Pages/Kommentare, speichert Findings mit HKDF-HMAC-Fingerprints (Dedup, Staling, group_by=fingerprint, Triage) im Schema argus, Scans/Scan-Runs mit Rate-Limits, CSV-Exporte mit 15-min-Einmaltokens, Audit-Zeilen mit Client-IP, Session-Prüfung über API. Laut v3.2.0-Changelog (Suchzusammenfassung, UNVERIFIZIERT): scannt Work-Item-Beschreibungen, Kommentare, Pages und Anhänge auf E-Mail-Adressen, Telefonnummern, Kartennummern, Ausweis-/Regierungs-IDs, Adressen, Secrets und API-Keys; Meldung nach Kategorie und Fundort; Schwärzung kann vor Teilen/Export erzwungen werden. [Verifikation P03]",
+  "data_model_hints": "Vorschlag scan, scan_run, finding, export, audit im Schema argus.",
+  "api_hints": "Alle Routen unter /argus/ (healthz, admin-health, metrics privat); Details nicht öffentlich.",
+  "ui_hints": "Ort/Gestaltung nicht belegt (Web-Build VITE_ARGUS_BASE_PATH).",
+  "sources": [
+   "HC/plane-enterprise/values.yaml (services.argus, env.argus_envs)",
+   "HC/plane-enterprise/templates/config-secrets/argus-env.yaml",
+   "HC/plane-enterprise/templates/workloads/argus.deployment.yaml",
+   "HC/plane-enterprise/README.md:1090-1147",
+   "WEB: https://plane.so/changelog/release-v3-2-0-workspace-governance-ai-memory-pii-scanning-and-more"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F34 Health-Probes und System-Checks",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "Commercial Edition (alle Pläne); CE nur GET /.",
+  "ce_status": "teilweise im CE",
+  "description": "/api/live/, /api/ready/ (DB+Cache, 503 mit bereinigtem reason), /api/health/ (status ok|degraded, timestamp, uptime, database/cache.connected), 5-s-Ergebniscache; analoge Endpunkte für pi, live, silo, flux, node-runner; God-Mode System checks.",
+  "data_model_hints": "Keine.",
+  "api_hints": "Payloads exakt im Dokument.",
+  "ui_hints": "God Mode 'System checks' (Gestaltung nicht belegt).",
+  "sources": [
+   "DD/self-hosting/manage/health-checks.md",
+   "HC/plane-enterprise/templates/config-secrets/app-env.yaml"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F35 Session-Expiry-Einstellungen im God Mode",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "Commercial Edition; CE nur ENV.",
+  "ce_status": "teilweise im CE",
+  "description": "System Configurations > Session settings: Session expiry (Tage, Default 7, min 1, inaktivitätsbasiert, Verlängerung max. 1×/Tag) und Admin session expiry (Stunden, Default 1, min 1, absolut); UI-Wert hat Vorrang vor SESSION_COOKIE_AGE/ADMIN_SESSION_COOKIE_AGE.",
+  "data_model_hints": "Instanz-Konfiguration SESSION_COOKIE_AGE/ADMIN_SESSION_COOKIE_AGE (Sekunden).",
+  "api_hints": "Instanz-Konfigurations-Endpunkt (wie CE configurations/).",
+  "ui_hints": "Zwei Ganzzahlfelder mit Validierung Minimum.",
+  "sources": [
+   "DD/self-hosting/govern/god-mode/session-expiry.md",
+   "apps/api/plane/settings/common.py:425-432"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F36 Airgapped Edition",
+  "cluster": "P03",
+  "tier": "Enterprise Grid",
+  "tier_details": "Nur Enterprise Grid, mindestens 100 Seats.",
+  "ce_status": "teilweise im CE",
+  "description": "Keine Telemetrie, Offline-Lizenzdatei, keine externen Abhängigkeiten, nur interne Integrationen (kein SaaS-Fallback), Images aus interner Registry, IS_AIRGAPPED, Monitor start-airgapped, K8s 1.31–1.33, cert-manager mit interner CA. CE-Spur: deployments/cli/community/restore-airgapped.sh (CE-Backup → Commercial Airgapped, README.md:555-569). [Verifikation P03]",
+  "data_model_hints": "Keine.",
+  "api_hints": "Keine.",
+  "ui_hints": "Lizenzdatei-Upload entfällt (ADR-001); ADR-004 macht Airgapped zum Standard.",
+  "sources": [
+   "DD/self-hosting/methods/airgapped-requirements.md",
+   "DD/self-hosting/methods/airgapped-edition.md",
+   "DD/self-hosting/methods/clone-docker-images.md",
+   "HC/plane-enterprise/values.yaml (airgapped)",
+   "deployments/cli/community/restore-airgapped.sh",
+   "deployments/cli/community/README.md:555-569",
+   "DD/self-hosting/methods/airgapped-edition-kubernetes.md"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F37 FIPS-140-3-Images",
+  "cluster": "P03",
+  "tier": "Enterprise Grid",
+  "tier_details": "Docs-Badge Enterprise Grid.",
+  "ce_status": "fehlt",
+  "description": "-fips-Varianten aller Images (UBI 10, OpenSSL-FIPS-Provider, Go-FIPS-Modul), Host muss im FIPS-Modus laufen, PLANE_REQUIRE_FIPS=1 erzwingt Startprüfung, kein AIO-FIPS, eigener FIPS-Node-Pool.",
+  "data_model_hints": "Keine.",
+  "api_hints": "Keine.",
+  "ui_hints": "Keine.",
+  "sources": [
+   "DD/self-hosting/methods/fips-deployment.md"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F38 Betriebsfeatures (HA, Read-Replica, External Secrets, Custom CA, Storage-Proxy, GCS, OpenTelemetry, PSA/OpenShift)",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "Commercial Edition (Kubernetes-Chart); teils auch CE-Chart.",
+  "ce_status": "teilweise im CE",
+  "description": "Workload-Tiers, PDB/Spread, diskrete rotierbare Credentials, app_keys/ai_providers/silo_connectors-Secrets, SKIP_ENV_VAR-Semantik, Custom-CA-Bundles, STORAGE_PROVIDER S3/GCS, USE_STORAGE_PROXY, private Buckets, OTel für Backend und Browser (FRONTEND_OTLP_*), Ingress traefik/nginx/openshift, requireExplicitSecrets.",
+  "data_model_hints": "Instanz-Konfiguration mit verschlüsselten Secrets.",
+  "api_hints": "Instanz-Endpunkt liefert Browser-OTel-Konfiguration (FRONTEND_*).",
+  "ui_hints": "Keine.",
+  "sources": [
+   "HC/plane-enterprise/values.yaml",
+   "HC/plane-enterprise/README.md:1494-1795",
+   "DD/self-hosting/govern/high-availability.md",
+   "DD/self-hosting/govern/private-bucket.md",
+   "HC/plane-enterprise/examples/garage/README.md"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F39 Dedizierte External-API-Instanz",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "Commercial-Chart, optional.",
+  "ce_status": "fehlt",
+  "description": "Zweiter Deployment-Pool des Backends (gleicher Entrypoint docker-entrypoint-api-ee.sh) für externen/öffentlichen API-Verkehr; keine Chart-Route.",
+  "data_model_hints": "Keine.",
+  "api_hints": "/api/v1/ (Annahme).",
+  "ui_hints": "Keine.",
+  "sources": [
+   "HC/plane-enterprise/templates/workloads/external-api.deployment.yaml",
+   "HC/plane-enterprise/README.md:1015-1030"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F40 GraphQL- und Marketplace-Endpunkte",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "Commercial-Chart, Pflichtrouten.",
+  "ce_status": "fehlt",
+  "description": "/graphql/ und /marketplace/ werden auf die API geroutet; Inhalt nicht dokumentiert (vermutlich Mobile-Client bzw. App-Marketplace).",
+  "data_model_hints": "Nicht belegt.",
+  "api_hints": "Nicht belegt.",
+  "ui_hints": "Keine.",
+  "sources": [
+   "HC/plane-enterprise/templates/ingress-nginx.yaml:83-94",
+   "HC/plane-enterprise/README.md:1897-1898",
+   "DD/self-hosting/methods/kubernetes.md:720-721"
+  ],
+  "confidence": "niedrig"
+ },
+ {
+  "name": "P03-F41 Flux – Realtime-Event-Server",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "Nur in Docs (Health, FIPS-Images), nicht im Chart.",
+  "ce_status": "fehlt",
+  "description": "WebSocket-Server für Echtzeit-Ereignisse mit Redis, intern Port 3004, Basis /flux, Endpunkte /flux/live, /flux/ready, /flux/health (connections.total, connections.channels).",
+  "data_model_hints": "Keine.",
+  "api_hints": "Nur Health-Endpunkte belegt.",
+  "ui_hints": "Keine.",
+  "sources": [
+   "DD/self-hosting/manage/health-checks.md",
+   "DD/self-hosting/methods/fips-deployment.md"
+  ],
+  "confidence": "niedrig"
+ },
+ {
+  "name": "P03-F42 Prime CLI und Commercial-Installationsmethoden",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "Prime CLI und Docker-Installer in jeder Commercial-Installation inkl. Commercial-Free (Badge „Commercial Edition“, prime-cli.md:11); Matrix-Zeilen One-click Deployment, Digital Ocean Marketplace app, Heroku Platform app, AWS AMI ab One (Legacy-Plan, plans.tsx:1147-1189). Entfällt/ersetzt durch Aspire-Deployment-Artefakte.",
+  "ce_status": "teilweise im CE",
+  "description": "prime-cli start/stop/restart/monitor/healthcheck/repair/update-cli/configure/upgrade/uninstall sowie backup (Vollsicherung nach /opt/plane/backups) und restore (überschreibt mit jüngster Sicherung; auch für Server-Umzug bei gleicher Domain mit Lizenz-Delink/-Reaktivierung); Installer curl prime.plane.so/install (Express/Advanced), /opt/plane/plane.env; Docker AIO, Swarm, Podman Quadlets, Coolify, Portainer; Cloud→Self-hosted-Migration als Herstellerleistung. CE: setup.sh-Menü Install/Start/Stop/Restart/Upgrade/View Logs/Backup Data/Exit, restore-airgapped.sh. SSL/ACME (CERT_EMAIL, SITE_ADDRESS, CERT_ACME_DNS) und Domainwechsel sind auch im CE vorhanden (kein Bezahl-Feature). [Verifikation P03]",
+  "data_model_hints": "Keine.",
+  "api_hints": "Keine.",
+  "ui_hints": "TUI 'monitor' (nicht zu portieren).",
+  "sources": [
+   "DD/self-hosting/manage/prime-cli.md",
+   "DD/self-hosting/methods/docker-compose.md",
+   "DD/self-hosting/methods/docker-aio.md",
+   "apps/web/components/workspace/billing/comparison/plans.tsx:1136-1191",
+   "DD/self-hosting/manage/backup-restore.md",
+   "DD/self-hosting/manage/migrate-plane.md",
+   "DD/self-hosting/self-hosting-101.md:44",
+   "deployments/cli/community/variables.env:54-61",
+   "DD/self-hosting/manage/prime-cli.md:110-118"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F43 Plane Compose (project-as-code CLI)",
+  "cluster": "P03",
+  "tier": "unklar",
+  "tier_details": "Client-Werkzeug; nutzt Commercial-API-Ressourcen (Typen, Workflows mit Approvals, Milestones).",
+  "ce_status": "fehlt",
+  "description": "Python-CLI mit Befehlen init/auth/schema/push/pull/clone/diff/validate/status/upgrade/state/ws/rate und YAML-Dateien plane.yaml, workspace.yaml, schema/{types,states,workflows,labels,features}.yaml, work/{workitems,cycles,modules,milestones}.yaml.",
+  "data_model_hints": "Workflows: is_active, work_item_types, states, transitions{to, type transition|approval, required_approvals, approvers}.",
+  "api_hints": "Verwendet Public API v1; .NET-API muss vertragskompatibel sein (Contract-Tests).",
+  "ui_hints": "Keine.",
+  "sources": [
+   "DD/dev-tools/plane-compose.md"
+  ],
+  "confidence": "hoch"
+ },
+ {
+  "name": "P03-F44 Workspace-Audit-Log (Querbezug)",
+  "cluster": "P03",
+  "tier": "Business",
+  "tier_details": "Cloud-Matrix: Workspace Activity Logs und API-enabled Audit Logs (comingSoon) ab Business (plans.tsx:740-759); docs.plane.so: Enterprise Grid (WEB); Self-hosting 101: Cloud „Business Plus“, self-hosted „Available on plans (Commercial and Airgapped)“ (self-hosting-101.md:42).",
+  "ce_status": "fehlt",
+  "description": "Filterbares workspace-weites Audit-Log, Export für Admins/Owner, API für Compliance-Systeme; belegte Ereignisse API-Token erstellen/widerrufen, Webhook anlegen/löschen. Querbezug Dok. 27 P08-17 (Workspace Activity Logs, im CE teilweise) und P08-18 (API-enabled Audit Logs). [Verifikation P03]",
+  "data_model_hints": "CE: APIActivityLog (Request-Log je Token).",
+  "api_hints": "Nicht öffentlich.",
+  "ui_hints": "Governance-Cluster.",
+  "sources": [
+   "apps/web/components/workspace/billing/comparison/plans.tsx:740-759",
+   "DD/dev-tools/mcp-server.md",
+   "WEB: https://docs.plane.so/workspaces-and-users/audit-logs",
+   "apps/api/plane/db/models/api.py:49-67",
+   "DD/self-hosting/self-hosting-101.md:42",
+   "migration/features/27-paid-sicherheit-admin-lizenz.md P08-17/P08-18"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F45 GAC – Granular Access Control / Custom Roles (Querbezug)",
+  "cluster": "P03",
+  "tier": "Enterprise",
+  "tier_details": "Rollen: Free/One Basic, Pro Pre-defined roles, Business RBAC, Enterprise GAC; Blog: Enterprise Grid.",
+  "ce_status": "fehlt",
+  "description": "Custom Roles aus Permission Schemes, effektive Rechte = Vereinigung aller angehängten Schemes; Settings-Eintrag 'Project roles & schemes'; Rollen-Slugs auch im Group Sync.",
+  "data_model_hints": "PermissionScheme, Role(slug), Role↔Scheme.",
+  "api_hints": "Rollen-/Berechtigungs-Cluster.",
+  "ui_hints": "'Project roles & schemes' in Workspace Settings.",
+  "sources": [
+   "apps/web/components/workspace/billing/comparison/plans.tsx:695-702",
+   "WEB: https://plane.so/blog/introducing-granular-access-control-gac-ldap-idp-group-sync",
+   "IMG/webhooks/create-webhook.webp"
+  ],
+  "confidence": "mittel"
+ },
+ {
+  "name": "P03-F46 Private + managed deployments (vom Hersteller betriebene private Cloud-Instanz)",
+  "cluster": "P03",
+  "tier": "Enterprise",
+  "tier_details": "Nur Enterprise, comingSoon: true (plans.tsx:1191-1201, Sektion „Self-hosted“ selfHostedOnly); ENTERPRISE_PLAN_FEATURES „Private + managed deployments“ (subscription.ts:8); planHighlights.enterprise (plans.tsx:1308). Entfällt nach ADR-004/ADR-001.",
+  "ce_status": "fehlt",
+  "description": "Matrix-Text „Get our hosted Cloud app on a private Cloud managed by us.“ – vom Hersteller betriebene, private Instanz (Dienstleistung, keine Produktfunktion); keine Doku, keine Helm-Spur. In der Verifikation ergänzt. [Verifikation P03]",
+  "data_model_hints": "Keine.",
+  "api_hints": "Keine.",
+  "ui_hints": "Nur Zeile in der Plan-Vergleichstabelle (entfällt, ADR-001).",
+  "sources": [
+   "apps/web/components/workspace/billing/comparison/plans.tsx:1191-1201",
+   "packages/constants/src/subscription.ts:8",
+   "apps/web/components/workspace/billing/comparison/plans.tsx:1308",
+   "migration/features/20-paid-spuren-im-repo.md PF-100",
+   "migration/features/27-paid-sicherheit-admin-lizenz.md P08-23"
+  ],
+  "confidence": "hoch"
+ }
+]

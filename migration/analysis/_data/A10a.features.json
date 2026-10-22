@@ -1,0 +1,978 @@
+[
+ {
+  "name": "Top-Navigation",
+  "area": "Shell/Navigation",
+  "description": "Leiste über allen Workspace-Seiten mit Workspace-Switcher, Power-K-Suchfeld, Inbox-Icon mit rotem Punkt (Mentions bzw. ungelesene), Hilfe-Menü, GitHub-Link und Avatar-Menü.",
+  "code_refs": [
+   "apps/web/components/navigation/top-navigation-root.tsx",
+   "apps/web/components/workspace/content-wrapper.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/layout.tsx"
+  ]
+ },
+ {
+  "name": "Workspace-Switcher",
+  "area": "Shell/Navigation",
+  "description": "Dropdown mit E-Mail des Nutzers, alphabetischer Workspace-Liste (aktiver zuerst) mit Rolle und Mitgliederzahl, Buttons Settings/Invite members, Links Create workspace, Workspace invites und Sign out; Wechsel speichert last_workspace_id.",
+  "code_refs": [
+   "apps/web/components/workspace/sidebar/workspace-menu-root.tsx",
+   "apps/web/components/workspace/sidebar/dropdown-item.tsx",
+   "apps/web/components/workspace/logo.tsx"
+  ]
+ },
+ {
+  "name": "Hilfe-Menü",
+  "area": "Shell/Navigation",
+  "description": "Menü mit Documentation, Contact sales (entfällt), Keyboard shortcuts, What's new?, Forum und Versionsnummer.",
+  "code_refs": [
+   "apps/web/components/workspace/sidebar/help-section/root.tsx",
+   "apps/web/components/global/version-number.tsx"
+  ]
+ },
+ {
+  "name": "User-Menü",
+  "area": "Shell/Navigation",
+  "description": "Avatar-Menü mit Cover/Avatar-Kopfkarte, Settings und Preferences (öffnen das Profil-Einstellungs-Modal) und Sign out.",
+  "code_refs": [
+   "apps/web/components/workspace/sidebar/user-menu-root.tsx",
+   "apps/web/components/common/modal/global.tsx"
+  ]
+ },
+ {
+  "name": "Abmelden",
+  "area": "Shell/Navigation",
+  "description": "Sign out per CSRF-geschütztem Formular-POST an /auth/sign-out/ und Reset aller Stores.",
+  "code_refs": [
+   "apps/web/store/user/index.ts",
+   "apps/web/services/auth.service.ts"
+  ]
+ },
+ {
+  "name": "Star-us-on-GitHub-Link",
+  "area": "Shell/Navigation",
+  "description": "Link auf das GitHub-Repository mit themenabhängigem Logo (Airgap: entfernen/konfigurierbar).",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/star-us-link.tsx"
+  ]
+ },
+ {
+  "name": "App-Rail (inaktiv)",
+  "area": "Shell/Navigation",
+  "description": "Dock-Leiste mit Projects/Settings und Kontextmenü (Icon only, Icon with name, Dock/Undock) – in der CE per isEnabled=false nie sichtbar.",
+  "code_refs": [
+   "apps/web/components/navigation/app-rail-root.tsx",
+   "apps/web/components/navigation/app-rail-hoc.tsx",
+   "apps/web/components/navigation/items-root.tsx",
+   "apps/web/lib/app-rail/provider.tsx"
+  ]
+ },
+ {
+  "name": "Resizable Sidebar",
+  "area": "Sidebar",
+  "description": "Projekt-App-Sidebar mit Breite 236–350 px (Default 250, localStorage sidebarWidth), Einklappen per Toggle, Mobile-Verhalten unter 768 px.",
+  "code_refs": [
+   "apps/web/components/sidebar/resizable-sidebar.tsx",
+   "apps/web/components/sidebar/sidebar-toggle-button.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/_sidebar.tsx",
+   "apps/web/store/theme.store.ts"
+  ]
+ },
+ {
+  "name": "Sidebar-Kopf und Quick-Action",
+  "area": "Sidebar",
+  "description": "Titel Projects, Button Customize navigation, Sidebar-Toggle und Button New work item (deaktiviert ohne Projekt oder ohne Admin/Member-Rolle).",
+  "code_refs": [
+   "apps/web/components/sidebar/sidebar-wrapper.tsx",
+   "apps/web/components/workspace/sidebar/quick-actions.tsx",
+   "apps/web/components/sidebar/add-button.tsx"
+  ]
+ },
+ {
+  "name": "Sidebar-Menüeinträge",
+  "area": "Sidebar",
+  "description": "Home sowie persönliche Einträge Stickies, Your work, Drafts und Sektion Workspace (Projects, gepinnte Views/Analytics/Archives, More/Hide) mit Rollen- und Pin-Regeln.",
+  "code_refs": [
+   "apps/web/components/workspace/sidebar/sidebar-menu-items.tsx",
+   "apps/web/components/workspace/sidebar/sidebar-item.tsx",
+   "apps/web/components/workspace/sidebar/helper.tsx",
+   "apps/web/components/sidebar/sidebar-navigation.tsx",
+   "packages/constants/src/workspace.ts"
+  ]
+ },
+ {
+  "name": "Extended-Sidebar More",
+  "area": "Sidebar",
+  "description": "Ausklapp-Panel (300 px) mit allen dynamischen Navigationseinträgen, Pin/Unpin und Drag&Drop-Sortierung; Persistenz über sidebar-preferences.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/extended-sidebar.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/extended-sidebar-wrapper.tsx",
+   "apps/web/components/workspace/sidebar/extended-sidebar-item.tsx",
+   "apps/web/hooks/use-navigation-preferences.ts"
+  ]
+ },
+ {
+  "name": "Customize navigation",
+  "area": "Sidebar",
+  "description": "Dialog zum Ein-/Ausblenden und Sortieren der persönlichen und Workspace-Einträge, Wahl des Navigationsmodus (Accordion/Tabbed) und des Projektlimits.",
+  "code_refs": [
+   "apps/web/components/navigation/customize-navigation-dialog.tsx",
+   "apps/web/hooks/use-navigation-preferences.ts"
+  ]
+ },
+ {
+  "name": "Projektliste in der Sidebar",
+  "area": "Sidebar",
+  "description": "Beigetretene Projekte mit Logo, Aufklappen der Projekt-Features (Accordion) bzw. Direktnavigation (Tabbed), Projektlimit mit More/Hide, Drag&Drop-Sortierung, Add project.",
+  "code_refs": [
+   "apps/web/components/workspace/sidebar/projects-list.tsx",
+   "apps/web/components/workspace/sidebar/projects-list-item.tsx",
+   "apps/web/components/workspace/sidebar/project-navigation.tsx"
+  ]
+ },
+ {
+  "name": "Projekt-Kontextmenü in der Sidebar",
+  "area": "Sidebar",
+  "description": "Menü je Projekt mit Publish, Copy link, Archives, Settings und Leave project (nur Gast).",
+  "code_refs": [
+   "apps/web/components/workspace/sidebar/projects-list-item.tsx",
+   "apps/web/components/project/leave-project-modal.tsx",
+   "apps/web/components/project/publish-project/modal.tsx"
+  ]
+ },
+ {
+  "name": "Extended-Projekt-Sidebar",
+  "area": "Sidebar",
+  "description": "Ausklapp-Panel mit allen beigetretenen Projekten, Suchfeld (Name oder Identifier), Create project und Drag&Drop-Sortierung; genutzt bei überschrittenem Projektlimit der Sidebar.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/extended-project-sidebar.tsx"
+  ]
+ },
+ {
+  "name": "Favoriten",
+  "area": "Favoriten",
+  "description": "Sektion Favorites mit Projekten, Cycles, Modules, Views, Pages und Ordnern; Entfernen, Umbenennen, Drag&Drop in/aus Ordnern und Sortierung.",
+  "code_refs": [
+   "apps/web/components/workspace/sidebar/favorites/favorites-menu.tsx",
+   "apps/web/components/workspace/sidebar/favorites/favorite-folder.tsx",
+   "apps/web/components/workspace/sidebar/favorites/favorite-items/root.tsx",
+   "apps/web/components/workspace/sidebar/favorites/favorites.helpers.ts",
+   "apps/web/store/favorite.store.ts"
+  ]
+ },
+ {
+  "name": "Favoriten-Ordner anlegen/umbenennen",
+  "area": "Favoriten",
+  "description": "Inline-Eingabe für neue Ordner mit Duplikatprüfung und Toasts; Umbenennen per Menü.",
+  "code_refs": [
+   "apps/web/components/workspace/sidebar/favorites/new-fav-folder.tsx",
+   "apps/web/components/workspace/sidebar/favorites/favorite-folder.tsx"
+  ]
+ },
+ {
+  "name": "Projekt-Feature-Navigation",
+  "area": "Projekt-Navigation",
+  "description": "Einträge Work items, Cycles, Modules, Views, Pages, Intake je nach Feature-Flags und Rolle; Aktiv-Regeln für Work-Item-Detail.",
+  "code_refs": [
+   "apps/web/components/workspace/sidebar/project-navigation.tsx",
+   "apps/web/components/navigation/tab-navigation-utils.ts"
+  ]
+ },
+ {
+  "name": "Tab-Navigation (TABBED)",
+  "area": "Projekt-Navigation",
+  "description": "Tab-Zeile mit Projekt-Switcher, Projekt-Aktionsmenü, Tabs, Overflow-Menü, Set/Clear default und Hide in more menu; Persistenz in Projekt-User-Properties.",
+  "code_refs": [
+   "apps/web/components/navigation/tab-navigation-root.tsx",
+   "apps/web/components/navigation/tab-navigation-visible-item.tsx",
+   "apps/web/components/navigation/tab-navigation-overflow-menu.tsx",
+   "apps/web/components/navigation/use-tab-preferences.ts",
+   "apps/web/components/navigation/project-header.tsx",
+   "apps/web/components/navigation/project-actions-menu.tsx"
+  ]
+ },
+ {
+  "name": "Seiten-Header und Breadcrumbs",
+  "area": "Projekt-Navigation",
+  "description": "AppHeader, Breadcrumb-Links, Projekt-Breadcrumb mit Projekt-Switcher, Seitentitel (PageHead), ContentWrapper.",
+  "code_refs": [
+   "apps/web/components/core/app-header.tsx",
+   "apps/web/components/core/content-wrapper.tsx",
+   "apps/web/components/core/page-title.tsx",
+   "apps/web/components/common/breadcrumb-link.tsx",
+   "apps/web/components/breadcrumbs/project.tsx",
+   "apps/web/components/breadcrumbs/common.tsx",
+   "apps/web/components/common/extended-app-header.tsx"
+  ]
+ },
+ {
+  "name": "Workspace-Home",
+  "area": "Home",
+  "description": "Startseite eines Workspace mit Begrüßung (Tageszeit, Datum, Uhrzeit), Button Manage widgets und Widget-Bereich; Produkt-Tour beim ersten Besuch.",
+  "code_refs": [
+   "apps/web/components/home/root.tsx",
+   "apps/web/components/home/user-greetings.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/page.tsx"
+  ]
+ },
+ {
+  "name": "Home-Widgets verwalten",
+  "area": "Home",
+  "description": "Dialog Manage widgets mit Ein-/Ausschalten und Drag&Drop-Sortierung der Widgets Quick links, Recents, Your stickies.",
+  "code_refs": [
+   "apps/web/components/home/widgets/manage/index.tsx",
+   "apps/web/components/home/widgets/manage/widget-list.tsx",
+   "apps/web/components/home/widgets/manage/widget-item.tsx",
+   "apps/web/store/workspace/home.ts"
+  ]
+ },
+ {
+  "name": "Quickstart-Guide",
+  "area": "Home",
+  "description": "Leerzustand Your quickstart guide mit Karten Create a project, Invite your team, Set up your workspace und Make Plane yours, Button Not right now; Fortschritt nur lokal (localStorage quickstart-guide-{ws}).",
+  "code_refs": [
+   "apps/web/components/home/widgets/empty-states/no-projects.tsx"
+  ]
+ },
+ {
+  "name": "Quick links",
+  "area": "Home",
+  "description": "Widget mit Links (Titel, URL, Kopieren, Bearbeiten, Öffnen, Löschen) und Dialog zum Anlegen/Bearbeiten.",
+  "code_refs": [
+   "apps/web/components/home/widgets/links/root.tsx",
+   "apps/web/components/home/widgets/links/links.tsx",
+   "apps/web/components/home/widgets/links/link-detail.tsx",
+   "apps/web/components/home/widgets/links/create-update-link-modal.tsx",
+   "apps/web/components/home/widgets/links/use-links.tsx"
+  ]
+ },
+ {
+  "name": "Recents",
+  "area": "Home",
+  "description": "Widget mit zuletzt besuchten Work Items, Pages und Projekten, Filter All/Work items/Pages/Projects; Work Items öffnen im Peek.",
+  "code_refs": [
+   "apps/web/components/home/widgets/recents/index.tsx",
+   "apps/web/components/home/widgets/recents/filters.tsx",
+   "apps/web/components/home/widgets/recents/issue.tsx",
+   "apps/web/components/home/widgets/recents/page.tsx",
+   "apps/web/components/home/widgets/recents/project.tsx"
+  ]
+ },
+ {
+  "name": "Stickies-Widget",
+  "area": "Home",
+  "description": "Widget Your stickies mit gekürzter Sticky-Liste, Add sticky und Link zur Stickies-Seite.",
+  "code_refs": [
+   "apps/web/components/stickies/widget.tsx",
+   "apps/web/components/stickies/layout/stickies-truncated.tsx"
+  ]
+ },
+ {
+  "name": "Stickies-Seite",
+  "area": "Stickies",
+  "description": "Seite /:ws/stickies mit Suche, Add sticky, Masonry-Layout (2–6 Spalten), Infinite Scroll und Drag&Drop-Sortierung.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/stickies/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/stickies/header.tsx",
+   "apps/web/components/stickies/layout/stickies-infinite.tsx",
+   "apps/web/components/stickies/layout/stickies-list.tsx",
+   "apps/web/components/stickies/modal/search.tsx"
+  ]
+ },
+ {
+  "name": "Sticky bearbeiten",
+  "area": "Stickies",
+  "description": "Sticky-Karte mit Editor (Autosave 500 ms), Farbwahl, Löschen mit Bestätigung.",
+  "code_refs": [
+   "apps/web/components/stickies/sticky/root.tsx",
+   "apps/web/components/stickies/sticky/inputs.tsx",
+   "apps/web/components/stickies/sticky/sticky-item-drag-handle.tsx",
+   "apps/web/components/stickies/delete-modal.tsx",
+   "apps/web/components/stickies/sticky/use-operations.tsx"
+  ]
+ },
+ {
+  "name": "Inbox-Liste",
+  "area": "Inbox",
+  "description": "Liste der Benachrichtigungen mit Tabs All/Mentions, Zähler, Pagination und Leerzuständen.",
+  "code_refs": [
+   "apps/web/components/workspace-notifications/sidebar/root.tsx",
+   "apps/web/components/workspace-notifications/sidebar/notification-card/item.tsx",
+   "apps/web/components/workspace-notifications/sidebar/empty-state.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/notifications/page.tsx"
+  ]
+ },
+ {
+  "name": "Inbox-Filter und -Optionen",
+  "area": "Inbox",
+  "description": "Kopf-Aktionen Mark all as read und Refresh, Filter-Menü Inbox Filters (Assigned to me, Created by me, Subscribed by me), Optionen Show unread, Show archived, Show snoozed; angewandte Filter als Chips.",
+  "code_refs": [
+   "apps/web/components/workspace-notifications/sidebar/filters/menu/root.tsx",
+   "apps/web/components/workspace-notifications/sidebar/filters/applied-filter.tsx",
+   "apps/web/components/workspace-notifications/sidebar/header/options/root.tsx"
+  ]
+ },
+ {
+  "name": "Benachrichtigung lesen/archivieren/snoozen",
+  "area": "Inbox",
+  "description": "Aktionen je Zeile: Mark as read/unread, Archive/Unarchive, Snooze-Menü (1 day, 3 days, 5 days, 1 week, 2 weeks, Custom mit Datum und Uhrzeit) und Un snooze.",
+  "code_refs": [
+   "apps/web/components/workspace-notifications/sidebar/notification-card/options/root.tsx",
+   "apps/web/components/workspace-notifications/sidebar/notification-card/options/snooze/root.tsx",
+   "apps/web/components/workspace-notifications/sidebar/notification-card/options/snooze/modal.tsx",
+   "apps/web/store/notifications/notification.ts"
+  ]
+ },
+ {
+  "name": "Benachrichtigungs-Detail",
+  "area": "Inbox",
+  "description": "Rechte Spalte zeigt das betroffene Work Item im eingebetteten Peek bzw. Intake-Inhalt; Klick markiert als gelesen.",
+  "code_refs": [
+   "apps/web/components/workspace-notifications/root.tsx",
+   "apps/web/components/workspace-notifications/sidebar/notification-card/content.tsx"
+  ]
+ },
+ {
+  "name": "Your work – Summary",
+  "area": "Your work",
+  "description": "Profilübersicht mit Kennzahlen (Created/Assigned/Subscribed), Workload je Zustandsgruppe, Charts nach Priorität und Zustand, Recent activity.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/profile/[userId]/page.tsx",
+   "apps/web/components/profile/overview/stats.tsx",
+   "apps/web/components/profile/overview/workload.tsx",
+   "apps/web/components/profile/overview/priority-distribution.tsx",
+   "apps/web/components/profile/overview/state-distribution.tsx",
+   "apps/web/components/profile/overview/activity.tsx"
+  ]
+ },
+ {
+  "name": "Your work – Work-Item-Tabs",
+  "area": "Your work",
+  "description": "Tabs Assigned, Created, Subscribed mit List/Kanban, Filtern und Display-Optionen (nur Admin/Member).",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/profile/[userId]/[profileViewId]/page.tsx",
+   "apps/web/components/profile/profile-issues.tsx",
+   "apps/web/components/profile/profile-issues-filter.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/profile/[userId]/mobile-header.tsx"
+  ]
+ },
+ {
+  "name": "Your work – Activity",
+  "area": "Your work",
+  "description": "Aktivitätsliste mit Load more und Download today's activity als CSV.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/profile/[userId]/activity/page.tsx",
+   "apps/web/components/profile/activity/activity-list.tsx",
+   "apps/web/components/profile/activity/download-button.tsx",
+   "apps/web/components/profile/activity/workspace-activity-list.tsx"
+  ]
+ },
+ {
+  "name": "Profil-Sidebar",
+  "area": "Your work",
+  "description": "Rechte Spalte mit Cover, Avatar, Name, Joined on, Timezone mit Uhrzeit und Projekt-Statistiken (Fertigstellungsgrad, Created/Assigned/Due/Completed).",
+  "code_refs": [
+   "apps/web/components/profile/sidebar.tsx",
+   "apps/web/components/profile/time.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/profile/[userId]/layout.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/profile/[userId]/header.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/profile/[userId]/navbar.tsx"
+  ]
+ },
+ {
+  "name": "Power-K Command Palette",
+  "area": "Power-K",
+  "description": "Modal (Ctrl/⌘ K) bzw. Top-Nav-Suchfeld mit Befehlsgruppen, Suche über Workspace/Projekt, Kontext-Chip und Unterseiten.",
+  "code_refs": [
+   "apps/web/components/power-k/ui/modal/wrapper.tsx",
+   "apps/web/components/power-k/ui/modal/commands-list.tsx",
+   "apps/web/components/power-k/ui/modal/header.tsx",
+   "apps/web/components/power-k/ui/modal/footer.tsx",
+   "apps/web/components/navigation/top-nav-power-k.tsx",
+   "apps/web/components/power-k/projects-app-provider.tsx"
+  ]
+ },
+ {
+  "name": "Power-K Navigationsbefehle",
+  "area": "Power-K",
+  "description": "Befehle zum Öffnen von Projekten, Cycles, Modules, Views, Pages, Intake, Workspace-Seiten, Einstellungen und Profil (Sequenzen G+…).",
+  "code_refs": [
+   "apps/web/components/power-k/config/navigation/commands.ts",
+   "apps/web/components/power-k/config/navigation/root.ts"
+  ]
+ },
+ {
+  "name": "Power-K Erstellen",
+  "area": "Power-K",
+  "description": "Befehle New work item, New project, New cycle, New module, New view, New page, New workspace mit Shortcuts.",
+  "code_refs": [
+   "apps/web/components/power-k/config/creation/command.ts",
+   "apps/web/components/power-k/config/creation/root.ts"
+  ]
+ },
+ {
+  "name": "Power-K Kontextbefehle",
+  "area": "Power-K",
+  "description": "Kontextbezogene Aktionen für Work Item, Cycle, Module und Page (Status, Priorität, Zuweisung, Labels, Cycle/Module, Schätzung, Favorit, Link kopieren, Löschen).",
+  "code_refs": [
+   "apps/web/components/power-k/ui/pages/context-based/root.tsx",
+   "apps/web/components/power-k/ui/pages/context-based/work-item/commands.ts",
+   "apps/web/components/power-k/ui/pages/context-based/cycle/commands.ts",
+   "apps/web/components/power-k/ui/pages/context-based/module/commands.tsx",
+   "apps/web/components/power-k/ui/pages/context-based/page/commands.ts",
+   "apps/web/components/power-k/core/context-detector.ts"
+  ]
+ },
+ {
+  "name": "Power-K Account/Preferences/Hilfe",
+  "area": "Power-K",
+  "description": "Befehle für Theme, Sprache, Zeitzone, Wochenstart, Profil-Einstellungen, Workspace-Einladungen, Sign out, Hilfe und Shortcut-Übersicht.",
+  "code_refs": [
+   "apps/web/components/power-k/config/account-commands.ts",
+   "apps/web/components/power-k/config/preferences-commands.ts",
+   "apps/web/components/power-k/config/help-commands.ts",
+   "apps/web/components/power-k/config/miscellaneous-commands.ts",
+   "apps/web/components/power-k/ui/pages/preferences/timezone-menu.tsx"
+  ]
+ },
+ {
+  "name": "Tastatur-Shortcuts",
+  "area": "Power-K",
+  "description": "Globaler Shortcut-Handler mit Einzeltasten, Modifier-Kombinationen und Sequenzen (1000 ms), Ausschluss von Eingabefeldern; Übersicht Keyboard shortcuts.",
+  "code_refs": [
+   "apps/web/components/power-k/core/shortcut-handler.ts",
+   "apps/web/components/power-k/core/registry.ts",
+   "apps/web/components/power-k/global-shortcuts.tsx",
+   "apps/web/components/power-k/ui/modal/shortcuts-root.tsx"
+  ]
+ },
+ {
+  "name": "Workspace-Settings-Rahmen",
+  "area": "Workspace-Settings",
+  "description": "Einstellungsbereich mit eigener Sidebar (Administration, Developer), Rechteprüfung je Tab und Mobile-Navigation.",
+  "code_refs": [
+   "apps/web/components/settings/workspace/sidebar/root.tsx",
+   "apps/web/components/settings/content-wrapper.tsx",
+   "apps/web/components/settings/mobile/nav.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/(workspace)/layout.tsx",
+   "packages/constants/src/settings/workspace.ts"
+  ]
+ },
+ {
+  "name": "Workspace General",
+  "area": "Workspace-Settings",
+  "description": "Logo, Name, Company size, URL (kopierbar), Timezone; Update workspace (nur Admin).",
+  "code_refs": [
+   "apps/web/components/workspace/settings/workspace-details.tsx",
+   "apps/web/components/core/modals/workspace-image-upload-modal.tsx",
+   "apps/web/components/global/timezone-select.tsx"
+  ]
+ },
+ {
+  "name": "Workspace löschen",
+  "area": "Workspace-Settings",
+  "description": "Löschbereich mit Bestätigungsdialog (Name und delete my workspace eintippen) und Weiterleitung.",
+  "code_refs": [
+   "apps/web/components/workspace/delete-workspace-section.tsx",
+   "apps/web/components/workspace/delete-workspace-modal.tsx",
+   "apps/web/components/workspace/delete-workspace-form.tsx"
+  ]
+ },
+ {
+  "name": "Workspace-Mitglieder",
+  "area": "Workspace-Settings",
+  "description": "Tabelle der Mitglieder mit Suche, Rollenfilter (inkl. Suspended), Sortierung, Rollenwechsel, Entfernen und Verlassen.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/(workspace)/members/page.tsx",
+   "apps/web/components/workspace/settings/members-list.tsx",
+   "apps/web/components/workspace/settings/members-list-item.tsx",
+   "apps/web/components/workspace/settings/member-columns.tsx",
+   "apps/web/components/workspace/settings/useMemberColumns.tsx",
+   "apps/web/components/workspace/confirm-workspace-member-remove.tsx"
+  ]
+ },
+ {
+  "name": "Workspace-Einladungen",
+  "area": "Workspace-Settings",
+  "description": "Dialog Invite people to collaborate (E-Mail + Rolle, mehrere Zeilen) und Liste Pending invites mit Rollenwechsel, Copy link, Remove.",
+  "code_refs": [
+   "apps/web/components/workspace/invite-modal/form.tsx",
+   "apps/web/components/workspace/invite-modal/fields.tsx",
+   "apps/web/components/workspace/invite-modal/actions.tsx",
+   "apps/web/components/workspace/settings/invitations-list-item.tsx"
+  ]
+ },
+ {
+  "name": "Projekt-Settings-Rahmen",
+  "area": "Projekt-Settings",
+  "description": "Sidebar mit General, Members, Features (Cycles, Modules, Views, Pages, Intake), States, Labels, Estimates, Automations; Weiterleitung auf erstes Projekt bzw. Leerseite.",
+  "code_refs": [
+   "apps/web/components/settings/project/sidebar/root.tsx",
+   "apps/web/components/settings/project/sidebar/item-categories.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/layout.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/page.tsx",
+   "packages/constants/src/settings/project.ts"
+  ]
+ },
+ {
+  "name": "Projekt General",
+  "area": "Projekt-Settings",
+  "description": "Cover, Logo, Name, Beschreibung, Project ID (mit Verfügbarkeitsprüfung), Network, Timezone; Update project; Archivieren/Löschen.",
+  "code_refs": [
+   "apps/web/components/project/form.tsx",
+   "apps/web/components/project/settings/control-section.tsx",
+   "apps/web/components/project/archive-restore-modal.tsx",
+   "apps/web/components/project/delete-project-modal.tsx"
+  ]
+ },
+ {
+  "name": "Projekt-Mitglieder",
+  "area": "Projekt-Settings",
+  "description": "Defaults (Project Lead, Default Assignee, Guest access), Mitgliederliste mit Suche/Filter/Sortierung, Rollenwechsel, Entfernen/Verlassen, Add member.",
+  "code_refs": [
+   "apps/web/components/project/project-settings-member-defaults.tsx",
+   "apps/web/components/project/member-list.tsx",
+   "apps/web/components/project/member-list-item.tsx",
+   "apps/web/components/project/send-project-invitation-modal.tsx",
+   "apps/web/components/project/confirm-project-member-remove.tsx",
+   "apps/web/components/projects/settings/useProjectColumns.tsx"
+  ]
+ },
+ {
+  "name": "Projekt-Features ein/aus",
+  "area": "Projekt-Settings",
+  "description": "Je Feature eine Seite mit Schalter (Cycles, Modules, Views, Pages, Intake); Änderung sofort per PATCH.",
+  "code_refs": [
+   "apps/web/components/settings/project/content/feature-control-item.tsx",
+   "apps/web/components/project/settings/features-list.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/features/cycles/page.tsx"
+  ]
+ },
+ {
+  "name": "Projekt veröffentlichen",
+  "area": "Projekt-Settings",
+  "description": "Publish-Dialog mit öffentlicher URL, Layout-Auswahl, Kommentaren/Reaktionen/Voting, Update und Unpublish.",
+  "code_refs": [
+   "apps/web/components/project/publish-project/modal.tsx"
+  ]
+ },
+ {
+  "name": "Projektliste",
+  "area": "Projekte",
+  "description": "Seite /:ws/projects mit Karten, Suche, Sortierung, Filtern (My projects, Access, Lead, Members, Created date) und angewandten Filtern.",
+  "code_refs": [
+   "apps/web/components/projects/page.tsx",
+   "apps/web/components/project/root.tsx",
+   "apps/web/components/project/card-list.tsx",
+   "apps/web/components/project/header.tsx",
+   "apps/web/components/project/search-projects.tsx",
+   "apps/web/components/project/dropdowns/order-by.tsx",
+   "apps/web/components/project/dropdowns/filters/root.tsx",
+   "apps/web/components/project/applied-filters/root.tsx"
+  ]
+ },
+ {
+  "name": "Projektkarte",
+  "area": "Projekte",
+  "description": "Karte mit Cover, Logo, Name, Identifier, Beschreibung, Mitgliedern, Copy link, Favorit, Settings/Join/Joined und Kontextmenü.",
+  "code_refs": [
+   "apps/web/components/project/card.tsx",
+   "apps/web/components/project/join-project-modal.tsx"
+  ]
+ },
+ {
+  "name": "Projektarchiv",
+  "area": "Projekte",
+  "description": "Seite /:ws/projects/archives mit archivierten Projekten, Restore und Löschen.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/archives/page.tsx",
+   "apps/web/components/project/card.tsx",
+   "apps/web/components/project/archive-restore-modal.tsx"
+  ]
+ },
+ {
+  "name": "Projekt anlegen",
+  "area": "Projekte",
+  "description": "Zweistufiger Dialog: Cover, Logo, Name, automatisch erzeugte Project ID, Beschreibung, Network, Lead; danach Feature-Schalter und Open project.",
+  "code_refs": [
+   "apps/web/components/project/create-project-modal.tsx",
+   "apps/web/components/projects/create/root.tsx",
+   "apps/web/components/project/create/header.tsx",
+   "apps/web/components/project/create/common-attributes.tsx",
+   "apps/web/components/projects/create/attributes.tsx",
+   "apps/web/components/project/project-feature-update.tsx"
+  ]
+ },
+ {
+  "name": "Projekt beitreten/verlassen",
+  "area": "Projekte",
+  "description": "Join-Dialog für öffentliche Projekte, Leave-Dialog mit Texteingabe sowie Verlassen über die Mitgliederliste.",
+  "code_refs": [
+   "apps/web/components/project/join-project-modal.tsx",
+   "apps/web/components/project/leave-project-modal.tsx",
+   "apps/web/components/project/confirm-project-member-remove.tsx"
+  ]
+ },
+ {
+  "name": "Profil-Einstellungen (Modal/Seite)",
+  "area": "Profil-Settings",
+  "description": "Profil-Einstellungen als Dialog aus dem User-Menü oder als Seite /settings/profile/:tab mit Sidebar (Your profile, Developer, auf der Seite zusätzlich Workspaces).",
+  "code_refs": [
+   "apps/web/components/settings/profile/modal.tsx",
+   "apps/web/components/settings/profile/sidebar/root.tsx",
+   "apps/web/components/settings/profile/content/root.tsx",
+   "apps/web/app/(all)/settings/profile/[profileTabId]/page.tsx"
+  ]
+ },
+ {
+  "name": "Profil bearbeiten",
+  "area": "Profil-Settings",
+  "description": "Cover, Avatar-Upload/-Entfernen, Vorname, Nachname, Display name, E-Mail mit Change email; Save changes.",
+  "code_refs": [
+   "apps/web/components/settings/profile/content/pages/general/form.tsx",
+   "apps/web/components/core/modals/user-image-upload-modal.tsx",
+   "apps/web/components/core/image-picker-popover.tsx"
+  ]
+ },
+ {
+  "name": "E-Mail ändern",
+  "area": "Profil-Settings",
+  "description": "Zweistufiger Dialog mit Verifizierungscode an die neue Adresse und anschließendem Abmelden.",
+  "code_refs": [
+   "apps/web/components/core/modals/change-email-modal.tsx"
+  ]
+ },
+ {
+  "name": "Konto deaktivieren",
+  "area": "Profil-Settings",
+  "description": "Bestätigungsdialog Deactivate your account, danach Abmelden.",
+  "code_refs": [
+   "apps/web/components/account/deactivate-account-modal.tsx"
+  ]
+ },
+ {
+  "name": "Theme wählen",
+  "area": "Profil-Settings",
+  "description": "Auswahl System Preference, Light, Dark, Light/Dark high contrast, Custom theme; Reload nach dem Speichern.",
+  "code_refs": [
+   "apps/web/components/appearance/theme-switcher.tsx",
+   "apps/web/components/core/theme/theme-switch.tsx",
+   "packages/constants/src/themes.ts"
+  ]
+ },
+ {
+  "name": "Custom Theme",
+  "area": "Profil-Settings",
+  "description": "Formular mit Light/Dark-Modus, Neutral- und Brand-Farbe, Import/Download der Konfiguration als JSON.",
+  "code_refs": [
+   "apps/web/components/core/theme/custom-theme-selector.tsx",
+   "apps/web/components/core/theme/color-inputs.tsx",
+   "apps/web/components/core/theme/input-color-picker.tsx",
+   "apps/web/components/core/theme/import-config-button.tsx",
+   "apps/web/components/core/theme/download-config-button.tsx",
+   "apps/web/components/core/theme/theme-mode-selector.tsx"
+  ]
+ },
+ {
+  "name": "Sprache, Zeitzone, Wochenstart",
+  "area": "Profil-Settings",
+  "description": "Auswahl der UI-Sprache (22 Sprachen), Zeitzone und des ersten Wochentags; Speichern sofort.",
+  "code_refs": [
+   "apps/web/components/settings/profile/content/pages/preferences/language-and-timezone-list.tsx",
+   "apps/web/components/profile/start-of-week-preference.tsx",
+   "apps/web/components/global/timezone-select.tsx"
+  ]
+ },
+ {
+  "name": "E-Mail-Benachrichtigungen",
+  "area": "Profil-Settings",
+  "description": "Schalter Property changes, State change, Work item completed, Comments, Mentions.",
+  "code_refs": [
+   "apps/web/components/settings/profile/content/pages/notifications/root.tsx",
+   "apps/web/components/settings/profile/content/pages/notifications/email-notification-form.tsx"
+  ]
+ },
+ {
+  "name": "Passwort ändern",
+  "area": "Profil-Settings",
+  "description": "Formular Current/New/Confirm password mit Stärke-Anzeige und Validierung.",
+  "code_refs": [
+   "apps/web/components/settings/profile/content/pages/security.tsx"
+  ]
+ },
+ {
+  "name": "Personal Access Tokens",
+  "area": "Profil-Settings",
+  "description": "Liste der API-Tokens mit Add access token und Leerzustand.",
+  "code_refs": [
+   "apps/web/components/settings/profile/content/pages/api-tokens.tsx"
+  ]
+ },
+ {
+  "name": "Sign-in/Sign-up",
+  "area": "Auth",
+  "description": "E-Mail-Schritt mit Email-Check, dann Passwort oder Unique code; OAuth-Buttons; Einladungs-Kopf; Fehler-Banner aus error_code.",
+  "code_refs": [
+   "apps/web/components/account/auth-forms/auth-root.tsx",
+   "apps/web/components/account/auth-forms/form-root.tsx",
+   "apps/web/components/account/auth-forms/email.tsx",
+   "apps/web/components/account/auth-forms/password.tsx",
+   "apps/web/components/account/auth-forms/unique-code.tsx",
+   "apps/web/components/account/auth-forms/auth-header.tsx",
+   "apps/web/components/auth-screens/auth-base.tsx",
+   "apps/web/components/auth-screens/header.tsx"
+  ]
+ },
+ {
+  "name": "Passwort vergessen",
+  "area": "Auth",
+  "description": "Formular Reset password mit Send reset link und 30-Sekunden-Timer; Popover ohne SMTP.",
+  "code_refs": [
+   "apps/web/components/account/auth-forms/forgot-password.tsx",
+   "apps/web/components/account/auth-forms/forgot-password-popover.tsx",
+   "apps/web/app/(all)/accounts/forgot-password/page.tsx"
+  ]
+ },
+ {
+  "name": "Passwort zurücksetzen/setzen",
+  "area": "Auth",
+  "description": "Formular mit neuem Passwort und Bestätigung, Formular-POST an /auth/reset-password/{uidb64}/{token}/.",
+  "code_refs": [
+   "apps/web/components/account/auth-forms/reset-password.tsx",
+   "apps/web/app/(all)/accounts/reset-password/page.tsx",
+   "apps/web/app/(all)/accounts/set-password/page.tsx"
+  ]
+ },
+ {
+  "name": "Zugriffs-Screens",
+  "area": "Auth",
+  "description": "Not authorized, Projektzugriff (Join project, Kontakt Admin, Project not found).",
+  "code_refs": [
+   "apps/web/components/auth-screens/not-authorized-view.tsx",
+   "apps/web/components/auth-screens/project/project-access-restriction.tsx"
+  ]
+ },
+ {
+  "name": "AGB-Hinweis und Auth-Fuß",
+  "area": "Auth",
+  "description": "Hinweis Terms of Service/Privacy Policy und Marketing-Fuß (Airgap: konfigurierbar bzw. entfernen).",
+  "code_refs": [
+   "apps/web/components/account/terms-and-conditions.tsx",
+   "apps/web/components/auth-screens/footer.tsx"
+  ]
+ },
+ {
+  "name": "Onboarding",
+  "area": "Onboarding",
+  "description": "Schritte Profil (Name, Avatar, optional Passwort), Rolle und Use-Case (nur Cloud), Workspace anlegen oder Einladungen annehmen, Team einladen; Fortschrittsbalken, Zurück, Konto wechseln.",
+  "code_refs": [
+   "apps/web/components/onboarding/root.tsx",
+   "apps/web/components/onboarding/header.tsx",
+   "apps/web/components/onboarding/steps/root.tsx",
+   "apps/web/components/onboarding/steps/profile/root.tsx",
+   "apps/web/components/onboarding/steps/workspace/create.tsx",
+   "apps/web/components/onboarding/steps/workspace/join-invites.tsx",
+   "apps/web/components/onboarding/steps/team/root.tsx",
+   "apps/web/components/onboarding/switch-account-dropdown.tsx"
+  ]
+ },
+ {
+  "name": "Workspace anlegen",
+  "area": "Onboarding",
+  "description": "Seite /create-workspace mit Name, URL (Slug-Prüfung), Organisationsgröße.",
+  "code_refs": [
+   "apps/web/components/workspace/create-workspace-form.tsx",
+   "apps/web/app/(all)/create-workspace/page.tsx"
+  ]
+ },
+ {
+  "name": "Produkt-Tour",
+  "area": "Onboarding",
+  "description": "Willkommensdialog und fünf Tour-Schritte (Work items, Cycles, Modules, Views, Pages) mit Abschluss Create your first project.",
+  "code_refs": [
+   "apps/web/components/onboarding/tour/root.tsx",
+   "apps/web/components/onboarding/tour/sidebar.tsx"
+  ]
+ },
+ {
+  "name": "Beschreibungs-Versionen",
+  "area": "Querschnitt",
+  "description": "Last edited by mit Versionsliste, Versionsdialog mit Navigation, Copy markdown und Restore.",
+  "code_refs": [
+   "apps/web/components/core/description-versions/root.tsx",
+   "apps/web/components/core/description-versions/dropdown.tsx",
+   "apps/web/components/core/description-versions/modal.tsx"
+  ]
+ },
+ {
+  "name": "Add existing work item",
+  "area": "Querschnitt",
+  "description": "Mehrfachauswahl-Dialog mit Suche, optionaler Workspace-Suche, Select all und Add selected work items.",
+  "code_refs": [
+   "apps/web/components/core/modals/existing-issues-list-modal.tsx",
+   "apps/web/components/core/modals/issue-search-modal-empty-state.tsx"
+  ]
+ },
+ {
+  "name": "Bulk delete work items",
+  "area": "Querschnitt",
+  "description": "Dialog zum Suchen, Auswählen und Löschen mehrerer Work Items eines Projekts (über Power-K).",
+  "code_refs": [
+   "apps/web/components/core/modals/bulk-delete-issues-modal.tsx",
+   "apps/web/components/core/modals/bulk-delete-issues-modal-item.tsx",
+   "apps/web/components/modals/work-item-level.tsx"
+  ]
+ },
+ {
+  "name": "KI-Assistent",
+  "area": "Querschnitt",
+  "description": "Popover im Work-Item-Modal zum Generieren von Text per KI (nur bei konfiguriertem LLM).",
+  "code_refs": [
+   "apps/web/components/core/modals/gpt-assistant-popover.tsx"
+  ]
+ },
+ {
+  "name": "Image-Picker und Uploads",
+  "area": "Querschnitt",
+  "description": "Cover-Auswahl aus Unsplash, statischen Bildern oder Upload; Avatar- und Workspace-Logo-Upload mit Entfernen.",
+  "code_refs": [
+   "apps/web/components/core/image-picker-popover.tsx",
+   "apps/web/components/core/modals/user-image-upload-modal.tsx",
+   "apps/web/components/core/modals/workspace-image-upload-modal.tsx",
+   "apps/web/helpers/cover-image.helper.ts"
+  ]
+ },
+ {
+  "name": "Datumsfilter Custom",
+  "area": "Querschnitt",
+  "description": "Dialog before/after/range mit Kalendern für Datumsfilter.",
+  "code_refs": [
+   "apps/web/components/core/filters/date-filter-modal.tsx",
+   "apps/web/components/core/filters/date-filter-select.tsx"
+  ]
+ },
+ {
+  "name": "What's new?",
+  "area": "Querschnitt",
+  "description": "Dialog mit Changelog-iframe bzw. Fallback, Versionsanzeige und Links.",
+  "code_refs": [
+   "apps/web/components/global/product-updates/modal.tsx",
+   "apps/web/components/global/product-updates/changelog.tsx",
+   "apps/web/components/global/product-updates/fallback.tsx",
+   "apps/web/components/global/product-updates/footer.tsx",
+   "apps/web/components/global/product-updates/header.tsx"
+  ]
+ },
+ {
+  "name": "Zeitzonen-Auswahl",
+  "area": "Querschnitt",
+  "description": "Durchsuchbare Zeitzonenliste aus /api/timezones/ für Workspace, Projekt und Profil.",
+  "code_refs": [
+   "apps/web/components/global/timezone-select.tsx",
+   "apps/web/hooks/use-timezone.tsx"
+  ]
+ },
+ {
+  "name": "Leerzustände und Skeletons",
+  "area": "Querschnitt",
+  "description": "Detailed/Simple/Section-Leerzustände und Skeleton-Loader für Listen, Layouts und Einstellungen.",
+  "code_refs": [
+   "apps/web/components/empty-state/detailed-empty-state-root.tsx",
+   "apps/web/components/empty-state/simple-empty-state-root.tsx",
+   "apps/web/components/empty-state/section-empty-state-root.tsx",
+   "apps/web/components/ui/loader/projects-loader.tsx",
+   "apps/web/components/ui/loader/settings/members.tsx"
+  ]
+ },
+ {
+  "name": "Modal-Hosts",
+  "area": "Querschnitt",
+  "description": "Globale Dialoge für Projekt-, Cycle-, Modul-, View-, Page- und Work-Item-Anlage sowie Work-Item-Löschen.",
+  "code_refs": [
+   "apps/web/components/modals/workspace-level.tsx",
+   "apps/web/components/modals/project-level.tsx",
+   "apps/web/components/modals/work-item-level.tsx"
+  ]
+ },
+ {
+  "name": "Instanz-Zustände",
+  "area": "Querschnitt",
+  "description": "Seiten Welcome to Plane (Instanz nicht eingerichtet, Link zur Admin-App) und Wartungsmeldung.",
+  "code_refs": [
+   "apps/web/components/instance/not-ready-view.tsx",
+   "apps/web/components/instance/maintenance-view.tsx",
+   "apps/web/components/instance/maintenance-message.tsx"
+  ]
+ },
+ {
+  "name": "Workspace-Views-Übersicht",
+  "area": "Workspace-Views",
+  "description": "Seite /:ws/workspace-views mit Suche, Default-Views (All work items, Assigned, Created, Subscribed) und eigenen Views mit Edit/Delete.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/workspace-views/page.tsx",
+   "apps/web/components/workspace/views/default-view-list-item.tsx",
+   "apps/web/components/workspace/views/views-list.tsx",
+   "apps/web/components/workspace/views/view-list-item.tsx"
+  ]
+ },
+ {
+  "name": "Workspace-View anlegen/bearbeiten/löschen",
+  "area": "Workspace-Views",
+  "description": "Dialog Create/Update View, Löschbestätigung, Quick-Actions Open in new tab/Copy link.",
+  "code_refs": [
+   "apps/web/components/workspace/views/modal.tsx",
+   "apps/web/components/workspace/views/form.tsx",
+   "apps/web/components/workspace/views/delete-view-modal.tsx",
+   "apps/web/components/workspace/views/quick-action.tsx",
+   "apps/web/components/workspace/views/default-view-quick-action.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/workspace-views/header.tsx"
+  ]
+ },
+ {
+  "name": "Archiv-Tabs",
+  "area": "Workspace-Views",
+  "description": "Tabs Work items, Cycles, Modules in den Projekt-Archiven.",
+  "code_refs": [
+   "apps/web/components/archives/archive-tabs-list.tsx"
+  ]
+ },
+ {
+  "name": "Work Item per Identifier",
+  "area": "Workspace-Views",
+  "description": "Route /:ws/browse/:workItem rendert die Work-Item-Detailseite.",
+  "code_refs": [
+   "apps/web/components/browse/workItem-detail.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/browse/[workItem]/page.tsx"
+  ]
+ },
+ {
+  "name": "Edition-Badge und Upgrade-Modal (entfällt)",
+  "area": "Upsell (entfällt)",
+  "description": "Community-Badge im Sidebar-Fuß öffnet das Upgrade-Modal mit Plan-Karten und Checkout – entfällt nach ADR-001.",
+  "code_refs": [
+   "apps/web/components/workspace/edition-badge.tsx",
+   "apps/web/components/license/modal/upgrade-modal.tsx",
+   "apps/web/components/license/modal/card/plan-upgrade.tsx",
+   "apps/web/components/license/modal/card/talk-to-sales.tsx",
+   "apps/web/components/license/modal/card/free-plan.tsx"
+  ]
+ },
+ {
+  "name": "Billing-Seite (entfällt)",
+  "area": "Upsell (entfällt)",
+  "description": "Workspace-Einstellung Billing and plans mit Planvergleich – entfällt nach ADR-001.",
+  "code_refs": [
+   "apps/web/components/workspace/billing/root.tsx",
+   "apps/web/components/workspace/billing/comparison/root.tsx",
+   "apps/web/components/workspace/billing/comparison/plans.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/(workspace)/billing/page.tsx"
+  ]
+ },
+ {
+  "name": "Pro-Badges (entfällt)",
+  "area": "Upsell (entfällt)",
+  "description": "Pill Pro an Active cycles, Schätzsystemen und Pro-Features – entfällt nach ADR-001.",
+  "code_refs": [
+   "apps/web/components/workspace/upgrade-badge.tsx",
+   "apps/web/components/common/pro-icon.tsx"
+  ]
+ }
+]

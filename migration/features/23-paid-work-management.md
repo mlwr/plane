@@ -1,9 +1,9 @@
 # 23 – Bezahl-Features Cluster „Work Management“ (P04) – IST-Analyse
 
-> **Gegenstand:** Plane v1.4.2 Community Edition (CE, AGPL-3.0), Repo-Root `/home/user/plane`. Spezifiziert werden **alle Funktionen des Clusters „Work Management“, die NICHT in der CE, sondern in den Bezahl-Editionen** (One/Pro/Business/Enterprise bzw. heute „Enterprise Grid“) enthalten sind: Work Item Types, Custom Properties (alle Typen, Pflichtfelder, Workspace- vs. Projekt-Ebene, Roll-ups, Formeln), Epics, Initiatives, Milestones, Releases, Customers, Recurring Work Items, Work Item Templates, Bulk Ops, Transfers/Conversions, Dependencies im Gantt, Auto-Transfer von Cycle-Work-Items, Module Overview, Auto-Assignment in Modules, Time Tracking/Worklogs/Timesheets/Approvals, Advanced Estimates, Public/Private/Secret Projects, Project States/Overview/Updates, Project Templates, Baselines & Deviations, Custom SLAs, Intake Forms/Assignees/Emails, Duplicate Detection.
+> **Gegenstand:** Plane v1.4.2 Community Edition (CE, AGPL-3.0), Repo-Root `/home/user/plane`. Spezifiziert werden **alle Funktionen des Clusters „Work Management“, die NICHT in der CE, sondern in den Bezahl-Editionen** (One/Pro/Business/Enterprise bzw. heute „Enterprise Grid“) enthalten sind: Work Item Types, Custom Properties (alle Typen, Pflichtfelder, Workspace- vs. Projekt-Ebene, Roll-ups, Formeln), Epics, Initiatives, Milestones, Releases, Customers, Recurring Work Items, Work Item Templates, Bulk Ops, Transfers/Conversions, Dependencies im Gantt, Auto-Transfer von Cycle-Work-Items, Module Overview, Auto-Assignment in Modules, Time Tracking/Worklogs/Timesheets/Approvals, Advanced Estimates, Public/Private/Secret Projects, Project States/Overview/Updates, Project Templates, Baselines & Deviations, Custom SLAs, Intake Forms/Assignees/Emails, Duplicate Detection; im Ergänzungslauf zusätzlich Work-Item-Votes, Kommentar-Antworten, projektübergreifende Sub-Work-Items und Workspace Governance für States/Labels (WM-48 … WM-51).
 > **Bindend:** `migration/architecture/00-grundsatzentscheidungen.md` – ADR-001 (eine Edition, alle Features immer aktiv, kein Upsell/Billing), ADR-002 (Realtime in .NET/YDotNet, kein Node zur Laufzeit), ADR-003 (Greenfield, fachliche Semantik bleibt, JSON-Verträge am Original orientiert), ADR-004 (Self-hosted/Airgapped, keine Pflicht-SaaS), ADR-005 (UI 1:1), ADR-006 (Original-Repo als Referenz).
 > **Schwesterdokumente (nicht duplizieren, sondern ergänzen):** `migration/features/20-paid-spuren-im-repo.md` (P01, Repo-Spuren, PF-Nummern), `migration/features/21-paid-api-referenz-developer-docs.md` (P02, vollständige REST-Verträge der Commercial-API), `migration/features/22-paid-architektur-selfhosting-dienste.md` (P03, Commercial-Dienste inkl. Intake-E-Mail-Dienst), `migration/features/25-paid-workflows-automation-templates.md` (P06, Templates, Recurring Work Items, Workflows), `migration/features/26-paid-wissen-pages-wiki.md` (P07). CE-Basis: `migration/analysis/02b-datenmodell-arbeitsobjekte.md`, `migration/analysis/04-api-intern-arbeitsobjekte.md`.
-> **Phase:** reine IST-Analyse, keine Implementierung. Stand: 2026-10-21.
+> **Phase:** reine IST-Analyse, keine Implementierung. Stand: 2026-10-21, ergänzt 2026-10-22 (Kap. 3.18, 3.19, 4, Anhänge A–C).
 
 ---
 
@@ -30,6 +30,8 @@
    - 3.15 Baselines & Deviations, Custom SLAs (WM-42, WM-43)
    - 3.16 Intake Forms, Intake Assignees, Emails for Intake (WM-44 … WM-46)
    - 3.17 Duplicate Detection (WM-47)
+   - 3.18 Ergänzte Work-Item-Funktionen: Votes, Kommentar-Antworten, projektübergreifende Sub-Work-Items, Workspace Governance für States/Labels (WM-48 … WM-51)
+   - 3.19 Nachrecherche-Nachträge zu WM-01 … WM-47 (WebSearch-Ergänzungslauf, Quellen WP-01 … WP-15)
 4. Offene Punkte / Unklarheiten / Rückfragen
 - Anhang A: Endpunkt-Inventar des Clusters (Commercial-API, vollständig)
 - Anhang B: i18n-Inventar des Clusters (Schlüssel → Feature)
@@ -46,6 +48,8 @@ Der Code der Commercial Edition (`makeplane/plane-ee`) ist closed-source und nic
 1. **CE-Repo** (`/home/user/plane`): Plan-Matrix, Upsell-Stellen, CE-Stubs/Extension-Points, Datenmodell-Felder ohne Funktion, Typen/Enums, mitgelieferte EE-Texte (i18n), Icons, Illustrationen. Jede CE-Status-Aussage wurde per `grep`/Lesen gegen das Repo geprüft.
 2. **Offline-Developer-Docs** (`/home/user/makeplane/developer-docs/docs`): REST-API-Referenz der Commercial Edition, MCP-Server-Tool-Referenz (präziseste Quelle für Enums und Verhalten), Plane Compose (YAML-Schema für Typen/Properties/Features/Milestones), Webhooks, OAuth-Scopes, Self-Hosting-Doku (Plan-Badges, Intake-E-Mail, Plane AI/Embeddings).
 3. **Web (sekundär):** Die Hosts `docs.plane.so`, `plane.so`, `university.plane.so` sind per Netzwerk-Policy nicht abrufbar (WebFetch → `getaddrinfo ENOTFOUND university.plane.so`; analog für plane.so laut Auftrag). **In diesem Lauf war das WebSearch-Budget des gesamten Workflows bereits ausgeschöpft** („limit: 200 WebSearch calls per turn, shared by every agent“) – es konnte **keine eigene WebSearch** ausgeführt werden. Das Quell-Repo der Nutzer-Doku (`makeplane/docs`) ist über GitHub nicht erreichbar (GitHub-MCP: Repository nicht für die Session freigegeben; `https://github.com/makeplane/docs` → HTTP 404). Web-Fakten in diesem Dokument stammen daher ausschließlich aus **WebSearch-Zusammenfassungen, die die Schwesterdokumente 20/21/22/25/26 bereits erhoben und mit URL belegt haben**; sie sind als **„W (via Dok NN)“** gekennzeichnet und nicht von P04 selbst verifiziert. Fehlende Web-Belege für Detailverhalten sind als **UNVERIFIZIERT** markiert. **Empfehlung:** Nach Freigabe weiterer WebSearch-Kontingente die in Kap. 4 gelisteten Punkte gezielt nachrecherchieren (Folge-Auftrag).
+
+**Ergänzungslauf (2026-10-22):** Das Dokument war nach Kap. 3.17 abgebrochen; Kap. 3.18, 3.19, 4 und die Anhänge A–C wurden in einem zweiten Lauf ergänzt. In diesem Lauf standen **14 eigene WebSearch-Abfragen** zur Verfügung. Ihre Ergebnisse sind als **WP-01 … WP-15** in Kap. 3.19 mit URL belegt. Es handelt sich um Suchmaschinen-Zusammenfassungen der Seiten, nicht um selbst gelesene Seiten; die Konfidenz ist entsprechend „mittel“. Drei Abfragen (Roll-ups; Baselines/SLAs/Auto-Assignment; Release-Doku allgemein) lieferten keine verwertbaren Treffer.
 
 ### 1.2 Planstufen
 
@@ -118,14 +122,16 @@ Der Code der Commercial Edition (`makeplane/plane-ee`) ist closed-source und nic
 
 | Kennzahl | Wert | Quelle |
 |---|---|---|
-| Features dieses Clusters (WM-01 … WM-47) | 47 | Kap. 2 |
-| davon CE-Status „fehlt“ | 21 | Kap. 2 |
+| Features dieses Clusters (WM-01 … WM-51; WM-48 … WM-51 im Ergänzungslauf aufgenommen) | 51 | Kap. 2 |
+| davon CE-Status „fehlt“ | 22 | Kap. 2 |
 | davon „Stub/UI-Hülle im CE“ | 16 | Kap. 2 |
-| davon „teilweise im CE“ | 10 | Kap. 2 |
+| davon „teilweise im CE“ | 13 | Kap. 2 |
 | davon „im CE vorhanden (nur Cloud-Gating)“ | 0 | Kap. 2 |
-| Commercial-REST-Endpunkte des Clusters (API v1, distinkte Methode+Pfad, nur EE; Anhang A.1) | 88 (+ 1 auch im CE vorhandener Endpunkt `transfer-issues`) | D1 |
-| MCP-Aktionen ohne REST-Gegenstück, die Verhalten/Felder belegen (Anhang A.2) | 31 | D2 |
-| EE-Texte des Clusters im CE-i18n (Schlüsselgruppen, Anhang B) | 31 Gruppen | R3–R10 |
+| Commercial-REST-Endpunkte des Clusters (API v1, distinkte Methode+Pfad), die im CE-Code fehlen (Anhang A.1, Gruppe A) | 89 | D1 (im Ergänzungslauf neu ausgezählt; der Erstlauf nannte 88 ohne Liste) |
+| … zusätzlich: im CE-Code vorhanden, aber nicht geroutet (Estimates, Anhang A.1, Gruppe B) | 8 | D1; `apps/api/plane/api/urls/estimate.py`, `apps/api/plane/api/urls/__init__.py` |
+| … zusätzlich: im CE geroutet (Relations GET/POST, `transfer-issues`, Anhang A.1, Gruppe C) | 3 | D1; `apps/api/plane/api/urls/work_item.py` Z. 149–153; R22 |
+| MCP-Aktionen ohne bzw. mit erweitertem REST-Gegenstück, die Verhalten/Felder belegen (Anhang A.2) | 43 | D2 (im Ergänzungslauf neu ausgezählt; der Erstlauf nannte 31 ohne Liste) |
+| EE- und mitzuverwendende CE-Texte des Clusters im CE-i18n (Schlüsselgruppen, Anhang B) | 77 Gruppen (B1–B77) | R3–R10 und weitere Dateien laut Anhang B |
 
 ---
 
@@ -146,8 +152,8 @@ Der Code der Commercial Edition (`makeplane/plane-ee`) ist closed-source und nic
 | WM-11 | Initiatives (Workspace-weit; Projekte/Epics/Work Items verknüpfen; State; Lead; Datum; Fortschritt) | Pro (R1, „Coming soon“) – Konflikt: Business (Plane University) | Sub-Initiativen nur Enterprise (W plane-vs-linear) | Stub/UI-Hülle im CE (Theme-Store-Flag, Asset-Typ, Slugs, Icons) | R1 Z. 272–282; D1 `initiative/`; D2 Z. 290–305; W (via Dok 21 §3 F02) |
 | WM-12 | Initiative-Labels (eigener Workspace-Katalog) | wie WM-11 | – | fehlt | D1 `initiative/*label*`; Kommentar in `apps/web/components/dropdowns/label/label-select.tsx` Z. 48–49 |
 | WM-13 | Initiative-/Epic-/Projekt-Updates und Checkpoints („markers … to report on progress“) | Pro („Coming soon“) | – | Stub/UI-Hülle im CE (Updates-Texte, Enum); Checkpoints fehlt | R1 Z. 284–295 (Checkpoints), Z. 354–366 (Project Updates, auskommentiert); R9 |
-| WM-14 | Milestones (Projekt-Feature: Meilensteine mit Zieldatum, Work-Item-Zuordnung) | unklar | – | Stub/UI-Hülle im CE (i18n, Fetch-Key, Projekt-Overview-Sektion) | R4 `features.milestones`; `packages/constants/src/fetch-keys.ts` Z. 205–206; `apps/web/store/project/project.store.ts` Z. 21, 86; D1 `milestones/`; W v1.16.0 (via Dok 21 §4.5) |
-| WM-15 | Releases (Workspace-Releases, Status, Tags, Labels, Changelog, Work-Item-Zuordnung, Release-Picker-Property) | unklar | – | fehlt (nur Icons, Illustration `changelog`, Kommentar zu Label-Scope `release`) | D2 Z. 307–356; D3 Z. 1109; R23; W introducing-releases, v2.6.0 (via Dok 21/25) |
+| WM-14 | Milestones (Projekt-Feature: Meilensteine mit Zieldatum, Work-Item-Zuordnung) | Pro (Nachrecherche WP-07; nicht in R1) | – | Stub/UI-Hülle im CE (i18n, Fetch-Key, Projekt-Overview-Sektion) | R4 `features.milestones`; `packages/constants/src/fetch-keys.ts` Z. 205–206; `apps/web/store/project/project.store.ts` Z. 21, 86; D1 `milestones/`; W v1.16.0 (via Dok 21 §4.5) |
+| WM-15 | Releases (Workspace-Releases, Status, Tags, Labels, Changelog, Work-Item-Zuordnung, Release-Picker-Property) | Business (Doku-Badge laut Nachrecherche WP-08; nicht in R1) | – | fehlt (nur Icons, Illustration `changelog`, Kommentar zu Label-Scope `release`) | D2 Z. 307–356; D3 Z. 1109; R23; W introducing-releases, v2.6.0 (via Dok 21/25) |
 | WM-16 | Customers (Kundenprofile, Felder Industry/Stage/Contract status/Revenue/Employees/Website/Email, Logo) | Business (Dok 21: docs.plane.so/customers, introducing-plane-business) – Konflikt: Pro „customer profiles“ (Dok 20: plane.so/pricing) | – | fehlt (nur Seed-Display-Properties `customer_count`, `customer_request_count`; Illustrationen) | D1 `customer/`; D2 Z. 463–511; `apps/api/plane/bgtasks/workspace_seed_task.py` Z. 160, 163 |
 | WM-17 | Customer Requests (Anfragen je Kunde, mit Link, verknüpfte Work Items) | wie WM-16 | – | fehlt | D1 `customer/*request*`; D2 Z. 483–495 |
 | WM-18 | Customer Properties (eigene Properties für Kunden, gleiche Typen wie WM-04) | wie WM-16 | – | fehlt | D1 `customer/*propert*`; D2 Z. 497–511 |
@@ -180,8 +186,14 @@ Der Code der Commercial Edition (`makeplane/plane-ee`) ist closed-source und nic
 | WM-45 | Intake Assignees / Intake responsibility (Standard-Bearbeiter für Intake, Benachrichtigung) | Business | Business/Enterprise ✓ | teilweise im CE (`Project.default_assignee` wird bei Intake-Anlage zugewiesen) | R1 Z. 425–434; R4 `features.intake.intake_responsibility`, `notify_assignee`; `apps/api/plane/app/views/intake/base.py` Z. 261–268 |
 | WM-46 | Emails For Intake (Projekt-E-Mail-Adresse, E-Mail → Intake-Work-Item/Kommentar) | Business | Business/Enterprise ✓ (Matrix „Coming soon“; Doku-Badge `Business`) | Stub/UI-Hülle im CE (`IntakeIssue.source_email`, `EInboxIssueSource.EMAIL`) | R1 Z. 458–468; D6; R15; Dienst: Dok 22 §4.23 |
 | WM-47 | Duplicate Detection (Duplikat-Vorschläge beim Anlegen von Work Items/Intake) | Commercial Edition (Plane AI); Plan-Tier unklar | – | Stub/UI-Hülle im CE (Typen `TDuplicateIssuePayload`/`TDeDupeIssue`, No-op-Hook, Modal-State, Texte) | R20; R16 `isDuplicateModalOpen`; R8 Z. 284–285; D7 |
+| WM-48 | Work-Item-Votes in der App (Up-/Downvotes an Work Items, Epics, Intake-Anfragen im Kopf der Detailansicht) | unklar (nicht in R1; Changelog 31.03.2026 ohne Planangabe) | – | teilweise im CE (Modell `IssueVote`, Votes nur im öffentlichen Board der Space-App; i18n-Tooltips `issue.vote.*` in der Web-App ungenutzt) | R6 Z. 266–271; R13 Z. 654–671; `apps/api/plane/space/urls/issue.py` Z. 53–55; D4 Z. 266–267; WP-02; Dok 20 PF-40 |
+| WM-49 | Kommentar-Antworten (Replies: Antwort-Threads unter Work-Item-Kommentaren, mit Reaktionen) | unklar (nicht in R1; Changelog v1.22.0 ohne Planangabe) | – | teilweise im CE (Feld `IssueComment.parent` vorhanden, aber nicht client-schreibbar; Texte `issue.comments.replies.*`; keine UI) | R6 Z. 115–151; R13 Z. 475–477; `apps/api/plane/app/views/issue/comment.py` Z. 28–30, 101, 134; D1 `issue-comment/add-issue-comment.md`; WP-03; Dok 20 PF-39 |
+| WM-50 | Projektübergreifende Sub-Work-Items (Work Item aus Projekt B als Sub-Work-Item eines Work Items in Projekt A) | unklar (Changelog 31.03.2026 ohne Planangabe) | – | fehlt (CE erzwingt gleiches Projekt für `parent`) | `apps/api/plane/app/serializers/issue.py` Z. 188–196; `apps/api/plane/app/views/issue/sub_issue.py` Z. 38–44, 210–248; WP-02 |
+| WM-51 | Workspace Governance für States und Labels (zentraler State-/Label-Katalog, Label-Scopes Work Item/Release/Initiative/Project, Sperre der Projekt-Bearbeitung) | Enterprise Grid | nur Enterprise Grid; Self-hosted ab v3.2.0 | teilweise im CE (Label-Modell erlaubt `project = NULL`; keine Endpunkte/UI; States nur projektbezogen) | `apps/api/plane/db/models/label.py` Z. 11–40; `apps/web/components/dropdowns/label/label-select.tsx` Z. 48–49; WP-05; Dok 25 F07 (W3/W4) |
 
-**Zählung CE-Status:** fehlt (21) = WM-04, 05, 06, 07, 08, 12, 15, 16, 17, 18, 19, 21, 28, 29, 31, 33, 34, 37, 38, 42, 43 · Stub/UI-Hülle (16) = WM-03, 09, 10, 11, 13 (Updates; Checkpoints fehlen), 14, 20, 22, 24, 25, 39, 40, 41, 44, 46, 47 · teilweise (10) = WM-01, 02, 23, 26, 27, 30, 32, 35, 36, 45.
+**Zählung CE-Status:** fehlt (22) = WM-04, 05, 06, 07, 08, 12, 15, 16, 17, 18, 19, 21, 28, 29, 31, 33, 34, 37, 38, 42, 43, 50 · Stub/UI-Hülle (16) = WM-03, 09, 10, 11, 13 (Updates; Checkpoints fehlen), 14, 20, 22, 24, 25, 39, 40, 41, 44, 46, 47 · teilweise (13) = WM-01, 02, 23, 26, 27, 30, 32, 35, 36, 45, 48, 49, 51.
+
+**Abgrenzung (im Ergänzungslauf geprüft):** Die Plan-Matrix R1 enthält in den Sektionen „Project + work tracking“ und „Project + work management“ (Z. 72–470) außer den Zeilen WM-xx nur „Active Cycles“, „Teamspace Cycles“ und „Scheduled Comms“; diese gehören zu Cluster P05 (Dok 24). Die Repo-Spuren PF-39 (Replies) und PF-40 (Votes) aus Dok 20 hatte bisher kein Cluster-Dokument spezifiziert (`grep -n -i -E "vote|repl" migration/features/2[1-8]-*.md`); sie sind jetzt WM-49 und WM-48. Die Workflow-Seite der Workspace Governance steht in Dok 25 F07, die Typ-/Property-Seite in WM-07; die State-/Label-Seite war nirgends spezifiziert und ist jetzt WM-51.
 
 ---
 
@@ -281,7 +293,7 @@ CE-Projektrollen: `ADMIN = 20`, `MEMBER = 15`, `GUEST = 5` (`packages/types/src/
 
 **Referenz-Screenshots (D, ältere UI-Generation mit den Begriffen „Issue“/„Issue Types“; nur Struktur-/Verhaltensreferenz, Gestaltung folgt dem aktuellen CE-Design und den i18n-Texten oben):** `/home/user/makeplane/developer-docs/docs/public/images/issues/{setup-issue-types,enable-issue-types,add-issue-type,create-issue-type,activate-issue-type,add-new-property,property-details,use-issue-type}.webp` (in keiner `.md` referenziert, aber Teil der offiziellen Developer-Docs). Belegt: (1) Projekt-Settings-Eintrag „Issue Types“ als letzter Tab nach „Automations“; (2) Aktivierungsseite mit Titel „Enable Issue Types“, Beschreibung, Vorschaubild und Button „Enable“; (3) Typenliste als Akkordeon: Zeile mit Chevron, quadratischem farbigem Typ-Icon (Icon auf farbigem Hintergrund), Name, Beschreibung, rechts Badge „Default“ (Default-Typ, ohne Toggle) bzw. Edit-Stift + Aktiv-Toggle; inaktive Typen tragen ein graues Badge „Disabled“ hinter dem Namen; Seitentitel mit primärem Button „Add issue type“ oben rechts; (4) Default-Typ „Issue“ mit Beschreibung „Default issue type with the option to add new properties“; Beispieltypen „Feature“ („Track new feature requests.“), „Story“ („A user story is the smallest unit of work that needs to be done.“), „Task“ („A task represents work that needs to be done.“), „Bug“ („A bug is a problem which impairs or prevents the functions of a product.“); (5) Modal „Create Issue type“: links Icon-Picker-Kachel, rechts Namensfeld, darunter mehrzeilige Beschreibung, Buttons „Cancel“ / „Create Issue type“; (6) im Create-Work-Item-Modal ein Typ-Dropdown direkt rechts neben dem Projekt-Chip (Breadcrumb „Projekt › Typ“) mit Suchfeld und Häkchen am gewählten Typ; die Custom Properties des Typs erscheinen **als Formularzeilen zwischen Beschreibung und der Standard-Property-Leiste** (links Icon + Name, Pflichtfelder mit rotem `*`, rechts Eingabe mit Placeholdern „Add text“, „Choose date“, „Select an option“, „Select a member“).
 
-**CE-Status:** teilweise im CE – Modelle/Felder/Serialisierung `type_id` vorhanden (u. a. `apps/api/plane/app/serializers/draft.py` Z. 359, `apps/api/plane/app/views/search/base.py` Z. 446/658), keine Endpunkte, keine Settings-Seiten, Switcher ist Stub.
+**CE-Status:** teilweise im CE – Modelle/Felder/Serialisierung `type_id` vorhanden (vollständige Fundstellen außerhalb von Migrationen/Tests: `apps/api/plane/app/serializers/draft.py` Z. 359, `apps/api/plane/app/views/search/base.py` Z. 446/658, `apps/api/plane/app/views/workspace/draft.py` Z. 175, `apps/api/plane/api/serializers/issue.py` Z. 66, 667, 681, `apps/api/plane/bgtasks/issue_version_sync.py` Z. 171, `apps/api/plane/db/models/issue.py` Z. 768), keine Endpunkte, keine Settings-Seiten, Switcher ist Stub.
 
 **Migrationshinweise:** Typ-Verwaltung als eigenes Bounded Context „WorkItemTypes“ (gemeinsam mit Properties, WM-03). Irreversibilität der Projekt-Aktivierung serverseitig erzwingen (PATCH `is_issue_type_enabled=false` → 400). Default-Wechsel transaktional (alter Default `is_default=false`, neuer `true`).
 
@@ -334,7 +346,7 @@ CE-Projektrollen: `ADMIN = 20`, `MEMBER = 15`, `GUEST = 5` (`packages/types/src/
 
 | Entität | Felder | Regeln |
 |---|---|---|
-| Property | `id`, `name` (RO, Slug aus `display_name`), `display_name`* (≤255), `description`, `logo_props`, `sort_order`, `property_type`* ∈ {`TEXT`,`DATETIME`,`DECIMAL`,`BOOLEAN`,`OPTION`,`RELATION`,`URL`,`EMAIL`,`FILE`,`FORMULA`}, `relation_type` ∈ {`ISSUE`,`USER`,`RELEASE`,`RICH_TEXT`} (nur bei RELATION; REST-Doku nennt nur ISSUE/USER), `is_required`, `is_multi`, `is_active`, `default_value` (Array von Strings), `settings` (Objekt, u. a. `display_format`), `validation_rules` (Objekt), `formula_config` (String, nur FORMULA), `issue_type` (RO), `workspace`, `project`, `external_id`, `external_source`, Audit, `deleted_at` | `display_format` Pflicht bei TEXT und DATETIME (D2 Z. 212) |
+| Property | `id`, `name` (RO, Slug aus `display_name`), `display_name`* (≤255), `description`, `logo_props`, `sort_order`, `property_type`* ∈ {`TEXT`,`DATETIME`,`DECIMAL`,`BOOLEAN`,`OPTION`,`RELATION`,`URL`,`EMAIL`,`FILE`,`FORMULA`}, `relation_type` ∈ {`ISSUE`,`USER`,`RELEASE`,`RICH_TEXT`} (nur bei RELATION; REST-Doku nennt nur ISSUE/USER), `is_required`, `is_multi`, `is_active`, `default_value` (Array von Strings), `settings` (Objekt; belegt ist nur der Schlüssel `display_format`), `validation_rules` (Objekt), `formula_config` (String, nur FORMULA), `issue_type` (RO), `workspace`, `project`, `external_id`, `external_source`, Audit, `deleted_at` | `display_format` Pflicht bei TEXT und DATETIME (D2 Z. 212) |
 | Option | `id`, `name`* (eindeutig je Property: „Option with same name already exists.“), `description`, `color` (MCP), `sort_order` (Beispiel 10000.0), `logo_props`, `is_active`, `is_default`, `parent` (uuid/null → hierarchische Optionen), `property`, `external_*`, `workspace`, `project`, Audit | Pflicht-Name „Option name is required.“ (R3 Z. 94–99) |
 | Value | `id`, `property_id`, `issue_id`, `value` (typabhängig), `value_type`, `external_*`, `created_at`, `updated_at` | eine Zeile je (Work Item, Property), bei `is_multi` mehrere; POST = Upsert (Multi: ersetzt alle), DELETE entfernt alle (D1 `values/*`; D2 Z. 209–212) |
 | Typ↔Property-Zuordnung | MCP `manage_type_properties(attach_ids, detach_ids)`; Detach entfernt nur die Zuordnung, nicht die Property (D2 Z. 202) | ⇒ n:m-Zuordnung (Workspace-Katalog) |
@@ -360,7 +372,7 @@ Wert-Kodierung (D2 Z. 212): TEXT/URL/EMAIL/FILE → String; DATETIME → `YYYY-M
 | **Text** | `TEXT` | `text` (Alias `string`) | `display_format` ∈ `single-line` („Single line“), `multi-line` („Paragraph“), `readonly` („Read only“; Kopf „Read only data“) – Fehler „Invalid text format“ | String | ja; bei `readonly` vermutlich nein (UNVERIFIZIERT) |
 | **Number** | `DECIMAL` | `number` (Integer) bzw. `decimal` (Gleitkomma) | Default-Wert-Feld Placeholder „Add number“ | Zahl | ja |
 | **Dropdown** | `OPTION` (+ `is_multi`) | `option` (Alias `enum`; `options`-Liste, `is_multi`) | „Single select“ / „Multi select“; Optionen „Options“ (Placeholder „Add option“); Default „No default value“ oder Option mit `is_default` | Option-ID bzw. Array | ja |
-| **Boolean** | `BOOLEAN` | `boolean` | „True | False“; Default „No default value“ | `true`/`false` | Tooltip „This property type cannot be made mandatory“ ist für mindestens einen Typ aktiv – vermutlich Boolean (UNVERIFIZIERT) |
+| **Boolean** | `BOOLEAN` | `boolean` | „True \| False“; Default „No default value“ | `true`/`false` | Tooltip „This property type cannot be made mandatory“ ist für mindestens einen Typ aktiv – vermutlich Boolean (UNVERIFIZIERT) |
 | **Date** | `DATETIME` | `date` (`YYYY-MM-DD`) bzw. `datetime` (ISO 8601) | `display_format` ∈ `MMM dd, yyyy`, `dd/MM/yyyy`, `MM/dd/yyyy`, `yyyy/MM/dd` | `YYYY-MM-DD` bzw. `YYYY-MM-DD HH:MM:SS` | ja |
 | **Member picker** | `RELATION` + `USER` | `member_picker` bzw. `relation` + `relation_type: user` | „Single select“ / „Multi select“, „No default value“ | User-ID bzw. Array | ja |
 | Relation (Work Item) | `RELATION` + `ISSUE` | `relation` + `relation_type: issue` | Single/Multi | Work-Item-ID bzw. Array | ja (UNVERIFIZIERT) |
@@ -610,7 +622,7 @@ Die vollständigen Spezifikationen (Formulare, API v2, Zeitlogik, Migrationshinw
 **Tier:** One „Limited props“; Pro „All props“; Business/Enterprise zusätzlich „Work item transfers and conversions“ (Coming soon) (R1 Z. 162–181; „Add several work items to cycles or modules, transfer them, or edit their properties.“). Upgrade-Karten: `PRO_PLAN_FEATURES` „Full Time Tracking + Bulk Ops“, `ONE_PLAN_FEATURES` „Time-tracking + limited bulk ops“, `FREE_PLAN_UPGRADE_FEATURES` „Time Tracking and Bulk Ops“ (R2). Welche Properties „limited“ sind, ist nicht belegt; nach ADR-001 gilt „All props“.
 
 **Funktionsbeschreibung:**
-1. **Mehrfachauswahl** in List-, Spreadsheet- und Gantt-Layout (CE-Infrastruktur `useMultipleSelectStore`, `TSelectionHelper`, `apps/web/hooks/use-multiple-select.ts`, `apps/web/store/multiple_select.store.ts`; Aktivierung über `enableSelection={isBulkOperationsEnabled && isAllowed}` u. a. in `apps/web/components/issues/issue-layouts/gantt/base-gantt-root.tsx` Z. 143; Auswertung von `useBulkOperationStatus()` in `spreadsheet/spreadsheet-view.tsx` Z. 66/87, `list/default.tsx` Z. 86/137, `gantt/base-gantt-root.tsx` Z. 61/143, `apps/web/components/gantt-chart/chart/main-content.tsx` Z. 28). In Epic-Listen deaktiviert (WM-09). Texte: „Select all“, „Deselect all“, „No work items selected“, „Please select at least one work item“ (`issue.select.*`, R6).
+1. **Mehrfachauswahl** in List-, Spreadsheet- und Gantt-Layout (CE-Infrastruktur `useMultipleSelectStore`, `TSelectionHelper`, `apps/web/hooks/use-multiple-select.ts`, `apps/web/store/multiple_select.store.ts`; Aktivierung über `enableSelection={isBulkOperationsEnabled && isAllowed}` in `apps/web/components/issues/issue-layouts/gantt/base-gantt-root.tsx` Z. 143, durchgereicht über `apps/web/components/gantt-chart/root.tsx` Z. 89, `chart/root.tsx` Z. 208, `chart/main-content.tsx` Z. 189, `sidebar/issues/sidebar.tsx` Z. 108 und `apps/web/components/base-layouts/gantt/layout.tsx` Z. 134; Auswertung von `useBulkOperationStatus()` in `spreadsheet/spreadsheet-view.tsx` Z. 66/87, `list/default.tsx` Z. 86/137, `gantt/base-gantt-root.tsx` Z. 61/143, `apps/web/components/gantt-chart/chart/main-content.tsx` Z. 28). In Epic-Listen deaktiviert (WM-09). Texte: „Select all“, „Deselect all“, „No work items selected“, „Please select at least one work item“ (`issue.select.*`, R6).
 2. **Aktionsleiste** am unteren Rand der Liste an der Position des CE-Banners (`sticky bottom-0 left-0 z-[2] grid h-20 place-items-center px-3.5`, `apps/web/components/issues/bulk-operations/root.tsx`); der CE zeigt dort `Banner variant="accent"` mit „Change state, priority, and more for several work items at once. Save three minutes on an average per operation.“ und CTA „Upgrade to One“ (`bulk_operations.upgrade_banner.*`, R6) – **entfällt**.
 3. **Änderbare Properties** (`TBulkIssueProperties = Pick<TIssue, "state_id" | "priority" | "label_ids" | "assignee_ids" | "start_date" | "target_date" | "module_ids" | "cycle_id" | "estimate_point">`, `packages/types/src/issues/issue.ts` Z. 140–156). Payload `TBulkOperationsPayload = { issue_ids: string[]; properties: Partial<TBulkIssueProperties> }`.
 4. **Semantik (Client-Store, `bulkUpdateProperties`, `apps/web/store/issue/helpers/base-issues.store.ts` Z. 722–757):** Array-Properties (`label_ids`, `assignee_ids`, `module_ids`) werden **hinzugefügt** (Vereinigung mit bestehenden Werten, `uniq([...existing, ...new])`), skalare Properties ersetzt. Server muss dieselbe Semantik liefern.
@@ -652,7 +664,7 @@ Die vollständigen Spezifikationen (Formulare, API v2, Zeitlogik, Migrationshinw
 **Funktionsbeschreibung:**
 1. **Dependency-Typen** (built-in, D2 Z. 156): `blocking`, `blocked_by`, `start_before`, `start_after`, `finish_before`, `finish_after`; UI-Labels „Blocking“, „Blocked by“, „Starts Before“, „Starts After“, „Finishes Before“, „Finishes After“ (`issue.relation.*`, R6 Z. 186–198). Eigener Button **„Add dependency“** (`issue.add.dependency`, im CE ungenutzt) neben „Add relation“ (`issue.add.relation`, im CE genutzt in `issue-detail-widgets/action-buttons.tsx` Z. 54 und `relations/quick-action-button.tsx` Z. 57); Abschnittslabels „Dependencies“ und „Relations“ (`common.dependencies`, `common.relations`, R8 Z. 555–556). **Dependencies und Custom Relations sind unabhängig** (MCP `delete … is_dependency`, D2 Z. 150; getrennte Webhook-Events `workitem.dependency.*` vs. `workitem.relation.*`, D4 Z. 271–274).
 2. **Speicher-Semantik (CE-Backend, maßgeblich):** Gespeichert werden nur die „Vorwärts“-Typen `blocked_by`, `start_before`, `finish_before` (und `relates_to`, `duplicate`, `implemented_by`). Beim Anlegen von `blocking`/`start_after`/`finish_after` werden `issue` und `related_issue` vertauscht und der Typ auf die Vorwärtsform gemappt (`get_actual_relation`, `apps/api/plane/utils/issue_relation_mapper.py`; `relation.py` Z. 266–281). Datensatz `(issue=A, related_issue=B, start_before)` bedeutet „A starts before B“ und erscheint bei B als „Starts After: A“. Lesen liefert je Work Item die Listen `blocking`, `blocked_by`, `duplicate`, `relates_to`, `start_after`, `start_before`, `finish_after`, `finish_before` (`relation.py` Z. 84–135, 200–235). Relationen dürfen Projekte überschreiten (nur Workspace-Scope, `relation.py` Z. 257–264). **Unique `(issue, related_issue)`** bei `deleted_at IS NULL` ⇒ zwischen zwei Items nur **eine** Relation beliebigen Typs (R13 Z. 305–316).
-3. **Zeitliche Semantik (Vorschlag, UNVERIFIZIERT – Rückfrage R-06):** `A start_before B`: B darf nicht vor A starten (`B.start_date ≥ A.start_date`, Start-to-Start); `A finish_before B`: B darf nicht vor dem Ende von A starten (`B.start_date ≥ A.target_date`, Finish-to-Start); `A blocked_by B`: wie Finish-to-Start von B nach A, aber ohne Datumsautomatik (nur Hinweis).
+3. **Zeitliche Semantik – im Ergänzungslauf korrigiert (WP-12, Kap. 3.19):** Die offizielle Doku nennt drei Dependency-Arten: **Finish-to-Start** = „Blocking“/„Blocked by“, **Start-to-Start** = „Starts before“/„Starts after“, **Finish-to-Finish** = „Finishes before“/„Finishes after“. Daraus folgt: `A blocking B` (gespeichert als `(B, A, blocked_by)`): B startet frühestens nach dem Ende von A (`B.start_date ≥ A.target_date`); `A start_before B`: `B.start_date ≥ A.start_date`; `A finish_before B`: `B.target_date ≥ A.target_date`. Der frühere Vorschlag dieses Dokuments (`finish_before` = Finish-to-Start, `blocked_by` ohne Datumsautomatik) ist **überholt**. Weitere Belege aus WP-12: Linien erscheinen nur, wenn beide Work Items Start- **und** Fälligkeitsdatum haben; verletzte Dependencies werden als **rote Linien** gezeigt; beim Ziehen im Timeline-Layout „passen sich abhängige Work Items automatisch an“. Ob ein Lag (Puffer in Tagen) unterstützt wird und ob die Anpassung transitiv kaskadiert, ist UNVERIFIZIERT (R-06).
 4. **Gantt:** Verbindungslinien (Pfeile) zwischen Balken für Dependencies; Erzeugen durch Ziehen eines Griffs am Balken auf einen anderen Balken (CE-Stub `getIsCurrentDependencyDragging(blockId)` – „Dummy method to return if the current Block's dependency is being dragged“, `apps/web/store/timeline/base-timeline.store.ts` Z. 344–345); beim Verschieben/Resizen eines Balkens werden **abhängige Balken mitverschoben**, sofern nicht `ignoreDependencies` (Signaturen `getUpdatedPositionAfterDrag(id, shouldUpdateHalfBlock, ignoreDependencies?) => IBlockUpdateDependencyData[]` und `updateBlockPosition(id, deltaLeft, deltaWidth, ignoreDependencies?)`, Z. 59–64; CE liefert nur den gezogenen Block, Z. 296–318); Speichern aller geänderten Daten in **einem** Request `POST /api/workspaces/{slug}/projects/{pid}/issue-dates/` mit `{updates: [{id, start_date?, target_date?}]}` (CE-Endpunkt vorhanden, `apps/web/services/issue/issue.service.ts` Z. 247; `apps/api/plane/app/urls/issue.py` Z. 252–254). Flag `isDependencyEnabled` (CE `false`, Z. 85); Issue-Gantt übergibt bereits `enableDependency` (`apps/web/components/issues/issue-layouts/gantt/base-gantt-root.tsx` Z. 149), `ChartDraggable` nimmt `enableDependency` entgegen, rendert aber keine Griffe (`apps/web/components/gantt-chart/helpers/draggable.tsx`). Typ `IBlockUpdateDependencyData { id; start_date?; target_date?; meta? }` (`packages/types/src/layout/gantt.ts` Z. 37–42).
 5. **Frontend-Typen erweitern:** `TIssueRelationTypes = "blocking" | "blocked_by" | "duplicate" | "relates_to"` (`packages/types/src/issues/issue_relation.ts` Z. 17) und `ISSUE_RELATION_OPTIONS`/`useTimeLineRelationOptions` (`apps/web/components/relations/index.tsx`, Schema `{key, i18n_label, className, icon(size), placeholder}`) um die Dependency-Typen ergänzen. Icons: `CalendarBeforeIcon`, `CalendarAfterIcon` (`packages/blocks/src/icons/calendar-before-icon.tsx`, `calendar-after-icon.tsx`), Propel `DependencyOutline/Filled`.
 
@@ -840,7 +852,7 @@ Gemeinsame Basis im CE: Intake-Feature, Zustandsmaschine (Pending −2, Rejected
 **Tier:** Funktion von **Plane AI** in der Commercial Edition („Plane AI brings AI-powered features to your workspace, including natural language chat, duplicate detection, and search …“, `/home/user/makeplane/developer-docs/docs/self-hosting/govern/plane-ai/configure-plane-ai.md` Z. 9; Badge „Commercial Edition“). Planstufe der Duplikaterkennung UNVERIFIZIERT (Plane AI ab Pro laut Dok 20 PF-82).
 
 **Funktionsbeschreibung:**
-1. **Technik (D7):** Ohne Embedding-Modell nutzt Plane AI BM25-Keyword-Suche; **mit** Embedding-Modell „vector similarity search, duplicate issue detection, and semantic retrieval over work items and pages“ (`configure-embedding-model.md` Z. 9). Unterstützte Modelle u. a. Cohere `embed-v4.0` (1536), OpenAI `text-embedding-3-small` (1536), Bedrock Titan v1 (1536)/v2 (1024); Vektor-Index in OpenSearch (`OPENSEARCH_ML_MODEL_ID`, `OPENSEARCH_EMBEDDING_DIMENSION` Default 1536); Bestand vektorisieren mit `manage_search_index --background --vectorize document index --force`.
+1. **Technik (D7):** Ohne Embedding-Modell nutzt Plane AI BM25-Keyword-Suche; **mit** Embedding-Modell „vector similarity search, duplicate issue detection, and semantic retrieval over work items and pages“ (`configure-embedding-model.md` Z. 9). Unterstützte Modelle (vollständig, `configure-embedding-model.md` Z. 15–26): Cohere `embed-v4.0` (1536), `embed-english-v3.0` (1024), `embed-english-v2.0` (4096); OpenAI `text-embedding-ada-002` (1536), `text-embedding-3-small` (1536), `text-embedding-3-large` (3072); AWS Bedrock `amazon.titan-embed-text-v1` (1536), `amazon.titan-embed-text-v2` (1024), `cohere.embed-english-v3` (1024), `cohere.embed-multilingual-v3` (1024); Vektor-Index in OpenSearch (`OPENSEARCH_ML_MODEL_ID`, `OPENSEARCH_EMBEDDING_DIMENSION` Default 1536); Bestand vektorisieren mit `manage_search_index --background --vectorize document index --force`.
 2. **Anfrage/Antwort (CE-Typen, `packages/types/src/de-dupe.ts`):** `TDuplicateIssuePayload = { title: string; workspace_id: string; issue_id?: string | null; project_id?: string; description_stripped?: string }` → `TDuplicateIssueResponse = { dupes: TDeDupeIssue[] }` mit `TDeDupeIssue = { id, type_id, project_id, sequence_id, name, priority, state_id, created_by }`.
 3. **Client-Hook:** `useDebouncedDuplicateIssues(workspaceSlug, workspaceId, projectId, { name, description_html?, issueId? }) => { duplicateIssues: TDeDupeIssue[] }` (CE liefert immer `[]`, `apps/web/hooks/use-debounced-duplicate-issues.tsx`) ⇒ **debounced** Abfrage während der Eingabe von Titel/Beschreibung; `issueId` schließt das eigene Item beim Bearbeiten aus.
 4. **UI:** Im Work-Item-Create-Modal und im Intake-Create-Modal existiert bereits der State `isDuplicateModalOpen` / `handleDuplicateIssueModal(open)` (`apps/web/components/issues/issue-modal/base.tsx` Z. 68, 159, 382, 405–406; `form.tsx` Z. 73–74; `apps/web/components/inbox/modals/create-modal/modal.tsx` Z. 23–46; `create-root.tsx` Z. 49–50) – im CE ohne UI ⇒ bei Treffern erscheint ein Hinweis **„Duplicate work item found“** / **„Duplicate work items found“** (`duplicate_issue_found`, `duplicate_issues_found`, R8 Z. 284–285), der ein Seitenpanel/Modal mit der Trefferliste öffnet (Identifier, Titel, State, Priorität). Die Lösch- und Archiv-Modals akzeptieren bereits `TDeDupeIssue` (`data?: TIssue | TDeDupeIssue`, `apps/web/components/issues/delete-issue-modal.tsx` Z. 26; `archive-issue-modal.tsx` Z. 19) ⇒ aus der Trefferliste heraus können Duplikate **gelöscht oder archiviert** werden. Layout/Position des Panels UNVERIFIZIERT (O-04). Intake: „Mark as duplicate“ (`inbox_issue.actions.mark_as_duplicate`) ist CE-Funktion und kann Treffer übernehmen.
@@ -850,3 +862,566 @@ Gemeinsame Basis im CE: Intake-Feature, Zustandsmaschine (Pending −2, Rejected
 **Migrationshinweise (ADR-000/004):** Vektoren in **PostgreSQL/pgvector** (`work_item_embedding(work_item_id PK, model, dim, embedding vector(n), content_hash, updated_at)`, HNSW-Index `vector_cosine_ops`); Embeddings über konfigurierbaren, **lokal betreibbaren** Provider (OpenAI-kompatibler Endpunkt wie Ollama/vLLM oder ONNX-Modell im Prozess); Fallback ohne Modell: `pg_trgm`-Ähnlichkeit auf `name` + `description_stripped` (entspricht dem BM25-Fallback des Originals); Hintergrund-Job für Re-Embedding bei Titel-/Beschreibungsänderung (Outbox). **CE-Status:** Stub/UI-Hülle. **Quellen:** R8, R16, R20, D7. **Konfidenz:** hoch (Typen, Hook, Texte, Technikbasis) / niedrig (UI-Layout).
 
 ---
+
+### 3.18 Ergänzte Work-Item-Funktionen (Ergänzungslauf)
+
+Die folgenden vier Funktionen gehören fachlich zum Work Management. Kein Cluster-Dokument hatte sie bisher spezifiziert (Abgrenzung siehe Hinweis unter der Feature-Tabelle in Kap. 2). Die Web-Belege WP-xx stehen in Kap. 3.19.
+
+#### WM-48 – Work-Item-Votes in der App (Up-/Downvotes)
+
+**Tier:** unklar. R1 hat keine Zeile dafür. Changelog vom 31.03.2026 „Vote on work items, link sub-work items across projects“ nennt keinen Plan (WP-02). Dok 20 PF-40 führt die Funktion als Repo-Spur mit Tier „unklar“.
+
+**Funktionsbeschreibung (UI & Verhalten):**
+1. **Ort:** Upvote- und Downvote-Steuerung im **Kopf der Work-Item-Detailansicht**, für **Work Items, Epics und Intake-Anfragen** (WP-02: „upvote or downvote work items, epics, and intake requests directly from the work item header“). Ein späterer Blogbeitrag beschreibt die Steuerung als „vote control on every work item, so planning has a tiebreaker“ (WP-02, Blog-Zusammenfassung; Datum Mai 2026 UNVERIFIZIERT).
+2. **Tooltips der Web-App** (im CE vorhanden, aber ungenutzt): „Click to upvote“, „Click to downvote“, „Click to view upvotes“, „Click to view downvotes“ (`issue.vote.*`, R6 Z. 266–271; `grep -rn "issue.vote" apps packages --include=*.tsx` liefert außerhalb der Locales keinen Treffer). Aus den Texten folgt: Der Pfeil-Button gibt die Stimme ab bzw. nimmt sie zurück. Ein zweiter Klickbereich, vermutlich der Zähler, öffnet die Liste der Abstimmenden. Die genaue Aufteilung von Button und Zähler ist UNVERIFIZIERT (O-16).
+3. **Abstimmungsregel (CE-Modell, maßgeblich):** Jeder Nutzer hat **höchstens eine Stimme je Work Item**: `IssueVote(issue, actor, vote ∈ {-1 DOWNVOTE, 1 UPVOTE}, Default 1)` mit Unique `(issue, actor)` bei `deleted_at IS NULL` (R13 Z. 654–671). Ein Wechsel von Up auf Down überschreibt die Stimme. Ein erneuter Klick auf die eigene Stimme nimmt sie zurück. Die Space-App setzt das so um (`handleVote`: existiert eine eigene Stimme mit gleichem Wert → `removeIssueVote`, sonst `addIssueVote`, `apps/space/components/issues/reactions/issue-vote-reactions.tsx` Z. 57–72). Der Server macht dabei `get_or_create` und setzt danach den Wert (`apps/api/plane/space/views/issue.py` Z. 637–652).
+4. **Darstellung (Referenz Space-App, CE):** zwei Buttons nebeneinander. Upvote mit Icon `TopArrowOutline`, Downvote mit `ArrowDownOutline`, jeweils mit Zähler (`text-13`). Eigene Stimme hervorgehoben: Upvote `border-accent-strong-200 text-accent-secondary`, Downvote `border-danger-strong text-danger-primary`, sonst `border-strong`. Größen `md` (`px-2 h-7`) und `sm` (`px-1 h-6 min-w-9`). Tooltip = Anzeigenamen der Abstimmenden, durch Komma getrennt (Grenze `VOTES_LIMIT = 1000`, danach „and {n} more“), ohne Stimmen „No upvotes yet“ / „No downvotes yet“ (hart kodiert, nicht in i18n) (`issue-vote-reactions.tsx` Z. 74–148). Nicht angemeldete Nutzer werden zum Login mit `next_path` geleitet (Z. 99, 134). Verwendet im Peek-Overview und im Kanban-Block der Space-App (`apps/space/components/issues/peek-overview/issue-reaction.tsx` Z. 29; `apps/space/components/issues/issue-layouts/kanban/block-reactions.tsx` Z. 37).
+5. **Activity:** Feld `vote`. Anlegen: Verb `updated`, `new_value = vote`, Kommentar „added the vote“. Entfernen: Verb `deleted`, `old_value = vote`, Kommentar „removed the vote“ (`apps/api/plane/bgtasks/issue_activities_task.py` Z. 1256–1313, Zuordnung Z. 1608–1609). Vote-Activities werden in allen Activity-Listen **ausgeblendet** (`~Q(field__in=["comment", "vote", "reaction", "draft"])`, `apps/api/plane/app/views/issue/activity.py` Z. 44; `apps/api/plane/app/views/workspace/base.py` Z. 356; `apps/api/plane/app/views/workspace/user.py` Z. 416; `apps/api/plane/api/views/issue.py` Z. 1741, 1799). Sie erzeugen **keine Benachrichtigung** (Ausschlussliste `apps/api/plane/bgtasks/notification_task.py` Z. 205–219).
+6. **Webhooks v2:** `workitem.vote.created` („A vote is cast on a work item“), `workitem.vote.deleted` („A vote is removed“) (D4 Z. 266–267).
+7. **Priorisierung:** „Prioritize what matters most based on team input“ (WP-02). Ob Listen nach Stimmen sortiert oder gefiltert werden können, ist UNVERIFIZIERT. Vorschlag: Display-Property und Sortierschlüssel „Votes“ (Saldo Up − Down) in List/Spreadsheet (O-16).
+8. **Öffentliche Boards (CE-Funktion, bleibt):** Schalter `DeployBoard.is_votes_enabled` (Default `False`, `apps/api/plane/db/models/deploy_board.py` Z. 36), gesetzt im Publish-Modal (`apps/api/plane/app/views/project/base.py` Z. 556, 583). Ist er aus, antwortet `POST` mit 400 „Votes are not enabled for this project board“ (`apps/api/plane/space/views/issue.py` Z. 627–631). Nicht-Mitglieder, die abstimmen, werden als `ProjectPublicMember` erfasst (Z. 643–650).
+
+**Datenmodell-Hinweise:** Tabelle `issue_votes` des CE unverändert übernehmen (`vote smallint CHECK (vote IN (-1, 1))`). In-App- und Board-Stimmen teilen sich die Tabelle. Serializer-Felder `issue, vote, workspace, project, actor, actor_detail` (`apps/api/plane/app/serializers/issue.py` Z. 698–703). Für Listen ein aggregierter Zähler (`upvote_count`, `downvote_count`) per Subquery bzw. materialisierter Spalte.
+
+**API-Hinweise:** CE-Board-Endpunkte `GET/POST/DELETE /api/public/anchor/{anchor}/issues/{issue_id}/votes/` (`apps/api/plane/space/urls/issue.py` Z. 53–55; Präfix `api/public/`, `apps/api/plane/urls.py` Z. 20). In der App ist kein interner Endpunkt belegt (UNVERIFIZIERT). Vorschlag analog zu Reactions: `GET/POST /api/workspaces/{slug}/projects/{project_id}/issues/{issue_id}/votes/` (Body `{vote: 1 | -1}`, Upsert) und `DELETE …/votes/` (eigene Stimme). Für Epics derselbe Pfad mit `epics/` (Epic-Service-Muster, WM-09), für Intake über das Work Item der Intake-Anfrage (`IntakeIssue.issue`).
+
+**UI-Hinweise:** Icons `TopArrowOutline/Filled`, `ArrowDownOutline/Filled` (R23, Kategorie `arrows`; im CE in der Space-App verwendet). In der Web-App fehlt jede Komponente.
+
+**CE-Status:** teilweise im CE – Modell, Activity, Board-Endpunkte und Board-UI vorhanden; In-App-Steuerung, interner Endpunkt und Sortierung fehlen. **Edge-Cases (CE-Bugs, nicht übernehmen):** (a) `IssueVotePublicViewSet.get_queryset` sucht das Board mit `workspace__slug=self.kwargs.get("anchor")` statt `anchor=…` (`apps/api/plane/space/views/issue.py` Z. 609–611). Die Liste ist dadurch praktisch immer leer; die Space-App liest Stimmen deshalb aus `vote_items` der Issue-Antwort (`apps/api/plane/space/views/issue.py` Z. 745, 860). (b) Der Wert `request.data.get("vote", 1)` wird nicht validiert (Z. 651); Django erzwingt `choices` beim Speichern nicht. Neuimplementierung: nur -1/1 zulassen, sonst 400.
+
+**Migrationshinweise:** Ein gemeinsamer Domain-Service `WorkItemVoting` für Board und App. Activity weiter schreiben, aber aus Feeds filtern (CE-Verhalten). Webhook-Events über die Outbox. Realtime-Aktualisierung der Zähler ist nicht belegt (UNVERIFIZIERT).
+
+**Quellen:** R6, R13, R23; `apps/space/components/issues/reactions/issue-vote-reactions.tsx`; `apps/api/plane/space/views/issue.py`; `apps/api/plane/bgtasks/issue_activities_task.py`; `apps/api/plane/bgtasks/notification_task.py`; D4; WP-02; Dok 20 PF-40. **Konfidenz:** hoch (Modell, Regeln, Board-Verhalten) / mittel (Position in der App) / niedrig (Sortierung, Voter-Liste).
+
+#### WM-49 – Kommentar-Antworten (Replies)
+
+**Tier:** unklar. R1 hat keine Zeile; die Zeile „Comments“ ist in allen Plänen ✓ (R1 Z. 99–109). Changelog v1.22.0 vom 30.12.2025: Nutzer können **Antworten auf Kommentare sehen und darauf reagieren** (WP-03). Dok 20 PF-39: Tier „unklar“.
+
+**Funktionsbeschreibung (UI & Verhalten):**
+1. Unter jedem Work-Item-Kommentar ein **Antwort-Thread**. Aktion „Reply“ (`common.actions.reply`, R8 Z. 627). Eingabe mit Placeholder „Add reply“ und Button „Add reply“ (`issue.comments.replies.create.placeholder|submit_button`, R6 Z. 116–119).
+2. **Toasts** (R6 Z. 120–150, Titel nicht belegt): Laden „Failed to fetch replies“; Anlegen „Reply created successfully“ / „Failed to create reply“; Bearbeiten „Reply updated successfully“ / „Failed to update reply“; Löschen „Reply deleted successfully“ / „Failed to delete reply“. Daraus folgt: Antworten werden **getrennt nachgeladen** (eigener Fetch) und sind bearbeit- und löschbar.
+3. **Reaktionen** auf Antworten (WP-03 „view and react to comment replies“); vermutlich dieselbe Emoji-Reaktionsleiste wie bei Kommentaren (`CommentReaction`, CE). UNVERIFIZIERT, ob identisch.
+4. **Tiefe:** nicht belegt. Vorschlag (UNVERIFIZIERT, O-17): eine Ebene. Eine Antwort auf eine Antwort hängt am Root-Kommentar; der Root zeigt „{n} replies“ und klappt den Thread auf.
+5. **Rechte (Vorschlag, analog zu Kommentaren):** Antworten darf, wer kommentieren darf. Bearbeiten und Löschen nur durch den Autor (WP-15: „You can delete only your own comments“). Sichtbarkeit `access` (`INTERNAL`/`EXTERNAL`) erbt die Antwort vom Root-Kommentar (UNVERIFIZIERT).
+6. **Benachrichtigung:** Ob der Autor des Root-Kommentars benachrichtigt wird, ist nicht belegt. Vorschlag: wie eine Erwähnung behandeln (Inbox-Eintrag an den Root-Autor und an die Thread-Teilnehmer).
+
+**Datenmodell-Hinweise:** CE-Feld `IssueComment.parent = ForeignKey("self", on_delete=CASCADE, null=True, related_name="parent_issue_comment")` (R13 Z. 475–477). Im CE ist es nicht schreibbar: interne API `COMMENT_WRITABLE_FIELDS = ("comment_html", "comment_json", "access")` mit dem Kommentar „actor, parent and the other relations are set by the server“ (`apps/api/plane/app/views/issue/comment.py` Z. 28–30, angewandt Z. 101 und 134); die Public-API-Create-Serializer-Felder enthalten kein `parent` (`apps/api/plane/api/serializers/issue.py` Z. 721–737). Der Antwort-Serializer der Public-API liefert `parent` aber mit aus, weil er nur `comment_stripped` und `comment_json` ausschließt (Z. 754–776). Der Frontend-Typ `TIssueComment` kennt kein `parent` (`packages/types/src/issues/activity/issue_comment.ts`). **Vorschlag EF Core:** `work_item_comment.parent_id` (nullable, self-FK) mit CHECK „Parent hat selbst kein Parent“ (eine Ebene), Index `(parent_id, created_at)`. Root-Listen filtern `parent_id IS NULL` und liefern `reply_count`. Löschen eines Roots löscht die Antworten mit (CASCADE beim Hard-Delete; beim Soft-Delete per Domain-Logik mit-markieren).
+
+**API-Hinweise:** Commercial API v1 `POST /api/v1/workspaces/{slug}/projects/{project_id}/work-items/{work_item_id}/comments/` und `PATCH …/comments/{comment_id}/` mit optionalem Body-Feld **`parent`** (String) (D1 `issue-comment/add-issue-comment.md` Z. 83–85; `issue-comment/update-issue-comment-detail.md` Z. 89–91; Scope `projects.work_items.comments:write`). Das Objekt-Schema der Doku listet `parent` nicht (D1 `issue-comment/overview.md`, Attribute). Interner Endpunkt für das getrennte Nachladen ist nicht belegt; Vorschlag `GET /api/workspaces/{slug}/projects/{project_id}/issues/{issue_id}/comments/{comment_id}/replies/`. Anlegen über den bestehenden Kommentar-Endpunkt mit `parent`. Der Webhook `workitem.comment.created` gilt vermutlich auch für Antworten; das Beispiel-Payload enthält kein `parent` (D4 Z. 374–399; UNVERIFIZIERT).
+
+**UI-Hinweise:** Icon `ReplyOutline/Filled` (R23 `arrows`). Im CE ist `ReplyOutline` bereits als Markierungs-Icon im `CommentBlock` eingebunden (`apps/web/components/comments/comment-block.tsx` Z. 11, 42). Layout des Threads (Einrückung, Auf-/Zuklappen) UNVERIFIZIERT → Referenz-Screenshots (O-04).
+
+**CE-Status:** teilweise im CE (Datenfeld vorhanden, gesperrt; Texte vorhanden; keine UI, kein Endpunkt). **Quellen:** R1, R6, R8, R13, R23; D1, D4; WP-03, WP-15; Dok 20 PF-39. **Konfidenz:** hoch (Texte, Datenfeld, API-Feld) / niedrig (Layout, Tiefe, Benachrichtigung).
+
+#### WM-50 – Projektübergreifende Sub-Work-Items
+
+**Tier:** unklar. Changelog vom 31.03.2026: „Work items in one project can now be added as sub-work items of work items in a different project“ (WP-02), ohne Planangabe. Nicht in R1.
+
+**Funktionsbeschreibung (UI & Verhalten):**
+1. Ein Work Item aus Projekt B kann **Sub-Work-Item** eines Work Items in Projekt A werden. Sub-Work-Items können neu angelegt oder als bestehende Work Items verknüpft werden (WP-02, Zusammenfassung der Sub-Work-Item-Doku).
+2. **CE-Ausgangslage (maßgeblich für die Lücke):**
+   - Der Server verlangt dasselbe Projekt: Ein `parent` ist nur gültig, wenn er im Projekt des Kindes liegt, sonst „Parent is not valid issue_id please pass a valid issue_id“ (`apps/api/plane/app/serializers/issue.py` Z. 188–196; `apps/api/plane/api/serializers/issue.py` Z. 159–168).
+   - `POST …/issues/{issue_id}/sub-issues/` übernimmt nur IDs aus dem Projekt der URL (`apps/api/plane/app/views/issue/sub_issue.py` Z. 210–248). `GET` listet nur Kinder im selben Projekt (Z. 38–44).
+   - UI: Im Modal „Add existing“ für Sub-Work-Items fehlt der Schalter „Workspace level“. Das Relations-Modal hat ihn (`workspaceLevelToggle`; Tooltip „Toggle workspace level search“, Label `common.workspace_level` „Workspace level“) (`apps/web/components/issues/issue-detail-widgets/issue-detail-widget-modals.tsx` Z. 177–196; `apps/web/components/core/modals/existing-issues-list-modal.tsx` Z. 219–239). Neue Sub-Work-Items entstehen mit gesperrter Projektauswahl (`isProjectSelectionDisabled`, `issue-detail-widget-modals.tsx` Z. 172).
+   - Die Suche kann workspaceweit suchen (`workspace_search`, `apps/api/plane/app/views/search/issue.py` Z. 102, 123).
+3. **Zielverhalten (Vorschlag, UNVERIFIZIERT, O-18):** (a) „Add existing“ für Sub-Work-Items bekommt den Schalter „Workspace level“ wie Relations. (b) „Create new“ erlaubt die Wahl des Projekts. (c) Die Sub-Work-Item-Liste zeigt Identifier mit Projektpräfix. Kinder aus Projekten, in denen der Nutzer kein Mitglied ist, erscheinen nur als Identifier ohne Inhalt. (d) „Add parent“ (Parent-Auswahl, `apps/web/components/issues/parent-issues-list-modal.tsx`, im CE mit `workspace_search: false`, Z. 84) bekommt ebenfalls den Workspace-Schalter. (e) Die Hierarchieregeln (WM-02) und die Zyklus-Prüfung gelten projektübergreifend. (f) Der Fortschritt des Parents zählt alle Kinder unabhängig vom Projekt.
+4. **Abgrenzung:** Relationen und Dependencies dürfen schon im CE Projekte überschreiten (R14 `relation.py` Z. 257–264; WM-26).
+
+**Datenmodell-Hinweise:** Keine Schemaänderung nötig; `Issue.parent` ist ein workspaceweit gültiger FK (R13 Z. 114–120). Zu ändern: Validierung (gleicher Workspace statt gleiches Projekt) und Sub-Issue-Abfragen (Filter `parent_id` plus Mitgliedschaftsprüfung je Kind-Projekt). Rechte: Wer verknüpft, muss in beiden Projekten Work Items bearbeiten dürfen (Vorschlag).
+
+**API-Hinweise:** Kein öffentlicher Endpunkt belegt. MCP setzt `parent` direkt über `workitem create|update` (D2 Z. 84–85). Vorschlag: bestehende Sub-Issue-Endpunkte akzeptieren `sub_issue_ids` aus beliebigen Projekten des Workspace; Antwort mit `project_id` je Kind.
+
+**UI-Hinweise:** Icon `SubWorkItemsOutline/Filled` (R23 `project-features`, im CE ungenutzt); Texte `common.sub_work_items` „Sub-work items“ (R8 Z. 514), `common.add_existing` „Add existing“ (R8 Z. 569), `common.workspace_level` (R8 Z. 516).
+
+**CE-Status:** fehlt (aktiv durch Validierung verhindert). **Quellen:** R8, R13, R14, R23; D2; WP-02. **Konfidenz:** hoch (CE-Grenzen) / mittel (Existenz) / niedrig (Detailverhalten).
+
+#### WM-51 – Workspace Governance für States und Labels (inkl. Label-Scopes)
+
+**Tier:** Enterprise Grid. Belege: Workspace Governance nur Enterprise Grid, Self-hosted ab v3.2.0, irreversibel (Dok 25 F07 mit W3/W4); Release v3.2.0 vom 10.09.2026 „lets admins set labels, states, and workflows once for every project“, Aktivierung dauerhaft (WP-05).
+
+**Funktionsbeschreibung (UI & Verhalten):**
+1. Der Workspace-Admin schaltet **Governance** ein. Danach haben **alle Projekte dieselben States, Labels und Workflows**. Sie werden einmal auf Workspace-Ebene definiert und von allen Projekten geerbt. **Projekt-Admins können sie im Projekt nicht mehr bearbeiten** (WP-05; Dok 25 F07). Die Aktivierung ist **nicht umkehrbar** (WP-05; Dok 25 F07).
+2. **Aufteilung der Spezifikation:** Workflow-Teil (Modi `any`/`constrained`/`required`, Pins, effektiver Workflow) → Dok 25 F07. Typ-/Property-Vokabular → WM-07. **States und Labels → hier.**
+3. **Label-Katalog mit Scopes:** Im EE gibt es einen „governed label catalog“ und einen `scope` je Label-Auswahl: Work Item, Release, Initiative, Project (Kommentar „EE switches on a `scope` (work item / release / initiative / project) and a governed label catalog“, `apps/web/components/dropdowns/label/label-select.tsx` Z. 48–49). Der CE-Baustein nimmt stattdessen eine `projectId`. Die Scopes entsprechen den getrennten Katalogen Initiative-Labels (WM-12), Release-Labels (WM-15) und Project Labels (WM-38).
+4. **States unter Governance:** Workspace-Katalog von States mit Gruppen `backlog`, `unstarted`, `started`, `completed`, `cancelled`, `triage` (Gruppen-Enum laut D2 Z. 393). Die States der Projekte werden durch den Katalog ersetzt bzw. darauf abgebildet. Die Abbildung bestehender Projekt-States beim Einschalten ist nicht belegt (UNVERIFIZIERT; Vorschlag: Mapping-Dialog je Projekt, gleichnamige States automatisch, sonst Default-State der gleichen Gruppe – analog „Items outside the pinned workflow go to its default state“, Dok 25 F07).
+5. **Sperren im Projekt:** Projekt-Settings → States und Labels werden schreibgeschützt (Hinweis „managed at workspace level“, Text UNVERIFIZIERT). Unter Governance sperrt das Original im Projekt zusätzlich Templates, Automationen und Recurring Work Items (Dok 25 F07, W33).
+6. **Plane-AI-Labelvorschläge** (Changelog 31.07.2026, WP-05) gehören zu Cluster P09 (Dok 28) und sind hier nur Querbezug.
+7. „Workspace labels“ als eigenständige Funktion (Changelog-Titel „2026-09-15 … workspace labels“, Dok 26 W36) ließ sich in diesem Lauf nicht als eigener Eintrag bestätigen; die Suche fand v3.2.0 mit Governance-Labels (WP-05). Ob Workspace-Labels auch **ohne** Governance nutzbar sind, ist UNVERIFIZIERT (O-19).
+
+**Datenmodell-Hinweise:** Das CE-Label-Modell ist bereits zweistufig: `Label(WorkspaceBaseModel)` mit `project` nullable, Unique `name` bei `project IS NULL` und Unique `(project, name)` bei `project IS NOT NULL` (`apps/api/plane/db/models/label.py` Z. 11–40; `apps/api/plane/db/models/workspace.py` Z. 185–195). **CE-Bug (nicht übernehmen):** Der Unique-Constraint für `project IS NULL` enthält kein `workspace` – Workspace-Labels wären instanzweit eindeutig. Neuimplementierung: `(workspace_id, lower(name)) WHERE project_id IS NULL AND deleted_at IS NULL`. Der CE-Endpunkt `GET /api/workspaces/{slug}/labels/` liefert nur Projekt-Labels der Projekte des Nutzers (`apps/api/plane/app/views/workspace/label.py`). `State` ist `ProjectBaseModel`, also immer projektgebunden (`apps/api/plane/db/models/state.py` Z. 79, Unique Z. 104). **Vorschlag EF Core:** `label.scope ∈ {work_item, release, initiative, project}`, `label.project_id` nullable (NULL = Katalog); `workspace_state` (Katalog) + `project_state_binding(project_id, workspace_state_id)` oder `state.project_id` nullable; Workspace-Einstellung `governance_enabled_at` (irreversibel, gemeinsam mit Dok 25 F07).
+
+**API-Hinweise:** Nicht dokumentiert für States/Labels. Dok 25 F07 belegt für Workflows Fehlercodes wie 409 `states_managed_at_project` (W14). Vorschlag: Projekt-Endpunkte für States/Labels antworten unter Governance mit 409 `states_managed_at_workspace` bzw. `labels_managed_at_workspace` (Namensschema analog `templates_managed_at_workspace`, Dok 25 Z. 838); Katalog-Endpunkte `GET/POST /api/workspaces/{slug}/workspace-labels/`, `…/workspace-states/` (Pfade UNVERIFIZIERT).
+
+**UI-Hinweise:** Workspace-Settings-Seite für Governance (Ort und Texte nicht im CE-i18n; O-04). Icons `LabelsOutline/Filled`, `StateOutline/Filled` (R23 `properties`).
+
+**CE-Status:** teilweise im CE (Label-Schema erlaubt Workspace-Labels; keine Endpunkte, keine UI, keine Governance). **Quellen:** `apps/api/plane/db/models/label.py`; `apps/api/plane/db/models/state.py`; `label-select.tsx`; D2; WP-05; Dok 25 F07; Dok 27 Z. 704. **Konfidenz:** mittel (Existenz, Irreversibilität) / niedrig (State-Mapping, UI).
+
+---
+
+### 3.19 Nachrecherche-Nachträge zu WM-01 … WM-47 (WebSearch-Ergänzungslauf)
+
+**Methode:** 14 WebSearch-Abfragen am 2026-10-22. Die Spalte „Befund“ gibt die Suchmaschinen-Zusammenfassung der genannten Seiten wieder; die Seiten selbst waren nicht abrufbar (Kap. 1.1). Konfidenz der Befunde daher **mittel**. Wo ein Befund einer Aussage in Kap. 3 widerspricht, gilt der Befund; die Kapitel-3-Stelle ist in der letzten Spalte genannt.
+
+| ID | Quelle (URL) | Befund | betrifft | Wirkung auf dieses Dokument |
+|---|---|---|---|---|
+| WP-01 | https://docs.plane.so/work-item-types ; https://plane.so/work-item-types | Seite mit Label „Pro“. Work Item Types lassen sich in einem Projekt nach dem Einschalten **nicht wieder abschalten**; einzelne Typen können jederzeit deaktiviert werden. Im **Enterprise Grid** werden Typen auf **Workspace-Ebene** statt im Projekt verwaltet („Workspace Work Item Types“). Sieben eingebaute Property-Typen: **Text, Number, Dropdown, Boolean, Date, Member picker, URL**. Properties legen Projekt-Admins unter einem Typ an (Titel, Beschreibung, Typ, Mandatory, Active). Empfehlung der Doku: vor dem Löschen einer Property „Active“ ausschalten, um Datenverlust zu vermeiden. | WM-01, WM-03, WM-04, WM-05, WM-07 | Bestätigt Irreversibilität (WM-01) und Löschdialog-Logik (WM-03). **WM-04:** „URL“ gehört zu den sieben UI-Typen; ein Label dafür fehlt im CE-i18n (Vorschlag „URL“). **WM-07:** Workspace-Level-Typen laut Doku Enterprise Grid, laut R1 Business (Tier-Konflikt, O-01). |
+| WP-02 | https://plane.so/changelog/2026-03-31-vote-on-work-items-link-sub-work-items-across-projects ; https://plane.so/blog/new-work-item-detail-view-custom-relations-and-more | Up-/Downvotes an Work Items, Epics und Intake-Anfragen im Kopf der Work-Item-Ansicht („Prioritize what matters most based on team input“). Work Items eines Projekts können Sub-Work-Items eines Work Items in einem anderen Projekt werden. Ein Blogbeitrag beschreibt eine „vote control on every work item … tiebreaker“ neben Subscribers und Custom Relations. | WM-48, WM-50, WM-27 | Grundlage für WM-48 und WM-50 (Kap. 3.18). |
+| WP-03 | https://plane.so/changelog/release-v1-22-0-clean-pages-connected-work-smoother-editing | v1.22.0 (30.12.2025): Antworten auf Kommentare sehen und darauf reagieren; Work Items mit „implements“ / „implemented by“ verknüpfen. | WM-49, WM-27 | Grundlage für WM-49. **WM-27:** „Implements/Implemented by“ sind ab v1.22.0 belegt (Enum im CE vorhanden, R13 Z. 278, 290). |
+| WP-04 | https://plane.so/blog/introducing-releases | Blog vom 13.05.2026: Releases sind ein Workspace-Artefakt, das Work Items **aus mehreren Projekten** unter einer Version bündelt, den Abschluss verfolgt und beim Ausliefern ein Changelog veröffentlicht. Zwei neue Property-Typen: **Release picker** und **Formula field**. Das Verhalten des Formula-Felds beschreibt die Zusammenfassung nicht. | WM-04, WM-06, WM-15 | Bestätigt WM-15 Punkt 1–3 und die Typen in WM-04/WM-06. Formel-Semantik bleibt offen (O-06). |
+| WP-05 | https://plane.so/changelog/release-v3-2-0-workspace-governance-ai-memory-pii-scanning-and-more ; https://plane.so/changelog/2026-07-31-skills-plane-ai-richer-pages-audit-logs | v3.2.0 (10.09.2026, Self-hosted): **Workspace Governance** – Admins legen Labels, States und Workflows einmal für alle Projekte fest; Einschalten ist dauerhaft; Projekt-Admins können diese Elemente im Projekt nicht mehr bearbeiten. 31.07.2026: Plane AI schlägt Labels für Work Items anhand von Titel und Beschreibung vor. | WM-51, WM-07 | Grundlage für WM-51. Labelvorschläge → Cluster P09 (Dok 28). |
+| WP-06 | https://docs.plane.so/customers ; https://university.plane.so/courses/202-the-power-relay/02-intro-to-customers.html ; https://plane.so/customer-requests ; https://plane.so/blog/introducing-plane-business | Customers ist laut Plane University ein **Business**-Feature. Aktivierung: Workspace Settings → Tab „Customers“ → Schalter oben rechts bzw. Button „Enable Customers“. Standardfelder: Name, Email, Website, Industry, Stage, Contract status, Revenue; eigene Properties möglich. Requests werden im Kundendatensatz angelegt, mit Quell-URL, und mit **Work Items und Epics** verknüpft. | WM-16, WM-17, WM-18 | Bestätigt Felder und Tier Business (Konflikt mit Dok 20 PF-41 „Pro“ bleibt dokumentiert, O-01). **WM-16:** Button-Text „Enable Customers“ ergänzt die UI-Texte. **WM-17:** Requests können auch mit Epics verknüpft werden (Epics sind Work Items, WM-09). |
+| WP-07 | https://docs.plane.so/core-concepts/projects/milestones ; https://university.plane.so/courses/201-the-growth/07-intro-to-milestones.html ; https://plane.so/changelog/release-v-1-16-0-introducing-milestones-and-recurring-cycles | Milestones sind **Pro**. Projekt-Admins schalten sie unter Project Settings → Features im Abschnitt **„Work management“** ein. Danach erscheint auf der **Projekt-Overview-Seite** ein Abschnitt „Milestones“. Anlegen dort mit **Titel, Beschreibung, Zieldatum und verknüpften Work Items**. Jeder Milestone zeigt einen **Fortschritt in Prozent** aus den verknüpften Work Items; der Balken steigt, wenn Items abgeschlossen **oder abgebrochen** werden. Im **Timeline-Layout** erscheinen Milestones als **gestrichelte Linien** am Fälligkeitsdatum. Ein Milestone kann Work Items, Cycles oder Module bündeln; laut University auch Epics. | WM-14, WM-39 | **WM-14:** Tier Pro (Tabelle angepasst). Statusableitung: Fortschritt = (completed + cancelled) / alle verknüpften Items; `milestone-done` bei 100 %, `milestone-not-started` bei 0 %, sonst `milestone-in-progress` (Ableitung, UNVERIFIZIERT). Feld **Beschreibung** fehlt in der REST-API (D1) → O-11. Abschnittsname „Work management“ = `common.work_management` (R8 Z. 223). |
+| WP-08 | https://docs.plane.so/releases | Seitenkopf „Releases **Business**“. Aktivierung: Workspace Settings → Releases → Schalter „Enable Releases“. | WM-15 | **WM-15:** Tier Business (Tabelle angepasst); Schaltertext „Enable Releases“. Ein Workspace-Feature-Schlüssel `releases` ist in D1/D2 nicht belegt (`workspace update_features` kennt nur sechs Schlüssel, D2 Z. 427–431) → O-09. |
+| WP-09 | https://docs.plane.so/intake/intake-forms ; https://university.plane.so/courses/201-the-growth/02-intro-to-intake-forms.html ; https://plane.so/changelog/2025-12-01-workspace-navigation-custom-forms-threads ; https://plane.so/changelog/cloud-mar-19-2025 ; https://github.com/makeplane/docs/pull/375 | Schalter „Forms“ in den Projekt-Features erzeugt eine **eindeutige öffentliche URL**; bei Kompromittierung über **„Renew“** neu erzeugen. **Standardformular** ohne Konfiguration mit Feldern **Name, Email, Title, Description** des Einreichers. **Eigene Formulare:** Features → Intake → Forms → „+“ neben „Create Forms using work item types“, Titel, Work Item Type, Auswahl der Properties, **Vorschau**, Speichern erzeugt die URL; jedes Formular hat einen eigenen Link; festlegbar, **welche Felder sichtbar, welche Pflicht** sind und in **welcher Reihenfolge**. Einreichung erzeugt ein Work Item im Projekt-Intake mit gesetztem Typ und Feldern. Intake Forms laut Changelog März 2025 im Business-Plan. | WM-44 | **WM-44:** Ergänzt Punkte 1–4: Default-Form-Felder, Renew-Funktion, Vorschau, Pflicht-/Reihenfolge-Konfiguration je Formular. Datenmodell-Vorschlag erweitern: `intake_form_field(form_id, property_id NULL, field_key ∈ {name, email, title, description, custom}, is_required, sort_order)`; „Renew“ erzeugt neuen `anchor`, alter Link wird ungültig. |
+| WP-10 | https://docs.plane.so/core-concepts/issues/time-tracking ; https://docs.plane.com/changelog/2025-03-13-easily-log-time-with-time-tracking ; https://university.plane.so/courses/201-the-growth/16-intro-to-time-tracking.html ; https://github.com/makeplane/plane/issues/8045 | Time Tracking ist **Pro**; Projekt-Admins schalten es in den Projekt-Settings ein. Erfassung am Work Item mit Stunden, Minuten, optionaler Beschreibung; „Tracked time“ aktualisiert sich. Einträge lassen sich in der Activity bearbeiten und löschen; Löschen ist endgültig. Worklogs in den Workspace-Settings, filterbar nach User, Projekt, Zeitraum. **Admins können Zeit im Namen von Mitarbeitenden und Externen erfassen**; keine Payroll-Anbindung, Zweck vor allem Compliance. Zu **Timesheet-Approvals** fand die Suche keine Plane-Doku. GitHub-Issue #8045 wünscht projektbezogene Zeitansichten/Exporte (Status unbekannt). | WM-32, WM-33, WM-34 | Bestätigt WM-32/33. **WM-32 Punkt 5:** Erfassung für Dritte ist Admins vorbehalten (Vorschlag: Projekt-Admin und Workspace-Admin; O-08). **WM-34:** weiterhin unbelegt (R-08). Tier-Konflikt One (R1) vs. Pro (Doku) → O-01. |
+| WP-11 | https://plane.so/state-of-projects-and-updates | Marketingseite: eigene „States Of Projects“ je Workspace, Fortschritt aller Projekte, Updates aus einer Stelle, Echtzeit-Updates, Projekt-Leads, Start- und Enddaten. | WM-37, WM-40 | Bestätigt Projekt-Lead/Daten als Projekt-Properties bei aktivem Feature (WM-37 Punkt 3). |
+| WP-12 | https://docs.plane.so/core-concepts/issues/timeline-dependency ; https://university.plane.so/courses/201-the-growth/06-intro-to-timeline-dependencies.html ; https://plane.so/changelog/self-hosted-v1_6_0 | Dependency-Linien nur, wenn Work Items **Start- und Fälligkeitsdatum** haben. Verbindung durch **Ziehen eines Konnektors** im Timeline-Layout oder über den Relations-Abschnitt. Drei Arten: **Finish-to-Start** = Blocking/Blocked by, **Start-to-Start** = Starts before/after, **Finish-to-Finish** = Finishes before/after. Verletzte Dependencies als **rote Linien**. Beim Ziehen passen sich **abhängige Work Items automatisch** an. Eingeführt in v1.6.0 (Dezember 2024), **Pro**. | WM-26 | **WM-26 Punkt 3 korrigiert** (siehe dort). Tier Pro bestätigt. |
+| WP-13 | https://university.plane.so/courses/201-the-growth/05-intro-to-initiatives.html ; https://university.plane.so/courses/301-the-setup/02-intro-to-plane-cloud.html ; https://plane.so/growing-teams | Initiatives laut Kurs 05 **Pro**; eine andere University-Seite listet Epics und Initiatives unter Business (Widerspruch). Aktivierung: Workspace Settings → Tab „Initiatives“ → „Enable Initiatives“; nur Admins ändern Workspace-Settings. Initiativen stehen über Projekten und Epics; Projekte und Epics aus dem ganzen Workspace verknüpfbar; aggregierter Fortschritt; States **Draft, Planned, Active, Completed, Closed**. growing-teams: bündelt verknüpfte Projekte, Work Items, Fortschritt und Status-Updates. Sub-Initiativen fand die Suche nicht. | WM-11 | **WM-11 Punkt 4:** Die UI-Labels der States lauten laut University wie die API-Werte („Active“, „Closed“), nicht „In progress“/„Cancelled“ wie die Propel-Icon-Namen nahelegen → Labels „Draft“, „Planned“, „Active“, „Completed“, „Closed“ verwenden (O-15). Schaltertext „Enable Initiatives“. |
+| WP-14 | https://university.plane.so/courses/201-the-growth/11-intro-to-project-states.html | Project States laut Kurs **Pro**. Einschalten unter Workspace Settings → **Project States**. Sechs Defaults: Draft, Planning, Execution, Monitoring, Completed, Cancelled. States umbenennen und Beschreibung ändern auf derselben Seite; eigene States über Button **„Add State“** (Beispiele On Hold, In Review, Beta, Launched, Sunsetting). Nutzung zum Filtern, Gruppieren, Portfolio-Management. | WM-37 | Bestätigt WM-37 Punkt 2 (Defaults, erweiterbar) und ergänzt „Add State“, Umbenennen, Beschreibung. Die Gruppenfrage bleibt offen (O-20). |
+| WP-15 | https://docs.plane.so/communication-and-collaboration/comments-and-activity ; https://docs.plane.so/introduction/tutorials/collaborate-on-work-items | Activity lässt sich auf **Property-Updates, Kommentare oder Worklogs** filtern. Nur eigene Kommentare sind löschbar; Löschen ist endgültig. Direktlink auf einen Kommentar kopierbar. Threaded Replies bestätigt die Doku-Zusammenfassung nicht. | WM-32, WM-49 | Bestätigt den Worklog-Filter in der Activity (WM-32 Punkt 4) und die Autor-Regel für WM-49. |
+
+**Abfragen ohne verwertbares Ergebnis:** (1) Roll-ups/Workspace-Level-Properties – keine Doku zu Roll-ups gefunden (WM-08 bleibt „niedrig“). (2) „baselines“, „custom SLAs“, „auto-assignment modules round robin capacity“ – nur Fremdprodukte (WM-31, WM-42, WM-43 bleiben unbelegt). (3) Erste Release-Abfrage – nur eine Developer-Docs-PR „All releases“ auf einem Drittspiegel, ohne Bezug zum Feature.
+
+---
+
+## 4. Offene Punkte / Unklarheiten / Rückfragen
+
+Die IDs werden in Kap. 3 referenziert. **O-xx** = fachliche oder quellenseitige Unklarheit mit Default-Vorschlag, den Implementierungs-Agenten ohne Rückfrage verwenden dürfen. **R-xx** = Entscheidung des Auftraggebers nötig; bis zur Entscheidung gilt der genannte Default.
+
+### 4.1 Unklarheiten (O-xx)
+
+| ID | Thema | Unklarheit | Betrifft | Default-Vorschlag | Belege |
+|---|---|---|---|---|---|
+| O-01 | Tier-Widersprüche | R1 ist älter als die öffentliche Doku. Konflikte: WM-07 (R1 Business, Doku Enterprise Grid), WM-11 (R1 Pro, University Pro **und** Business), WM-16 (Pricing Pro, University Business), WM-32 (R1 One, Doku Pro). | WM-07, WM-11, WM-16, WM-32 | Ohne Folgen für die Umsetzung (ADR-001: alles aktiv). In `P04.author.json` steht der niedrigste belegte Plan; der Konflikt steht in `tier_details`. | R1; WP-01, WP-06, WP-10, WP-13; Dok 20 PF-41 |
+| O-02 | Interne Web-API | Für Typen, Properties, Optionen, Werte, Worklogs, Timesheets, Milestones, Releases, Customers, Initiatives, Updates, Project States/Labels, Intake-Forms, Votes, Replies und Governance sind die internen Pfade der Web-App nicht belegt. Belegt sind nur die Pfade, die das CE-Frontend schon aufruft (Anhang A.3). | alle | Interne API nach CE-Schema `/api/workspaces/{slug}/…` bzw. `/api/workspaces/{slug}/projects/{project_id}/…`; Feldnamen und Semantik aus der Public-API v1 (Anhang A.1) übernehmen; die Public-API v1 zusätzlich 1:1 bereitstellen (ADR-003). | Anhang A; Dok 21 |
+| O-03 | Fehler in der Commercial-API-Doku | (a) Epic-Kinder-Scope `projects.work-items:read` mit Bindestrich (D1 `epics/list-epic-work-items.md`); (b) Property-curl sendet `name` statt `display_name`; (c) „Values Object“-Beispiel zeigt ein Option-Objekt; (d) Customer-Request-Antwortbeispiele fehlerhaft (Dok 21 §1.3); (e) Milestone-Endpunkte ohne Scope-Angabe in D1, Scopes nur in D5; (f) Initiative-Liste: REST mit Cursor, MCP „does not paginate“ (D2 Z. 296); (g) Cycle-Transfer: MCP „moves everything“ (D2 Z. 249) vs. CE nur offene State-Gruppen (R22); (h) Pfadparameter mal `{slug}`, mal `{workspace_slug}`. | WM-03, WM-09, WM-11, WM-14, WM-17, WM-23 | (a) Scope `projects.work_items:read`; (b) `display_name`; (c) Value-Objekt laut Feldliste; (d) Schema laut Feldliste; (e) Scopes `projects.milestones:read/write`; (f) Cursor-Pagination mit `per_page`, ohne Parameter alle (wie MCP); (g) CE-Verhalten; (h) einheitlich `{workspace_slug}`. | D1, D2, D5; Dok 21 §1.3, §8 |
+| O-04 | UI-Referenz für 1:1 | Für diese UIs gibt es im CE weder Komponenten noch vollständige Texte: Customers (alle Seiten), Releases (alle), Initiatives (Liste, Detail, Board), Milestones (Overview-Abschnitt, Detail), Property-Formular (aktuelle Generation: inline oder Modal), Labels der Property-Typen Relation/Email/File/Release picker/URL, Property-Zeilen in Modal und Sidebar, Duplicate-Panel, Beitrittsanfrage bei Private-Projekten, Project Overview, Project-States-Seite, Worklogs-Seite (aktuelle Generation), öffentliche Intake-Form-Seite, Governance-Seite, Votes in der App, Reply-Thread, Hierarchie-Editor. | WM-01 … WM-51 | Bis Screenshots vorliegen: Layout aus den Developer-Docs-Screenshots (WM-01, WM-03, WM-32, WM-33), sonst nach CE-Mustern (Settings-Seiten mit `SettingsHeading`, Listen wie Cycles/Modules, Peek wie Work Items). Fehlende Texte in Englisch ergänzen und als „nicht original“ markieren. **Empfehlung:** Zugang zu einer Commercial-/Trial-Instanz für Referenz-Screenshots (gleiche Bitte wie Dok 20 OP-05). | R3–R10; Dok 20 OP-05 |
+| O-05 | Activity-Texte für EE-Felder | Die Activity-Darstellung für Custom-Property-Werte (`ISSUE_ADDITIONAL_PROPERTIES_ACTIVITY`), Worklogs (`WORKLOG`), Typwechsel, Milestone-, Release- und Customer-Zuordnung hat keine Texte im CE. | WM-03, WM-14, WM-15, WM-16, WM-32 | Muster der CE-Activity-Helfer übernehmen (`apps/web/components/common/activity/helper.tsx`): „{actor} set {property} to {value}“, „{actor} changed the work item type from {old} to {new}“, „{actor} logged {duration}“ (letzteres belegt durch Screenshot `log-work.webp`), „{actor} added this work item to milestone {name}“. | `packages/types/src/issues/activity/base.ts` Z. 80–88 |
+| O-06 | Formula-Semantik | Operatoren `+ - * / &` und `{Field Name}` sind belegt; Funktionen, Typ-Koerzierung, leere Werte, Division durch 0, referenzierbare Standardfelder und Rundung nicht. | WM-06 | Grammatik aus WM-06; leere Zahl = 0, leerer Text = ""; Division durch 0 = leer; nur Custom Properties desselben Typs referenzierbar; Ergebnis `number` (2 Nachkommastellen in der Anzeige) oder `text`. | R3 Z. 180–205; WP-04 |
+| O-07 | Roll-ups | Nur der Matrix-Text „Workspace-level properties and roll-ups“ ist belegt; auch WP-Suchen fanden nichts. | WM-08 | Roll-up-Property an Eltern-Typen mit Aggregation Sum/Avg/Min/Max/Count/Count-not-empty über direkte Kinder, read-only, Neuberechnung per Domain-Event (Vorschlag aus WM-08). | R1 Z. 222–223 |
+| O-08 | Rechte-Matrix | Nicht belegt: Wer Typen/Properties je Projekt anlegt (Projekt-Admin vs. Workspace-Admin), ob Guests/Commenter Zeit loggen, wer Zeit für Dritte erfasst (WP-10: Admins), wer Timesheets anderer sieht, wer Customers/Releases/Initiatives bearbeitet, wer abstimmt (Guests?). | WM-01, WM-03, WM-15, WM-16, WM-32, WM-33, WM-48 | Konfiguration = Projekt-Admin (Projekt-Ebene) bzw. Workspace-Admin/Owner (Workspace-Ebene, Customers, Releases, Initiatives, Governance); Nutzung = Member/Contributor; Guests dürfen loggen und abstimmen nur an eigenen bzw. sichtbaren Work Items; Zeit für Dritte = Projekt-Admin; Timesheets aller = Workspace-Admin, Member nur eigene. Abstimmen mit Dok 21 §8 O15. | Kap. 3.0.4; WP-10 |
+| O-09 | Releases: Picker-Ziel und Feature-Schalter | Compose: Release picker referenziert einen Release-**Tag**; MCP: `relation_type: RELEASE` (Release). Ein Workspace-Feature-Schlüssel für Releases fehlt in D1/D2, obwohl die Doku „Enable Releases“ zeigt (WP-08). | WM-04, WM-15 | Picker referenziert das **Release** (`release.id`), zeigt Name und ggf. Tag-Version. Workspace-Schalter `releases` ergänzen (Default aus). | D2 Z. 212; D3 Z. 1109; WP-08 |
+| O-10 | Estimates | MCP: „a project has at most one estimate“ (D2 `project_estimate retrieve`), zugleich `link` „makes that estimate the project's active one“ (D2 Z. 224). Time-Werte sind laut Vorschau Minuten, das Template „Hours“ hat aber Werte 1–6. | WM-35 | Mehrere Estimate-Systeme je Projekt speicherbar (CE-Modell erlaubt es), genau eines aktiv (`Project.estimate`); `retrieve` liefert das aktive. Time-Werte in Minuten, Template-Werte 60…360, Anzeige „1h“…„6h“. | D2 Z. 216–230; `packages/constants/src/estimates.ts` |
+| O-11 | Milestones | Beschreibung laut WP-07 vorhanden, in der REST-API (D1) nicht. Kardinalität je Work Item (Gruppierung `milestone_id` spricht für 1). Zuordnung von Cycles, Modulen, Epics laut WP-07 möglich, API-seitig unbelegt. | WM-14 | Feld `description_html` ergänzen; höchstens ein Milestone je Work Item; Cycles/Module nicht direkt zuordnen, sondern nur über ihre Work Items (Fortschritt), Epics wie Work Items (Epics sind Work Items). | D1 `milestones/*`; D2 Z. 48, 91, 286; WP-07 |
+| O-12 | Intake Forms | Anti-Spam-Mechanismus, Felder des Standardformulars im Datenmodell, Absender-Speicherung, Datei-Uploads im Formular, Bestätigungsseite nach Absenden. | WM-44 | Standardfelder Name/Email/Title/Description (WP-09); Absender in `IntakeIssue.extra` (`{name, email}`) und `source_email`; Rate-Limit je IP und Honeypot (airgapped-tauglich); Bestätigungstext „Thank you“-Seite (Text UNVERIFIZIERT); keine Uploads. | R4 Z. 377–404; WP-09 |
+| O-13 | Auto-Rollover „to the default project state“ | R1 nennt zwei Ziele: nächster Cycle **oder** „default project state“. | WM-28 | Nur „nächster Cycle“ umsetzen (einziger UI-Text R4 Z. 491–494); existiert kein nächster Cycle, bleiben die Items im abgeschlossenen Cycle. | R1 Z. 249–259 |
+| O-14 | Private-Projekte (Beitritt mit Genehmigung) | Wert des `network`-Enums für „Private“ (Lücke `1`), Texte und Ablauf der Beitrittsanfrage, Benachrichtigung der Admins. | WM-36 | `network = 1`; Ablauf und Datenmodell aus WM-36; Inbox-Benachrichtigung an Projekt-Admins. | R12 Z. 30–36; D2 Z. 379 |
+| O-15 | Initiative-States und Sub-Initiativen | UI-Labels der States (WP-13: „Active“, „Closed“) vs. Propel-Icons `initiative-in-progress`, `initiative-cancelled`; Sub-Initiativen nur in einer Vergleichsseite belegt. | WM-11 | Labels = API-Werte in Title Case; Icons `InitiativeInProgress` für ACTIVE, `InitiativeCancelled` für CLOSED; Sub-Initiativen mit `parent_id` umsetzen (zyklenfrei). | R23; D2 Z. 305; WP-13 |
+| O-16 | Votes in der App | Trennung Abstimm-Button / Voter-Liste, Sortierung nach Stimmen, Abstimmung an Intake-Anfragen (Work Item im Status Pending), Realtime der Zähler. | WM-48 | Button = Stimme toggeln, Zähler-Klick = Popover mit Avataren und Namen; Sortierschlüssel „Votes“ (Saldo); Intake-Votes am verknüpften Work Item; Zähler-Update per Realtime-Event (ADR-002). | R6 Z. 266–271; WP-02 |
+| O-17 | Replies | Tiefe, Benachrichtigung, Vererbung von `access`, Webhook-Payload; der Cloud-Changelog vom 01.12.2025 nennt „threads“ (WP-09-URL), ohne dass der Bezug zu Replies bestätigt ist. | WM-49 | Eine Ebene; Benachrichtigung an Root-Autor und Thread-Teilnehmer; `access` vom Root; Webhook `workitem.comment.*` mit zusätzlichem Feld `parent`. | R6 Z. 115–151; D1; WP-03 |
+| O-18 | Projektübergreifende Sub-Work-Items | Rechte (Mitgliedschaft in beiden Projekten?), Sichtbarkeit fremder Kinder, Fortschrittszählung, Verhalten bei Archivierung/Löschung eines Projekts. | WM-50 | Verknüpfen nur mit Bearbeitungsrecht in beiden Projekten; fremde Kinder ohne Mitgliedschaft nur als Identifier; Fortschritt zählt alle Kinder; beim Löschen/Archivieren des Kind-Projekts entfällt die Parent-Beziehung nicht (Archiv) bzw. wird `parent = NULL` (Löschen). | WP-02; Kap. 3.18 |
+| O-19 | Governance für States/Labels | Mapping bestehender Projekt-States/-Labels beim Einschalten; ob „Workspace labels“ (Dok 26 W36) ohne Governance existieren; Texte der Governance-Seite. | WM-51 | Mapping-Dialog je Projekt (gleichnamig automatisch, sonst Default-State der Gruppe bzw. Label übernehmen in den Katalog); Workspace-Labels zusätzlich ohne Governance nutzbar (Katalog neben Projekt-Labels). | WP-05; Dok 25 F07 |
+| O-20 | Project States | Haben Projekt-States Gruppen (Blueprint `project_state {id, name, group}`)? Welche Projekt-Properties gibt es genau (State, Priority, Start/Due Date laut R7; Lead laut WP-11)? Kriterium „need attention“. | WM-37 | Gruppen = die sechs Default-States; Properties State, Priority, Lead, Start date, Due date; „need attention“ = letztes Project Update `OFF-TRACK`/`AT-RISK` oder Due date überschritten. | R7 Z. 194–197; WP-11, WP-14; Dok 25 F20 |
+| O-21 | Fortschritt und „Since last update“ | Definition `overdue` in Epic-/Initiative-Analytics; Berechnung des Deltas „Since last update“. | WM-10, WM-11, WM-40 | `overdue` = `target_date < heute` und Gruppe nicht `completed`/`cancelled`; Delta = Kennzahlen jetzt minus Snapshot des vorigen Updates. | `packages/types/src/epics.ts`; R9 |
+| O-22 | Module Overview | Mehrwert gegenüber dem CE-Modul-Peek nicht belegt. | WM-30 | Modul-Detailseite mit Tab „Overview“ (Vorschlag WM-30). | R1 Z. 297–306 |
+| O-23 | Worklog-Datum | Ob ein Worklog ein eigenes Leistungsdatum hat oder `created_at` gilt; Timesheet-Zeilen zeigen „on {Datum}“. | WM-32, WM-33 | Eigenes Feld `logged_at date` (Default heute, im Popover nicht editierbar, über API setzbar); Timesheet filtert danach. | D1 `worklogs/overview.md`; Screenshots WM-33 |
+
+### 4.2 Rückfragen an den Auftraggeber (R-xx)
+
+| ID | Frage | Betrifft | Default bis zur Entscheidung | Begründung |
+|---|---|---|---|---|
+| R-01 | Welche Epic-Generation ist die 1:1-Referenz: das separate Epic-Plumbing im CE v1.4.2 oder „Epic als normaler Work Item Type“ (Cloud ab 26.05.2026)? | WM-09, WM-10, WM-24 | Datenmodell nach neuer Generation (Epic = Typ mit `is_epic`), UI nach CE-Plumbing (eigener Nav-Eintrag „Epics“, eigene Routen). | ADR-005 (UI des CE ist Referenz); Dok 21 §4.1 |
+| R-02 | Bleiben die irreversiblen Schalter irreversibel: Work Item Types je Projekt, Hierarchie, Workspace Governance? | WM-01, WM-02, WM-51 | Ja, als fachliche Regel (ADR-003), serverseitig erzwungen (400/409). | R3 Z. 361–376, 399–403; WP-01, WP-05; Dok 25 O17 |
+| R-03 | Checkpoints: eigenes Feature umsetzen oder mit Milestones zusammenfassen? Es gibt nur den Matrix-Text. | WM-13 | Zurückstellen; Milestones (WM-14) decken datierte Marker im Projekt ab. Wenn gewünscht: Vorschlag aus WM-13. | R1 Z. 284–295 |
+| R-04 | Gelten alle Plan-Abstufungen als „höchste Stufe“ (ADR-001)? Beispiele: Bulk Ops „All props“ statt „Limited“, Estimates „Advanced“, Time Tracking mit Historie, Auto-Assignment mit allen drei Regeln. | WM-22, WM-31, WM-32, WM-35 | Ja, höchste Stufe; Feature-Toggles (Projekt/Workspace) bleiben als fachliche Schalter. | ADR-001; R1 |
+| R-05 | Verhalten beim Verschieben eines Work Items in ein anderes Projekt (Identifier, State-/Label-/Typ-Mapping, Cycle/Modul, Custom-Werte). | WM-23 | Vorschlag aus WM-23 (neue Sequenz, Redirect vom alten Identifier, Mapping nach Gruppe/Name). | R8 Z. 280 |
+| R-06 | Dependencies: Lag in Tagen, transitive Kaskade beim Verschieben, Verhalten bei manueller Datumsänderung im Detail (nur rote Linie oder Auto-Verschiebung)? | WM-26 | Kein Lag; Kaskade transitiv nur beim Ziehen im Gantt; manuelle Datumsänderung im Detail verschiebt nicht, verletzte Dependency wird rot. | WP-12 |
+| R-07 | Auto-Assignment in Modulen: Regeln Linear/Round Robin/Capacity sind nur als Namen belegt. Umsetzen nach Vorschlag oder zurückstellen? | WM-31 | Vorschlag aus WM-31 umsetzen; Kapazität = Anzahl offener Items im Modul. | R1 Z. 308–317 |
+| R-08 | Timesheet-Approvals: nur Matrix-Text, keine Doku. Umsetzen nach Vorschlag oder zurückstellen? | WM-34 | Vorschlag aus WM-34 (Wochen-Timesheet, Status draft/submitted/approved/rejected, Sperre nach Approval). | R1 Z. 189–190; WP-10 |
+| R-09 | Baselines & Deviations: nur Matrix-Text. Umsetzen nach Vorschlag oder zurückstellen? | WM-42 | Vorschlag aus WM-42. | R1 Z. 403–412 |
+| R-10 | Custom SLAs: nur Matrix-Text. Umsetzen nach Vorschlag oder zurückstellen? | WM-43 | Vorschlag aus WM-43 (Matrix Priorität × Typ, Response/Resolution, Pausen-States). | R1 Z. 436–445 |
+| R-11 | Duplicate Detection im Airgapped-Betrieb: nur `pg_trgm` oder zusätzlich lokales Embedding-Modell (ONNX/Ollama) als Standard? | WM-47 | `pg_trgm` als Standard, Embeddings optional über konfigurierbaren lokalen Provider (pgvector). | D7; ADR-004 |
+| R-12 | Intake per E-Mail: eigener SMTP-Empfang (wie Original) oder alternativ IMAP-Polling eines vorhandenen Postfachs? | WM-46 | SMTP-Empfangsdienst in .NET wie Original (Dok 22 §4.23), IMAP-Polling als optionale Betriebsart. | D6; Dok 22 §4.23 |
+| R-13 | Getrennte Tabellen für Dependencies und Custom Relations (wie Original-Semantik „independent“) und Migration des CE-Richtungsfehlers bei `implements`? | WM-26, WM-27 | Getrennte Tabellen; beim Datenimport aus einem CE-Bestand `implements`-Datensätze ohne Vertauschung als `implemented_by` mit vertauschter Richtung korrigieren. | R14; D2 Z. 150; D4 Z. 271–274 |
+| R-14 | Eine gemeinsame Property-Engine für Work Items und Customers? | WM-03, WM-18 | Ja (gleiche Typen und Regeln, D2 Z. 511). | D2 Z. 191–212, 497–511 |
+| R-15 | Formula- und Roll-up-Werte: beim Lesen berechnen oder materialisiert speichern? | WM-06, WM-08 | Materialisiert mit Neuberechnung per Domain-Event (für Filter/Sortierung/PQL nötig). | WM-03 Datenmodell |
+
+### 4.3 Restbedarf Recherche (für einen Folgelauf mit Netzzugang)
+
+Vollständig lesen, nicht nur als Suchzusammenfassung: https://docs.plane.so/work-item-types (inkl. „Workspace Work Item Types“), https://docs.plane.so/customers, https://docs.plane.so/releases, https://docs.plane.so/core-concepts/projects/milestones, https://docs.plane.so/intake/intake-forms, https://docs.plane.so/core-concepts/issues/time-tracking, https://docs.plane.so/core-concepts/issues/timeline-dependency, https://docs.plane.so/workspace-administration/workspace-governance, https://docs.plane.so/work-items/epics, https://docs.plane.so/communication-and-collaboration/comments-and-activity, https://plane.so/blog/introducing-releases, https://plane.so/changelog/2026-03-31-vote-on-work-items-link-sub-work-items-across-projects, https://plane.so/changelog/release-v1-22-0-clean-pages-connected-work-smoother-editing, https://plane.so/changelog/release-v3-2-0-workspace-governance-ai-memory-pii-scanning-and-more, https://university.plane.so/courses/201-the-growth/05-intro-to-initiatives.html, https://university.plane.so/courses/201-the-growth/11-intro-to-project-states.html. Ziel: Texte und Abläufe für O-04, O-06, O-09, O-11, O-12, O-15 bis O-20.
+
+---
+
+## Anhang A: Endpunkt-Inventar des Clusters
+
+### A.1 Commercial-REST-API v1 (Developer-Docs D1)
+
+**Methode:** Methode, Pfad und Scope wurden aus dem Badge (`class="method …"`, `class="path"`) und dem Abschnitt „Scopes“ jeder Datei unter `/home/user/makeplane/developer-docs/docs/api-reference/` gelesen. D1 schreibt den Workspace-Parameter mal `{slug}`, mal `{workspace_slug}`; hier einheitlich `{workspace_slug}` (O-03 h). Die Endpunkte sind für die Neuimplementierung 1:1 bereitzustellen (ADR-003); Plan-Gates (HTTP 402) entfallen (ADR-001).
+
+**Gruppe A – im CE-Code nicht vorhanden (89 distinkte Methode+Pfad; 90 Dateien, weil `GET …/values/` zweimal dokumentiert ist):**
+
+| # | Methode | Pfad (Präfix `/api/v1/workspaces/{workspace_slug}`) | Scope(s) laut D1 | Feature | D1-Datei(en) unter `api-reference/` |
+|---|---|---|---|---|---|
+| A1 | POST | `/projects/{project_id}/work-item-types/` | `projects.work_item_types:write` | WM-01 | `issue-types/types/add-issue-type.md` |
+| A2 | DELETE | `/projects/{project_id}/work-item-types/{type_id}/` | `projects.work_item_types:write` | WM-01 | `issue-types/types/delete-issue-type.md` |
+| A3 | GET | `/projects/{project_id}/work-item-types/{type_id}/` | `projects.work_item_types:read` | WM-01 | `issue-types/types/get-issue-type-details.md` |
+| A4 | GET | `/projects/{project_id}/work-item-types/schema/` | `projects.work_item_types:read` | WM-01 | `issue-types/types/get-work-item-type-schema.md` |
+| A5 | GET | `/projects/{project_id}/work-item-types/` | `projects.work_item_types:read` | WM-01 | `issue-types/types/list-issue-types.md` |
+| A6 | PATCH | `/projects/{project_id}/work-item-types/{type_id}/` | `projects.work_item_types:write` | WM-01 | `issue-types/types/update-issue-types.md` |
+| A7 | POST | `/projects/{project_id}/work-item-types/{type_id}/work-item-properties/` | `projects.work_item_properties:write` | WM-03/WM-04/WM-05/WM-06 | `issue-types/properties/add-property.md` |
+| A8 | DELETE | `/projects/{project_id}/work-item-types/{type_id}/work-item-properties/{property_id}/` | `projects.work_item_properties:write` | WM-03/WM-04/WM-05/WM-06 | `issue-types/properties/delete-property.md` |
+| A9 | GET | `/projects/{project_id}/work-item-types/{type_id}/work-item-properties/{property_id}/` | `projects.work_item_properties:read` | WM-03/WM-04/WM-05/WM-06 | `issue-types/properties/get-property-details.md` |
+| A10 | GET | `/projects/{project_id}/work-item-types/{type_id}/work-item-properties/` | `projects.work_item_properties:read` | WM-03/WM-04/WM-05/WM-06 | `issue-types/properties/list-properties.md` |
+| A11 | PATCH | `/projects/{project_id}/work-item-types/{type_id}/work-item-properties/{property_id}/` | `projects.work_item_properties:write` | WM-03/WM-04/WM-05/WM-06 | `issue-types/properties/update-property.md` |
+| A12 | POST | `/projects/{project_id}/work-item-properties/{property_id}/options/` | `projects.work_item_property_options:write` | WM-04 (Dropdown-Optionen) | `issue-types/options/add-dropdown-options.md` |
+| A13 | DELETE | `/projects/{project_id}/work-item-properties/{property_id}/options/{option_id}/` | `projects.work_item_property_options:write` | WM-04 (Dropdown-Optionen) | `issue-types/options/delete-dropdown-options.md` |
+| A14 | GET | `/projects/{project_id}/work-item-properties/{property_id}/options/{option_id}/` | `projects.work_item_property_options:read` | WM-04 (Dropdown-Optionen) | `issue-types/options/get-option-details.md` |
+| A15 | GET | `/projects/{project_id}/work-item-properties/{property_id}/options/` | `projects.work_item_property_options:read` | WM-04 (Dropdown-Optionen) | `issue-types/options/list-dropdown-options.md` |
+| A16 | PATCH | `/projects/{project_id}/work-item-properties/{property_id}/options/{option_id}/` | `projects.work_item_property_options:write` | WM-04 (Dropdown-Optionen) | `issue-types/options/update-dropdown-options.md` |
+| A17 | POST | `/projects/{project_id}/work-items/{work_item_id}/work-item-properties/{property_id}/values/` | `projects.work_item_property_values:write` | WM-03 (Werte) | `issue-types/values/add-property-values.md` |
+| A18 | DELETE | `/projects/{project_id}/work-items/{work_item_id}/work-item-properties/{property_id}/values/` | `projects.work_item_property_values:write` | WM-03 (Werte) | `issue-types/values/delete-property-value.md` |
+| A19 | GET | `/projects/{project_id}/work-items/{work_item_id}/work-item-properties/{property_id}/values/` | `projects.work_item_property_values:read` | WM-03 (Werte) | `issue-types/values/get-property-value-detail.md`, `issue-types/values/list-property-values.md` |
+| A20 | PATCH | `/projects/{project_id}/work-items/{work_item_id}/work-item-properties/{property_id}/values/` | `projects.work_item_property_values:write` | WM-03 (Werte) | `issue-types/values/update-property-value.md` |
+| A21 | POST | `/projects/{project_id}/epics/{epic_id}/issues/` | `projects.epics:write` | WM-09 | `epics/add-epic-work-items.md` |
+| A22 | POST | `/projects/{project_id}/epics/` | `projects.epics:write` | WM-09 | `epics/create-epic.md` |
+| A23 | DELETE | `/projects/{project_id}/epics/{epic_id}/` | `projects.epics:write` | WM-09 | `epics/delete-epic.md` |
+| A24 | GET | `/projects/{project_id}/epics/{resource_id}/` | `projects.epics:read` | WM-09 | `epics/get-epic-detail.md` |
+| A25 | GET | `/projects/{project_id}/epics/{epic_id}/issues/` | `projects.epics:read` `projects.work-items:read` | WM-09 | `epics/list-epic-work-items.md` |
+| A26 | GET | `/projects/{project_id}/epics/` | `projects.epics:read` | WM-09 | `epics/list-epics.md` |
+| A27 | PATCH | `/projects/{project_id}/epics/{epic_id}/` | `projects.epics:write` | WM-09 | `epics/update-epic.md` |
+| A28 | POST | `/initiatives/{initiative_id}/epics/` | `initiatives.epics:write` | WM-11 | `initiative/add-epics-to-initiative.md` |
+| A29 | POST | `/initiatives/labels/` | `initiatives.labels:write` | WM-12 | `initiative/add-initiative-label.md` |
+| A30 | POST | `/initiatives/` | `initiatives:write` | WM-11 | `initiative/add-initiative.md` |
+| A31 | POST | `/initiatives/{initiative_id}/labels/` | `initiatives.labels:write` | WM-12 | `initiative/add-labels-to-initiative.md` |
+| A32 | POST | `/initiatives/{initiative_id}/projects/` | `initiatives.projects:write` | WM-11 | `initiative/add-projects-to-initiative.md` |
+| A33 | DELETE | `/initiatives/labels/{label_id}/` | `initiatives.labels:write` | WM-12 | `initiative/delete-initiative-label.md` |
+| A34 | DELETE | `/initiatives/{initiative_id}/` | `initiatives:write` | WM-11 | `initiative/delete-initiative.md` |
+| A35 | GET | `/initiatives/{initiative_id}/` | `initiatives:read` | WM-11 | `initiative/get-initiative-detail.md` |
+| A36 | GET | `/initiatives/labels/{label_id}/` | `initiatives.labels:read` | WM-12 | `initiative/get-initiative-label-detail.md` |
+| A37 | GET | `/initiatives/{initiative_id}/epics/` | `initiatives.epics:read` | WM-11 | `initiative/list-initiative-epics.md` |
+| A38 | GET | `/initiatives/{initiative_id}/labels/` | `initiatives.labels:read` | WM-12 | `initiative/list-initiative-labels-for-initiative.md` |
+| A39 | GET | `/initiatives/labels/` | `initiatives.labels:read` | WM-12 | `initiative/list-initiative-labels.md` |
+| A40 | GET | `/initiatives/{initiative_id}/projects/` | `initiatives.projects:read` | WM-11 | `initiative/list-initiative-projects.md` |
+| A41 | GET | `/initiatives/` | `initiatives:read` | WM-11 | `initiative/list-initiatives.md` |
+| A42 | DELETE | `/initiatives/{initiative_id}/epics/` | `initiatives.epics:write` | WM-11 | `initiative/remove-epics-from-initiative.md` |
+| A43 | DELETE | `/initiatives/{initiative_id}/labels/` | `initiatives.labels:write` | WM-12 | `initiative/remove-labels-from-initiative.md` |
+| A44 | DELETE | `/initiatives/{initiative_id}/projects/` | `initiatives.projects:write` | WM-11 | `initiative/remove-projects-from-initiative.md` |
+| A45 | PATCH | `/initiatives/{initiative_id}/` | `initiatives:write` | WM-11 | `initiative/update-initiative-detail.md` |
+| A46 | PATCH | `/initiatives/labels/{label_id}/` | `initiatives.labels:write` | WM-12 | `initiative/update-initiative-label-detail.md` |
+| A47 | POST | `/projects/{project_id}/milestones/` | – (D1 ohne Angabe; D5: `projects.milestones:read` / `:write`) | WM-14 | `milestones/add-milestone.md` |
+| A48 | DELETE | `/projects/{project_id}/milestones/{milestone_id}/` | – (D1 ohne Angabe; D5: `projects.milestones:read` / `:write`) | WM-14 | `milestones/delete-milestone.md` |
+| A49 | GET | `/projects/{project_id}/milestones/{milestone_id}/` | – (D1 ohne Angabe; D5: `projects.milestones:read` / `:write`) | WM-14 | `milestones/get-milestone-detail.md` |
+| A50 | GET | `/projects/{project_id}/milestones/{milestone_id}/work-items/` | – (D1 ohne Angabe; D5: `projects.milestones:read` / `:write`) | WM-14 | `milestones/list-milestone-work-items.md` |
+| A51 | GET | `/projects/{project_id}/milestones/` | – (D1 ohne Angabe; D5: `projects.milestones:read` / `:write`) | WM-14 | `milestones/list-milestones.md` |
+| A52 | PATCH | `/projects/{project_id}/milestones/{milestone_id}/` | – (D1 ohne Angabe; D5: `projects.milestones:read` / `:write`) | WM-14 | `milestones/update-milestone-detail.md` |
+| A53 | POST | `/customer-properties/` | `customers.properties:write` | WM-18 | `customer/add-customer-property.md` |
+| A54 | POST | `/customers/{customer_id}/requests/` | `customers.requests:write` | WM-17 | `customer/add-customer-request.md` |
+| A55 | POST | `/customers/` | `customers:write` | WM-16 | `customer/add-customer.md` |
+| A56 | DELETE | `/customer-properties/{property_id}/` | `customers.properties:write` | WM-18 | `customer/delete-customer-property.md` |
+| A57 | DELETE | `/customers/{customer_id}/requests/{resource_id}/` | `customers.requests:write` | WM-17 | `customer/delete-customer-request.md` |
+| A58 | DELETE | `/customers/{resource_id}/` | `customers:write` | WM-16 | `customer/delete-customer.md` |
+| A59 | GET | `/customers/{resource_id}/` | `customers:read` | WM-16 | `customer/get-customer-detail.md` |
+| A60 | GET | `/customer-properties/{property_id}/` | `customers.properties:read` | WM-18 | `customer/get-customer-property-detail.md` |
+| A61 | GET | `/customers/{customer_id}/property-values/{property_id}/` | `customers.property_values:read` | WM-18 | `customer/get-customer-property-value.md` |
+| A62 | GET | `/customers/{customer_id}/requests/{resource_id}/` | `customers.requests:read` | WM-17 | `customer/get-customer-request-detail.md` |
+| A63 | POST | `/customers/{customer_id}/issues/` | `customers.work_items:write` | WM-16 | `customer/link-work-items-to-customer.md` |
+| A64 | GET | `/customer-properties/` | `customers.properties:read` | WM-18 | `customer/list-customer-properties.md` |
+| A65 | GET | `/customers/{customer_id}/property-values/` | `customers.property_values:read` | WM-18 | `customer/list-customer-property-values.md` |
+| A66 | GET | `/customers/{customer_id}/requests/` | `customers.requests:read` | WM-17 | `customer/list-customer-requests.md` |
+| A67 | GET | `/customers/{customer_id}/issues/` | `customers.work_items:read` | WM-16 | `customer/list-customer-work-items.md` |
+| A68 | GET | `/customers/` | `customers:read` | WM-16 | `customer/list-customers.md` |
+| A69 | DELETE | `/customers/{customer_id}/issues/{work_item_id}/` | `customers.work_items:write` | WM-16 | `customer/unlink-work-item-from-customer.md` |
+| A70 | PATCH | `/customers/{resource_id}/` | `customers:write` | WM-16 | `customer/update-customer-detail.md` |
+| A71 | PATCH | `/customer-properties/{property_id}/` | `customers.properties:write` | WM-18 | `customer/update-customer-property-detail.md` |
+| A72 | PATCH | `/customers/{customer_id}/property-values/{property_id}/` | `customers.property_values:write` | WM-18 | `customer/update-customer-property-value.md` |
+| A73 | PATCH | `/customers/{customer_id}/requests/{resource_id}/` | `customers.requests:write` | WM-17 | `customer/update-customer-request-detail.md` |
+| A74 | POST | `/projects/{project_id}/work-items/{work_item_id}/worklogs/` | `projects.work_items.worklogs:write` | WM-32 | `worklogs/create-worklog.md` |
+| A75 | DELETE | `/projects/{project_id}/work-items/{work_item_id}/worklogs/{worklog_id}/` | `projects.work_items.worklogs:write` | WM-32 | `worklogs/delete-worklog.md` |
+| A76 | GET | `/projects/{project_id}/total-worklogs/` | `projects.work_items.worklogs:read` | WM-32 | `worklogs/get-total-time.md` |
+| A77 | GET | `/projects/{project_id}/work-items/{work_item_id}/worklogs/` | `projects.work_items.worklogs:read` | WM-32 | `worklogs/get-worklogs-for-issue.md` |
+| A78 | PATCH | `/projects/{project_id}/work-items/{work_item_id}/worklogs/{worklog_id}/` | `projects.work_items.worklogs:write` | WM-32 | `worklogs/update-worklog.md` |
+| A79 | GET | `/projects/{project_id}/features/` | `projects.features:read` | 3.0.1 (Projekt-Toggles) | `project-features/get-project-features.md` |
+| A80 | PATCH | `/projects/{project_id}/features/` | `projects.features:write` | 3.0.1 (Projekt-Toggles) | `project-features/update-project-features.md` |
+| A81 | GET | `/features/` | `workspaces.features:read` | 3.0.2 (Workspace-Toggles) | `workspace-features/get-workspace-features.md` |
+| A82 | PATCH | `/features/` | `workspaces.features:write` | 3.0.2 (Workspace-Toggles) | `workspace-features/update-workspace-features.md` |
+| A83 | POST | `/project-labels/` | `projects.labels:write` | WM-38 | `project-labels/add-project-label.md` |
+| A84 | DELETE | `/project-labels/{label_id}/` | `projects.labels:write` | WM-38 | `project-labels/delete-project-label.md` |
+| A85 | GET | `/project-labels/{label_id}/` | `projects.labels:read` | WM-38 | `project-labels/get-project-label-detail.md` |
+| A86 | GET | `/project-labels/` | `projects.labels:read` | WM-38 | `project-labels/list-project-labels.md` |
+| A87 | PATCH | `/project-labels/{label_id}/` | `projects.labels:write` | WM-38 | `project-labels/update-project-label-detail.md` |
+| A88 | POST | `/projects/{project_id}/work-items/{work_item_id}/relations/remove/` | `projects.work_items:write` | WM-26/WM-27 | `work-item-relations/remove-work-item-relation.md` |
+| A89 | POST | `/projects/templates/use/` | `write` `projects:write` | WM-41 | `project/create-project-with-template.md` |
+
+**Gruppe B – im CE-Code vorhanden, aber nicht geroutet (8):** Die Views stehen in `apps/api/plane/api/views/estimate.py`, die Routen in `apps/api/plane/api/urls/estimate.py`; `apps/api/plane/api/urls/__init__.py` bindet `estimate.py` nicht ein. Relevanz: WM-35 (Time-Estimates, Bearbeiten). Vollständige Verträge in Dok 21 §2.5.
+
+| # | Methode | Pfad (Präfix wie oben) | Scope | D1-Datei |
+|---|---|---|---|---|
+| E1 | GET | `/projects/{project_id}/estimates/` | `projects.estimates:read` | `estimate/get-estimate.md` |
+| E2 | POST | `/projects/{project_id}/estimates/` | `projects.estimates:write` | `estimate/add-estimate.md` |
+| E3 | PATCH | `/projects/{project_id}/estimates/` | `projects.estimates:write` | `estimate/update-estimate.md` |
+| E4 | DELETE | `/projects/{project_id}/estimates/` | `projects.estimates:write` | `estimate/delete-estimate.md` |
+| E5 | GET | `/projects/{project_id}/estimates/{estimate_id}/estimate-points/` | `projects.estimates:read` | `estimate/list-estimate-points.md` |
+| E6 | POST | `/projects/{project_id}/estimates/{estimate_id}/estimate-points/` | `projects.estimates:write` | `estimate/add-estimate-points.md` |
+| E7 | PATCH | `/projects/{project_id}/estimates/{estimate_id}/estimate-points/{estimate_point_id}/` | `projects.estimates:write` | `estimate/update-estimate-point.md` |
+| E8 | DELETE | `/projects/{project_id}/estimates/{estimate_id}/estimate-points/{estimate_point_id}/` | `projects.estimates:write` | `estimate/delete-estimate-point.md` |
+
+**Gruppe C – im CE geroutet und für den Cluster relevant (3):**
+
+| # | Methode | Pfad (Präfix wie oben) | Scope | CE-Route | Relevanz |
+|---|---|---|---|---|---|
+| C1 | GET | `/projects/{project_id}/work-items/{work_item_id}/relations/` | `projects.work_items:read` | `apps/api/plane/api/urls/work_item.py` Z. 149–153 | WM-26/WM-27: Antwort muss Dependency-Typen und Custom Relations getrennt liefern |
+| C2 | POST | `/projects/{project_id}/work-items/{work_item_id}/relations/` (Body `relation_type`*, `issues`*) | `projects.work_items:write` | wie C1 | WM-26/WM-27 |
+| C3 | POST | `/projects/{project_id}/cycles/{cycle_id}/transfer-issues/` (Body `new_cycle_id`) | `projects.cycles:write` | R22 | WM-23, WM-28 |
+
+Die Lösch-Route `POST …/relations/remove/` (Body `related_issue`*) gehört zu Gruppe A (Zeile A88).
+
+### A.2 MCP-Aktionen ohne bzw. mit erweitertem REST-Gegenstück (D2)
+
+Quelle: `/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md` (D2). Gelistet sind Aktionen, die es in D1 nicht gibt, oder die Felder/Verhalten zeigen, die D1 nicht dokumentiert. Die Neuimplementierung braucht für jede Zeile einen internen und einen Public-API-Endpunkt (O-02).
+
+| # | Tool → Aktion | Pflicht / optional (D2) | Fehlt in D1 bzw. Erweiterung | Feature | D2 Z. |
+|---|---|---|---|---|---|
+| M1 | `workitem_type list` | – / `project_id`, `cursor`, `per_page` | Workspace-Scope ohne `project_id` | WM-01, WM-07 | 175–189 |
+| M2 | `workitem_type retrieve` | `workitem_type_id` / `project_id` | Workspace-Scope | WM-01, WM-07 | 175–189 |
+| M3 | `workitem_type create` | `name` / `project_id`, `description`, `project_ids`, `is_active`, `external_source`, `external_id` | Workspace-Scope; `project_ids` schreibbar (D1: RO) | WM-01, WM-07 | 175–189 |
+| M4 | `workitem_type update` | `workitem_type_id` / wie create | Workspace-Scope; `project_ids` schreibbar | WM-01, WM-07 | 175–189 |
+| M5 | `workitem_type delete` | `workitem_type_id` / `project_id` | Workspace-Scope | WM-01, WM-07 | 175–189 |
+| M6 | `workitem_type resolve` | `project_id`, `name` / – | „finds or creates a named type usable in the project; never duplicates“; exakter Vergleich, Whitespace getrimmt | WM-01, WM-09 | 175–189 |
+| M7 | `workitem_type import_to_project` | `project_id`, `workitem_type_ids` / – | Workspace-Typen mit Projekt verknüpfen | WM-07 | 175–189 |
+| M8 | `workitem_property list` | – / `project_id`, `workitem_type_id`, `cursor`, `per_page` | Auflösungsreihenfolge typ → projektflach → Workspace; ohne IDs alle Workspace-Properties | WM-03, WM-07 | 191–212 |
+| M9 | `workitem_property create` | `display_name`, `property_type` / `project_id`, `workitem_type_id`, `description`, `relation_type`, `is_required`, `is_multi`, `is_active`, `default_value`, `options`, `display_format`, `external_*` | Workspace-Katalog (ohne `project_id`), `options` inline, `display_format` | WM-03 … WM-07 | 191–212 |
+| M10 | `workitem_property manage_type_properties` | `workitem_type_id` / `project_id`, `attach_ids`, `detach_ids` | n:m-Zuordnung Typ↔Property; Detach löscht die Property nicht | WM-07 | 202 |
+| M11 | `workitem_relation create` | `project_id`, `workitem_id`, `workitem_ids` / `relation_type`, `relation_definition_id`, `relation_definition_label` | Custom Relations per Definition + Label (Richtung) | WM-27 | 149, 156 |
+| M12 | `workitem_relation delete` | `project_id`, `workitem_id`, `related_workitem_id` / `is_dependency` | Trennung Dependency vs. Custom Relation | WM-26, WM-27 | 150 |
+| M13 | `workitem_relation list_definitions` | – / `is_default`, `is_active` | Relationsdefinitionen | WM-27 | 151 |
+| M14 | `workitem_relation create_definition` | `name` / `outward`, `inward`, `is_active`, `color` | wie M13 | WM-27 | 152 |
+| M15 | `workitem_relation update_definition` | `definition_id` / `name`, `outward`, `inward`, `is_active`, `color` | wie M13 | WM-27 | 153 |
+| M16 | `workitem_relation delete_definition` | `definition_id` / – | wie M13 | WM-27 | 154 |
+| M17 | `project_estimate link` | `project_id`, `estimate_id` / – | aktives Estimate setzen | WM-35 | 224 |
+| M18 | `milestone manage_workitems` | `project_id`, `milestone_id` / `add_ids`, `remove_ids` | Zuordnen/Entfernen (D1 nur Lesen) | WM-14 | 286 |
+| M19 | `release list` | – / `cursor`, `per_page` | Releases fehlen in D1 vollständig | WM-15 | 311–327 |
+| M20 | `release retrieve` | `release_id` / – | wie M19 | WM-15 | 311–327 |
+| M21 | `release create` | `name` / `description_html`, `status`, `release_date`, `target_date`, `tag_id`, `lead_id`, `is_prerelease`, `external_*` | wie M19 | WM-15 | 311–327 |
+| M22 | `release update` | `release_id` / wie create ohne `external_*` | wie M19 | WM-15 | 311–327 |
+| M23 | `release delete` | `release_id` / – | wie M19 | WM-15 | 311–327 |
+| M24 | `release get_changelog` | `release_id` / – | Changelog existiert immer | WM-15 | 311–327 |
+| M25 | `release update_changelog` | `release_id` / `description_html`, `description_stripped` | Plain Text wird zu HTML | WM-15 | 311–327 |
+| M26 | `release list_workitems` | `release_id` / `cursor`, `per_page` | wie M19 | WM-15 | 311–327 |
+| M27 | `release manage_workitems` | `release_id` / `add_ids`, `remove_ids` | wie M19 | WM-15 | 311–327 |
+| M28 | `release_tag list` | – / `cursor`, `per_page` | Release-Tags | WM-15 | 329–341 |
+| M29 | `release_tag retrieve` | `tag_id` / – | wie M28 | WM-15 | 329–341 |
+| M30 | `release_tag create` | `version` / `description`, `commit_hash`, `git_tag` | wie M28 | WM-15 | 329–341 |
+| M31 | `release_tag update` | `tag_id` / `version`, `description`, `commit_hash`, `git_tag` | wie M28 | WM-15 | 329–341 |
+| M32 | `release_tag delete` | `tag_id` / – | wie M28 | WM-15 | 329–341 |
+| M33 | `release_label list` | – / `release_id`, `cursor`, `per_page` | Palette bzw. Labels eines Releases | WM-15 | 343–356 |
+| M34 | `release_label create` | `name` / `color`, `sort_order` | wie M33 | WM-15 | 343–356 |
+| M35 | `release_label update` | `label_id` / `name`, `color`, `sort_order` | wie M33 | WM-15 | 343–356 |
+| M36 | `release_label delete` | `label_id` / – | löscht aus der Palette für alle | WM-15 | 343–356 |
+| M37 | `release_label attach` | `release_id`, `label_ids` / – | wie M33 | WM-15 | 343–356 |
+| M38 | `release_label detach` | `release_id`, `label_ids` / – | Label bleibt in der Palette | WM-15 | 343–356 |
+| M39 | `customer create` | `name` / `description_html`, `email`, `website_url`, `domain`, `employees`, `stage`, `contract_status`, `revenue`, `external_*` | Upsert über `external_source`+`external_id`, sonst `name` | WM-16 | 475 |
+| M40 | `customer delete` | – / `customer_id`, `external_source`, `external_id` | Löschen über externe IDs | WM-16 | 477 |
+| M41 | `customer list_workitems` | `customer_id` / `customer_request_id`, `search` | Filter nach Request und Suche | WM-16, WM-17 | 478 |
+| M42 | `customer manage_workitems` | `customer_id` / `link_ids`, `unlink_ids`, `customer_request_id` | Verknüpfung im Kontext eines Requests | WM-16, WM-17 | 479 |
+| M43 | `project update_features` | `project_id` / `modules`, `cycles`, `views`, `pages`, `intakes`, `workitem_types`, `epics`, `parallel_cycles`, `project_updates`, `workflows` | zusätzlich `parallel_cycles`, `project_updates`, `workflows` (D1 kennt nur `epics`, `modules`, `cycles`, `views`, `pages`, `intakes`, `work_item_types`; D1 `project-features/update-project-features.md` Z. 46–82) | 3.0.1, WM-40 | 377 |
+
+### A.3 Interne Endpunkte, die das CE-Frontend aufruft, die im CE-Backend aber fehlen
+
+Ermittelt aus den Service-Dateien der Web-App und gegen `apps/api/plane/app/urls/` geprüft (`grep -rn "epics\|bulk-operation-issues" apps/api/plane/app/urls` ohne Treffer). `{serviceType}` ist im Epic-Kontext `epics` (`EIssueServiceType.EPICS`).
+
+| # | Methode | Pfad | Aufrufer (Datei, Zeile) | Feature |
+|---|---|---|---|---|
+| I1 | POST | `/api/workspaces/{slug}/projects/{project_id}/epics/` | `apps/web/services/issue/issue.service.ts` Z. 33 | WM-09 |
+| I2 | GET | `/api/workspaces/{slug}/projects/{project_id}/epics-detail/` bzw. `…/epics/` | Z. 48–50 | WM-09 |
+| I3 | GET | `/api/workspaces/{slug}/projects/{project_id}/v2/epics/` | Z. 69–70 | WM-09 |
+| I4 | GET | `/api/workspaces/{slug}/projects/{project_id}/epics/` (Liste mit Query) | Z. 104 | WM-09 |
+| I5 | GET | `/api/workspaces/{slug}/projects/{project_id}/epics/{epic_id}/` | Z. 114 | WM-09 |
+| I6 | GET | `/api/workspaces/{slug}/projects/{project_id}/epics/list/` | Z. 130 | WM-09 |
+| I7 | GET | `/api/workspaces/{slug}/projects/{project_id}/epics/{epic_id}/history/` (Query `activity_type=epic-property` bzw. `epic-comment`) | Z. 140; `apps/web/services/issue/issue_activity.service.ts` Z. 32–34; `apps/web/services/issue/issue_comment.service.ts` Z. 36–38 | WM-09 |
+| I8 | POST | `/api/workspaces/{slug}/projects/{project_id}/epics/{epic_id}/issue-relation/` | Z. 184–185 | WM-09, WM-26 |
+| I9 | DELETE | `/api/workspaces/{slug}/projects/{project_id}/epics/{epic_id}/issue-relation/{relation_id}/` | Z. 195–196 | WM-09, WM-26 |
+| I10 | PATCH | `/api/workspaces/{slug}/projects/{project_id}/epics/{epic_id}/` | Z. 227 | WM-09 |
+| I11 | DELETE | `/api/workspaces/{slug}/projects/{project_id}/epics/{epic_id}/` | Z. 235 | WM-09 |
+| I12 | GET | `/api/workspaces/{slug}/projects/{project_id}/epics/{epic_id}/issues/` | Z. 260–261 | WM-09 |
+| I13 | POST | `/api/workspaces/{slug}/projects/{project_id}/epics/{epic_id}/issues/` | Z. 276–277 | WM-09 |
+| I14 | GET | `/api/workspaces/{slug}/projects/{project_id}/epics/{epic_id}/links/` | Z. 287–288 | WM-09 |
+| I15 | POST | `/api/workspaces/{slug}/projects/{project_id}/epics/{epic_id}/links/` | Z. 302–303 | WM-09 |
+| I16 | PATCH | `/api/workspaces/{slug}/projects/{project_id}/epics/{epic_id}/links/{link_id}/` | Z. 319–320 | WM-09 |
+| I17 | DELETE | `/api/workspaces/{slug}/projects/{project_id}/epics/{epic_id}/links/{link_id}/` | Z. 330–331 | WM-09 |
+| I18 | POST | `/api/workspaces/{slug}/projects/{project_id}/bulk-operation-issues/` (Body `TBulkOperationsPayload`) | Z. 339–340 | WM-22 |
+| I19 | GET | `/api/workspaces/{slug}/projects/{project_id}/epics/{epic_id}/subscribe/` | Z. 385 | WM-09 |
+| I20 | DELETE | `/api/workspaces/{slug}/projects/{project_id}/epics/{epic_id}/subscribe/` | Z. 393 | WM-09 |
+| I21 | POST | `/api/workspaces/{slug}/projects/{project_id}/epics/{epic_id}/subscribe/` | Z. 403 | WM-09 |
+| I22 | POST | `/api/workspaces/{slug}/projects/{project_id}/epics/{epic_id}/comments/` | `apps/web/services/issue/issue_comment.service.ts` Z. 54–55 | WM-09 |
+| I23 | PATCH | `/api/workspaces/{slug}/projects/{project_id}/epics/{epic_id}/comments/{comment_id}/` | `issue_comment.service.ts` Z. 71–72 | WM-09 |
+| I24 | DELETE | `/api/workspaces/{slug}/projects/{project_id}/epics/{epic_id}/comments/{comment_id}/` | `issue_comment.service.ts` Z. 87–88 | WM-09 |
+| I25 | GET | `/api/workspaces/{slug}/projects/{project_id}/epics-user-properties/` | `apps/web/services/issue_filter.service.ts` Z. 39 | WM-09 |
+| I26 | PATCH | `/api/workspaces/{slug}/projects/{project_id}/epics-user-properties/` | `issue_filter.service.ts` Z. 50 | WM-09 |
+
+Hinweis: Für I2 wählt der Client `epics-detail/`, wenn `expand` den Wert `issue_relation` enthält und kein `group_by` gesetzt ist, sonst `epics/` (Z. 46–49). Die Work-Item-Varianten derselben Service-Methoden (`issues/…`, `sub-issues/`, `issue-links/`) existieren im CE und sind nicht gelistet.
+
+---
+
+## Anhang B: i18n-Inventar des Clusters (Schlüsselgruppe → Feature)
+
+Basis `packages/i18n/src/locales/en/`. Zeilenangaben per Skript aus der Einrückungsstruktur der JSON-Dateien ermittelt (Start- bis Endzeile des Objekts). Spalte „Status“: **EE** = Text nur für die Bezahl-Funktion, im CE ungenutzt; **CE** = im CE genutzt, aber für die Bezahl-Funktion mitzuverwenden; **Upsell** = entfällt nach ADR-001. Alle EE-Texte sind 1:1 (inkl. Tippfehlern und Leerzeichen) in die Ziel-i18n zu übernehmen (ADR-005/006).
+
+| # | Datei | Schlüsselgruppe | Zeilen | Feature | Status |
+|---|---|---|---|---|---|
+| B1 | `work-item-type.json` | `work_item_types.label`, `work_item_types.label_lowercase` | Z. 3–4 | WM-01 | EE |
+| B2 | `work-item-type.json` | `work_item_types.settings.{description, cant_delete_default_message, set_as_default, cant_set_default_inactive_message, set_default_confirmation}` | Z. 6–14 | WM-01 | EE |
+| B3 | `work-item-type.json` | `work_item_types.settings.properties` | Z. 15–233 | WM-03, WM-04, WM-05, WM-06 | EE |
+| B4 | `work-item-type.json` | `work_item_types.settings.types` | Z. 234–254 | WM-01, WM-07 | EE |
+| B5 | `work-item-type.json` | `work_item_types.settings.linked_properties` | Z. 255–273 | WM-07 | EE |
+| B6 | `work-item-type.json` | `work_item_types.settings.item_delete_confirmation` | Z. 274–293 | WM-01 | EE |
+| B7 | `work-item-type.json` | `work_item_types.create` | Z. 295–311 | WM-01 | EE |
+| B8 | `work-item-type.json` | `work_item_types.update` | Z. 312–328 | WM-01 | EE |
+| B9 | `work-item-type.json` | `work_item_types.create_update` | Z. 329–338 | WM-01 | EE |
+| B10 | `work-item-type.json` | `work_item_types.enable_disable` | Z. 339–352 | WM-01 | EE |
+| B11 | `work-item-type.json` | `work_item_types.change_confirmation` | Z. 353–360 | WM-01 | EE |
+| B12 | `work-item-type.json` | `work_item_types.empty_state.enable` | Z. 362–376 | WM-01 | EE |
+| B13 | `work-item-type.json` | `work_item_types.empty_state.get_pro`, `work_item_types.empty_state.upgrade` | Z. 377–390 | WM-01 | Upsell |
+| B14 | `work-item-type.json` | `work_item_type_hierarchy.settings` | Z. 394–408 | WM-02 | EE |
+| B15 | `work-item-type.json` | `work_item_type_hierarchy.levels` | Z. 409–436 | WM-02 | EE |
+| B16 | `work-item-type.json` | `work_item_type_hierarchy.break_hierarchy_modal` | Z. 437–458 | WM-02 | EE |
+| B17 | `work-item-type.json` | `work_item_type_hierarchy.work_item_modal` | Z. 459–468 | WM-02 | EE |
+| B18 | `work-item-type.json` | `work_item_type_hierarchy.work_item_type_modal` | Z. 469–475 | WM-02 | EE |
+| B19 | `project-settings.json` | `project_settings.estimates.{heading … create, toasts, validation}` | Z. 59–144 | WM-35 | CE (Teile EE: Re-order-Toasts Z. 112–121) |
+| B20 | `project-settings.json` | `project_settings.estimates.systems` (inkl. `time` Z. 159–162) | Z. 145–163 | WM-35 | CE/EE (`time`) |
+| B21 | `project-settings.json` | `project_settings.estimates.{edit, switch, current, select}` | Z. 164–177 | WM-35 | EE |
+| B22 | `project-settings.json` | `project_settings.work_item_types` | Z. 321–324 | WM-01 | EE |
+| B23 | `project-settings.json` | `project_settings.features.intake.{intake_responsibility, intake_sources, title, short_title, description, toggle_*}` | Z. 355–363 | WM-44, WM-45, WM-46 | CE/EE |
+| B24 | `project-settings.json` | `project_settings.features.intake.notify_assignee` | Z. 364–367 | WM-45 | EE |
+| B25 | `project-settings.json` | `project_settings.features.intake.in_app` | Z. 368–371 | Intake-Quelle „In-app“ (Kap. 3.16) | EE (Quellen-Karte) |
+| B26 | `project-settings.json` | `project_settings.features.intake.email` | Z. 372–376 | WM-46 | EE |
+| B27 | `project-settings.json` | `project_settings.features.intake.form` | Z. 377–398 | WM-44 | EE |
+| B28 | `project-settings.json` | `project_settings.features.intake.toasts` | Z. 399–411 | WM-44, WM-45 | EE |
+| B29 | `project-settings.json` | `project_settings.features.time_tracking` | Z. 413–419 | WM-32 | EE |
+| B30 | `project-settings.json` | `project_settings.features.milestones` | Z. 420–426 | WM-14 | EE |
+| B31 | `project-settings.json` | `project_settings.features.toasts` | Z. 427–431 | 3.0.1 | CE |
+| B32 | `project-settings.json` | `project_settings.project_updates` | Z. 433–436 | WM-40 | EE |
+| B33 | `project-settings.json` | `project_settings.templates` | Z. 437–440 | WM-20 (Dok 25 F21) | EE |
+| B34 | `project-settings.json` | `project_settings.cycles.auto_schedule` | Z. 442–523 | WM-28, WM-29 | EE |
+| B35 | `workspace-settings.json` | `workspace_settings.settings.worklogs` | Z. 187–191 | WM-33 | EE |
+| B36 | `workspace-settings.json` | `workspace_settings.settings.project_states` | Z. 258–263 | WM-37 | EE |
+| B37 | `workspace-settings.json` | `workspace_settings.settings.projects` (inkl. `tabs`) | Z. 264–271 | WM-37, WM-38 | EE |
+| B38 | `workspace-settings.json` | `workspace_settings.settings.templates` | Z. 272–276 | WM-20, WM-41 (Dok 25) | EE |
+| B39 | `workspace-settings.json` | `workspace_settings.settings.relations` | Z. 277–281 | WM-27 | EE |
+| B40 | `work-item.json` | `issue.add.dependency` (neben CE-Schlüssel `issue.add.relation` Z. 24) | Z. 23 | WM-26 | EE |
+| B41 | `work-item.json` | `issue.display.properties.issue_type` | Z. 59 | WM-01 | EE |
+| B42 | `work-item.json` | `issue.comments.replies` | Z. 115–151 | WM-49 | EE |
+| B43 | `work-item.json` | `issue.relation` (inkl. `start_*`, `finish_*`, `implements`, `implemented_by`) | Z. 188–199 | WM-26, WM-27 | CE/EE |
+| B44 | `work-item.json` | `issue.select` | Z. 211–217 | WM-22 | CE/EE |
+| B45 | `work-item.json` | `issue.duplicate`, `issue.toast.duplicate` | Z. 219–235 | WM-25 | EE |
+| B46 | `work-item.json` | `issue.vote` | Z. 266–271 | WM-48 | EE |
+| B47 | `work-item.json` | `bulk_operations.error_details` | Z. 314–331 | WM-22 | EE |
+| B48 | `work-item.json` | `bulk_operations.upgrade_banner` | Z. 332–335 | WM-22 | Upsell |
+| B49 | `work-item.json` | `recurring_work_items` (ohne `empty_state.upgrade`) | Z. 337–415 | WM-19 (Dok 25 F24) | EE |
+| B50 | `work-item.json` | `recurring_work_items.empty_state.upgrade` | Z. 368–371 | WM-19 | Upsell |
+| B51 | `work-item.json` | `epic` | Z. 416–431 | WM-09 | EE |
+| B52 | `empty-state.json` | `common_empty_state.progress` | Z. 3–6 | WM-10, WM-11 | EE |
+| B53 | `empty-state.json` | `common_empty_state.updates` | Z. 7–10 | WM-10, WM-40 | EE |
+| B54 | `empty-state.json` | `project_empty_state.no_access` | Z. 27–33 | WM-36 | CE |
+| B55 | `empty-state.json` | `project_empty_state.epics`, `project_empty_state.epic_work_items` | Z. 97–107 | WM-09 | EE |
+| B56 | `empty-state.json` | `workspace_empty_state.archive_epics` | Z. 110–113 | WM-09 | EE |
+| B57 | `empty-state.json` | `workspace_empty_state.project_overview_state_sidebar` | Z. 194–197 | WM-37, WM-39 | EE |
+| B58 | `empty-state.json` | `settings_empty_state.work_item_types`, `settings_empty_state.work_item_type_properties` | Z. 229–237 | WM-01, WM-03 | EE |
+| B59 | `empty-state.json` | `settings_empty_state.templates`, `settings_empty_state.template_setting` | Z. 238–242, 255–259 | WM-20 (Dok 25) | EE |
+| B60 | `empty-state.json` | `settings_empty_state.recurring_work_items` | Z. 243–247 | WM-19 | EE |
+| B61 | `empty-state.json` | `settings_empty_state.worklogs` | Z. 248–251 | WM-33 | EE |
+| B62 | `common.json` | `activity_empty_state.no_worklogs` | Z. 58 | WM-32 | EE |
+| B63 | `common.json` | `renew`, `preview`, `time_tracking`, `work_management`, `time_tracking_description`, `work_management_description` | Z. 220–223, 231–232 | WM-44 („Renew“, „Preview“ laut WP-09), WM-32, Projekt-Features-Abschnitt „Work management“ (WP-07) | EE |
+| B64 | `common.json` | `failed_to_move_issue_to_project`, `duplicate_issue_found`, `duplicate_issues_found`, `make_a_copy`, `move_to_project` | Z. 280, 284–285, 329–330 | WM-23, WM-25, WM-47 | CE/EE |
+| B65 | `common.json` | `common.sub_work_items`, `common.workspace_level`, `common.add_existing` | Z. 514, 516, 569 | WM-50 | CE |
+| B66 | `common.json` | `common.relations`, `common.dependencies` | Z. 555–556 | WM-26, WM-27 | CE/EE |
+| B67 | `common.json` | `common.on_track`, `common.off_track`, `common.at_risk` | Z. 588–590 | WM-10, WM-40 | EE |
+| B68 | `common.json` | `common.actions.make_a_copy`, `common.actions.reply` | Z. 612, 627 | WM-25, WM-49 | CE/EE |
+| B69 | `common.json` | `common.worklogs`, `common.project_updates`, `common.milestones`, `common.project_structure`, `common.custom_properties` | Z. 710–721 | WM-33, WM-40, WM-14, WM-37, WM-03/WM-07 | EE |
+| B70 | `common.json` | `milestones`, `milestones_description` | Z. 844–845 | WM-14 | EE |
+| B71 | `update.json` | `updates` (vollständig: `progress`, `add_update`, `add_update_placeholder`, `empty`, `reaction`, `create`, `delete`, `update`) | Z. 2–68 | WM-10, WM-11, WM-40 | EE |
+| B72 | `template.json` | `templates` (vollständig: `settings`, `empty_state`, `toasts`, `delete_confirmation`, `unpublish_confirmation`, `dropdown`) | Z. 2–332 | WM-20, WM-21, WM-41 (Dok 25 F20–F23) | EE |
+| B73 | `navigation.json` | `sidebar.epics` | Z. 29 | WM-09 | EE |
+| B74 | `power-k.json` | `power_k.navigation_actions.nav_project_overview` | Z. 108 | WM-39 | EE |
+| B75 | `workspace.json` | `workspace_analytics.projects_by_status` | Z. 149 | WM-37 | EE |
+| B76 | `workspace.json` | `workspace_projects.network` | Z. 158–168 | WM-36 | CE |
+| B77 | `inbox.json` | `inbox_issue.actions.mark_as_duplicate`, `inbox_issue.status.duplicate` | Z. 49, 20–23 | WM-47 | CE |
+
+**Fehlende Texte (kein Schlüssel im CE-i18n, aus Referenz nachzutragen, O-04):** Customers, Customer Requests, Customer Properties (alle); Releases, Release-Tags, Release-Labels, Changelog (alle); Initiatives inkl. State-Labels und Initiative-Labels; Milestone-Liste/-Detail (außer Feature-Seite); Property-Typ-Labels Relation, URL, Email, File, Release picker, Formula-Typlabel; Project Labels (außer Tab-Titel); Projekt-Beitrittsanfrage (Private); Timesheet-Approvals; Baselines; SLAs; Auto-Assignment; Module Overview; Checkpoints; Votes-Liste; Governance-Seite; Convert-Aktionen („Convert to Epic“ / „Convert to Work item“).
+
+---
+
+## Anhang C: Icon- und Illustrations-Inventar des Clusters (UI 1:1)
+
+### C.1 Icons aus `@makeplane/propel@0.7.3`
+
+Quelle: entpacktes npm-Paket (R23), Exportname aus `dist/icons/<kategorie>/<name>.d.ts`. Spalte „CE-Nutzung“ = Anzahl Dateien unter `apps/` und `packages/` mit dem Outline-Namen (`grep -rl --include=*.tsx --include=*.ts "\b<Name>\b" apps packages`); 0 = im CE ungenutzt, also nur für die Bezahl-Funktion vorgesehen.
+
+| Kategorie | Export (Outline / Filled) | Feature | CE-Nutzung (Outline) |
+|---|---|---|---|
+| `project-features` | `EpicOutline` / `EpicFilled` | WM-09 | 2 |
+| `project-features` | `MilestoneOutline` / `MilestonesFilled` (Plural nur bei Filled) | WM-14 | 0 |
+| `project-features` | `OverviewOutline` / `OverviewFilled` | WM-30, WM-39 | 0 |
+| `project-features` | `SubWorkItemsOutline` / `SubWorkItemsFilled` | WM-50 | 0 |
+| `project-features` | `WorkItemsOutline` / `WorkItemsFilled` | WM-01 | 23 |
+| `project-features` | `IntakeOutline` / `IntakeFilled` | WM-44 … WM-46 | 10 |
+| `workspace-features` | `CustomersOutline` / `CustomersFilled` | WM-16 … WM-18 | 0 |
+| `workspace-features` | `InitiativeOutline` / `InitiativeFilled` | WM-11 … WM-13 | 0 |
+| `workspace-features` | `ReleasesOutline` / `ReleasesFilled` | WM-15 | 0 |
+| `workspace-features` | `TemplatesOutline` / `TemplatesFilled` | WM-20, WM-21, WM-41 | 0 |
+| `workspace-features` | `TimeTrackingOutline` / `TimeTrackingFilled` | WM-32 … WM-34 | 1 |
+| `initiative-states` | `InitiativeDraft`, `InitiativePlanned`, `InitiativeInProgress`, `InitiativeCompleted`, `InitiativeCancelled` | WM-11 (O-15) | 0 |
+| `milestone-states` | `MilestoneNotStarted`, `MilestoneInProgress`, `MilestoneDone` | WM-14 | 0 |
+| `actions` | `AddTimeTrackingOutline` / `AddTimeTrackingFilled` | WM-32 („Log work“, Zuordnung UNVERIFIZIERT) | 0 |
+| `actions` | `ConvertToEpicOutline` / `ConvertToEpicFilled` | WM-24 | 0 |
+| `actions` | `ConvertToWorkItemOutline` / `ConvertToWorkItemFilled` | WM-24 | 0 |
+| `actions` | `LockOutline` / `LockFilled`, `GlobeOutline` / `GlobeFilled` | WM-36 | 19 / 15 |
+| `actions` | `SubscribeOutline` / `SubscribeFilled` | WM-40 (Activity-Icon `is_project_updates_enabled`) | 4 |
+| `actions` | `LinkOutline` / `LinkFilled`, `UnlinkOutline` / `UnlinkFilled` | WM-04 (URL), WM-07 (Unlink property) | 34 / 2 |
+| `arrows` | `TopArrowOutline` / `TopArrowFilled`, `ArrowDownOutline` / `ArrowDownFilled` | WM-48 | 4 / 3 |
+| `arrows` | `ReplyOutline` / `ReplyFilled` | WM-49 | 1 |
+| `miscellaneous` | `HierarchyOutline` / `HierarchyFilled` | WM-02 | 3 |
+| `miscellaneous` | `DependencyOutline` / `DependencyFilled` | WM-26 | 0 |
+| `miscellaneous` | `BlockingOutline` / `BlockingFilled` | WM-26 | 1 |
+| `miscellaneous` | `ReleaseTagOutline` / `ReleaseTagFilled` | WM-04 (Release picker), WM-15 | 0 |
+| `miscellaneous` | `TimeEntriesOutline` / `TimeEntriesFilled` | WM-32, WM-33 (Zuordnung UNVERIFIZIERT) | 0 |
+| `miscellaneous` | `TransferWorkItemOutline` / `TransferWorkItemFilled` | WM-23 | 3 |
+| `miscellaneous` | `TransferWorkItemAltOutline` / `TransferWorkItemAltFilled` | WM-23 (Projekt-Move, Zuordnung UNVERIFIZIERT) | 0 |
+| `miscellaneous` | `UpdatesOutline` / `UpdatesFilled` | WM-10, WM-40 | 0 |
+| `miscellaneous` | `RecurringWorkItemsOutline` / `RecurringWorkItemsFilled` | WM-19 | 0 |
+| `miscellaneous` | `RequestOutline` / `RequestFilled` | WM-17 (Zuordnung UNVERIFIZIERT) | 0 |
+| `miscellaneous` | `AttachOutline` / `AttachFilled`, `FileOutline` / `FileFilled` | WM-04 (File), WM-39 (Attachments) | 8 / 0 |
+| `miscellaneous` | `MailOutline` / `MailFilled` | WM-04 (Email), WM-46 | 7 |
+| `miscellaneous` | `ClockOutline` / `ClockFilled` | WM-43 (Zuordnung UNVERIFIZIERT) | 7 |
+| `properties` | `PropertiesOutline` / `PropertiesFilled` | WM-03 | 0 |
+| `properties` | `BooleanOutline` (kein Filled) | WM-04 | 0 |
+| `properties` | `DropdownOutline` / `DropdownFilled` | WM-04 | 0 |
+| `properties` | `HashOutline` / `HashFilled` | WM-04 (Number) | 1 |
+| `properties` | `MembersOutline` / `MembersFilled` | WM-04 (Member picker) | 18 |
+| `properties` | `RelationsOutline` / `RelationsFilled` | WM-04 (Relation), WM-27 | 1 |
+| `properties` | `ImplementsOutline` / `ImplementsFilled`, `ImplementedByOutline` / `ImplementedByFilled` | WM-27 | 0 / 0 |
+| `properties` | `DuplicateOfOutline` / `DuplicateOfFilled` | WM-47 | 5 |
+| `properties` | `StartDateOutline` / `StartDateFilled`, `DueDateOutline` / `DueDateFilled` | WM-04 (Date), WM-26 | 11 / 13 |
+| `properties` | `TimeInStateOutline` / `TimeInStateFilled` | WM-43 (Dok 25 F06) | 0 |
+| `properties` | `LabelsOutline` / `LabelsFilled`, `StateOutline` / `StateFilled` | WM-51, WM-37, WM-38 | 11 / 13 |
+| `formatting-and-editors` | `FormulaOutline` / `FormulaFilled` | WM-06 | 0 |
+| `formatting-and-editors` | `TextOutline` / `TextFilled` | WM-04 (Text) | 8 |
+| `formatting-and-editors` | `ToDoOutline` / `ToDoFilled` | WM-01 (Activity-Icon `is_issue_type_enabled`, R21 Z. 71) | 3 |
+| `layouts` | `GridOutline` / `GridFilled` | WM-09 (Activity-Icon `is_epic_enabled`, R21 Z. 68) | 5 |
+| `layouts` | `TimelineOutline` / `TimelineFilled`, `CalendarOutline` / `CalendarFilled` | WM-14 (Milestone-Linien im Timeline-Layout), WM-26 | 4 / 22 |
+
+Weitere Icons in `packages/blocks/src/icons/`: `CalendarBeforeIcon`, `CalendarAfterIcon` (WM-26, `calendar-before-icon.tsx`, `calendar-after-icon.tsx`).
+
+### C.2 Leerzustands-Illustrationen (`packages/blocks/src/empty-state/assets/`, R24)
+
+Asset-Schlüssel laut `asset-types.ts` (horizontal Z. 9–40, vertikal Z. 44–68).
+
+| Asset-Schlüssel | Stapel | Datei | Feature |
+|---|---|---|---|
+| `custom-properties` | horizontal | `horizontal-stack/custom-properties.tsx` | WM-03, WM-07 |
+| `customer` | horizontal + vertikal | `horizontal-stack/customer.tsx`, `vertical-stack/customer.tsx` | WM-16 |
+| `epic` | horizontal + vertikal | `horizontal-stack/epic.tsx`, `vertical-stack/epic.tsx` | WM-09 |
+| `estimate` | horizontal | `horizontal-stack/estimate.tsx` | WM-35 |
+| `intake` | horizontal | `horizontal-stack/intake.tsx` | WM-44 … WM-46 |
+| `label` | horizontal | `horizontal-stack/label.tsx` | WM-38, WM-51 |
+| `link` | horizontal | `horizontal-stack/link.tsx` | WM-39 (Projekt-Links) |
+| `state` / `state-square` | horizontal | `horizontal-stack/state.tsx`, `horizontal-stack/state-square.tsx` | WM-37, WM-51 |
+| `template` | horizontal | `horizontal-stack/template.tsx` | WM-20, WM-21, WM-41 |
+| `update` | horizontal | `horizontal-stack/update.tsx` | WM-10, WM-40 |
+| `worklog` | horizontal | `horizontal-stack/worklog.tsx` | WM-33 |
+| `work-item` | horizontal + vertikal | `horizontal-stack/work-item.tsx`, `vertical-stack/work-item.tsx` | WM-01, WM-09 (Epic-Kinder) |
+| `changelog` | vertikal | `vertical-stack/changelog.tsx` | WM-15 |
+| `initiative` | vertikal | `vertical-stack/initiative.tsx` | WM-11 |
+| `milestone` | vertikal | `vertical-stack/milestone.tsx` | WM-14 |
+| `no-access` | vertikal | `vertical-stack/no-access.tsx` | WM-36 |
+| `property` | vertikal | `vertical-stack/property.tsx` | WM-03 |
+| `project` | horizontal + vertikal | `horizontal-stack/project.tsx`, `vertical-stack/project.tsx` | WM-37, WM-39, WM-41 |

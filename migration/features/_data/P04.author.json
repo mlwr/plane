@@ -1,0 +1,982 @@
+{
+ "doc_path": "/home/user/plane/migration/features/23-paid-work-management.md",
+ "summary": "Ergänzungslauf zu Dok 23 (Cluster P04 Work Management). Das Dokument endete nach Kap. 3.17; Kap. 4 und die Anhänge A–C fehlten. Ergänzt wurden: Kap. 3.18 mit vier bisher in keinem Cluster spezifizierten Work-Item-Funktionen (WM-48 Votes in der App, WM-49 Kommentar-Antworten, WM-50 projektübergreifende Sub-Work-Items, WM-51 Workspace Governance für States/Labels), Kap. 3.19 mit 15 belegten Nachrecherche-Befunden (14 WebSearch-Abfragen), Kap. 4 mit 23 Unklarheiten (O-01–O-23) und 15 Rückfragen (R-01–R-15) samt Defaults, Anhang A (89 Commercial-Endpunkte ohne CE-Code, 8 ungeroutete Estimate-Endpunkte, 3 CE-Endpunkte, 43 MCP-Aktionen, 26 interne Pfade, die das CE-Frontend ohne Backend aufruft), Anhang B (77 i18n-Schlüsselgruppen mit Zeilen und Status) und Anhang C (Propel-Icons mit CE-Nutzung, Leerzustands-Illustrationen). Korrigiert: Dependency-Zeitsemantik in WM-26 (Finish-to-Finish statt Finish-to-Start für finish_before), Tiers von Milestones (Pro) und Releases (Business), Kennzahlen in Kap. 1.5. Der Cluster umfasst jetzt 51 Features: 22 fehlen im CE, 16 sind Stubs/UI-Hüllen, 13 teilweise vorhanden.",
+ "paid_features": [
+  {
+   "name": "WM-01 Work Item Types (Projekt- und Workspace-Typen, Default-Typ, aktiv/inaktiv, Typwechsel)",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Free/One ✗; Pro/Business/Enterprise ✓ (plans.tsx Z. 205–214, planHighlights.pro „Custom work items + Properties“); Doku-Label Pro (docs.plane.so/work-item-types); Workspace-Verwaltung der Typen laut Doku Enterprise Grid.",
+   "ce_status": "teilweise im CE",
+   "description": "Eigene Work-Item-Typen mit Name, Beschreibung, Icon und Hintergrundfarbe. Workspace-Settings-Seite „Work item Types“ mit Liste (Sortierung nach Projektanzahl, Filter aktiv/inaktiv), Modal „Create/Update work item type“, Aktiv-Toggle, „Set as default“ (verknüpft den Typ mit allen Projekten), Löschen nur ohne Default-Status und ohne zugeordnete Work Items. Projekt-Ebene: Aktivierung irreversibel („Once enabled, Work item Types can't be disabled.“), „Create new“/„Import from workspace“. Am Work Item: Typ im Create-Modal (Default-Typ bei Projektwechsel), Typwechsel mit Bestätigung, der typfremde Property-Werte löscht; Typ-Icon vor dem Identifier.",
+   "data_model_hints": "CE: IssueType(workspace, name, description, logo_props, is_epic, is_default, is_active, level, external_*), ProjectIssueType(project, issue_type, level, is_default), Issue.type FK SET_NULL, Project.is_issue_type_enabled. Vorschlag: Unique (workspace_id, lower(name)), partieller Unique-Index für einen Default je Projekt bzw. Workspace; Irreversibilität serverseitig.",
+   "api_hints": "Commercial v1: GET/POST /api/v1/workspaces/{workspace_slug}/projects/{project_id}/work-item-types/, GET/PATCH/DELETE …/{type_id}/, GET …/work-item-types/schema/?type_id=&include= (Scopes projects.work_item_types:read|write). MCP workitem_type resolve/import_to_project und Workspace-Scope ohne project_id. Interne Pfade nicht belegt.",
+   "ui_hints": "Icons WorkItemsOutline/Filled, PropertiesOutline/Filled, HierarchyOutline/Filled, ToDoOutline (Activity); Illustrationen custom-properties, property; IssueTypeSwitcher-Stub neben dem Identifier in Detail und Peek; Referenz-Screenshots developer-docs public/images/issues/*.webp (ältere Generation).",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/i18n/src/locales/en/work-item-type.json",
+    "packages/i18n/src/locales/en/project-settings.json",
+    "packages/i18n/src/locales/en/empty-state.json",
+    "apps/api/plane/db/models/issue_type.py",
+    "apps/api/plane/db/models/project.py",
+    "apps/web/components/issues/issue-modal/form.tsx",
+    "apps/web/components/issues/issue-type-switcher.tsx",
+    "/home/user/makeplane/developer-docs/docs/api-reference/issue-types/types/",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/plane-compose.md",
+    "https://docs.plane.so/work-item-types"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "WM-02 Work-Item-Type-Hierarchie (Level, Parent/Child-Regeln, Bruch-Validierung)",
+   "cluster": "P04 Work Management",
+   "tier": "unklar",
+   "tier_details": "Nicht in plans.tsx; Changelog 31.05.2026 (Workspace-Ebene); vermutlich mindestens Business wie WM-07 (UNVERIFIZIERT).",
+   "ce_status": "teilweise im CE",
+   "description": "Workspace-Tab „Hierarchy“: Schalter „Enable hierarchy“ (irreversibel), Level-Editor per Drag & Drop, Default-Level, Bruch-Modal „Validation error!“ mit Zählern der betroffenen Parent-/Sub-Work-Items und Bestätigung durch Eingabe „Confirm“ (Apply & Unlink entfernt parent-Beziehungen). Regel: Parent liegt genau eine Ebene über dem Kind; Fehler bei Create/Update im Work-Item-Modal.",
+   "data_model_hints": "CE-Trägerfelder IssueType.level (Float), ProjectIssueType.level (PositiveInt). Vorschlag: Workspace-Einstellung hierarchy_enabled (irreversibel), default_level; Domain-Service WorkItemHierarchyPolicy.",
+   "api_hints": "Nicht dokumentiert; Vorschlag PATCH Typ mit level, Dry-Run liefert parent_count/child_count, Ausführen mit force. Epic-Kinder werden laut D1 gegen die Typ-Hierarchie validiert.",
+   "ui_hints": "Icon HierarchyOutline/Filled; Drag & Drop wie Kanban (@atlaskit/pragmatic-drag-and-drop).",
+   "sources": [
+    "packages/i18n/src/locales/en/work-item-type.json Z. 393–476",
+    "apps/api/plane/db/models/issue_type.py",
+    "/home/user/makeplane/developer-docs/docs/api-reference/epics/add-epic-work-items.md"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-03 Custom Properties – Projekt-Ebene (Property-Engine, Werte am Work Item)",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Pro „Project-level custom properties“; Business/Enterprise zusätzlich „Workspace-level properties and roll-ups“ (plans.tsx Z. 216–225).",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Je Work Item Type Abschnitt „Properties“ mit „Add new property“ und „Import from workspace“; Formular „Create new custom property“ (Titel ≤255 Pflicht, Beschreibung, Property type Pflicht, Attribute, Optionen, Mandatory, Active); Toasts für Create/Update/Delete/Enable/Disable; Löschdialog bietet Deaktivieren als Alternative. Werte im Create-/Edit-Modal (Validierung vor Absenden, Speichern nach Create/Update, Drafts), in Detail/Peek-Sidebar, Activity ISSUE_ADDITIONAL_PROPERTIES_ACTIVITY, PQL cf[\"<id>\"], Typwechsel löscht typfremde Werte.",
+   "data_model_hints": "Commercial: Property(display_name, name, description, logo_props, sort_order, property_type, relation_type, is_required, is_multi, is_active, default_value[], settings{display_format}, validation_rules, formula_config, issue_type), Option(name unique je Property, description, color, sort_order, logo_props, is_active, is_default, parent), Value(property_id, issue_id, value, value_type). Vorschlag gemeinsame Engine mit Customers: custom_property, custom_property_option, work_item_type_property (n:m), custom_property_value mit typisierten Spalten und Indizes für PQL.",
+   "api_hints": "Commercial v1: …/projects/{project_id}/work-item-types/{type_id}/work-item-properties/ (GET/POST, GET/PATCH/DELETE {property_id}), …/work-item-properties/{property_id}/options/ (CRUD), …/work-items/{work_item_id}/work-item-properties/{property_id}/values/ (GET/POST/PATCH/DELETE; POST = Upsert, Multi ersetzt alle). Doku-Fehler: curl mit name statt display_name.",
+   "ui_hints": "Modal-Kontext-Hooks handlePropertyValuesValidation, handleCreateUpdatePropertyValues, getActiveAdditionalPropertiesLength, handleProjectEntitiesFetch (CE No-ops); useWorkItemProperties-Stub; Property-Tabelle Name|Type|Attributes|Mandatory|Active laut Screenshot property-details.webp; Platzhalter „Select options“/„{count} options selected“.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/i18n/src/locales/en/work-item-type.json",
+    "packages/i18n/src/locales/en/empty-state.json",
+    "apps/web/components/issues/issue-modal/context/issue-modal-context.tsx",
+    "apps/web/components/issues/issue-modal/base.tsx",
+    "apps/web/hooks/use-issue-properties.tsx",
+    "packages/types/src/issues/activity/base.ts",
+    "/home/user/makeplane/developer-docs/docs/api-reference/issue-types/",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "WM-04 Property-Typen (Text, Number, Dropdown, Boolean, Date, Member picker, Relation, URL, Email, File, Release picker, Formula)",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Mit WM-03 ab Pro; Release picker setzt Releases (WM-15, Business) voraus; Doku nennt sieben eingebaute UI-Typen Text, Number, Dropdown, Boolean, Date, Member picker, URL plus Release picker und Formula ab Mai 2026.",
+   "ce_status": "fehlt",
+   "description": "API-Enum property_type TEXT, DATETIME, DECIMAL, BOOLEAN, OPTION, RELATION (relation_type ISSUE, USER, RELEASE, RICH_TEXT), URL, EMAIL, FILE, FORMULA. Text mit display_format single-line/multi-line/readonly; Date mit MMM dd, yyyy | dd/MM/yyyy | MM/dd/yyyy | yyyy/MM/dd; Dropdown/Member single/multi; Boolean True|False; Default-Werte je Typ. Wert-Kodierung: Text/URL/Email/File String, Date YYYY-MM-DD[ HH:MM:SS], Number Zahl, Boolean true/false, Option/Relation ID oder Array.",
+   "data_model_hints": "Typisierte Wertspalten (value_text, value_number numeric, value_bool, value_date, value_ref_id); display_format in settings.",
+   "api_hints": "Wie WM-03; MCP workitem_property create mit options inline und display_format.",
+   "ui_hints": "Typ-Icons TextOutline, HashOutline, DropdownOutline, BooleanOutline, CalendarOutline/StartDate/DueDate, MembersOutline, RelationsOutline, LinkOutline, MailOutline, AttachOutline/FileOutline, ReleaseTagOutline, FormulaOutline; UI-Labels im CE-i18n nur für sieben Typen, URL/Email/File/Relation/Release picker fehlen.",
+   "sources": [
+    "packages/i18n/src/locales/en/work-item-type.json",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md Z. 212",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/plane-compose.md Z. 1094–1111",
+    "https://docs.plane.so/work-item-types",
+    "https://plane.so/blog/introducing-releases"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-05 Pflichtfelder, Default-Werte, Aktiv/Inaktiv, Optionen-Verwaltung",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Mit WM-03 ab Pro.",
+   "ce_status": "fehlt",
+   "description": "Checkbox „Mandatory property“ (Tooltips Check/Uncheck; für nicht unterstützte Typen gesperrt „This property type cannot be made mandatory“); Pflicht und Default schließen sich aus (Hinweistext zum Entfernen des Defaults). Durchsetzung im Modal vor dem Absenden und laut Plane Compose vor dem Abschluss (State-Gruppe completed). Default-Werte je Typ; Schalter Active (inaktive Properties nicht in Formularen, Werte bleiben).",
+   "data_model_hints": "is_required, default_value (String-Array), Option.is_default, is_active.",
+   "api_hints": "Server prüft Pflicht-Properties beim Wechsel in completed-State; bei Create/Update nur wenn alle Properties mitgesendet werden (Vorschlag).",
+   "ui_hints": "Tooltips „Click to disable“/„Click to enable“; Mandatory-Checkbox in der Property-Tabelle.",
+   "sources": [
+    "packages/i18n/src/locales/en/work-item-type.json Z. 206–228",
+    "apps/web/components/issues/issue-modal/form.tsx",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/plane-compose.md Z. 1090"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-06 Formula-Properties",
+   "cluster": "P04 Work Management",
+   "tier": "unklar",
+   "tier_details": "Keine Planangabe; Blog „Introducing Releases“ (13.05.2026) nennt das Formula field. Nicht verwechseln mit „Databases + Formulas“ in Pages (Business).",
+   "ce_status": "fehlt",
+   "description": "Feld „Formula field“ mit {Field Name}-Syntax und Operatoren + - * / &; Property-Picker beim Tippen; Button „Test“ validiert serverseitig („Formula is valid! Returns {resultType} ({count} field(s) referenced)“); Speicher-Validierung mit Zyklus-Erkennung („Circular reference detected …“) und Prüfung nicht existierender Properties. Werte berechnet, nicht editierbar.",
+   "data_model_hints": "formula_config (String) an der Property; Vorschlag materialisierte Ergebnisse mit Neuberechnung bei Änderung referenzierter Werte.",
+   "api_hints": "Validierungs-Endpunkt nicht belegt; Vorschlag POST …/work-item-properties/formula/validate/.",
+   "ui_hints": "Icon FormulaOutline/Filled; Texte work_item_types.settings.properties.formula.* und create_update.errors.formula.*.",
+   "sources": [
+    "packages/i18n/src/locales/en/work-item-type.json Z. 180–205",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md Z. 212",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/plane-compose.md Z. 1111",
+    "https://plane.so/blog/introducing-releases"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-07 Workspace-Level Properties und Workspace-Level Types (Katalog, Import, Link/Unlink, Governance-Modus)",
+   "cluster": "P04 Work Management",
+   "tier": "Business",
+   "tier_details": "plans.tsx Z. 222–223 Business/Enterprise „Workspace-level properties and roll-ups“; Plane Compose „workspace-level WIT definitions (Enterprise)“; docs.plane.so/work-item-types: Typen auf Workspace-Ebene im Enterprise Grid; zentrale Governance Enterprise Grid (Konflikt dokumentiert, O-01).",
+   "ce_status": "fehlt",
+   "description": "Zentraler Property-Katalog; je Typ „Custom properties“ mit Modal „Add properties“; Unlink mit Eingabebestätigung löscht alle Werte der Property an Work Items dieses Typs; Projekt-Import von Typen und Properties; Governance-Modus: projektbezogene Writes abgelehnt, Typen nur importiert, Properties im Workspace-Katalog. Display-Name workspaceweit eindeutig.",
+   "data_model_hints": "custom_property.project_id nullable (NULL = Katalog), n:m Typ↔Property, Workspace-Einstellung für Governance.",
+   "api_hints": "MCP: workitem_type ohne project_id, import_to_project, workitem_property list/create ohne project_id, manage_type_properties (attach/detach). REST-Pfade für Workspace-Scope nicht dokumentiert.",
+   "ui_hints": "Texte linked_properties.*, types.project.*; Unlink-Modal mit „Type {name} to continue:“.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/i18n/src/locales/en/work-item-type.json Z. 234–273",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md Z. 38–42, 175–212",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/plane-compose.md Z. 1003",
+    "https://docs.plane.so/work-item-types",
+    "https://docs.plane.so/workspace-administration/workspace-governance"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-08 Roll-ups",
+   "cluster": "P04 Work Management",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise (plans.tsx Z. 222–223, nur Matrix-Text).",
+   "ce_status": "fehlt",
+   "description": "Nur Matrix-Text „Workspace-level properties and roll-ups“ belegt; auch die Nachrecherche fand keine Doku. Vorschlag: read-only Roll-up-Property an Eltern-Typen mit Aggregation Sum/Avg/Min/Max/Count/Count-not-empty über Kinder.",
+   "data_model_hints": "Vorschlag: rollup_config an der Property (Quell-Property, Funktion, Filter auf State-Gruppe), materialisierte Werte.",
+   "api_hints": "Nicht belegt.",
+   "ui_hints": "Nicht belegt; Referenz-Screenshots nötig.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx Z. 222–223"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "WM-09 Epics",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Pro/Business/Enterprise (plans.tsx Z. 261–270); docs.plane.so/work-items/epics Label Pro.",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Epic = Work Item mit Typ is_epic. Projekt-Feature epics; Navigation „Epics“; Liste unter /{workspaceSlug}/projects/{projectId}/epics mit List/Kanban/Calendar/Gantt/Spreadsheet; Modal CreateUpdateEpicModal (Texte „New Epic“, „Epic title is required.“); Kinder über …/epics/{id}/issues/ mit Hierarchie-Validierung; Löschen setzt parent der Kinder auf null; Cycles/Module zuordenbar; Archiv; Leerzustände; eigene Activity-Typen epic-comment/epic-property; Generationswechsel 26.05.2026 (Epic als normaler Typ).",
+   "data_model_hints": "Keine eigene Tabelle; Commercial-Objekt mit Work-Item-Feldern (state, priority, assignees, labels, type, estimate_point, start/target_date, parent, sequence_id …).",
+   "api_hints": "Commercial v1: GET/POST …/projects/{project_id}/epics/, GET/PATCH/DELETE …/epics/{epic_id}/, GET/POST …/epics/{epic_id}/issues/ (Scope projects.epics:*). CE-Frontend erwartet intern …/epics/, epics-detail/, v2/epics/, epics/list/, history/, issue-relation/, issues/, links/, subscribe/, comments/, epics-user-properties/ – alle fehlen im CE-Backend.",
+   "ui_hints": "Icons EpicOutline/Filled, ConvertToEpic*, GridOutline (Activity); Illustration epic; Spreadsheet-Kopf „Epics“; Bulk-Auswahl in Epic-Listen deaktiviert.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/i18n/src/locales/en/work-item.json Z. 416–431",
+    "packages/i18n/src/locales/en/empty-state.json Z. 97–113",
+    "apps/web/services/issue/issue.service.ts",
+    "apps/web/services/issue_filter.service.ts",
+    "apps/api/plane/db/models/issue_type.py",
+    "/home/user/makeplane/developer-docs/docs/api-reference/epics/",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md Z. 50–58",
+    "https://docs.plane.so/work-items/epics"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "WM-10 Epic-Fortschritt und Epic-Updates",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Mit Epics ab Pro; Progress Charts ab Pro (plans.tsx Z. 538–548).",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Kennzahlen je Epic backlog/unstarted/started/completed/cancelled/overdue (TEpicAnalytics); Update-Feed mit Status ON-TRACK/OFF-TRACK/AT-RISK, Text, Abschnitt „Progress – Since last update“, Kommentare, Reaktionen, Bearbeiten/Löschen mit Toasts aus update.json.",
+   "data_model_hints": "Vorschlag entity_update(entity_type project|epic|initiative, entity_id, status, description_*, progress_snapshot jsonb), entity_update_comment, entity_update_reaction.",
+   "api_hints": "Nicht öffentlich dokumentiert.",
+   "ui_hints": "Icons UpdatesOutline/Filled; Illustration update; Leerzustände common_empty_state.progress/updates.",
+   "sources": [
+    "packages/types/src/epics.ts",
+    "packages/types/src/enums.ts Z. 87–91",
+    "packages/i18n/src/locales/en/update.json",
+    "packages/i18n/src/locales/en/empty-state.json Z. 3–10"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-11 Initiatives",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "plans.tsx Z. 272–282 Pro („Coming soon“); University-Kurs 05 Pro; andere University-Seite und Dok 21 Business (Konflikt); Sub-Initiativen nur Enterprise laut Vergleichsseite.",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Workspace-weite Ziele, die Projekte, Epics und Work Items bündeln. Aktivierung Workspace Settings → Initiatives → „Enable Initiatives“ (nur Admins). Felder Name, Rich-Text-Beschreibung, Lead, Start/Ende, logo_props, State DRAFT/PLANNED/ACTIVE/COMPLETED/CLOSED (UI-Labels laut University Draft, Planned, Active, Completed, Closed), Labels, verknüpfte Projekte/Epics; aggregierter Fortschritt; Update-Feed; Board-Ansicht; Detailseite mit einklappbarer Sidebar (localStorage initiatives_sidebar_collapsed).",
+   "data_model_hints": "initiative(name, description_*, lead, start_date, end_date, logo_props, state, archived_at, workspace), initiative_project, initiative_work_item, initiative_label(_assignment), parent_id für Sub-Initiativen.",
+   "api_hints": "Commercial v1: GET/POST /initiatives/, GET/PATCH/DELETE /initiatives/{id}/, GET/POST/DELETE …/{id}/projects/, …/{id}/epics/, …/{id}/labels/ (Scopes initiatives:*, initiatives.projects:*, initiatives.epics:*, initiatives.labels:*); MCP-Liste ohne Pagination.",
+   "ui_hints": "Icons InitiativeOutline/Filled, State-Icons InitiativeDraft/Planned/InProgress/Completed/Cancelled; Illustration initiative; Label-Dropdown mit Scope initiative.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "apps/web/store/theme.store.ts",
+    "packages/constants/src/workspace.ts",
+    "/home/user/makeplane/developer-docs/docs/api-reference/initiative/",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md Z. 290–305",
+    "https://university.plane.so/courses/201-the-growth/05-intro-to-initiatives.html"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-12 Initiative-Labels",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Wie Initiatives (WM-11).",
+   "ce_status": "fehlt",
+   "description": "Eigener Workspace-Label-Katalog für Initiativen (Name Pflicht, Beschreibung, Farbe, sort_order); Zuordnung mehrerer Labels je Initiative.",
+   "data_model_hints": "initiative_label(id, workspace_id, name, description, color, sort_order), initiative_label_assignment.",
+   "api_hints": "GET/POST /initiatives/labels/, GET/PATCH/DELETE /initiatives/labels/{label_id}/, GET/POST/DELETE /initiatives/{id}/labels/ (DELETE mit ID-Array im Body).",
+   "ui_hints": "Label-Dropdown mit Scope initiative; Texte fehlen im CE-i18n.",
+   "sources": [
+    "/home/user/makeplane/developer-docs/docs/api-reference/initiative/add-initiative-label.md",
+    "apps/web/components/dropdowns/label/label-select.tsx Z. 48–49"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-13 Checkpoints und Updates an Projekten/Epics/Initiativen",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Checkpoints Pro/Business/Enterprise („Coming soon“, plans.tsx Z. 284–295); Project Updates Pro (auskommentiert, Z. 354–366).",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Updates siehe WM-10/WM-40. Checkpoints nur als Matrix-Text belegt („Add markers to Projects, Epics and Initiatives …“); Vorschlag datierter Marker mit Ziel-Fortschritt, sichtbar in Timeline und Update-Feed; Entscheidung R-03.",
+   "data_model_hints": "Vorschlag checkpoint(entity_type, entity_id, title, date, description, target_progress).",
+   "api_hints": "Nicht belegt.",
+   "ui_hints": "Nicht belegt.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx Z. 284–295, 354–366",
+    "packages/i18n/src/locales/en/update.json"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "WM-14 Milestones",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Nicht in plans.tsx; docs.plane.so und University 07: Pro; eingeführt Self-hosted v1.16.0 (05.11.2025).",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Projekt-Feature unter Project Settings → Features → „Work management“ („Enable milestones“). Abschnitt „Milestones“ auf der Projekt-Overview-Seite; Milestone mit Titel, Beschreibung, Zieldatum und verknüpften Work Items; Fortschritt in Prozent (completed + cancelled); Status-Icons not started/in progress/done; im Timeline-Layout gestrichelte Linie am Datum; Gruppierung nach milestone_id; Webhooks milestone.created/updated/deleted.",
+   "data_model_hints": "milestone(id, project_id, title, target_date, description (laut Doku, nicht in REST), external_*); Zuordnung höchstens ein Milestone je Work Item (Unique issue_id).",
+   "api_hints": "Commercial v1: GET/POST …/projects/{project_id}/milestones/, GET/PATCH/DELETE …/{milestone_id}/, GET …/{milestone_id}/work-items/ (Scopes projects.milestones:*); Zuordnen nur über MCP manage_workitems belegt.",
+   "ui_hints": "Icons MilestoneOutline, MilestonesFilled, MilestoneNotStarted/InProgress/Done; Illustration milestone; Overview-Collapsible \"milestones\" (Default offen) im Projekt-Store.",
+   "sources": [
+    "packages/i18n/src/locales/en/project-settings.json Z. 420–426",
+    "packages/i18n/src/locales/en/common.json Z. 717, 844–845",
+    "apps/web/store/project/project.store.ts",
+    "packages/constants/src/fetch-keys.ts Z. 205–206",
+    "/home/user/makeplane/developer-docs/docs/api-reference/milestones/",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md Z. 274–288",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/intro-webhooks.md Z. 246–248",
+    "https://docs.plane.so/core-concepts/projects/milestones"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-15 Releases (Release, Tags, Labels, Changelog, Work-Item-Zuordnung)",
+   "cluster": "P04 Work Management",
+   "tier": "Business",
+   "tier_details": "Nicht in plans.tsx; Doku-Seitenkopf „Releases Business“ (docs.plane.so/releases); eingeführt mit v2.6.0 bzw. Blog 13.05.2026.",
+   "ce_status": "fehlt",
+   "description": "Workspace-Releases mit Name, Beschreibung, Status unreleased/released/cancelled, „Target date“ (= release_date), verstecktes target_date, Lead, Tag, is_prerelease; leeres Changelog-Dokument je Release; Work Items aus mehreren Projekten zuordnen; Release-Tags (version, description, commit_hash, git_tag); Release-Labels (Palette, attach/detach). Aktivierung Workspace Settings → Releases → „Enable Releases“.",
+   "data_model_hints": "release, release_changelog, release_work_item (n:m), release_tag (version unique), release_label, release_label_assignment.",
+   "api_hints": "REST nicht dokumentiert; MCP release, release_tag, release_label (list/retrieve/create/update/delete, get/update_changelog, list/manage_workitems, attach/detach).",
+   "ui_hints": "Icons ReleasesOutline/Filled, ReleaseTagOutline/Filled; Illustration changelog; alle UI-Texte fehlen im CE-i18n.",
+   "sources": [
+    "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md Z. 307–356",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/plane-compose.md Z. 1109",
+    "https://docs.plane.so/releases",
+    "https://plane.so/blog/introducing-releases"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-16 Customers (Kundenprofile, Work-Item-Verknüpfung)",
+   "cluster": "P04 Work Management",
+   "tier": "Business",
+   "tier_details": "Business laut docs.plane.so/customers, University 02-intro-to-customers und Blog Introducing Plane Business; Konflikt: Pricing-Seite nennt „customer profiles“ unter Pro (Dok 20 PF-41).",
+   "ce_status": "fehlt",
+   "description": "Workspace-Feature customers (Workspace Settings → Customers → Schalter bzw. „Enable Customers“). Kundenprofil mit Name, Beschreibung, Email, Website, Industry (API domain), Employees, Stage (lead … closed_lost), Contract status (active, pre_contract, signed, inactive), Revenue, Logo; eigene Properties; Verknüpfung mit Work Items (Anzahl customer_count/customer_request_count als Display-Properties); Upsert-Semantik über external_* oder Name.",
+   "data_model_hints": "customer(name, description_*, email, website_url, domain, employees, stage, contract_status, revenue, logo_props, logo_asset_id, archived_at, external_*), customer_work_item(customer_id, work_item_id, customer_request_id).",
+   "api_hints": "Commercial v1: GET/POST /customers/, GET/PATCH/DELETE /customers/{id}/, GET/POST /customers/{id}/issues/ (issue_ids), DELETE /customers/{id}/issues/{work_item_id}/ (Scopes customers:*, customers.work_items:*).",
+   "ui_hints": "Icons CustomersOutline/Filled; Illustration customer (horizontal und vertikal); kein Customers-Namespace im CE-i18n; ETabIndices ohne Customer-Eintrag.",
+   "sources": [
+    "/home/user/makeplane/developer-docs/docs/api-reference/customer/",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md Z. 463–511",
+    "apps/api/plane/bgtasks/workspace_seed_task.py Z. 160, 163",
+    "https://docs.plane.so/customers",
+    "https://university.plane.so/courses/202-the-power-relay/02-intro-to-customers.html"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-17 Customer Requests",
+   "cluster": "P04 Work Management",
+   "tier": "Business",
+   "tier_details": "Wie Customers (WM-16).",
+   "ce_status": "fehlt",
+   "description": "Anfragen je Kunde mit Name, Rich-Text-Beschreibung, Link (Quell-URL) und verknüpften Work Items bzw. Epics; work_item_ids nur beim Anlegen, danach über die Customer-Work-Item-Verknüpfung mit customer_request_id; Löschen entkoppelt Work Items.",
+   "data_model_hints": "customer_request(id, customer_id, workspace_id, name, description_*, link).",
+   "api_hints": "GET/POST /customers/{id}/requests/, GET/PATCH/DELETE /customers/{id}/requests/{request_id}/ (Scope customers.requests:*); MCP list_workitems/manage_workitems mit customer_request_id.",
+   "ui_hints": "Icon RequestOutline (Zuordnung UNVERIFIZIERT); Texte fehlen im CE-i18n.",
+   "sources": [
+    "/home/user/makeplane/developer-docs/docs/api-reference/customer/add-customer-request.md",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md Z. 483–495",
+    "https://plane.so/customer-requests"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-18 Customer Properties",
+   "cluster": "P04 Work Management",
+   "tier": "Business",
+   "tier_details": "Wie Customers (WM-16).",
+   "ce_status": "fehlt",
+   "description": "Eigene Properties für Kunden mit denselben Typen wie Work-Item-Properties; display_name workspaceweit eindeutig; Werte als String-Listen je Property (set_values ersetzt nur genannte Properties).",
+   "data_model_hints": "Gemeinsame Property-Engine mit WM-03 (Owner-Kind customer).",
+   "api_hints": "GET/POST /customer-properties/, GET/PATCH/DELETE /customer-properties/{id}/, GET /customers/{id}/property-values/, GET/PATCH /customers/{id}/property-values/{property_id}/ (Body {values: [...]}, Antwort 204).",
+   "ui_hints": "Wie WM-03/WM-04.",
+   "sources": [
+    "/home/user/makeplane/developer-docs/docs/api-reference/customer/",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md Z. 497–511"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-19 Recurring Work Items",
+   "cluster": "P04 Work Management",
+   "tier": "Business",
+   "tier_details": "Business („Upgrade to Business to make recurring work feel effortless.“).",
+   "ce_status": "fehlt",
+   "description": "Projekt-Settings „Recurring work items“; Work-Item-Blueprint plus Schedule (Startdatum, Intervalltyp daily/weekly/monthly/yearly, interval_count, end_at); Läufe 00:05 Projekt-Zeitzone; nur Projekt-Admins; erzeugte Work Items durchlaufen Default-Typ, Property-Defaults, Workflow und Activity. Vollständige Spezifikation Dok 25 F24.",
+   "data_model_hints": "Siehe Dok 25 F24.",
+   "api_hints": "API v2 laut Dok 25 F24.",
+   "ui_hints": "Icon RecurringWorkItemsOutline/Filled; Leerzustand settings_empty_state.recurring_work_items.",
+   "sources": [
+    "packages/i18n/src/locales/en/work-item.json Z. 337–415",
+    "packages/i18n/src/locales/en/empty-state.json Z. 243–247",
+    "migration/features/25-paid-workflows-automation-templates.md"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-20 Work Item Templates",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Pro (planHighlights.pro „Work item templates“).",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Projekt- und Workspace-Templates mit Name, Beschreibung, Work-Item-Feldern inkl. Typ, Custom-Property-Werten und Sub-Work-Items; Anwendung im Create-Modal („Pick a work item template“, „Use template“); Formularlogik im CE schon vorhanden (Reset bei Projektwechsel, erneute Anwendung bei „Create more“, Sperre während isApplyingTemplate). Vollständig Dok 25 F21.",
+   "data_model_hints": "Siehe Dok 25 F21.",
+   "api_hints": "Siehe Dok 25 F21.",
+   "ui_hints": "Modal-Kontext workItemTemplateId, handleTemplateChange (CE No-op); Icon TemplatesOutline/Filled; Illustration template.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/i18n/src/locales/en/template.json",
+    "apps/web/components/issues/issue-modal/form.tsx",
+    "migration/features/25-paid-workflows-automation-templates.md"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "WM-21 Pre-defined work item Templates",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Pro („Coming soon“, plans.tsx Z. 368–379).",
+   "ce_status": "fehlt",
+   "description": "Mitgelieferte Vorlagen, die Work Item Types und Properties für Anwendungsfälle vorkonfigurieren; airgapped als Seed-Daten (Dok 25 F23).",
+   "data_model_hints": "Siehe Dok 25 F23.",
+   "api_hints": "Siehe Dok 25 F23.",
+   "ui_hints": "Siehe Dok 25 F23.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx Z. 368–379",
+    "migration/features/25-paid-workflows-automation-templates.md"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "WM-22 Bulk Ops",
+   "cluster": "P04 Work Management",
+   "tier": "One",
+   "tier_details": "One „Limited props“; Pro „All props“; Business/Enterprise zusätzlich „Work item transfers and conversions“ (Coming soon) (plans.tsx Z. 162–181).",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Mehrfachauswahl in List, Spreadsheet und Gantt (nicht in Epic-Listen); Aktionsleiste am unteren Listenrand statt Upsell-Banner; änderbar state_id, priority, label_ids, assignee_ids, start_date, target_date, module_ids, cycle_id, estimate_point; Array-Properties werden hinzugefügt (Vereinigung), Skalare ersetzt; Fehler invalid_archive_state_group, invalid_issue_start_date, invalid_issue_target_date, invalid_state_transition; zusätzlich Archivieren und Löschen (CE-Endpunkte).",
+   "data_model_hints": "Keine eigene Tabelle; Domain-Command BulkUpdateWorkItems.",
+   "api_hints": "CE-Frontend ruft POST /api/workspaces/{slug}/projects/{project_id}/bulk-operation-issues/ mit {issue_ids, properties}; Route fehlt im CE-Backend; CE hat bulk-archive-issues/ und bulk-delete-issues/.",
+   "ui_hints": "useBulkOperationStatus = () => false; Store bulkUpdateProperties; Texte issue.select.*, bulk_operations.error_details.*.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/constants/src/subscription.ts",
+    "packages/i18n/src/locales/en/work-item.json Z. 211–217, 313–336",
+    "apps/web/components/issues/bulk-operations/root.tsx",
+    "apps/web/hooks/use-bulk-operation-status.ts",
+    "apps/web/store/issue/helpers/base-issues.store.ts",
+    "packages/types/src/issues/issue.ts"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "WM-23 Work Item Transfers (Projekt- und Cycle-Wechsel)",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Pro/Business/Enterprise (plans.tsx Z. 238–247).",
+   "ce_status": "teilweise im CE",
+   "description": "CE: Bulk-Transfer offener Work Items (backlog/unstarted/started) eines Cycles in einen nicht beendeten Cycle mit Progress-Snapshot. Bezahl-Teil: einzelnes Work Item in anderes Projekt verschieben („Failed to move work item to project“), Bulk-Transfer (Business). Projekt-Move-Semantik (neue Sequenz, Mapping von State/Labels/Typ, Cycle/Modul leeren) UNVERIFIZIERT (R-05).",
+   "data_model_hints": "Vorschlag: alter Identifier als Redirect-Eintrag.",
+   "api_hints": "CE/Commercial: POST …/cycles/{cycle_id}/transfer-issues/ mit new_cycle_id; Projekt-Move nicht dokumentiert.",
+   "ui_hints": "Icons TransferWorkItemOutline (CE), TransferWorkItemAltOutline; Dialog „Transfer work items“ (CE).",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/i18n/src/locales/en/common.json Z. 280",
+    "apps/api/plane/utils/cycle_transfer_issues.py",
+    "apps/web/components/cycles/transfer-issues-modal.tsx",
+    "/home/user/makeplane/developer-docs/docs/api-reference/cycle/transfer-cycle-work-items.md"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-24 Conversions (Work Item ↔ Epic)",
+   "cluster": "P04 Work Management",
+   "tier": "unklar",
+   "tier_details": "Bulk-Conversions Business/Enterprise (Coming soon, plans.tsx Z. 168–179); Einzelkonvertierung ohne Planangabe.",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Aktionen „Convert to Epic“ / „Convert to Work item“ über das Work-Item-Modal (handleConvert); Typwechsel mit Hierarchie-Validierung, Kinder bleiben, typfremde Werte entfallen.",
+   "data_model_hints": "Kein eigenes Modell (Typwechsel).",
+   "api_hints": "Nicht dokumentiert.",
+   "ui_hints": "Icons ConvertToEpicOutline/Filled, ConvertToWorkItemOutline/Filled; Texte fehlen im CE-i18n.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx Z. 168–179",
+    "apps/web/components/issues/issue-modal/context/issue-modal-context.tsx",
+    "apps/web/components/issues/issue-modal/provider.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "WM-25 Kopie eines Work Items in ein anderes Projekt",
+   "cluster": "P04 Work Management",
+   "tier": "unklar",
+   "tier_details": "Changelog v1.13.0 „Duplicate work items and epics across projects“ ohne Planangabe.",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Quick Action „Make a copy“ mit EE-Untermenü (createCopyMenuWithDuplication); Modal „Make a copy to another project“ („This creates a copy of the work item.“, „All property data will be removed while duplicating.“, Projektwahl); Toasts „Work item duplicated successfully“/„Failed to duplicate work item“; Kopie mit Titel und Beschreibung, Properties auf Defaults des Zielprojekts.",
+   "data_model_hints": "Kein eigenes Modell.",
+   "api_hints": "Nicht dokumentiert.",
+   "ui_hints": "State isDuplicateIssueModalOpen im Peek; Texte issue.duplicate.*.",
+   "sources": [
+    "packages/i18n/src/locales/en/work-item.json Z. 219–235",
+    "apps/web/components/issues/issue-layouts/quick-action-dropdowns/copy-menu-helper.tsx",
+    "apps/web/components/issues/peek-overview/view.tsx"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-26 Dependencies in Gantt",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Pro/Business/Enterprise (plans.tsx Z. 227–236); Changelog v1.6.0 (Dezember 2024) Pro.",
+   "ce_status": "teilweise im CE",
+   "description": "Dependency-Typen blocking/blocked_by (Finish-to-Start), start_before/start_after (Start-to-Start), finish_before/finish_after (Finish-to-Finish); Button „Add dependency“ getrennt von „Add relation“; Gantt-Linien nur bei Start- und Fälligkeitsdatum, Erzeugen per Konnektor-Ziehen, verletzte Dependencies rot, abhängige Balken verschieben sich beim Ziehen mit; Speichern aller Datumsänderungen in einem issue-dates-Request. CE speichert nur Vorwärtsformen und vertauscht bei blocking/start_after/finish_after.",
+   "data_model_hints": "CE IssueRelation mit Unique (issue, related_issue); Vorschlag getrennte Tabelle work_item_dependency.",
+   "api_hints": "CE intern: Relations-Endpunkt mit allen Typen, POST …/issue-dates/; Commercial v1 relations GET/POST und POST …/relations/remove/; Webhooks workitem.dependency.created/deleted.",
+   "ui_hints": "Gantt-Stubs isDependencyEnabled=false, getIsCurrentDependencyDragging, updateBlockPosition(ignoreDependencies); Icons DependencyOutline, BlockingOutline, CalendarBeforeIcon/AfterIcon.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/i18n/src/locales/en/work-item.json Z. 186–198",
+    "apps/api/plane/utils/issue_relation_mapper.py",
+    "apps/api/plane/app/views/issue/relation.py",
+    "apps/web/store/timeline/base-timeline.store.ts",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md Z. 142–156",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/intro-webhooks.md Z. 271–274",
+    "https://docs.plane.so/core-concepts/issues/timeline-dependency"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "WM-27 Custom Relations (Relationsdefinitionen, Implements/Implemented by)",
+   "cluster": "P04 Work Management",
+   "tier": "unklar",
+   "tier_details": "Keine Planangabe; Blog „New work item detail view, custom relations and more“; implements/implemented by seit v1.22.0.",
+   "ce_status": "teilweise im CE",
+   "description": "Workspace-Settings „Relations“ („Create and manage relation types that connect work items across your workspace.“); Definition name, outward, inward, is_active, color, Default-Definitionen; Relation mit Definition und gewähltem Label (Richtung); unabhängig von Dependencies.",
+   "data_model_hints": "Vorschlag relation_definition(workspace_id, name, outward, inward, color, is_active, is_default, sort_order) und work_item_relation(source_id, target_id, definition_id).",
+   "api_hints": "MCP workitem_relation list/create/update/delete_definition, create mit relation_definition_id + relation_definition_label, delete mit is_dependency.",
+   "ui_hints": "Icons ImplementsOutline/Filled, ImplementedByOutline/Filled, RelationsOutline/Filled.",
+   "sources": [
+    "packages/i18n/src/locales/en/workspace-settings.json Z. 277–281",
+    "packages/i18n/src/locales/en/work-item.json Z. 197–198",
+    "apps/api/plane/db/models/issue.py Z. 272–293",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md Z. 142–156",
+    "https://plane.so/changelog/release-v1-22-0-clean-pages-connected-work-smoother-editing"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-28 Auto-transfer Cycle Work Items (Auto-Rollover)",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Pro/Business/Enterprise (plans.tsx Z. 249–259).",
+   "ce_status": "fehlt",
+   "description": "Option „Auto-rollover work items“ im Formular „Auto-schedule cycles“: am Abschlusstag eines Cycles unfertige Work Items in den nächsten Cycle verschieben (CE-Transferlogik mit Progress-Snapshot).",
+   "data_model_hints": "Feld auto_rollover in cycle_schedule.",
+   "api_hints": "Hintergrundjob; kein öffentlicher Endpunkt.",
+   "ui_hints": "Tooltip „On the day a cycle completes, move all unfinished work items into the next cycle.“",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx Z. 249–259",
+    "packages/i18n/src/locales/en/project-settings.json Z. 491–494",
+    "apps/api/plane/utils/cycle_transfer_issues.py"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-29 Auto-schedule Cycles",
+   "cluster": "P04 Work Management",
+   "tier": "unklar",
+   "tier_details": "Changelog v1.16.0 „recurring cycles“ ohne Planangabe.",
+   "ce_status": "fehlt",
+   "description": "Abschnitt „Auto-schedule cycles“ auf der Cycles-Feature-Seite mit Formular Cycle Title (nummeriert), Cycle Duration 1–30 Wochen, Cooldown Period ≥ 0 Tage, Cycle starts day (nicht in der Vergangenheit), Number of future cycles 1–3, Auto-rollover; Toasts für Toggle und Speichern.",
+   "data_model_hints": "Vorschlag cycle_schedule(project_id, is_enabled, title, duration_weeks, cooldown_days, start_date, future_count, auto_rollover, next_sequence).",
+   "api_hints": "Nicht dokumentiert.",
+   "ui_hints": "Texte project_settings.cycles.auto_schedule.*.",
+   "sources": [
+    "packages/i18n/src/locales/en/project-settings.json Z. 442–523",
+    "https://plane.so/changelog/release-v-1-16-0-introducing-milestones-and-recurring-cycles"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "WM-30 Module Overview",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Pro/Business/Enterprise (plans.tsx Z. 297–306).",
+   "ce_status": "teilweise im CE",
+   "description": "CE hat Modul-Peek mit Burndown/Progress und Verteilungen; Bezahl-Mehrwert nur als Matrix-Text („Like Cycle Overviews …“); Vorschlag Modul-Detailseite mit Tab „Overview“.",
+   "data_model_hints": "Keine neuen Tabellen.",
+   "api_hints": "Keine neuen Endpunkte (CE-Analytics).",
+   "ui_hints": "Icon OverviewOutline; Komponenten apps/web/components/modules/analytics-sidebar/*.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx Z. 297–306",
+    "apps/web/components/modules/analytics-sidebar/root.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "WM-31 Auto-assignment in Modules",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Pro „Linear“; Business/Enterprise „Round-robin and Capacity“ (plans.tsx Z. 308–317).",
+   "ce_status": "fehlt",
+   "description": "Nur Matrix-Text; Vorschlag: Modul-Regel none/linear/round_robin/capacity beim Hinzufügen eines Work Items ohne Assignee (Linear = Lead, Round Robin reihum, Capacity = geringste offene Last).",
+   "data_model_hints": "Vorschlag module.assignment_rule, Round-Robin-Zeiger je Modul.",
+   "api_hints": "Nicht belegt.",
+   "ui_hints": "Nicht belegt.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx Z. 308–317",
+    "apps/api/plane/db/models/module.py"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "WM-32 Time Tracking und Worklogs",
+   "cluster": "P04 Work Management",
+   "tier": "One",
+   "tier_details": "One „Basic“; Pro „Historical timesheets“; Business/Enterprise „Historical timesheets and approvals“ (plans.tsx Z. 183–192); Doku: Pro (Konflikt, O-01).",
+   "ce_status": "teilweise im CE",
+   "description": "Projekt-Feature „Time tracking“; Property „Tracked time“ (Summe, Format {h}h {m}m); „+ Log work“-Popover mit Stunden, Minuten, Beschreibung; Erfolgstoast „Worklog created successfully.“; Activity-Eintrag „{Name} logged {Dauer}“ mit Bearbeiten/Löschen; Activity-Filter „Worklogs“; Admins erfassen Zeit für Dritte; Projektsumme je Work Item.",
+   "data_model_hints": "Worklog(description, duration Minuten, logged_by, project_id, workspace_id, issue_id, Audit); Vorschlag logged_at date.",
+   "api_hints": "Commercial v1: GET/POST …/work-items/{work_item_id}/worklogs/, PATCH/DELETE …/worklogs/{worklog_id}/, GET …/projects/{project_id}/total-worklogs/ (Scope projects.work_items.worklogs:*).",
+   "ui_hints": "Icons TimeTrackingOutline, AddTimeTrackingOutline, TimeEntriesOutline; Screenshots log-work.webp, worklog-created.webp.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/i18n/src/locales/en/project-settings.json Z. 413–419",
+    "apps/api/plane/db/models/project.py Z. 100",
+    "apps/api/plane/db/models/exporter.py",
+    "/home/user/makeplane/developer-docs/docs/api-reference/worklogs/",
+    "https://docs.plane.so/core-concepts/issues/time-tracking"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "WM-33 Timesheets / Worklog-Downloads (Workspace)",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Pro „Historical timesheets“ (plans.tsx Z. 188).",
+   "ce_status": "fehlt",
+   "description": "Workspace-Settings „Worklogs“ („Download worklogs AKA timesheets for anyone in any project.“); Filter Users, Projects, Datumsbereich; Tabelle Project | Work item | Logged | Time mit Pagination; Download Excel/CSV als asynchroner Export; Abschnitt „Previous Downloads“.",
+   "data_model_hints": "ExporterHistory.type issue_worklogs (CE vorhanden), eigener Export-Endpunkt nötig.",
+   "api_hints": "Vorschlag GET /api/workspaces/{slug}/worklogs/ mit Filtern, POST/GET …/worklogs/downloads/.",
+   "ui_hints": "Illustration worklog; Screenshots view-worklogs.webp, filter-and-download-worklogs.webp.",
+   "sources": [
+    "packages/i18n/src/locales/en/workspace-settings.json Z. 187–191",
+    "packages/i18n/src/locales/en/empty-state.json Z. 248–251",
+    "apps/api/plane/db/models/exporter.py",
+    "apps/api/plane/app/views/exporter/base.py"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-34 Timesheet-Approvals",
+   "cluster": "P04 Work Management",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise („Historical timesheets and approvals“, plans.tsx Z. 189–190).",
+   "ce_status": "fehlt",
+   "description": "Nur Matrix-Text, Nachrecherche ohne Treffer; Vorschlag Wochen-Timesheet mit Status draft/submitted/approved/rejected und Sperre der Worklogs nach Approval (R-08).",
+   "data_model_hints": "Vorschlag timesheet(user_id, week_start, status, approver_id, decided_at), timesheet_worklog.",
+   "api_hints": "Nicht belegt.",
+   "ui_hints": "Nicht belegt.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx Z. 189–190",
+    "apps/web/components/license/modal/upgrade-modal.tsx Z. 70"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "WM-35 Advanced Estimates (Time-System, Bearbeiten, Umsortieren, Systemwechsel)",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Free/One „Basic“; Pro/Business/Enterprise „Advanced“ (plans.tsx Z. 145–154).",
+   "ce_status": "teilweise im CE",
+   "description": "System „Time“ (Template „Hours“, Werte in Minuten); Dialog „Edit estimate system“ mit „Add, update or remove estimates“ und „Change estimate type“; Systemwechsel mit Mapping; Umsortieren (Toasts); Validierungstexte; aktives Estimate je Projekt.",
+   "data_model_hints": "EstimateType um time erweitern; EstimatePoint.value bei time = Minuten.",
+   "api_hints": "Commercial v1 Estimates (CE-Code vorhanden, nicht geroutet): GET/POST/PATCH/DELETE …/estimates/, GET/POST …/estimate-points/, PATCH/DELETE …/estimate-points/{id}/; MCP project_estimate link.",
+   "ui_hints": "EstimateListItemButtons ohne Edit im CE; Texte project_settings.estimates.*.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx Z. 145–154",
+    "packages/i18n/src/locales/en/project-settings.json Z. 58–178",
+    "packages/constants/src/estimates.ts",
+    "apps/web/components/estimates/create/helper.tsx",
+    "apps/api/plane/api/urls/estimate.py"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "WM-36 Public, Private und Secret Projects",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Pro/Business/Enterprise (plans.tsx Z. 331–341).",
+   "ce_status": "teilweise im CE",
+   "description": "CE kennt Secret (0, UI „Private“) und Public (2). Bezahl-Teil: echte Stufe Private = sichtbar, Beitritt nur nach Genehmigung (Beitrittsanfrage, Genehmigung durch Projekt-Admins).",
+   "data_model_hints": "network ∈ {0 secret, 1 private (UNVERIFIZIERT), 2 public}; project_join_request(project_id, user_id, status, message, decided_by, decided_at).",
+   "api_hints": "CE Self-Join POST /api/users/me/workspaces/{slug}/projects/invitations/; Anfrage-Endpunkte nicht belegt.",
+   "ui_hints": "Icons Lock/Globe; Join-Screen-Texte project_empty_state.no_access.*; Texte für Anfrage fehlen.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx Z. 331–341",
+    "apps/api/plane/db/models/project.py Z. 30–36, 71, 76",
+    "packages/constants/src/project.ts",
+    "apps/api/plane/app/views/project/base.py",
+    "apps/api/plane/app/views/project/invite.py"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-37 State of Projects / Project States (Project Grouping)",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Pro/Business/Enterprise (plans.tsx Z. 343–353); University-Kurs 11 Pro; Workspace-Feature project_grouping.",
+   "ce_status": "fehlt",
+   "description": "Workspace Settings → Projects (Tabs Project states / Project labels) bzw. „Project States“; sechs Default-States Draft, Planning, Execution, Monitoring, Completed, Cancelled; umbenennen, Beschreibung, „Add State“; Projekt-Properties State, Priority, Start/Due date (und Lead) in der Overview-Sidebar; Projektliste nach States gruppiert/gefiltert; Analytics „Projects by status“.",
+   "data_model_hints": "Vorschlag project_state(workspace_id, name, color, group, sequence, is_default, description); Projekt-Spalten state_id, priority, start_date, target_date.",
+   "api_hints": "Nicht dokumentiert (nur Project Labels).",
+   "ui_hints": "Texte workspace_settings.settings.project_states/projects, workspace_empty_state.project_overview_state_sidebar.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx Z. 343–353",
+    "packages/i18n/src/locales/en/workspace-settings.json Z. 258–271",
+    "packages/i18n/src/locales/en/empty-state.json Z. 194–197",
+    "https://university.plane.so/courses/201-the-growth/11-intro-to-project-states.html"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-38 Project Labels",
+   "cluster": "P04 Work Management",
+   "tier": "unklar",
+   "tier_details": "Changelog v2.5.0 ohne Planangabe.",
+   "ce_status": "fehlt",
+   "description": "Workspace-Katalog von Labels für Projekte (Tab „Project labels“), mehrere je Projekt, Filter/Gruppierung der Projektliste.",
+   "data_model_hints": "project_label(workspace_id, name, description, color, sort_order), Zuordnung Projekt↔Label (label_ids am Projekt, Vorschlag).",
+   "api_hints": "Commercial v1: GET/POST /project-labels/, GET/PATCH/DELETE /project-labels/{label_id}/ (Scope projects.labels:*).",
+   "ui_hints": "Label-Dropdown mit Scope project.",
+   "sources": [
+    "packages/i18n/src/locales/en/workspace-settings.json Z. 264–271",
+    "/home/user/makeplane/developer-docs/docs/api-reference/project-labels/"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-39 Project Overview",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Pro (Zeile auskommentiert, „Coming soon“, plans.tsx Z. 318–329).",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Projekt-Übersichtsseite mit Kopf (Cover, Logo, Name, Beschreibung), Kennzahlen, einklappbaren Abschnitten milestones (Default offen), links, attachments, Update-Feed und State-Sidebar; Power-K „Go to project overview“.",
+   "data_model_hints": "TProjectLink {id, title, url, metadata, project_id, created_by_id, created_at}; Vorschlag project_link, project_attachment.",
+   "api_hints": "Keine CE-Endpunkte; nicht dokumentiert.",
+   "ui_hints": "Icon OverviewOutline/Filled; Store ProjectOverviewCollapsible.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx Z. 318–329",
+    "apps/web/store/project/project.store.ts",
+    "packages/types/src/project/project_link.ts",
+    "packages/i18n/src/locales/en/power-k.json Z. 108"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-40 Project Updates",
+   "cluster": "P04 Work Management",
+   "tier": "Pro",
+   "tier_details": "Pro (Zeile auskommentiert, „Coming soon“, plans.tsx Z. 354–366).",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Projekt-Feature project_updates; Settings-Seite „Project Updates“; Update-Feed mit On-Track/Off-Track/At-Risk, Fortschritt „Since last update“, Kommentare, Reaktionen (wie WM-10).",
+   "data_model_hints": "entity_update mit entity_type project.",
+   "api_hints": "MCP project update_features project_updates; REST nicht dokumentiert.",
+   "ui_hints": "Activity-Icon SubscribeOutline; Texte update.json, common_empty_state.updates.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx Z. 354–366",
+    "packages/i18n/src/locales/en/project-settings.json Z. 433–436",
+    "packages/i18n/src/locales/en/update.json",
+    "apps/web/components/common/activity/helper.tsx"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-41 Project Templates",
+   "cluster": "P04 Work Management",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise (plans.tsx Z. 392–401; BUSINESS_PLAN_FEATURES).",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Projekt aus Template mit Feature-Toggles, States, Projekt-State, Labels, Estimates, Work Item Types inkl. Properties, Epics, Intake-Settings, Milestones, Modulen, Recurring Work Items, Starter-Work-Items (Dok 25 F20).",
+   "data_model_hints": "Projekt.template_id; template_data laut Dok 25 F20.",
+   "api_hints": "POST /api/v1/workspaces/{workspace_slug}/projects/templates/use/ (template_id, name, identifier, description, network, project_lead).",
+   "ui_hints": "templateId-Props ohne Wirkung in create-project-modal.tsx und projects/create/root.tsx.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx Z. 392–401",
+    "packages/constants/src/subscription.ts",
+    "/home/user/makeplane/developer-docs/docs/api-reference/project/create-project-with-template.md",
+    "migration/features/25-paid-workflows-automation-templates.md"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-42 Baselines And Deviations",
+   "cluster": "P04 Work Management",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise (plans.tsx Z. 403–412; planHighlights.business).",
+   "ce_status": "fehlt",
+   "description": "Nur Matrix-Text; Vorschlag: benannte Plan-Snapshots je Projekt und Abweichungsanzeige (Gantt-Overlay, Liste, Kennzahlen) (R-09).",
+   "data_model_hints": "Vorschlag project_baseline, project_baseline_item.",
+   "api_hints": "Nicht belegt.",
+   "ui_hints": "Nicht belegt.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx Z. 403–412"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "WM-43 Custom SLAs",
+   "cluster": "P04 Work Management",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise (plans.tsx Z. 436–445); nicht zu verwechseln mit dem Support-SLA.",
+   "ce_status": "fehlt",
+   "description": "Nur Matrix-Text („Set SLA matrices for time-sensitive work items.“); Vorschlag SLA-Matrix Priorität × Typ mit Response-/Resolution-Zielen, Pausen-States, Badge und Benachrichtigungen (R-10).",
+   "data_model_hints": "Vorschlag sla_policy, sla_policy_rule, work_item_sla.",
+   "api_hints": "Nicht belegt.",
+   "ui_hints": "Mögliche Bausteine TimeInStateOutline, ClockOutline (UNVERIFIZIERT).",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx Z. 436–445"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "WM-44 Intake Forms",
+   "cluster": "P04 Work Management",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise (plans.tsx Z. 447–456; BUSINESS_PLAN_FEATURES „Intake Forms“; Changelog März 2025 Business).",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Quellen-Karte „Forms“ mit „Default form URL“ (öffentlich, über „Renew“ neu erzeugbar); Standardformular mit Name, Email, Title, Description; eigene Formulare je Work Item Type mit Titel, Property-Auswahl, Pflicht- und Reihenfolge-Konfiguration und Vorschau; Verwaltung durch Workspace-Admins; Einreichung erzeugt Intake-Work-Item mit source FORMS und gesetztem Typ; öffentliche Seite in der Space-App.",
+   "data_model_hints": "Vorschlag intake_form(project_id, title, work_item_type_id, is_default, anchor, is_active), intake_form_field(form_id, property_id, field_key, is_required, sort_order); DeployBoard entity_name intake.",
+   "api_hints": "Nicht dokumentiert; Vorschlag GET /api/public/anchor/{anchor}/intake-form/ und POST …/intake-form/submit/ mit Rate-Limit.",
+   "ui_hints": "Texte project_settings.features.intake.form.*; Anzeige „Intake Form user“ in der Intake-Detailansicht.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx Z. 447–456",
+    "packages/constants/src/subscription.ts",
+    "packages/i18n/src/locales/en/project-settings.json Z. 377–398",
+    "packages/types/src/inbox.ts Z. 27–31",
+    "apps/api/plane/db/models/deploy_board.py",
+    "https://docs.plane.so/intake/intake-forms"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "WM-45 Intake Assignees / Intake responsibility",
+   "cluster": "P04 Work Management",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise (plans.tsx Z. 425–434).",
+   "ce_status": "teilweise im CE",
+   "description": "Abschnitt „Intake responsibility“ mit Auswahl verantwortlicher Mitglieder (Toasts „Setting assignees...“) und Schalter „Notify assignees“; Benachrichtigung bei neuen Intake-Einträgen; Zuweisung beim Akzeptieren. CE weist bereits Project.default_assignee bei Intake-Anlage zu.",
+   "data_model_hints": "Vorschlag intake_setting(project_id, assignee_ids uuid[], notify_assignees, is_in_app_enabled, is_email_enabled, is_form_enabled).",
+   "api_hints": "Nicht dokumentiert.",
+   "ui_hints": "Texte project_settings.features.intake.notify_assignee und intake_responsibility.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx Z. 425–434",
+    "packages/i18n/src/locales/en/project-settings.json Z. 355–367, 399–411",
+    "apps/api/plane/app/views/intake/base.py Z. 261–268"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-46 Emails For Intake",
+   "cluster": "P04 Work Management",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise (plans.tsx Z. 458–468, Coming soon); Doku-Badge Business (configure-dns-email-service.md).",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Quellen-Karte „Email“ mit projekteigener Adresse („Email ID“); eingehende Mail erzeugt Intake-Work-Item (source EMAIL, source_email), Antwort im Thread wird Kommentar; eigener SMTP-Empfangsdienst mit Domain-Konfiguration.",
+   "data_model_hints": "IntakeIssue.source/source_email/extra (CE); Vorschlag intake_email_address, intake_email_message (message_id, in_reply_to).",
+   "api_hints": "Interner Callback POST /intake/email/ (Dok 22 §4.23).",
+   "ui_hints": "Texte project_settings.features.intake.email.*.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx Z. 458–468",
+    "packages/i18n/src/locales/en/project-settings.json Z. 372–376",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/govern/configure-dns-email-service.md",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/govern/environment-variables.md",
+    "migration/features/22-paid-architektur-selfhosting-dienste.md"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "WM-47 Duplicate Detection",
+   "cluster": "P04 Work Management",
+   "tier": "unklar",
+   "tier_details": "Funktion von Plane AI in der Commercial Edition; Plane AI laut Dok 20 PF-82 ab Pro; Planstufe der Duplikaterkennung nicht belegt.",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Debounced Abfrage beim Tippen von Titel/Beschreibung im Work-Item- und Intake-Create-Modal; Hinweis „Duplicate work item(s) found“ öffnet Trefferliste (Identifier, Titel, State, Priorität); Treffer löschbar/archivierbar; mit Embedding-Modell Vektorsuche, sonst BM25.",
+   "data_model_hints": "Typen TDuplicateIssuePayload, TDeDupeIssue; Vorschlag work_item_embedding mit pgvector, Fallback pg_trgm.",
+   "api_hints": "Nicht dokumentiert; Vorschlag POST /api/workspaces/{slug}/dedupe/issues/.",
+   "ui_hints": "Hook useDebouncedDuplicateIssues (CE liefert []), State isDuplicateModalOpen; Icon DuplicateOfOutline.",
+   "sources": [
+    "packages/types/src/de-dupe.ts",
+    "apps/web/hooks/use-debounced-duplicate-issues.tsx",
+    "apps/web/components/issues/issue-modal/base.tsx",
+    "packages/i18n/src/locales/en/common.json Z. 284–285",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/govern/plane-ai/configure-embedding-model.md"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-48 Work-Item-Votes in der App (Up-/Downvotes)",
+   "cluster": "P04 Work Management",
+   "tier": "unklar",
+   "tier_details": "Nicht in plans.tsx; Changelog 31.03.2026 ohne Planangabe; Dok 20 PF-40 „unklar“.",
+   "ce_status": "teilweise im CE",
+   "description": "Up-/Downvote im Kopf der Detailansicht für Work Items, Epics und Intake-Anfragen; eine Stimme je Nutzer und Work Item (-1/1), erneuter Klick nimmt sie zurück; Tooltips „Click to upvote/downvote“, „Click to view upvotes/downvotes“; Activity-Feld vote ohne Feed-Anzeige und ohne Benachrichtigung; Webhooks workitem.vote.created/deleted. CE hat Votes nur im öffentlichen Board (DeployBoard.is_votes_enabled).",
+   "data_model_hints": "CE IssueVote(issue, actor, vote ∈ {-1, 1}) mit Unique (issue, actor); Zähler per Aggregat.",
+   "api_hints": "CE Board: GET/POST/DELETE /api/public/anchor/{anchor}/issues/{issue_id}/votes/; intern nicht belegt, Vorschlag …/issues/{id}/votes/ (POST Upsert, DELETE eigene Stimme). CE-Bug: Board-Liste filtert workspace__slug=anchor.",
+   "ui_hints": "Referenz Space-App IssueVotes: TopArrowOutline/ArrowDownOutline mit Zähler, Hervorhebung eigener Stimme, Tooltip mit Namen; In-App-Komponente fehlt.",
+   "sources": [
+    "packages/i18n/src/locales/en/work-item.json Z. 266–271",
+    "apps/api/plane/db/models/issue.py Z. 654–671",
+    "apps/api/plane/space/views/issue.py",
+    "apps/space/components/issues/reactions/issue-vote-reactions.tsx",
+    "apps/api/plane/bgtasks/issue_activities_task.py Z. 1256–1313",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/intro-webhooks.md Z. 266–267",
+    "https://plane.so/changelog/2026-03-31-vote-on-work-items-link-sub-work-items-across-projects"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "WM-49 Kommentar-Antworten (Replies)",
+   "cluster": "P04 Work Management",
+   "tier": "unklar",
+   "tier_details": "Nicht in plans.tsx (Comments in allen Plänen); Changelog v1.22.0 ohne Planangabe; Dok 20 PF-39 „unklar“.",
+   "ce_status": "teilweise im CE",
+   "description": "Antwort-Thread unter Kommentaren mit „Reply“, Eingabe „Add reply“, getrennt nachgeladenen Antworten, Bearbeiten/Löschen (Toasts aus issue.comments.replies.*) und Reaktionen; Tiefe, Benachrichtigung und access-Vererbung nicht belegt.",
+   "data_model_hints": "CE IssueComment.parent (self-FK CASCADE) vorhanden, aber nicht client-schreibbar; Vorschlag eine Ebene mit CHECK, reply_count an Root-Kommentaren.",
+   "api_hints": "Commercial v1 POST/PATCH …/work-items/{id}/comments/ mit Feld parent (Scope projects.work_items.comments:write); interner Replies-Endpunkt nicht belegt (Vorschlag …/comments/{id}/replies/).",
+   "ui_hints": "Icon ReplyOutline (im CE dekorativ in CommentBlock); Thread-Layout UNVERIFIZIERT.",
+   "sources": [
+    "packages/i18n/src/locales/en/work-item.json Z. 115–151",
+    "packages/i18n/src/locales/en/common.json Z. 627",
+    "apps/api/plane/db/models/issue.py Z. 475–477",
+    "apps/api/plane/app/views/issue/comment.py Z. 28–30",
+    "/home/user/makeplane/developer-docs/docs/api-reference/issue-comment/add-issue-comment.md",
+    "https://plane.so/changelog/release-v1-22-0-clean-pages-connected-work-smoother-editing"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-50 Projektübergreifende Sub-Work-Items",
+   "cluster": "P04 Work Management",
+   "tier": "unklar",
+   "tier_details": "Changelog 31.03.2026 ohne Planangabe.",
+   "ce_status": "fehlt",
+   "description": "Work Items aus einem anderen Projekt als Sub-Work-Items anlegen oder verknüpfen; CE verhindert das (Parent muss im selben Projekt liegen, Sub-Issue-Endpunkte filtern project_id, Modal ohne Workspace-Schalter). Zielverhalten: Workspace-Schalter im „Add existing“-Modal, Projektwahl beim Anlegen, Identifier mit Projektpräfix, Hierarchieregeln projektübergreifend.",
+   "data_model_hints": "Keine Schemaänderung (Issue.parent workspaceweit); Validierung und Abfragen anpassen, Mitgliedschaftsprüfung je Kind-Projekt.",
+   "api_hints": "Nicht dokumentiert; Sub-Issue-Endpunkte für IDs aus allen Workspace-Projekten öffnen; MCP setzt parent direkt.",
+   "ui_hints": "Icon SubWorkItemsOutline; Texte common.sub_work_items, common.add_existing, common.workspace_level.",
+   "sources": [
+    "apps/api/plane/app/serializers/issue.py Z. 188–196",
+    "apps/api/plane/api/serializers/issue.py Z. 159–168",
+    "apps/api/plane/app/views/issue/sub_issue.py",
+    "apps/web/components/issues/issue-detail-widgets/issue-detail-widget-modals.tsx",
+    "https://plane.so/changelog/2026-03-31-vote-on-work-items-link-sub-work-items-across-projects"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "WM-51 Workspace Governance für States und Labels (Label-Scopes, Projekt-Sperre)",
+   "cluster": "P04 Work Management",
+   "tier": "Enterprise Grid",
+   "tier_details": "Nur Enterprise Grid; Self-hosted ab v3.2.0 (10.09.2026); irreversibel (Dok 25 F07, docs.plane.so/workspace-administration/workspace-governance, Changelog v3.2.0).",
+   "ce_status": "teilweise im CE",
+   "description": "Workspace-Admin schaltet Governance dauerhaft ein; danach haben alle Projekte dieselben States, Labels und Workflows, zentral definiert; Projekt-Admins können sie nicht mehr bearbeiten; Label-Katalog mit Scopes work item/release/initiative/project. Workflow-Teil in Dok 25 F07, Typen/Properties in WM-07.",
+   "data_model_hints": "CE Label(WorkspaceBaseModel) mit project nullable und Unique-Constraints (CE-Bug: ohne workspace im Constraint für project NULL); State nur projektbezogen. Vorschlag label.scope, workspace_state-Katalog, Workspace-Einstellung governance_enabled_at.",
+   "api_hints": "Nicht dokumentiert; Vorschlag 409 states_managed_at_workspace/labels_managed_at_workspace für Projekt-Endpunkte, Katalog-Endpunkte für Workspace-Labels/-States.",
+   "ui_hints": "Governance-Seite nicht im CE-i18n; Icons LabelsOutline, StateOutline; Kommentar in label-select.tsx Z. 48–49.",
+   "sources": [
+    "apps/api/plane/db/models/label.py Z. 11–40",
+    "apps/api/plane/db/models/state.py",
+    "apps/web/components/dropdowns/label/label-select.tsx Z. 48–49",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md Z. 393",
+    "https://plane.so/changelog/release-v3-2-0-workspace-governance-ai-memory-pii-scanning-and-more",
+    "migration/features/25-paid-workflows-automation-templates.md"
+   ],
+   "confidence": "mittel"
+  }
+ ],
+ "open_questions": [
+  "O-01 Tier-Widersprüche zwischen plans.tsx (älterer Stand) und öffentlicher Doku/University bei WM-07, WM-11, WM-16, WM-32 – ohne Folgen für die Umsetzung (ADR-001), aber zu dokumentieren.",
+  "O-02 Interne Web-API-Pfade für alle EE-Objekte sind nicht belegt; Default: CE-Pfadschema mit Feldnamen der Public-API v1, Public-API v1 zusätzlich 1:1.",
+  "O-03 Fehler in der Commercial-API-Doku (Scope mit Bindestrich, name vs display_name, falsche Beispiele, fehlende Milestone-Scopes, Pagination-Widerspruch Initiatives, Cycle-Transfer 'moves everything', {slug} vs {workspace_slug}).",
+  "O-04 Für Customers, Releases, Initiatives, Milestones, Property-Formular und fünf Property-Typ-Labels, Duplicate-Panel, Private-Projekt-Beitritt, Project Overview/States, Worklogs-Seite, Intake-Form-Seite, Governance, Votes und Reply-Thread fehlen im CE UI und Texte – Zugang zu einer Commercial-/Trial-Instanz für Referenz-Screenshots nötig.",
+  "O-05 Activity-Texte für Custom-Property-Werte, Worklogs, Typwechsel, Milestone-, Release- und Customer-Zuordnung fehlen im CE.",
+  "O-06 Formula-Semantik (Funktionen, leere Werte, Division durch 0, referenzierbare Felder, Rundung) nicht belegt.",
+  "O-07 Roll-ups nur als Matrix-Text belegt; Aggregationsfunktionen und Geltungsbereich unklar.",
+  "O-08 Rechte-Matrix für Typen/Properties, Zeiterfassung (auch für Dritte und durch Guests), Timesheets, Customers, Releases, Initiatives und Votes nicht belegt.",
+  "O-09 Release picker: Referenz auf Release oder Release-Tag? Workspace-Feature-Schlüssel für Releases fehlt in API/MCP, obwohl die Doku 'Enable Releases' zeigt.",
+  "O-10 Estimates: MCP 'a project has at most one estimate' vs. link/aktives Estimate; Time-Einheit Minuten vs. Template 'Hours' mit Werten 1–6.",
+  "O-11 Milestones: Beschreibung laut Doku, nicht in REST; Kardinalität je Work Item; Zuordnung von Cycles/Modulen/Epics API-seitig unbelegt.",
+  "O-12 Intake Forms: Anti-Spam, Speicherung der Absenderdaten, Uploads, Bestätigungsseite nicht belegt.",
+  "O-13 Auto-Rollover 'to the default project state' (plans.tsx) ohne UI-Gegenstück.",
+  "O-14 Private-Projekte: network-Wert (vermutlich 1), Texte und Ablauf der Beitrittsanfrage.",
+  "O-15 Initiative-State-Labels (University: Draft, Planned, Active, Completed, Closed) vs. Propel-Icons in-progress/cancelled; Sub-Initiativen nur indirekt belegt.",
+  "O-16 Votes in der App: Trennung Button/Voter-Liste, Sortierung nach Stimmen, Intake-Votes, Realtime-Zähler.",
+  "O-17 Replies: Tiefe, Benachrichtigung, access-Vererbung, Webhook-Payload; Bezug des Cloud-Changelogs 'threads' (01.12.2025) unklar.",
+  "O-18 Projektübergreifende Sub-Work-Items: Rechte, Sichtbarkeit fremder Kinder, Fortschritt, Verhalten bei Archivierung/Löschung des Kind-Projekts.",
+  "O-19 Governance für States/Labels: Mapping beim Einschalten, Existenz von Workspace-Labels ohne Governance, Texte der Governance-Seite.",
+  "O-20 Project States: Gruppen, genaue Projekt-Properties, Kriterium 'need attention'.",
+  "O-21 Definition overdue und Berechnung 'Since last update' bei Epic-/Initiative-/Projekt-Fortschritt.",
+  "O-22 Module Overview: Mehrwert gegenüber dem CE-Modul-Peek nicht belegt.",
+  "O-23 Worklog-Leistungsdatum (eigenes Feld oder created_at) für Timesheets.",
+  "R-01 Welche Epic-Generation ist Referenz (CE-Plumbing mit eigener Epic-Navigation oder 'Epic als normaler Typ' ab 26.05.2026)? Default: Datenmodell neue Generation, UI nach CE.",
+  "R-02 Bleiben irreversible Schalter (Work Item Types je Projekt, Hierarchie, Governance) irreversibel? Default: ja.",
+  "R-03 Checkpoints umsetzen oder mit Milestones zusammenfassen? Default: zurückstellen.",
+  "R-04 Gelten alle Plan-Abstufungen als höchste Stufe (Bulk Ops All props, Estimates Advanced, Auto-Assignment alle Regeln)? Default: ja, Feature-Toggles bleiben.",
+  "R-05 Semantik 'Work Item in anderes Projekt verschieben' (Identifier, Mapping, Cycle/Modul, Custom-Werte).",
+  "R-06 Dependencies: Lag, transitive Kaskade, Verhalten bei manueller Datumsänderung. Default: kein Lag, Kaskade nur beim Ziehen im Gantt.",
+  "R-07 Auto-Assignment in Modulen (Linear, Round Robin, Capacity) nach Vorschlag umsetzen oder zurückstellen?",
+  "R-08 Timesheet-Approvals nach Vorschlag umsetzen oder zurückstellen?",
+  "R-09 Baselines & Deviations nach Vorschlag umsetzen oder zurückstellen?",
+  "R-10 Custom SLAs nach Vorschlag umsetzen oder zurückstellen?",
+  "R-11 Duplicate Detection airgapped: nur pg_trgm oder lokales Embedding-Modell als Standard?",
+  "R-12 Intake per E-Mail: SMTP-Empfang wie Original oder zusätzlich IMAP-Polling?",
+  "R-13 Getrennte Tabellen für Dependencies und Custom Relations und Korrektur des CE-Richtungsfehlers bei implements beim Datenimport?",
+  "R-14 Gemeinsame Property-Engine für Work Items und Customers? Default: ja.",
+  "R-15 Formula-/Roll-up-Werte berechnen beim Lesen oder materialisiert? Default: materialisiert."
+ ]
+}

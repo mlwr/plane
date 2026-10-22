@@ -1,0 +1,1105 @@
+[
+ {
+  "name": "Cycle-Liste mit Gruppen",
+  "area": "Cycles",
+  "description": "Projekt-Cycle-Liste mit aktivem Cycle oben, aufklappbaren Gruppen „Upcoming cycle“ (offen) und „Completed cycle“ (zu), Leerzuständen für Filter/Suche und Lader.",
+  "code_refs": [
+   "apps/web/components/cycles/cycles-view.tsx",
+   "apps/web/components/cycles/list/root.tsx",
+   "apps/web/components/cycles/list/cycles-list-item.tsx",
+   "apps/web/components/cycles/list/cycle-list-group-header.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/cycles/(list)/page.tsx"
+  ]
+ },
+ {
+  "name": "Cycle-Suche und Filter",
+  "area": "Cycles",
+  "description": "Ausklappbare Namenssuche und Filter nach Status sowie Start- und Enddatum (inklusive Custom-Datumsbereich) mit Applied-Filter-Leiste; nicht persistent.",
+  "code_refs": [
+   "apps/web/components/cycles/cycles-view-header.tsx",
+   "apps/web/components/cycles/dropdowns/filters/root.tsx",
+   "apps/web/components/cycles/applied-filters/root.tsx",
+   "apps/web/store/cycle_filter.store.ts",
+   "packages/utils/src/cycle.ts"
+  ]
+ },
+ {
+  "name": "Inline-Dashboard aktiver Cycle",
+  "area": "Cycles",
+  "description": "Karten „Progress“ (Gruppenanteile, Klick filtert), „Work item burndown“ (nach Work Items oder Estimate-Punkten) und Statistik-Tabs „Priority work items“, „Assignees“, „Labels“ für den laufenden Cycle.",
+  "code_refs": [
+   "apps/web/components/cycles/active-cycle/root.tsx",
+   "apps/web/components/cycles/active-cycle/progress.tsx",
+   "apps/web/components/cycles/active-cycle/productivity.tsx",
+   "apps/web/components/cycles/active-cycle/cycle-stats.tsx",
+   "apps/web/components/cycles/active-cycle/use-cycles-details.ts"
+  ]
+ },
+ {
+  "name": "Cycle anlegen und bearbeiten",
+  "area": "Cycles",
+  "description": "Dialog mit Projekt, Name, Beschreibung und Datumsbereich; Überschneidungsprüfung über cycles/date-check/; Speichern über Create/Update.",
+  "code_refs": [
+   "apps/web/components/cycles/modal.tsx",
+   "apps/web/components/cycles/form.tsx",
+   "apps/web/services/cycle.service.ts"
+  ]
+ },
+ {
+  "name": "Cycle-Peek und Detail-Sidebar",
+  "area": "Cycles",
+  "description": "Rechte Leiste (Query peekCycle oder Detailseite) mit Kopf, Details (Datum, Lead, Members, Work items, Points), Fortschritt und Statistik-Tabs States/Assignees/Labels mit Filterwirkung.",
+  "code_refs": [
+   "apps/web/components/cycles/cycle-peek-overview.tsx",
+   "apps/web/components/cycles/analytics-sidebar/root.tsx",
+   "apps/web/components/cycles/analytics-sidebar/sidebar-header.tsx",
+   "apps/web/components/cycles/analytics-sidebar/sidebar-details.tsx",
+   "apps/web/components/cycles/analytics-sidebar/issue-progress.tsx",
+   "apps/web/components/cycles/analytics-sidebar/progress-stats.tsx"
+  ]
+ },
+ {
+  "name": "Burndown-/Progress-Chart",
+  "area": "Cycles",
+  "description": "Ideal- und Ist-Linie über die Cycle-Laufzeit, umschaltbar zwischen Work-Item-Anzahl und Estimate-Punkten.",
+  "code_refs": [
+   "apps/web/components/cycles/analytics-sidebar/sidebar-chart.tsx",
+   "apps/web/components/cycles/dropdowns/estimate-type-dropdown.tsx",
+   "apps/web/components/core/sidebar/progress-chart.tsx"
+  ]
+ },
+ {
+  "name": "Cycle-Detailseite mit Kopf",
+  "area": "Cycles",
+  "description": "Work-Item-Layouts des Cycles mit Breadcrumb-Switcher, Zähler, Layoutwahl, Filtern, Display, Analytics, „Add work item“ (nicht bei abgeschlossenem Cycle), Sidebar-Umschalter und Quick-Actions; mobile Variante.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/cycles/(detail)/[cycleId]/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/cycles/(detail)/header.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/cycles/(detail)/mobile-header.tsx"
+  ]
+ },
+ {
+  "name": "Work Items übertragen",
+  "area": "Cycles",
+  "description": "Transfer offener Work Items eines abgeschlossenen Cycles in einen anderen offenen Cycle über Dialog mit Suche; Hinweisleiste „Completed cycles are not editable.“ über den Layouts.",
+  "code_refs": [
+   "apps/web/components/cycles/transfer-issues-modal.tsx",
+   "apps/web/components/cycles/transfer-issues.tsx",
+   "apps/web/components/cycles/list/cycle-list-item-action.tsx",
+   "apps/web/components/issues/issue-layouts/roots/cycle-layout-root.tsx"
+  ]
+ },
+ {
+  "name": "Cycle archivieren und wiederherstellen",
+  "area": "Cycles",
+  "description": "Archivieren nur abgeschlossener Cycles mit Bestätigung, Archivliste unter archives/cycles, Wiederherstellen per Menü.",
+  "code_refs": [
+   "apps/web/components/cycles/archived-cycles/modal.tsx",
+   "apps/web/components/cycles/archived-cycles/root.tsx",
+   "apps/web/components/cycles/archived-cycles/view.tsx",
+   "apps/web/components/cycles/archived-cycles/header.tsx",
+   "apps/web/services/cycle_archive.service.ts"
+  ]
+ },
+ {
+  "name": "Cycle löschen",
+  "area": "Cycles",
+  "description": "Bestätigungsdialog und Löschen des Cycles inklusive Entfernung aus Favoriten.",
+  "code_refs": [
+   "apps/web/components/cycles/delete-modal.tsx",
+   "apps/web/store/cycle.store.ts"
+  ]
+ },
+ {
+  "name": "Cycle-Kontextmenü",
+  "area": "Cycles",
+  "description": "Menü und Rechtsklick-Menü mit Edit, Open in new tab, Copy link, Archive, Restore, Delete inklusive Rechte- und Statusbedingungen.",
+  "code_refs": [
+   "apps/web/components/cycles/quick-actions.tsx",
+   "apps/web/components/common/quick-actions-helper.tsx"
+  ]
+ },
+ {
+  "name": "Cycle-Favoriten",
+  "area": "Cycles",
+  "description": "Stern in der Listenzeile setzt bzw. entfernt den Favoriten über user-favorites.",
+  "code_refs": [
+   "apps/web/components/cycles/list/cycle-list-item-action.tsx",
+   "apps/web/store/cycle.store.ts"
+  ]
+ },
+ {
+  "name": "Workspace-weite Active Cycles",
+  "area": "Cycles",
+  "description": "In CE Upsell-Seite /:ws/active-cycles mit Feature-Kacheln; nach ADR-001 als echte Übersicht aller aktiven Cycles zu bauen.",
+  "code_refs": [
+   "apps/web/components/active-cycles/workspace-active-cycles-upgrade.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/active-cycles/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/active-cycles/header.tsx"
+  ]
+ },
+ {
+  "name": "Cycle-Fortschritt Pro (Burnup, Version 2)",
+  "area": "Cycles",
+  "description": "Bezahlfunktion: erweiterte Fortschrittsreihe und Burnup-Umschaltung; in CE nur ungenutzte Logik (plotType, formatActiveCycle, cycle-progress-Endpunkt).",
+  "code_refs": [
+   "packages/utils/src/cycle.ts",
+   "apps/web/store/cycle.store.ts"
+  ]
+ },
+ {
+  "name": "Modul-Übersicht in drei Layouts",
+  "area": "Modules",
+  "description": "Liste, Galerie und Timeline (Gantt) der Projektmodule mit Fortschritt, Daten, Lead, Mitgliedern und Status.",
+  "code_refs": [
+   "apps/web/components/modules/modules-list-view.tsx",
+   "apps/web/components/modules/module-list-item.tsx",
+   "apps/web/components/modules/module-card-item.tsx",
+   "apps/web/components/modules/gantt-chart/modules-list-layout.tsx",
+   "apps/web/components/modules/gantt-chart/blocks.tsx",
+   "apps/web/components/modules/module-layout-icon.tsx"
+  ]
+ },
+ {
+  "name": "Modul-Suche, Filter und Sortierung",
+  "area": "Modules",
+  "description": "Suche, Filter nach Status, Lead, Mitgliedern, Start- und Zieldatum, Favoriten sowie Sortierung; Persistenz in localStorage.",
+  "code_refs": [
+   "apps/web/components/modules/module-view-header.tsx",
+   "apps/web/components/modules/dropdowns/filters/root.tsx",
+   "apps/web/components/modules/dropdowns/order-by.tsx",
+   "apps/web/components/modules/applied-filters/root.tsx",
+   "apps/web/store/module_filter.store.ts",
+   "packages/utils/src/module.ts"
+  ]
+ },
+ {
+  "name": "Modul anlegen und bearbeiten",
+  "area": "Modules",
+  "description": "Dialog mit Projekt, Titel, Beschreibung, Datumsbereich, Status, Lead und Mitgliedern.",
+  "code_refs": [
+   "apps/web/components/modules/modal.tsx",
+   "apps/web/components/modules/form.tsx"
+  ]
+ },
+ {
+  "name": "Modul-Status",
+  "area": "Modules",
+  "description": "Statusauswahl (Backlog, Planned, In Progress, Paused, Completed, Cancelled) in Liste, Formular und Sidebar.",
+  "code_refs": [
+   "apps/web/components/modules/module-status-dropdown.tsx",
+   "apps/web/components/modules/select/status.tsx",
+   "packages/constants/src/module.ts"
+  ]
+ },
+ {
+  "name": "Modul-Links",
+  "area": "Modules",
+  "description": "Links in der Modul-Sidebar anlegen, bearbeiten, kopieren, öffnen und löschen.",
+  "code_refs": [
+   "apps/web/components/modules/links/create-update-modal.tsx",
+   "apps/web/components/modules/links/list.tsx",
+   "apps/web/components/modules/links/list-item.tsx"
+  ]
+ },
+ {
+  "name": "Modul-Sidebar mit Lead, Mitgliedern und Fortschritt",
+  "area": "Modules",
+  "description": "Peek bzw. Detailleiste mit Status, Daten, Lead, Mitgliedern, Fortschritt (Burndown) und Statistik-Tabs.",
+  "code_refs": [
+   "apps/web/components/modules/module-peek-overview.tsx",
+   "apps/web/components/modules/analytics-sidebar/root.tsx",
+   "apps/web/components/modules/analytics-sidebar/issue-progress.tsx",
+   "apps/web/components/modules/analytics-sidebar/progress-stats.tsx"
+  ]
+ },
+ {
+  "name": "Modul-Detailseite",
+  "area": "Modules",
+  "description": "Work-Item-Layouts des Moduls mit Kopf (Switcher, Layout, Filter, Display, Analytics, Add work item) und einklappbarer Sidebar.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/modules/(detail)/[moduleId]/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/modules/(detail)/header.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/modules/(detail)/mobile-header.tsx"
+  ]
+ },
+ {
+  "name": "Modul archivieren, wiederherstellen, löschen",
+  "area": "Modules",
+  "description": "Archivieren nur bei Status completed/cancelled, Archivliste, Wiederherstellen, Löschen mit Bestätigung.",
+  "code_refs": [
+   "apps/web/components/modules/archived-modules/modal.tsx",
+   "apps/web/components/modules/archived-modules/root.tsx",
+   "apps/web/components/modules/archived-modules/view.tsx",
+   "apps/web/components/modules/delete-module-modal.tsx",
+   "apps/web/services/module_archive.service.ts"
+  ]
+ },
+ {
+  "name": "Modul-Kontextmenü und Favoriten",
+  "area": "Modules",
+  "description": "Menü mit Edit, Open in new tab, Copy link, Archive, Restore, Delete sowie Favoriten-Stern.",
+  "code_refs": [
+   "apps/web/components/modules/quick-actions.tsx",
+   "apps/web/components/modules/module-list-item-action.tsx",
+   "apps/web/components/common/quick-actions-helper.tsx"
+  ]
+ },
+ {
+  "name": "Page-Liste mit Tabs",
+  "area": "Pages",
+  "description": "Tabs Public, Private, Archived (Query type) mit Seitenblöcken, Zugriffssymbol, Favorit und Menü.",
+  "code_refs": [
+   "apps/web/components/pages/pages-list-view.tsx",
+   "apps/web/components/pages/pages-list-main-content.tsx",
+   "apps/web/components/pages/list/root.tsx",
+   "apps/web/components/pages/list/block.tsx",
+   "apps/web/components/pages/list/block-item-action.tsx",
+   "apps/web/components/pages/list/tab-navigation.tsx"
+  ]
+ },
+ {
+  "name": "Page-Suche, Filter und Sortierung",
+  "area": "Pages",
+  "description": "Suchfeld, Filter (Favorites, Created date, Created by) und Sortierung mit Applied-Filter-Leiste.",
+  "code_refs": [
+   "apps/web/components/pages/list/search-input.tsx",
+   "apps/web/components/pages/list/filters/root.tsx",
+   "apps/web/components/pages/list/order-by.tsx",
+   "apps/web/components/pages/list/applied-filters/root.tsx",
+   "apps/web/hooks/use-page-filters.ts"
+  ]
+ },
+ {
+  "name": "Page anlegen",
+  "area": "Pages",
+  "description": "„Add page“ legt sofort eine leere Page an und öffnet sie; über die Command-Palette Anlage-Dialog mit Name, Logo und Zugriff.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/pages/(list)/header.tsx",
+   "apps/web/components/pages/modals/create-page-modal.tsx",
+   "apps/web/components/pages/modals/page-form.tsx"
+  ]
+ },
+ {
+  "name": "Kollaborativer Page-Editor",
+  "area": "Pages",
+  "description": "Editor-Seite mit Echtzeit-Kollaboration, Titel, Logo, Mentions, REST-Fallback und Inhaltslimit-Banner.",
+  "code_refs": [
+   "apps/web/components/pages/editor/page-root.tsx",
+   "apps/web/components/pages/editor/editor-body.tsx",
+   "apps/web/components/pages/editor/header/root.tsx",
+   "apps/web/components/pages/editor/header/logo-picker.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/pages/(detail)/[pageId]/page.tsx"
+  ]
+ },
+ {
+  "name": "Page-Toolbar",
+  "area": "Pages",
+  "description": "Formatierungsleiste (Typografie, Marks, Ausrichtung, Listen, Zitat, Code, Tabelle, Bild, Farben), optional sticky.",
+  "code_refs": [
+   "apps/web/components/pages/editor/toolbar/root.tsx",
+   "apps/web/components/pages/editor/toolbar/toolbar.tsx",
+   "apps/web/components/pages/editor/toolbar/color-dropdown.tsx",
+   "apps/web/components/pages/editor/toolbar/options-dropdown.tsx"
+  ]
+ },
+ {
+  "name": "Page-Kopf",
+  "area": "Pages",
+  "description": "Breadcrumb mit Page-Switcher, Lock-Anzeige, Favorit, Link kopieren, Archiv-, Offline- und Syncing-Badges sowie Menü.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/pages/(detail)/header.tsx",
+   "apps/web/components/pages/header/root.tsx",
+   "apps/web/components/pages/header/actions.tsx",
+   "apps/web/components/pages/header/lock-control.tsx",
+   "apps/web/components/pages/header/favorite-control.tsx",
+   "apps/web/components/pages/header/copy-link-control.tsx",
+   "apps/web/components/pages/header/archived-badge.tsx",
+   "apps/web/components/pages/header/offline-badge.tsx",
+   "apps/web/components/pages/header/syncing-badge.tsx"
+  ]
+ },
+ {
+  "name": "Outline",
+  "area": "Pages",
+  "description": "Navigationsbereich-Tab mit Überschriften-Gliederung und schwebendem Mini-Outline; Klick scrollt zur Überschrift.",
+  "code_refs": [
+   "apps/web/components/pages/navigation-pane/root.tsx",
+   "apps/web/components/pages/navigation-pane/tab-panels/outline.tsx",
+   "apps/web/components/pages/editor/summary/content-browser.tsx",
+   "apps/web/components/pages/editor/summary/heading-components.tsx"
+  ]
+ },
+ {
+  "name": "Info-Panel",
+  "area": "Pages",
+  "description": "Dokumentinfo (Words, Characters, Paragraphs, Read time), Ersteller/Bearbeiter und Versionsliste.",
+  "code_refs": [
+   "apps/web/components/pages/navigation-pane/tab-panels/info/root.tsx",
+   "apps/web/components/pages/navigation-pane/tab-panels/info/document-info.tsx",
+   "apps/web/components/pages/navigation-pane/tab-panels/info/actors-info.tsx",
+   "apps/web/components/pages/navigation-pane/tab-panels/info/version-history.tsx"
+  ]
+ },
+ {
+  "name": "Assets-Panel",
+  "area": "Pages",
+  "description": "Liste der in der Page eingebetteten Bilder mit Vorschau, Name und Download.",
+  "code_refs": [
+   "apps/web/components/pages/navigation-pane/tab-panels/assets.tsx",
+   "apps/web/components/pages/navigation-pane/tab-panels/empty-state/assets.tsx"
+  ]
+ },
+ {
+  "name": "Versionshistorie",
+  "area": "Pages",
+  "description": "Read-only-Ansicht früherer Versionen (Query version) mit Wiederherstellen durch Ersetzen des Editorinhalts.",
+  "code_refs": [
+   "apps/web/components/pages/version/root.tsx",
+   "apps/web/components/pages/version/main-content.tsx",
+   "apps/web/components/pages/version/editor.tsx"
+  ]
+ },
+ {
+  "name": "Page sperren und entsperren",
+  "area": "Pages",
+  "description": "Lock/Unlock für Owner oder Admin über REST und Stateless-Realtime-Event.",
+  "code_refs": [
+   "apps/web/components/pages/header/lock-control.tsx",
+   "apps/web/components/pages/dropdowns/actions.tsx",
+   "apps/web/hooks/use-collaborative-page-actions.tsx"
+  ]
+ },
+ {
+  "name": "Page-Zugriff öffentlich/privat",
+  "area": "Pages",
+  "description": "Umschalten Make private/Make public mit Verschieben in den jeweiligen Tab.",
+  "code_refs": [
+   "apps/web/components/pages/dropdowns/actions.tsx",
+   "apps/web/components/common/page-access-icon.tsx",
+   "apps/web/store/pages/base-page.ts"
+  ]
+ },
+ {
+  "name": "Page archivieren und wiederherstellen",
+  "area": "Pages",
+  "description": "Archive/Restore über REST und Realtime-Event; archivierte Pages read-only mit Badge.",
+  "code_refs": [
+   "apps/web/components/pages/dropdowns/actions.tsx",
+   "apps/web/components/pages/header/archived-badge.tsx",
+   "apps/web/hooks/use-collaborative-page-actions.tsx"
+  ]
+ },
+ {
+  "name": "Page exportieren",
+  "area": "Pages",
+  "description": "Export als PDF (Formate A4, A3, A2, Letter, Legal, Tabloid, mit oder ohne Bilder) oder Markdown im Browser.",
+  "code_refs": [
+   "apps/web/components/pages/modals/export-page-modal.tsx",
+   "apps/web/components/editor/pdf/document.tsx"
+  ]
+ },
+ {
+  "name": "Page duplizieren",
+  "area": "Pages",
+  "description": "„Make a copy“ erzeugt eine Kopie über duplicate/.",
+  "code_refs": [
+   "apps/web/components/pages/dropdowns/actions.tsx",
+   "apps/web/hooks/use-page-operations.ts"
+  ]
+ },
+ {
+  "name": "Page löschen",
+  "area": "Pages",
+  "description": "Löschen archivierter Pages mit Bestätigung.",
+  "code_refs": [
+   "apps/web/components/pages/modals/delete-page-modal.tsx",
+   "apps/web/components/pages/dropdowns/actions.tsx"
+  ]
+ },
+ {
+  "name": "Page-Anzeigeoptionen",
+  "area": "Pages",
+  "description": "Full width, Sticky toolbar, Copy markdown und Version history im Page-Menü; Einstellungen in pages_config.",
+  "code_refs": [
+   "apps/web/components/pages/dropdowns/actions.tsx",
+   "apps/web/components/pages/editor/toolbar/options-dropdown.tsx"
+  ]
+ },
+ {
+  "name": "Realtime-Ereignisse auf Pages",
+  "area": "Pages",
+  "description": "Verarbeitung von Lock-, Archiv-, Zugriffs- und Lösch-Ereignissen anderer Nutzer mit Toasts.",
+  "code_refs": [
+   "apps/web/hooks/use-realtime-page-events.tsx"
+  ]
+ },
+ {
+  "name": "Plane AI im Page-Editor",
+  "area": "Pages",
+  "description": "Bezahlfunktion: Menü „Ask Pi“ und Ton-Varianten; in CE nicht gerendert.",
+  "code_refs": [
+   "apps/web/components/pages/editor/ai/menu.tsx",
+   "apps/web/components/pages/editor/ai/ask-pi-menu.tsx",
+   "apps/web/hooks/use-editor-flagging.ts"
+  ]
+ },
+ {
+  "name": "Page verschieben",
+  "area": "Pages",
+  "description": "Bezahlfunktion: Menüeintrag „Move“ ohne Dialog in CE (isMovePageEnabled = false).",
+  "code_refs": [
+   "apps/web/components/pages/dropdowns/actions.tsx",
+   "apps/web/hooks/use-page-flag.ts"
+  ]
+ },
+ {
+  "name": "Projekt-View-Liste",
+  "area": "Views",
+  "description": "Liste der Projekt-Views mit Suche, Sortierung, Filtern (Favorites, Created date, Created by), Zugriffssymbol, Live-Badge und Owner-Avatar.",
+  "code_refs": [
+   "apps/web/components/views/views-list.tsx",
+   "apps/web/components/views/view-list-item.tsx",
+   "apps/web/components/views/view-list-item-action.tsx",
+   "apps/web/components/views/view-list-header.tsx",
+   "apps/web/components/views/filters/filter-selection.tsx",
+   "apps/web/components/views/filters/order-by.tsx",
+   "apps/web/components/views/applied-filters/root.tsx"
+  ]
+ },
+ {
+  "name": "Projekt-View anlegen und bearbeiten",
+  "area": "Views",
+  "description": "Dialog mit Name, Beschreibung, Zugriff, Logo, Rich-Filtern, Layout und Display-Optionen; auch aus der Filterzeile („Save view“).",
+  "code_refs": [
+   "apps/web/components/views/modal.tsx",
+   "apps/web/components/views/form.tsx"
+  ]
+ },
+ {
+  "name": "Projekt-View löschen",
+  "area": "Views",
+  "description": "Bestätigungsdialog für Owner oder Projekt-Admin.",
+  "code_refs": [
+   "apps/web/components/views/delete-view-modal.tsx"
+  ]
+ },
+ {
+  "name": "View-Kontextmenü und Favoriten",
+  "area": "Views",
+  "description": "Menü mit Edit, Open in new tab, Copy link, Delete sowie Favoriten-Stern.",
+  "code_refs": [
+   "apps/web/components/views/quick-actions.tsx",
+   "apps/web/components/views/helper.tsx",
+   "apps/web/components/common/quick-actions-helper.tsx"
+  ]
+ },
+ {
+  "name": "Projekt-View-Detail",
+  "area": "Views",
+  "description": "Work-Item-Layouts der View mit Switcher-Kopf; Layout und Display bei gesperrten Views ausgeblendet.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/views/(detail)/[viewId]/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/views/(detail)/[viewId]/header.tsx"
+  ]
+ },
+ {
+  "name": "Views veröffentlichen und teilen",
+  "area": "Views",
+  "description": "Bezahlfunktion: Publish-Menü, -Dialog und Freigabe; in CE Stub useViewPublish.",
+  "code_refs": [
+   "apps/web/components/views/publish/use-view-publish.tsx",
+   "apps/web/components/views/view-list-item-action.tsx"
+  ]
+ },
+ {
+  "name": "Workspace-View-Liste",
+  "area": "Views",
+  "description": "Standard-Views (All work items, Assigned, Created, Subscribed) und eigene Workspace-Views mit Suche.",
+  "code_refs": [
+   "apps/web/components/workspace/views/views-list.tsx",
+   "apps/web/components/workspace/views/default-view-list-item.tsx",
+   "apps/web/components/workspace/views/view-list-item.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/workspace-views/page.tsx"
+  ]
+ },
+ {
+  "name": "Workspace-View anlegen, bearbeiten, löschen",
+  "area": "Views",
+  "description": "Dialog mit Name, Beschreibung, Zugriff, Filtern und Display; Löschen mit Bestätigung; Quick-Actions im Kopf.",
+  "code_refs": [
+   "apps/web/components/workspace/views/modal.tsx",
+   "apps/web/components/workspace/views/form.tsx",
+   "apps/web/components/workspace/views/delete-view-modal.tsx",
+   "apps/web/components/workspace/views/quick-action.tsx",
+   "apps/web/components/workspace/views/default-view-quick-action.tsx"
+  ]
+ },
+ {
+  "name": "Workspace-View-Detail",
+  "area": "Views",
+  "description": "Spreadsheet aller Work Items der View mit Switcher, Filtern und Display.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/workspace-views/[globalViewId]/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/workspace-views/header.tsx"
+  ]
+ },
+ {
+  "name": "Workspace-Analytics mit Tabs",
+  "area": "Analytics",
+  "description": "Seite /:ws/analytics/:tabId mit Tabs Overview und Work items, Projektfilter und Leerzustand ohne Projekte.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/analytics/[tabId]/page.tsx",
+   "apps/web/components/analytics/tabs.tsx",
+   "apps/web/components/analytics/use-analytics-tabs.tsx",
+   "apps/web/components/analytics/analytics-filter-actions.tsx",
+   "apps/web/components/analytics/select/project.tsx"
+  ]
+ },
+ {
+  "name": "Analytics-Kennzahlen",
+  "area": "Analytics",
+  "description": "Kennzahlen-Kacheln je Tab (Nutzer, Rollen, Projekte, Work Items, Cycles, Intake bzw. Work-Item-Gruppen).",
+  "code_refs": [
+   "apps/web/components/analytics/total-insights.tsx",
+   "apps/web/components/analytics/insight-card.tsx",
+   "packages/constants/src/analytics/common.ts"
+  ]
+ },
+ {
+  "name": "Project Insights",
+  "area": "Analytics",
+  "description": "Radar-Chart und Liste der Projekte mit Work-Item-Anzahl.",
+  "code_refs": [
+   "apps/web/components/analytics/overview/project-insights.tsx",
+   "apps/web/components/analytics/overview/root.tsx"
+  ]
+ },
+ {
+  "name": "Active Projects",
+  "area": "Analytics",
+  "description": "Liste der Projekte mit Fertigstellungsgrad (grün über 50 %, sonst rot).",
+  "code_refs": [
+   "apps/web/components/analytics/overview/active-projects.tsx",
+   "apps/web/components/analytics/overview/active-project-item.tsx"
+  ]
+ },
+ {
+  "name": "Created vs Resolved",
+  "area": "Analytics",
+  "description": "Gestapeltes Flächendiagramm erstellter und erledigter Work Items über die Zeit.",
+  "code_refs": [
+   "apps/web/components/analytics/work-items/created-vs-resolved.tsx"
+  ]
+ },
+ {
+  "name": "Customized Insights",
+  "area": "Analytics",
+  "description": "Frei konfigurierbares Balkendiagramm mit X-Achse, Metrik und Gruppierung samt Tabelle und CSV-Export.",
+  "code_refs": [
+   "apps/web/components/analytics/work-items/customized-insights.tsx",
+   "apps/web/components/analytics/work-items/priority-chart.tsx",
+   "apps/web/components/analytics/select/analytics-params.tsx",
+   "apps/web/components/analytics/select/select-x-axis.tsx",
+   "apps/web/components/analytics/select/select-y-axis.tsx",
+   "apps/web/components/chart/utils.ts",
+   "apps/web/components/analytics/work-items/utils.ts"
+  ]
+ },
+ {
+  "name": "Insight-Tabelle mit CSV-Export",
+  "area": "Analytics",
+  "description": "Tabelle der State-Gruppen je Projekt bzw. Assignee mit Suche in der ersten Spalte und CSV-Export.",
+  "code_refs": [
+   "apps/web/components/analytics/work-items/workitems-insight-table.tsx",
+   "apps/web/components/analytics/insight-table/root.tsx",
+   "apps/web/components/analytics/insight-table/data-table.tsx",
+   "apps/web/components/analytics/export.ts"
+  ]
+ },
+ {
+  "name": "Analytics-Panel für Projekt, Cycle und Modul",
+  "area": "Analytics",
+  "description": "Rechtes Panel (auch Vollbild) mit dem Work-Items-Tab, gefiltert auf Projekt, Cycle oder Modul.",
+  "code_refs": [
+   "apps/web/components/analytics/work-items/modal/index.tsx",
+   "apps/web/components/analytics/work-items/modal/header.tsx",
+   "apps/web/components/analytics/work-items/modal/content.tsx"
+  ]
+ },
+ {
+  "name": "Erweiterte Analytics",
+  "area": "Analytics",
+  "description": "Bezahlfunktion: Zeitraumfilter, weitere Achsen und Metriken, Epic-Modus und zusätzliche Tabs; in CE nur Typen, Store-Felder und ungenutzte Komponenten.",
+  "code_refs": [
+   "apps/web/components/analytics/select/duration.tsx",
+   "apps/web/components/analytics/select/select-y-axis.tsx",
+   "packages/types/src/analytics.ts",
+   "apps/web/store/analytics.store.ts"
+  ]
+ },
+ {
+  "name": "Intake-Liste mit Tabs",
+  "area": "Intake",
+  "description": "Liste Open/Closed mit Zähler, Endlos-Laden (10 je Seite), automatischer Auswahl des ersten Eintrags und mobiler Ebene.",
+  "code_refs": [
+   "apps/web/components/inbox/sidebar/root.tsx",
+   "apps/web/components/inbox/sidebar/inbox-list.tsx",
+   "apps/web/components/inbox/sidebar/inbox-list-item.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/intake/page.tsx"
+  ]
+ },
+ {
+  "name": "Intake-Filter und Sortierung",
+  "area": "Intake",
+  "description": "Filter nach Status, Priorität, Assignees, Erstellern, Labels, Erstell- und Aktualisierungsdatum sowie Sortierung.",
+  "code_refs": [
+   "apps/web/components/inbox/inbox-filter/root.tsx",
+   "apps/web/components/inbox/inbox-filter/filters/filter-selection.tsx",
+   "apps/web/components/inbox/inbox-filter/sorting/order-by.tsx",
+   "apps/web/components/inbox/inbox-filter/applied-filters/root.tsx",
+   "packages/utils/src/intake.ts"
+  ]
+ },
+ {
+  "name": "Intake-Detail",
+  "area": "Intake",
+  "description": "Titel, Beschreibung, Eigenschaften (Assignees, Priorität, Due date, Labels), Duplikat-Hinweis, Aktivitäten und Kommentare.",
+  "code_refs": [
+   "apps/web/components/inbox/content/root.tsx",
+   "apps/web/components/inbox/content/issue-root.tsx",
+   "apps/web/components/inbox/content/issue-properties.tsx",
+   "apps/web/components/inbox/inbox-issue-status.tsx",
+   "apps/web/components/inbox/inbox-status-icon.tsx"
+  ]
+ },
+ {
+  "name": "Intake-Eintrag anlegen",
+  "area": "Intake",
+  "description": "Dialog mit Titel, Beschreibung, Intake-State, Priorität, Assignees, Labels, Due date und „Create more“.",
+  "code_refs": [
+   "apps/web/components/inbox/modals/create-modal/modal.tsx",
+   "apps/web/components/inbox/modals/create-modal/create-root.tsx",
+   "apps/web/components/inbox/modals/create-modal/issue-title.tsx",
+   "apps/web/components/inbox/modals/create-modal/issue-description.tsx",
+   "apps/web/components/inbox/modals/create-modal/issue-properties.tsx",
+   "apps/web/components/projects/settings/intake/header.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/intake/layout.tsx"
+  ]
+ },
+ {
+  "name": "Intake annehmen",
+  "area": "Intake",
+  "description": "„Accept“ öffnet das Work-Item-Modal, setzt Status Accepted und übernimmt das Work Item ins Projekt.",
+  "code_refs": [
+   "apps/web/components/inbox/content/inbox-issue-header.tsx",
+   "apps/web/components/issues/issue-modal/base.tsx",
+   "apps/web/store/inbox/inbox-issue.store.ts"
+  ]
+ },
+ {
+  "name": "Intake ablehnen",
+  "area": "Intake",
+  "description": "„Decline“ mit Bestätigung setzt Status Declined.",
+  "code_refs": [
+   "apps/web/components/inbox/modals/decline-issue-modal.tsx",
+   "apps/web/components/inbox/content/inbox-issue-header.tsx"
+  ]
+ },
+ {
+  "name": "Intake zurückstellen",
+  "area": "Intake",
+  "description": "Snooze bis zu einem Datum (frühestens morgen, Projekt-Zeitzone) und Un snooze.",
+  "code_refs": [
+   "apps/web/components/inbox/modals/snooze-issue-modal.tsx",
+   "apps/web/components/inbox/content/inbox-issue-header.tsx"
+  ]
+ },
+ {
+  "name": "Als Duplikat markieren",
+  "area": "Intake",
+  "description": "Auswahl eines Projekt-Work-Items als Original, setzt Status Duplicate.",
+  "code_refs": [
+   "apps/web/components/inbox/modals/select-duplicate.tsx"
+  ]
+ },
+ {
+  "name": "Intake-Eintrag löschen",
+  "area": "Intake",
+  "description": "Löschen mit Bestätigung für Admin oder Ersteller.",
+  "code_refs": [
+   "apps/web/components/inbox/modals/delete-issue-modal.tsx"
+  ]
+ },
+ {
+  "name": "Intake-Navigation",
+  "area": "Intake",
+  "description": "Vor/Zurück-Buttons und Pfeiltasten wechseln zwischen Einträgen; mobile Kopfzeile.",
+  "code_refs": [
+   "apps/web/components/inbox/content/inbox-issue-header.tsx",
+   "apps/web/components/inbox/content/inbox-issue-mobile-header.tsx"
+  ]
+ },
+ {
+  "name": "Intake in Benachrichtigungen",
+  "area": "Intake",
+  "description": "Eingebettete Intake-Detailansicht in der Workspace-Benachrichtigung.",
+  "code_refs": [
+   "apps/web/components/inbox/content/root.tsx",
+   "apps/web/components/inbox/root.tsx"
+  ]
+ },
+ {
+  "name": "Erweiterte Intake-Funktionen",
+  "area": "Intake",
+  "description": "Bezahlfunktion: zusätzliche Felder (Start date, Cycle, Modules, Estimate, Parent), Intake Forms, Zuständigkeit, E-Mail-Eingang und Duplikaterkennung.",
+  "code_refs": [
+   "apps/web/components/inbox/modals/create-modal/issue-properties.tsx"
+  ]
+ },
+ {
+  "name": "Estimates-Einstellungen",
+  "area": "Estimates",
+  "description": "Seite mit Schalter „Enable estimates for my project“, aktivem System und archivierten Systemen.",
+  "code_refs": [
+   "apps/web/components/estimates/root.tsx",
+   "apps/web/components/estimates/estimate-disable-switch.tsx",
+   "apps/web/components/estimates/estimate-list.tsx",
+   "apps/web/components/estimates/estimate-list-item.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/estimates/page.tsx"
+  ]
+ },
+ {
+  "name": "Schätzsystem anlegen",
+  "area": "Estimates",
+  "description": "Zweistufiger Assistent: System (Points, Categories) und Template (Fibonacci, Linear, Squares, T-Shirt Sizes, Easy to hard, Custom), dann Werte bearbeiten, ergänzen, entfernen und umsortieren.",
+  "code_refs": [
+   "apps/web/components/estimates/create/modal.tsx",
+   "apps/web/components/estimates/create/stage-one.tsx",
+   "apps/web/components/estimates/radio-select.tsx",
+   "apps/web/components/estimates/points/create-root.tsx",
+   "apps/web/components/estimates/points/preview.tsx",
+   "apps/web/components/estimates/points/create.tsx",
+   "apps/web/components/estimates/points/update.tsx",
+   "apps/web/components/estimates/inputs/root.tsx",
+   "apps/web/components/estimates/inputs/number-input.tsx",
+   "apps/web/components/estimates/inputs/text-input.tsx",
+   "packages/constants/src/estimates.ts"
+  ]
+ },
+ {
+  "name": "Schätzwert-Validierung",
+  "area": "Estimates",
+  "description": "Prüfung auf leer, Duplikat, Zahl größer 0 bzw. Text und maximal 20 Zeichen mit Inline-Fehlern.",
+  "code_refs": [
+   "apps/web/components/estimates/points/create.tsx",
+   "apps/web/components/estimates/points/update.tsx",
+   "packages/utils/src/estimates.ts"
+  ]
+ },
+ {
+  "name": "Schätzsystem löschen",
+  "area": "Estimates",
+  "description": "Löschen des Systems mit Bestätigung und Abschalten der Estimates im Projekt.",
+  "code_refs": [
+   "apps/web/components/estimates/delete/modal.tsx",
+   "apps/web/components/estimates/estimate-list-item-buttons.tsx"
+  ]
+ },
+ {
+  "name": "Advanced Estimates",
+  "area": "Estimates",
+  "description": "Bezahlfunktion: Zeit-Schätzungen, Bearbeiten, Umsortieren und Wechsel bestehender Systeme.",
+  "code_refs": [
+   "apps/web/components/estimates/create/helper.tsx",
+   "packages/constants/src/estimates.ts"
+  ]
+ },
+ {
+  "name": "Label-Liste mit Hierarchie",
+  "area": "Labels",
+  "description": "Projekt-Labels als Baum mit Gruppen (aufklappbar) und Einzel-Labels, Leerzustand und Lader.",
+  "code_refs": [
+   "apps/web/components/labels/project-setting-label-list.tsx",
+   "apps/web/components/labels/project-setting-label-group.tsx",
+   "apps/web/components/labels/project-setting-label-item.tsx",
+   "apps/web/components/labels/label-block/label-item-block.tsx",
+   "apps/web/components/labels/label-block/label-name.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/labels/page.tsx"
+  ]
+ },
+ {
+  "name": "Label anlegen und bearbeiten",
+  "area": "Labels",
+  "description": "Inline-Formular mit Farbwahl aus 10 Farben und Name (Pflicht, maximal 255 Zeichen).",
+  "code_refs": [
+   "apps/web/components/labels/create-update-label-inline.tsx",
+   "packages/constants/src/label.ts"
+  ]
+ },
+ {
+  "name": "Labels per Drag&Drop ordnen und gruppieren",
+  "area": "Labels",
+  "description": "Reihenfolge ändern, Label in eine Gruppe ziehen (make-child) oder auf Wurzelebene verschieben; Auto-Scroll.",
+  "code_refs": [
+   "apps/web/components/labels/label-drag-n-drop-HOC.tsx",
+   "apps/web/components/labels/label-utils.ts",
+   "apps/web/store/label.store.ts"
+  ]
+ },
+ {
+  "name": "Label aus Gruppe entfernen",
+  "area": "Labels",
+  "description": "Menüeintrag „Remove from group“ setzt parent auf null.",
+  "code_refs": [
+   "apps/web/components/labels/project-setting-label-item.tsx"
+  ]
+ },
+ {
+  "name": "Label löschen",
+  "area": "Labels",
+  "description": "Bestätigungsdialog; entfernt das Label von allen Work Items und aus View-Filtern.",
+  "code_refs": [
+   "apps/web/components/labels/delete-label-modal.tsx"
+  ]
+ },
+ {
+  "name": "State-Gruppen",
+  "area": "States",
+  "description": "Fünf aufklappbare Gruppen (Backlog, Unstarted, Started, Completed, Cancelled) mit ihren States.",
+  "code_refs": [
+   "apps/web/components/project-states/root.tsx",
+   "apps/web/components/project-states/group-list.tsx",
+   "apps/web/components/project-states/group-item.tsx",
+   "apps/web/components/project-states/state-list.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/states/page.tsx"
+  ]
+ },
+ {
+  "name": "State anlegen und bearbeiten",
+  "area": "States",
+  "description": "Inline-Formular mit Farbe, Name (maximal 100 Zeichen) und Beschreibung.",
+  "code_refs": [
+   "apps/web/components/project-states/create-update/form.tsx",
+   "apps/web/components/project-states/create-update/create.tsx",
+   "apps/web/components/project-states/create-update/update.tsx"
+  ]
+ },
+ {
+  "name": "State-Reihenfolge per Drag&Drop",
+  "area": "States",
+  "description": "Verschieben innerhalb und zwischen Gruppen mit Neuberechnung von sequence.",
+  "code_refs": [
+   "apps/web/components/project-states/state-item.tsx",
+   "apps/web/components/project-states/state-item-title.tsx",
+   "packages/utils/src/work-item/state.ts"
+  ]
+ },
+ {
+  "name": "Default-State festlegen",
+  "area": "States",
+  "description": "„Mark as default“ setzt genau einen Default-State je Projekt.",
+  "code_refs": [
+   "apps/web/components/project-states/options/mark-as-default.tsx"
+  ]
+ },
+ {
+  "name": "State löschen",
+  "area": "States",
+  "description": "Löschen mit Bestätigung; gesperrt für Default-State und einzigen State einer Gruppe.",
+  "code_refs": [
+   "apps/web/components/project-states/options/delete.tsx"
+  ]
+ },
+ {
+  "name": "Workflows",
+  "area": "States",
+  "description": "Bezahlfunktion: Übergangsregeln und Sperren beim Ziehen und Anlegen; in CE Stub.",
+  "code_refs": [
+   "apps/web/components/workflow/use-workflow-drag-n-drop.ts"
+  ]
+ },
+ {
+  "name": "Webhook-Liste",
+  "area": "Webhooks",
+  "description": "Workspace-Webhooks mit URL, Aktiv-Schalter und Leerzustand.",
+  "code_refs": [
+   "apps/web/components/web-hooks/webhooks-list.tsx",
+   "apps/web/components/web-hooks/webhooks-list-item.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/(workspace)/webhooks/page.tsx"
+  ]
+ },
+ {
+  "name": "Webhook anlegen",
+  "area": "Webhooks",
+  "description": "Dialog mit Payload-URL und Ereignisauswahl (alle oder Projects, Cycles, Work items, Modules, Work item comments).",
+  "code_refs": [
+   "apps/web/components/web-hooks/create-webhook-modal.tsx",
+   "apps/web/components/web-hooks/form/form.tsx",
+   "apps/web/components/web-hooks/form/input.tsx",
+   "apps/web/components/web-hooks/form/event-types.tsx",
+   "apps/web/components/web-hooks/form/individual-event-options.tsx"
+  ]
+ },
+ {
+  "name": "Webhook-Secret",
+  "area": "Webhooks",
+  "description": "Einmalige Anzeige, Kopieren und CSV-Download des Secrets; Regenerieren auf der Detailseite.",
+  "code_refs": [
+   "apps/web/components/web-hooks/form/secret-key.tsx",
+   "apps/web/components/web-hooks/generated-hook-details.tsx",
+   "apps/web/components/web-hooks/utils.ts"
+  ]
+ },
+ {
+  "name": "Webhook bearbeiten",
+  "area": "Webhooks",
+  "description": "Detailseite mit URL, Aktiv-Schalter und Ereignissen.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/(workspace)/webhooks/[webhookId]/page.tsx",
+   "apps/web/components/web-hooks/form/form.tsx",
+   "apps/web/components/web-hooks/form/toggle.tsx"
+  ]
+ },
+ {
+  "name": "Webhook löschen",
+  "area": "Webhooks",
+  "description": "Danger zone mit Bestätigungsdialog.",
+  "code_refs": [
+   "apps/web/components/web-hooks/form/delete-section.tsx",
+   "apps/web/components/web-hooks/delete-webhook-modal.tsx"
+  ]
+ },
+ {
+  "name": "Persönliche API-Tokens",
+  "area": "API-Tokens",
+  "description": "Liste der Tokens mit Status Active/Expired, Beschreibung und Ablauf im Profil.",
+  "code_refs": [
+   "apps/web/components/api-token/token-list-item.tsx",
+   "apps/web/components/settings/profile/content/pages/api-tokens.tsx"
+  ]
+ },
+ {
+  "name": "API-Token anlegen",
+  "area": "API-Tokens",
+  "description": "Dialog mit Titel, Beschreibung, Ablauf (1 week, 1 month, 3 months, 1 year, Custom, Never expires), einmaliger Anzeige und CSV-Download.",
+  "code_refs": [
+   "apps/web/components/api-token/modal/create-token-modal.tsx",
+   "apps/web/components/api-token/modal/form.tsx",
+   "apps/web/components/api-token/modal/generated-token-details.tsx"
+  ]
+ },
+ {
+  "name": "API-Token löschen",
+  "area": "API-Tokens",
+  "description": "Bestätigungsdialog zum Widerruf des Tokens.",
+  "code_refs": [
+   "apps/web/components/api-token/delete-token-modal.tsx"
+  ]
+ },
+ {
+  "name": "Work Items exportieren",
+  "area": "Exporter",
+  "description": "Export ausgewählter oder aller Projekte als CSV, Excel oder JSON.",
+  "code_refs": [
+   "apps/web/components/exporter/export-form.tsx",
+   "apps/web/components/exporter/guide.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/(workspace)/exports/page.tsx"
+  ]
+ },
+ {
+  "name": "Export-Historie",
+  "area": "Exporter",
+  "description": "Tabelle früherer Exporte mit Status, Paginierung, Aktualisieren, 3-s-Polling und Download (7 Tage).",
+  "code_refs": [
+   "apps/web/components/exporter/prev-exports.tsx",
+   "apps/web/components/exporter/column.tsx"
+  ]
+ },
+ {
+  "name": "Auto-Archive",
+  "area": "Automation",
+  "description": "Automatisches Archivieren geschlossener Work Items nach 1–12 Monaten.",
+  "code_refs": [
+   "apps/web/components/automation/auto-archive-automation.tsx",
+   "apps/web/components/automation/select-month-modal.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/automations/page.tsx"
+  ]
+ },
+ {
+  "name": "Auto-Close",
+  "area": "Automation",
+  "description": "Automatisches Schließen inaktiver Work Items nach 1–12 Monaten in einen wählbaren Cancelled-State.",
+  "code_refs": [
+   "apps/web/components/automation/auto-close-automation.tsx",
+   "apps/web/components/automation/select-month-modal.tsx"
+  ]
+ },
+ {
+  "name": "Auto-Reminders und Custom Automations",
+  "area": "Automation",
+  "description": "Bezahlfunktion: Erinnerungen vor Fälligkeit und frei definierbare Automationen; in CE nur Texte.",
+  "code_refs": [
+   "packages/i18n/src/locales/en/project-settings.json",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/automations/page.tsx"
+  ]
+ },
+ {
+  "name": "GitHub- und Slack-Integration",
+  "area": "Integrationen",
+  "description": "Bezahlfunktion: Installation, Repository- und Kanalverknüpfung; CE-Bausteine sind unerreichbar.",
+  "code_refs": [
+   "apps/web/components/integration/single-integration-card.tsx",
+   "apps/web/components/integration/github/select-repository.tsx",
+   "apps/web/components/integration/slack/select-channel.tsx",
+   "apps/web/hooks/use-integration-popup.tsx"
+  ]
+ },
+ {
+  "name": "Beschreibungsfeld mit Autosave",
+  "area": "Editor-Wrapper",
+  "description": "Rich-Text-Beschreibung für Work Items und Intake mit Debounce-Speicherung (1 500 ms), Uploads und Mentions.",
+  "code_refs": [
+   "apps/web/components/editor/rich-text/description-input/root.tsx",
+   "apps/web/components/editor/rich-text/description-input/loader.tsx",
+   "apps/web/components/editor/rich-text/editor.tsx"
+  ]
+ },
+ {
+  "name": "Kommentar-Editor",
+  "area": "Editor-Wrapper",
+  "description": "Lite-Text-Editor mit Toolbar (voll oder kompakt), Zugriffsumschalter Private/Public und Senden per Enter.",
+  "code_refs": [
+   "apps/web/components/editor/lite-text/editor.tsx",
+   "apps/web/components/editor/lite-text/toolbar.tsx",
+   "apps/web/components/editor/lite-text/lite-toolbar.tsx"
+  ]
+ },
+ {
+  "name": "Sticky-Editor",
+  "area": "Editor-Wrapper",
+  "description": "Editor für Stickies mit Hintergrundfarben, Bold, Italic, To-do-Liste und Löschen.",
+  "code_refs": [
+   "apps/web/components/editor/sticky-editor/editor.tsx",
+   "apps/web/components/editor/sticky-editor/toolbar.tsx",
+   "apps/web/components/editor/sticky-editor/color-palette.tsx"
+  ]
+ },
+ {
+  "name": "Nutzer-Mentions",
+  "area": "Editor-Wrapper",
+  "description": "Mention-Chip mit Hover-Profilkarte und Link zum Profil; unbekannte Nutzer als „@suspended user“.",
+  "code_refs": [
+   "apps/web/components/editor/embeds/mentions/root.tsx",
+   "apps/web/components/editor/embeds/mentions/user.tsx"
+  ]
+ },
+ {
+  "name": "Read-only-Dokumentansicht",
+  "area": "Editor-Wrapper",
+  "description": "Document-Editor-Wrapper für Versionsansichten.",
+  "code_refs": [
+   "apps/web/components/editor/document/editor.tsx"
+  ]
+ }
+]
