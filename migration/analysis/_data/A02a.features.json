@@ -1,0 +1,358 @@
+[
+ {
+  "name": "Workspace anlegen (Name, Slug, Organisationsgröße, Slug-Verfügbarkeitsprüfung, reservierte Slugs)",
+  "area": "Workspace",
+  "description": "Erstellt Workspace und Admin-Mitgliedschaft (Rolle 20). Slug: Regex ^[a-zA-Z0-9_-]+$, max. 48 Zeichen, nicht reserviert, global eindeutig; Name max. 80 Zeichen, ohne URL, mit mind. einem alphanumerischen Zeichen. Abschaltbar über DISABLE_WORKSPACE_CREATION. Startet danach den Demo-Seed.",
+  "code_refs": [
+   "apps/api/plane/db/models/workspace.py",
+   "apps/api/plane/utils/constants.py",
+   "apps/api/plane/app/views/workspace/base.py",
+   "apps/api/plane/app/serializers/workspace.py",
+   "packages/constants/src/workspace.ts",
+   "apps/web/components/workspace/create-workspace-form.tsx"
+  ]
+ },
+ {
+  "name": "Workspace löschen (Soft-Delete mit Slug-Freigabe, Hard-Delete nach 60 Tagen)",
+  "area": "Workspace",
+  "description": "Nur Admins. Setzt Profile.last_workspace_id = NULL, Soft-Delete mit asynchroner Kaskade, Slug wird zu slug__<epoch>; endgültige Löschung durch den täglichen hard_delete-Job.",
+  "code_refs": [
+   "apps/api/plane/db/models/workspace.py",
+   "apps/api/plane/db/mixins.py",
+   "apps/api/plane/bgtasks/deletion_task.py",
+   "apps/api/plane/app/views/workspace/base.py"
+  ]
+ },
+ {
+  "name": "Workspace-Mitglieder und Rollen (Admin/Member/Guest)",
+  "area": "Workspace",
+  "description": "WorkspaceMember mit role 20/15/5. Entfernen oder Verlassen setzt is_active=false und deaktiviert alle Projektmitgliedschaften; eine Herabstufung zum Gast stuft auch alle Projektrollen auf Gast herab. Schutzregeln: letzter Admin, alleiniger Projekt-Admin.",
+  "code_refs": [
+   "apps/api/plane/db/models/workspace.py",
+   "apps/api/plane/app/views/workspace/member.py"
+  ]
+ },
+ {
+  "name": "Workspace-Einladungen",
+  "area": "Workspace",
+  "description": "WorkspaceMemberInvite mit E-Mail (lowercase), Rolle (höchstens die eigene), JWT-Token und message; Annahme bzw. Ablehnung nur einmal (responded_at). Eindeutigkeit pro E-Mail und Workspace unter aktiven Einladungen.",
+  "code_refs": [
+   "apps/api/plane/db/models/workspace.py",
+   "apps/api/plane/app/views/workspace/invite.py",
+   "apps/api/plane/app/serializers/workspace.py"
+  ]
+ },
+ {
+  "name": "Demo-Workspace-Inhalte (Seed)",
+  "area": "Workspace/Onboarding",
+  "description": "Nach der Workspace-Erstellung: Bot-User 'Plane', Demo-Projekt (Name = Workspace-Name) mit States, Labels, Cycles, Modules, 7 Tutorial-Work-Items, einer View und 2 Pages.",
+  "code_refs": [
+   "apps/api/plane/bgtasks/workspace_seed_task.py",
+   "apps/api/plane/seeds/data/projects.json",
+   "apps/api/plane/seeds/data/issues.json",
+   "apps/api/plane/seeds/data/pages.json",
+   "apps/api/plane/seeds/data/states.json",
+   "apps/api/plane/seeds/data/labels.json",
+   "apps/api/plane/seeds/data/cycles.json",
+   "apps/api/plane/seeds/data/modules.json",
+   "apps/api/plane/seeds/data/views.json"
+  ]
+ },
+ {
+  "name": "Projekt anlegen/bearbeiten (Name, Identifier, Beschreibung, Netzwerk, Logo, Cover, Lead, Default-Assignee, Default-State, Estimate, Zeitzone)",
+  "area": "Projekt",
+  "description": "Identifier max. 12 Zeichen in Großbuchstaben; Name und Identifier eindeutig im Workspace und frei von verbotenen Sonderzeichen; ProjectIdentifier-Registry; Zeitzone wird vom Workspace geerbt; archivierte Projekte sind nicht änderbar.",
+  "code_refs": [
+   "apps/api/plane/db/models/project.py",
+   "apps/api/plane/app/serializers/project.py",
+   "apps/api/plane/app/views/project/base.py"
+  ]
+ },
+ {
+  "name": "Projekt-Feature-Toggles",
+  "area": "Projekt",
+  "description": "cycle_view, module_view, issue_views_view, page_view, intake_view (legt den Default-Intake an), is_time_tracking_enabled, is_issue_type_enabled, guest_view_all_features.",
+  "code_refs": [
+   "apps/api/plane/db/models/project.py",
+   "apps/api/plane/app/views/project/base.py"
+  ]
+ },
+ {
+  "name": "Auto-Archivieren / Auto-Schließen (archive_in, close_in)",
+  "area": "Projekt/Automation",
+  "description": "Monate (0–12, 0 = aus) bis zur automatischen Archivierung bzw. Schließung von Work-Items; ausgeführt durch den Beat-Job archive_and_close_old_issues.",
+  "code_refs": [
+   "apps/api/plane/db/models/project.py",
+   "apps/api/plane/celery.py"
+  ]
+ },
+ {
+  "name": "Projekt archivieren/dearchivieren",
+  "area": "Projekt",
+  "description": "archived_at setzen bzw. zurücksetzen; beim Archivieren werden die Favoriten des Projekts gelöscht.",
+  "code_refs": [
+   "apps/api/plane/db/models/project.py",
+   "apps/api/plane/app/views/project/base.py"
+  ]
+ },
+ {
+  "name": "Projekt-Identifier prüfen/freigeben",
+  "area": "Projekt",
+  "description": "GET/DELETE workspaces/<slug>/project-identifiers/ auf Basis von ProjectIdentifier.",
+  "code_refs": [
+   "apps/api/plane/db/models/project.py",
+   "apps/api/plane/app/views/project/base.py"
+  ]
+ },
+ {
+  "name": "Projektmitglieder, Projekt-Einladungen und Projekt-Sortierung",
+  "area": "Projekt",
+  "description": "ProjectMember (Rolle, is_active) und ProjectMemberInvite. Automatische ProjectUserProperty mit Sidebar-Sortierung (neues Projekt oben).",
+  "code_refs": [
+   "apps/api/plane/db/models/project.py",
+   "apps/api/plane/app/views/project/member.py",
+   "apps/api/plane/app/views/project/invite.py"
+  ]
+ },
+ {
+  "name": "Projekt-Navigations- und Pages-Präferenzen je Benutzer",
+  "area": "Projekt",
+  "description": "preferences.navigation.default_tab und hide_in_more_menu sowie pages.block_display; dazu Filter, Display-Filter, Display-Properties und Rich-Filter je Benutzer und Projekt.",
+  "code_refs": [
+   "apps/api/plane/db/models/project.py",
+   "apps/api/plane/db/models/issue.py",
+   "packages/types/src/project/projects.ts"
+  ]
+ },
+ {
+  "name": "Benutzerprofil und persönliche Einstellungen",
+  "area": "Profil",
+  "description": "Theme (system/light/dark/contrast/custom inkl. primary/background/darkPalette), Sprache, Wochenstart, Benutzer-Zeitzone, Avatar/Cover, Display-Name, Onboarding-Schritte, Use-Case, Job-Rolle, Benachrichtigungs-Ansicht.",
+  "code_refs": [
+   "apps/api/plane/db/models/user.py",
+   "apps/web/store/user/profile.store.ts",
+   "packages/types/src/users.ts",
+   "packages/constants/src/themes.ts"
+  ]
+ },
+ {
+  "name": "Verknüpfte OAuth-Konten",
+  "area": "Identität",
+  "description": "Account je Provider (google, github, gitlab, gitea) mit Tokens; eindeutig pro (provider, provider_account_id).",
+  "code_refs": [
+   "apps/api/plane/db/models/user.py",
+   "apps/api/plane/authentication/adapter/oauth.py"
+  ]
+ },
+ {
+  "name": "Login-Sessions (App und God-Mode)",
+  "area": "Identität",
+  "description": "DB-Sessions mit 128-Zeichen-Key, device_info und user_id; Cookies session-id (7 Tage) und admin-session-id (1 h).",
+  "code_refs": [
+   "apps/api/plane/db/models/session.py",
+   "apps/api/plane/authentication/utils/login.py",
+   "apps/api/plane/authentication/middleware/session.py",
+   "apps/api/plane/settings/common.py"
+  ]
+ },
+ {
+  "name": "Persönliche API-Tokens",
+  "area": "Entwickler",
+  "description": "Erstellen (Token nur einmal sichtbar), Liste, Ablaufdatum, label/description, letzter Gebrauch; Authentifizierung über X-Api-Key.",
+  "code_refs": [
+   "apps/api/plane/db/models/api.py",
+   "apps/api/plane/app/views/api.py",
+   "apps/api/plane/app/serializers/api.py",
+   "apps/api/plane/api/middleware/api_authentication.py"
+  ]
+ },
+ {
+  "name": "API-Aktivitätsprotokoll",
+  "area": "Entwickler/Betrieb",
+  "description": "Request-/Response-Log aller Aufrufe mit X-Api-Key (14 Tage Aufbewahrung).",
+  "code_refs": [
+   "apps/api/plane/db/models/api.py",
+   "apps/api/plane/middleware/logger.py",
+   "apps/api/plane/bgtasks/logger_task.py",
+   "apps/api/plane/bgtasks/cleanup_task.py"
+  ]
+ },
+ {
+  "name": "Webhooks mit Event-Auswahl, Secret und Delivery-Logs",
+  "area": "Entwickler",
+  "description": "Workspace-Webhooks (URL http/https, SSRF-Schutz) für die Events project, issue, module, cycle und issue_comment; Secret 'plane_wh_…'; Version v1; WebhookLog mit Retry-Count, 14 Tage Aufbewahrung.",
+  "code_refs": [
+   "apps/api/plane/db/models/webhook.py",
+   "apps/api/plane/app/serializers/webhook.py",
+   "apps/api/plane/bgtasks/webhook_task.py"
+  ]
+ },
+ {
+  "name": "Datei-Uploads (Avatare, Logos, Cover, Anhänge, Editor-Bilder)",
+  "area": "Assets",
+  "description": "FileAsset mit entity_type, Presigned-Upload, Bestätigung (is_uploaded), Metadaten, Soft-Delete/Restore und typabhängigen asset_url-Pfaden; nie bestätigte Uploads werden nach 7 Tagen entfernt.",
+  "code_refs": [
+   "apps/api/plane/db/models/asset.py",
+   "apps/api/plane/app/views/asset/v2.py",
+   "apps/api/plane/bgtasks/file_asset_task.py"
+  ]
+ },
+ {
+  "name": "Favoriten mit Ordnern",
+  "area": "Navigation",
+  "description": "Favoriten für project, cycle, module, view, page und issue sowie Ordner (parent); Sortierung über sequence; Sichtbarkeitsprüfung; Löschen ist ein Hard-Delete.",
+  "code_refs": [
+   "apps/api/plane/db/models/favorite.py",
+   "apps/api/plane/app/views/workspace/favorite.py",
+   "apps/api/plane/app/serializers/favorite.py"
+  ]
+ },
+ {
+  "name": "Zuletzt besucht (Home)",
+  "area": "Home",
+  "description": "Tracking der Besuche von project, issue, page, view, cycle und module; maximal 20 Einträge je User und Workspace; die Liste zeigt issue, page und project.",
+  "code_refs": [
+   "apps/api/plane/db/models/recent_visit.py",
+   "apps/api/plane/bgtasks/recent_visited_task.py",
+   "apps/api/plane/app/views/workspace/recent_visit.py"
+  ]
+ },
+ {
+  "name": "Stickies (persönliche Notizen)",
+  "area": "Home",
+  "description": "Rich-Text-Notizen mit Farbe/Hintergrund und Logo, Suche über description_stripped, neue Notizen oben, nur der Owner hat Zugriff.",
+  "code_refs": [
+   "apps/api/plane/db/models/sticky.py",
+   "apps/api/plane/app/views/workspace/sticky.py",
+   "apps/api/plane/api/views/sticky.py"
+  ]
+ },
+ {
+  "name": "Quick Links (Home)",
+  "area": "Home",
+  "description": "Persönliche Links (title, url mit http://-Ergänzung, keine Duplikate je Owner).",
+  "code_refs": [
+   "apps/api/plane/db/models/workspace.py",
+   "apps/api/plane/app/views/workspace/quick_link.py",
+   "apps/api/plane/app/serializers/workspace.py"
+  ]
+ },
+ {
+  "name": "Home-Widget-Präferenzen",
+  "area": "Home",
+  "description": "Widgets quick_links, recents und my_stickies aktivieren/deaktivieren und sortieren (Defaults werden beim ersten Abruf angelegt).",
+  "code_refs": [
+   "apps/api/plane/db/models/workspace.py",
+   "apps/api/plane/app/views/workspace/home.py"
+  ]
+ },
+ {
+  "name": "Sidebar-Navigation: angeheftete Einträge und Projekt-Navigation",
+  "area": "Navigation",
+  "description": "WorkspaceUserPreference (views, active_cycles, analytics, drafts, your_work, archives, stickies: is_pinned, sort_order) sowie Projekt-Navigationsmodus ACCORDION/TABBED und Projektlimit.",
+  "code_refs": [
+   "apps/api/plane/db/models/workspace.py",
+   "apps/api/plane/app/views/workspace/user_preference.py",
+   "apps/web/hooks/use-navigation-preferences.ts"
+  ]
+ },
+ {
+  "name": "Workspace-weite Benutzer-Filter und Anzeigeeinstellungen",
+  "area": "Workspace-Views",
+  "description": "WorkspaceUserProperties: filters, display_filters, display_properties und rich_filters je User und Workspace (lazy angelegt).",
+  "code_refs": [
+   "apps/api/plane/db/models/workspace.py",
+   "apps/api/plane/app/views/workspace/user.py"
+  ]
+ },
+ {
+  "name": "Gespeicherte Analytics-Ansichten",
+  "area": "Analytics",
+  "description": "AnalyticView mit query_dict (x_axis, y_axis, Filter); Abruf mit segment.",
+  "code_refs": [
+   "apps/api/plane/db/models/analytic.py",
+   "apps/api/plane/app/serializers/analytic.py",
+   "apps/api/plane/app/views/analytic/base.py"
+  ]
+ },
+ {
+  "name": "Work-Item-Export (CSV/XLSX/JSON) mit Export-Historie",
+  "area": "Export",
+  "description": "ExporterHistory mit den Status queued, processing, completed und failed; Download-URL gilt 8 Tage.",
+  "code_refs": [
+   "apps/api/plane/db/models/exporter.py",
+   "apps/api/plane/app/views/exporter/base.py",
+   "apps/api/plane/bgtasks/export_task.py",
+   "apps/api/plane/bgtasks/exporter_expired_task.py"
+  ]
+ },
+ {
+  "name": "Projekt veröffentlichen (Publish/Space)",
+  "area": "Publish",
+  "description": "DeployBoard mit anchor, freigegebenen Layouts (view_props), Kommentaren, Reaktionen, Votes und Intake. Public Members erfassen Interaktionen von Nicht-Mitgliedern.",
+  "code_refs": [
+   "apps/api/plane/db/models/deploy_board.py",
+   "apps/api/plane/db/models/project.py",
+   "apps/api/plane/app/views/project/base.py",
+   "apps/api/plane/space/views/issue.py",
+   "packages/types/src/publish.ts"
+  ]
+ },
+ {
+  "name": "Instanz-Setup, Instanz-Admins und Instanz-Konfiguration (God Mode)",
+  "area": "Instanz",
+  "description": "Instance (is_setup_done, Name, Telemetrie), InstanceAdmin und InstanceConfiguration (Auth-Provider, SMTP, AI, Unsplash, Workspace-Erstellung; Secrets verschlüsselt).",
+  "code_refs": [
+   "apps/api/plane/license/models/instance.py",
+   "apps/api/plane/license/management/commands/configure_instance.py",
+   "apps/api/plane/license/management/commands/register_instance.py",
+   "apps/api/plane/utils/instance_config_variables/core.py",
+   "apps/api/plane/license/api/views/admin.py"
+  ]
+ },
+ {
+  "name": "Betriebs-CLI (Management-Commands)",
+  "area": "Betrieb",
+  "description": "activate_user, reset_password, create_instance_admin, reactivate_workspace_member, create_project_member, test_email, clear_cache, create_bucket, update_bucket, create_dummy_data, fix_duplicate_sequences, update_deleted_workspace_slug, wait_for_db, wait_for_migrations sowie Datenmigrations-Hilfen.",
+  "code_refs": [
+   "apps/api/plane/db/management/commands/",
+   "apps/api/plane/license/management/commands/",
+   "apps/api/bin/docker-entrypoint-api.sh"
+  ]
+ },
+ {
+  "name": "Workspace-Themes (nur API)",
+  "area": "Workspace",
+  "description": "WorkspaceTheme (name, colors) je Workspace; CRUD-API existiert, wird vom CE-Frontend nicht genutzt.",
+  "code_refs": [
+   "apps/api/plane/db/models/workspace.py",
+   "apps/api/plane/app/views/workspace/base.py"
+  ]
+ },
+ {
+  "name": "Automatische Bereinigung (Hard-Delete, Log-Cleanup)",
+  "area": "System",
+  "description": "Tägliche Jobs: hard_delete (60 Tage), API-/Webhook-Logs (14 Tage), Exportlinks (8 Tage), nie bestätigte Uploads (7 Tage).",
+  "code_refs": [
+   "apps/api/plane/celery.py",
+   "apps/api/plane/bgtasks/deletion_task.py",
+   "apps/api/plane/bgtasks/cleanup_task.py"
+  ]
+ },
+ {
+  "name": "Schema-Indizien für Bezahl-/Mobile-Funktionen (in der CE nur Datenmodell)",
+  "area": "EE-Indizien",
+  "description": "Team (Teamspaces), ProjectWebhook, Device/DeviceSession (Push), SocialLoginConnection (Jira), Integration/GitHub/Slack-Sync, Importer (GitHub/Jira), ChangeLog, Zeiterfassung, Issue-Typen, Onboarding-Checkliste/AI-Chat-Flags, EE-Asset-Typen.",
+  "code_refs": [
+   "apps/api/plane/db/models/workspace.py",
+   "apps/api/plane/db/models/webhook.py",
+   "apps/api/plane/db/models/device.py",
+   "apps/api/plane/db/models/social_connection.py",
+   "apps/api/plane/db/models/integration/base.py",
+   "apps/api/plane/db/models/integration/github.py",
+   "apps/api/plane/db/models/integration/slack.py",
+   "apps/api/plane/db/models/importer.py",
+   "packages/types/src/enums.ts"
+  ]
+ }
+]

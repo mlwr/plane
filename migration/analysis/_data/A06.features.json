@@ -1,0 +1,415 @@
+[
+ {
+  "name": "E-Mail-Existenzprüfung vor dem Login",
+  "area": "Auth Web/Space",
+  "description": "Liefert existing und status MAGIC_CODE/CREDENTIAL abhängig von is_password_autoset, SMTP und ENABLE_MAGIC_LINK_LOGIN; steuert den Login-Schritt im UI",
+  "code_refs": [
+   "apps/api/plane/authentication/views/app/check.py",
+   "apps/api/plane/authentication/views/space/check.py",
+   "apps/web/services/auth.service.ts"
+  ]
+ },
+ {
+  "name": "Anmeldung mit E-Mail und Passwort (Web)",
+  "area": "Auth Web",
+  "description": "Formular-POST /auth/sign-in/ mit CSRF, Throttle, Instanz-Check, Passwortprüfung, Konto-/Bot-Sperren, Session-Login und Redirect auf Web-Root mit next_path",
+  "code_refs": [
+   "apps/api/plane/authentication/views/app/email.py",
+   "apps/api/plane/authentication/provider/credentials/email.py",
+   "apps/api/plane/authentication/adapter/base.py",
+   "apps/web/components/account/auth-forms/password.tsx"
+  ]
+ },
+ {
+  "name": "Registrierung mit E-Mail und Passwort (Web)",
+  "area": "Auth Web",
+  "description": "POST /auth/sign-up/ mit Signup-Sperre (ENABLE_SIGNUP, Einladung), zxcvbn-Prüfung, Anlage von User und Profile",
+  "code_refs": [
+   "apps/api/plane/authentication/views/app/email.py",
+   "apps/api/plane/authentication/adapter/base.py",
+   "apps/api/plane/authentication/utils/password.py"
+  ]
+ },
+ {
+  "name": "Magic-Code per E-Mail anfordern",
+  "area": "Auth Web/Space",
+  "description": "6-stelliger Code, 10 Minuten gültig, max. 4 Codes pro 10 Minuten, Versand per Celery-Mail",
+  "code_refs": [
+   "apps/api/plane/authentication/views/app/magic.py",
+   "apps/api/plane/authentication/views/space/magic.py",
+   "apps/api/plane/authentication/provider/credentials/magic_code.py",
+   "apps/api/plane/bgtasks/magic_link_code_task.py"
+  ]
+ },
+ {
+  "name": "Anmeldung/Registrierung mit Magic-Code",
+  "area": "Auth Web/Space",
+  "description": "Code-Prüfung mit 5 Versuchen, Fehlervarianten SIGN_IN/SIGN_UP, Neuanlage mit is_password_autoset und is_email_verified",
+  "code_refs": [
+   "apps/api/plane/authentication/views/app/magic.py",
+   "apps/api/plane/authentication/views/space/magic.py",
+   "apps/api/plane/authentication/provider/credentials/magic_code.py",
+   "apps/web/components/account/auth-forms/unique-code.tsx"
+  ]
+ },
+ {
+  "name": "Login mit Google",
+  "area": "Auth OAuth",
+  "description": "OAuth-Code-Flow mit State in Session, verified_email-Pflicht, offline access",
+  "code_refs": [
+   "apps/api/plane/authentication/provider/oauth/google.py",
+   "apps/api/plane/authentication/views/app/google.py",
+   "apps/api/plane/authentication/utils/oauth_state.py"
+  ]
+ },
+ {
+  "name": "Login mit GitHub inkl. Organisationspflicht",
+  "area": "Auth OAuth",
+  "description": "OAuth-Flow, primäre verifizierte E-Mail Pflicht, optional Mitgliedschaft in GITHUB_ORGANIZATION_ID",
+  "code_refs": [
+   "apps/api/plane/authentication/provider/oauth/github.py",
+   "apps/api/plane/authentication/views/app/github.py"
+  ]
+ },
+ {
+  "name": "Login mit GitLab (auch self-hosted)",
+  "area": "Auth OAuth",
+  "description": "OAuth-Flow gegen GITLAB_HOST, confirmed_at-Pflicht",
+  "code_refs": [
+   "apps/api/plane/authentication/provider/oauth/gitlab.py",
+   "apps/api/plane/authentication/views/app/gitlab.py"
+  ]
+ },
+ {
+  "name": "Login mit Gitea",
+  "area": "Auth OAuth",
+  "description": "OAuth-Flow gegen GITEA_HOST mit Schema-Prüfung, verifizierte E-Mail Pflicht, abweichende Redirect-Logik",
+  "code_refs": [
+   "apps/api/plane/authentication/provider/oauth/gitea.py",
+   "apps/api/plane/authentication/views/app/gitea.py",
+   "apps/api/plane/authentication/views/space/gitea.py"
+  ]
+ },
+ {
+  "name": "Übernahme von Profil und Avatar vom Identity-Provider",
+  "area": "Auth OAuth",
+  "description": "Avatar-Download SSRF-sicher in den Storage, optionaler Profilsync bei jedem Login (ENABLE_<PROVIDER>_SYNC)",
+  "code_refs": [
+   "apps/api/plane/authentication/adapter/base.py",
+   "apps/api/plane/utils/url_security.py",
+   "apps/api/plane/utils/instance_config_variables/core.py"
+  ]
+ },
+ {
+  "name": "Login auf öffentlichen Boards (Space)",
+  "area": "Auth Space",
+  "description": "Passwort- und Magic-Login unter /auth/spaces/ mit Redirect in den Space-Bereich; OAuth nutzt App-Routen",
+  "code_refs": [
+   "apps/api/plane/authentication/views/space/email.py",
+   "apps/api/plane/authentication/views/space/magic.py",
+   "apps/space/hooks/oauth/core.tsx",
+   "apps/space/components/account/auth-forms/password.tsx"
+  ]
+ },
+ {
+  "name": "Abmelden (Web, Space, God-Mode)",
+  "area": "Auth",
+  "description": "POST-Formular mit CSRF, setzt last_logout_ip/time, löscht Session und Cookie, Redirect",
+  "code_refs": [
+   "apps/api/plane/authentication/views/app/signout.py",
+   "apps/api/plane/authentication/views/space/signout.py",
+   "apps/api/plane/license/api/views/admin.py",
+   "apps/web/services/auth.service.ts"
+  ]
+ },
+ {
+  "name": "Passwort vergessen",
+  "area": "Auth Passwort",
+  "description": "Reset-Link per E-Mail (uidb64/token, 1 h gültig), Web- und Space-Variante",
+  "code_refs": [
+   "apps/api/plane/authentication/views/app/password_management.py",
+   "apps/api/plane/authentication/views/space/password_management.py",
+   "apps/api/plane/bgtasks/forgot_password_task.py"
+  ]
+ },
+ {
+  "name": "Passwort zurücksetzen",
+  "area": "Auth Passwort",
+  "description": "Formular-POST auf /auth/reset-password/<uidb64>/<token>/, Token-Prüfung, Stärkeprüfung, Redirect auf sign-in?success=True",
+  "code_refs": [
+   "apps/api/plane/authentication/views/app/password_management.py",
+   "apps/web/components/account/auth-forms/reset-password.tsx"
+  ]
+ },
+ {
+  "name": "Passwort ändern im Profil",
+  "area": "Auth Passwort",
+  "description": "JSON-POST /auth/change-password/ mit altem Passwort (außer autoset), Stärkeprüfung, Neu-Login der aktuellen Session",
+  "code_refs": [
+   "apps/api/plane/authentication/views/common.py"
+  ]
+ },
+ {
+  "name": "Passwort erstmalig setzen",
+  "area": "Auth Passwort",
+  "description": "JSON-POST /auth/set-password/ für Konten mit is_password_autoset (Magic/OAuth)",
+  "code_refs": [
+   "apps/api/plane/authentication/views/common.py",
+   "apps/web/services/auth.service.ts"
+  ]
+ },
+ {
+  "name": "Steuerung der Auth-Methoden und Registrierung",
+  "area": "Instanz-Konfiguration",
+  "description": "ENABLE_SIGNUP, ENABLE_EMAIL_PASSWORD, ENABLE_MAGIC_LINK_LOGIN, IS_<PROVIDER>_ENABLED, Client-IDs/Secrets (verschlüsselt) aus InstanceConfiguration oder ENV",
+  "code_refs": [
+   "apps/api/plane/utils/instance_config_variables/core.py",
+   "apps/api/plane/license/utils/instance_value.py",
+   "apps/api/plane/license/api/views/instance.py"
+  ]
+ },
+ {
+  "name": "Automatischer Beitritt aus angenommenen Einladungen beim Login",
+  "area": "Auth Post-Login",
+  "description": "Workspace- und Projektmitgliedschaften aus akzeptierten Einladungen anlegen und Einladungen löschen (nur App-Flows)",
+  "code_refs": [
+   "apps/api/plane/authentication/utils/user_auth_workflow.py",
+   "apps/api/plane/authentication/utils/workspace_project_join.py"
+  ]
+ },
+ {
+  "name": "Weiterleitung nach dem Login (next_path, Onboarding, Workspace, Einladungen)",
+  "area": "Auth Redirect",
+  "description": "Sichere next_path-Validierung und Ermittlung des Ziels onboarding/<slug>/invitations/create-workspace",
+  "code_refs": [
+   "apps/api/plane/utils/path_validator.py",
+   "apps/api/plane/authentication/utils/redirection_path.py",
+   "apps/api/plane/authentication/utils/host.py"
+  ]
+ },
+ {
+  "name": "God-Mode Erst-Einrichtung",
+  "area": "Admin",
+  "description": "Einmaliger Admin-Sign-up mit atomarer Sperre, setzt Instanzname, Telemetrie-Flag und is_setup_done",
+  "code_refs": [
+   "apps/api/plane/license/api/views/admin.py",
+   "apps/admin/components/instance/setup-form.tsx"
+  ]
+ },
+ {
+  "name": "God-Mode Anmeldung und Admin-Session",
+  "area": "Admin",
+  "description": "Admin-Sign-in mit eigenem Cookie admin-session-id (1 h), Session-Abfrage und Me-Endpunkt",
+  "code_refs": [
+   "apps/api/plane/license/api/views/admin.py",
+   "apps/api/plane/license/api/permissions/instance.py",
+   "apps/admin/app/(all)/(home)/sign-in-form.tsx"
+  ]
+ },
+ {
+  "name": "Instanz-Admins verwalten",
+  "area": "Admin",
+  "description": "Liste (gecacht 2 h), Hinzufügen per E-Mail mit Rolle, Entfernen",
+  "code_refs": [
+   "apps/api/plane/license/api/views/admin.py",
+   "apps/api/plane/utils/cache.py"
+  ]
+ },
+ {
+  "name": "Session-Status-Abfrage",
+  "area": "Auth",
+  "description": "GET /api/users/session/ und /api/instances/admins/session/ liefern is_authenticated und User",
+  "code_refs": [
+   "apps/api/plane/app/views/user/base.py",
+   "apps/api/plane/license/api/views/admin.py"
+  ]
+ },
+ {
+  "name": "Schutz vor Brute-Force und Missbrauch (Rate-Limits)",
+  "area": "Sicherheit",
+  "description": "IP-basierte Auth-Throttles, Anon-Throttle, E-Mail-Verifizierungs-Throttle, Asset- und API-Key-Throttle mit Fehler RATE_LIMIT_EXCEEDED",
+  "code_refs": [
+   "apps/api/plane/authentication/rate_limit.py",
+   "apps/api/plane/throttles/asset.py",
+   "apps/api/plane/api/rate_limit.py",
+   "apps/api/plane/authentication/adapter/exception.py"
+  ]
+ },
+ {
+  "name": "Kontodeaktivierung und Login-Sperre",
+  "area": "Konto",
+  "description": "Deaktivierte Konten werden in allen Login-Flows abgewiesen, Sessions gelöscht; Reaktivierung nur per CLI",
+  "code_refs": [
+   "apps/api/plane/app/views/user/base.py",
+   "apps/api/plane/authentication/adapter/base.py",
+   "apps/api/plane/db/management/commands/activate_user.py"
+  ]
+ },
+ {
+  "name": "E-Mail-Adresse ändern mit Bestätigungscode",
+  "area": "Konto",
+  "description": "Code an neue Adresse, Limits pro User und Zieladresse, Logout nach Änderung, Benachrichtigung beider Adressen",
+  "code_refs": [
+   "apps/api/plane/app/views/user/base.py",
+   "apps/api/plane/bgtasks/user_email_update_task.py"
+  ]
+ },
+ {
+  "name": "Verbundene OAuth-Konten anzeigen/entfernen",
+  "area": "Konto",
+  "description": "GET/DELETE /api/users/me/accounts/ (liefert auch Tokens, E-21)",
+  "code_refs": [
+   "apps/api/plane/app/views/user/base.py",
+   "apps/api/plane/app/serializers/user.py",
+   "apps/api/plane/authentication/adapter/oauth.py"
+  ]
+ },
+ {
+  "name": "Rollen und Berechtigungen auf Workspace- und Projektebene",
+  "area": "Berechtigungen",
+  "description": "Admin/Member/Guest, Permission-Klassen je HTTP-Methode, allow_permission mit Ersteller-Ausnahme und WS-Admin-Override",
+  "code_refs": [
+   "apps/api/plane/app/permissions/base.py",
+   "apps/api/plane/app/permissions/workspace.py",
+   "apps/api/plane/app/permissions/project.py"
+  ]
+ },
+ {
+  "name": "Gast-Sichtbarkeit pro Projekt (guest_view_all_features)",
+  "area": "Berechtigungen",
+  "description": "Gäste sehen ohne Freigabe nur eigene Issues/Intake/Pages/Views; Freigabe als Projekt-Einstellung",
+  "code_refs": [
+   "apps/api/plane/db/models/project.py",
+   "apps/api/plane/app/views/issue/base.py",
+   "apps/api/plane/app/views/workspace/user.py",
+   "apps/api/plane/app/permissions/page.py"
+  ]
+ },
+ {
+  "name": "Seitenzugriff (öffentlich/privat, Eigentümer)",
+  "area": "Berechtigungen",
+  "description": "ProjectPagePermission: Projekt-Scope über ProjectPage, Eigentümer, Gastregel, private Seiten nur Eigentümer, DELETE nur Admin",
+  "code_refs": [
+   "apps/api/plane/app/permissions/page.py"
+  ]
+ },
+ {
+  "name": "CSRF-Fehlerseite",
+  "area": "Sicherheit",
+  "description": "HTML-Seite 'CSRF Verification Failed' mit Link zur Startseite bei ungültigem Formular-Token",
+  "code_refs": [
+   "apps/api/plane/authentication/views/common.py",
+   "apps/api/templates/csrf_failure.html"
+  ]
+ },
+ {
+  "name": "Rich-Text-Sanitizing und Prüfung der Dokument-Binärdaten",
+  "area": "Querschnitt",
+  "description": "nh3-Sanitizing aller description_html/comment_html, Prüfung description_binary",
+  "code_refs": [
+   "apps/api/plane/utils/content_validator.py",
+   "apps/api/plane/app/serializers/issue.py",
+   "apps/api/plane/app/serializers/page.py"
+  ]
+ },
+ {
+  "name": "Listen-Paginierung, Gruppierung, Sortierung und Filter",
+  "area": "Querschnitt",
+  "description": "Cursor-Paginierung inkl. gruppierter Listen, Allowlists, Legacy- und Rich-Filter",
+  "code_refs": [
+   "apps/api/plane/utils/paginator.py",
+   "apps/api/plane/utils/global_paginator.py",
+   "apps/api/plane/utils/grouper.py",
+   "apps/api/plane/utils/order_queryset.py",
+   "apps/api/plane/utils/issue_filters.py",
+   "apps/api/plane/utils/filters/filter_backend.py",
+   "apps/api/plane/utils/filters/filterset.py"
+  ]
+ },
+ {
+  "name": "Analytics-Diagramme und Burndown",
+  "area": "Querschnitt",
+  "description": "Chart-Daten nach Achsen/Gruppen, Datumsbereiche mit Vergleichsperioden, Burndown für Cycles/Module",
+  "code_refs": [
+   "apps/api/plane/utils/build_chart.py",
+   "apps/api/plane/utils/analytics_plot.py",
+   "apps/api/plane/utils/date_utils.py"
+  ]
+ },
+ {
+  "name": "Unerledigte Issues in neuen Cycle übertragen",
+  "area": "Querschnitt",
+  "description": "Fortschritts-Snapshot speichern und offene Issues verschieben, Activity erzeugen",
+  "code_refs": [
+   "apps/api/plane/utils/cycle_transfer_issues.py"
+  ]
+ },
+ {
+  "name": "Issue-Export CSV/JSON/XLSX",
+  "area": "Querschnitt",
+  "description": "Serializer-basierter Export mit Formel-Injection-Schutz",
+  "code_refs": [
+   "apps/api/plane/utils/porters/exporter.py",
+   "apps/api/plane/utils/porters/formatters.py",
+   "apps/api/plane/utils/porters/serializers/issue.py",
+   "apps/api/plane/utils/csv_utils.py"
+  ]
+ },
+ {
+  "name": "Issue-Suche nach Name, Projekt-Identifier und Nummer",
+  "area": "Querschnitt",
+  "description": "Volltext-Teilstring und Sequenznummern-Erkennung",
+  "code_refs": [
+   "apps/api/plane/utils/issue_search.py"
+  ]
+ },
+ {
+  "name": "Webhook-URL-Prüfung und sichere Zustellung",
+  "area": "Sicherheit",
+  "description": "SSRF-Prüfung, Domain-Sperrliste, IP-Pinning, HMAC-Signatur X-Plane-Signature",
+  "code_refs": [
+   "apps/api/plane/app/serializers/webhook.py",
+   "apps/api/plane/utils/ip_address.py",
+   "apps/api/plane/utils/url_security.py",
+   "apps/api/plane/bgtasks/webhook_task.py"
+  ]
+ },
+ {
+  "name": "Link-Vorschau (Titel/Favicon) für Work-Item-Links",
+  "area": "Sicherheit",
+  "description": "SSRF-sicherer Abruf mit Redirect-Revalidierung",
+  "code_refs": [
+   "apps/api/plane/bgtasks/work_item_link_task.py",
+   "apps/api/plane/utils/url_security.py"
+  ]
+ },
+ {
+  "name": "Namens- und Slug-Validierung",
+  "area": "Querschnitt",
+  "description": "Keine URLs in Namen, mindestens ein alphanumerisches Zeichen, reservierte Workspace-Slugs",
+  "code_refs": [
+   "apps/api/plane/utils/url.py",
+   "apps/api/plane/utils/constants.py",
+   "apps/api/plane/utils/content_validator.py",
+   "apps/api/plane/app/serializers/workspace.py"
+  ]
+ },
+ {
+  "name": "Zeitzonen-Umrechnung (User- und Projekt-Zeitzone)",
+  "area": "Querschnitt",
+  "description": "Datumsfelder in User-TZ, Cycle-Start/Ende und Snooze in Projekt-TZ",
+  "code_refs": [
+   "apps/api/plane/utils/timezone_converter.py",
+   "apps/api/plane/app/views/base.py"
+  ]
+ },
+ {
+  "name": "Rate-Limit-Header der öffentlichen API",
+  "area": "Public API",
+  "description": "X-RateLimit-Remaining/X-RateLimit-Reset je API-Key",
+  "code_refs": [
+   "apps/api/plane/api/rate_limit.py",
+   "apps/api/plane/api/views/base.py"
+  ]
+ }
+]

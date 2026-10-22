@@ -1,0 +1,510 @@
+[
+ {
+  "name": "API-Key-Authentifizierung der Public API",
+  "area": "Public API v1",
+  "description": "Zugriff auf /api/v1/ ausschließlich per persönlichem API-Token im Header X-Api-Key; prüft Aktivität, Ablauf und aktiven User, aktualisiert last_used; Token gilt workspaceübergreifend.",
+  "code_refs": [
+   "apps/api/plane/api/middleware/api_authentication.py",
+   "apps/api/plane/api/views/base.py",
+   "apps/api/plane/db/models/api.py"
+  ]
+ },
+ {
+  "name": "Rate-Limiting je API-Key",
+  "area": "Public API v1",
+  "description": "Sliding-Window-Limit (Default 60/minute, konfigurierbar) je Token mit X-RateLimit-Remaining/X-RateLimit-Reset-Headern und 429-Antwort mit Fehlercode 5900.",
+  "code_refs": [
+   "apps/api/plane/api/rate_limit.py",
+   "apps/api/plane/api/views/base.py",
+   "apps/api/plane/authentication/adapter/exception.py",
+   "apps/api/plane/settings/common.py"
+  ]
+ },
+ {
+  "name": "API-Aktivitätsprotokoll",
+  "area": "Public API v1",
+  "description": "Asynchrone Protokollierung aller Requests mit X-Api-Key (Pfad, Methode, Query, redigierte Header, Request-/Response-Body, Status, IP, User-Agent) in APIActivityLog mit Aufbewahrungsfrist.",
+  "code_refs": [
+   "apps/api/plane/middleware/logger.py",
+   "apps/api/plane/bgtasks/logger_task.py",
+   "apps/api/plane/bgtasks/cleanup_task.py"
+  ]
+ },
+ {
+  "name": "OpenAPI-Dokumentation (Schema, Swagger UI, Redoc)",
+  "area": "Public API v1",
+  "description": "Optional per ENABLE_DRF_SPECTACULAR aktivierbares OpenAPI-3-Schema nur der /api/v1/-Pfade (ohne PUT und server-Pfade) mit Tags, operationIds und Beispielen.",
+  "code_refs": [
+   "apps/api/plane/settings/openapi.py",
+   "apps/api/plane/urls.py",
+   "apps/api/plane/utils/openapi/hooks.py",
+   "apps/api/plane/utils/openapi/auth.py",
+   "apps/api/plane/utils/openapi/decorators.py",
+   "apps/api/plane/utils/openapi/parameters.py"
+  ]
+ },
+ {
+  "name": "Aktueller Benutzer",
+  "area": "Public API v1",
+  "description": "GET /api/v1/users/me/ liefert das Kurzprofil des Token-Inhabers.",
+  "code_refs": [
+   "apps/api/plane/api/views/user.py",
+   "apps/api/plane/api/urls/user.py",
+   "apps/api/plane/api/serializers/user.py"
+  ]
+ },
+ {
+  "name": "Projekte verwalten (Liste, Lite, Detail, Anlegen, Ändern, Löschen)",
+  "area": "Public API v1",
+  "description": "Projekt-CRUD inkl. Lite-Liste mit include_archived, Default-States und Admin-Mitgliedschaft bei Anlage, automatischem Default-Intake bei intake_view, Webhook-Ereignissen.",
+  "code_refs": [
+   "apps/api/plane/api/views/project.py",
+   "apps/api/plane/api/urls/project.py",
+   "apps/api/plane/api/serializers/project.py"
+  ]
+ },
+ {
+  "name": "Projekt archivieren/dearchivieren",
+  "area": "Public API v1",
+  "description": "POST/DELETE {P}/archive/ setzt bzw. entfernt archived_at und löscht Favoriten.",
+  "code_refs": [
+   "apps/api/plane/api/views/project.py"
+  ]
+ },
+ {
+  "name": "Projekt-Summary",
+  "area": "Public API v1",
+  "description": "Zählungen eines Projekts (members, states, labels, cycles, modules, issues, intakes, pages) wählbar per fields.",
+  "code_refs": [
+   "apps/api/plane/api/views/project.py"
+  ]
+ },
+ {
+  "name": "States verwalten",
+  "area": "Public API v1",
+  "description": "CRUD der Workflow-States eines Projekts (ohne Triage), Default-Umschaltung, Löschschutz für Default-/belegte States, externe IDs.",
+  "code_refs": [
+   "apps/api/plane/api/views/state.py",
+   "apps/api/plane/api/urls/state.py",
+   "apps/api/plane/api/serializers/state.py"
+  ]
+ },
+ {
+  "name": "Labels verwalten",
+  "area": "Public API v1",
+  "description": "CRUD der Projekt-Labels (Schreiben nur Projekt-Admin), Namens- und External-ID-Konflikte als 409.",
+  "code_refs": [
+   "apps/api/plane/api/views/issue.py",
+   "apps/api/plane/api/urls/label.py",
+   "apps/api/plane/api/serializers/issue.py"
+  ]
+ },
+ {
+  "name": "Work Items verwalten",
+  "area": "Public API v1",
+  "description": "Liste (Sortierung, External-ID-Lookup, fields/expand), Anlegen (Validierung, Default-Assignee, Default-Typ, created_at/created_by-Override), Ändern, Löschen mit Activity und Webhooks.",
+  "code_refs": [
+   "apps/api/plane/api/views/issue.py",
+   "apps/api/plane/api/urls/work_item.py",
+   "apps/api/plane/api/serializers/issue.py"
+  ]
+ },
+ {
+  "name": "Work Item per Identifier",
+  "area": "Public API v1",
+  "description": "GET {W}/work-items/{PROJ}-{seq}/ löst ein Work Item über Projekt-Identifier und Sequenznummer auf.",
+  "code_refs": [
+   "apps/api/plane/api/views/issue.py",
+   "apps/api/plane/api/urls/work_item.py"
+  ]
+ },
+ {
+  "name": "Work-Item-Suche",
+  "area": "Public API v1",
+  "description": "Suche nach Name, Projekt-Identifier und Sequenznummern, workspaceweit oder projektbezogen, mit limit.",
+  "code_refs": [
+   "apps/api/plane/api/views/issue.py"
+  ]
+ },
+ {
+  "name": "Work-Item-Links",
+  "area": "Public API v1",
+  "description": "CRUD externer Links mit URL-Validierung, Duplikatprüfung und asynchronem Titel-Crawling.",
+  "code_refs": [
+   "apps/api/plane/api/views/issue.py",
+   "apps/api/plane/api/serializers/issue.py",
+   "apps/api/plane/bgtasks/work_item_link_task.py"
+  ]
+ },
+ {
+  "name": "Work-Item-Kommentare",
+  "area": "Public API v1",
+  "description": "CRUD von Kommentaren (INTERNAL/EXTERNAL) inkl. externer IDs, Activity und Webhooks.",
+  "code_refs": [
+   "apps/api/plane/api/views/issue.py",
+   "apps/api/plane/api/serializers/issue.py"
+  ]
+ },
+ {
+  "name": "Work-Item-Aktivitäten",
+  "area": "Public API v1",
+  "description": "Liste und Detail der Änderungshistorie ohne Kommentar-/Vote-/Reaction-/Draft-Einträge.",
+  "code_refs": [
+   "apps/api/plane/api/views/issue.py"
+  ]
+ },
+ {
+  "name": "Work-Item-Anhänge",
+  "area": "Public API v1",
+  "description": "Presigned-POST-Upload mit MIME-Allowlist und Größenlimit, Upload-Bestätigung, Liste, Download per 302-Redirect, Löschen.",
+  "code_refs": [
+   "apps/api/plane/api/views/issue.py",
+   "apps/api/plane/settings/storage.py",
+   "apps/api/plane/settings/common.py"
+  ]
+ },
+ {
+  "name": "Work-Item-Relationen",
+  "area": "Public API v1",
+  "description": "Liste gruppiert nach 8 Relationstypen und Anlage (auch projektübergreifend) mit Mapping auf gespeicherte Richtung.",
+  "code_refs": [
+   "apps/api/plane/api/views/issue.py",
+   "apps/api/plane/utils/issue_relation_mapper.py",
+   "apps/api/plane/api/serializers/issue.py"
+  ]
+ },
+ {
+  "name": "Cycles verwalten",
+  "area": "Public API v1",
+  "description": "CRUD, Lite-Liste und Filter cycle_view (all/current/upcoming/completed/draft/incomplete) mit Fortschrittszählungen und Projektzeitzonen-Konvertierung.",
+  "code_refs": [
+   "apps/api/plane/api/views/cycle.py",
+   "apps/api/plane/api/urls/cycle.py",
+   "apps/api/plane/api/serializers/cycle.py"
+  ]
+ },
+ {
+  "name": "Work Items in Cycles",
+  "area": "Public API v1",
+  "description": "Work Items einem Cycle zuordnen (Verschieben aus anderen Cycles), auflisten, entfernen.",
+  "code_refs": [
+   "apps/api/plane/api/views/cycle.py"
+  ]
+ },
+ {
+  "name": "Cycle-Transfer",
+  "area": "Public API v1",
+  "description": "Offene Work Items eines abgeschlossenen Cycles in einen anderen Cycle übertragen inkl. Progress-Snapshot.",
+  "code_refs": [
+   "apps/api/plane/api/views/cycle.py",
+   "apps/api/plane/utils/cycle_transfer_issues.py"
+  ]
+ },
+ {
+  "name": "Cycle-Archiv",
+  "area": "Public API v1",
+  "description": "Abgeschlossene Cycles archivieren, archivierte auflisten (mit Schätzsummen), dearchivieren.",
+  "code_refs": [
+   "apps/api/plane/api/views/cycle.py"
+  ]
+ },
+ {
+  "name": "Modules verwalten",
+  "area": "Public API v1",
+  "description": "CRUD und Lite-Liste von Modulen inkl. Mitgliedern, Lead, Status und Fortschrittszählungen.",
+  "code_refs": [
+   "apps/api/plane/api/views/module.py",
+   "apps/api/plane/api/urls/module.py",
+   "apps/api/plane/api/serializers/module.py"
+  ]
+ },
+ {
+  "name": "Work Items in Modulen",
+  "area": "Public API v1",
+  "description": "Work Items Modulen zuordnen, auflisten und entfernen.",
+  "code_refs": [
+   "apps/api/plane/api/views/module.py"
+  ]
+ },
+ {
+  "name": "Modul-Archiv",
+  "area": "Public API v1",
+  "description": "Abgeschlossene/abgebrochene Module archivieren, auflisten, dearchivieren.",
+  "code_refs": [
+   "apps/api/plane/api/views/module.py"
+  ]
+ },
+ {
+  "name": "Intake über die API",
+  "area": "Public API v1",
+  "description": "Intake-Work-Items einreichen (Triage-State), auflisten, ansehen, triagieren (Status, Snooze, Duplikat, Annahme mit State-Wechsel) und löschen.",
+  "code_refs": [
+   "apps/api/plane/api/views/intake.py",
+   "apps/api/plane/api/urls/intake.py",
+   "apps/api/plane/api/serializers/intake.py"
+  ]
+ },
+ {
+  "name": "Workspace-Mitglieder lesen",
+  "area": "Public API v1",
+  "description": "Liste der Workspace-Mitglieder mit Rolle und paginierte Lite-Liste.",
+  "code_refs": [
+   "apps/api/plane/api/views/member.py",
+   "apps/api/plane/api/urls/member.py",
+   "apps/api/plane/api/serializers/member.py"
+  ]
+ },
+ {
+  "name": "Projekt-Mitglieder verwalten",
+  "area": "Public API v1",
+  "description": "Projektmitglieder auflisten (voll/lite), hinzufügen, Rolle ändern, deaktivieren.",
+  "code_refs": [
+   "apps/api/plane/api/views/member.py",
+   "apps/api/plane/api/serializers/member.py"
+  ]
+ },
+ {
+  "name": "Workspace-Einladungen",
+  "area": "Public API v1",
+  "description": "CRUD von Einladungsdatensätzen (ohne Token und E-Mail-Versand), Sperren für Annahme/Antwort.",
+  "code_refs": [
+   "apps/api/plane/api/views/invite.py",
+   "apps/api/plane/api/urls/invite.py",
+   "apps/api/plane/api/serializers/invite.py"
+  ]
+ },
+ {
+  "name": "Stickies",
+  "area": "Public API v1",
+  "description": "CRUD eigener Stickies im Workspace mit Volltextsuche über query.",
+  "code_refs": [
+   "apps/api/plane/api/views/sticky.py",
+   "apps/api/plane/api/urls/sticky.py",
+   "apps/api/plane/api/serializers/sticky.py"
+  ]
+ },
+ {
+  "name": "User-Assets (Avatar/Cover)",
+  "area": "Public API v1",
+  "description": "Upload-Tickets für Avatar-/Cover-Bilder, Upload-Bestätigung, Löschen (Server-Variante defekt).",
+  "code_refs": [
+   "apps/api/plane/api/views/asset.py",
+   "apps/api/plane/api/urls/asset.py"
+  ]
+ },
+ {
+  "name": "Generic Workspace Assets",
+  "area": "Public API v1",
+  "description": "Upload und Download generischer Workspace-Dateien mit externer ID (in v1.4.2 POST/GET defekt), Upload-Bestätigung.",
+  "code_refs": [
+   "apps/api/plane/api/views/asset.py",
+   "apps/api/plane/settings/storage.py"
+  ]
+ },
+ {
+  "name": "Webhook-Payload-Format",
+  "area": "Public API v1",
+  "description": "Webhooks für project, issue, cycle, module, cycle_issue, module_issue, issue_comment, user, intake_issue werden mit den v1-Serializern serialisiert.",
+  "code_refs": [
+   "apps/api/plane/bgtasks/webhook_task.py",
+   "apps/api/plane/api/serializers/__init__.py"
+  ]
+ },
+ {
+  "name": "Öffentliches Board: Einstellungen und Metadaten",
+  "area": "Public Space API",
+  "description": "Abruf der Publish-Settings (Kommentare/Reaktionen/Votes/Intake/Layouts) und der Projekt-Metadaten per Anchor sowie Anchor-Ermittlung per Projekt-ID.",
+  "code_refs": [
+   "apps/api/plane/space/views/project.py",
+   "apps/api/plane/space/views/meta.py",
+   "apps/api/plane/space/urls/project.py"
+  ]
+ },
+ {
+  "name": "Öffentliche Issue-Liste",
+  "area": "Public Space API",
+  "description": "Anonyme, filterbare, sortierbare und gruppierte/subgruppierte Issue-Liste des veröffentlichten Projekts mit Votes und Reaktionen.",
+  "code_refs": [
+   "apps/api/plane/space/views/issue.py",
+   "apps/api/plane/space/utils/grouper.py",
+   "apps/api/plane/utils/issue_filters.py"
+  ]
+ },
+ {
+  "name": "Öffentliches Issue-Detail",
+  "area": "Public Space API",
+  "description": "Issue-Details inkl. Beschreibung, Label-/Assignee-/Modul-IDs, Votes und Reaktionen.",
+  "code_refs": [
+   "apps/api/plane/space/views/issue.py"
+  ]
+ },
+ {
+  "name": "Öffentliche Kommentare",
+  "area": "Public Space API",
+  "description": "EXTERNAL-Kommentare lesen (anonym) sowie eigene Kommentare anlegen, ändern und löschen (angemeldet), wenn am Board aktiviert.",
+  "code_refs": [
+   "apps/api/plane/space/views/issue.py",
+   "apps/api/plane/space/urls/issue.py"
+  ]
+ },
+ {
+  "name": "Reaktionen auf Issues und Kommentare",
+  "area": "Public Space API",
+  "description": "Emoji-Reaktionen auf Issues und EXTERNAL-Kommentare setzen und entfernen.",
+  "code_refs": [
+   "apps/api/plane/space/views/issue.py"
+  ]
+ },
+ {
+  "name": "Votes",
+  "area": "Public Space API",
+  "description": "Up-/Downvote je Nutzer und Issue setzen, ändern und entfernen.",
+  "code_refs": [
+   "apps/api/plane/space/views/issue.py"
+  ]
+ },
+ {
+  "name": "Board-Stammdaten",
+  "area": "Public Space API",
+  "description": "States, Labels, Mitglieder, Cycles und Module des veröffentlichten Projekts.",
+  "code_refs": [
+   "apps/api/plane/space/views/state.py",
+   "apps/api/plane/space/views/label.py",
+   "apps/api/plane/space/views/project.py",
+   "apps/api/plane/space/views/cycle.py",
+   "apps/api/plane/space/views/module.py"
+  ]
+ },
+ {
+  "name": "Öffentliche Intake-Einreichung",
+  "area": "Public Space API",
+  "description": "Angemeldete Nutzer reichen über das Board Intake-Issues ein, sehen, ändern und löschen eigene Einreichungen (Basis für Intake Forms).",
+  "code_refs": [
+   "apps/api/plane/space/views/intake.py",
+   "apps/api/plane/space/urls/intake.py"
+  ]
+ },
+ {
+  "name": "Kommentarbilder und Asset-Auslieferung im Space",
+  "area": "Public Space API",
+  "description": "Upload von Kommentarbildern, Bindung an eigene Kommentare, Auslieferung von Beschreibungs-/Kommentarbildern per Redirect, Löschen/Wiederherstellen.",
+  "code_refs": [
+   "apps/api/plane/space/views/asset.py",
+   "apps/api/plane/space/urls/asset.py"
+  ]
+ },
+ {
+  "name": "Projekt veröffentlichen (Deploy Board verwalten)",
+  "area": "Public Space API",
+  "description": "Anlegen und Ändern des DeployBoard mit Kommentar-/Reaktions-/Vote-Schaltern, Intake und Layouts über die interne App-API.",
+  "code_refs": [
+   "apps/api/plane/app/views/project/base.py",
+   "apps/api/plane/app/serializers/project.py",
+   "apps/api/plane/db/models/deploy_board.py"
+  ]
+ },
+ {
+  "name": "Instanz-Info und öffentliche Konfiguration",
+  "area": "Instanz-API / God Mode",
+  "description": "GET /api/instances/ liefert Instanzdaten und abgeleitete config (Login-Methoden, Signup, SMTP, AI, Unsplash, URLs, Dateigröße) für Web, Space und Admin.",
+  "code_refs": [
+   "apps/api/plane/license/api/views/instance.py",
+   "apps/api/plane/license/api/serializers/instance.py"
+  ]
+ },
+ {
+  "name": "Allgemeine Instanzeinstellungen",
+  "area": "Instanz-API / God Mode",
+  "description": "Instanzname und Telemetrie-Schalter ändern.",
+  "code_refs": [
+   "apps/api/plane/license/api/views/instance.py"
+  ]
+ },
+ {
+  "name": "Erst-Einrichtung der Instanz",
+  "area": "Instanz-API / God Mode",
+  "description": "Formularbasierte Anlage des ersten Instanz-Admins mit Passwortstärkeprüfung, Row-Lock gegen Doppel-Setup und automatischer Anmeldung.",
+  "code_refs": [
+   "apps/api/plane/license/api/views/admin.py",
+   "apps/api/plane/authentication/utils/password.py",
+   "apps/api/plane/authentication/rate_limit.py"
+  ]
+ },
+ {
+  "name": "Admin-Anmeldung, -Abmeldung und Session",
+  "area": "Instanz-API / God Mode",
+  "description": "Formular-Login mit Fehlercode-Redirects, separates Admin-Session-Cookie, Logout, Session-Status und Profil des Admins.",
+  "code_refs": [
+   "apps/api/plane/license/api/views/admin.py",
+   "apps/api/plane/authentication/middleware/session.py",
+   "apps/api/plane/authentication/utils/login.py"
+  ]
+ },
+ {
+  "name": "Instanz-Admins verwalten",
+  "area": "Instanz-API / God Mode",
+  "description": "Weitere Instanz-Admins per E-Mail hinzufügen, auflisten, entfernen (API ohne UI).",
+  "code_refs": [
+   "apps/api/plane/license/api/views/admin.py",
+   "apps/api/plane/license/api/serializers/admin.py"
+  ]
+ },
+ {
+  "name": "Instanz-Konfiguration (Authentifizierung, OAuth, SMTP, AI, Unsplash, Workspaces)",
+  "area": "Instanz-API / God Mode",
+  "description": "Lesen und Speichern der 36 Konfigurationsschlüssel mit Verschlüsselung der Secrets und Seed aus Umgebungsvariablen.",
+  "code_refs": [
+   "apps/api/plane/license/api/views/configuration.py",
+   "apps/api/plane/license/utils/encryption.py",
+   "apps/api/plane/license/utils/instance_value.py",
+   "apps/api/plane/utils/instance_config_variables/core.py",
+   "apps/api/plane/license/management/commands/configure_instance.py"
+  ]
+ },
+ {
+  "name": "SMTP deaktivieren und Test-E-Mail",
+  "area": "Instanz-API / God Mode",
+  "description": "SMTP-Konfiguration zurücksetzen sowie Test-Mail an eine Empfängeradresse mit differenzierten Fehlermeldungen senden.",
+  "code_refs": [
+   "apps/api/plane/license/api/views/configuration.py"
+  ]
+ },
+ {
+  "name": "Workspaces der Instanz verwalten",
+  "area": "Instanz-API / God Mode",
+  "description": "Paginierte Workspace-Liste mit Projekt-/Mitgliederzahlen und Suche, Slug-Verfügbarkeitsprüfung, Workspace-Anlage durch Admins.",
+  "code_refs": [
+   "apps/api/plane/license/api/views/workspace.py",
+   "apps/api/plane/license/api/serializers/workspace.py",
+   "apps/api/plane/utils/constants.py"
+  ]
+ },
+ {
+  "name": "Instanz-Registrierung und Versionsprüfung",
+  "area": "Instanz-API / God Mode",
+  "description": "Beim Containerstart Instanz anlegen/aktualisieren (Version, neueste Version via GitHub) und Konfiguration seeden.",
+  "code_refs": [
+   "apps/api/plane/license/management/commands/register_instance.py",
+   "apps/api/bin/docker-entrypoint-api.sh"
+  ]
+ },
+ {
+  "name": "Telemetrie-Push",
+  "area": "Instanz-API / God Mode",
+  "description": "Periodischer OTLP-Export von Instanz- und Workspace-Kennzahlen bei aktivierter Telemetrie (entfällt nach ADR-004).",
+  "code_refs": [
+   "apps/api/plane/license/bgtasks/telemetry_metrics.py",
+   "apps/api/plane/utils/otlp_endpoints.py",
+   "apps/api/plane/celery.py"
+  ]
+ },
+ {
+  "name": "Health-Check und robots.txt",
+  "area": "plane.web",
+  "description": "GET / liefert {\"status\": \"OK\"}, GET /robots.txt sperrt Crawler.",
+  "code_refs": [
+   "apps/api/plane/web/views.py",
+   "apps/api/plane/web/urls.py"
+  ]
+ }
+]

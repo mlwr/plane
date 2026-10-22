@@ -1,0 +1,1380 @@
+{
+ "doc_path": "/home/user/plane/migration/features/20-paid-spuren-im-repo.md",
+ "summary": "Die IST-Analyse der Bezahl-Feature-Spuren im Plane-v1.4.2-CE-Repo (Cluster P01) ist fertig und liegt unter /home/user/plane/migration/features/20-paid-spuren-im-repo.md (1.788 Zeilen, Deutsch, jede Aussage mit Quellpfad). Außerhalb von migration/ wurde nichts geändert.\n\nInhalt:\n(1) Die Feature×Plan-Matrix aus apps/web/components/workspace/billing/comparison/plans.tsx ist zeilengenau übertragen: 14 Sektionen, 87 aktive und 4 auskommentierte Zeilen, 14 Zeilen mit comingSoon plus die Sektion Integrations. Dazu kommen Self-hosted-Werte, Highlights, Upgrade-Feature-Listen sowie Payment- und Marketing-Konstanten.\n(2) Eine konsolidierte Tabelle mit 103 Bezahl-Features (PF-01 bis PF-103). Sie enthält auch die Features, die nicht in plans.tsx stehen, aber im Repo belegt sind: Teamspaces, Initiatives, Customers, Milestones, Releases, Workflows, Recurring Work Items, Plane AI, Group Sync, OAuth Bridge, Applications, Wiki-Collections und weitere. Zu jedem Feature gibt es Tier, Abstufung je Plan, geprüften CE-Status und Quelle, außerdem einen Abschnitt mit Funktionsbeschreibung aus den UI-Texten sowie Hinweisen zu UI, Datenmodell und API.\n(3) Ein Inventar von 22 Upsell- und Billing-Stellen und von 57 CE-Stubs bzw. Extension-Points (S1–S57).\n(4) Eine i18n-Auswertung per Skript: 3.859 Schlüssel insgesamt, 2.377 ohne Referenz im CE-Code, 1.875 inhaltlich geprüfte EE-Schlüssel. Neun Namespaces (automation, editor, integration, template, tour, update, wiki, work-item-type, workflow) enthalten (nahezu) nur EE-Texte, und diese liegen bereits in 22 Sprachen übersetzt im Repo. Anhang A listet die EE-Schlüssel vollständig.\n(5) EE-Typen, -Enums, -Konstanten und Propel-Icons.\n(6) Spuren im Backend: Models und Felder wie IssueType/ProjectIssueType, Project.is_time_tracking_enabled, IssueRelation-Typen start_before/finish_before/implemented_by, Page.parent/is_global und DeployBoard-Typen. Dazu die PQL-Ablehnung in der API sowie fünf Gruppen von Endpunkten, die das CE-Frontend aufruft, die im CE-Backend aber fehlen (active-cycles, epics, epics-user-properties, integrations, deprecated dashboard).\n(7) 19 offene Punkte.\n\nFür die API-Verträge wird auf das Schwester-Dokument 21-paid-api-referenz-developer-docs.md (P02) verwiesen.",
+ "paid_features": [
+  {
+   "name": "PF-01 Advanced Estimates (Time-System, Edit/Switch/Reorder)",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Free/One Basic; Pro/Business/Enterprise Advanced",
+   "ce_status": "teilweise im CE",
+   "description": "Time-Estimates (System 'time', Vorlage Hours), Bearbeiten/Umsortieren von Punkten, Wechsel points<->categories; CE erlaubt nur Anlegen/Löschen von points/categories.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/constants/src/estimates.ts",
+    "apps/web/components/estimates/create/helper.tsx",
+    "apps/web/components/estimates/estimate-list-item-buttons.tsx",
+    "packages/i18n/src/locales/en/project-settings.json"
+   ],
+   "confidence": "hoch",
+   "data_model_hints": "EstimateType nur categories/points in apps/api/plane/db/models/estimate.py; time-Werte in Minuten",
+   "ui_hints": "EstimateCreateStageOne mit UpgradeBadge-Zweig; EstimateInputRoot TIME-Zweig leer"
+  },
+  {
+   "name": "PF-02 Bulk Ops",
+   "cluster": "P01",
+   "tier": "One",
+   "tier_details": "One Limited props; Pro All props; Business/Enterprise + Work item transfers and conversions (Coming soon)",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Mehrfachauswahl in List/Spreadsheet/Gantt mit Aktionsleiste zum Bearbeiten von Properties, Cycle/Module-Zuordnung, Transfer, Archivieren inkl. Validierungsfehlern.",
+   "sources": [
+    "apps/web/hooks/use-bulk-operation-status.ts",
+    "apps/web/components/issues/bulk-operations/root.tsx",
+    "packages/i18n/src/locales/en/work-item.json"
+   ],
+   "confidence": "hoch",
+   "ui_hints": "Banner sticky bottom h-20, Banner variant accent; useBulkOperationStatus=false"
+  },
+  {
+   "name": "PF-03 Time Tracking + Worklogs",
+   "cluster": "P01",
+   "tier": "One",
+   "tier_details": "One Basic; Pro Historical timesheets; Business/Enterprise Historical timesheets and approvals",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Projekt-Toggle Time tracking, Worklogs je Work Item, Workspace-Worklog-Download (Timesheets), Approvals.",
+   "sources": [
+    "apps/api/plane/db/models/project.py",
+    "apps/api/plane/db/models/exporter.py",
+    "packages/types/src/issues/activity/base.ts",
+    "packages/i18n/src/locales/en/project-settings.json",
+    "packages/i18n/src/locales/en/workspace-settings.json"
+   ],
+   "confidence": "hoch",
+   "data_model_hints": "Project.is_time_tracking_enabled; ExporterHistory.type issue_worklogs; Activity WORKLOG",
+   "api_hints": "Developer-Docs api-reference/worklogs/"
+  },
+  {
+   "name": "PF-04 Active Cycles (Workspace)",
+   "cluster": "P01",
+   "tier": "One",
+   "tier_details": "One-Enterprise",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Workspace-Seite mit allen laufenden Cycles aller Projekte inkl. Stats, Burndown, Priority-Items; CE zeigt Upsell-Seite.",
+   "sources": [
+    "apps/web/components/active-cycles/workspace-active-cycles-upgrade.tsx",
+    "apps/web/app/(all)/[workspaceSlug]/(projects)/active-cycles/page.tsx",
+    "apps/web/services/cycle.service.ts",
+    "packages/types/src/workspace.ts"
+   ],
+   "confidence": "hoch",
+   "api_hints": "GET /api/workspaces/{slug}/active-cycles/?per_page&cursor wird vom Frontend aufgerufen, fehlt im CE-Backend"
+  },
+  {
+   "name": "PF-05 Work item Types",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise",
+   "ce_status": "teilweise im CE",
+   "description": "Workspace-/Projekt-Work-Item-Typen mit Icon, aktiv/inaktiv, Default, irreversibler Projektaktivierung, Typwechsel am Work Item.",
+   "sources": [
+    "apps/api/plane/db/models/issue_type.py",
+    "apps/api/plane/db/models/issue.py",
+    "apps/web/components/issues/issue-type-switcher.tsx",
+    "packages/i18n/src/locales/en/work-item-type.json"
+   ],
+   "confidence": "hoch",
+   "data_model_hints": "IssueType, ProjectIssueType, Issue.type, Project.is_issue_type_enabled",
+   "api_hints": "type_id in CE-Serializern; Developer-Docs api-reference/issue-types/types"
+  },
+  {
+   "name": "PF-06 Custom Properties (Projekt-Ebene)",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro Project-level custom properties",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Properties je Work-Item-Typ: Text, Number, Dropdown, Boolean, Date, Member picker, Formula; mandatory, aktiv, Optionen, Default.",
+   "sources": [
+    "packages/i18n/src/locales/en/work-item-type.json",
+    "apps/web/components/issues/issue-modal/provider.tsx",
+    "apps/web/components/issues/issue-modal/context/issue-modal-context.tsx",
+    "packages/types/src/issues/issue-property-values.ts"
+   ],
+   "confidence": "hoch",
+   "api_hints": "Developer-Docs api-reference/issue-types/{properties,options,values}"
+  },
+  {
+   "name": "PF-07 Workspace-Level Properties und Roll-ups",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise",
+   "ce_status": "fehlt",
+   "description": "Workspace-Property-Katalog, Verknüpfen/Entknüpfen mit Typen, Import auf Projektebene, Roll-ups.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/i18n/src/locales/en/work-item-type.json"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-08 Work-Item-Type-Hierarchie",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "nicht in plans.tsx",
+   "ce_status": "fehlt",
+   "description": "Hierarchie-Level per Drag&Drop, irreversible Aktivierung, Validierung bei Parent/Child, Bruch-Dialog mit Confirm.",
+   "sources": [
+    "packages/i18n/src/locales/en/work-item-type.json",
+    "apps/api/plane/db/models/issue_type.py"
+   ],
+   "confidence": "mittel",
+   "data_model_hints": "IssueType.level, ProjectIssueType.level vorhanden"
+  },
+  {
+   "name": "PF-09 Dependencies in Gantt",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise",
+   "ce_status": "teilweise im CE",
+   "description": "Relationen Starts/Finishes Before/After und Darstellung im Gantt.",
+   "sources": [
+    "apps/api/plane/db/models/issue.py",
+    "apps/web/components/relations/index.tsx",
+    "packages/types/src/issues/issue_relation.ts"
+   ],
+   "confidence": "hoch",
+   "data_model_hints": "IssueRelationChoices START_BEFORE/FINISH_BEFORE mit Reverse-Mapping existieren im CE-Backend"
+  },
+  {
+   "name": "PF-10 Implements/Implemented by und Workspace-Relationstypen",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "nicht in plans.tsx",
+   "ce_status": "teilweise im CE",
+   "description": "Relationspaar implements/implemented_by und frei definierbare Relationstypen auf Workspace-Ebene.",
+   "sources": [
+    "apps/api/plane/db/models/issue.py",
+    "packages/i18n/src/locales/en/workspace-settings.json"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-11 Work item Transfers",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise",
+   "ce_status": "teilweise im CE",
+   "description": "Verschieben von Work Items zwischen Projekten/Cycles; CE kann nur offene Items abgeschlossener Cycles transferieren.",
+   "sources": [
+    "apps/web/components/cycles/transfer-issues-modal.tsx",
+    "packages/i18n/src/locales/en/common.json"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-12 Auto-transfer Cycle Work items",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise",
+   "ce_status": "fehlt",
+   "description": "Auto-Rollover offener Items am Cycle-Ende in den nächsten Cycle.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/i18n/src/locales/en/project-settings.json"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-13 Auto-schedule Cycles",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "nicht in plans.tsx",
+   "ce_status": "fehlt",
+   "description": "Automatische Cycle-Erstellung: Titel, Dauer 1-30 Wochen, Cooldown, Starttag, 1-3 künftige Cycles, Rollover.",
+   "sources": [
+    "packages/i18n/src/locales/en/project-settings.json"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-14 Epics",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Work Items mit Typ is_epic: eigene Liste, Detail, Filter, Kommentare, Cycle/Module-Zuordnung, Analytics; ca. 100 CE-Dateien mit Epic-Plumbing.",
+   "sources": [
+    "apps/web/components/epic-modal/modal.tsx",
+    "apps/api/plane/db/models/issue_type.py",
+    "apps/web/services/issue/issue.service.ts",
+    "apps/web/store/issue/root.store.ts",
+    "apps/api/plane/app/views/issue/archive.py"
+   ],
+   "confidence": "hoch",
+   "api_hints": "Frontend ruft /projects/{pid}/epics/, epics-detail, v2/epics, epics-user-properties auf; fehlen im CE-Backend"
+  },
+  {
+   "name": "PF-15 Initiatives",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise (in plans.tsx Coming soon)",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Workspace-Initiativen über Projekte/Epics mit Status Draft/Planned/In progress/Completed/Cancelled, Labels, Beschreibung, Seitenleiste.",
+   "sources": [
+    "apps/web/store/theme.store.ts",
+    "packages/types/src/enums.ts",
+    "apps/web/components/dropdowns/label/label-select.tsx"
+   ],
+   "confidence": "hoch",
+   "api_hints": "Developer-Docs api-reference/initiative/"
+  },
+  {
+   "name": "PF-16 Checkpoints",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise (Coming soon)",
+   "ce_status": "fehlt",
+   "description": "Marker an Projekten, Epics, Initiativen zur Fortschrittsberichterstattung.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-17 Milestones",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "nicht in plans.tsx",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Projekt-Feature Milestones mit Status not started/in progress/done, Abschnitt in Projekt-Overview.",
+   "sources": [
+    "packages/i18n/src/locales/en/project-settings.json",
+    "packages/constants/src/fetch-keys.ts",
+    "apps/web/store/project/project.store.ts"
+   ],
+   "confidence": "mittel",
+   "api_hints": "Developer-Docs api-reference/milestones/"
+  },
+  {
+   "name": "PF-18 Module Overview",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise",
+   "ce_status": "teilweise im CE",
+   "description": "Ausführliche Modul-Übersicht analog Cycle-Overview mit Progress-Charts.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "apps/web/components/modules/analytics-sidebar/progress-stats.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-19 Auto-assignment in Modules",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro Linear; Business/Enterprise Round-robin and Capacity",
+   "ce_status": "fehlt",
+   "description": "Zuweisungsregeln für Work Items in Modulen.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-20 Public, Private und Secret Projects",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise",
+   "ce_status": "teilweise im CE",
+   "description": "Dritte Sichtbarkeitsstufe Private (sichtbar, Beitritt mit Genehmigung); CE hat 0 Secret/Private und 2 Public.",
+   "sources": [
+    "apps/api/plane/db/models/project.py",
+    "packages/constants/src/project.ts"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-21 State of Projects / Project Grouping / Projekt-Labels",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise",
+   "ce_status": "fehlt",
+   "description": "Workspace-Projekt-States und Projekt-Labels zur Fortschrittsübersicht aller Projekte.",
+   "sources": [
+    "packages/i18n/src/locales/en/workspace-settings.json",
+    "packages/i18n/src/locales/en/empty-state.json"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-22 Project Overview",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro (Zeile auskommentiert, Coming soon)",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Projekt-Übersicht mit Links, Attachments, Milestones.",
+   "sources": [
+    "apps/web/store/project/project.store.ts",
+    "packages/i18n/src/locales/en/power-k.json"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-23 Project Updates",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro (Zeile auskommentiert, Coming soon)",
+   "ce_status": "fehlt",
+   "description": "Status-Updates On-Track/Off-Track/At-Risk mit Kommentaren, Reaktionen, Progress seit letztem Update.",
+   "sources": [
+    "packages/i18n/src/locales/en/update.json",
+    "packages/types/src/enums.ts"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-24 Pre-defined work item Templates",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise (Coming soon)",
+   "ce_status": "fehlt",
+   "description": "Mitgelieferte Work-Item-Templates mit Typen und Properties.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-25 Work-Item-Templates",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise (planHighlights)",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Templates für Work Items, Auswahl im Create-Modal.",
+   "sources": [
+    "packages/i18n/src/locales/en/template.json",
+    "apps/web/components/issues/issue-modal/provider.tsx",
+    "apps/web/components/issues/issue-modal/modal.tsx"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-26 Project Templates",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Projekt-Setups (States, Workflows, Automationen, Typen, Labels) als Template.",
+   "sources": [
+    "apps/web/components/project/create-project-modal.tsx",
+    "apps/web/components/projects/create/root.tsx",
+    "packages/i18n/src/locales/en/template.json"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-27 Page-Templates",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise",
+   "ce_status": "fehlt",
+   "description": "Pages als Templates für Projekt, Team, Workspace.",
+   "sources": [
+    "packages/i18n/src/locales/en/template.json"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-28 Template-Marketplace",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "nicht in plans.tsx",
+   "ce_status": "fehlt",
+   "description": "Veröffentlichung von Templates mit Metadaten, Cover, Screenshots.",
+   "sources": [
+    "packages/i18n/src/locales/en/template.json"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-29 Recurring work items",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "laut Upsell-Text Business",
+   "ce_status": "fehlt",
+   "description": "Wiederkehrende Work Items mit Startdatum und Intervalltyp.",
+   "sources": [
+    "packages/i18n/src/locales/en/work-item.json",
+    "packages/i18n/src/locales/en/empty-state.json"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-30 Teamspaces",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro (PRO_PLAN_FEATURES)",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Teamspaces mit Mitgliedern, Projekten, Work-Item-Sichten, Views, Pages, Kommentaren.",
+   "sources": [
+    "packages/types/src/issues/issue.ts",
+    "apps/web/store/issue/root.store.ts",
+    "apps/web/store/router.store.ts",
+    "packages/constants/src/subscription.ts"
+   ],
+   "confidence": "hoch",
+   "api_hints": "Developer-Docs api-reference/teamspace/"
+  },
+  {
+   "name": "PF-31 Teamspace Cycles",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise",
+   "ce_status": "fehlt",
+   "description": "Mehrere Cycles mehrerer Projekte gleichzeitig sehen.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-32 Baselines And Deviations",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise",
+   "ce_status": "fehlt",
+   "description": "Baselines für Projektfortschritt und Abweichungen.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-33 Scheduled Comms",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise",
+   "ce_status": "fehlt",
+   "description": "Geplante Reports/Benachrichtigungen an Drittsysteme.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-34 Intake Assignees / Intake-Verantwortung",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise",
+   "ce_status": "teilweise im CE",
+   "description": "Standard-Bearbeiter für Intake, Benachrichtigung bei neuen Requests.",
+   "sources": [
+    "packages/i18n/src/locales/en/project-settings.json",
+    "apps/api/plane/db/models/project.py"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-35 Custom SLAs",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise",
+   "ce_status": "fehlt",
+   "description": "SLA-Matrizen für zeitkritische Work Items.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-36 Intake Forms",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Öffentliche Formulare je Work-Item-Typ mit Property-Auswahl; Quelle FORMS.",
+   "sources": [
+    "packages/types/src/inbox.ts",
+    "apps/api/plane/db/models/intake.py",
+    "apps/api/plane/db/models/deploy_board.py",
+    "packages/i18n/src/locales/en/project-settings.json"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-37 Emails For Intake",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise (Coming soon; Doku-Badge Business)",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "E-Mail-Adresse je Projekt erzeugt Intake-Items, Quelle EMAIL.",
+   "sources": [
+    "apps/api/plane/db/models/intake.py",
+    "packages/types/src/inbox.ts",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/govern/configure-dns-email-service.md"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-38 Work Item in anderes Projekt duplizieren",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "nicht in plans.tsx",
+   "ce_status": "fehlt",
+   "description": "Kopie eines Work Items in anderes Projekt ohne Property-Daten.",
+   "sources": [
+    "packages/i18n/src/locales/en/work-item.json"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-39 Kommentar-Antworten",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "nicht in plans.tsx",
+   "ce_status": "teilweise im CE",
+   "description": "Reply-Threads unter Kommentaren.",
+   "sources": [
+    "packages/i18n/src/locales/en/work-item.json",
+    "apps/api/plane/db/models/issue.py"
+   ],
+   "confidence": "mittel",
+   "data_model_hints": "IssueComment.parent existiert, nicht client-schreibbar"
+  },
+  {
+   "name": "PF-40 Up-/Downvotes in der App",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "nicht in plans.tsx",
+   "ce_status": "teilweise im CE",
+   "description": "Votes auf Work Items in der Web-App (CE nur im Space).",
+   "sources": [
+    "packages/i18n/src/locales/en/work-item.json",
+    "apps/api/plane/db/models/issue.py"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-41 Customers",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "WebSearch plane.so/pricing: Pro customer profiles",
+   "ce_status": "fehlt",
+   "description": "Kunden-Datenbank, Kunden-Requests, Kunden-Properties, Verknüpfung mit Work Items, Display-Properties customer_count.",
+   "sources": [
+    "apps/api/plane/bgtasks/workspace_seed_task.py",
+    "/home/user/makeplane/developer-docs/docs/api-reference/customer/overview.md",
+    "https://plane.so/pricing"
+   ],
+   "confidence": "mittel",
+   "api_hints": "Developer-Docs api-reference/customer/"
+  },
+  {
+   "name": "PF-42 Releases",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "nur Icons/Label-Scope",
+   "ce_status": "fehlt",
+   "description": "Releases als Entität; Label-Scope release.",
+   "sources": [
+    "apps/web/components/dropdowns/label/label-select.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-43 Shared Views",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise",
+   "ce_status": "fehlt",
+   "description": "Views mit ausgewählten Mitgliedern teilen.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "apps/api/plane/db/models/view.py"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-44 Publish Views",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise",
+   "ce_status": "teilweise im CE",
+   "description": "Views öffentlich publizieren.",
+   "sources": [
+    "apps/api/plane/db/models/deploy_board.py",
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-45 Dashboards and Widgets",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Eigene Dashboards mit Widgets, Chart-Modellen und Farbpaletten.",
+   "sources": [
+    "apps/web/components/workspace/sidebar/user-menu.tsx",
+    "packages/constants/src/chart.ts",
+    "packages/i18n/src/locales/en/empty-state.json"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-46 Progress Charts",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise",
+   "ce_status": "teilweise im CE",
+   "description": "Erweiterte Fortschrittsdiagramme (Ideal/Ist/Trailing/Leading) in Cycles, Modulen, Overviews.",
+   "sources": [
+    "apps/web/components/cycles/analytics-sidebar/sidebar-chart.tsx",
+    "packages/i18n/src/locales/en/project.json"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-47 Cycle Reports",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise",
+   "ce_status": "teilweise im CE",
+   "description": "On-demand-Cycle-Reports mit Permalinks.",
+   "sources": [
+    "apps/api/plane/db/models/cycle.py"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-48 Insights",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise (Coming soon)",
+   "ce_status": "fehlt",
+   "description": "Hindsight, On-demand insights, Foresights.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-49 Advanced Pages Analytics",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise (Coming soon)",
+   "ce_status": "fehlt",
+   "description": "Wer sieht/teilt/kommentiert Pages.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-50 Custom Reports / erweiterte Analytics-Tabs",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise (Coming soon)",
+   "ce_status": "teilweise im CE",
+   "description": "Tabs Scope and Demand, Custom Analytics, Kacheln Projects by status, Active users, Intake Trends.",
+   "sources": [
+    "packages/i18n/src/locales/en/workspace.json",
+    "packages/types/src/analytics.ts"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-51 Time Capsule",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise (Zeile auskommentiert)",
+   "ce_status": "fehlt",
+   "description": "Point-in-time-Snapshots der Projekt-Timeline.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-52 PQL / erweiterte Filteroperatoren",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Plane Query Language, negierte und erweiterte Operatoren; CE-API lehnt pql/filters mit 400 ab.",
+   "sources": [
+    "apps/api/plane/api/views/issue.py",
+    "apps/web/hooks/rich-filters/use-filters-operator-configs.ts",
+    "packages/types/src/rich-filters/operators/extended.ts"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-53 Advanced Search (OpenSearch)",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Doku-Badge Pro",
+   "ce_status": "fehlt",
+   "description": "Volltextsuche über Work Items, Projekte, Pages.",
+   "sources": [
+    "/home/user/makeplane/developer-docs/docs/self-hosting/govern/advanced-search.md",
+    "packages/i18n/src/locales/en/power-k.json"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-54 Rollen: Pre-defined / RBAC / GAC",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Free/One Basic; Pro Pre-defined roles; Business RBAC; Enterprise GAC",
+   "ce_status": "teilweise im CE",
+   "description": "Vier vordefinierte Rollen und Custom Roles mit Permissions; CE hat Admin/Member/Guest.",
+   "sources": [
+    "apps/api/plane/db/models/workspace.py",
+    "packages/types/src/workspace.ts",
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-55 Member-/Seat-/Guest-Limits",
+   "cluster": "P01",
+   "tier": "One",
+   "tier_details": "SH ~50/~50/~200/~200/Unlimited; Guests 5 per paid member; entfällt (ADR-001)",
+   "ce_status": "fehlt",
+   "description": "Plan-Limits, werden nicht portiert.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-56 Approvals",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise (Coming soon)",
+   "ce_status": "fehlt",
+   "description": "Workspace-, Projekt-, Typ-Approvals; Workflow-Reviewer pro Transition.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/i18n/src/locales/en/workflow.json"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-57 Admin Interface",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise",
+   "ce_status": "fehlt",
+   "description": "Admin-Übersicht über Workspace- und Projekt-Settings.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-58 Workspace Activity Logs",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Filterbare Aktivitätslogs des Workspaces.",
+   "sources": [
+    "apps/web/store/workspace/index.ts",
+    "packages/i18n/src/locales/en/settings.json"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-59 API-enabled Audit Logs",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise (Coming soon); WebSearch Enterprise Grid",
+   "ce_status": "fehlt",
+   "description": "Workspace-Audit-Log mit API für Compliance-Systeme.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "https://plane.so/self-hosted/whitepaper"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-60 Mitglieder-Import per CSV",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "nicht in plans.tsx",
+   "ce_status": "fehlt",
+   "description": "CSV-Import von Workspace- und Projektmitgliedern mit Rollen 5/15/20.",
+   "sources": [
+    "packages/i18n/src/locales/en/workspace.json",
+    "packages/i18n/src/locales/en/project.json"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-61 Multi-Workspace-Management",
+   "cluster": "P01",
+   "tier": "Enterprise Grid",
+   "tier_details": "WebSearch",
+   "ce_status": "fehlt",
+   "description": "Zentrale Verwaltung mehrerer Workspaces einer Organisation.",
+   "sources": [
+    "https://plane.so/business",
+    "https://plane.so/changelog/release-v2-2-0-enterprise-rollout-enhanced-search-workspace-refinements"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-62 Workspace-Access-Tokens",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "nicht in plans.tsx",
+   "ce_status": "fehlt",
+   "description": "API-Tokens auf Workspace-Ebene.",
+   "sources": [
+    "packages/i18n/src/locales/en/empty-state.json",
+    "apps/web/app/routes/core.ts"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-63 Custom Automations (Trigger/Bedingung/Aktion)",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise; Anzahl Pro 5,000/Business 10,000/Enterprise Unlimited",
+   "ce_status": "fehlt",
+   "description": "Automationen mit Plane-Events oder Zeitplan (fixed/cron, Zeitzone), Bedingungen, Aktionen Add comment/Change property/Run Script, Run-Historie.",
+   "sources": [
+    "packages/i18n/src/locales/en/automation.json",
+    "apps/web/components/automation/auto-close-automation.tsx"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-64 Globale Workspace-Automationen",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "nicht in plans.tsx",
+   "ce_status": "fehlt",
+   "description": "Automationen für alle oder ausgewählte Projekte.",
+   "sources": [
+    "packages/i18n/src/locales/en/automation.json"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-65 Decisions And Loops Automation",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise (Coming soon)",
+   "ce_status": "fehlt",
+   "description": "Aktionen als Trigger, Verzweigungen.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-66 Anzahl Automationen",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro 5,000; Business 10,000; Enterprise Unlimited; entfällt (ADR-001)",
+   "ce_status": "fehlt",
+   "description": "Limit, wird nicht portiert.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-67 Auto-Reminders",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "nicht in plans.tsx",
+   "ce_status": "fehlt",
+   "description": "Automatische Erinnerungen per E-Mail/In-App vor Fälligkeit.",
+   "sources": [
+    "packages/i18n/src/locales/en/project-settings.json"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-68 Workflows",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "BUSINESS_PLAN_FEATURES Workflows + Approvals; WebSearch: Pro single workflow per project",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Mehrere Workflows je Projekt/Typ, erlaubte State-Übergänge mit Reviewern, Erstellung je State, Reset, Änderungshistorie.",
+   "sources": [
+    "packages/i18n/src/locales/en/workflow.json",
+    "apps/web/components/workflow/use-workflow-drag-n-drop.ts",
+    "packages/constants/src/fetch-keys.ts",
+    "packages/constants/src/state.ts"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-69 Plane Runner / Scripts",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "nicht in plans.tsx",
+   "ce_status": "fehlt",
+   "description": "Benutzerdefinierte Skripte und Run-Script-Aktion.",
+   "sources": [
+    "packages/i18n/src/locales/en/workspace-settings.json",
+    "packages/i18n/src/locales/en/automation.json"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-70 Real-time Collab (Live-Cursor/Presence)",
+   "cluster": "P01",
+   "tier": "One",
+   "tier_details": "One-Enterprise",
+   "ce_status": "teilweise im CE",
+   "description": "Live-Cursor/Awareness und Kollaboration in Wiki-/Teamspace-Pages; CE deaktiviert collaboration-cursor.",
+   "sources": [
+    "apps/web/hooks/use-editor-flagging.ts",
+    "apps/live/src/types/index.ts",
+    "apps/live/src/services/page/handler.ts"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-71 Work item Embeds",
+   "cluster": "P01",
+   "tier": "One",
+   "tier_details": "One-Enterprise",
+   "ce_status": "teilweise im CE",
+   "description": "Work Items in Pages einbetten; CE hat nur Parse-Extension.",
+   "sources": [
+    "packages/editor/src/extensions/core-without-props.ts",
+    "packages/editor/src/extensions/work-item-embed/extension.tsx",
+    "apps/web/hooks/use-parse-editor-content.ts"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-72 Link-to-work items",
+   "cluster": "P01",
+   "tier": "One",
+   "tier_details": "One-Enterprise",
+   "ce_status": "fehlt",
+   "description": "Pages mit Work Items verknüpfen, Abschnitt Linked pages.",
+   "sources": [
+    "packages/i18n/src/locales/en/work-item.json"
+   ],
+   "confidence": "hoch",
+   "api_hints": "Developer-Docs api-reference/work-item-pages/"
+  },
+  {
+   "name": "PF-73 Publish Pages",
+   "cluster": "P01",
+   "tier": "One",
+   "tier_details": "One-Enterprise",
+   "ce_status": "teilweise im CE",
+   "description": "Pages öffentlich publizieren mit Kommentaren externer Nutzer.",
+   "sources": [
+    "apps/api/plane/db/models/deploy_board.py",
+    "packages/i18n/src/locales/en/wiki.json"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-74 Wiki inkl. Collections",
+   "cluster": "P01",
+   "tier": "One",
+   "tier_details": "One-Enterprise (PRO_PLAN_FEATURES: Wikis)",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Workspace-Pages unter /wiki mit Collections General/Private/Shared/Archived, Transfer/Delete-Logik.",
+   "sources": [
+    "apps/api/plane/db/models/page.py",
+    "packages/i18n/src/locales/en/wiki.json",
+    "apps/web/hooks/use-workspace-paths.ts"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-75 Page-Exports Word/Queued",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro One download at a time; Business/Enterprise Queued downloads",
+   "ce_status": "teilweise im CE",
+   "description": "DOCX-Export und Warteschlange; CE kann PDF und Markdown.",
+   "sources": [
+    "apps/web/components/pages/modals/export-page-modal.tsx"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-76 Page-Versionen Aufbewahrung",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro 2 days; Business 3 months; Enterprise Unlimited",
+   "ce_status": "teilweise im CE",
+   "description": "Zeitbasierte Aufbewahrung und Highlight changes; CE begrenzt auf 20 Versionen.",
+   "sources": [
+    "apps/api/plane/bgtasks/page_version_task.py",
+    "apps/api/plane/bgtasks/cleanup_task.py"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-77 Databases + Formulas in Pages",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise (Coming soon)",
+   "ce_status": "fehlt",
+   "description": "Datenbanken und Formeln in Pages.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-78 Nested Pages",
+   "cluster": "P01",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise (Coming soon)",
+   "ce_status": "teilweise im CE",
+   "description": "Unterseiten; CE-Modell Page.parent und rekursive CTE vorhanden.",
+   "sources": [
+    "apps/api/plane/db/models/page.py",
+    "apps/api/plane/app/views/page/base.py",
+    "packages/i18n/src/locales/en/wiki.json"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-79 Page-Kommentare",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "Upsell-Tab Comments",
+   "ce_status": "fehlt",
+   "description": "Kommentar-Tab im Navigation-Pane.",
+   "sources": [
+    "packages/i18n/src/locales/en/page.json"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-80 Pages verschieben / teilen",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "nicht in plans.tsx",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Move zu Projekt/Teamspace/Wiki, Page-Sharing.",
+   "sources": [
+    "apps/web/hooks/use-page-flag.ts",
+    "packages/i18n/src/locales/en/page.json"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-81 Editor-Attachments und External Embeds",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "Upsell-Text Upgrade your plan to view this attachment",
+   "ce_status": "fehlt",
+   "description": "Datei-Anhang-Block, Embed/Link/Rich-Card-Umwandlung.",
+   "sources": [
+    "packages/i18n/src/locales/en/editor.json",
+    "packages/editor/src/types/editor-extended.ts"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-82 Plane AI",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "WebSearch: Pro 1,000 AI credits/Seat/Monat; Business mehr; Doku Commercial Edition",
+   "ce_status": "teilweise im CE",
+   "description": "Pi-Chat, AI-Block im Editor, Agents, MCP-Connectors; CE hat nur GPT-Assistent und Rephrase.",
+   "sources": [
+    "apps/web/hooks/use-editor-flagging.ts",
+    "apps/web/components/workspace/sidebar/sidebar-item.tsx",
+    "apps/admin/app/(all)/(dashboard)/ai/page.tsx",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/govern/plane-ai/configure-plane-ai.md"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-83 Importer mit Custom Props",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Free/One without custom props; Pro+ with custom props",
+   "ce_status": "fehlt",
+   "description": "Jira/GitHub-Importer mit Status-Pipeline.",
+   "sources": [
+    "packages/constants/src/workspace.ts",
+    "packages/i18n/src/locales/en/integration.json",
+    "apps/api/plane/db/models/importer.py"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-84 GitHub-Integration inkl. Enterprise",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro (Doku-Badge)",
+   "ce_status": "teilweise im CE",
+   "description": "Org-/Personal-Connect, Repo-Mapping, Issue-Sync bi-/unidirektional, PR-State-Mapping.",
+   "sources": [
+    "packages/i18n/src/locales/en/integration.json",
+    "apps/api/plane/db/models/integration/github.py",
+    "apps/web/components/integration/single-integration-card.tsx"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-85 GitLab-Integration inkl. Enterprise",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Doku-Badge Pro",
+   "ce_status": "fehlt",
+   "description": "MR-State-Mapping, Projekt-Verbindungen, Issue-Sync.",
+   "sources": [
+    "packages/i18n/src/locales/en/integration.json",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/govern/integrations/gitlab.md"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-86 Slack-Integration",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro (Coming soon in plans.tsx; Doku-Badge)",
+   "ce_status": "teilweise im CE",
+   "description": "Workspace-/Personal-Connect, Projekt-Benachrichtigungen in Channels, DM-Alerts, Slash-Commands.",
+   "sources": [
+    "packages/i18n/src/locales/en/integration.json",
+    "apps/api/plane/db/models/integration/slack.py"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-87 Sentry-Integration",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Doku-Badge Pro",
+   "ce_status": "fehlt",
+   "description": "Sentry-Issue-State-Mapping.",
+   "sources": [
+    "packages/i18n/src/locales/en/integration.json",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/govern/integrations/sentry.md"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-88 Bitbucket Data Center",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Doku-Badge Pro",
+   "ce_status": "fehlt",
+   "description": "Repo-Sync mit Bitbucket DC.",
+   "sources": [
+    "packages/i18n/src/locales/en/integration.json",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/govern/integrations/bitbucket.md"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-89 Zapier",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro (Coming soon)",
+   "ce_status": "fehlt",
+   "description": "If-then-else-Automationen über Zapier.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-90 Zendesk / Freshdesk",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro (Coming soon)",
+   "ce_status": "fehlt",
+   "description": "Work Items aus Tickets erzeugen.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-91 OAuth Bridge",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "nicht in plans.tsx",
+   "ce_status": "fehlt",
+   "description": "Externe IdP-JWTs (Issuer, JWKS, Audience, Claims, Algorithmen, TTL, Rate limit) als API-Credentials.",
+   "sources": [
+    "packages/i18n/src/locales/en/integration.json"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-92 Applications / OAuth-Apps / Marketplace",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "nicht in plans.tsx",
+   "ce_status": "fehlt",
+   "description": "Eigene OAuth-Apps, Scopes, Consent, App-Mentions, Marketplace-Metadaten.",
+   "sources": [
+    "packages/i18n/src/locales/en/workspace-settings.json",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/build-plane-app/overview.md"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-93 Workspace-SSO SAML/OIDC mit Domain-Verifizierung",
+   "cluster": "P01",
+   "tier": "One",
+   "tier_details": "plans.tsx One+; Doku-Badges Pro/Business",
+   "ce_status": "fehlt",
+   "description": "Domain-Verifizierung per DNS-TXT, genau ein aktiver SSO-Provider, SAML/OIDC-Setup-Details.",
+   "sources": [
+    "packages/i18n/src/locales/en/auth.json",
+    "packages/types/src/instance/auth-ee.ts",
+    "apps/web/hooks/oauth/extended.tsx"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-94 Domain Security",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise",
+   "ce_status": "fehlt",
+   "description": "Erlaubte Login-Domains festlegen/einschränken.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-95 2FA und Passkeys",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise",
+   "ce_status": "fehlt",
+   "description": "Zwei-Faktor-Authentifizierung und Passkeys.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-96 Password Policy",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "Pro-Enterprise",
+   "ce_status": "fehlt",
+   "description": "Konfigurierbare Passwortrichtlinien.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "PF-97 LDAP",
+   "cluster": "P01",
+   "tier": "Enterprise",
+   "tier_details": "Enterprise (Coming soon); Doku-Badge Enterprise Grid",
+   "ce_status": "fehlt",
+   "description": "Login über LDAP mit Username/Passwort.",
+   "sources": [
+    "packages/i18n/src/locales/en/auth.json",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/govern/ldap.md"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-98 IdP-Group-Sync (+ SCIM)",
+   "cluster": "P01",
+   "tier": "Enterprise Grid",
+   "tier_details": "WebSearch Whitepaper",
+   "ce_status": "fehlt",
+   "description": "IdP-Gruppen auf Projekte/Rollen mappen, Sync on login, Offline-Sync alle 6 h, Auto remove.",
+   "sources": [
+    "packages/i18n/src/locales/en/workspace-settings.json",
+    "/home/user/makeplane/developer-docs/docs/api-reference/idp-group-sync/overview.md"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-99 Storage-Quoten / Max File Size",
+   "cluster": "P01",
+   "tier": "Cloud-only",
+   "tier_details": "Free 5GB/5MB; Pro 1TB/100MB; Business 5TB/200MB; Enterprise Custom; entfällt (ADR-004)",
+   "ce_status": "fehlt",
+   "description": "Cloud-Limits, werden nicht portiert.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-100 Deployment-Varianten / Private deployments",
+   "cluster": "P01",
+   "tier": "One",
+   "tier_details": "One+ Marketplace-Apps; Enterprise Private deployments; entfällt",
+   "ce_status": "fehlt",
+   "description": "Deployment-Angebote, nicht fachlich.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-101 Support-Kanäle / SLA",
+   "cluster": "P01",
+   "tier": "Pro",
+   "tier_details": "entfällt",
+   "ce_status": "fehlt",
+   "description": "Support-Leistungen, nicht fachlich.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "hoch"
+  },
+  {
+   "name": "PF-102 Product Tour / Get started",
+   "cluster": "P01",
+   "tier": "unklar",
+   "tier_details": "Cloud-Onboarding",
+   "ce_status": "fehlt",
+   "description": "Geführte Touren, Demo-Projekt, Get-started-Checkliste.",
+   "sources": [
+    "packages/i18n/src/locales/en/tour.json"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "PF-103 Billing, Trial, Seats, Upgrade-Flows",
+   "cluster": "P01",
+   "tier": "Cloud-only",
+   "tier_details": "entfällt (ADR-001)",
+   "ce_status": "fehlt",
+   "description": "Billing-Seite, Upgrade-Modal, Trial-Banner, Seats; werden entfernt.",
+   "sources": [
+    "apps/web/components/workspace/billing/root.tsx",
+    "apps/web/components/license/modal/upgrade-modal.tsx",
+    "packages/constants/src/payment.ts"
+   ],
+   "confidence": "hoch"
+  }
+ ],
+ "open_questions": [
+  "OP-01: Was soll in der Sidebar-Fußzeile anstelle des Editions-Badges „Community“ stehen? Zur Wahl: ein neutrales Label ohne Upgrade-Modal (UI 1:1) oder das Entfernen der Fußzeile (ADR-001).",
+  "OP-05: Gibt es Zugang zu einer Commercial- oder Trial-Instanz, um Referenz-Screenshots zu erstellen? Für Customers, Initiatives, Teamspaces, Dashboards, Releases, Milestones, Pi-Chat und Approvals enthält das CE-Repo weder UI-Texte noch Komponenten. Ohne Referenz ist die geforderte 1:1-UI für diese Features nicht exakt nachbaubar.",
+  "OP-09: Gehören die weiteren Commercial-Produkte zum Portierungsumfang? Gemeint sind Desk, Bridge, Workgraph, Briefs, PII Scanner, Library/Excerpts sowie die reservierten Slugs chat/calendar/drive/channels. Im Repo gibt es dazu nur Icons bzw. Slugs.",
+  "OP-14: Sollen die externen SaaS-Integrationen Zapier, Zendesk und Freshdesk überhaupt gebaut werden? In der Plan-Matrix sind sie als „Coming soon“ markiert und im Airgapped-Betrieb nicht nutzbar.",
+  "OP-16: Soll das Cloud-Onboarding (Product Tour, Demo-Projekt, Get-started-Checkliste) portiert werden?",
+  "OP-04: Welche vierte vordefinierte Rolle ist gemeint, und welcher Permission-Katalog gilt für RBAC/GAC? Beides ist im Repo nicht benannt; eine Recherche in der öffentlichen Doku steht noch aus.",
+  "OP-06/07/08: Für die PQL-Grammatik, die Formel-Properties mit Roll-up-Semantik und die Intervalltypen wiederkehrender Work Items gibt es keine Belege. Wir schlagen vor, eigene Spezifikationen zu entwerfen. Ist das so gewünscht?",
+  "OP-03: Sollen „Enterprise“ (Name im Code) und „Enterprise Grid“ (Name in Doku und Website) als Synonym behandelt werden? Und gehört SCIM in den Scope? SCIM ist nur per WebSearch belegt.",
+  "OP-10/11: Wie sollen Template-/App-Marketplaces und die Skript-Ausführung (Plane Runner) im Airgapped-Betrieb gelöst werden? Unser Vorschlag: instanzlokale Kataloge und eine eigene ADR für die Sandbox."
+ ]
+}

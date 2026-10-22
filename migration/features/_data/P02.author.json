@@ -1,0 +1,572 @@
+{
+ "doc_path": "/home/user/plane/migration/features/21-paid-api-referenz-developer-docs.md",
+ "summary": "Vollständige IST-Analyse der öffentlichen REST-API der Commercial Edition (alle 270 Dateien unter /home/user/makeplane/developer-docs/docs/api-reference/ gelesen, ergänzt um oauth-scopes.md, mcp-server-tools.md, advanced-search.md, editions-and-versions.md, Self-Hosting-Plan-Badges, die im CE-Repo enthaltene Plan-Matrix apps/web/components/workspace/billing/comparison/plans.tsx + packages/constants/src/subscription.ts, EE-i18n-Texte in packages/i18n/src/locales/en/*.json und WebSearch-Snippets; plane.so selbst war nicht erreichbar). Ergebnis: 231 distinkte Endpunkte inventarisiert und jeweils gegen apps/api/plane/api/urls|views|serializers abgeglichen: 94 CE, 9 CE-teilweise (Estimate-API: Views+URL-Modul vorhanden, aber nicht in apps/api/plane/api/urls/__init__.py eingebunden; Relation-Remove nur Serializer), 123 EE-only, 5 deprecated (inbox-issues). EE-only-Ressourcen mit vollständigem Feld-/Enum-/Endpunkt-/Scope-/Pagination-Inventar: Customers (inkl. Requests, Custom-Properties, Werte, Work-Item-Links; Stage-/Contract-Status-Werte, Upsert-Semantik aus MCP), Epics (Work-Item mit Typ is_epic; seit 05/2026 normaler Work-Item-Typ), Initiatives + Initiative-Labels + Projekt/Epic-Verknüpfung, Teamspaces (Mitglieder/Projekte), Milestones, Worklogs (Minuten, Projekt-Summe), Work-Item-Types/Properties (10 Property-Typen inkl. FORMULA, relation_type ISSUE/USER/RELEASE/RICH_TEXT, display_format)/Options/Values (Upsert-Semantik) + Schema-Endpunkt, IdP Group Sync (Config auto-create, Workspace-/Projekt-Mappings mit Rollen-Slugs und Projekt-Identifier, OIDC-only), Work-Item-Page-Links, Pages-/Wiki-Public-API (type-Filter all/public/private/shared/archived, parent_id), Projekt-/Workspace-Feature-Toggles, Projekt-Labels (Project Grouping), Project Templates (templates/use), Advanced Search (OpenSearch → Postgres-FTS-Empfehlung), Workspace-Member-Remove. Zusätzlich aus MCP-Doku: Releases (+Tags/Labels/Changelog), Custom Relation Definitions, PQL, Rollen-Namespaces/Slugs, Cycle complete, Attachment upload_from_url. Tier-Zuordnung je Feature mit Abstufungen (Hersteller-Plan-Matrix im CE-Repo + Web-Belege), CE-Status per grep verifiziert (z. B. IssueType/ProjectIssueType/Issue.type existieren, keine Properties; Project.is_time_tracking_enabled ohne Worklog-Modell; Epic-Service-Pfade im Web-Client ohne Backend; Teamspace-/Initiative-/Milestone-Stubs in Stores/Enums/i18n/Empty-State-Assets; EstimateType ohne 'time'). Dokument enthält 21 dokumentierte Doku-Fehler/Inkonsistenzen, Scope-Inventar, CE-Abweichungen in gemeinsamen Ressourcen, .NET-Migrationshinweise und 15 offene Punkte.",
+ "paid_features": [
+  {
+   "name": "Epics (Work-Item-Typ Epic + Epic-API)",
+   "cluster": "P02",
+   "tier": "Pro",
+   "tier_details": "Free/One: nein; Pro/Business/Enterprise: ja (plans.tsx:261-270; docs.plane.so/work-items/epics Label Pro). Seit 26.05.2026 ist Epic ein normaler konfigurierbarer Work-Item-Typ.",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Epics bündeln Work Items als übergeordnetes Work Item. Technisch Work Item mit Typ is_epic=true. Kinder per parent; Hinzufügen validiert Typ-Hierarchie; Löschen setzt parent der Kinder auf null; PATCH prüft external_id-Konflikte; Verknüpfung mit Initiativen.",
+   "sources": [
+    "AR/epics/overview.md",
+    "AR/epics/create-epic.md",
+    "AR/epics/add-epic-work-items.md",
+    "AR/epics/delete-epic.md",
+    "DD/dev-tools/mcp-server-tools.md:50-58",
+    "apps/web/components/workspace/billing/comparison/plans.tsx:261-270",
+    "packages/types/src/issues/issue.ts:23-27",
+    "apps/web/services/issue/issue.service.ts:33-303",
+    "https://plane.so/blog/epics-is-becoming-a-work-item-type-in-plane"
+   ],
+   "confidence": "hoch",
+   "api_hints": "GET/POST /api/v1/workspaces/{slug}/projects/{pid}/epics/; GET/PATCH/DELETE .../epics/{epic_id}/; GET/POST .../epics/{epic_id}/issues/ (Body work_item_ids). Scopes projects.epics:read/write. Request-Felder state_id, parent_id, assignee_ids, label_ids; Response state, parent, assignees, labels. Cursor-Pagination.",
+   "data_model_hints": "Kein eigenes Modell: WorkItem mit WorkItemType.IsEpic. Felder: id, name, description(object), description_html, description_stripped, description_binary, state, priority(none/urgent/high/medium/low), assignees[], labels[], type, estimate_point, point, start_date, target_date, parent, sequence_id, sort_order, is_draft, completed_at, archived_at, project, workspace, external_id, external_source, Audit, deleted_at.",
+   "ui_hints": "CE-Web enthält EIssueServiceType.EPICS-Verzweigungen (interne Pfade /api/workspaces/{slug}/projects/{pid}/epics/, .../issues/ statt sub-issues, .../links/ statt issue-links), EIssuesStoreType.EPIC, Empty-State-Asset epic.tsx, i18n work_item_type_hierarchy."
+  },
+  {
+   "name": "Initiatives (inkl. Projekt-/Epic-/Work-Item-Verknüpfung, Sub-Initiativen)",
+   "cluster": "P02",
+   "tier": "Pro",
+   "tier_details": "Plan-Tabelle: Pro/Business/Enterprise (comingSoon, plans.tsx:272-282); Plane University nennt Business (Konflikt); Sub-Initiativen nur Enterprise (plane.so Vergleichsseite). Seit 05/2026 akzeptieren Initiativen jeden Work-Item-Typ.",
+   "ce_status": "fehlt",
+   "description": "Workspace-weite strategische Ziele mit Lebenszyklus-State, Lead, Zeitraum; verknüpfen Projekte und Epics/Work Items, Fortschritt und Updates.",
+   "sources": [
+    "AR/initiative/overview.md",
+    "AR/initiative/add-initiative.md",
+    "AR/initiative/list-initiative-epics.md",
+    "DD/dev-tools/mcp-server-tools.md:290-305",
+    "apps/web/components/workspace/billing/comparison/plans.tsx:272-282",
+    "apps/web/store/theme.store.ts:20-187",
+    "packages/types/src/enums.ts:72"
+   ],
+   "confidence": "hoch",
+   "api_hints": "GET/POST /workspaces/{slug}/initiatives/; GET/PATCH/DELETE /initiatives/{id}/; GET/POST/DELETE /initiatives/{id}/projects/ (project_ids), /epics/ (epic_ids), /labels/ (label_ids). Scopes initiatives:*, initiatives.projects:*, initiatives.epics:*, initiatives.labels:*. Pagination widersprüchlich (REST paginiert, MCP nicht). DELETE-Bodies undokumentiert.",
+   "data_model_hints": "Initiative: id, name*, description(string), description_html, description_stripped, description_binary, lead(uuid), start_date, end_date, logo_props, state(DRAFT/PLANNED/ACTIVE/COMPLETED/CLOSED), archived_at, workspace, Audit. Link-Tabellen initiative_projects, initiative_work_items, optional parent_initiative_id.",
+   "ui_hints": "Einklappbare Initiative-Sidebar (localStorage initiatives_sidebar_collapsed), Editor-Asset INITIATIVE_DESCRIPTION, Empty-State vertical-stack/initiative.tsx, reservierte Slugs initiatives/initiative."
+  },
+  {
+   "name": "Initiative-Labels",
+   "cluster": "P02",
+   "tier": "Pro",
+   "tier_details": "wie Initiatives",
+   "ce_status": "fehlt",
+   "description": "Workspace-Katalog eigener Labels für Initiativen und deren Zuordnung zu Initiativen.",
+   "sources": [
+    "AR/initiative/add-initiative-label.md",
+    "AR/initiative/list-initiative-labels.md",
+    "AR/initiative/add-labels-to-initiative.md",
+    "apps/web/components/dropdowns/label/label-select.tsx:48"
+   ],
+   "confidence": "hoch",
+   "api_hints": "GET/POST /workspaces/{slug}/initiatives/labels/; GET/PATCH/DELETE /initiatives/labels/{label_id}/ (Literal-Route vor UUID-Route matchen); GET/POST/DELETE /initiatives/{id}/labels/ (label_ids). Scope initiatives.labels:*.",
+   "data_model_hints": "id, name*, description, color(hex), sort_order(number), created_at, workspace.",
+   "ui_hints": "EE-LabelSelect mit scope 'initiative' (CE-Kommentar label-select.tsx:48)."
+  },
+  {
+   "name": "Customers (Kunden, Requests, Kunden-Properties, Werte, Work-Item-Links)",
+   "cluster": "P02",
+   "tier": "Business",
+   "tier_details": "Free/One/Pro: nein; Business/Enterprise: ja (Plane-Business-Launch-Post, Plane University 202)",
+   "ce_status": "fehlt",
+   "description": "Kundenprofile mit CRM-Feldern, Kunden-Requests (Feature-Wünsche) mit Link, Verknüpfung von Work Items mit Kunde/Request, frei definierbare Kunden-Properties und deren Werte. Requests nach Kunde filtern, nach Umsatz/Vertragsstatus priorisieren; verknüpfte Work Items zeigen Kunden. Create per MCP ist Upsert (external_source+external_id, sonst name).",
+   "sources": [
+    "AR/customer/overview.md",
+    "AR/customer/add-customer.md",
+    "AR/customer/add-customer-request.md",
+    "AR/customer/add-customer-property.md",
+    "AR/customer/update-customer-property-value.md",
+    "AR/customer/link-work-items-to-customer.md",
+    "DD/dev-tools/mcp-server-tools.md:463-511",
+    "https://plane.so/blog/introducing-plane-business",
+    "https://docs.plane.so/customers"
+   ],
+   "confidence": "hoch",
+   "api_hints": "21 Endpunkte: /workspaces/{slug}/customers/ (+/{id}/), /customers/{id}/requests/ (+/{request_id}/), /customers/{id}/issues/ (POST issue_ids, DELETE /issues/{wid}/), /customer-properties/ (+/{property_id}/), /customers/{id}/property-values/ (+/{property_id}/ PATCH {values:[]} -> 204). Scopes customers:*, customers.requests:*, customers.properties:*, customers.property_values:*, customers.work_items:*. Request-Delete entkoppelt Work Items. Request-Response-Beispiele in Doku fehlerhaft.",
+   "data_model_hints": "Customer: id, name*, description(object), description_html, description_stripped, description_binary, email, website_url, logo_props, logo_asset, logo_url(RO), domain(UI 'Industry'), employees(int), stage(lead/sales_qualified_lead/contract_negotiation/closed_won/closed_lost, frei), contract_status(active/pre_contract/signed/inactive, frei), revenue(string), archived_at, customer_request_count(RO), external_*, workspace, Audit. Request: name*, description(object), description_html, link, work_item_ids(write-only, nur Create). Property: display_name*(workspaceweit eindeutig), name(abgeleitet), description, logo_props, sort_order, property_type(TEXT/DATETIME/DECIMAL/BOOLEAN/OPTION/RELATION/URL/EMAIL/FILE[/FORMULA]), relation_type(ISSUE/USER[/RELEASE/RICH_TEXT]), is_required, default_value[], settings(display_format), is_active, is_multi, validation_rules, options[], external_*. Werte: Strings je Property-ID.",
+   "ui_hints": "Keine CE-i18n-Texte; nur Empty-State-Assets horizontal-stack/customer.tsx und vertical-stack/customer.tsx. Aktivierung über Workspace-Feature customers."
+  },
+  {
+   "name": "Teamspaces",
+   "cluster": "P02",
+   "tier": "Pro",
+   "tier_details": "Pro: Basic; Business/Enterprise: Advanced (u. a. Teamspace Cycles ab Business, plans.tsx:381-390); PRO_PLAN_FEATURES 'Teamspaces'",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Abbildung realer Teams mit Lead, Mitgliedern und Projekten; Arbeit nach Teams verfolgen; Seiten in Teamspaces; Teamspace-Kommentare.",
+   "sources": [
+    "AR/teamspace/overview.md",
+    "AR/teamspace/add-teamspace.md",
+    "AR/teamspace/add-teamspace-members.md",
+    "packages/constants/src/subscription.ts:28",
+    "apps/web/store/router.store.ts:18-84",
+    "packages/types/src/enums.ts:71-74",
+    "packages/editor/src/types/document-collaborative-events.ts:43-75",
+    "https://docs.plane.so/core-concepts/workspaces/teamspaces"
+   ],
+   "confidence": "hoch",
+   "api_hints": "GET/POST /workspaces/{slug}/teamspaces/; GET/PATCH/DELETE /teamspaces/{id}/; GET/POST/DELETE /teamspaces/{id}/members/ (member_ids); GET/POST/DELETE /teamspaces/{id}/projects/ (project_ids). Scopes teamspaces:*, teamspaces.members:*, teamspaces.projects:*. Kein MCP-Tool.",
+   "data_model_hints": "id, name*, description_json, description_html, description_stripped, description_binary, logo_props, lead, workspace, Audit; Link-Tabellen teamspace_members, teamspace_projects. CE-Modell Team (workspace.py:261) ist Legacy, nicht Teamspace.",
+   "ui_hints": "teamspaceId in Router- und Issue-Root-Store, Filter-Entitätstyp teamspace, Member-Select-Scope teamspaceId, i18n common.members_and_teamspaces, page.json Teamspace-Texte, Empty-State vertical-stack/teamspace.tsx."
+  },
+  {
+   "name": "Milestones",
+   "cluster": "P02",
+   "tier": "unklar",
+   "tier_details": "Kein Plan-Beleg; eingeführt Self-hosted Commercial v1.16.0 (05.11.2025)",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Zeitbasierte Checkpoints im Projekt, die Work Items unter gemeinsamen Termin bündeln; Projekt-Feature-Toggle 'Enable milestones'; Gruppierung/PQL nach milestone.",
+   "sources": [
+    "AR/milestones/overview.md",
+    "AR/milestones/add-milestone.md",
+    "AR/milestones/list-milestone-work-items.md",
+    "DD/dev-tools/mcp-server-tools.md:274-288",
+    "packages/i18n/src/locales/en/project-settings.json:420-426",
+    "apps/web/store/project/project.store.ts:21-86",
+    "https://plane.so/changelog/release-v-1-16-0-introducing-milestones-and-recurring-cycles"
+   ],
+   "confidence": "mittel",
+   "api_hints": "GET/POST /projects/{pid}/milestones/; GET/PATCH/DELETE /milestones/{id}/; GET /milestones/{id}/work-items/ -> [{id,issue,milestone}]. Zuordnung nur per MCP manage_workitems (add_ids/remove_ids) dokumentiert. Scope laut OAuth-Liste projects.milestones:*.",
+   "data_model_hints": "id, title*, target_date(date), external_id, external_source, created_at, updated_at, project, workspace; Link work_item<->milestone (Kardinalität offen, vermutlich 1 Milestone je Work Item).",
+   "ui_hints": "Projekt-Übersicht mit einklappbarer Sektion 'milestones' (Default offen), i18n common.milestones/milestones_description, Empty-State vertical-stack/milestone.tsx."
+  },
+  {
+   "name": "Time Tracking / Worklogs",
+   "cluster": "P02",
+   "tier": "One",
+   "tier_details": "One: Basic; Pro: Historical timesheets; Business/Enterprise: Historical timesheets and approvals (plans.tsx:183-191); docs.plane.so Time tracking Label Pro",
+   "ce_status": "teilweise im CE",
+   "description": "Zeiterfassung pro Work Item in Minuten mit Beschreibung; Projekt-Toggle; 'Log work' im Work Item; Activity-Einträge editier-/löschbar; Property Tracked time; Workspace-Settings Worklogs mit Filtern (Nutzer/Projekt/Zeitraum) und Download.",
+   "sources": [
+    "AR/worklogs/overview.md",
+    "AR/worklogs/create-worklog.md",
+    "AR/worklogs/get-total-time.md",
+    "packages/i18n/src/locales/en/project-settings.json:413-419",
+    "packages/i18n/src/locales/en/workspace-settings.json:187-191",
+    "apps/api/plane/db/models/project.py:100",
+    "packages/types/src/issues/activity/base.ts:82",
+    "https://docs.plane.so/core-concepts/issues/time-tracking"
+   ],
+   "confidence": "hoch",
+   "api_hints": "GET/POST /projects/{pid}/work-items/{wid}/worklogs/; PATCH/DELETE .../worklogs/{worklog_id}/; GET /projects/{pid}/total-worklogs/ -> [{issue_id,duration}]. Scopes projects.work_items.worklogs:*.",
+   "data_model_hints": "id, description, duration(int Minuten), logged_by, project_id, workspace_id, created_by/updated_by (Body erlaubt), created_at, updated_at, deleted_at, issue.",
+   "ui_hints": "i18n time_tracking-Toggle, workspace_settings worklogs, empty_state worklogs, common.no_worklogs; Activity-Typ WORKLOG; Empty-State horizontal-stack/worklog.tsx."
+  },
+  {
+   "name": "Work Item Types",
+   "cluster": "P02",
+   "tier": "Pro",
+   "tier_details": "Pro/Business/Enterprise: ja (plans.tsx:205-213)",
+   "ce_status": "teilweise im CE",
+   "description": "Eigene Work-Item-Typen je Projekt bzw. Workspace (Governance-Modus mit import_to_project), Default-Typ, Aktiv-Flag, Hierarchie-Level, Epic-Flag; neue Work Items ohne Typ erhalten Default-Typ.",
+   "sources": [
+    "AR/issue-types/types/overview.md",
+    "AR/issue-types/types/add-issue-type.md",
+    "DD/dev-tools/mcp-server-tools.md:175-189",
+    "apps/api/plane/db/models/issue_type.py:14-55",
+    "apps/api/plane/api/serializers/issue.py:65-67",
+    "packages/i18n/src/locales/en/work-item-type.json"
+   ],
+   "confidence": "hoch",
+   "api_hints": "GET/POST /projects/{pid}/work-item-types/; GET/PATCH/DELETE /work-item-types/{type_id}/; Scopes projects.work_item_types:*; Arrays ohne Envelope.",
+   "data_model_hints": "id, name*, description, logo_props, is_epic, is_default, is_active, level(number), project_ids[], workspace, project, external_*, Audit, deleted_at. CE hat IssueType/ProjectIssueType/Issue.type.",
+   "ui_hints": "i18n work_item_types.* und work_item_type_hierarchy.* vollständig im CE (Settings, Create/Update, Default-Regeln, Hierarchie-Levels, Break-Hierarchy-Modal)."
+  },
+  {
+   "name": "Custom Properties (Properties, Dropdown-Optionen, Werte)",
+   "cluster": "P02",
+   "tier": "Pro",
+   "tier_details": "Pro: Project-level custom properties; Business/Enterprise: Workspace-level properties and roll-ups (plans.tsx:216-224)",
+   "ce_status": "fehlt",
+   "description": "Typgebundene Zusatzfelder an Work Items mit 10 Typen, Pflicht/Aktiv, Default, Multi; Optionen mit Default/Parent; Werte als Upsert je Work Item und Property, Activity ISSUE_ADDITIONAL_PROPERTIES_ACTIVITY.",
+   "sources": [
+    "AR/issue-types/properties/overview.md",
+    "AR/issue-types/properties/add-property.md",
+    "AR/issue-types/options/overview.md",
+    "AR/issue-types/values/add-property-values.md",
+    "DD/dev-tools/mcp-server-tools.md:191-212",
+    "packages/i18n/src/locales/en/work-item-type.json",
+    "packages/types/src/issues/issue-property-values.ts"
+   ],
+   "confidence": "hoch",
+   "api_hints": "Properties: /projects/{pid}/work-item-types/{type_id}/work-item-properties/(+{property_id}/); Options: /projects/{pid}/work-item-properties/{property_id}/options/(+{option_id}/); Values: /projects/{pid}/work-items/{wid}/work-item-properties/{property_id}/values/ GET/POST(Upsert)/PATCH/DELETE(alle Werte). Scopes projects.work_item_properties:*, ..._property_options:*, ..._property_values:*.",
+   "data_model_hints": "Property: id, name(abgeleitet), display_name*(<=255), description, logo_props, sort_order, property_type(TEXT/DATETIME/DECIMAL/BOOLEAN/OPTION/RELATION/URL/EMAIL/FILE/FORMULA), relation_type(ISSUE/USER/RELEASE/RICH_TEXT), is_required, default_value[], settings{display_format}, is_active, is_multi, validation_rules, formula_config, options[], issue_type. Option: id, name*(eindeutig je Property), description, sort_order, logo_props, is_active, is_default, parent, property, color(MCP). Value: id, property_id, issue_id, value(typabhängig), value_type, external_*.",
+   "ui_hints": "UI-Typnamen Text/Number/Dropdown/Boolean/Date/Member picker/Formula; Attribute Single line/Paragraph/Read only, Single/Multi select; Mandatory-vs-Default-Konflikt; 'disable instead'-Löschdialog; 'Import from workspace'; Empty-State custom-properties.tsx/property.tsx."
+  },
+  {
+   "name": "Formula-Properties",
+   "cluster": "P02",
+   "tier": "unklar",
+   "tier_details": "'Databases + Formulas' in Plan-Tabelle Business+Enterprise (plans.tsx:909-918), in ENTERPRISE_PLAN_FEATURES als Enterprise-Merkmal (subscription.ts:11)",
+   "ce_status": "fehlt",
+   "description": "Berechnete Property mit Formel aus {Field Name}-Referenzen und Operatoren + - * / &, Test/Validierung, Zyklus- und Referenzprüfung.",
+   "sources": [
+    "AR/issue-types/properties/add-property.md",
+    "packages/i18n/src/locales/en/work-item-type.json",
+    "apps/web/components/workspace/billing/comparison/plans.tsx:909-918",
+    "packages/constants/src/subscription.ts:7-14"
+   ],
+   "confidence": "mittel",
+   "api_hints": "property_type=FORMULA mit formula_config (string) in Property-Create/Update.",
+   "data_model_hints": "formula_config als String/JSON; Ergebnis-Typ wird bei Validierung gemeldet ('Returns {resultType}').",
+   "ui_hints": "i18n properties.formula.* (field_label, tooltip, test_button, validation_success, picker) und create_update.errors.formula.*"
+  },
+  {
+   "name": "Work-Item-Type-Schema-Endpunkt (LLM/MCP)",
+   "cluster": "P02",
+   "tier": "Pro",
+   "tier_details": "folgt Work Item Types/Custom Properties",
+   "ce_status": "fehlt",
+   "description": "Liefert Standard- und Custom-Felder eines Typs inkl. Optionen für LLM/MCP-Integrationen.",
+   "sources": [
+    "AR/issue-types/types/get-work-item-type-schema.md"
+   ],
+   "confidence": "hoch",
+   "api_hints": "GET /projects/{pid}/work-item-types/schema/?type_id=&include=members,labels; Scope projects.work_item_types:read.",
+   "data_model_hints": "Response {type_id,type_name,type_description,type_logo_props,fields{name,description_html,priority,state_id,assignee_ids,label_ids,start_date,target_date,parent_id,estimate_point_id},custom_fields{<key>:{id,type,name,display_name,required,is_multi,options[]}}}.",
+   "ui_hints": "keine UI"
+  },
+  {
+   "name": "IdP Group Sync",
+   "cluster": "P02",
+   "tier": "unklar",
+   "tier_details": "Nur Self-hosted Commercial Edition, nur OIDC (SAML/LDAP coming soon); konkrete Plan-Stufe nicht belegt (vermutlich Enterprise)",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "IdP-Gruppen auf Workspace-Rollen und Projekte/Projektrollen abbilden; Sync beim Login, optional Offline-Sync alle 6 Stunden, Auto-Remove bei Gruppenaustritt; Gruppen-Claim konfigurierbar.",
+   "sources": [
+    "AR/idp-group-sync/overview.md",
+    "AR/idp-group-sync/get-group-sync-config.md",
+    "AR/idp-group-sync/create-project-mapping.md",
+    "packages/i18n/src/locales/en/workspace-settings.json:192-256",
+    "packages/i18n/src/locales/en/empty-state.json:252-254",
+    "https://docs.plane.so/authentication/group-sync"
+   ],
+   "confidence": "hoch",
+   "api_hints": "GET/PATCH /workspaces/{slug}/group-sync/config/ (auto-create); /group-sync/workspace-mappings/ und /group-sync/project-mappings/ jeweils GET/POST + /{mapping_id}/ GET/PATCH/DELETE. Workspace-Admin; Scopes workspaces.group_sync:read/write.",
+   "data_model_hints": "Config: is_enabled, sync_on_login, auto_remove, sync_offline, group_attribute_key, default_workspace_role(Slug). Workspace-Mapping: idp_group_name*, role(Slug). Projekt-Mapping: idp_group_name*, project(Projekt-Identifier z. B. ENG, nicht UUID) XOR all_projects, role(Slug member/admin/guest).",
+   "ui_hints": "Workspace Settings > Group syncing; Texte für Enable-Toggle, Sync on login, Offline sync, Auto remove, Group attribute key, Group mapping, Add new group sync, Modal User group/Project/Project role, Delete-Modal vollständig im CE-i18n; Empty-State horizontal-stack/group-syncing.tsx."
+  },
+  {
+   "name": "Work-Item <-> Page-Links",
+   "cluster": "P02",
+   "tier": "One",
+   "tier_details": "One/Pro/Business/Enterprise ('Link-to-work items', plans.tsx:842-851; ONE_PLAN_FEATURES 'Link pages in issues and vice-versa')",
+   "ce_status": "fehlt",
+   "description": "Verknüpft Wiki-/Projektseiten mit Work Items in eigenem Abschnitt der Work-Item-Details.",
+   "sources": [
+    "AR/work-item-pages/overview.md",
+    "AR/work-item-pages/add-work-item-page.md",
+    "DD/dev-tools/mcp-server-tools.md:448-461",
+    "packages/constants/src/subscription.ts:38"
+   ],
+   "confidence": "hoch",
+   "api_hints": "GET/POST /projects/{pid}/work-items/{wid}/pages/ (page_id); GET/DELETE .../pages/{page_id}/ (MCP: Link-ID statt Page-ID). Kein Scope dokumentiert.",
+   "data_model_hints": "Link: id, page{id,name,description_html,created_at,updated_at,created_by,is_global,logo_props}, issue, project, workspace, created_at, updated_at, created_by.",
+   "ui_hints": "Abschnitt in Work-Item-Detail (Details nicht belegt)."
+  },
+  {
+   "name": "Pages-Public-API und Wiki (Workspace-Seiten, Collections, Nested Pages, Shared Pages)",
+   "cluster": "P02",
+   "tier": "One",
+   "tier_details": "Pages Free; Wiki One (Plan-Tabelle) bzw. Pro (PRO_PLAN_FEATURES 'Wikis'); Real-time Collab/Embeds/Publish One+; Seiten-Templates Pro+; Versionen Pro 2 Tage/Business 3 Monate/Enterprise unbegrenzt; Nested Pages Business+; Exports Pro einzeln, Business+ Queue",
+   "ce_status": "teilweise im CE",
+   "description": "Projektseiten und projektunabhängige Wiki-Seiten per Public-API; Listen-Filter all/public/private/shared/archived, Titelsuche, parent_id für verschachtelte Seiten; Wiki-Collections (General/Private/Shared/Archived + eigene).",
+   "sources": [
+    "AR/page/overview.md",
+    "AR/page/list-project-pages.md",
+    "AR/page/add-workspace-page.md",
+    "apps/web/components/workspace/billing/comparison/plans.tsx:809-931",
+    "apps/api/plane/db/models/page.py:23-80",
+    "apps/api/plane/app/urls/page.py",
+    "packages/i18n/src/locales/en/wiki.json"
+   ],
+   "confidence": "hoch",
+   "api_hints": "GET/POST /projects/{pid}/pages/, GET /projects/{pid}/pages/{page_id}/ (projects.pages:*); GET/POST /workspaces/{slug}/pages/, GET /pages/{page_id}/ (wiki.pages:*). Query type, search, per_page(20/100), cursor. Kein Update/Delete in Public-API.",
+   "data_model_hints": "name*, description_html*, owned_by, access(0 Public/1 Private), color, is_locked, archived_at, view_props, logo_props, external_*, workspace, parent_id; CE-Page hat is_global, parent, moved_to_page/project, sort_order.",
+   "ui_hints": "i18n wiki.json (wiki_collections: predefined, create/edit/delete-Modal mit Transfer, add_existing_page_modal, list), page.json (Move/Search über Wiki-Collections, Projekte, Teamspaces)."
+  },
+  {
+   "name": "Projekt-Feature-Toggle-API",
+   "cluster": "P02",
+   "tier": "unklar",
+   "tier_details": "Kein eigenes Plan-Feature; steuert Bezahl-Features (epics, work_item_types, parallel_cycles, project_updates, workflows)",
+   "ce_status": "teilweise im CE",
+   "description": "Bündelt Projekt-Feature-Schalter in einem Objekt; ADR-001: Toggles bleiben als fachliche Einstellungen.",
+   "sources": [
+    "AR/project-features/overview.md",
+    "AR/project-features/update-project-features.md",
+    "DD/dev-tools/mcp-server-tools.md:377",
+    "apps/api/plane/db/models/project.py:95-102",
+    "packages/i18n/src/locales/en/project-settings.json:325-426"
+   ],
+   "confidence": "hoch",
+   "api_hints": "GET/PATCH /projects/{pid}/features/; Scopes projects.features:*.",
+   "data_model_hints": "{epics, modules, cycles, views, pages, intakes, work_item_types} bool (+MCP parallel_cycles, project_updates, workflows; i18n time_tracking, milestones). Mapping auf CE module_view, cycle_view, issue_views_view, page_view, intake_view, is_issue_type_enabled.",
+   "ui_hints": "Projekt-Settings > Features (i18n project_settings.features.*)."
+  },
+  {
+   "name": "Workspace-Feature-Toggle-API",
+   "cluster": "P02",
+   "tier": "unklar",
+   "tier_details": "Kein eigenes Plan-Feature; schaltet project_grouping, initiatives, teams, customers, wiki, pi",
+   "ce_status": "fehlt",
+   "description": "Workspace-weite Schalter für große EE-Funktionsbereiche.",
+   "sources": [
+    "AR/workspace-features/overview.md",
+    "AR/workspace-features/update-workspace-features.md",
+    "DD/dev-tools/mcp-server-tools.md:423-432"
+   ],
+   "confidence": "hoch",
+   "api_hints": "GET/PATCH /workspaces/{slug}/features/; Scopes workspaces.features:*.",
+   "data_model_hints": "{project_grouping, initiatives, teams, customers, wiki, pi} bool.",
+   "ui_hints": "Workspace-Settings (Details nicht belegt)."
+  },
+  {
+   "name": "Project Grouping (Projekt-States + Projekt-Labels)",
+   "cluster": "P02",
+   "tier": "Pro",
+   "tier_details": "'State Of Projects' Pro/Business/Enterprise (plans.tsx:343-352); Plane University: Pro",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Fortschrittsübersicht aller Projekte über Projekt-States (Default Draft, Planning, Execution, Monitoring, Completed, Cancelled, erweiterbar) und workspaceweiter Projekt-Label-Katalog.",
+   "sources": [
+    "AR/project-labels/overview.md",
+    "AR/project-labels/add-project-label.md",
+    "packages/i18n/src/locales/en/workspace-settings.json:258-271",
+    "apps/web/components/workspace/billing/comparison/plans.tsx:343-352",
+    "https://university.plane.so/courses/201-the-growth/11-intro-to-project-states.html"
+   ],
+   "confidence": "mittel",
+   "api_hints": "GET/POST /workspaces/{slug}/project-labels/; GET/PATCH/DELETE /project-labels/{label_id}/; Scope projects.labels:* (gleich wie Work-Item-Labels). Projekt-States ohne Public-API.",
+   "data_model_hints": "Projekt-Label: id, name*, description, color, sort_order(65535), workspace, Audit; n:m Projekt<->Label.",
+   "ui_hints": "Workspace Settings > Projects mit Tabs 'Project states'/'Project labels'; Texte im CE-i18n."
+  },
+  {
+   "name": "Project Templates",
+   "cluster": "P02",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise (plans.tsx:392-401; BUSINESS_PLAN_FEATURES; Changelog Cloud 28.04.2025); Work-Item-Templates bereits Pro",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Projekt aus Template erzeugen; kopiert States, Labels, Estimates, Module, Work Items; Body überschreibt Defaults; Lead wird Projekt-Admin.",
+   "sources": [
+    "AR/project/create-project-with-template.md",
+    "AR/project/overview.md",
+    "packages/i18n/src/locales/en/template.json",
+    "https://plane.so/changelog/cloud-april-28-2025"
+   ],
+   "confidence": "hoch",
+   "api_hints": "POST /workspaces/{slug}/projects/templates/use/ Body template_id*, name, identifier, description, network(0/2), project_lead; Scope write oder projects:write. Template-CRUD nicht dokumentiert.",
+   "data_model_hints": "Project.template_id (uuid); Template-Inhalt: Projekt-Properties, States, Labels, Features, Work-Item-Typen, Estimates, Module, Work Items.",
+   "ui_hints": "i18n templates.settings.* (new_project_template, new_work_item_template, new_page_template, use_template), empty_state templates/template_setting."
+  },
+  {
+   "name": "Advanced Search (OpenSearch)",
+   "cluster": "P02",
+   "tier": "Pro",
+   "tier_details": "Badge Pro in DD/self-hosting/govern/advanced-search.md",
+   "ce_status": "fehlt",
+   "description": "Volltext mit Fuzzy-Matching, Autocomplete, Multi-Entity-Suche (Work Items, Projekte, Cycles, Module, Pages) über Cmd/Ctrl+K; API-Endpunkt mit Filter-JSON.",
+   "sources": [
+    "AR/issue/advanced-search-work-items.md",
+    "DD/self-hosting/govern/advanced-search.md"
+   ],
+   "confidence": "hoch",
+   "api_hints": "POST /workspaces/{slug}/work-items/advanced-search/ Body query, filters(IssueFilterSet), limit, workspace_search, project_id.",
+   "data_model_hints": "Ergebnis {id,name,sequence_id,project_identifier,project_id,workspace_id,type_id,state_id,priority,target_date,start_date}; Migration: Postgres-FTS + pg_trgm (+pgvector) statt OpenSearch.",
+   "ui_hints": "globale Suche Cmd/Ctrl+K (CE-Power-K-UI vorhanden)."
+  },
+  {
+   "name": "Zeitbasierte Estimates (type=time)",
+   "cluster": "P02",
+   "tier": "Pro",
+   "tier_details": "Estimates Free/One 'Basic', Pro+ 'Advanced' (plans.tsx:145-153); Konstante is_ee: true",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Estimate-System 'Time' (Template Hours 1-6) zusätzlich zu Points/Categories.",
+   "sources": [
+    "AR/estimate/overview.md",
+    "AR/estimate/add-estimate.md",
+    "packages/constants/src/estimates.ts:121-141",
+    "apps/api/plane/db/models/estimate.py:13-15",
+    "apps/api/plane/api/urls/estimate.py",
+    "apps/api/plane/api/urls/__init__.py"
+   ],
+   "confidence": "hoch",
+   "api_hints": "Estimate-API /projects/{pid}/estimates/ (GET/POST/PATCH/DELETE) und /estimate-points/ — im CE als View vorhanden, aber nicht geroutet; type categories/points/time; MCP link (aktives Estimate).",
+   "data_model_hints": "Estimate: name*, description, type, last_used, external_*; Point: estimate*, key(int), value*(<=20), description, external_*.",
+   "ui_hints": "Estimate-Settings im CE vorhanden; Time-System als EE markiert."
+  },
+  {
+   "name": "Custom Relation Definitions",
+   "cluster": "P02",
+   "tier": "unklar",
+   "tier_details": "kein Plan-Beleg",
+   "ce_status": "fehlt",
+   "description": "Eigene workspaceweite Relationstypen mit outward/inward-Label, Farbe, Aktiv-Flag neben eingebauten Abhängigkeiten; Remove-Endpunkt für Relationen.",
+   "sources": [
+    "DD/dev-tools/mcp-server-tools.md:142-156",
+    "AR/work-item-relations/remove-work-item-relation.md",
+    "packages/i18n/src/locales/en/workspace-settings.json:277-281",
+    "apps/api/plane/api/serializers/issue.py:601-611"
+   ],
+   "confidence": "mittel",
+   "api_hints": "REST: POST /work-items/{wid}/relations/remove/ {related_issue}; Definitionen nur via MCP list/create/update/delete_definition (name*, outward, inward, is_active, color, is_default).",
+   "data_model_hints": "relation_definitions(id,name,outward,inward,color,is_active,is_default); Relation mit relation_definition_id + Richtung; Dependencies separat (is_dependency).",
+   "ui_hints": "Workspace Settings > Relations."
+  },
+  {
+   "name": "Workspace-Mitglied per API entfernen (mit Seat-Reduktion)",
+   "cluster": "P02",
+   "tier": "Cloud-only",
+   "tier_details": "Commercial-API; Seat-Logik entfällt nach ADR-001",
+   "ce_status": "fehlt",
+   "description": "Entfernt Mitglied, deaktiviert es in allen Projekten, reduziert Seats.",
+   "sources": [
+    "AR/members/remove-workspace-member.md"
+   ],
+   "confidence": "mittel",
+   "api_hints": "POST /workspaces/{slug}/members/remove/ (Body undokumentiert); Scope workspaces.members:write.",
+   "data_model_hints": "WorkspaceMember.is_active=false + ProjectMember.is_active=false.",
+   "ui_hints": "keine"
+  },
+  {
+   "name": "Releases (Release, Tags, Labels, Changelog)",
+   "cluster": "P02",
+   "tier": "unklar",
+   "tier_details": "nur MCP-Doku/Blog (Mai 2026)",
+   "ce_status": "fehlt",
+   "description": "Workspace-Releases mit Status, Termin, Tag, Lead, Changelog (Rich Text), Work-Item-Zuordnung, Release-Tags und Label-Palette; Property-Typ Release picker.",
+   "sources": [
+    "DD/dev-tools/mcp-server-tools.md:307-356",
+    "https://plane.so/blog/introducing-releases"
+   ],
+   "confidence": "mittel",
+   "api_hints": "nicht in REST-Referenz; MCP-Actions list/retrieve/create/update/delete/get_changelog/update_changelog/list_workitems/manage_workitems.",
+   "data_model_hints": "Release: name*, description_html, status(unreleased/released/cancelled), release_date(UI 'Target date'), target_date, tag_id, lead_id, is_prerelease, external_*; Tag: version*, description, commit_hash, git_tag; Label: name*, color, sort_order.",
+   "ui_hints": "Empty-State vertical-stack/changelog.tsx; LabelSelect-Scope 'release'."
+  },
+  {
+   "name": "PQL (Plane Query Language)",
+   "cluster": "P02",
+   "tier": "Pro",
+   "tier_details": "Pro/Business/Enterprise (plans.tsx:658-667)",
+   "ce_status": "fehlt",
+   "description": "Textuelle Filtersprache für Work-Item-Listen inkl. Funktionen und Custom-Property-Filter.",
+   "sources": [
+    "DD/dev-tools/mcp-server-tools.md:44-48,91,254",
+    "apps/web/components/workspace/billing/comparison/plans.tsx:658-667"
+   ],
+   "confidence": "mittel",
+   "api_hints": "Parameter pql bei Work-Item-, Cycle-, Modul-Listen (MCP).",
+   "data_model_hints": "Felder project, assignee, state, label, cycle, module, type, milestone, creator (UUIDs); Funktionen currentUser(), openStates(), isOverdue(), childOf(), cf[\"<id>\"].",
+   "ui_hints": "nicht belegt"
+  },
+  {
+   "name": "Rollen-Slugs / RBAC / GAC",
+   "cluster": "P02",
+   "tier": "Business",
+   "tier_details": "Free/One Basic, Pro Pre-defined roles, Business RBAC, Enterprise GAC (plans.tsx:695-703)",
+   "ce_status": "fehlt",
+   "description": "Rollen mit Namespace workspace (Owner/Admin/Member/Guest) und project (Admin/Contributor/Commenter/Guest), stabile Slugs; Basis für Group-Sync-Mappings.",
+   "sources": [
+    "DD/dev-tools/mcp-server-tools.md:409-421",
+    "AR/idp-group-sync/overview.md",
+    "apps/web/components/workspace/billing/comparison/plans.tsx:695-703"
+   ],
+   "confidence": "mittel",
+   "api_hints": "MCP list_roles(namespace), retrieve_role; Member-Filter role_slug, is_active, is_bot.",
+   "data_model_hints": "roles(id, namespace, slug, name, ...); CE nutzt Integer 20/15/5.",
+   "ui_hints": "nicht belegt (anderer Cluster)"
+  },
+  {
+   "name": "Work-Item-/Projekt-Updates (On/Off-Track)",
+   "cluster": "P02",
+   "tier": "unklar",
+   "tier_details": "'Project Updates' in Plan-Tabelle auskommentiert (plans.tsx:355-366)",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Status-Updates mit ON-TRACK/OFF-TRACK/AT-RISK, Kommentare, Reaktionen; seit 05/2026 für alle Work-Item-Typen.",
+   "sources": [
+    "packages/types/src/enums.ts:87-91",
+    "packages/i18n/src/locales/en/update.json",
+    "https://forum.plane.so/t/epics-is-becoming-a-work-item-type-ships-tuesday-may-26/136"
+   ],
+   "confidence": "mittel",
+   "api_hints": "nicht in REST-Referenz; Projekt-Feature project_updates (MCP).",
+   "data_model_hints": "update(id, entity, status enum, description, reactions, comments).",
+   "ui_hints": "i18n updates.* (progress, add_update, empty, reaction, create/delete/update)."
+  },
+  {
+   "name": "Intake per E-Mail",
+   "cluster": "P02",
+   "tier": "Business",
+   "tier_details": "Business/Enterprise (plans.tsx:458-467; Badge Business in configure-dns-email-service.md)",
+   "ce_status": "teilweise im CE",
+   "description": "E-Mail-Adresse je Projekt-Intake; eingehende Mails werden Intake-Work-Items mit source_email.",
+   "sources": [
+    "AR/intake-issue/update-intake-issue-detail.md",
+    "apps/api/plane/db/models/intake.py:77",
+    "DD/self-hosting/govern/configure-dns-email-service.md"
+   ],
+   "confidence": "hoch",
+   "api_hints": "PATCH intake-issues/{wid}/ akzeptiert source, source_email.",
+   "data_model_hints": "IntakeIssue.source_email (CE-Feld vorhanden), source.",
+   "ui_hints": "Projekt-Settings Intake (anderer Cluster)."
+  },
+  {
+   "name": "Plane Intelligence / AI (Workspace-Feature pi)",
+   "cluster": "P02",
+   "tier": "unklar",
+   "tier_details": "kein Beleg",
+   "ce_status": "fehlt",
+   "description": "KI-Funktionen der Commercial Edition, schaltbar über Workspace-Feature pi; eigene Dienste pi-api/pi-worker/pi-beat.",
+   "sources": [
+    "AR/workspace-features/overview.md",
+    "HC/plane-enterprise/templates/workloads/pi-api.deployment.yaml"
+   ],
+   "confidence": "niedrig",
+   "api_hints": "nur Feature-Flag pi in /workspaces/{slug}/features/.",
+   "data_model_hints": "nicht belegt",
+   "ui_hints": "nicht belegt"
+  },
+  {
+   "name": "Agent Runs (OAuth-Scopes)",
+   "cluster": "P02",
+   "tier": "unklar",
+   "tier_details": "kein Beleg",
+   "ce_status": "fehlt",
+   "description": "Agent-Ausführungen und deren Aktivitäten als API-Ressource.",
+   "sources": [
+    "DD/dev-tools/build-plane-app/oauth-scopes.md"
+   ],
+   "confidence": "niedrig",
+   "api_hints": "Scopes agents.runs:read/write, agents.run_activities:read/write; Endpunkte nicht in REST-Referenz.",
+   "data_model_hints": "nicht belegt",
+   "ui_hints": "Empty-State ai-agents.tsx vorhanden"
+  },
+  {
+   "name": "OAuth-Apps mit Scopes für die Public-API",
+   "cluster": "P02",
+   "tier": "unklar",
+   "tier_details": "kein Plan-Beleg",
+   "ce_status": "fehlt",
+   "description": "Bearer-Token-Authentifizierung mit feingranularen Scopes neben API-Keys.",
+   "sources": [
+    "AR/introduction.md",
+    "DD/dev-tools/build-plane-app/oauth-scopes.md"
+   ],
+   "confidence": "hoch",
+   "api_hints": "Authorization: Bearer <token>; Scope-Liste in Kap. 6 des Dokuments.",
+   "data_model_hints": "OAuth-Applications, Grants, Tokens mit Scopes.",
+   "ui_hints": "i18n workspace_settings.applications.* im CE"
+  }
+ ],
+ "open_questions": [
+  "Plan-Stufe für Milestones, IdP Group Sync, Custom Relation Definitions, Releases, Shared Pages, PI, Agent Runs, Formula-Properties ist öffentlich nicht eindeutig belegt (plane.so nicht erreichbar) – für die Migration wegen ADR-001 irrelevant, nur dokumentarisch.",
+  "Initiatives: Plan-Tabelle sagt Pro, Plane University Business – welche Angabe soll dokumentiert werden?",
+  "Body der DELETE-Massenendpunkte (initiatives/{id}/labels|projects|epics, teamspaces/{id}/members|projects) und von POST members/remove/ ist undokumentiert; Vorschlag: Arrays label_ids/project_ids/epic_ids/member_ids bzw. email oder member_id.",
+  "Response-Schemas für Customer-Requests, Customer-Property-Values und Customer-Work-Items sind in der Doku Platzhalter – müssen aus anderen Quellen (UI-Analyse/Screenshots) abgeleitet werden.",
+  "Kardinalität Milestone <-> Work Item (1:n vs. n:m) und REST-Endpunkt zur Zuordnung sind nicht dokumentiert (nur MCP manage_workitems).",
+  "Rollenmodell: CE nutzt Integer-Rollen (20/15/5), EE Rollen-Slugs mit Namespaces (RBAC/GAC) – Architektur-Entscheidung (ADR) nötig, welches Modell die Zielplattform führt.",
+  "Offline-Group-Sync alle 6 Stunden ohne Login setzt eine IdP-Abfrage voraus, die mit reinem OIDC nicht standardisiert ist – optionaler Provider-Adapter oder Funktion nur beim Login?",
+  "Default-Werte der EE-Feature-Toggles (Projekt: epics, work_item_types, milestones, time_tracking, workflows, parallel_cycles, project_updates; Workspace: project_grouping, initiatives, teams, customers, wiki, pi) sind unbekannt.",
+  "Workspace-Governance-Modus für Work-Item-Typen/Properties (zentrales Vokabular, import_to_project) – Aktivierung und Verhalten nur aus MCP-Doku bekannt."
+ ]
+}

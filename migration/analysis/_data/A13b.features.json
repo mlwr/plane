@@ -1,0 +1,454 @@
+[
+ {
+  "name": "Sprachauswahl mit 22 Sprachen und Persistenz",
+  "area": "i18n",
+  "description": "Dropdown in Profil-Preferences und Power-K-Menü mit festen Labels/Reihenfolge; Sprache in localStorage 'userLanguage' und im Benutzerprofil; Wechsel setzt <html lang>; Sign-out setzt Englisch",
+  "code_refs": [
+   "packages/i18n/src/constants/language.ts",
+   "packages/i18n/src/core/set-language.ts",
+   "packages/i18n/src/hooks/use-translation.ts",
+   "apps/web/components/settings/profile/content/pages/preferences/language-and-timezone-list.tsx",
+   "apps/web/components/power-k/ui/pages/preferences/languages-menu.tsx",
+   "apps/web/store/user/profile.store.ts",
+   "apps/web/store/root.store.ts"
+  ]
+ },
+ {
+  "name": "Übersetzte UI-Texte mit Fallback und ICU-Pluralisierung",
+  "area": "i18n",
+  "description": "Alle UI-Texte über t(key, params); Suche in allen 28 Namespaces, Fallback Englisch, dann Key; ICU plural/select inklusive # und verschachtelter Variablen",
+  "code_refs": [
+   "packages/i18n/src/core/instance.ts",
+   "packages/i18n/src/hooks/use-translation.ts",
+   "packages/i18n/src/locales/en/*.json"
+  ]
+ },
+ {
+  "name": "Texte der Bezahl-Features (Wiki-Collections, Workflows, Work-Item-Types inkl. Custom Properties/Formeln/Hierarchie, Templates inkl. Marketplace, Automations, Integrationen, Project Updates, Produkt-Tour, Editor-Blöcke Attachment/Embed/AI)",
+  "area": "i18n (EE)",
+  "description": "Vollständig übersetzte Textquellen der EE-Features, die im CE-Code nicht genutzt werden; definieren UI-Elemente, Validierungsregeln und Toasts",
+  "code_refs": [
+   "packages/i18n/src/locales/en/wiki.json",
+   "packages/i18n/src/locales/en/workflow.json",
+   "packages/i18n/src/locales/en/work-item-type.json",
+   "packages/i18n/src/locales/en/template.json",
+   "packages/i18n/src/locales/en/automation.json",
+   "packages/i18n/src/locales/en/integration.json",
+   "packages/i18n/src/locales/en/update.json",
+   "packages/i18n/src/locales/en/tour.json",
+   "packages/i18n/src/locales/en/editor.json"
+  ]
+ },
+ {
+  "name": "Theme-Auswahl (System, Light, Dark, Light/Dark High Contrast, Custom)",
+  "area": "constants/utils",
+  "description": "Theme-Optionen mit Vorschaufarben; Auflösung light/dark/system",
+  "code_refs": [
+   "packages/constants/src/themes.ts",
+   "packages/utils/src/theme-legacy.ts"
+  ]
+ },
+ {
+  "name": "Custom-Theme-Generator",
+  "area": "utils/theme",
+  "description": "Aus Brand- und Neutralfarbe werden 14-stufige OKLCH-Paletten berechnet (im Dark-Modus invertiert) und als CSS-Variablen auf <html> gesetzt; Textfarbe auf Akzentfarbe per WCAG-Luminanz",
+  "code_refs": [
+   "packages/utils/src/theme/palette-generator.ts",
+   "packages/utils/src/theme/theme-application.ts",
+   "packages/utils/src/theme/theme-inversion.ts",
+   "packages/utils/src/theme/constants.ts",
+   "apps/web/components/core/theme/custom-theme-selector.tsx"
+  ]
+ },
+ {
+  "name": "Work-Item-Layouts List/Kanban/Calendar/Spreadsheet/Gantt (Space: List/Kanban)",
+  "area": "constants",
+  "description": "Layout-Kennungen, Titel-/Label-Keys, Kalender-Monat/Woche",
+  "code_refs": [
+   "packages/constants/src/issue/layout.ts",
+   "packages/types/src/issues/issue.ts",
+   "packages/constants/src/calendar.ts"
+  ]
+ },
+ {
+  "name": "Display-Filter je Seite (Group by, Sub-group by, Order by, Show empty groups, Sub-work-items)",
+  "area": "constants/utils",
+  "description": "Erlaubte Optionen je Seite und Layout, Defaults, erlaubte Query-Parameter",
+  "code_refs": [
+   "packages/constants/src/issue/filter.ts",
+   "packages/constants/src/issue/common.ts",
+   "packages/utils/src/work-item/base.ts"
+  ]
+ },
+ {
+  "name": "Display-Properties-Toggles",
+  "area": "constants/utils",
+  "description": "13 sichtbare Toggles, 16 Properties mit Default sichtbar",
+  "code_refs": [
+   "packages/constants/src/issue/common.ts",
+   "packages/utils/src/work-item/base.ts"
+  ]
+ },
+ {
+  "name": "Spreadsheet-Spalten und Spalten-Sortiermenü",
+  "area": "constants",
+  "description": "14 Spalten in fester Reihenfolge, je Spalte Sortier-Keys und Titel (A/Z, New/Old, Low/High, Most/Least, None/Urgent) mit Icons",
+  "code_refs": [
+   "packages/constants/src/issue/common.ts"
+  ]
+ },
+ {
+  "name": "Rich-Filter-Leiste für Work Items",
+  "area": "shared-state/utils/constants",
+  "description": "Bedingungen hinzufügen/ändern/entfernen, Operatoren is/is any of/between, Filter löschen, View speichern/aktualisieren, Sichtbarkeit; Filter für State, State Group, Priority, Label, Cycle, Module, Projects, Assignees, Mentions, Created by, Subscriber, Start/Target/Created/Updated date",
+  "code_refs": [
+   "packages/shared-state/src/store/rich-filters/filter.ts",
+   "packages/shared-state/src/store/rich-filters/config.ts",
+   "packages/shared-state/src/store/rich-filters/config-manager.ts",
+   "packages/shared-state/src/store/work-item-filters/filter.store.ts",
+   "packages/shared-state/src/store/work-item-filters/adapter.ts",
+   "packages/utils/src/rich-filters",
+   "packages/utils/src/work-item-filters/configs/filters",
+   "packages/constants/src/rich-filters/operator-labels/core.ts"
+  ]
+ },
+ {
+  "name": "Prioritäten-Darstellung",
+  "area": "constants",
+  "description": "Urgent/High/Medium/Low/None mit Farben und Icons",
+  "code_refs": [
+   "packages/constants/src/issue/common.ts",
+   "packages/constants/src/issue/filter.ts"
+  ]
+ },
+ {
+  "name": "State-Gruppen, Default-States und Fortschrittsbalken",
+  "area": "constants/utils",
+  "description": "Fünf Gruppen mit Farben und Default-Namen, Fortschrittsfarben, Sortierung und Drag&Drop-Sequenz von States",
+  "code_refs": [
+   "packages/constants/src/state.ts",
+   "packages/utils/src/work-item/state.ts"
+  ]
+ },
+ {
+  "name": "Cycle-Status, Cycle-Liste und Burndown/Burnup",
+  "area": "constants/utils",
+  "description": "Status-Badges, Sortierung der Cycles, Fortschritt in Prozent, Chart-Datenreihen v1/v2, optimistische Aktualisierung der Distribution",
+  "code_refs": [
+   "packages/constants/src/cycle.ts",
+   "packages/utils/src/cycle.ts",
+   "packages/utils/src/distribution-update.ts"
+  ]
+ },
+ {
+  "name": "Module: Status, Layouts, Sortierung, Filter",
+  "area": "constants/utils",
+  "description": "Sechs Status mit Farben, Layouts List/Board/Timeline, Sortierung und Filter",
+  "code_refs": [
+   "packages/constants/src/module.ts",
+   "packages/utils/src/module.ts"
+  ]
+ },
+ {
+  "name": "Projektliste: Sortierung, Filter, Netzwerk Private/Public, Drag-Sortierung in der Sidebar",
+  "area": "constants/utils",
+  "description": "Sortier- und Scope-Optionen, Filterlogik, Berechnung der sort_order",
+  "code_refs": [
+   "packages/constants/src/project.ts",
+   "packages/utils/src/project.ts"
+  ]
+ },
+ {
+  "name": "Pages- und Views-Listen",
+  "area": "utils/constants",
+  "description": "Tabs Public/Private/Archived, Sortierung, Filter, Fallback „Untitled“, Zugriff auf Views, Link für veröffentlichte Views",
+  "code_refs": [
+   "packages/utils/src/page.ts",
+   "packages/utils/src/project-views.ts",
+   "packages/constants/src/views.ts",
+   "packages/constants/src/page.ts"
+  ]
+ },
+ {
+  "name": "Intake: Status, Sortierung, Zeitraumfilter",
+  "area": "constants/utils",
+  "description": "Status pending/declined/snoozed/accepted/duplicate, Sortierung, Zeitraum Heute/Gestern/7/30 Tage",
+  "code_refs": [
+   "packages/constants/src/intake.ts",
+   "packages/utils/src/intake.ts",
+   "packages/types/src/inbox.ts"
+  ]
+ },
+ {
+  "name": "Benachrichtigungen: Tabs, Filter, Snooze",
+  "area": "constants/services",
+  "description": "Tabs All/Mentions mit Ungelesen-Zählern, Filter Assigned/Created/Subscribed, Snooze 1/3/5 Tage, 1/2 Wochen, Custom; Read/Unread/Archive-Endpunkte",
+  "code_refs": [
+   "packages/constants/src/notification.ts",
+   "packages/services/src/workspace/notification.service.ts"
+  ]
+ },
+ {
+  "name": "Schätzsysteme und Vorlagen",
+  "area": "constants/utils",
+  "description": "Points (Fibonacci, Linear, Squares, Custom), Categories (T-Shirt, Easy to hard, Custom), Time (Hours); 2–6 Werte, Prüfung auf Duplikate",
+  "code_refs": [
+   "packages/constants/src/estimates.ts",
+   "packages/utils/src/estimates.ts"
+  ]
+ },
+ {
+  "name": "Kalender mit konfigurierbarem Wochenstart",
+  "area": "utils/constants",
+  "description": "Monatsraster mit Nachbartagen, aktueller Woche und Heute; Wochenstart aus Profil",
+  "code_refs": [
+   "packages/utils/src/calendar.ts",
+   "packages/constants/src/calendar.ts",
+   "packages/constants/src/profile.ts"
+  ]
+ },
+ {
+  "name": "Settings-Navigation (Profil/Projekt/Workspace) mit Rollenrechten",
+  "area": "constants",
+  "description": "Kategorien, Einträge, hrefs, Zugriffsrollen und Hervorhebungslogik",
+  "code_refs": [
+   "packages/constants/src/settings/profile.ts",
+   "packages/constants/src/settings/project.ts",
+   "packages/constants/src/settings/workspace.ts"
+  ]
+ },
+ {
+  "name": "Workspace-Sidebar, Navigationspräferenzen und Favoriten",
+  "area": "constants/types/services",
+  "description": "Statische und dynamische Menüpunkte mit Rollen, persönliche Navigationseinträge (Stickies, Your work, Drafts), Accordion/Tabbed-Modus, Favoriten-Links und Favoriten-API",
+  "code_refs": [
+   "packages/constants/src/workspace.ts",
+   "packages/types/src/navigation-preferences.ts",
+   "packages/constants/src/sidebar-favorites.ts",
+   "packages/services/src/user/favorite.service.ts"
+  ]
+ },
+ {
+  "name": "Workspace-Erstellung, Onboarding und Validierung",
+  "area": "constants/utils/services",
+  "description": "Gesperrte Slugs, Organisationsgröße, Rollen und Use-Cases im Onboarding, Namens-/Slug-Validierung, Slug-Check",
+  "code_refs": [
+   "packages/constants/src/workspace.ts",
+   "packages/utils/src/validation.ts",
+   "packages/services/src/workspace/workspace.service.ts",
+   "packages/services/src/workspace/instance-workspace.service.ts"
+  ]
+ },
+ {
+  "name": "Authentifizierung: Passwortstärke und Fehlermeldungs-Banner",
+  "area": "utils/constants/services",
+  "description": "Fünf Passwortkriterien, Stärkeermittlung, Mapping der Fehlercodes 5000–5900 auf Banner, Email-Check, Magic Code, Passwort zurücksetzen/setzen, Sign-out per Formular",
+  "code_refs": [
+   "packages/utils/src/auth.ts",
+   "packages/constants/src/auth/index.ts",
+   "packages/services/src/auth/auth.service.ts",
+   "packages/services/src/auth/sites-auth.service.ts"
+  ]
+ },
+ {
+  "name": "Datums- und Zeitdarstellung",
+  "area": "utils",
+  "description": "Formate (englisch), relative Zeit, kurze relative Zeit, Datumsbereiche, Dauer, Datumsfilter-Grammatik",
+  "code_refs": [
+   "packages/utils/src/datetime.ts",
+   "packages/utils/src/filter.ts"
+  ]
+ },
+ {
+  "name": "Emoji-Reaktionen",
+  "area": "constants/utils",
+  "description": "Acht Reaktions-Emojis (als Dezimal-Codepoints gespeichert), Gruppierung und Umrechnung",
+  "code_refs": [
+   "packages/constants/src/emoji.ts",
+   "packages/utils/src/emoji.ts"
+  ]
+ },
+ {
+  "name": "Label-, Icon- und Avatar-Farben",
+  "area": "constants/utils",
+  "description": "Zehn Label-Farben mit Zufallsauswahl, kontrastgerechte Icon-Farben, deterministische Pastellfarben, Avatar-Initialen",
+  "code_refs": [
+   "packages/constants/src/label.ts",
+   "packages/utils/src/color.ts",
+   "packages/utils/src/string.ts"
+  ]
+ },
+ {
+  "name": "Link-Icons und URL-Erkennung",
+  "area": "utils",
+  "description": "Icon je Domain bzw. Dateiendung, URL-/E-Mail-/IP-Erkennung, sichere next_path-Prüfung",
+  "code_refs": [
+   "packages/utils/src/get-icon-for-link.ts",
+   "packages/utils/src/url.ts",
+   "packages/utils/src/tlds.ts"
+  ]
+ },
+ {
+  "name": "Zwischenablage und CSV-Download",
+  "area": "utils",
+  "description": "Kopieren von Links/Text mit Fallback, CSV-Datei herunterladen",
+  "code_refs": [
+   "packages/utils/src/string.ts",
+   "packages/utils/src/file.ts"
+  ]
+ },
+ {
+  "name": "Datei-Upload (Space/Public) mit Signaturprüfung",
+  "area": "services/constants",
+  "description": "MIME-Erkennung über die Datei-Signatur, Warnung bei gefährlichen Endungen, Presigned-Upload, Abschluss- und Bulk-Statusmeldung, Asset-URLs im Editor",
+  "code_refs": [
+   "packages/services/src/file/helper.ts",
+   "packages/services/src/file/sites-file.service.ts",
+   "packages/services/src/file/file-upload.service.ts",
+   "packages/constants/src/file.ts",
+   "packages/utils/src/editor/common.ts"
+  ]
+ },
+ {
+  "name": "Markdown-Export/Kopieren aus dem Editor",
+  "area": "utils",
+  "description": "HTML wird in GitHub-Markdown umgewandelt, inklusive Bildern, Mentions, Checklisten und Kursivschrift",
+  "code_refs": [
+   "packages/utils/src/editor/markdown-parser/root.ts",
+   "packages/utils/src/editor/markdown-parser/custom-components-handler.ts",
+   "packages/utils/src/editor/markdown-parser/marks-handler.ts",
+   "packages/editor/src/plugins/markdown-clipboard.ts"
+  ]
+ },
+ {
+  "name": "Analytics: Insights, Achsen und Farbpaletten",
+  "area": "constants",
+  "description": "Insight-Felder für Overview und Work Items, X-/Y-Achsen, Zeitraumfilter, Chart-Paletten Modern/Horizon/Earthen",
+  "code_refs": [
+   "packages/constants/src/analytics/common.ts",
+   "packages/constants/src/chart.ts",
+   "packages/constants/src/graph.ts"
+  ]
+ },
+ {
+  "name": "Tab-Reihenfolge in Formularen",
+  "area": "constants/utils",
+  "description": "Feste Tab-Indizes für Work-Item-, Intake-, Label-, Projekt-, Cycle-, Modul-, View- und Page-Formulare; mobil deaktiviert",
+  "code_refs": [
+   "packages/constants/src/tab-indices.ts",
+   "packages/utils/src/tab-indices.ts"
+  ]
+ },
+ {
+  "name": "Dialog- und Dropdown-Verhalten",
+  "area": "hooks",
+  "description": "Escape schließt nur den obersten Dialog; Outside-Click mit Ausnahmen für Portale und data-prevent-outside-click",
+  "code_refs": [
+   "packages/hooks/src/use-dialog-dismissal.tsx",
+   "packages/hooks/src/use-outside-click-detector.tsx"
+  ]
+ },
+ {
+  "name": "Scrollen zu Hash-Ankern",
+  "area": "hooks",
+  "description": "Bei passendem URL-Hash wird nach 200 ms weich zum Element gescrollt; mehrere IDs im Hash möglich",
+  "code_refs": [
+   "packages/hooks/src/use-hash-scroll.ts"
+  ]
+ },
+ {
+  "name": "Synchronisierte LocalStorage-Präferenzen und Plattformerkennung",
+  "area": "hooks",
+  "description": "JSON-Werte im LocalStorage, synchron über alle Komponenten per Event; Erkennung von Mobilgerät und Betriebssystem",
+  "code_refs": [
+   "packages/hooks/src/use-local-storage.tsx",
+   "packages/hooks/src/use-platform-os.tsx"
+  ]
+ },
+ {
+  "name": "Public Boards (Space): Work Items, Votes, Reaktionen, Kommentare",
+  "area": "services",
+  "description": "Öffentliche Endpunkte per Anchor für Issues, Votes, Reaktionen, Kommentare, Kommentar-Reaktionen, Labels, States, Members, Module, Cycles und Publish-Settings",
+  "code_refs": [
+   "packages/services/src/issue/sites-issue.service.ts",
+   "packages/services/src/project/sites-publish.service.ts",
+   "packages/services/src/label/sites-label.service.ts",
+   "packages/services/src/state/sites-state.service.ts",
+   "packages/services/src/user/sites-member.service.ts",
+   "packages/services/src/module/sites-module.service.ts",
+   "packages/services/src/cycle/sites-cycle.service.ts"
+  ]
+ },
+ {
+  "name": "God-Mode: Instanz-Konfiguration und Workspaces",
+  "area": "services/types",
+  "description": "Instanzinfo, Changelog, Admins, Konfigurationsschlüssel (Auth, E-Mail, AI, Unsplash, Workspace-Erstellung), Test-E-Mail, Workspaces der Instanz",
+  "code_refs": [
+   "packages/services/src/instance/instance.service.ts",
+   "packages/services/src/workspace/instance-workspace.service.ts",
+   "packages/types/src/instance/base.ts",
+   "packages/types/src/instance/auth.ts"
+  ]
+ },
+ {
+  "name": "Webhooks und API-Tokens",
+  "area": "services/types",
+  "description": "CRUD, Secret neu generieren, Events je Typ, Token-Liste",
+  "code_refs": [
+   "packages/services/src/developer/webhook.service.ts",
+   "packages/services/src/developer/api-token.service.ts",
+   "packages/types/src/webhook.ts",
+   "packages/types/src/api_token.ts"
+  ]
+ },
+ {
+  "name": "Workspace-Mitglieder und Einladungen",
+  "area": "services/constants",
+  "description": "Einladen, Annehmen (einzeln/mehrere), Rollen ändern, entfernen; Rollenbezeichnungen und -beschreibungen; Spalten der Mitgliedertabelle",
+  "code_refs": [
+   "packages/services/src/workspace/invitation.service.ts",
+   "packages/services/src/workspace/member.service.ts",
+   "packages/constants/src/workspace.ts",
+   "packages/constants/src/members.ts"
+  ]
+ },
+ {
+  "name": "Activity-Filter am Work Item",
+  "area": "constants",
+  "description": "Filter nach Updates, Comments, State, Assignee",
+  "code_refs": [
+   "packages/constants/src/issue/filter.ts"
+  ]
+ },
+ {
+  "name": "Home-/Dashboard-Widgets und Dauerfilter",
+  "area": "constants/services/types",
+  "description": "Dauerfilter, Tabs Upcoming/Overdue/Completed, Widget-Statistiken",
+  "code_refs": [
+   "packages/constants/src/dashboard.ts",
+   "packages/services/src/dashboard/dashboard.service.ts",
+   "packages/types/src/dashboard.ts",
+   "packages/types/src/home.ts"
+  ]
+ },
+ {
+  "name": "AI-Assistent und Umformulieren im Editor",
+  "area": "services/constants",
+  "description": "Prompt- und Rephrase-Endpunkte, Ladehinweis „Pi is generating response“",
+  "code_refs": [
+   "packages/services/src/ai/ai.service.ts",
+   "packages/constants/src/ai.ts"
+  ]
+ },
+ {
+  "name": "Upgrade-/Billing-Screens (entfallen gemäß ADR-001)",
+  "area": "constants/utils",
+  "description": "Plan-Features, Preise, Upgrade-URLs, Rabattberechnung",
+  "code_refs": [
+   "packages/constants/src/subscription.ts",
+   "packages/constants/src/payment.ts",
+   "packages/utils/src/subscription.ts",
+   "packages/types/src/payment.ts"
+  ]
+ }
+]

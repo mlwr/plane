@@ -1,0 +1,575 @@
+{
+ "doc_path": "/home/user/plane/migration/features/27-paid-sicherheit-admin-lizenz.md",
+ "summary": "IST-Analyse Cluster P08 „Sicherheit, Administration, Lizenz“ (1388 Zeilen). Inhalt: Quellenlage, zeilengenaue Übertragung der Plan-Matrix-Sektionen workspace-user-management, storage, security, self-hosted, support aus plans.tsx, Feature-Tabelle P08-01 bis P08-31 und je Feature ein Abschnitt (Funktion, Datenmodell, API, UI, Migrationshinweis, Quellen, Konfidenz), 17 offene Punkte, drei Anhänge (i18n-Inventar mit 251 Schlüsseln und CE-Nutzungsspalte, 28 CE-Extension-Points und Spuren, Inventar der Screenshots).\n\nWichtigste Ergebnisse:\n- Instanzweites SSO lässt sich nachbauen. SAML, OIDC und LDAP sind in God Mode → Authentication als zusätzliche Karten umgesetzt. Felder, Platzhalter, Hilfetexte und die Plane-URLs für Web und Mobile sind wörtlich aus offiziellen Developer-Docs-Screenshots übernommen. Das CE hat die passenden Extension-Points (TExtendedLoginMediums = never, useExtendedOAuthConfig-Stub, EXTENDED_LOGIN_MEDIUM_LABELS = {}).\n- Workspace-Identity ist ein zweiter, workspace-bezogener SSO-Weg: verifizierte Domains per DNS-TXT, genau ein aktiver SAML- oder OIDC-Provider, Umschalt-Dialog. Alle 115 UI-Texte liegen im CE; Code dazu fehlt.\n- IdP Group Sync ist über API und UI-Texte gut spezifiziert.\n- Rollenmodell der Commercial Edition: Namespaces workspace (Owner/Admin/Member/Guest) und project (Admin/Contributor/Commenter/Guest) mit stabilen Slugs. Das CE kennt nur die Integer-Rollen 20/15/5.\n- 2FA, Passkeys, Password Policy, Domain Security, RBAC, GAC, Approvals, Admin Interface, Activity Logs und Audit Logs sind nur über Matrix-Zeilen und Randbelege nachweisbar. Die Abschnitte enthalten belegte CE-Ausgangslagen; alle Entwurfsvorschläge sind als UNVERIFIZIERT markiert.\n- Lizenz, Seats und Billing sind vollständig dokumentiert, entfallen aber nach ADR-001: Workspace-Lizenzschlüssel, Enterprise-Grid-Instanzlizenz, Offline-Lizenzdatei, Sync/Delink, Seat-Berechnung, 14-Tage-Trial sowie Prime/Monitor (Flag-/Lizenz-Resync alle 300 min).\n- Airgapped wird zur Grundeigenschaft, FIPS zu einem Betriebsprofil.\n- Zusätzlich gefunden: God-Mode User Management, God-Mode Session-Einstellungen, Argus PII-Scanner.\n\nEinschränkung: Das WebSearch-Budget des Laufs (200 Abfragen, von allen Agenten geteilt) war beim Start erschöpft. Eigene Websuchen waren daher nicht möglich. plane.so und docs.plane.so sind gesperrt; https://github.com/makeplane/docs lieferte 404. Web-Aussagen stammen nur sekundär aus den Schwester-Dokumenten 20, 21, 22, 25 und 26 und sind als „W, sekundär“ markiert. Als UI-Primärreferenz dienen die offline vorhandenen Screenshots unter /home/user/makeplane/developer-docs/docs/public/images. Außerhalb von /home/user/plane/migration/ wurde nichts geändert, es gab keinen Commit.",
+ "paid_features": [
+  {
+   "name": "SAML-SSO (instanzweit, God Mode, inkl. God-Mode-Login per SSO)",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "One",
+   "tier_details": "Matrix: Free –, One/Pro/Business/Enterprise ✓ (plans.tsx Z. 1060); Developer-Docs-Badges Pro + Business (saml-sso.md); ONE_PLAN_FEATURES/FREE_PLAN_UPGRADE_FEATURES 'OIDC + SAML for SSO'",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "God Mode → Authentication: Karte 'SAML' (Configure bzw. Edit + Switch). Konfigurationsseite /god-mode/authentication/saml mit Feldern Entity ID, SSO URL, Logout URL (optional), IdP's name (optional), SAML certificate sowie Kästen WEB/MOBILE (Entity ID {base}/auth/saml/metadata/, Callback {base}/auth/saml/callback/ per HTTP-POST, Logout {base}/auth/saml/logout/ per HTTP-Redirect) und MAPPING (Name ID format=emailAddress, first_name, last_name, email). AuthnRequests werden nicht signiert, das IdP-Zertifikat ist Pflicht. JIT-Anlage von Benutzern wie bei CE-OAuth. Login-Button '{Sign in|Sign up} with {IdP name}'. Instanz-Admins können sich per SSO in God Mode anmelden. Im FIPS-Profil weist SAML_REJECT_DEPRECATED_ALGORITHM RSA-SHA1 ab.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/constants/src/subscription.ts",
+    "packages/i18n/src/locales/en/auth.json",
+    "packages/types/src/instance/auth-ee.ts",
+    "apps/web/hooks/oauth/extended.tsx",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/govern/saml-sso.md",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/govern/instance-admin.md",
+    "/home/user/makeplane/developer-docs/docs/public/images/custom-sso/saml-oauth.png",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/methods/fips-deployment.md",
+    "https://plane.so/changelog/release-v2-5-0-project-labels-sso-for-god-mode-columns-in-pages (sekundär)"
+   ],
+   "confidence": "hoch",
+   "api_hints": "GET /auth/saml/ (Initiierung, next_path), POST /auth/saml/callback/ (ACS), GET|POST /auth/saml/logout/ (SLS), GET /auth/saml/metadata/, Mobile-Varianten /auth/mobile/saml/…, Space-Variante /auth/spaces/saml/… (UNVERIFIZIERT). Konfiguration über PATCH /api/instances/configurations/. Neue Fehlercodes in den freien CE-Bereichen 5106–5119 (Vorschlag).",
+   "data_model_hints": "InstanceConfiguration-Schlüssel (Vorschlag IS_SAML_ENABLED, SAML_ENTITY_ID, SAML_SSO_URL, SAML_LOGOUT_URL, SAML_PROVIDER_NAME, SAML_CERTIFICATE verschlüsselt; laut Helm-README liegt das SAML-Zertifikat DB-resident). User.last_login_medium='saml'. Kein Account-Eintrag nötig.",
+   "ui_hints": "Muster CE-AuthenticationMethodCard und GitLab-Formular (Save changes/Go back, CopyField). Icon Propel Saml. Zweispaltig 'IdP-provided details for Plane' / 'Plane-provided details for your IdP'. Login-Button über useExtendedOAuthConfig mit Schlüssel-Icon."
+  },
+  {
+   "name": "OIDC-SSO (instanzweit, God Mode)",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "One",
+   "tier_details": "Matrix One–Enterprise ✓, selfHostedOnly (plans.tsx Z. 1071); Docs-Badges Pro + Business",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Karte 'OIDC' ('Authenticate your users via the OpenID Connect protocol.'). Seite /god-mode/authentication/oidc mit Client ID, Client secret, Authorize URL, Token URL, Users' info URL, Logout URL (optional), IdP's name (optional). Plane-provided: Origin {base}/auth/oidc/, Callback {base}/auth/oidc/callback/, Logout {base}/auth/oidc/logout/ sowie Mobile-Varianten. Authorization-Code-Flow mit manuell eingetragenen Endpunkten. email ist Pflicht im Userinfo, first_name/last_name optional. Liefert den Gruppen-Claim für IdP Group Sync.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/govern/oidc-sso.md",
+    "/home/user/makeplane/developer-docs/docs/public/images/custom-sso/oidc-oauth.png",
+    "/home/user/makeplane/helm-charts/charts/plane-enterprise/README.md"
+   ],
+   "confidence": "hoch",
+   "api_hints": "GET /auth/oidc/, GET /auth/oidc/callback/, GET /auth/oidc/logout/, /auth/mobile/oidc/…; state/PKCE wie CE oauth_state.py",
+   "data_model_hints": "Vorschlag IS_OIDC_ENABLED, OIDC_CLIENT_ID, OIDC_CLIENT_SECRET (DB-resident laut Helm), OIDC_AUTHORIZE_URL, OIDC_TOKEN_URL, OIDC_USERINFO_URL, OIDC_LOGOUT_URL, OIDC_PROVIDER_NAME; Account(provider='oidc') optional",
+   "ui_hints": "Wie SAML; Client secret als Passwortfeld mit Auge-Icon; Icon Propel Oidc"
+  },
+  {
+   "name": "Workspace-Identity: verifizierte Domains + Workspace-SSO (SAML oder OIDC)",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "unklar",
+   "tier_details": "Vermutlich Cloud-Variante von SAML/OIDC (Matrix One+); keine Plan-Angabe belegbar (UNVERIFIZIERT)",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Workspace Settings → Identity ('Configure your domain and enable Single sign-on'). Domain management/Verified domains mit Liste (Domain name, Status Verified/Failed/Pending) und den Modals 'Add domain', 'Verify your domain' (4 Schritte, TXT record value, 'I'll do it later') sowie 'Delete domain'. Single sign-on bleibt deaktiviert ('Add a verified domain to configure SSO'), bis eine Domain verifiziert ist. Danach Provider SAML/OIDC mit Configure/Edit, Buttons 'Configure only' und 'Configure and enable'. Es ist genau ein Provider aktiv; der Switch-Dialog deaktiviert den bisherigen. Alle 115 Texte stehen in sso.*.",
+   "sources": [
+    "packages/i18n/src/locales/en/auth.json",
+    "packages/i18n/src/locales/en/workspace-settings.json",
+    "https://docs.plane.so/authentication/sso (sekundär)"
+   ],
+   "confidence": "mittel",
+   "api_hints": "Vorschlag: GET/POST {W}/domains/, POST {W}/domains/{id}/verify/, DELETE {W}/domains/{id}/, {W}/sso-providers/… mit enable (UNVERIFIZIERT)",
+   "data_model_hints": "Vorschlag workspace_domains(domain, status pending|verified|failed, verification_token, verified_at) und workspace_sso_providers(type saml|oidc, is_enabled, config verschlüsselt) mit maximal einem aktiven Provider je Workspace",
+   "ui_hints": "Neuer Workspace-Settings-Tab 'Identity' unter Administration; Texte 1:1 aus sso.* inklusive Tippfehler 'for you IdP'"
+  },
+  {
+   "name": "LDAP-Authentifizierung",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Enterprise Grid",
+   "tier_details": "Matrix: nur Enterprise (Coming soon, Z. 1117); Docs-Badge Enterprise Grid; ENTERPRISE_PLAN_FEATURES 'LDAP support'",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Karte LDAP in God Mode, Seite /god-mode/authentication/ldap mit Server URI (ldap:// oder ldaps://), Bind DN, Bind Password (verschlüsselt in DB), User Search Base, User Search Filter (Default (uid={username})), User Attributes (Default mail,cn,givenName,sn), Provider Name (Default LDAP) und Copy-Feld 'Authentication Endpoint'. Ablauf: Service-Bind, Suche, User-Bind zur Passwortprüfung; Plane speichert kein LDAP-Passwort. E-Mail kommt aus mail bzw. userPrincipalName, der Name aus givenName/sn bzw. cn. Erster Login legt das Profil an, spätere Logins aktualisieren es. Login-Button 'Sign in with LDAP'; Formular 'Continue with {ldapProviderName}' mit Username und Passwort. LDAP_TLS_REQUIRE_CERT (FIPS: demand).",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/i18n/src/locales/en/auth.json",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/govern/ldap.md",
+    "/home/user/makeplane/developer-docs/docs/public/images/ldap/ldap-configuration.webp",
+    "/home/user/makeplane/developer-docs/docs/public/images/ldap/sign-in-ldap.webp",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/methods/fips-deployment.md"
+   ],
+   "confidence": "hoch",
+   "api_hints": "Authentication Endpoint (Pfad unbekannt; Vorschlag POST /auth/ldap/sign-in/ mit username, password, next_path); Verbindungstest beim Speichern",
+   "data_model_hints": "InstanceConfiguration: LDAP_BIND_PASSWORD (belegt, DB-resident), LDAP_TLS_REQUIRE_CERT (belegt); Vorschlag IS_LDAP_ENABLED, LDAP_SERVER_URI, LDAP_BIND_DN, LDAP_USER_SEARCH_BASE, LDAP_USER_SEARCH_FILTER, LDAP_USER_ATTRIBUTES, LDAP_PROVIDER_NAME; last_login_medium='ldap'",
+   "ui_hints": "Karte unten in der Auth-Liste; nur Kasten WEB; neuer Login-Schritt für LDAP-Credentials; Texte auth.ldap.* und auth.common.username.*"
+  },
+  {
+   "name": "IdP Group Sync",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Enterprise Grid",
+   "tier_details": "Blog GAC/LDAP/IdP-Group-Sync und Whitepaper-Snippet: Enterprise Grid (sekundär); Docs: nur Commercial Self-hosted, nur OIDC (sekundär)",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Workspace Settings → Group syncing: Schalter 'Enable group syncing'; Konfiguration 'Sync on login' (Default an), 'Offline sync' (alle 6 h), 'Auto remove', 'Group attribute key' (Platzhalter Groups); Abschnitt 'Group mapping' mit 'Add new group sync'. Modal mit Feldern User group, Project und Project role. Löschen entzieht keine bestehenden Zugänge. Die API kennt zusätzlich Workspace-Mappings und all_projects.",
+   "sources": [
+    "packages/i18n/src/locales/en/workspace-settings.json",
+    "packages/i18n/src/locales/en/empty-state.json",
+    "packages/blocks/src/empty-state/assets/horizontal-stack/group-syncing.tsx",
+    "/home/user/makeplane/developer-docs/docs/api-reference/idp-group-sync/overview.md",
+    "migration/features/21-paid-api-referenz-developer-docs.md",
+    "https://docs.plane.so/authentication/group-sync (sekundär)",
+    "https://plane.so/blog/introducing-granular-access-control-gac-ldap-idp-group-sync (sekundär)"
+   ],
+   "confidence": "hoch",
+   "api_hints": "workspaces/{ws}/group-sync/config/ (GET legt mit Defaults an, PATCH), …/workspace-mappings/ und …/project-mappings/ CRUD; Scopes workspaces.group_sync:read/write; nur Workspace-Admin",
+   "data_model_hints": "Config: is_enabled, sync_on_login, auto_remove, sync_offline, group_attribute_key, default_workspace_role (Slug). Projekt-Mapping: idp_group_name, project xor all_projects, role (Slug). Workspace-Mapping: idp_group_name, role.",
+   "ui_hints": "Illustration group-syncing, Leerzustand 'No group mappings yet', Lösch-Modal 'Delete group sync'"
+  },
+  {
+   "name": "SCIM-Provisioning",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Enterprise Grid",
+   "tier_details": "Cloud 'Business Plus', Self-hosted 'Available on plans (Commercial and Airgapped)' (self-hosting-101.md Z. 42); Whitepaper-Snippet: Enterprise Grid (sekundär) – UNVERIFIZIERT",
+   "ce_status": "fehlt",
+   "description": "Nur Nennungen, kein Spec. Vorschlag: SCIM 2.0 Users/Groups; Groups speisen die Group-Sync-Mappings. User.is_managed ist ein möglicher Marker (UNVERIFIZIERT).",
+   "sources": [
+    "/home/user/makeplane/developer-docs/docs/self-hosting/self-hosting-101.md",
+    "https://plane.so/self-hosted/whitepaper (sekundär)",
+    "https://www.idenhq.com/scim-tax/plane (sekundär)",
+    "apps/api/plane/db/models/user.py"
+   ],
+   "confidence": "niedrig",
+   "api_hints": "Vorschlag /scim/v2/Users, /scim/v2/Groups mit Bearer-Token",
+   "data_model_hints": "User.is_managed (CE, ungenutzt)",
+   "ui_hints": "nicht belegt"
+  },
+  {
+   "name": "Zwei-Faktor-Authentifizierung",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Pro",
+   "tier_details": "Matrix Free/One –, Pro/Business/Enterprise ✓ (Z. 1095, gemeinsame Zeile mit Passkeys)",
+   "ce_status": "fehlt",
+   "description": "'Secure your Plane workspace with device-dependent two-factor authentication and passkeys.' Keine weiteren Belege. Vorschlag (UNVERIFIZIERT): TOTP mit Recovery-Codes in Profil → Security, zusätzlicher Login-Schritt, optionale Workspace-Erzwingung.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "apps/web/components/settings/profile/content/pages/security.tsx",
+    "packages/constants/src/settings/profile.ts"
+   ],
+   "confidence": "niedrig",
+   "api_hints": "Vorschlag /api/users/me/2fa/setup|verify, DELETE /api/users/me/2fa/, POST /auth/2fa/",
+   "data_model_hints": "Vorschlag user_two_factor (totp_secret verschlüsselt), user_recovery_codes, workspaces.require_two_factor",
+   "ui_hints": "Profil-Tab 'security' (Icon LockOutline) unterhalb von Change password; neuer EAuthSteps-Schritt"
+  },
+  {
+   "name": "Passkeys",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Pro",
+   "tier_details": "Matrix Pro/Business/Enterprise ✓ (Z. 1095)",
+   "ce_status": "fehlt",
+   "description": "Nur Matrix-Beleg. Vorschlag (UNVERIFIZIERT): WebAuthn-Passkeys als passwortloser Login und als zweiter Faktor; Verwaltung (Add, Rename, Remove) in Profil → Security.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig",
+   "api_hints": "Vorschlag /auth/passkeys/register|login (options + verify), /api/users/me/passkeys/",
+   "data_model_hints": "Vorschlag user_passkeys(credential_id, public_key, sign_count, aaguid, transports, name, last_used_at)",
+   "ui_hints": "Login-Button über useExtendedOAuthConfig; Liste in Profil → Security"
+  },
+  {
+   "name": "Password Policy",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Pro",
+   "tier_details": "Matrix Pro/Business/Enterprise ✓ (Z. 1106)",
+   "ce_status": "teilweise im CE",
+   "description": "'Set custom password policies in line with your compliance requirements.' CE-Basis mit festen Regeln: Backend zxcvbn-Score ≥ 3 (Fenster 128 Zeichen, PASSWORD_TOO_WEAK 5021); Frontend mindestens 8 Zeichen plus Groß- und Kleinbuchstabe, Ziffer und Sonderzeichen; Space nur 8 Zeichen. Ungenutzte Felder User.is_password_expired und is_password_reset_required. Konfigurierbare Parameter sind UNVERIFIZIERT.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "apps/api/plane/authentication/utils/password.py",
+    "apps/api/plane/authentication/adapter/base.py",
+    "packages/utils/src/auth.ts",
+    "packages/constants/src/auth/index.ts",
+    "apps/api/plane/db/models/user.py",
+    "apps/api/plane/db/migrations/0116_workspacemember_explored_features_and_more.py"
+   ],
+   "confidence": "mittel",
+   "api_hints": "Vorschlag Policy-CRUD in God Mode oder Workspace-Settings; Durchsetzung in sign-up/set/reset/change-password",
+   "data_model_hints": "Vorschlag password_policies(min_length, require_*, min_zxcvbn_score, expiry_days, history_count) und user_password_history",
+   "ui_hints": "PasswordStrengthIndicator rendert die konfigurierten Kriterien dynamisch"
+  },
+  {
+   "name": "Domain Security",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Pro",
+   "tier_details": "Matrix Pro/Business/Enterprise ✓ (Z. 1083)",
+   "ce_status": "fehlt",
+   "description": "'Choose other domains that can authenticate into your Plane workspace or restrict all but one domain.' Zwei Modi: zusätzliche Domains zulassen oder auf eine Domain beschränken. Im CE ist nur das ungenutzte Altfeld Instance.whitelist_emails vorhanden; verwandt ist GITHUB_ORGANIZATION_ID. Durchsetzungspunkte sind UNVERIFIZIERT.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "apps/api/plane/license/models/instance.py",
+    "packages/types/src/instance/base.ts"
+   ],
+   "confidence": "niedrig",
+   "api_hints": "Vorschlag: Prüfung bei Einladung, Join, CSV-Import und Group-Sync",
+   "data_model_hints": "Vorschlag workspace_domain_policies(mode, domains[]) bzw. Flag an workspace_domains",
+   "ui_hints": "Teil der Identity-Seite (Vorschlag)"
+  },
+  {
+   "name": "Rollen: Pre-defined Roles",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Pro",
+   "tier_details": "Matrix Free/One 'Basic' (= CE Admin/Member/Guest), Pro 'Pre-defined roles', Business 'RBAC', Enterprise 'GAC' (Z. 695)",
+   "ce_status": "teilweise im CE",
+   "description": "Vier vordefinierte Rollen je Namespace: workspace Owner/Admin/Member/Guest, project Admin/Contributor/Commenter/Guest. Rollen sind Objekte (list_roles, retrieve_role), der Slug ist je (namespace, slug) eindeutig. Fragmente der Permissions-Matrix zu Workflows, Templates, Automationen, Pages, Wiki und privaten Projekten sind übernommen. Das CE hat nur die Integer-Rollen 20/15/5.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md",
+    "/home/user/makeplane/developer-docs/docs/api-reference/idp-group-sync/overview.md",
+    "packages/constants/src/workspace.ts",
+    "apps/api/plane/db/models/workspace.py",
+    "migration/analysis/03-api-intern-workspace-projekt-user.md",
+    "https://docs.plane.so/roles-and-permissions/permissions-matrix (sekundär)"
+   ],
+   "confidence": "mittel",
+   "api_hints": "GET {W}/roles/?namespace=, GET {W}/roles/{role_id}/; Mitgliederfilter role_slug, is_active, is_bot",
+   "data_model_hints": "Vorschlag roles(workspace_id null für System, namespace, slug, name, is_system) mit role_id an workspace_members/project_members; Mapping 20→admin, 15→member/Contributor, 5→guest; Owner und Commenter neu",
+   "ui_hints": "Rollen-Dropdowns der Mitgliederlisten; Settings-Header zeigt den Rollentitel"
+  },
+  {
+   "name": "RBAC: benutzerdefinierte Rollen",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Business",
+   "tier_details": "Matrix Business 'RBAC'; planHighlights.business 'RBAC'",
+   "ce_status": "fehlt",
+   "description": "'… or create custom ones with RBAC.' Kein Spec. Vorschlag (UNVERIFIZIERT): eigene Rollen je Namespace mit Permission-Katalog resource × action, System-Rollen nicht löschbar.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "niedrig",
+   "api_hints": "Vorschlag CRUD {W}/roles/ mit permissions",
+   "data_model_hints": "Vorschlag role_permissions(role_id, permission_key)",
+   "ui_hints": "Vorschlag Workspace Settings → Roles (Icon AccessAndRolesOutline)"
+  },
+  {
+   "name": "GAC: Granular Access Control",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Enterprise",
+   "tier_details": "Matrix Enterprise 'GAC'; ENTERPRISE_PLAN_FEATURES 'GAC'; Blog-Titel GAC + LDAP + IdP Group Sync (sekundär)",
+   "ce_status": "fehlt",
+   "description": "Nur Nennungen. Vorschlag (UNVERIFIZIERT): feingranulare Vergaben auf Objekt- und Scope-Ebene oberhalb von RBAC.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/constants/src/subscription.ts",
+    "https://plane.so/blog/introducing-granular-access-control-gac-ldap-idp-group-sync (sekundär)"
+   ],
+   "confidence": "niedrig",
+   "api_hints": "nicht belegt",
+   "data_model_hints": "nicht belegt",
+   "ui_hints": "nicht belegt"
+  },
+  {
+   "name": "Guests (Kontingent 5 je bezahltem Mitglied)",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "One",
+   "tier_details": "Matrix Free –, One–Enterprise '5 per paid member' (Z. 706); Billing-Text Pro '1:5 Guests'",
+   "ce_status": "im CE vorhanden (nur Cloud-Gating)",
+   "description": "Gast-Rolle (5) auf Workspace- und Projektebene ist im CE vollständig vorhanden. Projekt-Switch 'Guest access' (guest_view_all_features) erlaubt Gästen das Sehen aller Work Items; Sichtbarkeitsfilter gelten in Suche, Export, Pages und Favoriten. Bezahl-Anteil ist nur das Kontingent; es entfällt.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "/home/user/makeplane/developer-docs/docs/public/images/activate-license/pro-activated-cloud.webp",
+    "apps/web/components/project/project-settings-member-defaults.tsx",
+    "apps/api/plane/app/views/search/base.py",
+    "apps/api/plane/app/permissions/page.py"
+   ],
+   "confidence": "hoch",
+   "api_hints": "CE-Endpunkte (Dok. 03)",
+   "data_model_hints": "Project.guest_view_all_features; Rolle 5",
+   "ui_hints": "CE-UI unverändert"
+  },
+  {
+   "name": "Approvals (Workspace-, Projekt-, Work-Item-Type-Approvals)",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Business",
+   "tier_details": "Matrix Business/Enterprise (Coming soon, Z. 717); BUSINESS_PLAN_FEATURES 'Workflows + Approvals'; Workflow-Approval-Flows 2026 laut Dok. 25 Enterprise Grid",
+   "ce_status": "fehlt",
+   "description": "'Set workspace, project, and work item type approvals to designated admins.' Kein eigener Spec. Die Workflow-Approvals sind in Dok. 25 F03 spezifiziert. Weitere Approval-Kontexte: Timesheet-Approvals, Beitritt zu privaten Projekten.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/constants/src/subscription.ts",
+    "apps/web/components/license/modal/upgrade-modal.tsx",
+    "migration/features/25-paid-workflows-automation-templates.md"
+   ],
+   "confidence": "niedrig",
+   "api_hints": "siehe Dok. 25 F03; generisch nicht belegt",
+   "data_model_hints": "Vorschlag approval_requests(scope, subject, status, decided_by)",
+   "ui_hints": "Icon ApproverOutline"
+  },
+  {
+   "name": "Admin Interface",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Business",
+   "tier_details": "Matrix Business/Enterprise ✓ (Z. 729)",
+   "ce_status": "fehlt",
+   "description": "'Get an admin overview to manage workspace and project settings.' Kein Spec. Mögliche Überschneidung mit Workspace Governance (Dok. 25 F07) und der Projects-Einstellung. Vorschlag: projektübergreifende Admin-Projektliste mit Join, Settings, Archive und Members.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/i18n/src/locales/en/workspace-settings.json",
+    "migration/features/25-paid-workflows-automation-templates.md"
+   ],
+   "confidence": "niedrig",
+   "api_hints": "nicht belegt",
+   "data_model_hints": "keine neuen Entitäten nötig (Vorschlag)",
+   "ui_hints": "Vorschlag: Workspace Settings → Administration"
+  },
+  {
+   "name": "Workspace Activity Logs",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Business",
+   "tier_details": "Matrix Business/Enterprise ✓ (Z. 740)",
+   "ce_status": "teilweise im CE",
+   "description": "'See filterable activity logs for your entire workspace.' Im CE gibt es nur die Aktivität je User (GET /api/workspaces/{slug}/user-activity/{user_id}/ mit Filter project, paginiert, plus Export) und den No-op mutateWorkspaceMembersActivity. Vorschlag: workspaceweite, filterbare Liste (Akteur, Projekt, Entitätstyp, Aktion, Zeitraum) mit CSV-Export.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "apps/api/plane/app/views/workspace/user.py",
+    "apps/api/plane/app/urls/workspace.py",
+    "apps/web/store/workspace/index.ts"
+   ],
+   "confidence": "mittel",
+   "api_hints": "Vorschlag GET {W}/activities/?actor=&project=&entity_type=&verb=&from=&to=",
+   "data_model_hints": "Union über Activity-Tabellen oder workspace_activities",
+   "ui_hints": "Darstellung wie Work-Item-Activity; Zeitraumfilter wie EDurationFilters"
+  },
+  {
+   "name": "API-enabled Audit Logs",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Business",
+   "tier_details": "Matrix Business/Enterprise (Coming soon, Z. 751); Cloud 'Business Plus' (self-hosting-101.md); ausgeliefert mit Commercial v3.1.0 (sekundär)",
+   "ce_status": "fehlt",
+   "description": "'See a full-workspace audit log and use APIs to flag Plane activity in compliance systems.' Das Audit-Log enthält API-Token-Ereignisse (MCP-Doku). Ereigniskatalog und Felder sind UNVERIFIZIERT. Vorschlag: append-only Log für Sicherheits- und Admin-Ereignisse mit Filter, Export, Public-API und optionalem Webhook.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/self-hosting-101.md",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server.md",
+    "https://docs.plane.so/workspaces-and-users/audit-logs (sekundär)",
+    "https://plane.so/changelog/release-v3-1-0-audit-logs-skills-in-plane-ai-dashboards-and-more (sekundär)"
+   ],
+   "confidence": "niedrig",
+   "api_hints": "Vorschlag GET /api/v1/workspaces/{slug}/audit-logs/ (Scope workspaces.audit_logs:read), Webhook audit_log.created",
+   "data_model_hints": "Vorschlag audit_logs(occurred_at, actor_type, actor_id, action, resource_type, resource_id, changes jsonb, ip, user_agent), monatlich partitioniert",
+   "ui_hints": "Icon AuditLogsOutline; Tabelle mit Detail-Drawer"
+  },
+  {
+   "name": "Workspace-Lizenz und Seite 'Billing and plans' (inkl. Sync plan, Delink, Trial, Upgrade-Flow)",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Pro",
+   "tier_details": "Lizenzmechanik der Commercial Edition für Pro/Business (workspace- und maschinengebunden); Cloud-Trial 14 Tage Business",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Der Button 'Activate this workspace' öffnet das Modal 'Activate {Workspace}' mit 'Enter license key', Close und Activate. Die Plan-Karte zeigt 'Billable seats when you upgrade: n' bzw. 'Your billing cycle renews on … • Billable seats: n' mit 'Manage your subscription'. Weiter: Sync plan, Delink license key, Trial-Banner, Abbruch des Trials vor dem Löschen des Workspaces sowie Fehlertexte. Im CE gibt es nur den Planvergleich, das Upgrade-Modal und das Editions-Badge. Nach ADR-001 entfällt alles.",
+   "sources": [
+    "apps/web/components/workspace/billing/root.tsx",
+    "apps/web/components/license/modal/upgrade-modal.tsx",
+    "apps/web/components/workspace/edition-badge.tsx",
+    "packages/i18n/src/locales/en/home.json",
+    "packages/i18n/src/locales/en/workspace-settings.json",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/manage/manage-licenses/activate-pro-and-business.md",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/troubleshoot/license-errors.md",
+    "/home/user/makeplane/developer-docs/docs/public/images/activate-license/enter-license-key-selfhosted.webp"
+   ],
+   "confidence": "hoch",
+   "api_hints": "entfällt",
+   "data_model_hints": "Altfelder IInstance.license_key, is_activated, user_count und Profile.billing_* nicht übernehmen",
+   "ui_hints": "Billing-Tab, Badge, Modal und Trial-Banner werden nicht gebaut (O11)"
+  },
+  {
+   "name": "Enterprise-Grid-Instanzlizenz (God Mode → Billing)",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Enterprise Grid",
+   "tier_details": "Instanzweit, gilt für alle Workspaces",
+   "ce_status": "fehlt",
+   "description": "God-Mode-Sidebar 'Billing – Active plans' führt zur Seite 'Billings and plans' mit der Karte 'Activate Enterprise license' (Eingabe License key, Activate). Entfällt nach ADR-001.",
+   "sources": [
+    "/home/user/makeplane/developer-docs/docs/self-hosting/manage/manage-licenses/activate-enterprise.md",
+    "/home/user/makeplane/developer-docs/docs/public/images/activate-license/activate-enterprise-plan.webp"
+   ],
+   "confidence": "hoch",
+   "api_hints": "entfällt",
+   "data_model_hints": "entfällt",
+   "ui_hints": "God-Mode-Eintrag Billing nicht bauen"
+  },
+  {
+   "name": "Offline-Lizenzdatei (Airgapped)",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Enterprise Grid",
+   "tier_details": "Airgapped exklusiv Enterprise Grid ab 100 Seats (airgapped-requirements.md); daneben Doku zur Aktivierung von Pro/Business auf Airgapped (Widerspruch)",
+   "ce_status": "fehlt",
+   "description": "Upload einer .json-Lizenzdatei aus dem Prime-Portal, auf Workspace-Ebene ('Plane provided details': Instance ID, Workspace ID, Workspace slug, Domain, Instance app version) oder in God Mode ('Instance details'). Entfällt nach ADR-001.",
+   "sources": [
+    "/home/user/makeplane/developer-docs/docs/self-hosting/manage/manage-licenses/activate-airgapped.md",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/manage/manage-licenses/activate-airgapped-enterprise.md",
+    "/home/user/makeplane/developer-docs/docs/public/images/activate-license/upload-airgapped-license-file.webp",
+    "/home/user/makeplane/developer-docs/docs/public/images/activate-license/upload-airgapped-enterprise.webp"
+   ],
+   "confidence": "hoch",
+   "api_hints": "entfällt",
+   "data_model_hints": "entfällt",
+   "ui_hints": "entfällt"
+  },
+  {
+   "name": "Prime-Portal und Monitor-Dienst (Lizenzvalidierung, Feature-Flags)",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Cloud-only",
+   "tier_details": "Mechanik der Commercial Edition, kein Plan-Feature",
+   "ce_status": "teilweise im CE",
+   "description": "Der Go-Dienst Monitor validiert Lizenzen, synchronisiert Flags und Lizenzen alle 300 min und prüft die Dienste alle 5 min. Konfiguration über PRIME_HOST, MACHINE_SIGNATURE, APP_DOMAIN, PAYMENT_SERVER_BASE_URL und FEATURE_FLAG_SERVER_BASE_URL. Im CE wird MACHINE_SIGNATURE als SHA-256 über Host-Merkmale berechnet, aber nur auf Präsenz geprüft. Entfällt nach ADR-001/004.",
+   "sources": [
+    "/home/user/makeplane/developer-docs/docs/self-hosting/manage/health-checks.md",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/plane-architecture.md",
+    "/home/user/makeplane/helm-charts/charts/plane-enterprise/templates/config-secrets/app-env.yaml",
+    "/home/user/makeplane/helm-charts/charts/plane-enterprise/templates/config-secrets/monitor.yaml",
+    "apps/api/bin/docker-entrypoint-api.sh",
+    "apps/api/plane/license/management/commands/register_instance.py"
+   ],
+   "confidence": "hoch",
+   "api_hints": "entfällt; Health-Checks siehe Dok. 22",
+   "data_model_hints": "Instance.edition fest PLANE_COMMUNITY; nicht übernehmen",
+   "ui_hints": "entfällt"
+  },
+  {
+   "name": "Self-hosted-Pläne und Deployment-Varianten (One, Airgapped, Private/Managed Deployments, FIPS)",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "One",
+   "tier_details": "One: One-click, DO, Heroku, AWS AMI; Enterprise: Private deployments (Coming soon); Enterprise Grid: Airgapped (ab 100 Seats) und FIPS",
+   "ce_status": "teilweise im CE",
+   "description": "Plane One ist ein Legacy-Plan (799 einmalig, bis 50 User, OIDC/SAML). Airgapped bedeutet: keine Telemetrie, Offline-Lizenz, interne Registry und CA, IS_AIRGAPPED. FIPS: -fips-Images, Host im FIPS-Modus, PLANE_REQUIRE_FIPS sowie die Defaults LDAP_TLS_REQUIRE_CERT=demand, SAML_REJECT_DEPRECATED_ALGORITHM, SECRET_ENCRYPTION_V2 (AES-256-GCM) und USAGE_ID_DIGEST=sha256. Portierung: Airgapped wird Grundeigenschaft, FIPS ein Betriebsprofil; Private/Managed Deployments und Marktplatz-Apps entfallen.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/constants/src/subscription.ts",
+    "deployments/cli/community/restore-airgapped.sh",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/methods/airgapped-requirements.md",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/methods/fips-deployment.md",
+    "/home/user/makeplane/helm-charts/charts/plane-enterprise/values.yaml"
+   ],
+   "confidence": "hoch",
+   "api_hints": "keine",
+   "data_model_hints": "keine",
+   "ui_hints": "keine"
+  },
+  {
+   "name": "Member-Limits und Seat-Berechnung",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Cloud-only",
+   "tier_details": "Cloud Free 12, One leer, Pro+ Unlimited; Self-hosted-Richtwerte ~50/~50/~200/~200/Unlimited; Commercial Free 12 Seats je Workspace",
+   "ce_status": "fehlt",
+   "description": "Billable Seats sind die Nutzer mit bezahlten Rollen; Gäste 1:5; Agents sind nicht billable. members/remove reduziert Seats; der CSV-Import scheitert am Seat-Limit; CTA 'Add Seats'. Im CE gibt es keine Limits. Entfällt nach ADR-001.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/editions-and-versions.md",
+    "/home/user/makeplane/developer-docs/docs/api-reference/members/remove-workspace-member.md",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/agents/overview.md",
+    "packages/i18n/src/locales/en/workspace.json"
+   ],
+   "confidence": "hoch",
+   "api_hints": "members/remove ohne Seat-Logik portieren",
+   "data_model_hints": "keine",
+   "ui_hints": "keine Seat-Anzeigen"
+  },
+  {
+   "name": "Storage-Limits (Workspace-Speicher, Max file size)",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Cloud-only",
+   "tier_details": "Free 5GB/5 MB, Pro 1 TB/100 MB, Business 5 TB/200 MB, Enterprise Custom (cloudOnly)",
+   "ce_status": "teilweise im CE",
+   "description": "Im CE gibt es nur das instanzweite FILE_SIZE_LIMIT (Default 5 MB), ausgeliefert als config.file_size_limit. Portierung: Max file size als Instanz-Einstellung, keine Speicherquote.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "apps/api/plane/settings/common.py",
+    "apps/api/plane/license/api/views/instance.py",
+    "apps/web/hooks/use-file-size.ts"
+   ],
+   "confidence": "hoch",
+   "api_hints": "CE-Instanz-Config",
+   "data_model_hints": "InstanceConfiguration",
+   "ui_hints": "God-Mode-Einstellung"
+  },
+  {
+   "name": "Support-Kanäle, SLA und 'Chat with us'",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "Pro",
+   "tier_details": "Kanäle: Free Forum, One Mail+Forum, Pro Mail+Forum+Chat, Business/Enterprise Full-suite; SLA ab Pro",
+   "ce_status": "teilweise im CE",
+   "description": "God Mode → General → 'Chat + telemetry' mit dem Schalter 'Chat with us' (wird mit der Telemetrie abgeschaltet). Im CE gibt es nur das Feld Instance.is_support_required ohne UI. Entfällt (Vertrieb; ADR-004).",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "apps/api/plane/license/models/instance.py",
+    "/home/user/makeplane/developer-docs/docs/public/images/instance-admin/god-mode-general.webp"
+   ],
+   "confidence": "hoch",
+   "api_hints": "entfällt",
+   "data_model_hints": "is_support_required nicht übernehmen",
+   "ui_hints": "entfällt"
+  },
+  {
+   "name": "God Mode: User Management (Instanz-Benutzer, Instanz-Admins einladen)",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "unklar",
+   "tier_details": "Commercial Edition ohne Plan-Badge",
+   "ce_status": "teilweise im CE",
+   "description": "Seite 'User Management' mit Suche, '+ Invite members' und Tabelle (Full Name, Display Name, Email, Account Type User/Instance Admin, Status Active/Suspended, Joining Date). Zeilenmenü: Grant/Remove admin access, Remove. Modal 'Invite instance admin' mit Email ID, Password, 'Generate random password.' und 'Prompt user to change password after onboarding.'; es wird keine E-Mail versandt. Im CE gibt es das InstanceAdmin-Modell und die Endpunkte GET/POST/DELETE /api/instances/admins/ ohne UI; is_password_reset_required ist ungenutzt.",
+   "sources": [
+    "/home/user/makeplane/developer-docs/docs/self-hosting/manage/manage-instance-users.md",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/govern/instance-admin.md",
+    "/home/user/makeplane/developer-docs/docs/public/images/instance-admin/user-management.webp",
+    "/home/user/makeplane/developer-docs/docs/public/images/instance-admin/invite-instance-admin.webp",
+    "apps/api/plane/license/api/views/admin.py",
+    "apps/api/plane/db/models/user.py"
+   ],
+   "confidence": "hoch",
+   "api_hints": "Vorschlag GET /api/instances/users/, POST …/invite-admin/, …/grant-admin/, …/revoke-admin/, DELETE …/users/{id}/",
+   "data_model_hints": "User.is_active, is_password_reset_required; InstanceAdmin",
+   "ui_hints": "God-Mode-Sidebar 'User Management – Instance user management'; Untertitel mit 'seats' klären (O11)"
+  },
+  {
+   "name": "God Mode: Session-Einstellungen",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "unklar",
+   "tier_details": "Commercial Edition ohne Plan-Badge",
+   "ce_status": "teilweise im CE",
+   "description": "System Configurations → Session settings: Session expiry (Tage, Default 7, min. 1, inaktivitätsbasiert, höchstens einmal täglich verlängert) und Admin session expiry (Stunden, Default 1, min. 1, absolut). Der UI-Wert hat Vorrang vor ENV. Im CE gibt es nur die ENV-Variablen SESSION_COOKIE_AGE und ADMIN_SESSION_COOKIE_AGE.",
+   "sources": [
+    "/home/user/makeplane/developer-docs/docs/self-hosting/govern/god-mode/session-expiry.md",
+    "apps/api/plane/settings/common.py",
+    "apps/api/plane/authentication/middleware/session.py"
+   ],
+   "confidence": "hoch",
+   "api_hints": "über Instanz-Konfiguration",
+   "data_model_hints": "InstanceConfiguration-Schlüssel (Vorschlag)",
+   "ui_hints": "Seite nicht auf Screenshots belegt (O17)"
+  },
+  {
+   "name": "Argus: Sensitive-Data-/PII-Scanner",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "unklar",
+   "tier_details": "Feature-Flag PII_SCANNER; Changelog v3.2.0 'PII scanning' (sekundär)",
+   "ce_status": "fehlt",
+   "description": "Optionaler Dienst. Er scannt Plane-Inhalte, speichert Findings im Schema argus mit HMAC-Fingerprints und bietet Dedup, Staling, Gruppierung und Triage, CSV-Export mit 15-Minuten-Token, Rate-Limits sowie Audit-Zeilen mit Client-IP; UI unter /argus/. Erkennungsregeln und UI-Texte sind nicht belegt.",
+   "sources": [
+    "/home/user/makeplane/helm-charts/charts/plane-enterprise/values.yaml",
+    "/home/user/makeplane/helm-charts/charts/plane-enterprise/README.md",
+    "/home/user/makeplane/helm-charts/charts/plane-enterprise/templates/config-secrets/argus-env.yaml",
+    "https://plane.so/changelog/release-v3-2-0-workspace-governance-ai-memory-pii-scanning-and-more (sekundär)"
+   ],
+   "confidence": "mittel",
+   "api_hints": "Routen unter /argus/ (Details nicht belegt)",
+   "data_model_hints": "eigenes Schema argus; Findings mit Fingerprint, Triage-Status, Scan-Runs, Exports",
+   "ui_hints": "nicht belegt"
+  },
+  {
+   "name": "Mitglieder-CSV-Import (Workspace und Projekt) mit Seat-Limit",
+   "cluster": "P08 Sicherheit, Administration, Lizenz",
+   "tier": "unklar",
+   "tier_details": "keine Plan-Angabe (Dok. 20 PF-60)",
+   "ce_status": "fehlt",
+   "description": "Workspace-CSV mit Email, Display Name, First Name, Last Name, Role (5/15/20). Projekt-CSV mit Email und Role; die User müssen bereits Workspace-Mitglieder sein. Ergebnisstatistiken; Fehler 'Unable to import members due to seat limit restrictions.' Portierung ohne Seat-Prüfung.",
+   "sources": [
+    "packages/i18n/src/locales/en/workspace.json",
+    "packages/i18n/src/locales/en/project.json"
+   ],
+   "confidence": "mittel",
+   "api_hints": "nicht belegt",
+   "data_model_hints": "keine neuen Entitäten",
+   "ui_hints": "Texte workspace.members_import.* und project.members_import.*"
+  }
+ ],
+ "open_questions": [
+  "O1 (Rückfrage an den Auftraggeber): Sollen sowohl instanzweites SSO (God Mode, SAML/OIDC/LDAP) als auch workspace-bezogenes SSO mit verifizierten Domains ('Identity', Texte sso.*) gebaut werden, oder nur das Instanz-SSO?",
+  "O11 (Rückfrage an den Auftraggeber): Nach ADR-001 entfallen Billing-Seite, Editions-Badge (inkl. Versions-Tooltip 'Version: v…'), Upgrade-Modal und Trial-Banner. Soll die Versionsanzeige an anderer Stelle erscheinen? Soll der God-Mode-Untertitel 'View and manage seats …' neutral formuliert werden?",
+  "O12: Das WebSearch-Budget dieses Laufs war erschöpft. Ein Folgelauf mit Suchbudget sollte nachrecherchieren: docs.plane.so/authentication/sso, …/group-sync, …/workspaces-and-users/audit-logs, …/roles-and-permissions/permissions-matrix und …/member-roles, …/workspace-administration/workspace-governance, 2FA/Passkey-Doku, plane.so/blog/introducing-granular-access-control-gac-ldap-idp-group-sync, Changelogs v3.1.0 und v3.2.0, plane.so/pricing und plane.so/enterprise-grid.",
+  "O2/O3: Details zu 2FA (Faktoren, Recovery-Codes, Erzwingung je Workspace, Geltung für SSO-Logins), Passkeys, Password Policy (Parameter, Geltungsbereich Instanz oder Workspace) und Domain Security (Durchsetzungspunkte) sind nicht belegt; die Entwürfe sind als UNVERIFIZIERT markiert.",
+  "O4: Permission-Katalog für RBAC-Custom-Roles, die Semantik von GAC und die Matrix-Zeile 'Approvals' (Workspace/Projekt/Work-Item-Type) sind ohne öffentliche Spezifikation.",
+  "O5: Bedeutung von 'Admin Interface' und Abgrenzung zur Workspace Governance (Dok. 25 F07) sind unklar.",
+  "O6: Offline-Group-Sync alle 6 h ist ohne IdP-API nicht möglich (OIDC liefert Gruppen nur im Token). Nötig sind ein Provider-Adapter oder ein deaktivierter Schalter.",
+  "O7: Umfang, Scope und Token-Verwaltung von SCIM sind unbekannt; 'Business Plus' ist nur einmal genannt.",
+  "O8: Rollen-Slugs: Die Group-Sync-API nutzt den Projekt-Slug 'member', die MCP-Doku nennt 'Contributor'. Die Slugs für Owner und Commenter sind unbekannt.",
+  "O9: Ereigniskatalog, Felder und API-Pfade des Audit-Logs sowie Erkennungsregeln und UI von Argus sind nicht belegt.",
+  "O10: Bedeutet 'Remove' in God-Mode User Management Löschen oder Deaktivieren?",
+  "O13: SAML Entity ID: Die Doku nennt /auth/saml/, der Screenshot /auth/saml/metadata/.",
+  "O16: Die Matrix weist dem Free-Plan keine Gäste zu, die CE (Free-Parität) hat die Gast-Rolle aber ohne Einschränkung.",
+  "O17: Der Ort der God-Mode-Seite 'System Configurations → Session settings' ist auf keinem Screenshot belegt."
+ ]
+}

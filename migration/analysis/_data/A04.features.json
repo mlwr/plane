@@ -1,0 +1,447 @@
+[
+ {
+  "name": "Work-Item-Liste mit Filter, Sortierung, Gruppierung, Untergruppierung, Paginierung (Liste/Kanban/Kalender/Spreadsheet/Gantt)",
+  "area": "Work Items",
+  "description": "Zentrale Projekt-Issue-Liste mit Rich-Filtern (JSON) und Legacy-Filtern, order_by aus Allowlist, group_by/sub_group_by aus ISSUE_GROUP_BY_ALLOWLIST, Cursor-Paginierung pro Gruppe, Gast-Einschränkung; Recent-Visit des Projekts.",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/base.py (IssueViewSet.list)",
+   "apps/api/plane/utils/grouper.py",
+   "apps/api/plane/utils/paginator.py",
+   "apps/api/plane/utils/order_queryset.py",
+   "apps/api/plane/utils/issue_filters.py",
+   "apps/api/plane/utils/filters/filter_backend.py",
+   "apps/api/plane/utils/filters/filterset.py"
+  ]
+ },
+ {
+  "name": "Rich-Filter-Ausdrücke (AND/OR/NOT)",
+  "area": "Work Items",
+  "description": "JSON-Filterbaum im Query-Parameter filters mit Feldern state_id, state_group, priority, assignee_id, label_id, cycle_id, module_id, mention_id, subscriber_id, created_by_id, project_id, start/target_date, created_at/updated_at (exact/in/range), is_archived, is_draft.",
+  "code_refs": [
+   "apps/api/plane/utils/filters/filter_backend.py",
+   "apps/api/plane/utils/filters/filterset.py",
+   "packages/types/src/view-props.ts"
+  ]
+ },
+ {
+  "name": "Work Item anlegen",
+  "area": "Work Items",
+  "description": "Anlegen mit Name, Beschreibung (HTML/JSON/Binary, sanitisiert), Priorität, State (Default-State-Fallback), Parent (gleiches Projekt), Schätzpunkt, Datumsfeldern, Assignees (Default-Assignee des Projekts), Labels; Sequenz-ID per Advisory Lock; Activity, Webhook, Description-Version.",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/base.py (IssueViewSet.create)",
+   "apps/api/plane/app/serializers/issue.py (IssueCreateSerializer)",
+   "apps/api/plane/db/models/issue.py (Issue.save)"
+  ]
+ },
+ {
+  "name": "Work Item bearbeiten",
+  "area": "Work Items",
+  "description": "PATCH aller Felder inkl. Ersetzen von Assignees/Labels, completed_at-Synchronisation bei State-Wechsel, skip_activity für Beschreibungs-Migrationen; Activity, Benachrichtigung, Webhook pro Feld, Description-Versionierung.",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/base.py (IssueViewSet.partial_update)",
+   "apps/api/plane/utils/serializers.py (writable_data)",
+   "apps/api/plane/bgtasks/issue_description_version_task.py"
+  ]
+ },
+ {
+  "name": "Work-Item-Detail inkl. Reaktionen, Links, Attachments, Parent",
+  "area": "Work Items",
+  "description": "Detailansicht mit cycle_id, module_ids, label_ids, assignee_ids, Zählern, is_subscribed; expand=issue_reactions,issue_attachments,issue_link,parent; Gast-Prüfung; Recent-Visit.",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/base.py (IssueViewSet.retrieve)",
+   "apps/api/plane/app/serializers/base.py (DynamicBaseSerializer)",
+   "apps/api/plane/app/serializers/issue.py (IssueDetailSerializer)"
+  ]
+ },
+ {
+  "name": "Work Item per Identifier aufrufen (PROJ-123)",
+  "area": "Work Items",
+  "description": "Auflösung über Projekt-Identifier (case-insensitive) und Sequenz-ID inkl. is_intake; Mitgliedschafts- und Gast-Prüfung; Recent-Visit.",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/base.py (IssueDetailIdentifierEndpoint)",
+   "apps/api/plane/app/urls/issue.py"
+  ]
+ },
+ {
+  "name": "Work Item löschen",
+  "area": "Work Items",
+  "description": "Soft-Delete mit Kaskade (inkl. Sub-Issues), Löschen der Recent-Visits, Activity mit Benachrichtigung.",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/base.py (IssueViewSet.destroy)",
+   "apps/api/plane/bgtasks/deletion_task.py"
+  ]
+ },
+ {
+  "name": "Work-Item-Meta und Mehrfach-Abruf per IDs",
+  "area": "Work Items",
+  "description": "Sequenz-ID/Projekt-Identifier eines Issues; Laden mehrerer Issues per CSV-Liste (issues/list).",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/base.py (IssueMetaEndpoint, IssueListEndpoint)"
+  ]
+ },
+ {
+  "name": "Delta-Sync für lokalen Client-Cache",
+  "area": "Work Items",
+  "description": "v2-Paginierung nach updated_at mit optionaler Beschreibung sowie Liste archivierter/gelöschter IDs seit updated_at__gt.",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/base.py (IssuePaginatedViewSet, DeletedIssuesListViewSet)",
+   "apps/api/plane/utils/global_paginator.py"
+  ]
+ },
+ {
+  "name": "Gantt mit Abhängigkeiten (issues-detail)",
+  "area": "Work Items",
+  "description": "Ungruppierte Liste mit expand issue_relation/issue_related für Timeline-Abhängigkeiten (im CE per ENABLE_ISSUE_DEPENDENCIES=false deaktiviert, nach ADR-001 aktiv).",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/base.py (IssueDetailEndpoint)",
+   "apps/api/plane/app/serializers/issue.py (IssueListDetailSerializer)",
+   "packages/constants/src/issue/filter.ts"
+  ]
+ },
+ {
+  "name": "Anzeige-Einstellungen pro Nutzer und Projekt",
+  "area": "Work Items",
+  "description": "Persistenz von filters, rich_filters, display_filters (Layout, Gruppierung, Sortierung), display_properties und preferences je Nutzer/Projekt.",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/base.py (ProjectUserDisplayPropertyEndpoint)",
+   "apps/api/plane/db/models/project.py (ProjectUserProperty)"
+  ]
+ },
+ {
+  "name": "Start-/Zieldatum per Drag & Drop (Bulk)",
+  "area": "Work Items",
+  "description": "Mehrere Issues gleichzeitig mit neuen Start-/Zieldaten aktualisieren (Gantt/Kalender), Validierung Start ≤ Ziel, Activity ohne Benachrichtigung.",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/base.py (IssueBulkUpdateDateEndpoint)"
+  ]
+ },
+ {
+  "name": "Bulk-Löschen und Bulk-Archivieren",
+  "area": "Work Items",
+  "description": "Mehrfachauswahl löschen (nur Admin) bzw. archivieren (nur completed/cancelled, Fehlercode 4091).",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/base.py (BulkDeleteIssuesEndpoint)",
+   "apps/api/plane/app/views/issue/archive.py (BulkArchiveIssuesEndpoint)"
+  ]
+ },
+ {
+  "name": "Work Items archivieren / wiederherstellen / Archiv-Liste",
+  "area": "Work Items",
+  "description": "Archivieren abgeschlossener/abgebrochener Issues, Wiederherstellen, Archivliste mit Filter/Gruppierung und show_sub_issues, Archiv-Detail.",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/archive.py (IssueArchiveViewSet)"
+  ]
+ },
+ {
+  "name": "Labels verwalten",
+  "area": "Labels",
+  "description": "Projekt-Labels anlegen, ändern, löschen (Hierarchie über parent, Farbe, Sortierung, eindeutiger Name, Cache-Invalidierung) sowie Bulk-Import.",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/label.py (LabelViewSet, BulkCreateIssueLabelsEndpoint)",
+   "apps/api/plane/app/serializers/issue.py (LabelSerializer)",
+   "apps/api/plane/db/models/label.py"
+  ]
+ },
+ {
+  "name": "Kommentare",
+  "area": "Kommentare & Verlauf",
+  "description": "Kommentare anlegen/bearbeiten (edited_at)/löschen mit HTML-Sanitizing, Sichtbarkeit INTERNAL/EXTERNAL, Gast-Einschränkung; Activity und Webhooks.",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/comment.py (IssueCommentViewSet)",
+   "apps/api/plane/db/models/issue.py (IssueComment.save)"
+  ]
+ },
+ {
+  "name": "Reaktionen auf Work Items und Kommentare",
+  "area": "Kommentare & Verlauf",
+  "description": "Emoji-Reaktionen hinzufügen und eigene entfernen, jeweils mit Activity.",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/reaction.py (IssueReactionViewSet)",
+   "apps/api/plane/app/views/issue/comment.py (CommentReactionViewSet)"
+  ]
+ },
+ {
+  "name": "Aktivitätsverlauf",
+  "area": "Kommentare & Verlauf",
+  "description": "Chronologisch zusammengeführte Activities und Kommentare, filterbar nach activity_type (issue-property/issue-comment) und created_at__gt, inkl. Intake-Quelldaten.",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/activity.py (IssueActivityEndpoint)",
+   "apps/api/plane/bgtasks/issue_activities_task.py"
+  ]
+ },
+ {
+  "name": "Links an Work Items",
+  "area": "Links & Attachments",
+  "description": "Links anlegen/bearbeiten/löschen mit URL-Normalisierung, Duplikatprüfung und Titel-/Favicon-Crawling (SSRF-geschützt).",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/link.py (IssueLinkViewSet)",
+   "apps/api/plane/bgtasks/work_item_link_task.py"
+  ]
+ },
+ {
+  "name": "Attachments an Work Items",
+  "area": "Links & Attachments",
+  "description": "Upload per presigned POST (MIME-Allowlist, Größenlimit), Bestätigung, Download-Redirect, Löschen (soft); Legacy-Multipart-Upload v1.",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/attachment.py (IssueAttachmentV2Endpoint, IssueAttachmentEndpoint)",
+   "apps/api/plane/db/models/asset.py (FileAsset)",
+   "apps/api/plane/settings/common.py (ATTACHMENT_MIME_TYPES)"
+  ]
+ },
+ {
+  "name": "Relationen zwischen Work Items",
+  "area": "Relationen & Sub-Issues",
+  "description": "Workspace-weite Relationen blocking/blocked_by, duplicate, relates_to, start_before/after, finish_before/after, implemented_by/implements anlegen, auflisten und entfernen.",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/relation.py (IssueRelationViewSet)",
+   "apps/api/plane/utils/issue_relation_mapper.py",
+   "apps/api/plane/db/models/issue.py (IssueRelation, IssueRelationChoices)"
+  ]
+ },
+ {
+  "name": "Sub-Issues",
+  "area": "Relationen & Sub-Issues",
+  "description": "Kinder eines Work Items mit State-Verteilung, Sortierung und Gruppierung anzeigen; bestehende Issues als Sub-Issues zuordnen.",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/sub_issue.py (SubIssuesEndpoint)"
+  ]
+ },
+ {
+  "name": "Work Items abonnieren",
+  "area": "Subscriber",
+  "description": "Abo-Status abfragen, abonnieren, abbestellen; Subscriber durch Mitglieder hinzufügen/entfernen.",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/subscriber.py (IssueSubscriberViewSet)"
+  ]
+ },
+ {
+  "name": "Beschreibungs-Versionen und Work-Item-Versionen",
+  "area": "Versionen",
+  "description": "Paginierte Versionshistorie der Beschreibung (Merge-Fenster 600 s) mit Detailansicht, auch für Intake-Items; Eigenschafts-Versionen (IssueVersion).",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/version.py (WorkItemDescriptionVersionEndpoint, IssueVersionEndpoint)",
+   "apps/api/plane/app/views/intake/base.py (IntakeWorkItemDescriptionVersionEndpoint)",
+   "apps/api/plane/bgtasks/issue_description_version_task.py"
+  ]
+ },
+ {
+  "name": "Intake-Übersicht und Einreichen",
+  "area": "Intake",
+  "description": "Intake des Projekts mit Anzahl offener Items; Einreichen neuer Work Items in den Triage-State durch alle Rollen inkl. Gäste.",
+  "code_refs": [
+   "apps/api/plane/app/views/intake/base.py (IntakeViewSet, IntakeIssueViewSet.create)",
+   "apps/api/plane/db/models/intake.py"
+  ]
+ },
+ {
+  "name": "Intake-Liste mit Status-Tabs, Filtern und Sortierung",
+  "area": "Intake",
+  "description": "Liste nach Status (Open/Closed), Legacy-Filtern mit Präfix issue__ und Sortierung (created/updated/sequence); Gast sieht nur eigene.",
+  "code_refs": [
+   "apps/api/plane/app/views/intake/base.py (IntakeIssueViewSet.list)",
+   "apps/web/store/inbox/project-inbox.store.ts"
+  ]
+ },
+ {
+  "name": "Intake-Triage: annehmen, ablehnen, snoozen, als Duplikat markieren, bearbeiten, löschen",
+  "area": "Intake",
+  "description": "Statuswechsel nur durch Admins (Annahme setzt den Default-State), Snooze bis Tagesbeginn in Projekt-TZ, Duplikat-Verweis, Bearbeiten (Gäste nur Name/Beschreibung), Löschen inkl. Issue bei nicht angenommenen Items.",
+  "code_refs": [
+   "apps/api/plane/app/views/intake/base.py (IntakeIssueViewSet.partial_update, destroy)",
+   "apps/api/plane/app/serializers/intake.py (IntakeIssueSerializer)",
+   "apps/api/plane/utils/timezone_converter.py (snooze_day_start)"
+  ]
+ },
+ {
+  "name": "Cycles verwalten",
+  "area": "Cycles",
+  "description": "Liste (alle/aktueller), Detail, Anlegen/Bearbeiten (Daten in Projekt-TZ, Draft-Cycles ohne Daten, Sperre abgeschlossener Cycles), Löschen; Favoriten; Recent-Visit.",
+  "code_refs": [
+   "apps/api/plane/app/views/cycle/base.py (CycleViewSet, CycleFavoriteViewSet)",
+   "apps/api/plane/app/serializers/cycle.py (CycleWriteSerializer)",
+   "apps/api/plane/utils/timezone_converter.py (convert_to_utc)"
+  ]
+ },
+ {
+  "name": "Cycle-Datumsüberschneidung prüfen",
+  "area": "Cycles",
+  "description": "Prüft vor dem Speichern, ob sich der Zeitraum mit anderen Cycles überschneidet.",
+  "code_refs": [
+   "apps/api/plane/app/views/cycle/base.py (CycleDateCheckEndpoint)"
+  ]
+ },
+ {
+  "name": "Work Items zu Cycles hinzufügen/entfernen und Cycle-Work-Items",
+  "area": "Cycles",
+  "description": "Zuordnung (ein Cycle pro Issue, Umhängen aus anderen Cycles), Entfernen, Liste der Cycle-Work-Items (Active-Cycle-Kachel mit urgent/high).",
+  "code_refs": [
+   "apps/api/plane/app/views/cycle/issue.py (CycleIssueViewSet)",
+   "apps/web/store/issue/cycle/issue.store.ts"
+  ]
+ },
+ {
+  "name": "Unvollständige Work Items in anderen Cycle übertragen",
+  "area": "Cycles",
+  "description": "Transfer offener Issues in einen nicht abgeschlossenen Cycle mit Einfrieren von Fortschritt, Verteilungen und Burndown im progress_snapshot.",
+  "code_refs": [
+   "apps/api/plane/app/views/cycle/base.py (TransferCycleIssueEndpoint)",
+   "apps/api/plane/utils/cycle_transfer_issues.py"
+  ]
+ },
+ {
+  "name": "Cycle-Fortschritt und Analytics (Burndown, Verteilungen, Schätzpunkte)",
+  "area": "Cycles",
+  "description": "Fortschrittszahlen je State-Gruppe (Issues/Punkte), Assignee-/Label-Verteilungen und Burndown-Chart je Tag (issues/points).",
+  "code_refs": [
+   "apps/api/plane/app/views/cycle/base.py (CycleProgressEndpoint, CycleAnalyticsEndpoint)",
+   "apps/api/plane/utils/analytics_plot.py (burndown_plot)"
+  ]
+ },
+ {
+  "name": "Cycles archivieren / Archiv",
+  "area": "Cycles",
+  "description": "Abgeschlossene Cycles archivieren und wiederherstellen; Archivliste und Archiv-Detail mit Verteilungen.",
+  "code_refs": [
+   "apps/api/plane/app/views/cycle/archive.py (CycleArchiveUnarchiveEndpoint)"
+  ]
+ },
+ {
+  "name": "Cycle- und Modul-Anzeigeeinstellungen",
+  "area": "Cycles/Modules",
+  "description": "Filter, Rich-Filter, Display-Filter und Display-Properties je Nutzer für Cycle- und Modul-Ansichten.",
+  "code_refs": [
+   "apps/api/plane/app/views/cycle/base.py (CycleUserPropertiesEndpoint)",
+   "apps/api/plane/app/views/module/base.py (ModuleUserPropertiesEndpoint)"
+  ]
+ },
+ {
+  "name": "Module verwalten",
+  "area": "Modules",
+  "description": "Liste/Detail mit Fortschritt, Schätzpunkten, Verteilungen und Burndown; Anlegen/Bearbeiten (Status, Lead, Mitglieder, eindeutiger Name)/Löschen; Favoriten; Recent-Visit.",
+  "code_refs": [
+   "apps/api/plane/app/views/module/base.py (ModuleViewSet, ModuleFavoriteViewSet)",
+   "apps/api/plane/app/serializers/module.py"
+  ]
+ },
+ {
+  "name": "Work Items Modulen zuordnen",
+  "area": "Modules",
+  "description": "n:m-Zuordnung vom Modul aus (mehrere Issues) und vom Work Item aus (Module hinzufügen/entfernen), Liste der Modul-Work-Items.",
+  "code_refs": [
+   "apps/api/plane/app/views/module/issue.py (ModuleIssueViewSet)"
+  ]
+ },
+ {
+  "name": "Modul-Links und Modul-Archiv",
+  "area": "Modules",
+  "description": "Links an Modulen verwalten; abgeschlossene/abgebrochene Module archivieren und wiederherstellen, Archivliste/-detail.",
+  "code_refs": [
+   "apps/api/plane/app/views/module/base.py (ModuleLinkViewSet)",
+   "apps/api/plane/app/views/module/archive.py (ModuleArchiveUnarchiveEndpoint)"
+  ]
+ },
+ {
+  "name": "Projekt-Views (gespeicherte Ansichten)",
+  "area": "Views",
+  "description": "Views mit Filtern, Rich-Filtern, Display-Einstellungen anlegen/bearbeiten (nur Owner, Lock-Prüfung)/löschen; public/private; Favoriten; Recent-Visit.",
+  "code_refs": [
+   "apps/api/plane/app/views/view/base.py (IssueViewViewSet, IssueViewFavoriteViewSet)",
+   "apps/api/plane/app/serializers/view.py",
+   "apps/api/plane/db/models/view.py"
+  ]
+ },
+ {
+  "name": "Workspace-Views und Workspace-Work-Items-Liste",
+  "area": "Views",
+  "description": "Workspace-weite gespeicherte Views und projektübergreifende Work-Item-Liste mit Rollen-/Gastfilter pro Projekt.",
+  "code_refs": [
+   "apps/api/plane/app/views/view/base.py (WorkspaceViewViewSet, WorkspaceViewIssuesViewSet)"
+  ]
+ },
+ {
+  "name": "Pages-Liste, Suche, Sortierung und Summary",
+  "area": "Pages",
+  "description": "Root-Pages des Projekts (eigene und public, Gast-Filter), Suche per Name, Sortierung, Favoriten zuerst; Zähler public/private/archived.",
+  "code_refs": [
+   "apps/api/plane/app/views/page/base.py (PageViewSet.list, summary)"
+  ]
+ },
+ {
+  "name": "Page anlegen, bearbeiten, Detail",
+  "area": "Pages",
+  "description": "Page mit Name, Zugriff, Farbe, Labels, Parent, Logo/View-Props, Beschreibung; Detail mit verlinkten Issue-IDs; Titel-Sync durch den Live-Server.",
+  "code_refs": [
+   "apps/api/plane/app/views/page/base.py (PageViewSet.create, partial_update, retrieve)",
+   "apps/api/plane/app/serializers/page.py",
+   "apps/api/plane/permissions/page.py"
+  ]
+ },
+ {
+  "name": "Page sperren, Zugriff ändern, archivieren, löschen",
+  "area": "Pages",
+  "description": "Lock/Unlock, public/private (nur Owner), rekursives Archivieren/Entarchivieren, Löschen nur archivierter Pages (Kinder werden abgehängt).",
+  "code_refs": [
+   "apps/api/plane/app/views/page/base.py (lock, unlock, access, archive, unarchive, destroy, unarchive_archive_page_and_descendants)",
+   "apps/api/plane/app/permissions/page.py (ProjectPagePermission)"
+  ]
+ },
+ {
+  "name": "Page-Inhalt (Yjs-Binary) für Echtzeit-Kollaboration",
+  "area": "Pages",
+  "description": "Laden und Speichern des kollaborativen Dokumentzustands (Binary + HTML + JSON) mit Sperr-/Archiv-Prüfung, PageLog und Versionierung.",
+  "code_refs": [
+   "apps/api/plane/app/views/page/base.py (PagesDescriptionViewSet)",
+   "apps/live/src/services/page/core.service.ts",
+   "apps/api/plane/bgtasks/page_transaction_task.py"
+  ]
+ },
+ {
+  "name": "Page-Versionshistorie",
+  "area": "Pages",
+  "description": "Liste und Detail der Page-Versionen (Merge-Fenster 600 s, max. 20).",
+  "code_refs": [
+   "apps/api/plane/app/views/page/version.py (PageVersionEndpoint)",
+   "apps/api/plane/bgtasks/page_version_task.py"
+  ]
+ },
+ {
+  "name": "Page duplizieren und favorisieren",
+  "area": "Pages",
+  "description": "Kopie mit '(Copy)', duplizierten Bildern und regeneriertem Binary über den Live-Server; Favorit setzen/entfernen.",
+  "code_refs": [
+   "apps/api/plane/app/views/page/base.py (PageDuplicateEndpoint, PageFavoriteViewSet)",
+   "apps/api/plane/bgtasks/copy_s3_object.py"
+  ]
+ },
+ {
+  "name": "Draft-Work-Items (Querverweis)",
+  "area": "Drafts",
+  "description": "Private Entwürfe im Workspace anlegen/bearbeiten/löschen und in echte Work Items konvertieren (inkl. Cycle/Module/Assets).",
+  "code_refs": [
+   "apps/api/plane/app/views/workspace/draft.py (WorkspaceDraftIssueViewSet)",
+   "apps/api/plane/app/urls/workspace.py"
+  ]
+ },
+ {
+  "name": "Zuletzt besucht",
+  "area": "Querschnitt",
+  "description": "Recent-Visits für Projekt-Listen, Issues, Cycles, Module, Views und Pages (max. 20 je Nutzer/Workspace).",
+  "code_refs": [
+   "apps/api/plane/bgtasks/recent_visited_task.py"
+  ]
+ },
+ {
+  "name": "Bezahl-Feature-Andockpunkte im Bereich (vom Client erwartet, im CE-Backend fehlend)",
+  "area": "Bezahl-Features",
+  "description": "Page verschieben (move), Page-Version wiederherstellen (restore), archived-pages/favorite-pages-Listen, Page-Mentions, Bulk-Operationen, Bulk-Abonnieren, Relation per ID löschen, View-Issues, Cycle-Progress/Active-Cycles, Epics-Endpunkte, View-Lock/Access/Publish, geteilte private Pages, Custom-Property-Filter, Intake-Kanäle.",
+  "code_refs": [
+   "apps/web/services/page/project-page.service.ts",
+   "apps/web/services/page/project-page-version.service.ts",
+   "apps/web/services/issue/issue.service.ts",
+   "apps/web/services/view.service.ts",
+   "apps/live/src/services/page/core.service.ts",
+   "apps/api/plane/app/permissions/page.py",
+   "apps/api/plane/utils/filters/filter_backend.py"
+  ]
+ }
+]

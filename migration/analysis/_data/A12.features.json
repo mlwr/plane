@@ -1,0 +1,367 @@
+[
+ {
+  "name": "Rich-Text-Editor (Work-Item-Beschreibung, Inbox, Space)",
+  "area": "Editor-Varianten",
+  "description": "Vollständiger Editor mit Bubble-Menü, Slash-Commands, Side-Menu/Drag-Handle, Block-Menü, History; externer value-Sync (SWR), onChange mit isMigrationUpdate",
+  "code_refs": [
+   "packages/editor/src/components/editors/rich-text/editor.tsx",
+   "packages/editor/src/components/editors/editor-wrapper.tsx",
+   "packages/editor/src/hooks/use-editor.ts",
+   "apps/web/components/editor/rich-text/editor.tsx",
+   "apps/space/components/editor/rich-text-editor.tsx"
+  ]
+ },
+ {
+  "name": "Lite-Text-Editor (Kommentare, Stickies)",
+  "area": "Editor-Varianten",
+  "description": "Schlanker Editor ohne Menüs; Enter sendet ab (onEnterKeyPress), Shift-Enter Zeilenumbruch/Listen-Split; Toolbars der Konsumenten über executeMenuItemCommand",
+  "code_refs": [
+   "packages/editor/src/components/editors/lite-text/editor.tsx",
+   "packages/editor/src/extensions/enter-key.ts",
+   "apps/web/components/editor/lite-text/editor.tsx",
+   "apps/web/components/editor/sticky-editor/editor.tsx"
+  ]
+ },
+ {
+  "name": "Dokument-Editor (read-only, Versionen)",
+  "area": "Editor-Varianten",
+  "description": "Nicht-kollaborativer Document-Editor mit PageRenderer, Outline (HeadingList) und Slash-Commands; genutzt für Page- und Beschreibungs-Versionen",
+  "code_refs": [
+   "packages/editor/src/components/editors/document/editor.tsx",
+   "packages/editor/src/components/editors/document/page-renderer.tsx",
+   "apps/web/components/editor/document/editor.tsx"
+  ]
+ },
+ {
+  "name": "Kollaborativer Page-Editor mit Titel-Editor",
+  "area": "Editor-Varianten/Realtime",
+  "description": "Echtzeit-Editor auf Yjs/Hocuspocus mit separatem Titel-Editor (Platzhalter 'Untitled'), Tastatur-Navigation Titel↔Inhalt, Lade-Skeleton, Sync-Status an Konsumenten",
+  "code_refs": [
+   "packages/editor/src/components/editors/document/collaborative-editor.tsx",
+   "packages/editor/src/hooks/use-collaborative-editor.ts",
+   "packages/editor/src/hooks/use-title-editor.ts",
+   "packages/editor/src/hooks/use-editor-navigation.ts",
+   "packages/editor/src/components/editors/document/loader.tsx",
+   "apps/web/components/pages/editor/editor-body.tsx"
+  ]
+ },
+ {
+  "name": "Slash-Command-Menü",
+  "area": "Menüs",
+  "description": "'/'-Menü mit Text, H1–H6, Listen, To-do, Tabelle, Quote, Code, Image, Callout, Divider, Emoji sowie 9 Text- und 9 Hintergrundfarben; Suche über Titel/Beschreibung/Suchbegriffe mit Treffer-Hervorhebung",
+  "code_refs": [
+   "packages/editor/src/extensions/slash-commands/root.tsx",
+   "packages/editor/src/extensions/slash-commands/command-items-list.tsx",
+   "packages/editor/src/extensions/slash-commands/command-menu.tsx",
+   "packages/editor/src/extensions/slash-commands/command-menu-item.tsx"
+  ]
+ },
+ {
+  "name": "Bubble-Menü (Selektion)",
+  "area": "Menüs",
+  "description": "Bei Textselektion: Node-Typ-Auswahl, Link setzen/entfernen mit Validierung, Text-/Hintergrundfarbe, Bold/Italic/Underline/Strike (bei Code nur Code), Ausrichtung links/zentriert/rechts",
+  "code_refs": [
+   "packages/editor/src/components/menus/bubble-menu/root.tsx",
+   "packages/editor/src/components/menus/bubble-menu/node-selector.tsx",
+   "packages/editor/src/components/menus/bubble-menu/link-selector.tsx",
+   "packages/editor/src/components/menus/bubble-menu/color-selector.tsx",
+   "packages/editor/src/components/menus/bubble-menu/alignment-selector.tsx",
+   "packages/editor/src/components/menus/floating-menu/root.tsx"
+  ]
+ },
+ {
+  "name": "Drag-Handle, Block-Menü und Block-Drag&Drop",
+  "area": "Menüs",
+  "description": "Side-Menu mit Drag-Handle neben jedem Block; Klick öffnet Block-Menü (Delete, Duplicate, Fit to width bei Tabellen); Drag&Drop von Blöcken inkl. Listen-Umbau und Autoscroll",
+  "code_refs": [
+   "packages/editor/src/extensions/side-menu.ts",
+   "packages/editor/src/plugins/drag-handle.ts",
+   "packages/editor/src/components/menus/block-menu.tsx",
+   "packages/editor/src/components/menus/block-menu-options.tsx",
+   "packages/editor/src/styles/drag-drop.css"
+  ]
+ },
+ {
+  "name": "Textstruktur: Überschriften, Absätze, Ausrichtung, Zitate, Divider",
+  "area": "Nodes/Marks",
+  "description": "Heading 1–6, Paragraph, Textausrichtung (left/center/right), Blockquote (Enter verlässt Zitat), horizontale Linie (---, ___, ***)",
+  "code_refs": [
+   "packages/editor/src/extensions/starter-kit.ts",
+   "packages/editor/src/extensions/text-align.ts",
+   "packages/editor/src/extensions/quote.ts",
+   "packages/editor/src/extensions/horizontal-rule.ts"
+  ]
+ },
+ {
+  "name": "Listen (Aufzählung, Nummerierung, To-do)",
+  "area": "Nodes/Marks",
+  "description": "Bullet-, Ordered- und Task-Listen mit Verschachtelung, Tab/Shift-Tab, eigener Backspace/Delete-Logik, automatischem Zusammenführen benachbarter Listen, Checkbox-Styling (erledigte Items ausgegraut)",
+  "code_refs": [
+   "packages/editor/src/extensions/custom-list-keymap/list-keymap.ts",
+   "packages/editor/src/extensions/custom-list-keymap/list-helpers.ts",
+   "packages/editor/src/extensions/keymap.ts",
+   "packages/editor/src/extensions/extensions.ts",
+   "packages/editor/src/styles/editor.css"
+  ]
+ },
+ {
+  "name": "Text-Formatierung und Farben",
+  "area": "Nodes/Marks",
+  "description": "Bold, Italic, Underline, Strike, Inline-Code (Mod-e, Backticks), 8 Text- und 8 Hintergrundfarben (Light/Dark), Typografie-Ersetzungen (—, …, →, ©, ½, ×)",
+  "code_refs": [
+   "packages/editor/src/extensions/custom-color.ts",
+   "packages/editor/src/extensions/code-inline/index.tsx",
+   "packages/editor/src/extensions/typography/inputRules.ts",
+   "packages/editor/src/constants/common.ts",
+   "packages/editor/src/styles/variables.css"
+  ]
+ },
+ {
+  "name": "Code-Block mit Syntax-Highlighting",
+  "area": "Nodes/Marks",
+  "description": "Code-Block per ``` / ~~~ (mit Sprache), lowlight-Highlighting (common + ts, GitHub-Dark-Theme), Copy-Button 'Copy code', Tab-Einrückung, VS-Code-Paste übernimmt Sprache, Umwandlung zurück in Absätze",
+  "code_refs": [
+   "packages/editor/src/extensions/code/code-block.ts",
+   "packages/editor/src/extensions/code/index.tsx",
+   "packages/editor/src/extensions/code/lowlight-plugin.ts",
+   "packages/editor/src/extensions/code/code-block-node-view.tsx",
+   "packages/editor/src/extensions/code/utils/replace-code-block-with-text.ts",
+   "packages/editor/src/styles/github-dark.css"
+  ]
+ },
+ {
+  "name": "Tabellen",
+  "area": "Nodes/Marks",
+  "description": "3×3-Tabellen, Spaltenbreiten-Resize, Header-Zeile/-Spalte, Zeilen-/Spalten-Handles mit Dropdown (Insert, Duplicate, Clear, Delete, Hintergrundfarbe), Drag&Drop von Zeilen/Spalten, '+'-Buttons mit Drag zum Hinzufügen/Entfernen, Zellselektions-Rahmen, Tab-Navigation, Fit to width",
+  "code_refs": [
+   "packages/editor/src/extensions/table/table/table.ts",
+   "packages/editor/src/extensions/table/table/table-view.tsx",
+   "packages/editor/src/extensions/table/plugins/drag-handles/column/drag-handle.tsx",
+   "packages/editor/src/extensions/table/plugins/drag-handles/row/dropdown.tsx",
+   "packages/editor/src/extensions/table/plugins/insert-handlers/utils.ts",
+   "packages/editor/src/extensions/table/plugins/selection-outline/plugin.ts",
+   "packages/editor/src/styles/table.css"
+  ]
+ },
+ {
+  "name": "Bilder",
+  "area": "Nodes/Medien",
+  "description": "Bild per Slash/Toolbar, Drop oder Paste; Upload mit Fortschritt; Resize mit Seitenverhältnis; Ausrichtung; Download; Vollbild mit Zoom (0.5–2×) und Pan; Restore bei Ladefehler; Asset-Duplizierung beim Einfügen aus Plane mit Retry; Lösch-Tracking",
+  "code_refs": [
+   "packages/editor/src/extensions/custom-image/extension.tsx",
+   "packages/editor/src/extensions/custom-image/components/block.tsx",
+   "packages/editor/src/extensions/custom-image/components/uploader.tsx",
+   "packages/editor/src/extensions/custom-image/components/toolbar/full-screen/modal.tsx",
+   "packages/editor/src/plugins/drop.ts",
+   "packages/editor/src/plugins/file/delete.ts",
+   "packages/editor/src/plugins/file/restore.ts",
+   "packages/editor/src/helpers/asset-duplication.ts"
+  ]
+ },
+ {
+  "name": "Callouts",
+  "area": "Nodes/Medien",
+  "description": "Callout-Block mit Emoji- oder Icon-Logo (EmojiPicker), wählbarer Hintergrundfarbe; letzte Wahl wird in localStorage gemerkt; Pfeiltasten/Backspace an Grenzen",
+  "code_refs": [
+   "packages/editor/src/extensions/callout/extension.tsx",
+   "packages/editor/src/extensions/callout/block.tsx",
+   "packages/editor/src/extensions/callout/logo-selector.tsx",
+   "packages/editor/src/extensions/callout/color-selector.tsx",
+   "packages/editor/src/extensions/callout/utils.ts"
+  ]
+ },
+ {
+  "name": "Mentions",
+  "area": "Nodes/Medien",
+  "description": "'@'-Suche (debounced 300 ms, Sektionen) nach Nutzern; Darstellung als @Name mit Hover-Karte (Avatar, Name, Rolle); eigener Nutzer hervorgehoben",
+  "code_refs": [
+   "packages/editor/src/extensions/mentions/extension.tsx",
+   "packages/editor/src/extensions/mentions/mentions-list-dropdown.tsx",
+   "packages/editor/src/extensions/mentions/utils.ts",
+   "apps/web/hooks/editor/use-editor-mention.tsx",
+   "apps/web/components/editor/embeds/mentions/user.tsx"
+  ]
+ },
+ {
+  "name": "Emojis",
+  "area": "Nodes/Medien",
+  "description": "':'-Suggestion (max. 5, Default-Liste bei Slash 'Emoji'), :shortcode:-Ersetzung, Emoticons, automatische Umwandlung von Unicode-Emojis in Emoji-Nodes",
+  "code_refs": [
+   "packages/editor/src/extensions/emoji/emoji.ts",
+   "packages/editor/src/extensions/emoji/extension.ts",
+   "packages/editor/src/extensions/emoji/suggestion.ts",
+   "packages/editor/src/extensions/emoji/components/emojis-list.tsx"
+  ]
+ },
+ {
+  "name": "Links",
+  "area": "Nodes/Marks",
+  "description": "Autolink beim Tippen, Link-Paste über Selektion, Hover-Vorschau (Copy/Edit/Unlink), Bearbeiten von URL und Text, Öffnen per Klick, Filter für gefährliche Protokolle",
+  "code_refs": [
+   "packages/editor/src/extensions/custom-link/extension.tsx",
+   "packages/editor/src/extensions/custom-link/helpers/autolink.ts",
+   "packages/editor/src/components/editors/link-view-container.tsx",
+   "packages/editor/src/components/links/link-preview.tsx",
+   "packages/editor/src/components/links/link-edit-view.tsx"
+  ]
+ },
+ {
+  "name": "Markdown-Funktionen",
+  "area": "Konvertierung",
+  "description": "Markdown-Paste wird geparst; Kopieren liefert Markdown (text/plain) und HTML; Copy as Markdown; Markdown-Export der Page",
+  "code_refs": [
+   "packages/editor/src/plugins/markdown-clipboard.ts",
+   "packages/editor/src/helpers/editor-ref.ts",
+   "packages/utils/src/editor/markdown-parser/root.ts",
+   "apps/web/components/pages/modals/export-page-modal.tsx"
+  ]
+ },
+ {
+  "name": "Platzhalter",
+  "area": "Editor-Verhalten",
+  "description": "Kontextabhängige Platzhalter: 'Heading N', Default \"Press '/' for commands...\", eigene Texte/Funktionen, nur bei leerem Dokument; Titel 'Untitled'",
+  "code_refs": [
+   "packages/editor/src/extensions/placeholder.ts",
+   "packages/editor/src/hooks/use-title-editor.ts"
+  ]
+ },
+ {
+  "name": "Outline, Dokument-Info und Deep-Links",
+  "area": "Editor-Verhalten",
+  "description": "Heading-Liste für das Inhaltsverzeichnis mit Scroll; Wörter/Zeichen/Absätze; Scroll zu Block per URL-Hash (#nodeId)",
+  "code_refs": [
+   "packages/editor/src/extensions/headings-list.ts",
+   "packages/editor/src/helpers/scroll-to-node.ts",
+   "packages/editor/src/helpers/editor-ref.ts",
+   "packages/editor/src/components/editors/editor-container.tsx"
+  ]
+ },
+ {
+  "name": "Anzeige-Konfiguration",
+  "area": "Editor-Verhalten",
+  "description": "Schriftart (Sans serif/Serif/Mono), Schriftgröße (small/large/mobile), Zeilenabstand, Wide Layout (720/1152 px) mit Container-Queries",
+  "code_refs": [
+   "packages/editor/src/constants/config.ts",
+   "packages/editor/src/constants/common.ts",
+   "packages/editor/src/styles/variables.css",
+   "packages/editor/src/styles/title-editor.css"
+  ]
+ },
+ {
+  "name": "Echtzeit-Kollaboration und Offline-Cache",
+  "area": "Realtime",
+  "description": "Gleichzeitiges Bearbeiten über Hocuspocus/Yjs, IndexedDB-Cache für Sofortanzeige, automatische Wiederverbindung (Sichtbarkeit/online), Sync-Status (syncing/synced/error)",
+  "code_refs": [
+   "packages/editor/src/hooks/use-yjs-setup.ts",
+   "packages/editor/src/contexts/collaboration-context.tsx",
+   "apps/live/src/controllers/collaboration.controller.ts",
+   "apps/live/src/hocuspocus.ts"
+  ]
+ },
+ {
+  "name": "REST-Fallback-Speicherung",
+  "area": "Realtime",
+  "description": "Bei Verbindungsverlust wird der Serverstand per REST geladen, gemergt und per PATCH description gespeichert (Autosave)",
+  "code_refs": [
+   "apps/web/hooks/use-page-fallback.ts",
+   "packages/editor/src/helpers/editor-ref.ts"
+  ]
+ },
+ {
+  "name": "Echtzeit-Seitenereignisse",
+  "area": "Realtime",
+  "description": "Lock/Unlock, Archive/Unarchive, Make public/private werden per Stateless-Nachricht an alle Clients verteilt und lokal übernommen",
+  "code_refs": [
+   "packages/editor/src/constants/document-collaborative-events.ts",
+   "apps/live/src/lib/stateless.ts",
+   "apps/web/hooks/use-collaborative-page-actions.tsx",
+   "apps/web/hooks/use-realtime-page-events.tsx"
+  ]
+ },
+ {
+  "name": "Persistenz und Titel-Sync (Server)",
+  "area": "Live-Server",
+  "description": "Laden/Speichern des Y-Binaries über die API inkl. HTML→Binary-Migration und Titel-Migration; Titel wird debounced als Page-Name gespeichert",
+  "code_refs": [
+   "apps/live/src/extensions/database.ts",
+   "apps/live/src/extensions/title-sync.ts",
+   "apps/live/src/extensions/title-update/title-update-manager.ts",
+   "apps/live/src/extensions/title-update/debounce.ts",
+   "apps/live/src/services/page/core.service.ts"
+  ]
+ },
+ {
+  "name": "Fehler-Broadcast und Force-Close",
+  "area": "Live-Server",
+  "description": "Lade-/Speicherfehler werden an Clients gemeldet; zu große Dokumente werden instanzübergreifend getrennt (Close 4001) und entladen",
+  "code_refs": [
+   "apps/live/src/utils/broadcast-error.ts",
+   "apps/live/src/extensions/force-close-handler.ts",
+   "apps/live/src/types/admin-commands.ts"
+  ]
+ },
+ {
+  "name": "Horizontale Skalierung",
+  "area": "Live-Server",
+  "description": "Redis-Pub/Sub je Dokument und Admin-Kanal hocuspocus:admin für mehrere Live-Instanzen",
+  "code_refs": [
+   "apps/live/src/extensions/redis.ts",
+   "apps/live/src/redis.ts",
+   "apps/live/src/utils/broadcast-message.ts"
+  ]
+ },
+ {
+  "name": "Dokument-Konvertierung (Server)",
+  "area": "Live-Server",
+  "description": "POST /live/convert-document/ wandelt HTML in description_json und description_binary (rich/document); von API-Background-Task genutzt",
+  "code_refs": [
+   "apps/live/src/controllers/document.controller.ts",
+   "packages/editor/src/helpers/yjs-utils.ts",
+   "apps/api/plane/bgtasks/copy_s3_object.py"
+  ]
+ },
+ {
+  "name": "Serverseitiger PDF-Export",
+  "area": "Live-Server",
+  "description": "POST /live/pdf-export/ rendert Page als PDF (Seitenformate A4/A3/A2/Letter/Legal/Tabloid, Hoch/Quer, ohne Bilder optional, Mentions, Bilder verkleinert)",
+  "code_refs": [
+   "apps/live/src/controllers/pdf-export.controller.ts",
+   "apps/live/src/services/pdf-export/pdf-export.service.ts",
+   "apps/live/src/lib/pdf/node-renderers.tsx",
+   "apps/live/src/lib/pdf/mark-renderers.ts",
+   "apps/live/src/lib/pdf/plane-pdf-exporter.tsx",
+   "apps/live/src/schema/pdf-export.ts"
+  ]
+ },
+ {
+  "name": "Health-Endpunkt",
+  "area": "Live-Server",
+  "description": "GET /live/health/ liefert Status, Zeitstempel, Version",
+  "code_refs": [
+   "apps/live/src/controllers/health.controller.ts"
+  ]
+ },
+ {
+  "name": "AI-Menü im Editor (Bezahl-Edition, CE nur Hook)",
+  "area": "Bezahl-Edition",
+  "description": "AI-Handle neben Blöcken und AI-Menü ('Ask Pi', Tonalität); in CE per disabledExtensions 'ai' deaktiviert und nicht gerendert",
+  "code_refs": [
+   "packages/editor/src/plugins/ai-handle.ts",
+   "packages/editor/src/components/menus/ai-menu.tsx",
+   "apps/web/components/pages/editor/ai/menu.tsx",
+   "apps/web/hooks/use-editor-flagging.ts"
+  ]
+ },
+ {
+  "name": "Work-Item-Embeds, Attachments, External Embeds, Draw.io, Kollaborations-Cursor, erweiterte Mentions (Bezahl-Edition, CE nur Hooks)",
+  "area": "Bezahl-Edition",
+  "description": "In CE nur als Erweiterungspunkte belegt (Node-Config issue-embed-component, TEditorCommands attachment/external-embed, Drag-Selektoren .editor-embed-component/.editor-drawio-component, TExtensions collaboration-cursor, TSearchEntities issue/project/cycle/module/page)",
+  "code_refs": [
+   "packages/editor/src/extensions/work-item-embed/extension.tsx",
+   "packages/editor/src/types/editor.ts",
+   "packages/editor/src/types/extensions.ts",
+   "packages/editor/src/plugins/drag-handle.ts",
+   "apps/web/hooks/use-additional-editor-mention.tsx"
+  ]
+ }
+]

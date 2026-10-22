@@ -1,0 +1,53 @@
+{
+ "doc_path": "/home/user/plane/migration/analysis/06-auth-sicherheit-querschnitt.md",
+ "summary": "A06 deckt Authentifizierung, Sitzungen, Berechtigungen, Middleware, Throttles und alle Dateien in apps/api/plane/utils ab. Alle interaktiven Logins (Web, Space, God-Mode) sind klassische HTML-Formular-POSTs auf Django-Views. Sie antworten mit 302-Redirects, Fehler kommen als Query-Parameter error_code/error_message. Nur email-check, magic-generate, forgot-password, get-csrf-token, change-password und set-password sind JSON-Endpunkte.\nUnter /auth/ gibt es 37 Routen: Passwort, Magic-Code (6-stellig, höchstens 4 Codes pro 600 s, 5 Prüfversuche, Redis/Lua), OAuth (Google, GitHub mit optionaler Org-Pflicht, GitLab, Gitea) und Passwort vergessen/zurücksetzen/ändern/setzen. Dazu kommen die Admin-Routen unter /api/instances/admins/. Alle Login-Wege laufen über Adapter.complete_login_or_signup. Dort greifen die Sperren für Bots (5017) und deaktivierte Konten (5019), SIGNUP_DISABLED, die zxcvbn-Prüfung und das Speichern des OAuth-Accounts.\nSitzungen liegen in der DB-Tabelle sessions. Es gibt zwei Cookies: session-id und admin-session-id; welches gilt, entscheidet der Teilstring \"instances\" im Pfad. Schreibende Aufrufe der App prüfen statt eines CSRF-Tokens den Origin-Header gegen eine Allowlist. Die Formular-POSTs nutzen das Django-CSRF-Token csrfmiddlewaretoken.\nDie Berechtigungen kennen die Rollen 20/15/5 auf Workspace- und Projektebene. Es gibt 13 DRF-Klassen, den Decorator allow_permission (196 Verwendungen, Ersteller-Ausnahme, Workspace-Admin-Override nur bei Projektmitgliedschaft), ProjectPagePermission und die Gast-Sichtbarkeit guest_view_all_features an 12 Stellenklassen.\nDas Dokument enthält vollständige Inventare: Routen, alle Fehlercodes mit Auslösestellen, Provider, Konfigurationsschlüssel samt widersprüchlichen Defaults, Settings, Middleware-Kette, Throttles, Session- und Redis-Schlüssel, jede utils-Datei, 26 Sicherheitsmechanismen (SSRF mit IP-Pinning, nh3-Allowlist, Upload-, Redirect- und Formelschutz) sowie 28 Edge-Cases und Bugs.\nEin Teil der Bugs ist kritisch: Die Space-OAuth-Callbacks für GitHub, Google und GitLab enden immer mit HTTP 500. Beim Login-Workflow wird ProjectMember ohne project_id angelegt. Workspace-Slugs, die \"instances\" enthalten, führen zum falschen Session-Cookie.\nMigrationshinweise: ASP.NET Identity Core plus eigenes Cookie-Schema je Kontext mit ITicketStore in PostgreSQL, Antiforgery mit dem Feldnamen csrfmiddlewaretoken, ein eigener Origin-Check, RateLimiter mit Redis, ein eigener Reset-Token-Provider mit Django-Semantik, ein SSRF-Client über SocketsHttpHandler.ConnectCallback und eine Provider-Registry als Andockpunkt für SAML, OIDC, LDAP, 2FA und SCIM (PF-93 bis PF-98). Dazu kommen 12 offene Punkte.",
+ "key_facts": [
+  "37 Routen unter /auth/ (apps/api/plane/authentication/urls.py); Admin-Auth separat unter /api/instances/admins/{sign-up,sign-in,sign-out,session,me}/ (apps/api/plane/license/urls.py)",
+  "Login/Logout/Reset sind django.views.View-Formular-POSTs mit 302-Redirect; Fehler als Query error_code=<int>&error_message=<KEY>[&email=…] (apps/api/plane/utils/path_validator.py get_safe_redirect_url)",
+  "Erfolgreiche App-Logins (außer Gitea) leiten immer auf die Web-Root {APP} bzw. {APP}/?next_path=/pfad; Ergebnisse von get_redirection_path ohne führenden Slash werden verworfen (apps/api/plane/authentication/utils/redirection_path.py)",
+  "AUTHENTICATION_ERROR_CODES: 62 Schlüssel 5000–5999; nie ausgelöst: 5018, 5050, 5080, 5140, 5165, 5999; im Web-Frontend fehlen 5056, 5112, 5122, 5123, 5124, 5999 (apps/api/plane/authentication/adapter/error.py, apps/web/helpers/authentication.helper.tsx)",
+  "Sessions in DB-Tabelle sessions (128-Zeichen-Schlüssel [a-z0-9], user_id, device_info; apps/api/plane/db/models/session.py); Cookies session-id (7 Tage) und admin-session-id (3600 s), Auswahl per Teilstring 'instances' im Pfad (apps/api/plane/authentication/middleware/session.py)",
+  "Cookie-Auth-Schreibzugriffe: Origin-Allowlist statt CSRF-Token (apps/api/plane/authentication/session.py); Formular-POSTs: Django-CSRF mit csrfmiddlewaretoken aus GET /auth/get-csrf-token/",
+  "Magic-Code: 6 Ziffern, Redis-Key magic_<email> 600 s, max. 4 Ausgaben/600 s (magic_<email>:issued), max. 5 Prüfversuche (magic_<email>:verify_attempts), atomar per Lua (apps/api/plane/authentication/provider/credentials/magic_code.py)",
+  "Passwort-Policy Backend: zxcvbn-Score >= 3 auf erstem oder letztem 128-Zeichen-Fenster (apps/api/plane/authentication/utils/password.py); Frontend: >= 8 Zeichen + Groß/Klein/Ziffer/Sonderzeichen (packages/utils/src/auth.ts); Django AUTH_PASSWORD_VALIDATORS ungenutzt",
+  "Rate-Limits: AuthenticationThrottle 10/min/IP (ENV AUTHENTICATION_RATE_LIMIT), AnonRateThrottle 30/min, EmailVerificationThrottle 3/h/User, AssetRateThrottle 5/min/Asset, ApiKeyRateThrottle 60/min/Key; jede DRF-429 wird zu {error_code:5900,error_message:RATE_LIMIT_EXCEEDED} (apps/api/plane/authentication/adapter/exception.py)",
+  "OAuth-Provider akzeptieren nur verifizierte E-Mails (Google verified_email, GitHub primary+verified, GitLab confirmed_at, Gitea verified) → sonst 5124; redirect_uri fest /auth/<provider>/callback/; IS_<P>_ENABLED wird im Backend nicht geprüft",
+  "Deaktivierte Konten erkennt das Backend an is_active=False zusammen mit gesetztem last_logout_time. Ergebnis: 5019 bei Magic-Code und OAuth; beim Passwort-Login vorher 5065, weil das Passwort bei der Deaktivierung zufällig neu gesetzt wird. Ein Reaktivierungs-Endpunkt fehlt, möglich nur per CLI activate_user",
+  "Rollen Admin=20/Member=15/Guest=5 (apps/api/plane/app/permissions/base.py); allow_permission: Ersteller-Bypass, WS-Admin gilt als Projekt-Admin nur bei aktiver Projektmitgliedschaft; Kopie der Permissions in apps/api/plane/utils/permissions/",
+  "Gäste sehen ohne Project.guest_view_all_features nur selbst erstellte bzw. eigene Objekte – umgesetzt in Issues, Kommentaren, Versionen, Intake, Views, Pages, Suche, Workspace-Stats, Favoriten, Export",
+  "SSRF-Schutz: IP-Blockliste inkl. eingebetteter IPv4 (IPv4-mapped/6to4/Teredo/NAT64) und DNS-Rebinding-Schutz per IP-Pinning (apps/api/plane/utils/ip_address.py, url_security.py) für Webhooks, Link-Vorschau, OAuth-Avatar",
+  "HTML-Sanitizing via nh3 mit fester Tag-/Attribut-Allowlist und URL-Schemata http/https/mailto/tel, 10 MiB Limit (apps/api/plane/utils/content_validator.py)",
+  "Ungenutzte Utils: apps/api/plane/utils/exporters/* (nur Tests), imports.py, markdown.py; Telemetrie-Helfer otlp_endpoints.py entfällt (ADR-004)",
+  "Paginierungs-Envelope und Cursor-Formate (value:offset:is_prev bzw. size:page:offset), Allowlists für order_by/group_by, Rich-Filter-JSON mit Tiefenlimit 5 vollständig dokumentiert (apps/api/plane/utils/paginator.py, order_queryset.py, filters/*)"
+ ],
+ "migration_risks": [
+  "Formular-POST-plus-302-Semantik mit Fehlern als Query-Parametern muss exakt nachgebaut werden; ein Umbau auf JSON-Login würde Frontend-Verhalten (ADR-005) verändern",
+  "Same-Site-Betrieb zwingend (SameSite=Lax für Session- und CSRF-Cookie); Aspire-AppHost braucht gemeinsamen Reverse-Proxy mit Pfad-Routing",
+  "Django-Session-Hash-Semantik (Passwortänderung invalidiert alle anderen Sessions) und Reset-Token-Bindung an last_login sind in ASP.NET nicht Standard und müssen explizit implementiert werden",
+  "zxcvbn-Score-Kompatibilität zwischen Python-zxcvbn 4.4.28 und einem .NET-Port nicht garantiert",
+  "nh3/ammonia-Default-Tag-Liste muss in HtmlSanitizer exakt nachgebildet werden, sonst werden gespeicherte Editor-Inhalte anders bereinigt",
+  "SSRF-Schutz inkl. IPv6-Transitionsadressen und IP-Pinning muss mit SocketsHttpHandler.ConnectCallback nachgebaut werden; Fehler öffnen interne Netze",
+  "Magic-Code-Zustandsautomat (Zählreihenfolge, TTL-Clamp, Varianten SIGN_IN/SIGN_UP) bitgenau übernehmen, sonst brechen Contract-Tests und UI-Fehlertexte",
+  "Widersprüchliche Konfigurations-Defaults (ENABLE_SIGNUP, ENABLE_MAGIC_LINK_LOGIN) führen ohne bewusste Entscheidung zu abweichendem Verhalten",
+  "Bekannte IST-Bugs (Space-OAuth-Callbacks 500, ProjectMember ohne project_id, Cookie-Auswahl per Teilstring, Cache-Invalidierung pro User) müssen bewusst korrigiert statt kopiert werden",
+  "Gast-Sichtbarkeitsregeln sind über viele Views verteilt; eine vergessene Stelle erzeugt Datenlecks",
+  "Rate-Limit-Identität hängt von Proxy-Konfiguration ab (NUM_PROXIES/ForwardedHeaders); falsche Konfiguration macht Limits umgehbar oder sperrt alle Nutzer",
+  "Antiforgery-Token in ASP.NET ist an die Identität gebunden; Token muss nach Login/Logout neu geholt werden (Frontend tut dies bereits vor jedem Formular)",
+  "Paid-Auth-Features (SAML/OIDC/LDAP/2FA/SCIM) haben im CE-Repo keine UI-Vorlage außer i18n-Schlüsseln; Provider-Registry muss frühzeitig erweiterbar entworfen werden"
+ ],
+ "open_questions": [
+  "OP-01: Bekannte IST-Fehler (E-01, E-02, E-04, E-05, E-07, E-08, E-14, E-15, E-16, E-18, E-19, E-20, E-24) korrigieren oder 1:1 nachbauen?",
+  "OP-02: Sollen email-check/magic-generate/forgot-password für angemeldete Aufrufer ein CSRF-Token verlangen (IST-Nebeneffekt E-17)?",
+  "OP-03: Wie werden angenommene Projekt-Einladungen beim Login korrekt verarbeitet, und sollen sie nach Annahme gelöscht werden?",
+  "OP-04: CORS-Default bei leerer CORS_ALLOWED_ORIGINS: alle Origins (IST) oder nur eigene Basis-URLs?",
+  "OP-05: OAuth-Tokens in accounts speichern (verschlüsselt?) und über GET /api/users/me/accounts/ ausliefern?",
+  "OP-06: Fehlende Frontend-Fehlertexte für 5056, 5112, 5122, 5123, 5124, 5999 ergänzen oder 1:1 lassen?",
+  "OP-07: Backend-Prüfung von IS_<PROVIDER>_ENABLED ergänzen?",
+  "OP-08: Gitea-Redirect-Sonderweg auf Standardverhalten vereinheitlichen?",
+  "OP-09: Rate-Limit- und Magic-Code-Speicher in Redis (Parität) oder PostgreSQL?",
+  "OP-10: Gleitende Sessions und Sitzungsverwaltung (device_info) anbieten?",
+  "OP-11: Automatisierung der Erst-Einrichtung (Instanz-Seed, Admin) im Aspire-AppHost/CLI?",
+  "OP-12: Welche Paid-Auth-Features (PF-93 bis PF-98) in welcher Phase und mit welchem UI-Vorbild?",
+  "E-02 ist zu verifizieren: Löst eine angenommene, nicht gelöschte ProjectMemberInvite beim nächsten App-Login wirklich eine IntegrityError (HTTP 500) aus?"
+ ]
+}

@@ -1,0 +1,1026 @@
+[
+ {
+  "name": "Layout-Umschaltung (List, Board, Calendar, Table, Timeline)",
+  "area": "Layouts/Kopf",
+  "description": "Segment-Control im Seitenkopf (ab @4xl) bzw. Mobil-Menü; Wechsel speichert display_filters.layout und leert den Cache.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/filters/header/layout-selection.tsx",
+   "apps/web/components/issues/issue-layouts/filters/header/mobile-layout-selection.tsx",
+   "apps/web/components/issues/filters.tsx",
+   "apps/web/store/issue/project/filter.store.ts"
+  ]
+ },
+ {
+  "name": "Projekt-Work-Items-Kopf",
+  "area": "Layouts/Kopf",
+  "description": "Breadcrumb 'Work Items', Anzahl-Chip mit Tooltip, Badge 'Public' bei veröffentlichtem Projekt, Filter-Toggle, 'Display', 'Analytics', 'Add work item'.",
+  "code_refs": [
+   "apps/web/components/issues/header.tsx",
+   "apps/web/components/issues/filters.tsx"
+  ]
+ },
+ {
+  "name": "Layout-Kontextmenü im Kopf",
+  "area": "Layouts/Kopf",
+  "description": "'…'-Menü mit 'Open in new tab' und 'Copy link' für die Work-Item-Liste.",
+  "code_refs": [
+   "apps/web/components/issues/layout-quick-actions.tsx",
+   "apps/web/components/common/quick-actions-helper.tsx"
+  ]
+ },
+ {
+  "name": "Analytics-Modal aus der Liste",
+  "area": "Layouts/Kopf",
+  "description": "Button 'Analytics' öffnet Work-Item-Analytics für den aktuellen Kontext.",
+  "code_refs": [
+   "apps/web/components/issues/filters.tsx",
+   "apps/web/components/analytics/work-items/modal"
+  ]
+ },
+ {
+  "name": "List-Layout mit Gruppierung",
+  "area": "List",
+  "description": "Gruppen mit sticky Kopf (Icon, Titel, Anzahl, Collapse), leere Gruppen ausblendbar, Load more je Gruppe, virtualisierte Zeilen.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/list/default.tsx",
+   "apps/web/components/issues/issue-layouts/list/list-group.tsx",
+   "apps/web/components/issues/issue-layouts/list/headers/group-by-card.tsx",
+   "apps/web/components/issues/issue-layouts/list/base-list-root.tsx"
+  ]
+ },
+ {
+  "name": "List-Zeile mit Inline-Properties",
+  "area": "List",
+  "description": "Identifier, Titel mit Tooltip, Sub-Item-Aufklappen, Properties-Leiste, Quick-Actions; Klick öffnet Peek, Ctrl/Cmd/Mittelklick neuer Tab.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/list/block-root.tsx",
+   "apps/web/components/issues/issue-layouts/list/block.tsx",
+   "apps/web/components/issues/issue-layouts/list/blocks-list.tsx"
+  ]
+ },
+ {
+  "name": "Sub-Work-Items in List aufklappen",
+  "area": "List",
+  "description": "Chevron lädt und zeigt Kinder eingerückt (nestingLevel) direkt in der Liste.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/list/block-root.tsx"
+  ]
+ },
+ {
+  "name": "Kanban-Board mit Spalten",
+  "area": "Kanban",
+  "description": "Spalten je Gruppe (350 px), Spaltenkopf mit Collapse und '+', eingeklappt vertikal, leere Spalten standardmäßig sichtbar, Paginierung je Spalte.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/kanban/default.tsx",
+   "apps/web/components/issues/issue-layouts/kanban/kanban-group.tsx",
+   "apps/web/components/issues/issue-layouts/kanban/headers/group-by-card.tsx",
+   "apps/web/components/issues/issue-layouts/kanban/base-kanban-root.tsx"
+  ]
+ },
+ {
+  "name": "Kanban-Swimlanes (Sub-Gruppierung)",
+  "area": "Kanban",
+  "description": "Zweite Gruppierungsebene als Swimlanes mit eigenem Kopf und Collapse.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/kanban/swimlanes.tsx",
+   "apps/web/components/issues/issue-layouts/kanban/headers/sub-group-by-card.tsx"
+  ]
+ },
+ {
+  "name": "Kanban-Karte",
+  "area": "Kanban",
+  "description": "Karte mit Identifier, Titel, Properties, Quick-Action-Button; Höhe geschätzt für Virtualisierung.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/kanban/block.tsx",
+   "apps/web/components/issues/issue-layouts/kanban/blocks-list.tsx"
+  ]
+ },
+ {
+  "name": "Kanban-Löschzone",
+  "area": "Kanban",
+  "description": "Beim Ziehen erscheinende Zone 'Drop here to delete the work item.', öffnet Delete-Dialog.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/kanban/kanban-delete-drop-zone.tsx"
+  ]
+ },
+ {
+  "name": "Drag-and-Drop zwischen Gruppen und Reihenfolge",
+  "area": "DnD",
+  "description": "Ändert Gruppenwert (State, Priority, Assignees, Labels, Cycle, Module) und sort_order; Overlay mit Sortierhinweis; gesperrte Ziele mit Fehlermeldung.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/utils.tsx",
+   "apps/web/hooks/use-group-dragndrop.ts",
+   "apps/web/components/issues/issue-layouts/group-drag-overlay.tsx"
+  ]
+ },
+ {
+  "name": "Calendar-Layout Monat/Woche",
+  "area": "Calendar",
+  "description": "Navigation ‹ ›, Monatsauswahl, 'Today', Optionen (Monat/Woche, Wochenenden anzeigen), Tageszellen mit Einträgen nach target_date.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/calendar/calendar.tsx",
+   "apps/web/components/issues/issue-layouts/calendar/header.tsx",
+   "apps/web/components/issues/issue-layouts/calendar/dropdowns/months-dropdown.tsx",
+   "apps/web/components/issues/issue-layouts/calendar/dropdowns/options-dropdown.tsx",
+   "apps/web/components/issues/issue-layouts/calendar/week-header.tsx",
+   "apps/web/components/issues/issue-layouts/calendar/week-days.tsx",
+   "apps/web/components/issues/issue-layouts/calendar/day-tile.tsx"
+  ]
+ },
+ {
+  "name": "Calendar-Drag auf anderen Tag",
+  "area": "Calendar",
+  "description": "Verschieben eines Eintrags setzt target_date auf den Zieltag.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/calendar/utils.ts",
+   "apps/web/components/issues/issue-layouts/calendar/issue-block-root.tsx"
+  ]
+ },
+ {
+  "name": "Calendar-Eintrag",
+  "area": "Calendar",
+  "description": "Eintrag mit State-Farbe, Identifier, Titel, Quick-Actions; Drag- und Peek-Hervorhebung.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/calendar/issue-block.tsx",
+   "apps/web/components/issues/issue-layouts/calendar/issue-blocks.tsx"
+  ]
+ },
+ {
+  "name": "Calendar-Quick-Add je Tag",
+  "area": "Calendar",
+  "description": "Hover-Trigger in der Tageszelle mit 'Add work item' bzw. 'Add existing work item' (Cycle/Modul).",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/calendar/quick-add-issue-actions.tsx"
+  ]
+ },
+ {
+  "name": "Gantt/Timeline-Ansicht",
+  "area": "Gantt",
+  "description": "Sidebar mit Work Items und Dauer, Zeitleiste Week/Month/Quarter, 'Today', Vollbild, Endlos-Scroll horizontal, Sprung-Button zu Balken außerhalb des Sichtbereichs.",
+  "code_refs": [
+   "apps/web/components/gantt-chart/root.tsx",
+   "apps/web/components/gantt-chart/chart/root.tsx",
+   "apps/web/components/gantt-chart/chart/header.tsx",
+   "apps/web/components/gantt-chart/chart/main-content.tsx",
+   "apps/web/components/gantt-chart/chart/views/week.tsx",
+   "apps/web/components/gantt-chart/chart/views/month.tsx",
+   "apps/web/components/gantt-chart/chart/views/quarter.tsx",
+   "apps/web/components/gantt-chart/blocks/block-row.tsx"
+  ]
+ },
+ {
+  "name": "Gantt Verschieben und Resize",
+  "area": "Gantt",
+  "description": "Balken per Maus verschieben, linke/rechte Kante ziehen mit Datums-Badge; Sammel-Update über issue-dates.",
+  "code_refs": [
+   "apps/web/components/gantt-chart/helpers/draggable.tsx",
+   "apps/web/components/gantt-chart/helpers/blockResizables/left-resizable.tsx",
+   "apps/web/components/gantt-chart/helpers/blockResizables/right-resizable.tsx",
+   "apps/web/components/gantt-chart/helpers/blockResizables/use-gantt-resizable.ts",
+   "apps/web/components/issues/issue-layouts/gantt/base-gantt-root.tsx"
+  ]
+ },
+ {
+  "name": "Gantt Datum setzen für Items ohne Datum",
+  "area": "Gantt",
+  "description": "Hover über Zeile ohne Daten zeigt Hinzufügen-Element, das Start/Ende setzt.",
+  "code_refs": [
+   "apps/web/components/gantt-chart/helpers/add-block.tsx"
+  ]
+ },
+ {
+  "name": "Gantt-Sidebar-Reorder",
+  "area": "Gantt",
+  "description": "Reihenfolge in der Sidebar per DnD (nur bei order_by sort_order).",
+  "code_refs": [
+   "apps/web/components/gantt-chart/sidebar/gantt-dnd-HOC.tsx",
+   "apps/web/components/gantt-chart/sidebar/utils.ts",
+   "apps/web/components/gantt-chart/sidebar/issues/sidebar.tsx",
+   "apps/web/components/gantt-chart/sidebar/issues/block.tsx"
+  ]
+ },
+ {
+  "name": "Gantt-Blöcke für Module",
+  "area": "Gantt",
+  "description": "Timeline-Engine auch für Module (Sidebar-Block, Timeline-Typ MODULE).",
+  "code_refs": [
+   "apps/web/components/gantt-chart/sidebar/modules/sidebar.tsx",
+   "apps/web/components/gantt-chart/sidebar/modules/block.tsx",
+   "apps/web/components/gantt-chart/contexts/index.tsx"
+  ]
+ },
+ {
+  "name": "Spreadsheet-Tabelle",
+  "area": "Spreadsheet",
+  "description": "Sticky erste Spalte mit Schatten beim Scrollen, Spalten je Display-Property, Zellen editierbar (State, Priority, Assignees, Labels, Modules, Cycle, Start, Due, Estimate), Read-only-Spalten (Created on, Updated on, Links, Attachments, Sub-work items).",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/spreadsheet/spreadsheet-view.tsx",
+   "apps/web/components/issues/issue-layouts/spreadsheet/spreadsheet-table.tsx",
+   "apps/web/components/issues/issue-layouts/spreadsheet/issue-row.tsx",
+   "apps/web/components/issues/issue-layouts/spreadsheet/issue-column.tsx",
+   "apps/web/components/issues/issue-layouts/spreadsheet/columns/index.ts"
+  ]
+ },
+ {
+  "name": "Spreadsheet-Sortierung über Spaltenkopf",
+  "area": "Spreadsheet",
+  "description": "Spaltenmenü mit auf-/absteigender Sortierung und Zurücksetzen; setzt order_by.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/spreadsheet/columns/header-column.tsx",
+   "apps/web/components/issues/issue-layouts/spreadsheet/spreadsheet-header-column.tsx",
+   "apps/web/components/issues/issue-layouts/spreadsheet/spreadsheet-header.tsx"
+  ]
+ },
+ {
+  "name": "Spreadsheet-Tastaturnavigation",
+  "area": "Spreadsheet",
+  "description": "Pfeiltasten zwischen Zellen, Enter öffnet das Zellen-Dropdown.",
+  "code_refs": [
+   "apps/web/hooks/use-table-keyboard-navigation.tsx",
+   "apps/web/components/issues/issue-layouts/spreadsheet/spreadsheet-table.tsx"
+  ]
+ },
+ {
+  "name": "Sub-Work-Item-Sprung aus Spreadsheet",
+  "area": "Spreadsheet",
+  "description": "Klick auf 'N sub-work items' öffnet die Detailseite am Anker #sub-issues.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/spreadsheet/columns/sub-issue-column.tsx"
+  ]
+ },
+ {
+  "name": "Workspace-Views (All work items) als Spreadsheet",
+  "area": "Spreadsheet",
+  "description": "Workspace-weite Tabelle mit allen Spalten und Rechten je Projekt.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/roots/all-issue-layout-root.tsx",
+   "apps/web/components/issues/issue-layouts/spreadsheet/roots/workspace-root.tsx"
+  ]
+ },
+ {
+  "name": "Inline-Property-Leiste",
+  "area": "Properties",
+  "description": "State, Priority, Datumsbereich bzw. Start/Due, Assignees, Labels, Modules, Cycle, Estimate, Sub-Item-/Attachment-/Link-Zähler; Sichtbarkeit über Display-Properties.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/properties/all-properties.tsx",
+   "apps/web/components/issues/issue-layouts/properties/labels.tsx",
+   "apps/web/components/issues/issue-layouts/properties/with-display-properties-HOC.tsx"
+  ]
+ },
+ {
+  "name": "Quick-Add je Layout",
+  "area": "Quick-Add",
+  "description": "Inline-Erfassung per Titel und Enter (Formular bleibt offen), Vorbelegung aus Gruppe, optimistische Anlage mit Promise-Toast und Toast-Aktionen.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/quick-add/root.tsx",
+   "apps/web/components/issues/issue-layouts/quick-add/form/root.tsx",
+   "apps/web/components/issues/issue-layouts/quick-add/form/list.tsx",
+   "apps/web/components/issues/issue-layouts/quick-add/form/kanban.tsx",
+   "apps/web/components/issues/issue-layouts/quick-add/form/calendar.tsx",
+   "apps/web/components/issues/issue-layouts/quick-add/form/gantt.tsx",
+   "apps/web/components/issues/issue-layouts/quick-add/form/spreadsheet.tsx",
+   "apps/web/components/issues/issue-layouts/quick-add/button/list.tsx",
+   "apps/web/components/issues/issue-layouts/quick-add/button/kanban.tsx",
+   "apps/web/components/issues/issue-layouts/quick-add/button/gantt.tsx",
+   "apps/web/components/issues/issue-layouts/quick-add/button/spreadsheet.tsx"
+  ]
+ },
+ {
+  "name": "Toast-Aktionen nach Erstellen",
+  "area": "Quick-Add/Modal",
+  "description": "Toast mit 'Copy link', Identifier kopieren und 'View' (neuer Tab).",
+  "code_refs": [
+   "apps/web/components/issues/create-issue-toast-action-items.tsx"
+  ]
+ },
+ {
+  "name": "Gruppen-'+' mit 'Create work item' / 'Add an existing work item'",
+  "area": "Layouts",
+  "description": "Gruppenkopf-Button öffnet Modal mit Gruppenvorbelegung; in Cycle/Modul zusätzlich bestehende Items hinzufügen.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/list/headers/group-by-card.tsx",
+   "apps/web/components/issues/issue-layouts/kanban/headers/group-by-card.tsx",
+   "apps/web/components/core/modals/existing-issues-list-modal.tsx"
+  ]
+ },
+ {
+  "name": "Quick-Action-Menü und Rechtsklick-Kontextmenü",
+  "area": "Quick-Actions",
+  "description": "Edit, Make a copy, Open in new tab, Copy link, Remove from cycle/module, Archive (nur completed/cancelled), Restore, Delete – je Kontext.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/quick-action-dropdowns/helper.tsx",
+   "apps/web/components/issues/issue-layouts/quick-action-dropdowns/project-issue.tsx",
+   "apps/web/components/issues/issue-layouts/quick-action-dropdowns/cycle-issue.tsx",
+   "apps/web/components/issues/issue-layouts/quick-action-dropdowns/module-issue.tsx",
+   "apps/web/components/issues/issue-layouts/quick-action-dropdowns/all-issue.tsx",
+   "apps/web/components/issues/issue-layouts/quick-action-dropdowns/archived-issue.tsx",
+   "apps/web/components/issues/issue-layouts/quick-action-dropdowns/issue-detail.tsx"
+  ]
+ },
+ {
+  "name": "Display-Dropdown",
+  "area": "Display-Filter",
+  "description": "Display Properties (Chips), Group by, Sub-group by (Kanban), Order by, 'Show sub-work items', 'Show empty groups' – Optionen je Seite/Layout.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/filters/header/display-filters/display-filters-selection.tsx",
+   "apps/web/components/issues/issue-layouts/filters/header/display-filters/display-properties.tsx",
+   "apps/web/components/issues/issue-layouts/filters/header/display-filters/group-by.tsx",
+   "apps/web/components/issues/issue-layouts/filters/header/display-filters/sub-group-by.tsx",
+   "apps/web/components/issues/issue-layouts/filters/header/display-filters/order-by.tsx",
+   "apps/web/components/issues/issue-layouts/filters/header/display-filters/extra-options.tsx",
+   "packages/constants/src/issue/filter.ts"
+  ]
+ },
+ {
+  "name": "Klassische Filter-Sektionen und Applied-Filter-Chips",
+  "area": "Filter (Legacy)",
+  "description": "Filtersektionen Assignee, Created by, Mention, Label, Priority, State, State group, Cycle, Module, Project, Start/Due date (mit Custom-Datumsdialog); Chips angewendeter Filter; genutzt von Sub-Items und anderen Bereichen.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/filters/header/filters/index.ts",
+   "apps/web/components/issues/issue-layouts/filters/applied-filters/index.ts",
+   "apps/web/components/issues/issue-layouts/filters/header/helpers/dropdown.tsx",
+   "apps/web/components/core/filters/date-filter-modal.tsx"
+  ]
+ },
+ {
+  "name": "Rich-Filter-Zeile",
+  "area": "Rich-Filter",
+  "description": "Filterzeile mit Bedingungs-Chips (Eigenschaft, Operator, Wert, Entfernen), 'Add filter', 'Clear all', 'Save view', 'Update view', Ein-/Ausblenden.",
+  "code_refs": [
+   "apps/web/components/rich-filters/filters-row.tsx",
+   "apps/web/components/rich-filters/filters-toggle.tsx",
+   "apps/web/components/rich-filters/add-filters/button.tsx",
+   "apps/web/components/rich-filters/add-filters/dropdown.tsx",
+   "apps/web/components/rich-filters/filter-item/root.tsx"
+  ]
+ },
+ {
+  "name": "Filterwert-Eingaben",
+  "area": "Rich-Filter",
+  "description": "Einfach-/Mehrfachauswahl mit Icons, Datum ('is'), Datumsbereich ('between', unvollständig rot), Anzeige '+N more'.",
+  "code_refs": [
+   "apps/web/components/rich-filters/filter-value-input/root.tsx",
+   "apps/web/components/rich-filters/filter-value-input/select/multi.tsx",
+   "apps/web/components/rich-filters/filter-value-input/select/single.tsx",
+   "apps/web/components/rich-filters/filter-value-input/select/selected-options-display.tsx",
+   "apps/web/components/rich-filters/filter-value-input/date/single.tsx",
+   "apps/web/components/rich-filters/filter-value-input/date/range.tsx"
+  ]
+ },
+ {
+  "name": "Ungültige Filterbedingung",
+  "area": "Rich-Filter",
+  "description": "Chip 'Invalid filter' mit Erklärungs-Tooltip, entfernbar.",
+  "code_refs": [
+   "apps/web/components/rich-filters/filter-item/invalid.tsx"
+  ]
+ },
+ {
+  "name": "View speichern/aktualisieren aus Filtern",
+  "area": "Rich-Filter",
+  "description": "'Save view' öffnet vorbefülltes View-Modal (Projekt/Workspace), 'Update view' schreibt Filter/Display in eigene, nicht gesperrte View.",
+  "code_refs": [
+   "apps/web/components/work-item-filters/filters-hoc/project-level.tsx",
+   "apps/web/components/work-item-filters/filters-hoc/workspace-level.tsx",
+   "apps/web/components/work-item-filters/filters-hoc/base.tsx"
+  ]
+ },
+ {
+  "name": "Work-Item-Filterfelder",
+  "area": "Rich-Filter",
+  "description": "15 Felder mit Icons und Optionen aus Projekt-/Workspace-Stammdaten; Cycle/Module nur bei aktivierten Features.",
+  "code_refs": [
+   "apps/web/hooks/work-item-filters/use-work-item-filters-config.tsx",
+   "packages/utils/src/work-item-filters/configs/filters/priority.ts",
+   "apps/web/hooks/rich-filters/use-filters-operator-configs.ts"
+  ]
+ },
+ {
+  "name": "Empty-States der Layouts",
+  "area": "Empty-States",
+  "description": "Kontextabhängige Leerzustände (Projekt, View, Archiv, Cycle inkl. abgeschlossen, Modul, Global View, Profil) mit Aktionen bzw. 'Clear all filters'.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/empty-states/index.tsx",
+   "apps/web/components/issues/issue-layouts/empty-states/project-issues.tsx",
+   "apps/web/components/issues/issue-layouts/empty-states/project-view.tsx",
+   "apps/web/components/issues/issue-layouts/empty-states/archived-issues.tsx",
+   "apps/web/components/issues/issue-layouts/empty-states/cycle.tsx",
+   "apps/web/components/issues/issue-layouts/empty-states/module.tsx",
+   "apps/web/components/issues/issue-layouts/empty-states/global-view.tsx",
+   "apps/web/components/issues/issue-layouts/empty-states/profile-view.tsx"
+  ]
+ },
+ {
+  "name": "Skeleton-Loader je Layout",
+  "area": "Lade-Zustände",
+  "description": "List-, Kanban-, Spreadsheet-, Calendar- und Gantt-Skeletons; Mutation-Spinner oben rechts; Paginations-Platzhalter.",
+  "code_refs": [
+   "apps/web/components/ui/loader/layouts/list-layout-loader.tsx",
+   "apps/web/components/ui/loader/layouts/kanban-layout-loader.tsx",
+   "apps/web/components/ui/loader/layouts/spreadsheet-layout-loader.tsx",
+   "apps/web/components/ui/loader/layouts/calendar-layout-loader.tsx",
+   "apps/web/components/ui/loader/layouts/gantt-layout-loader.tsx",
+   "apps/web/components/issues/issue-layouts/issue-layout-HOC.tsx",
+   "apps/web/components/issues/issue-layouts/roots/project-layout-root.tsx"
+  ]
+ },
+ {
+  "name": "Virtualisierung und Endlos-Laden",
+  "area": "Performance/UX",
+  "description": "RenderIfVisible für Zeilen/Karten/Gantt, IntersectionObserver-Sentinels für Folgeseiten.",
+  "code_refs": [
+   "apps/web/components/core/render-if-visible-HOC.tsx",
+   "apps/web/hooks/use-intersection-observer.tsx",
+   "apps/web/components/issues/issue-layouts/list/block-root.tsx"
+  ]
+ },
+ {
+  "name": "Layout-Fehlergrenze",
+  "area": "Fehlerzustände",
+  "description": "Fehler eines Layouts werden abgefangen und mit Fallback angezeigt.",
+  "code_refs": [
+   "apps/web/components/common/layout-error-boundary.tsx",
+   "apps/web/components/issues/issue-layouts/issue-layout-HOC.tsx"
+  ]
+ },
+ {
+  "name": "Cycle-/Modul-/View-/Archiv-/Profil-Kontexte",
+  "area": "Layouts",
+  "description": "Gleiche Layouts in Cycle (inkl. Transfer bei abgeschlossenem Cycle), Modul, Projekt-View, Archiv und Profil.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/roots/cycle-layout-root.tsx",
+   "apps/web/components/issues/issue-layouts/roots/module-layout-root.tsx",
+   "apps/web/components/issues/issue-layouts/roots/project-view-layout-root.tsx",
+   "apps/web/components/issues/issue-layouts/roots/archived-issue-layout-root.tsx",
+   "apps/web/components/issues/issue-layouts/list/roots/profile-issues-root.tsx",
+   "apps/web/components/cycles/transfer-issues.tsx"
+  ]
+ },
+ {
+  "name": "Archiv-Kopf",
+  "area": "Archiv",
+  "description": "Tabs Work items/Cycles/Modules, Filter-Toggle, Display (List-Optionen).",
+  "code_refs": [
+   "apps/web/components/issues/archived-issues-header.tsx"
+  ]
+ },
+ {
+  "name": "Peek-Overview mit 3 Modi",
+  "area": "Peek",
+  "description": "Side Peek, Modal, Full Screen; Schließen, Vollbildseite, Modus-Wechsel, Speicherstatus, Subscribe, Copy link, Menü.",
+  "code_refs": [
+   "apps/web/components/issues/peek-overview/root.tsx",
+   "apps/web/components/issues/peek-overview/view.tsx",
+   "apps/web/components/issues/peek-overview/header.tsx"
+  ]
+ },
+ {
+  "name": "Peek-Inhalt",
+  "area": "Peek",
+  "description": "Parent-Chip, Identifier (Klick kopiert), Titel, Beschreibung mit Autosave, Reaktionen, Versionsverlauf, Widgets, Properties, Activity.",
+  "code_refs": [
+   "apps/web/components/issues/peek-overview/issue-detail.tsx",
+   "apps/web/components/issues/peek-overview/properties.tsx"
+  ]
+ },
+ {
+  "name": "Peek-Schließen per Outside-Click/Escape",
+  "area": "Peek",
+  "description": "Regelbasiertes Schließen mit Ausnahmen für Portale, Modals, Inputs; Fokus zurück auf Listenelement.",
+  "code_refs": [
+   "apps/web/hooks/use-peek-overview-outside-click.tsx",
+   "apps/web/components/issues/peek-overview/view.tsx",
+   "apps/web/hooks/use-issue-peek-overview-redirection.tsx"
+  ]
+ },
+ {
+  "name": "Peek-Fehler- und Ladezustand",
+  "area": "Peek",
+  "description": "'Work item does not exist' mit Illustration; Skeleton.",
+  "code_refs": [
+   "apps/web/components/issues/peek-overview/error.tsx",
+   "apps/web/components/issues/peek-overview/loader.tsx"
+  ]
+ },
+ {
+  "name": "Home-Peek",
+  "area": "Peek",
+  "description": "Peek auf der Home-Seite.",
+  "code_refs": [
+   "apps/web/components/issues/peek-overview/peek-overviews.tsx"
+  ]
+ },
+ {
+  "name": "Work-Item-Detailseite",
+  "area": "Detail",
+  "description": "Route /{ws}/browse/{IDENT}-{seq}/, Hauptinhalt plus einklappbare Sidebar, mobil Properties inline, Fehlerzustand mit 'View other work items'.",
+  "code_refs": [
+   "apps/web/components/issues/issue-detail/root.tsx",
+   "apps/web/components/issues/issue-detail/main-content.tsx",
+   "apps/web/components/issues/issue-detail/sidebar.tsx"
+  ]
+ },
+ {
+  "name": "Detail-Kopfaktionen",
+  "area": "Detail",
+  "description": "Subscribe/Unsubscribe, Copy link (absolute URL), Make a copy, Open in new tab, Archive/Restore, Delete mit Weiterleitungen.",
+  "code_refs": [
+   "apps/web/components/issues/issue-detail/issue-detail-quick-actions.tsx",
+   "apps/web/components/issues/issue-detail/subscription.tsx"
+  ]
+ },
+ {
+  "name": "Titel-Bearbeitung mit Autosave",
+  "area": "Detail/Peek",
+  "description": "Textarea mit 1,5 s Debounce, Zeichenzähler n/255, Pflichtprüfung.",
+  "code_refs": [
+   "apps/web/components/issues/title-input.tsx",
+   "apps/web/components/issues/issue-update-status.tsx"
+  ]
+ },
+ {
+  "name": "Identifier mit Klick-zum-Kopieren",
+  "area": "Detail/Peek",
+  "description": "'IDENT-seq' in Größen/Varianten, Tooltip 'Click to copy'.",
+  "code_refs": [
+   "apps/web/components/issues/issue-detail/issue-identifier.tsx",
+   "apps/web/components/issues/issue-detail/identifier-text.tsx",
+   "apps/web/components/issues/issue-type-switcher.tsx"
+  ]
+ },
+ {
+  "name": "Sidebar-Properties",
+  "area": "Detail/Peek",
+  "description": "State, Assignees, Priority, Created by, Start/Due date, Estimate, Modules, Cycle, Parent, Labels mit sofortigem Speichern.",
+  "code_refs": [
+   "apps/web/components/issues/issue-detail/sidebar.tsx",
+   "apps/web/components/issues/issue-detail/cycle-select.tsx",
+   "apps/web/components/issues/issue-detail/module-select.tsx",
+   "apps/web/components/issues/issue-detail/label/root.tsx"
+  ]
+ },
+ {
+  "name": "Parent setzen/ändern/entfernen",
+  "area": "Detail/Peek",
+  "description": "Parent-Auswahl per Suchmodal, Parent-Chip über dem Titel mit Geschwister-Liste und 'Remove parent work item'.",
+  "code_refs": [
+   "apps/web/components/issues/issue-detail/parent-select.tsx",
+   "apps/web/components/issues/parent-select-root.tsx",
+   "apps/web/components/issues/parent-issues-list-modal.tsx",
+   "apps/web/components/issues/issue-detail/parent/root.tsx",
+   "apps/web/components/issues/issue-detail/parent/siblings.tsx",
+   "apps/web/components/issues/issue-detail/parent/sibling-item.tsx"
+  ]
+ },
+ {
+  "name": "Reaktionen auf Work Items",
+  "area": "Detail/Peek",
+  "description": "Emoji-Picker und Reaktionsgruppe mit Zählern und Nutzer-Tooltip.",
+  "code_refs": [
+   "apps/web/components/issues/issue-detail/reactions/issue.tsx"
+  ]
+ },
+ {
+  "name": "Beschreibungs-Versionsverlauf",
+  "area": "Detail/Peek",
+  "description": "Versionen anzeigen und wiederherstellen.",
+  "code_refs": [
+   "apps/web/components/core/description-versions",
+   "apps/web/components/issues/peek-overview/issue-detail.tsx"
+  ]
+ },
+ {
+  "name": "Widget-Aktionsleiste",
+  "area": "Widgets",
+  "description": "'Add sub-work item', 'Add relation', 'Add link', 'Attach'; Sektionen erscheinen bei Inhalt und öffnen sich nach Aktion.",
+  "code_refs": [
+   "apps/web/components/issues/issue-detail-widgets/root.tsx",
+   "apps/web/components/issues/issue-detail-widgets/action-buttons.tsx",
+   "apps/web/components/issues/issue-detail-widgets/widget-button.tsx",
+   "apps/web/components/issues/issue-detail-widgets/issue-detail-widget-collapsibles.tsx",
+   "apps/web/components/issues/issue-detail-widgets/issue-detail-widget-modals.tsx"
+  ]
+ },
+ {
+  "name": "Sub-Work-Items-Widget",
+  "area": "Widgets",
+  "description": "Fortschritt 'x/y Done', Create new / Add existing, eigene Display-Filter, Filter, Gruppierung, verschachtelte Liste mit Properties und Menü (Edit, Copy link, Remove parent, Delete).",
+  "code_refs": [
+   "apps/web/components/issues/issue-detail-widgets/sub-issues/root.tsx",
+   "apps/web/components/issues/issue-detail-widgets/sub-issues/title.tsx",
+   "apps/web/components/issues/issue-detail-widgets/sub-issues/title-actions.tsx",
+   "apps/web/components/issues/issue-detail-widgets/sub-issues/display-filters.tsx",
+   "apps/web/components/issues/issue-detail-widgets/sub-issues/filters.tsx",
+   "apps/web/components/issues/issue-detail-widgets/sub-issues/quick-action-button.tsx",
+   "apps/web/components/issues/issue-detail-widgets/sub-issues/content.tsx",
+   "apps/web/components/issues/issue-detail-widgets/sub-issues/helper.ts",
+   "apps/web/components/issues/issue-detail-widgets/sub-issues/issues-list/root.tsx",
+   "apps/web/components/issues/issue-detail-widgets/sub-issues/issues-list/list-group.tsx",
+   "apps/web/components/issues/issue-detail-widgets/sub-issues/issues-list/list-item.tsx",
+   "apps/web/components/issues/issue-detail-widgets/sub-issues/issues-list/properties.tsx"
+  ]
+ },
+ {
+  "name": "Relations-Widget",
+  "area": "Widgets",
+  "description": "Relationstypen relates_to, duplicate, blocked_by, blocking; Liste je Typ mit Properties und Menü (Edit, Copy link, Remove relation, Delete).",
+  "code_refs": [
+   "apps/web/components/issues/issue-detail-widgets/relations/root.tsx",
+   "apps/web/components/issues/issue-detail-widgets/relations/title.tsx",
+   "apps/web/components/issues/issue-detail-widgets/relations/quick-action-button.tsx",
+   "apps/web/components/issues/issue-detail-widgets/relations/content.tsx",
+   "apps/web/components/issues/issue-detail-widgets/relations/helper.tsx",
+   "apps/web/components/issues/relations/issue-list.tsx",
+   "apps/web/components/issues/relations/issue-list-item.tsx",
+   "apps/web/components/issues/relations/properties.tsx",
+   "apps/web/components/relations/index.tsx"
+  ]
+ },
+ {
+  "name": "Links-Widget",
+  "area": "Widgets",
+  "description": "Link-Kacheln mit Favicon/Titel, Kopieren, Bearbeiten, Löschen; Modal 'Add link'/'Update link' mit URL-Validierung.",
+  "code_refs": [
+   "apps/web/components/issues/issue-detail-widgets/links/root.tsx",
+   "apps/web/components/issues/issue-detail-widgets/links/title.tsx",
+   "apps/web/components/issues/issue-detail-widgets/links/content.tsx",
+   "apps/web/components/issues/issue-detail-widgets/links/helper.tsx",
+   "apps/web/components/issues/issue-detail-widgets/links/quick-action-button.tsx",
+   "apps/web/components/issues/issue-detail/links/create-update-link-modal.tsx",
+   "apps/web/components/issues/issue-detail/links/link-item.tsx",
+   "apps/web/components/issues/issue-detail/links/link-list.tsx"
+  ]
+ },
+ {
+  "name": "Attachments-Widget",
+  "area": "Widgets",
+  "description": "Upload per Button/Dropzone mit Größenlimit, Fortschritt, Liste mit Uploader-Avatar, Öffnen, Löschen mit Bestätigung.",
+  "code_refs": [
+   "apps/web/components/issues/issue-detail-widgets/attachments/root.tsx",
+   "apps/web/components/issues/issue-detail-widgets/attachments/title.tsx",
+   "apps/web/components/issues/issue-detail-widgets/attachments/content.tsx",
+   "apps/web/components/issues/issue-detail-widgets/attachments/helper.tsx",
+   "apps/web/components/issues/issue-detail-widgets/attachments/quick-action-button.tsx",
+   "apps/web/components/issues/attachment/attachment-item-list.tsx",
+   "apps/web/components/issues/attachment/attachment-list-item.tsx",
+   "apps/web/components/issues/attachment/attachment-list-upload-item.tsx",
+   "apps/web/components/issues/attachment/delete-attachment-modal.tsx"
+  ]
+ },
+ {
+  "name": "Attachment-Kacheln (Intake)",
+  "area": "Widgets",
+  "description": "Kachelansicht mit Upload-Kachel, genutzt im Intake.",
+  "code_refs": [
+   "apps/web/components/issues/attachment/root.tsx",
+   "apps/web/components/issues/attachment/attachment-upload.tsx",
+   "apps/web/components/issues/attachment/attachments-list.tsx",
+   "apps/web/components/issues/attachment/attachment-detail.tsx",
+   "apps/web/components/issues/attachment/attachment-upload-details.tsx"
+  ]
+ },
+ {
+  "name": "Activity-Feed",
+  "area": "Activity",
+  "description": "Zeitleiste aller Änderungen (Name, Beschreibung, State, Assignees, Priority, Estimate, Parent, Relationen, Daten, Cycle, Modul, Labels, Links, Attachments, Archiv, Intake) mit Akteur und relativer Zeit.",
+  "code_refs": [
+   "apps/web/components/issues/issue-detail/issue-activity/root.tsx",
+   "apps/web/components/issues/issue-detail/issue-activity/activity-comment-root.tsx",
+   "apps/web/components/issues/issue-detail/issue-activity/activity/activity-list.tsx",
+   "apps/web/components/issues/issue-detail/issue-activity/activity/actions/helpers/activity-block.tsx"
+  ]
+ },
+ {
+  "name": "Activity-Filter und -Sortierung",
+  "area": "Activity",
+  "description": "Filter Updates/Comments/State/Assignee und Sortierung asc/desc, in localStorage gespeichert.",
+  "code_refs": [
+   "apps/web/components/issues/issue-detail/issue-activity/filter-root.tsx",
+   "apps/web/components/issues/issue-detail/issue-activity/activity-filter.tsx",
+   "apps/web/components/issues/issue-detail/issue-activity/sort-root.tsx"
+  ]
+ },
+ {
+  "name": "Kommentare",
+  "area": "Kommentare",
+  "description": "Kommentar erstellen (Enter sendet), bearbeiten (Autor), löschen, Link kopieren mit Hervorhebung, intern/öffentlich umschalten bei veröffentlichtem Projekt, Reaktionen.",
+  "code_refs": [
+   "apps/web/components/comments/comment-create.tsx",
+   "apps/web/components/comments/card/root.tsx",
+   "apps/web/components/comments/card/display.tsx",
+   "apps/web/components/comments/card/edit-form.tsx",
+   "apps/web/components/comments/quick-actions.tsx",
+   "apps/web/components/comments/comment-reaction.tsx",
+   "apps/web/components/comments/comment-block.tsx",
+   "apps/web/components/issues/issue-detail/issue-activity/helper.tsx",
+   "apps/web/components/issues/issue-detail/reactions/issue-comment.tsx"
+  ]
+ },
+ {
+  "name": "Create/Edit-Modal",
+  "area": "Modal",
+  "description": "Projektwahl, Titel, Rich-Text-Beschreibung mit Mentions/Uploads, Default-Properties-Pills, Parent, Create more, Discard, Save/Update, feste Tab-Reihenfolge.",
+  "code_refs": [
+   "apps/web/components/issues/issue-modal/modal.tsx",
+   "apps/web/components/issues/issue-modal/base.tsx",
+   "apps/web/components/issues/issue-modal/form.tsx",
+   "apps/web/components/issues/issue-modal/components/project-select.tsx",
+   "apps/web/components/issues/issue-modal/components/title-input.tsx",
+   "apps/web/components/issues/issue-modal/components/description-editor.tsx",
+   "apps/web/components/issues/issue-modal/components/default-properties.tsx",
+   "apps/web/components/issues/issue-modal/components/parent-tag.tsx",
+   "packages/constants/src/tab-indices.ts"
+  ]
+ },
+ {
+  "name": "Draft-Rückfrage beim Schließen",
+  "area": "Modal",
+  "description": "'Save this draft?' mit Discard/Cancel/Save to Drafts bei ungespeicherten neuen Items.",
+  "code_refs": [
+   "apps/web/components/issues/issue-modal/draft-issue-layout.tsx",
+   "apps/web/components/issues/confirm-issue-discard.tsx"
+  ]
+ },
+ {
+  "name": "AI-Hilfe im Modal",
+  "area": "Modal",
+  "description": "'I'm feeling lucky' (Beschreibung generieren) und AI-Popover, nur bei konfiguriertem LLM.",
+  "code_refs": [
+   "apps/web/components/issues/issue-modal/components/description-editor.tsx",
+   "apps/web/components/core/modals/gpt-assistant-popover.tsx"
+  ]
+ },
+ {
+  "name": "Workspace-Entwürfe",
+  "area": "Drafts",
+  "description": "Seite Drafts mit Liste, Load More, Inline-Properties, Doppelklick bearbeiten, Make a copy, Move to project, Delete, Empty-State 'Create draft work item'.",
+  "code_refs": [
+   "apps/web/components/issues/workspace-draft/root.tsx",
+   "apps/web/components/issues/workspace-draft/draft-issue-block.tsx",
+   "apps/web/components/issues/workspace-draft/draft-issue-properties.tsx",
+   "apps/web/components/issues/workspace-draft/quick-action.tsx",
+   "apps/web/components/issues/workspace-draft/empty-state.tsx",
+   "apps/web/components/issues/workspace-draft/loader.tsx",
+   "apps/web/components/issues/workspace-draft/delete-modal.tsx"
+  ]
+ },
+ {
+  "name": "Archivieren mit Bestätigung",
+  "area": "Archiv",
+  "description": "Dialog 'Archive Work item', nur completed/cancelled, Toast mit Hinweis auf Projekt-Archiv.",
+  "code_refs": [
+   "apps/web/components/issues/archive-issue-modal.tsx",
+   "packages/constants/src/state.ts"
+  ]
+ },
+ {
+  "name": "Wiederherstellen aus Archiv",
+  "area": "Archiv",
+  "description": "Restore im Archiv-Menü und in der Detailseite.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/quick-action-dropdowns/archived-issue.tsx",
+   "apps/web/components/issues/issue-detail/issue-detail-quick-actions.tsx",
+   "apps/web/services/issue/issue_archive.service.ts"
+  ]
+ },
+ {
+  "name": "Löschen mit Bestätigung",
+  "area": "Löschen",
+  "description": "Dialog 'Delete Work item' mit Berechtigungsprüfung (Ersteller/Admin).",
+  "code_refs": [
+   "apps/web/components/issues/delete-issue-modal.tsx"
+  ]
+ },
+ {
+  "name": "Hover-Vorschaukarte",
+  "area": "Allgemein",
+  "description": "Karte mit Identifier, State, Name, Priority und Datum.",
+  "code_refs": [
+   "apps/web/components/issues/preview-card/root.tsx",
+   "apps/web/components/issues/preview-card/date.tsx"
+  ]
+ },
+ {
+  "name": "Read-only-Label-Anzeige",
+  "area": "Allgemein",
+  "description": "Label-Chips bzw. Sammelchip 'N Labels' mit Tooltip.",
+  "code_refs": [
+   "apps/web/components/issues/label.tsx"
+  ]
+ },
+ {
+  "name": "State-Dropdown",
+  "area": "Dropdowns",
+  "description": "States mit Gruppen-Icon und Fortschritt, Suche, Workflow-Reihenfolge.",
+  "code_refs": [
+   "apps/web/components/dropdowns/state/state-select.tsx",
+   "packages/blocks/src/property-select/state-select.tsx"
+  ]
+ },
+ {
+  "name": "Priority-Dropdown",
+  "area": "Dropdowns",
+  "description": "urgent/high/medium/low/none mit PriorityIcon.",
+  "code_refs": [
+   "apps/web/components/dropdowns/priority/priority-select.tsx",
+   "packages/blocks/src/property-select/priority-select.tsx"
+  ]
+ },
+ {
+  "name": "Member-Dropdown",
+  "area": "Dropdowns",
+  "description": "Einzel/Mehrfach, aktueller Nutzer zuerst '(You)', Suspended deaktiviert, 'No assignee', Avatar-Gruppe max. 2 + '+N'.",
+  "code_refs": [
+   "apps/web/components/dropdowns/member/member-select.tsx",
+   "apps/web/components/dropdowns/member/avatar.tsx",
+   "packages/blocks/src/property-select/member-select.tsx"
+  ]
+ },
+ {
+  "name": "Label-Dropdown mit Anlage",
+  "area": "Dropdowns",
+  "description": "Mehrfachauswahl, Suche, Projekt-Admins legen Label aus Suchbegriff an.",
+  "code_refs": [
+   "apps/web/components/dropdowns/label/label-select.tsx",
+   "packages/blocks/src/property-select/label-select/label-select.tsx",
+   "packages/blocks/src/property-select/label-select/create-label-empty-state.tsx"
+  ]
+ },
+ {
+  "name": "Cycle-Dropdown",
+  "area": "Dropdowns",
+  "description": "Nur current/upcoming/draft, 'No cycle' zum Leeren.",
+  "code_refs": [
+   "apps/web/components/dropdowns/cycle/cycle-select.tsx",
+   "packages/blocks/src/property-select/cycle-select.tsx"
+  ]
+ },
+ {
+  "name": "Module-Dropdown",
+  "area": "Dropdowns",
+  "description": "Einzel/Mehrfach mit Suche.",
+  "code_refs": [
+   "apps/web/components/dropdowns/module/module-select.tsx",
+   "packages/blocks/src/property-select/module-select.tsx"
+  ]
+ },
+ {
+  "name": "Estimate-Dropdown",
+  "area": "Dropdowns",
+  "description": "Schätzpunkte (Zeit als h/m), 'No estimate', lazy geladen.",
+  "code_refs": [
+   "apps/web/components/dropdowns/estimate/estimate-select.tsx",
+   "packages/blocks/src/property-select/estimate-select.tsx"
+  ]
+ },
+ {
+  "name": "Projekt-Dropdown",
+  "area": "Dropdowns",
+  "description": "Joined/alle Projekte, Suche über Name und Identifier, ohne Archivierte.",
+  "code_refs": [
+   "apps/web/components/dropdowns/project/project-select.tsx",
+   "packages/blocks/src/property-select/project-select.tsx"
+  ]
+ },
+ {
+  "name": "Intake-State-Dropdown",
+  "area": "Dropdowns",
+  "description": "Einzelner Intake-State.",
+  "code_refs": [
+   "apps/web/components/dropdowns/intake-state/intake-state-select.tsx",
+   "packages/blocks/src/property-select/intake-state-select.tsx"
+  ]
+ },
+ {
+  "name": "Datum- und Datumsbereich-Auswahl",
+  "area": "Dropdowns",
+  "description": "Kalender-Popover mit min/max, Wochenstart, Clear; Bereich mit Zwei-Klick-Auswahl und zusammengeführtem Label.",
+  "code_refs": [
+   "packages/blocks/src/property-select/date-select.tsx",
+   "packages/blocks/src/property-select/date-range-select.tsx",
+   "packages/blocks/src/property-select/date-select-shell.tsx",
+   "apps/web/components/dropdowns/merged-date.tsx"
+  ]
+ },
+ {
+  "name": "Layout-Dropdown",
+  "area": "Dropdowns",
+  "description": "Auswahl eines Layouts als Pill-Select.",
+  "code_refs": [
+   "apps/web/components/dropdowns/layout.tsx"
+  ]
+ },
+ {
+  "name": "Read-only-Wertanzeigen",
+  "area": "Readonly",
+  "description": "State, Priority, Member, Labels, Cycle, Module, Date, Estimate als reine Anzeige (in CE ungenutzt).",
+  "code_refs": [
+   "apps/web/components/readonly/index.tsx",
+   "apps/web/components/readonly/state.tsx",
+   "apps/web/components/readonly/priority.tsx",
+   "apps/web/components/readonly/member.tsx",
+   "apps/web/components/readonly/labels.tsx",
+   "apps/web/components/readonly/cycle.tsx",
+   "apps/web/components/readonly/module.tsx",
+   "apps/web/components/readonly/date.tsx",
+   "apps/web/components/readonly/estimate.tsx"
+  ]
+ },
+ {
+  "name": "Generisches Layout-Framework",
+  "area": "Base-Layouts",
+  "description": "Generische List-/Kanban-/Gantt-Layouts mit Layout-Switcher, Gruppen-Drop-Ziel und Loader (in CE ungenutzt).",
+  "code_refs": [
+   "apps/web/components/base-layouts/layout-switcher.tsx",
+   "apps/web/components/base-layouts/list/layout.tsx",
+   "apps/web/components/base-layouts/kanban/layout.tsx",
+   "apps/web/components/base-layouts/gantt/layout.tsx",
+   "apps/web/components/base-layouts/gantt/sidebar.tsx",
+   "apps/web/components/base-layouts/hooks/use-group-drop-target.ts",
+   "apps/web/components/base-layouts/hooks/use-layout-state.ts",
+   "apps/web/components/base-layouts/loaders/layout-loader.tsx"
+  ]
+ },
+ {
+  "name": "Bulk Operations (Bezahlfeature, CE-Stub)",
+  "area": "Bezahlfunktionen",
+  "description": "Mehrfachauswahl mit Checkboxen/Tastatur und Massenänderung; in CE nur Upsell-Banner, Auswahl deaktiviert – neu zu bauen.",
+  "code_refs": [
+   "apps/web/components/issues/bulk-operations/root.tsx",
+   "apps/web/hooks/use-bulk-operation-status.ts",
+   "apps/web/hooks/use-multiple-select.ts",
+   "apps/web/components/core/multiple-select",
+   "apps/web/services/issue/issue.service.ts"
+  ]
+ },
+ {
+  "name": "Workflows beim DnD (Bezahlfeature, CE-Stub)",
+  "area": "Bezahlfunktionen",
+  "description": "Sperren nicht erlaubter State-Übergänge in Board/List und bei Quick-Add.",
+  "code_refs": [
+   "apps/web/components/workflow/use-workflow-drag-n-drop.ts"
+  ]
+ },
+ {
+  "name": "Duplizieren in anderes Projekt (Bezahlfeature, CE-Stub)",
+  "area": "Bezahlfunktionen",
+  "description": "Erweiterung von 'Make a copy'.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/quick-action-dropdowns/copy-menu-helper.tsx"
+  ]
+ },
+ {
+  "name": "Epics (Bezahlfeature, CE-Stub)",
+  "area": "Bezahlfunktionen",
+  "description": "Epic-Modal, Epic-Empty-State, Epic-Layouts (isEpic-Zweige).",
+  "code_refs": [
+   "apps/web/components/epic-modal/modal.tsx",
+   "apps/web/components/issues/issue-layouts/empty-states/project-epic.tsx"
+  ]
+ },
+ {
+  "name": "Work-Item-Typen, Custom Properties, Vorlagen, Konvertierung (Bezahlfeature, CE-Stub)",
+  "area": "Bezahlfunktionen",
+  "description": "Erweiterungspunkte im Modal-Provider und Typ-Switcher.",
+  "code_refs": [
+   "apps/web/components/issues/issue-modal/provider.tsx",
+   "apps/web/components/issues/issue-modal/context/issue-modal-context.tsx",
+   "apps/web/components/issues/issue-type-switcher.tsx"
+  ]
+ },
+ {
+  "name": "Timeline-Abhängigkeiten (Bezahlfeature, CE-Stub)",
+  "area": "Bezahlfunktionen",
+  "description": "Dependency-Linien und -Typen im Gantt.",
+  "code_refs": [
+   "apps/web/store/timeline/base-timeline.store.ts",
+   "packages/constants/src/issue/filter.ts",
+   "apps/web/components/gantt-chart/blocks/block.tsx"
+  ]
+ },
+ {
+  "name": "Erweiterte Filteroperatoren (Bezahlfeature, CE-Stub)",
+  "area": "Bezahlfunktionen",
+  "description": "Zusätzliche/negierte Operatoren im Filter-Chip.",
+  "code_refs": [
+   "packages/types/src/rich-filters/operators/extended.ts",
+   "apps/web/hooks/rich-filters/use-filters-operator-configs.ts"
+  ]
+ },
+ {
+  "name": "Kommentar-Antworten (Bezahlfeature, CE-Stub)",
+  "area": "Bezahlfunktionen",
+  "description": "Reply-Threads unter Kommentaren (Prop enableReplies, i18n vorhanden).",
+  "code_refs": [
+   "apps/web/components/comments/card/root.tsx"
+  ]
+ },
+ {
+  "name": "Teamspace-Gruppierung (Bezahlfeature, CE-Stub)",
+  "area": "Bezahlfunktionen",
+  "description": "Gruppierung team_project und Teamspace-Stores.",
+  "code_refs": [
+   "apps/web/components/issues/issue-layouts/utils.tsx"
+  ]
+ }
+]

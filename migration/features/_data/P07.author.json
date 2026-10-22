@@ -1,0 +1,716 @@
+{
+ "doc_path": "/home/user/plane/migration/features/26-paid-wissen-pages-wiki.md",
+ "summary": "Ich habe die IST-Analyse für Cluster P07 (Wissensmanagement) nach /home/user/plane/migration/features/26-paid-wissen-pages-wiki.md geschrieben (831 Zeilen). Das Dokument erfasst 45 Bezahl-Merkmale (P07-01 bis P07-45) plus die Upsell-/Downgrade-Flows (P07-46), die nach ADR-001 entfallen. Alle Merkmale haben Plan-Tier, Abstufung, CE-Status und Quellen. Die Abschnitte bringen Funktionsbeschreibung, Datenmodell, API, UI, Migrationshinweis (ADR) und Konfidenz.\n\nQuellen: Plan-Matrix (plans.tsx) und subscription.ts, EE-Texte in den i18n-Dateien (wiki, page, editor, template, work-item), CE-Code auf EE-Spuren geprüft, Developer-Docs offline, zwei neuere GitHub-Branches von makeplane/developer-docs (per WebFetch), Helm-Chart plane-enterprise (iframely, drawio, live_exporter, Export-Queue) und rund 60 WebSearch-Abfragen zu docs.plane.so, Changelog und Blog.\n\nWichtige Befunde:\n- Realtime: Der CRDT-Sync läuft im CE schon. Bezahlt sind nur Live-Cursor und Presence-Avatare; das CE schaltet \"collaboration-cursor\" ab. Wiki- und Teamspace-Dokumenttypen (workspace_page, team_page) gibt es nur in der EE.\n- Versionen und Export sind im CE schon teilweise da. Versionen: maximal 20 pro Seite, Änderungen innerhalb 10 Minuten werden zusammengefasst. Export: PDF und Markdown clientseitig. Bezahlt sind die Aufbewahrungsstufen, Diff und Versionsvergleich, DOCX, die Export-Queue und der ZIP-Export mit Unterseiten.\n- Im CE stecken viele EE-Stubs: Page.is_global, parent, moved_to_*, sub_pages_data, DeployBoard 'page', TEditorCommands 'attachment'/'external-embed', CSS-Selektoren für drawio und embed, ein leerer Attachment-Zweig im Drop-Plugin, eine nicht registrierte Work-Item-Embed-NodeView und usePageFlag mit Move/Sharing auf false.\n- Den HTML-Vertrag habe ich für 9 Editor-Komponenten belegt: mention, issue-embed, page-embed, image, callout, external-embed, block-/inline-math, inline-date, attachment.\n- Ebenfalls belegt: Collections-API (Rollen 0/1/2, private Collections, placement, archive_pages), Analytics-Zählregeln (1-Stunden-Dedup, Owner-Ansichten ausgeschlossen), Publish-Regeln (Anchor mit 32 Hex-Zeichen, Archivieren hebt Veröffentlichung auf) und die Liste der Editor-Blöcke mit ihren Tiers.\n- Möglicher CE-Bug (nicht ausgeführt, UNVERIFIZIERT): track_page_version liest page.description, ein Feld, das es nicht gibt.\n- Top-Lizenz-only: unbegrenzte Versionen, der Block \"Link dashboard widgets\" und Databases + Formulas (nur angekündigt, kein Auslieferungsnachweis).\n\nZwei Rückfragen an den Auftraggeber: ob eine Commercial-Instanz für 1:1-Referenzen der EE-only-Oberflächen bereitsteht, und wie mit Databases + Formulas umgegangen werden soll.\n\nIch habe nichts außerhalb von migration/ geändert und keinen Commit gemacht.",
+ "paid_features": [
+  {
+   "name": "Wiki (Workspace-Seiten ohne Projekt) inkl. Wiki-Home, Sidebar, Feature-Toggle",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Pro",
+   "tier_details": "Matrix plans.tsx: Free ✗, One/Pro/Business/Enterprise ✓; PRO_PLAN_FEATURES 'Wikis'; Upsell-Text 'with Plane Pro'; Doku 'Wiki Pro'",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Workspaceweite Wissensbasis unter /{slug}/wiki/{pageId}; Sidebar Home/Favorites/Collections/Shared/Private/Archived; Gäste ausgeschlossen; Toggle Workspace settings › Wiki (Flag wiki); Shortcut D",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/constants/src/subscription.ts",
+    "packages/i18n/src/locales/en/wiki.json",
+    "apps/web/hooks/use-workspace-paths.ts",
+    "apps/web/components/power-k/ui/modal/search-results-map.tsx",
+    "apps/api/plane/db/models/page.py",
+    "https://docs.plane.so/core-concepts/pages/wiki",
+    "/home/user/makeplane/developer-docs/docs/api-reference/workspace-features/overview.md"
+   ],
+   "confidence": "hoch",
+   "api_hints": "v1 /api/v1/workspaces/{slug}/pages/ (type all|public|private|shared|archived), v2 /api/v2/workspaces/{slug}/pages/; Scope wiki.pages:*; Realtime documentType workspace_page",
+   "data_model_hints": "Page.is_global=true, keine ProjectPage; Felder collection_id, page_collection_id, parent_id",
+   "ui_hints": "i18n workspace_pages.empty_state.*; Empty-State-Assets apps/web/app/assets/empty-state/wiki/*"
+  },
+  {
+   "name": "Wiki-Collections (öffentlich, Default 'General')",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Pro",
+   "tier_details": "Doku: Wiki and Collections Pro+; Blog Collections Pro+",
+   "ce_status": "fehlt",
+   "description": "Flache Gruppen für Wiki-Seiten; Default-Collection General geschützt; Add existing page, Edit, Delete mit Transfer oder mit Seiten; Tabelle Page name/Owner/Nested pages/Last activity/Actions",
+   "sources": [
+    "packages/i18n/src/locales/en/wiki.json",
+    "https://docs.plane.so/core-concepts/pages/wiki",
+    "https://plane.so/blog/introducing-collections-and-ai-native-documentation",
+    "https://raw.githubusercontent.com/makeplane/developer-docs/docs-page-update-api/docs/api-reference/collection/overview.md"
+   ],
+   "confidence": "hoch",
+   "api_hints": "v1 collections CRUD, add/remove/list/search pages, move-or-reorder (placement append|before|after), DELETE ?archive_pages; v2 /api/v2/workspaces/{slug}/collections/ inkl. members, pages, pages-search",
+   "data_model_hints": "Collection {name, access 0|1 immutable, is_default, is_global, logo_props, sort_order, owned_by_id, current_user_access, has_pages}; Membership page_collection {collection, page, sort_order}",
+   "ui_hints": "wiki_collections.* (Formulare, Modale, Toasts, Listen-Spalten)"
+  },
+  {
+   "name": "Private Collections",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Business",
+   "tier_details": "Doku/Blog: Business+; nur Workspace-Admins legen an",
+   "ce_status": "fehlt",
+   "description": "Nur eingeladene Mitglieder sehen Collection (nicht in Sidebar/Suche); Rollen view/comment/edit; Owner/Admin verwalten Mitglieder; Verschiebe-Regeln für Seitenbäume",
+   "sources": [
+    "https://raw.githubusercontent.com/makeplane/developer-docs/docs-page-update-api/docs/api-reference/collection/overview.md",
+    "https://raw.githubusercontent.com/makeplane/developer-docs/docs-page-update-api/docs/api-reference/collection/move-or-reorder-collection-page.md",
+    "https://plane.so/blog/introducing-collections-and-ai-native-documentation"
+   ],
+   "confidence": "hoch",
+   "api_hints": "POST …/collections/{id}/members/ {member, access 0|1|2}; v2 members {add:[{member_id,access}], remove:[]}",
+   "data_model_hints": "page_collection_members(collection_id, member_id, access)",
+   "ui_hints": "'Invite only', 'Restricted Access'"
+  },
+  {
+   "name": "Nested Pages",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Business",
+   "tier_details": "Matrix Business/Enterprise (COMING SOON, fehlerhafter Zellwert); BUSINESS_PLAN_FEATURES 'Nested Pages'; Doku/Blog Business+",
+   "ce_status": "teilweise im CE",
+   "description": "Hierarchie in Wiki/Projekt/Teamspace; /page legt Unterseite an; Drag umhängen; Breadcrumbs; keine Sichtbarkeitsvererbung; Archiv rekursiv; Löschen mit Option Kinder hochzuziehen",
+   "sources": [
+    "apps/api/plane/db/models/page.py",
+    "apps/api/plane/app/views/page/base.py",
+    "packages/constants/src/subscription.ts",
+    "https://docs.plane.so/core-concepts/pages/nested-pages",
+    "packages/i18n/src/locales/en/page.json"
+   ],
+   "confidence": "hoch",
+   "api_hints": "parent_id in Page-Objekt und Updates; Anlage mit Parent fügt page-embed-component ins Elterndokument",
+   "data_model_hints": "Page.parent (CE), PageVersion.sub_pages_data; CTE/ltree für Bäume",
+   "ui_hints": "Expand/Collapse 'Collapse page'/'Expand page'; Banner page_content_limit_banner"
+  },
+  {
+   "name": "Page-Versionen: Aufbewahrung",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Pro",
+   "tier_details": "Matrix: Pro 2 days, Business 3 months, Enterprise Unlimited; aktuelle Preisseite: Pro 20 versions/30 days, Business 60/90 days, Enterprise Grid Unlimited",
+   "ce_status": "teilweise im CE",
+   "description": "Versionsliste im Info-Tab, Nur-Lese-Ansicht, Restore erzeugt neuen Eintrag; CE: max 20 Versionen, 600-s-Zusammenfassung pro User, keine Zeit-Retention; möglicher CE-Bug page.description",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "apps/api/plane/bgtasks/page_version_task.py",
+    "apps/api/plane/bgtasks/cleanup_task.py",
+    "https://plane.so/pricing"
+   ],
+   "confidence": "hoch",
+   "api_hints": "GET …/pages/{id}/versions/, …/versions/{pk}/",
+   "data_model_hints": "page_versions + konfigurierbare max_count/retention_days/coalesce_seconds",
+   "ui_hints": "apps/web/components/pages/navigation-pane/tab-panels/info/version-history.tsx"
+  },
+  {
+   "name": "Versionen: Highlight changes, Vergleich zweier Versionen, Server-Restore",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "unklar",
+   "tier_details": "keine Plan-Angabe; vermutlich wie Versionen (UNVERIFIZIERT)",
+   "ce_status": "fehlt",
+   "description": "Toggle 'Highlight changes' (Default an) markiert Änderungen; seit 2026-07-31 Diff beliebiger zweier Versionen; Web ruft …/versions/{id}/restore/, CE-API ohne Route",
+   "sources": [
+    "packages/i18n/src/locales/en/page.json",
+    "apps/web/services/page/project-page-version.service.ts",
+    "apps/web/components/pages/editor/page-root.tsx",
+    "https://plane.so/changelog/2026-07-31-skills-plane-ai-richer-pages-audit-logs",
+    "https://plane.so/changelog/release-v-2-4-0-plane-ai-now-available"
+   ],
+   "confidence": "mittel",
+   "api_hints": "POST …/versions/{id}/restore/ (nur Client-Aufruf belegt)",
+   "data_model_hints": "Diff aus description_json zweier Versionen"
+  },
+  {
+   "name": "Real-time Collaboration (Presence-Avatare + Live-Cursor)",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "One",
+   "tier_details": "Matrix Free ✗, One+ ✓; ONE_PLAN_FEATURES 'Real-time collab + public views and page'; Upsell-Text nennt real-time collaboration als Pro-Freischaltung",
+   "ce_status": "teilweise im CE",
+   "description": "CE hat Yjs-CRDT-Sync für Projektseiten; Bezahl-Teil: Profilbilder der Anwesenden oben, farbige Live-Cursor; Realtime für Wiki/Teamspace-Seiten",
+   "sources": [
+    "apps/web/hooks/use-editor-flagging.ts",
+    "packages/editor/src/hooks/use-collaborative-editor.ts",
+    "apps/web/components/pages/editor/editor-body.tsx",
+    "apps/live/src/types/index.ts",
+    "packages/types/src/page/core.ts",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/plane-architecture.md",
+    "https://docs.plane.so/pages/overview"
+   ],
+   "confidence": "hoch",
+   "api_hints": "WebSocket {LIVE_BASE_PATH}/collaboration?documentType=project_page|workspace_page|team_page&projectId&teamId&workspaceSlug; y-protocols Awareness",
+   "data_model_hints": "keine Persistenz; Awareness user {id,name,color}",
+   "ui_hints": "Avatar-Stapel im Header, Cursor mit Namen"
+  },
+  {
+   "name": "Page-Publish (öffentlicher Link, Kommentare Externer, Report)",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "One",
+   "tier_details": "Matrix One+; Doku: Publish erfordert Pro; FREE_PLAN_UPGRADE_FEATURES 'Public Views and Pages'",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Publish-Button oben rechts erzeugt Link; Kommentare ohne Workspace-Konto; Teamspace-Seiten nicht; Archivieren hebt Veröffentlichung auf; Report-Dialog mit vier Gründen",
+   "sources": [
+    "apps/api/plane/db/models/deploy_board.py",
+    "packages/types/src/publish.ts",
+    "packages/i18n/src/locales/en/common.json",
+    "https://developers.plane.so/api-reference/v2/published-pages/overview",
+    "https://docs.plane.so/pages/report-page"
+   ],
+   "confidence": "hoch",
+   "api_hints": "v2 GET /api/v2/workspaces/{slug}/published-pages/{anchor}/ (read-only, kein Publish-Endpunkt in Public-API)",
+   "data_model_hints": "deploy_boards entity_name='page', anchor 32 hex, is_comments_enabled, is_reactions_enabled",
+   "ui_hints": "'Powered by Plane Pages' (powered_by_plane_pages)"
+  },
+  {
+   "name": "Page-Exports PDF/Word/Markdown, Queue, ZIP inkl. Unterseiten",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Pro",
+   "tier_details": "Matrix: Pro 'One download at a time', Business/Enterprise 'Queued downloads'; DOCX seit v2.5.3; ZIP-Subtree und Hintergrund seit v3.1.0",
+   "ce_status": "teilweise im CE",
+   "description": "CE: clientseitig PDF (A4/A3/A2/Letter/Legal/Tabloid, No images) und Markdown, Live-/pdf-export ungenutzt; EE: DOCX, Hintergrund-Worker (RabbitMQ plane-exports, live-exporter), ZIP mit Unterseiten, eigene Exporte herunterladen",
+   "sources": [
+    "apps/web/components/pages/modals/export-page-modal.tsx",
+    "apps/live/src/controllers/pdf-export.controller.ts",
+    "/home/user/makeplane/helm-charts/charts/plane-enterprise/values.yaml",
+    "/home/user/makeplane/helm-charts/charts/plane-enterprise/README.md",
+    "https://plane.so/changelog/release-v2-5-3-docx-export-for-pages",
+    "https://plane.so/changelog/release-v3-1-0-audit-logs-skills-in-plane-ai-dashboards-and-more"
+   ],
+   "confidence": "hoch",
+   "api_hints": "Live POST /pdf-export {pageId, workspaceSlug, projectId?, title?, author?, subject?, pageSize?, pageOrientation?, fileName?, noAssets?}; EXPORT_DOWNLOAD_BASE_URL",
+   "data_model_hints": "page_export_jobs(format, include_sub_pages, status, file_asset_id, expires_at)",
+   "ui_hints": "Export-Modal CE als Basis"
+  },
+  {
+   "name": "Page Templates (Workspace/Projekt)",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Pro",
+   "tier_details": "Matrix Pro/Business/Enterprise ✓; Blog Pro+",
+   "ce_status": "fehlt",
+   "description": "Templates in Workspace Settings › Templates und Projekteinstellungen; Picker 'Choose from template' bei '+'; 'Use template'",
+   "sources": [
+    "packages/i18n/src/locales/en/template.json",
+    "https://docs.plane.so/templates/page-templates",
+    "https://developers.plane.so/api-reference/v2/workspace-page-templates/overview"
+   ],
+   "confidence": "hoch",
+   "api_hints": "/api/v2/workspaces/{slug}/page-templates/ CRUD",
+   "data_model_hints": "name≤255, description_html, short_description, template_type 'page', project_id (null=Workspace), template_data (Titel, HTML, Anzeige; parent {id, project_id, project_identifier})",
+   "ui_hints": "templates.settings.form.page.*, empty_state.page.*"
+  },
+  {
+   "name": "Work-Item-Embeds in Pages",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "One",
+   "tier_details": "Matrix One+; Doku-Label 'Work item Pro'",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Block zeigt Karte eines Work Items mit aktuellen Details; archivierte öffnen Read-only-Peek",
+   "sources": [
+    "packages/editor/src/extensions/work-item-embed/extension.tsx",
+    "packages/editor/src/extensions/core-without-props.ts",
+    "https://raw.githubusercontent.com/makeplane/developer-docs/docs-page-update-api/docs/api-reference/page/page-content-html.md",
+    "https://docs.plane.so/core-concepts/pages/editor-blocks"
+   ],
+   "confidence": "hoch",
+   "data_model_hints": "<issue-embed-component id entity_identifier project_identifier workspace_identifier entity_name='issue'>",
+   "ui_hints": "Kartenlayout nicht im CE"
+  },
+  {
+   "name": "Work-Item-Mentions & Create work item from selection",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Business",
+   "tier_details": "Doku-Labels Business",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "@-Mention von Work Items; markierten Text in neues Work Item umwandeln (Text→Mention, endgültig)",
+   "sources": [
+    "apps/web/hooks/use-additional-editor-mention.tsx",
+    "packages/types/src/search.ts",
+    "https://docs.plane.so/pages/overview",
+    "https://plane.so/changelog/release-v-2-1-0-text-to-work-items-video-attachments-and-block-links"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "Link Pages ↔ Work Items",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "One",
+   "tier_details": "Matrix One+; ONE_PLAN_FEATURES 'Link pages in issues and vice-versa'; Changelog Pro",
+   "ce_status": "fehlt",
+   "description": "Pages-Sektion im Work Item, Button 'Link pages' mit Mehrfachauswahl Projekt+Wiki; eine Seite je Work Item einmal (409)",
+   "sources": [
+    "packages/i18n/src/locales/en/work-item.json",
+    "/home/user/makeplane/developer-docs/docs/api-reference/work-item-pages/overview.md",
+    "https://developers.plane.so/api-reference/v2/work-item-pages/overview",
+    "https://plane.so/changelog/release-v-1-13-0-duplicate-work-items-and-epics-across-projects"
+   ],
+   "confidence": "hoch",
+   "api_hints": "v1/v2 …/work-items/{wid}/pages/; Delete per Link-ID",
+   "data_model_hints": "work_item_pages(issue_id, page_id, project_id, workspace_id) unique aktiv"
+  },
+  {
+   "name": "Inline-Kommentare",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Business",
+   "tier_details": "Blog: Inline Page comments Business",
+   "ce_status": "fehlt",
+   "description": "Kommentar-Thread an markiertem Text, Antworten im Comments-Panel, Resolve/Unresolve, Filter active/resolved/all, nur Autor editiert",
+   "sources": [
+    "packages/i18n/src/locales/en/page.json",
+    "https://docs.plane.so/core-concepts/pages/inline-comments",
+    "https://plane.so/blog/plane-wiki-and-pages-a-guide-to-team-documentation"
+   ],
+   "confidence": "hoch",
+   "data_model_hints": "page_comments(comment_type, anchor_id, parent_id, is_resolved, …), page_comment_reactions (Vorschlag)",
+   "ui_hints": "Navigation-Pane-Tab comments (paneTab)"
+  },
+  {
+   "name": "Page-Level-Kommentare, Filter, Moderation",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "unklar",
+   "tier_details": "keine Plan-Angabe",
+   "ce_status": "fehlt",
+   "description": "Kommentare zur ganzen Seite, Umschalter Page/Inline, Filter Status und Autor, Kommentar-Link; Admins verbergen/einblenden mit Grund",
+   "sources": [
+    "https://plane.so/changelog/2026-10-15-page-comments-dashboard-custom-properties",
+    "https://plane.so/changelog/release-v3-2-0-workspace-governance-ai-memory-pii-scanning-and-more"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "Page-Sharing / Access-Control",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Business",
+   "tier_details": "Doku: Business+ für private Wiki-Seiten",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Share mit Can view/Can comment/Can edit, Ansicht Shared, nur Wiki-Seiten, nur eigene Seite, E-Mail bei Freigabe",
+   "sources": [
+    "apps/web/hooks/use-page-flag.ts",
+    "packages/i18n/src/locales/en/workspace.json",
+    "packages/i18n/src/locales/en/common.json",
+    "https://docs.plane.so/core-concepts/pages/wiki",
+    "/home/user/makeplane/developer-docs/docs/api-reference/page/list-workspace-pages.md"
+   ],
+   "confidence": "hoch",
+   "api_hints": "Listenfilter type=shared; Share-Endpunkt nicht dokumentiert",
+   "data_model_hints": "page_members(page_id, member_id, access 0|1|2) (Vorschlag)"
+  },
+  {
+   "name": "Teamspace-Pages",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Pro",
+   "tier_details": "nur indirekt: PRO_PLAN_FEATURES 'Teamspaces' (UNVERIFIZIERT)",
+   "ce_status": "fehlt",
+   "description": "Seiten im Teamspace-Tab, immer öffentlich im Teamspace, Lead-Sonderrechte, kein Publish/Work-Item-Link",
+   "sources": [
+    "packages/constants/src/subscription.ts",
+    "packages/types/src/page/core.ts",
+    "https://docs.plane.so/core-concepts/workspaces/teamspaces",
+    "https://docs.plane.so/roles-and-permissions/permissions-matrix"
+   ],
+   "confidence": "mittel",
+   "api_hints": "Realtime documentType team_page, teamId"
+  },
+  {
+   "name": "Page Labels",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Business",
+   "tier_details": "Blog/Doku Business+",
+   "ce_status": "teilweise im CE",
+   "description": "Eigene Workspace-Seitenlabels (getrennt von Work-Item-Labels), Verwaltung Workspace settings › Wiki, OR-Filter, Rechte je Seitentyp",
+   "sources": [
+    "apps/api/plane/db/models/page.py",
+    "https://docs.plane.so/pages/page-labels",
+    "https://plane.so/blog/plane-wiki-and-pages-a-guide-to-team-documentation"
+   ],
+   "confidence": "hoch",
+   "data_model_hints": "CE PageLabel→Work-Item-Label; Ziel page_label_definitions + page_label_assignments"
+  },
+  {
+   "name": "Moving Pages",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Pro",
+   "tier_details": "Doku: Moving Pro",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Move-Icon, Ziel Projekt/Teamspace/Wiki/Collection, entsperrt+nicht archiviert, private/geteilte nicht in Teamspace, Fallback General, Unterseiten wandern mit",
+   "sources": [
+    "packages/i18n/src/locales/en/page.json",
+    "apps/web/hooks/use-page-flag.ts",
+    "apps/web/components/pages/dropdowns/actions.tsx",
+    "apps/api/plane/db/models/page.py",
+    "https://docs.plane.so/pages/organize-pages"
+   ],
+   "confidence": "hoch",
+   "data_model_hints": "moved_to_page, moved_to_project (CE-Felder ohne Funktion)"
+  },
+  {
+   "name": "Databases + Formulas in Pages",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Business",
+   "tier_details": "Matrix Business/Enterprise COMING SOON; planHighlights.enterprise und ENTERPRISE_PLAN_FEATURES nennen es Enterprise; kein Auslieferungsnachweis",
+   "ce_status": "fehlt",
+   "description": "Datenbanken und Formeln in Seiten ohne Verlust anderer Inhalte (nur Ankündigung)",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/constants/src/subscription.ts"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "Draw.io-Diagramme und -Boards",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Pro",
+   "tier_details": "Integrationsdoku Pro, Blog Business (widersprüchlich)",
+   "ce_status": "fehlt",
+   "description": "Workspace-Integration verbinden, Blöcke Draw.io diagram (voller Editor) und Draw.io board (Whiteboard), nicht in Versionshistorie",
+   "sources": [
+    "packages/editor/src/plugins/drag-handle.ts",
+    "/home/user/makeplane/helm-charts/charts/plane-enterprise/templates/config-secrets/app-env.yaml",
+    "/home/user/makeplane/helm-charts/charts/plane-enterprise/templates/workloads/drawio.deployment.yaml",
+    "https://github.com/makeplane/helm-charts/pull/245",
+    "https://docs.plane.so/integrations/draw-io",
+    "https://www.drawio.com/blog/diagrams-in-plane"
+   ],
+   "confidence": "mittel",
+   "api_hints": "DRAWIO_EMBED_URL; Editor <url>/?embed=1, Viewer <url>/js/viewer-static.min.js; Fallback diagrams.net",
+   "data_model_hints": "Persistenzformat unbekannt; Vorschlag drawio-component mit XML- und Vorschau-Asset"
+  },
+  {
+   "name": "Externe Embeds / Rich Cards (Iframely), Medien per URL",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Pro",
+   "tier_details": "Doku-Label Embed Pro",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "/embed für YouTube/Figma/Google Docs/Loom; Umschalten Embed/Link/Rich Card; Zoom; Bilder/Videos per URL",
+   "sources": [
+    "packages/i18n/src/locales/en/editor.json",
+    "packages/editor/src/types/editor.ts",
+    "/home/user/makeplane/helm-charts/charts/plane-enterprise/templates/config-secrets/live-env.yaml",
+    "https://docs.plane.so/core-concepts/pages/editor-blocks",
+    "https://plane.so/changelog/release-v-1-15-0-embeds-pages-and-integrations-for-connected-cross-team-work"
+   ],
+   "confidence": "hoch",
+   "data_model_hints": "<external-embed-component src data-entity-name data-entity-type data-is-rich-card data-has-tried-embedding data-has-embed-failed>",
+   "api_hints": "IFRAMELY_URL (Iframely Port 8061, Node)"
+  },
+  {
+   "name": "Attachments in Pages (inkl. Office-Bearbeitung)",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Pro",
+   "tier_details": "Doku-Label Attachment Pro; Cloud-Max-Dateigröße Free 5MB/Pro 100MB/Business 200MB/Enterprise Custom",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Datei als Karte, ausführbare Dateien blockiert, Video Show preview/Show as attachment, Office-Dateien in Microsoft Office bearbeitbar",
+   "sources": [
+    "packages/editor/src/plugins/drop.ts",
+    "packages/editor/src/constants/config.ts",
+    "packages/i18n/src/locales/en/editor.json",
+    "https://raw.githubusercontent.com/makeplane/developer-docs/docs-page-update-api/docs/api-reference/page/page-content-html.md",
+    "https://raw.githubusercontent.com/makeplane/developer-docs/docs-page-update-api/docs/api-reference/page/confirm-workspace-page-attachment-upload.md",
+    "https://plane.so/changelog/2026-09-15-ai-memory-workspace-labels-ms-office-edits"
+   ],
+   "confidence": "hoch",
+   "api_hints": "Asset-Upload entity_type PAGE_DESCRIPTION, PATCH …/pages/{id}/attachments/{attachment_id}/ {is_uploaded}",
+   "data_model_hints": "<attachment-component id src data-name data-file-size data-file-type status>"
+  },
+  {
+   "name": "Video-Block",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Pro",
+   "tier_details": "Doku-Label Video Pro",
+   "ce_status": "fehlt",
+   "description": "/video, Upload und Wiedergabe MP4/MPEG/OGG/WebM/QuickTime/AVI/WMV",
+   "sources": [
+    "https://docs.plane.so/core-concepts/pages/editor-blocks",
+    "https://plane.so/changelog/release-v-2-1-0-text-to-work-items-video-attachments-and-block-links"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "Advanced Pages Analytics (Page + Collection)",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Business",
+   "tier_details": "Matrix Business/Enterprise COMING SOON; Doku Business",
+   "ce_status": "fehlt",
+   "description": "Panel über ••• › Analytics, 7/30/90/all, Total/Unique views, Nested pages, Attachments, Tageschart, Viewers-Tab; 1-h-Dedup, Owner ausgeschlossen; Collection-Rollup",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "https://docs.plane.so/pages/page-analytics",
+    "https://plane.so/changelog/2026-08-31-shared-views-tabs-in-pages-and-more"
+   ],
+   "confidence": "hoch",
+   "data_model_hints": "page_views(page_id, user_id, viewed_at)"
+  },
+  {
+   "name": "Stickies-Erweiterungen",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "unklar",
+   "tier_details": "kein Bezahl-Gate belegbar; Matrix ohne Stickies-Zeile",
+   "ce_status": "im CE vorhanden (nur Cloud-Gating)",
+   "description": "Stickies vollständig im CE; Änderungen im Original nur Floater-Position und v2-API",
+   "sources": [
+    "apps/api/plane/db/models/sticky.py",
+    "apps/web/components/stickies/action-bar.tsx",
+    "/home/user/makeplane/developer-docs/docs/api-reference/sticky/overview.md",
+    "https://docs.plane.so/core-concepts/stickies"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "Plane AI im Editor: Selection-Aktionen",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "unklar",
+   "tier_details": "Plane-AI-gebunden (UNVERIFIZIERT)",
+   "ce_status": "Stub/UI-Hülle im CE",
+   "description": "Paraphrase, Simplify, Elaborate, Summarize, Get title, Ton, Replace selection; CE: Ask-Pi-Menü, ai deaktiviert",
+   "sources": [
+    "apps/web/components/pages/editor/ai/menu.tsx",
+    "packages/editor/src/plugins/ai-handle.ts",
+    "apps/web/hooks/use-editor-flagging.ts",
+    "https://docs.plane.so/ai/plane-ai"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "Plane AI: AI-Block",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Pro",
+   "tier_details": "Blog Pro+, Guide/Doku Business (widersprüchlich)",
+   "ce_status": "fehlt",
+   "description": "/ai bzw. /ai-block, Summarize Page / Custom Prompt, Regenerate/Refine/Rewrite/Use this/Discard, Stale-Indikator",
+   "sources": [
+    "packages/i18n/src/locales/en/editor.json",
+    "https://plane.so/changelog/2026-06-15-ai-block-in-pages",
+    "https://docs.plane.so/core-concepts/pages/editor-blocks"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "Plane AI: Prompt/Agent in Pages mit Proposals",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Pro",
+   "tier_details": "Blog Pro+, Doku Business (widersprüchlich)",
+   "ce_status": "fehlt",
+   "description": "KI schlägt Änderungen an mehreren Abschnitten vor, blockweise annehmen/ablehnen",
+   "sources": [
+    "https://docs.plane.so/ai/plane-ai",
+    "https://plane.so/blog/introducing-collections-and-ai-native-documentation"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "Editor-Block Columns",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Pro",
+   "tier_details": "Doku-Label Columns Pro",
+   "ce_status": "fehlt",
+   "description": "2/3/4 Spalten mit beliebigen Blöcken",
+   "sources": [
+    "https://docs.plane.so/core-concepts/pages/editor-blocks",
+    "https://plane.so/changelog/release-v2-5-0-project-labels-sso-for-god-mode-columns-in-pages"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "Editor-Block Tabs",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Business",
+   "tier_details": "Doku-Label Tabs Business",
+   "ce_status": "fehlt",
+   "description": "horizontale/vertikale Tabs, startet mit zwei, read-only umschaltbar",
+   "sources": [
+    "https://docs.plane.so/core-concepts/pages/editor-blocks",
+    "https://plane.so/changelog/2026-08-31-shared-views-tabs-in-pages-and-more"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "Editor-Block Toggle",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Business",
+   "tier_details": "Doku-Label Toggle Business",
+   "ce_status": "fehlt",
+   "description": "aufklappbarer Block /toggle",
+   "sources": [
+    "https://docs.plane.so/core-concepts/pages/editor-blocks",
+    "https://plane.so/changelog/2026-08-14-collapsible-toggle-blocks-dashboard-intake-widgets"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "Editor-Inline Status",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Pro",
+   "tier_details": "Doku-Label Status Pro",
+   "ce_status": "fehlt",
+   "description": "/status|/label|/badge|/tag, graues 'STATUS', sechs Farben",
+   "sources": [
+    "https://docs.plane.so/core-concepts/pages/editor-blocks"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "Editor-Inline Date",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Pro",
+   "tier_details": "Doku-Label Date Pro",
+   "ce_status": "fehlt",
+   "description": "/date|/calendar|/deadline|/due, Pill mit Kalender",
+   "sources": [
+    "https://docs.plane.so/core-concepts/pages/editor-blocks",
+    "https://raw.githubusercontent.com/makeplane/developer-docs/docs-page-update-api/docs/api-reference/page/page-content-html.md"
+   ],
+   "confidence": "hoch",
+   "data_model_hints": "<inline-date-component id date>"
+  },
+  {
+   "name": "Block- und Inline-Gleichungen (LaTeX)",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Business",
+   "tier_details": "Doku-Label Business",
+   "ce_status": "fehlt",
+   "description": "$$…$$ Block zentriert, $…$ inline, Fehleranzeige",
+   "sources": [
+    "https://docs.plane.so/core-concepts/pages/editor-blocks",
+    "https://raw.githubusercontent.com/makeplane/developer-docs/docs-page-update-api/docs/api-reference/page/page-content-html.md"
+   ],
+   "confidence": "hoch",
+   "data_model_hints": "<block-math-component latex>, <inline-math-component latex>"
+  },
+  {
+   "name": "Mermaid-Diagramm-Block",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "unklar",
+   "tier_details": "nicht belegt",
+   "ce_status": "fehlt",
+   "description": "/mermaid, Preview/Code-Umschalter",
+   "sources": [
+    "https://docs.plane.so/core-concepts/pages/editor-blocks",
+    "https://plane.so/changelog/2026-06-30-mermaid-js-diagrams-pql-dashboard-filters"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "HTML-Artifact-Block",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Business",
+   "tier_details": "Doku-Label Business",
+   "ce_status": "fehlt",
+   "description": ".html/.htm interaktiv in isoliertem Frame, Datei wird mit Block gelöscht",
+   "sources": [
+    "https://docs.plane.so/core-concepts/pages/editor-blocks",
+    "https://plane.so/changelog/2026-07-31-skills-plane-ai-richer-pages-audit-logs"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "Table-of-contents-Block",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "unklar",
+   "tier_details": "nicht belegt",
+   "ce_status": "fehlt",
+   "description": "Inhaltsverzeichnis-Block (Layout), nur Pages",
+   "sources": [
+    "https://docs.plane.so/core-concepts/pages/editor-blocks"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "Link-pages-Block (Wiki)",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Business",
+   "tier_details": "Doku-Label Business, nur Wiki-Seiten",
+   "ce_status": "fehlt",
+   "description": "Live-Liste der Kinder einer Seite, Tiefe All/1–6, auch Eltern einfügbar",
+   "sources": [
+    "https://docs.plane.so/core-concepts/pages/editor-blocks",
+    "https://docs.plane.so/pages/overview"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "Page-Embed-Block (/page) und Linked page embed",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Business",
+   "tier_details": "mit Nested Pages (UNVERIFIZIERT)",
+   "ce_status": "fehlt",
+   "description": "/page legt Unterseite mit Link-Block an; Referenz auf bestehende Seite (v3.1.0)",
+   "sources": [
+    "https://raw.githubusercontent.com/makeplane/developer-docs/docs-page-update-api/docs/api-reference/page/page-content-html.md",
+    "https://docs.plane.so/core-concepts/pages/nested-pages",
+    "https://plane.so/changelog/release-v3-1-0-audit-logs-skills-in-plane-ai-dashboards-and-more"
+   ],
+   "confidence": "mittel",
+   "data_model_hints": "<page-embed-component entity_identifier workspace_identifier entity_name='sub_page'>"
+  },
+  {
+   "name": "Widget-Block (Chart aus Work-Item-Daten)",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "unklar",
+   "tier_details": "nicht belegt",
+   "ce_status": "fehlt",
+   "description": "Chart direkt aus Work-Item-Daten in Projekt- und Wiki-Seiten",
+   "sources": [
+    "https://docs.plane.so/core-concepts/pages/editor-blocks"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "Link-dashboard-widgets-Block",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "Enterprise Grid",
+   "tier_details": "Doku-Label Enterprise/Grid",
+   "ce_status": "fehlt",
+   "description": "bettet ein Widget eines bestehenden Dashboards synchron ein",
+   "sources": [
+    "https://docs.plane.so/core-concepts/pages/editor-blocks",
+    "https://plane.so/changelog/2026-07-31-skills-plane-ai-richer-pages-audit-logs"
+   ],
+   "confidence": "mittel"
+  },
+  {
+   "name": "Block-Links",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "unklar",
+   "tier_details": "nicht belegt",
+   "ce_status": "fehlt",
+   "description": "Link auf einzelnen Block kopieren",
+   "sources": [
+    "https://plane.so/changelog/release-v-2-1-0-text-to-work-items-video-attachments-and-block-links"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "Page-Benachrichtigungen (Freigabe, Subscriber)",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "unklar",
+   "tier_details": "nicht belegt",
+   "ce_status": "fehlt",
+   "description": "E-Mail bei Freigabe; Subscriber-Mails bei neuer Version und Mention",
+   "sources": [
+    "https://plane.so/changelog/release-v-1-15-0-embeds-pages-and-integrations-for-connected-cross-team-work",
+    "https://plane.so/changelog/release-v3-2-0-workspace-governance-ai-memory-pii-scanning-and-more"
+   ],
+   "confidence": "niedrig"
+  },
+  {
+   "name": "Pages-Public-API (v1/v2)",
+   "cluster": "P07 Wissensmanagement",
+   "tier": "unklar",
+   "tier_details": "je Ressource wie zugehöriges Feature; v2 liefert 402 payment_required",
+   "ce_status": "fehlt",
+   "description": "Pages, Collections, Templates, Published Pages, Attachments, Work-Item-Pages, MCP; Body-Updates aufs kollaborative Dokument, PUT ersetzt Body, 502/503, 10 MB",
+   "sources": [
+    "/home/user/makeplane/developer-docs/docs/api-reference/page/overview.md",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md",
+    "https://raw.githubusercontent.com/makeplane/developer-docs/docs-page-update-api/docs/api-reference/page/update-workspace-page.md",
+    "https://raw.githubusercontent.com/makeplane/developer-docs/docs/api-reference-v2/docs/api-reference/v2/workspace-pages/overview.md",
+    "apps/api/plane/api/urls/"
+   ],
+   "confidence": "hoch"
+  }
+ ],
+ "open_questions": [
+  "OP-01: Gibt es eine Commercial-/Cloud-Instanz (zum Beispiel einen Trial), um Referenz-Screenshots und Verhalten der EE-only-Oberflächen aufzunehmen? Gemeint sind Wiki-Sidebar, Collections, Share-, Move- und Export-Dialog, Kommentar-Panel, Analytics und alle neuen Blöcke. Ohne diese Referenz ist ADR-005 (UI 1:1) für diese Teile nicht prüfbar.",
+  "OP-03: Databases + Formulas ist nur als COMING SOON angekündigt und nirgends ausgeliefert. Soll dafür ein eigenes Feature entworfen werden, oder entfällt es?",
+  "OP-11: Soll die Export-Queue als PostgreSQL-Job-Tabelle umgesetzt werden oder als Aspire-RabbitMQ-Ressource, wie im Original (RabbitMQ + Redis)?",
+  "OP-12: Wird die Bearbeitung von Office-Anhängen in Microsoft Office benötigt (Mechanismus unbekannt, externe Abhängigkeit)? Falls ja: als optionale WOPI- oder Office-Integration?",
+  "OP-10: Self-hosted-Ersatz für 'Report a published page' (im Original Cloud-Support-E-Mail): in God-Mode konfigurierbare Melde-Adresse oder Funktion ausblenden?",
+  "OP-05: Collection löschen: In der UI gibt es 'Transfer' und 'Delete with pages', die API kennt archive_pages true/false. Sollen alle drei Varianten angeboten werden?",
+  "OP-06: Für Draw.io, Mermaid, Toggle, Tabs, Columns, Status, HTML-Artifact, Widget, Dashboard-Widget, AI-Block, Video, TOC und Link-pages ist kein Original-HTML-Vertrag belegt. Eigene Verträge sind nötig und müssen zentral dokumentiert werden.",
+  "OP-09: Kommentare auf publizierten Seiten: anonym oder mit Space-Login?",
+  "OP-17: Draw.io fällt im Original auf die diagrams.net-Cloud zurück. Ist für Airgapped die gebündelte draw.io-Webapp als Default bestätigt?",
+  "OP-07: Wo landen neue Wiki-Seiten: in der aktuellen Collection oder immer in General? Die Doku widerspricht sich."
+ ]
+}

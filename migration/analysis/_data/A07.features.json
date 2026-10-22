@@ -1,0 +1,371 @@
+[
+ {
+  "name": "Aktivitätsverlauf von Work Items",
+  "area": "Activity-Pipeline",
+  "description": "Protokolliert Erstellen/Löschen sowie Änderungen an Name, Beschreibung, Parent, Priorität, State, Start/Zieldatum, Labels, Assignees, Estimate, Archivierung, Kommentaren, Links, Anhängen, Cycles, Modulen, Relationen, Reaktionen, Votes und Intake-Status als IssueActivity mit exakten field/verb/comment-Werten",
+  "code_refs": [
+   "apps/api/plane/bgtasks/issue_activities_task.py",
+   "apps/api/plane/db/models/issue.py",
+   "apps/api/plane/app/serializers/issue.py"
+  ]
+ },
+ {
+  "name": "In-App-Benachrichtigungen (Inbox)",
+  "area": "Notifications",
+  "description": "Erzeugt Notification-Einträge für Subscriber, Ersteller und Assignees je Activity (sender created/assigned/subscribed) mit data.issue und data.issue_activity",
+  "code_refs": [
+   "apps/api/plane/bgtasks/notification_task.py",
+   "apps/api/plane/db/models/notification.py",
+   "apps/api/plane/app/views/notification/base.py"
+  ]
+ },
+ {
+  "name": "Erwähnungs-Benachrichtigungen",
+  "area": "Notifications",
+  "description": "Neue @-Erwähnungen in Beschreibung oder Kommentar (mention-component user_mention) erzeugen Notifications mit sender mentioned, Erwähnte werden Subscriber; IssueMention wird gepflegt",
+  "code_refs": [
+   "apps/api/plane/bgtasks/notification_task.py"
+  ]
+ },
+ {
+  "name": "Automatisches Abonnieren von Work Items",
+  "area": "Notifications",
+  "description": "Akteure, neue Assignees und Erwähnte werden automatisch IssueSubscriber",
+  "code_refs": [
+   "apps/api/plane/bgtasks/notification_task.py",
+   "apps/api/plane/bgtasks/issue_activities_task.py"
+  ]
+ },
+ {
+  "name": "E-Mail-Benachrichtigungen (5-Minuten-Bündelung)",
+  "area": "E-Mail",
+  "description": "Bündelt Änderungen je Empfänger und Issue alle 5 Minuten zu einer Mail 'issue-updates' mit Änderungsblöcken und Kommentaren",
+  "code_refs": [
+   "apps/api/plane/bgtasks/email_notification_task.py",
+   "apps/api/templates/emails/notifications/issue-updates.html",
+   "apps/api/plane/celery.py"
+  ]
+ },
+ {
+  "name": "E-Mail-Benachrichtigungs-Einstellungen",
+  "area": "Notifications",
+  "description": "Profil-Toggles property_change, state_change, issue_completed, comment, mention steuern den E-Mail-Versand",
+  "code_refs": [
+   "apps/api/plane/db/models/notification.py",
+   "apps/api/plane/app/views/notification/base.py",
+   "apps/web/components/settings/profile/content/pages/notifications/email-notification-form.tsx"
+  ]
+ },
+ {
+  "name": "Webhooks",
+  "area": "Webhooks",
+  "description": "Workspace-Webhooks für Projects, Cycles, Work items, Modules und Work item comments; signierte JSON-POSTs mit Retry und automatischer Deaktivierung nach 6 Fehlversuchen",
+  "code_refs": [
+   "apps/api/plane/bgtasks/webhook_task.py",
+   "apps/api/plane/db/models/webhook.py",
+   "apps/api/plane/app/views/webhook/base.py",
+   "apps/web/components/web-hooks/form/individual-event-options.tsx"
+  ]
+ },
+ {
+  "name": "Webhook-Secret anzeigen/regenerieren und als CSV herunterladen",
+  "area": "Webhooks",
+  "description": "Secret nur bei Anlage und Regenerierung sichtbar; CSV mit Webhook-Daten und Secret",
+  "code_refs": [
+   "apps/api/plane/app/views/webhook/base.py",
+   "apps/api/plane/app/serializers/webhook.py",
+   "apps/web/components/web-hooks/utils.ts"
+  ]
+ },
+ {
+  "name": "Webhook-Deaktivierungs-Mail",
+  "area": "Webhooks/E-Mail",
+  "description": "Mail an den Ersteller, wenn ein Webhook wegen fehlgeschlagener Zustellungen deaktiviert wird",
+  "code_refs": [
+   "apps/api/plane/bgtasks/webhook_task.py",
+   "apps/api/templates/emails/notifications/webhook-deactivate.html"
+  ]
+ },
+ {
+  "name": "Webhook-Zustellprotokoll (API)",
+  "area": "Webhooks",
+  "description": "WebhookLog je Zustellversuch, abrufbar über webhook-logs-Endpunkt (im CE-Frontend nicht genutzt), 14 Tage Aufbewahrung",
+  "code_refs": [
+   "apps/api/plane/bgtasks/webhook_task.py",
+   "apps/api/plane/app/views/webhook/base.py",
+   "apps/api/plane/bgtasks/cleanup_task.py"
+  ]
+ },
+ {
+  "name": "SSRF-Schutz für ausgehende Requests",
+  "area": "Webhooks/Sicherheit",
+  "description": "DNS-Auflösung mit IP-Blockliste, IP-Pinning, keine Redirects/Proxies, Allow- und Blocklisten per ENV",
+  "code_refs": [
+   "apps/api/plane/utils/url_security.py",
+   "apps/api/plane/utils/ip_address.py",
+   "apps/api/plane/settings/common.py"
+  ]
+ },
+ {
+  "name": "Work-Item-Export (CSV/JSON/XLSX)",
+  "area": "Export",
+  "description": "Export der Work Items gewählter Projekte als ZIP (je Projekt oder gesamt) mit 28 Spalten, Historie und Download-Link (7 Tage gültig)",
+  "code_refs": [
+   "apps/api/plane/bgtasks/export_task.py",
+   "apps/api/plane/utils/porters/serializers/issue.py",
+   "apps/api/plane/utils/porters/formatters.py",
+   "apps/api/plane/app/views/exporter/base.py",
+   "apps/web/components/exporter/export-form.tsx"
+  ]
+ },
+ {
+  "name": "Analytics-Export per E-Mail",
+  "area": "Export",
+  "description": "CSV der Analytics-Distribution (x_axis, y_axis, segment) als Mail-Anhang; CE-Frontend exportiert stattdessen clientseitig",
+  "code_refs": [
+   "apps/api/plane/bgtasks/analytic_plot_export.py",
+   "apps/api/plane/app/views/analytic/base.py",
+   "apps/api/templates/emails/exports/analytics.html"
+  ]
+ },
+ {
+  "name": "Auto-Archivierung",
+  "area": "Automationen",
+  "description": "Täglich: abgeschlossene/abgebrochene Work Items ohne laufenden Cycle/Modul, die archive_in Monate unverändert sind, werden archiviert ('Plane has archived the issue')",
+  "code_refs": [
+   "apps/api/plane/bgtasks/issue_automation_task.py",
+   "apps/web/components/automation/auto-archive-automation.tsx"
+  ]
+ },
+ {
+  "name": "Auto-Schließen",
+  "area": "Automationen",
+  "description": "Täglich: offene Work Items, die close_in Monate unverändert sind, werden in den gewählten Close-State verschoben",
+  "code_refs": [
+   "apps/api/plane/bgtasks/issue_automation_task.py",
+   "apps/web/components/automation/auto-close-automation.tsx"
+  ]
+ },
+ {
+  "name": "Intake-Snooze-Ablauf",
+  "area": "Automationen",
+  "description": "Alle 5 Minuten werden gesnoozte Intake-Einträge nach Ablauf wieder auf Pending gesetzt",
+  "code_refs": [
+   "apps/api/plane/bgtasks/issue_automation_task.py"
+  ]
+ },
+ {
+  "name": "Datei-Uploads (Avatar, Cover, Workspace-Logo, Editor-Bilder)",
+  "area": "Storage",
+  "description": "Upload über presigned POST direkt zu S3/MinIO mit anschließender Bestätigung, Entity-Zuordnung und Metadaten-Ermittlung",
+  "code_refs": [
+   "apps/api/plane/app/views/asset/v2.py",
+   "apps/api/plane/settings/storage.py",
+   "apps/api/plane/bgtasks/storage_metadata_task.py",
+   "packages/services/src/file/helper.ts",
+   "apps/web/services/file.service.ts"
+  ]
+ },
+ {
+  "name": "Work-Item-Anhänge",
+  "area": "Storage",
+  "description": "Anhänge mit erlaubten MIME-Typen, Upload-Bestätigung erzeugt Activity, Download per presigned Redirect, Löschen soft",
+  "code_refs": [
+   "apps/api/plane/app/views/issue/attachment.py",
+   "apps/api/plane/settings/common.py"
+  ]
+ },
+ {
+  "name": "Asset-Anzeige/Download und öffentliche statische Assets",
+  "area": "Storage",
+  "description": "302-Redirect auf presigned GET; Avatare/Cover/Logos öffentlich über /api/assets/v2/static/<id>/; inline nur sichere Bildtypen",
+  "code_refs": [
+   "apps/api/plane/app/views/asset/v2.py",
+   "apps/api/plane/settings/storage.py"
+  ]
+ },
+ {
+  "name": "Asset-Restore (Undo) und Duplizieren",
+  "area": "Storage",
+  "description": "Gelöschte Editor-Assets wiederherstellen, Assets serverseitig kopieren (Throttle 5/min je Asset)",
+  "code_refs": [
+   "apps/api/plane/app/views/asset/v2.py",
+   "apps/api/plane/throttles/asset.py"
+  ]
+ },
+ {
+  "name": "Seiten duplizieren inkl. Bildern",
+  "area": "Storage/Pages",
+  "description": "Kopiert eingebettete Bilder in neue Assets, schreibt HTML um und erzeugt JSON/Binary über den Live-Server",
+  "code_refs": [
+   "apps/api/plane/bgtasks/copy_s3_object.py",
+   "apps/api/plane/app/views/page/base.py"
+  ]
+ },
+ {
+  "name": "Page-Versionshistorie",
+  "area": "Versionierung",
+  "description": "Versionen von Seiteninhalten in 10-Minuten-Fenstern je Besitzer, maximal 20",
+  "code_refs": [
+   "apps/api/plane/bgtasks/page_version_task.py",
+   "apps/api/plane/bgtasks/cleanup_task.py",
+   "apps/api/plane/db/models/page.py"
+  ]
+ },
+ {
+  "name": "Versionen der Work-Item-Beschreibung",
+  "area": "Versionierung",
+  "description": "Description-Versionen in gleitenden 10-Minuten-Fenstern je Besitzer, Cleanup auf 20",
+  "code_refs": [
+   "apps/api/plane/bgtasks/issue_description_version_task.py",
+   "apps/api/plane/bgtasks/cleanup_task.py"
+  ]
+ },
+ {
+  "name": "Erwähnte Work Items einer Seite",
+  "area": "Pages",
+  "description": "PageLog indiziert Mentions und Bilder; Seitendetails liefern issue_ids der erwähnten Work Items",
+  "code_refs": [
+   "apps/api/plane/bgtasks/page_transaction_task.py",
+   "apps/api/plane/app/views/page/base.py"
+  ]
+ },
+ {
+  "name": "Link-Vorschau (Titel und Favicon)",
+  "area": "Work Items",
+  "description": "Abruf von Titel und Favicon verlinkter URLs, gespeichert in IssueLink.metadata",
+  "code_refs": [
+   "apps/api/plane/bgtasks/work_item_link_task.py",
+   "apps/api/plane/app/views/issue/link.py"
+  ]
+ },
+ {
+  "name": "Zuletzt besucht (Recents)",
+  "area": "Home",
+  "description": "Merkt pro User und Workspace die letzten 20 besuchten Projekte, Work Items, Cycles, Module, Views und Pages",
+  "code_refs": [
+   "apps/api/plane/bgtasks/recent_visited_task.py"
+  ]
+ },
+ {
+  "name": "Demo-Projekt bei Workspace-Anlage",
+  "area": "Onboarding",
+  "description": "Seed eines Demo-Projekts mit States, Labels, Cycles, Modulen, 7 Work Items, View und 2 Pages durch Bot-User 'Plane'",
+  "code_refs": [
+   "apps/api/plane/bgtasks/workspace_seed_task.py",
+   "apps/api/plane/seeds/data/projects.json",
+   "apps/api/plane/app/views/workspace/base.py"
+  ]
+ },
+ {
+  "name": "Login-Code per E-Mail (Magic Code)",
+  "area": "E-Mail/Auth",
+  "description": "Mail 'Your unique Plane login code is <code>' für App und Space",
+  "code_refs": [
+   "apps/api/plane/bgtasks/magic_link_code_task.py",
+   "apps/api/templates/emails/auth/magic_signin.html"
+  ]
+ },
+ {
+  "name": "Passwort zurücksetzen per E-Mail",
+  "area": "E-Mail/Auth",
+  "description": "Mail mit Reset-Link /accounts/reset-password/?uidb64&token&email für App und Space",
+  "code_refs": [
+   "apps/api/plane/bgtasks/forgot_password_task.py",
+   "apps/api/templates/emails/auth/forgot_password.html"
+  ]
+ },
+ {
+  "name": "Workspace-Einladung per E-Mail",
+  "area": "E-Mail",
+  "description": "Einladungsmail mit Link /workspace-invitations/?invitation_id&slug&token; Klartext in WorkspaceMemberInvite.message",
+  "code_refs": [
+   "apps/api/plane/bgtasks/workspace_invitation_task.py",
+   "apps/api/templates/emails/invitations/workspace_invitation.html"
+  ]
+ },
+ {
+  "name": "Benachrichtigung bei Projekt-Hinzufügung",
+  "area": "E-Mail",
+  "description": "Mail 'You have been invited to a Plane project' an neu hinzugefügte Projektmitglieder",
+  "code_refs": [
+   "apps/api/plane/bgtasks/project_add_user_email_task.py",
+   "apps/api/templates/emails/notifications/project_addition.html"
+  ]
+ },
+ {
+  "name": "Mails zur Konto-Aktivierung und -Deaktivierung",
+  "area": "E-Mail",
+  "description": "Mail beim Login eines inaktiven Kontos bzw. beim Deaktivieren des eigenen Kontos",
+  "code_refs": [
+   "apps/api/plane/bgtasks/user_activation_email_task.py",
+   "apps/api/plane/bgtasks/user_deactivation_email_task.py",
+   "apps/api/plane/authentication/adapter/base.py",
+   "apps/api/plane/app/views/user/base.py"
+  ]
+ },
+ {
+  "name": "E-Mail-Adresse ändern",
+  "area": "E-Mail",
+  "description": "Verifizierungscode an die neue Adresse, Bestätigungsmails an neue und alte Adresse",
+  "code_refs": [
+   "apps/api/plane/bgtasks/user_email_update_task.py",
+   "apps/api/templates/emails/user/email_updated.html"
+  ]
+ },
+ {
+  "name": "SMTP-Konfiguration und Testmail (God-Mode)",
+  "area": "E-Mail/Admin",
+  "description": "SMTP-Einstellungen in InstanceConfiguration (Passwort verschlüsselt), Testmail mit Fehler-Mapping, Funktion zum Deaktivieren",
+  "code_refs": [
+   "apps/api/plane/license/api/views/configuration.py",
+   "apps/api/plane/license/utils/instance_value.py",
+   "apps/api/plane/utils/instance_config_variables/core.py"
+  ]
+ },
+ {
+  "name": "Soft-Delete und endgültige Löschung",
+  "area": "Datenpflege",
+  "description": "Gelöschte Objekte samt abhängigen Daten werden soft markiert und nach 60 Tagen physisch gelöscht",
+  "code_refs": [
+   "apps/api/plane/bgtasks/deletion_task.py",
+   "apps/api/plane/db/mixins.py"
+  ]
+ },
+ {
+  "name": "Aufbewahrung von Logs und Versionen",
+  "area": "Datenpflege",
+  "description": "Tägliche Bereinigung von API-Logs (14 Tage), Webhook-Logs (14 Tage), E-Mail-Logs (7 Tage), Page- und Description-Versionen (> 20), Exporten (8 Tage) und nie hochgeladenen Assets (7 Tage)",
+  "code_refs": [
+   "apps/api/plane/bgtasks/cleanup_task.py",
+   "apps/api/plane/bgtasks/exporter_expired_task.py",
+   "apps/api/plane/bgtasks/file_asset_task.py"
+  ]
+ },
+ {
+  "name": "Request-Log der externen API",
+  "area": "Betrieb",
+  "description": "Speichert jede Anfrage mit X-Api-Key (Token als HMAC, sensible Header redigiert) in APIActivityLog",
+  "code_refs": [
+   "apps/api/plane/middleware/logger.py",
+   "apps/api/plane/bgtasks/logger_task.py"
+  ]
+ },
+ {
+  "name": "Instanz-Telemetrie",
+  "area": "Betrieb",
+  "description": "OTLP-Gauges zu Instanz- und Workspace-Zählern alle 6 h, wenn Telemetrie aktiviert ist (entfällt laut ADR-004)",
+  "code_refs": [
+   "apps/api/plane/license/bgtasks/telemetry_metrics.py"
+  ]
+ },
+ {
+  "name": "Dummy-Daten-Generator (Entwickler-Tool)",
+  "area": "Entwicklung",
+  "description": "Management-Command erzeugt Testprojekte mit Faker-Daten",
+  "code_refs": [
+   "apps/api/plane/bgtasks/dummy_data_task.py",
+   "apps/api/plane/db/management/commands/create_dummy_data.py"
+  ]
+ }
+]

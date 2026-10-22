@@ -1,0 +1,296 @@
+[
+ {
+  "name": "Self-Hosting-CLI (Install/Start/Stop/Restart/Upgrade/Logs/Backup)",
+  "area": "Deployment",
+  "description": "Interaktives Skript mit Menü 1–8: lädt Compose/Env aus dem GitHub-Release, prüft die Architektur, kann lokal bauen, synchronisiert plane.env, erzeugt MinIO-Credentials, wartet auf Migrator und API-Health und sichert Volumes als tar.gz",
+  "code_refs": [
+   "deployments/cli/community/install.sh",
+   "deployments/cli/community/docker-compose.yml",
+   "deployments/cli/community/variables.env",
+   "deployments/cli/community/README.md"
+  ]
+ },
+ {
+  "name": "Daten-Restore (Community und Commercial Air-Gapped)",
+  "area": "Deployment",
+  "description": "Spielt Backup-Tarballs in Docker-Volumes (plane-app_*) zurück bzw. in die Datenordner der Air-Gapped-Edition (db, redis, minio/uploads, mq) mit Rollback",
+  "code_refs": [
+   "deployments/cli/community/restore.sh",
+   "deployments/cli/community/restore-airgapped.sh"
+  ]
+ },
+ {
+  "name": "Docker-Swarm-Deployment",
+  "area": "Deployment",
+  "description": "Menü Deploy/Remove/Status/Redeploy/Upgrade/Logs für einen Swarm-Stack auf Basis der CLI-Compose-Datei",
+  "code_refs": [
+   "deployments/swarm/community/swarm.sh"
+  ]
+ },
+ {
+  "name": "All-in-One-Container",
+  "area": "Deployment",
+  "description": "Ein Image mit supervisord (migrator, api, worker, beat, space, live, proxy); web/admin statisch; prüft Pflicht-ENV, Secrets und DOMAIN_NAME",
+  "code_refs": [
+   "deployments/aio/community/Dockerfile",
+   "deployments/aio/community/start.sh",
+   "deployments/aio/community/supervisor.conf",
+   "deployments/aio/community/build.sh",
+   "apps/proxy/Caddyfile.aio.ce"
+  ]
+ },
+ {
+  "name": "Reverse-Proxy mit automatischem HTTPS",
+  "area": "Infrastruktur/Proxy",
+  "description": "Caddy mit ACME (Let's Encrypt, DNS-Challenge Cloudflare/DigitalOcean), Trusted Proxies, Client-IP-Header, max_header_size 25MB, Body-Limit FILE_SIZE_LIMIT und pfadbasiertem Routing inkl. Redirects /spaces und /god-mode",
+  "code_refs": [
+   "apps/proxy/Caddyfile.ce",
+   "apps/proxy/Dockerfile.ce"
+  ]
+ },
+ {
+  "name": "Statische Frontend-Auslieferung mit SPA-Fallback, Security-Headern und Rate-Limit",
+  "area": "Infrastruktur/Frontend-Hosting",
+  "description": "Caddy :3000 für web/admin: try_files auf index.html bzw. /god-mode/index.html, Header X-Frame-Options DENY, nosniff und X-XSS-Protection, 300 Requests/min pro IP",
+  "code_refs": [
+   "apps/web/caddy/Caddyfile",
+   "apps/admin/caddy/Caddyfile",
+   "apps/web/Dockerfile.web",
+   "apps/admin/Dockerfile.admin"
+  ]
+ },
+ {
+  "name": "Konfigurierbare Base-URLs/-Paths der Apps",
+  "area": "Konfiguration",
+  "description": "VITE_*_BASE_URL/_PATH (Build-Zeit) und API-seitig *_BASE_URL/_PATH für Redirects und Links zwischen web, admin, space und live",
+  "code_refs": [
+   "packages/constants/src/endpoints.ts",
+   "apps/admin/vite.config.ts",
+   "apps/space/vite.config.ts",
+   "apps/api/plane/settings/common.py",
+   "apps/api/plane/authentication/utils/host.py"
+  ]
+ },
+ {
+  "name": "Health-Checks und robots.txt",
+  "area": "Betrieb",
+  "description": "GET / auf der API liefert {status: OK} (wird nicht geloggt); GET /live/health/ liefert status, timestamp und version; robots.txt mit Disallow: /; Docker-HEALTHCHECKs für web, admin und space",
+  "code_refs": [
+   "apps/api/plane/web/views.py",
+   "apps/api/plane/web/urls.py",
+   "apps/live/src/controllers/health.controller.ts",
+   "apps/space/Dockerfile.space"
+  ]
+ },
+ {
+  "name": "Upload-Größenlimit mit 413-Fehler",
+  "area": "API/Infrastruktur",
+  "description": "FILE_SIZE_LIMIT gilt für Proxy, Django DATA_UPLOAD_MAX_MEMORY_SIZE und Presigned-Policy und wird per /api/instances/ an die Frontends gemeldet; JSON-Fehler REQUEST_BODY_TOO_LARGE",
+  "code_refs": [
+   "apps/api/plane/middleware/request_body_size.py",
+   "apps/api/plane/settings/common.py",
+   "apps/api/plane/license/api/views/instance.py"
+  ]
+ },
+ {
+  "name": "Rate-Limiting",
+  "area": "API-Sicherheit",
+  "description": "Anonym 30/min, Asset 5/min, API-Key 60/min (konfigurierbar) mit X-RateLimit-Headern, Auth 10/min (konfigurierbar), E-Mail-Verifizierung 3/h; einheitlicher 429-Fehler RATE_LIMIT_EXCEEDED (5900)",
+  "code_refs": [
+   "apps/api/plane/api/rate_limit.py",
+   "apps/api/plane/authentication/rate_limit.py",
+   "apps/api/plane/throttles/asset.py",
+   "apps/api/plane/authentication/adapter/exception.py",
+   "apps/api/plane/api/views/base.py"
+  ]
+ },
+ {
+  "name": "API-Activity-Log für API-Key-Requests",
+  "area": "Betrieb/Audit",
+  "description": "Protokolliert Requests mit X-Api-Key (HMAC-Token-ID, redigierte Header, Body/Response) asynchron in APIActivityLog; tägliche Bereinigung nach API_ACTIVITY_LOG_RETENTION_DAYS",
+  "code_refs": [
+   "apps/api/plane/middleware/logger.py",
+   "apps/api/plane/bgtasks/logger_task.py",
+   "apps/api/plane/bgtasks/cleanup_task.py"
+  ]
+ },
+ {
+  "name": "Strukturiertes Request-Logging",
+  "area": "Betrieb",
+  "description": "JSON-Logs pro Request (Methode, Pfad, Status, Dauer, IP, User-Agent, User) ohne Health-Check; rotierende Fehler-Logdatei; winston-JSON im Live-Server",
+  "code_refs": [
+   "apps/api/plane/middleware/logger.py",
+   "apps/api/plane/settings/production.py",
+   "apps/api/plane/utils/logging.py",
+   "packages/logger/src/config.ts"
+  ]
+ },
+ {
+  "name": "Automatische Daten-Bereinigung und zeitgesteuerte Jobs",
+  "area": "Betrieb/Hintergrundjobs",
+  "description": "13 Beat-Jobs: E-Mail-Benachrichtigungen und Intake-Unsnooze alle 5 min, Hard-Delete, Auto-Archive/Close, Export-Link-Ablauf, nicht hochgeladene Assets, Log- und Versions-Cleanup, Telemetrie",
+  "code_refs": [
+   "apps/api/plane/celery.py",
+   "apps/api/plane/bgtasks/cleanup_task.py",
+   "apps/api/plane/bgtasks/deletion_task.py",
+   "apps/api/plane/bgtasks/issue_automation_task.py"
+  ]
+ },
+ {
+  "name": "Instanz-Registrierung und Versionsprüfung",
+  "area": "Instanz",
+  "description": "Legt beim Start die Instanz an bzw. aktualisiert sie (Name, ID, current_version, latest_version über die GitHub-API, edition) und stößt Telemetrie an",
+  "code_refs": [
+   "apps/api/plane/license/management/commands/register_instance.py",
+   "apps/api/bin/docker-entrypoint-api.sh"
+  ]
+ },
+ {
+  "name": "Instanz-Konfiguration aus Umgebungsvariablen (Erst-Seeding, verschlüsselt)",
+  "area": "Instanz/Konfiguration",
+  "description": "36 Keys (Auth, Workspace, OAuth, SMTP, KI, Unsplash) werden beim ersten Start aus ENV in die DB übernommen; Secrets mit Fernet verschlüsselt; Auslieferung als Feature-Flags über GET /api/instances/",
+  "code_refs": [
+   "apps/api/plane/license/management/commands/configure_instance.py",
+   "apps/api/plane/utils/instance_config_variables/core.py",
+   "apps/api/plane/license/utils/instance_value.py",
+   "apps/api/plane/license/utils/encryption.py",
+   "apps/api/plane/license/api/views/instance.py"
+  ]
+ },
+ {
+  "name": "Telemetrie-Metriken (abschaltbar über Instanz-Flag)",
+  "area": "Telemetrie",
+  "description": "OTLP-Gauges zu Instanz und Workspaces (bis 1 000) alle 6 h an telemetry.plane.so, nur wenn is_telemetry_enabled",
+  "code_refs": [
+   "apps/api/plane/license/bgtasks/telemetry_metrics.py",
+   "apps/api/plane/utils/otlp_endpoints.py",
+   "apps/api/plane/license/models/instance.py"
+  ]
+ },
+ {
+  "name": "Product-Updates-Changelog (iframe)",
+  "area": "Web-UI",
+  "description": "Zeigt die Seite aus INSTANCE_CHANGELOG_URL im iframe mit 15-s-Timeout und Fallback-Ansicht",
+  "code_refs": [
+   "apps/web/components/global/product-updates/changelog.tsx",
+   "apps/api/Dockerfile.api",
+   "apps/api/plane/settings/common.py"
+  ]
+ },
+ {
+  "name": "OpenAPI-Dokumentation der REST-API v1",
+  "area": "Public API",
+  "description": "Optional (ENABLE_DRF_SPECTACULAR=1): Schema, Swagger-UI und ReDoc unter /api/schema/ mit 14 Tags und API-Key-Auth",
+  "code_refs": [
+   "apps/api/plane/settings/openapi.py",
+   "apps/api/plane/urls.py",
+   "apps/api/plane/api/apps.py"
+  ]
+ },
+ {
+  "name": "Read-Replica-Unterstützung",
+  "area": "Datenbank",
+  "description": "Optionale zweite DB; GET/HEAD/OPTIONS von Views mit use_read_replica=True gehen an die Replica, Schreibzugriffe und Migrationen an die Primary",
+  "code_refs": [
+   "apps/api/plane/middleware/db_routing.py",
+   "apps/api/plane/utils/core/dbrouters.py",
+   "apps/api/plane/utils/core/request_scope.py",
+   "apps/api/plane/settings/common.py"
+  ]
+ },
+ {
+  "name": "Redis mit TLS (rediss://)",
+  "area": "Infrastruktur",
+  "description": "Zertifikats- und Hostname-Prüfung standardmäßig an, eigenes CA-Bundle oder Abschaltung per ENV bzw. URL-Option",
+  "code_refs": [
+   "apps/api/plane/settings/common.py",
+   "apps/api/plane/settings/redis.py"
+  ]
+ },
+ {
+  "name": "Objektspeicher mit Presigned Upload/Download",
+  "area": "Dateien",
+  "description": "S3/MinIO; Presigned POST mit Größen- und Typ-Policy, Presigned GET mit sicherer Content-Disposition, Bucket-Anlage beim Start, Proxy-Route /uploads",
+  "code_refs": [
+   "apps/api/plane/settings/storage.py",
+   "apps/api/plane/db/management/commands/create_bucket.py",
+   "apps/api/plane/app/views/asset/v2.py",
+   "apps/proxy/Caddyfile.ce"
+  ]
+ },
+ {
+  "name": "Webhook-SSRF-Allowlists",
+  "area": "Webhooks/Sicherheit",
+  "description": "WEBHOOK_ALLOWED_IPS (CIDR), WEBHOOK_ALLOWED_HOSTS und WEBHOOK_DISALLOWED_DOMAINS steuern erlaubte Ziele trotz privater IP",
+  "code_refs": [
+   "apps/api/plane/settings/common.py",
+   "apps/api/plane/utils/ip_address.py"
+  ]
+ },
+ {
+  "name": "Session-Cookies (App vs. God-Mode) und Origin-basierter CSRF-Schutz",
+  "area": "Sicherheit",
+  "description": "Getrennte Cookies session-id/admin-session-id mit eigenen Laufzeiten, Secure-Flag automatisch; Schreibzugriffe nur vom eigenen oder einem konfigurierten Origin",
+  "code_refs": [
+   "apps/api/plane/authentication/middleware/session.py",
+   "apps/api/plane/authentication/session.py",
+   "apps/api/plane/db/models/session.py",
+   "apps/api/plane/settings/common.py"
+  ]
+ },
+ {
+  "name": "Realtime-Kollaborationsserver (Infrastruktur)",
+  "area": "Realtime",
+  "description": "WebSocket /live/collaboration (Hocuspocus, Redis-Skalierung, Admin-Kanal, Force-Close), HTML-zu-Yjs-Konvertierung (/live/convert-document/) und PDF-Export (/live/pdf-export/)",
+  "code_refs": [
+   "apps/live/src/server.ts",
+   "apps/live/src/hocuspocus.ts",
+   "apps/live/src/controllers/collaboration.controller.ts",
+   "apps/live/src/controllers/document.controller.ts",
+   "apps/live/src/controllers/pdf-export.controller.ts",
+   "apps/live/src/extensions/redis.ts",
+   "apps/web/components/pages/editor/editor-body.tsx"
+  ]
+ },
+ {
+  "name": "Lokale Entwicklungsumgebung",
+  "area": "Entwicklung",
+  "description": "setup.sh (Env-Dateien, SECRET_KEY, MinIO-Keys, pnpm install), docker-compose-local.yml (Infra + API/Worker/Beat), pnpm dev (web 3000, admin 3001, space 3002, live 3100)",
+  "code_refs": [
+   "setup.sh",
+   "docker-compose-local.yml",
+   "package.json",
+   "CONTRIBUTING.md"
+  ]
+ },
+ {
+  "name": "Isolierter Test-Stack und Testsuites",
+  "area": "Qualitätssicherung",
+  "description": "docker-compose-test.yml mit Postgres/Valkey/RabbitMQ/MinIO auf tmpfs; pytest-Marker unit/contract/smoke/slow; Vitest für live, blocks, services und codemods",
+  "code_refs": [
+   "docker-compose-test.yml",
+   "apps/api/pytest.ini",
+   "apps/api/plane/tests/conftest.py",
+   "apps/api/tests/RUNNING_TESTS.md",
+   "apps/live/vitest.config.ts",
+   "packages/blocks/vitest.config.ts"
+  ]
+ },
+ {
+  "name": "CI/CD-Pipelines",
+  "area": "Build/Release",
+  "description": "Multi-Arch-Images (frontend, space, admin, live, backend, proxy, aio) mit GitHub-Release-Assets; Prüfungen für Version, CodeQL, Lizenz-Header, Migrationen, ruff, Format/Lint/Types, i18n-Sync und react-doctor",
+  "code_refs": [
+   ".github/workflows/build-branch.yml",
+   ".github/workflows/check-version.yml",
+   ".github/workflows/codeql.yml",
+   ".github/workflows/copyright-check.yml",
+   ".github/workflows/migration-check.yml",
+   ".github/workflows/pull-request-build-lint-api.yml",
+   ".github/workflows/pull-request-build-lint-web-apps.yml",
+   ".github/workflows/i18n-sync-check.yml",
+   ".github/workflows/react-doctor.yml",
+   ".github/workflows/feature-deployment.yml"
+  ]
+ }
+]

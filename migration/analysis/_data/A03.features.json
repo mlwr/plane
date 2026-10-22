@@ -1,0 +1,526 @@
+[
+ {
+  "name": "Workspace anlegen inkl. Slug-Verfügbarkeitsprüfung und Demo-Seed",
+  "area": "Workspace",
+  "description": "Name/Slug-Validierung (Länge, URL-Verbot, alphanumerisch, reservierte Slugs, Eindeutigkeit, 409 bei Konflikt), Instanz-Sperre DISABLE_WORKSPACE_CREATION, Owner als Admin, asynchroner Seed mit Bot-User und Demo-Projekt.",
+  "code_refs": [
+   "apps/api/plane/app/urls/workspace.py",
+   "apps/api/plane/app/views/workspace/base.py (WorkSpaceViewSet.create, WorkSpaceAvailabilityCheckEndpoint)",
+   "apps/api/plane/app/serializers/workspace.py (WorkSpaceSerializer)",
+   "apps/api/plane/utils/constants.py",
+   "apps/api/plane/bgtasks/workspace_seed_task.py",
+   "apps/web/services/workspace.service.ts"
+  ]
+ },
+ {
+  "name": "Workspace-Einstellungen bearbeiten und Workspace löschen",
+  "area": "Workspace",
+  "description": "PATCH (nur Admin) von Name, Slug, Logo, Zeitzone, Organisationsgröße; Löschen mit Soft-Delete, Slug-Umbenennung und Zurücksetzen von Profile.last_workspace_id.",
+  "code_refs": [
+   "apps/api/plane/app/views/workspace/base.py (partial_update, destroy)",
+   "apps/api/plane/db/models/workspace.py (Workspace.delete)",
+   "apps/web/services/workspace.service.ts"
+  ]
+ },
+ {
+  "name": "Workspace-Liste/Switcher",
+  "area": "Workspace/User",
+  "description": "Eigene Workspaces mit Rolle und Mitgliederanzahl (GET /api/users/me/workspaces/), Suche nach Name.",
+  "code_refs": [
+   "apps/api/plane/app/views/workspace/base.py (UserWorkSpacesEndpoint)",
+   "apps/web/services/workspace.service.ts (userWorkspaces)"
+  ]
+ },
+ {
+  "name": "Mitglieder einladen und Einladungen verwalten",
+  "area": "Workspace-Einstellungen/Mitglieder",
+  "description": "Bulk-Einladung per E-Mail mit Rolle (≤ eigene Rolle), Fehler bei bestehenden Mitgliedern/ungültigen E-Mails, Einladungsliste, Rolle der Einladung ändern, Einladung löschen, E-Mail-Versand per Celery.",
+  "code_refs": [
+   "apps/api/plane/app/views/workspace/invite.py (WorkspaceInvitationsViewset)",
+   "apps/api/plane/bgtasks/workspace_invitation_task.py",
+   "apps/web/services/workspace.service.ts"
+  ]
+ },
+ {
+  "name": "Einladung annehmen/ablehnen",
+  "area": "Onboarding/Einladungen",
+  "description": "Öffentliche Einladungsdetails ohne Token, Annahme per Token nur für eingeloggten Empfänger gleicher E-Mail, Bulk-Annahme im Onboarding, Reaktivierung entfernter Mitglieder.",
+  "code_refs": [
+   "apps/api/plane/app/views/workspace/invite.py (WorkspaceJoinEndpoint, UserWorkspaceInvitationsViewSet)",
+   "packages/services/src/workspace/invitation.service.ts"
+  ]
+ },
+ {
+  "name": "Workspace-Mitgliederverwaltung",
+  "area": "Workspace-Einstellungen/Mitglieder",
+  "description": "Mitgliederliste (inkl. inaktiver, E-Mails nur für Nicht-Gäste), Rollenänderung (nur Admin, nicht eigene, Gast-Herabstufung kaskadiert auf Projekte), Entfernen, Workspace verlassen mit Einziger-Admin-Schutz.",
+  "code_refs": [
+   "apps/api/plane/app/views/workspace/member.py (WorkSpaceMemberViewSet)",
+   "apps/web/store/member/workspace/workspace-member.store.ts"
+  ]
+ },
+ {
+  "name": "Eigene Workspace-Mitgliedschaft und Ansichtseinstellungen",
+  "area": "Workspace",
+  "description": "GET workspace-members/me (Rolle, view_props, Draft-Zähler), POST workspace-views (view_props), Projektrollen-Map (project-roles), Projekt-Mitglieder-Map je Projekt.",
+  "code_refs": [
+   "apps/api/plane/app/views/workspace/member.py (WorkspaceMemberUserEndpoint, WorkspaceMemberUserViewsEndpoint, WorkspaceProjectMemberEndpoint)",
+   "apps/api/plane/app/views/project/member.py (UserProjectRolesEndpoint)"
+  ]
+ },
+ {
+  "name": "Benutzerprofil im Workspace",
+  "area": "Profil",
+  "description": "Profilübersicht (User-Daten, Projekt-Kennzahlen), Statistiken (State-/Priority-Verteilung, erstellt/zugewiesen/erledigt/offen/abonniert, aktuelle/kommende Cycles), Aktivitätsliste (paginiert), Issue-Liste mit Filter/Gruppierung, CSV-Export der Tagesaktivität – jeweils nur für den Betrachter sichtbare Issues.",
+  "code_refs": [
+   "apps/api/plane/app/views/workspace/user.py (WorkspaceUserProfileEndpoint, WorkspaceUserProfileStatsEndpoint, WorkspaceUserActivityEndpoint, WorkspaceUserProfileIssuesEndpoint)",
+   "apps/api/plane/app/views/workspace/base.py (ExportWorkspaceUserActivityEndpoint)",
+   "apps/web/services/user.service.ts",
+   "apps/web/store/user/profile.store.ts"
+  ]
+ },
+ {
+  "name": "Workspace-weite Filter- und Anzeigeeinstellungen",
+  "area": "Workspace/Views",
+  "description": "WorkspaceUserProperties (filters, display_filters, display_properties, rich_filters, navigation_project_limit, navigation_control_preference) per get_or_create und PATCH.",
+  "code_refs": [
+   "apps/api/plane/app/views/workspace/user.py (WorkspaceUserPropertiesEndpoint)",
+   "apps/web/services/workspace.service.ts (fetchWorkspaceFilters, patchWorkspaceFilters)"
+  ]
+ },
+ {
+  "name": "Workspace-weite Stammdatenlisten",
+  "area": "Workspace",
+  "description": "Labels, States (mit berechnetem order), aktive Estimates mit Punkten, Cycles und Modules mit Fortschrittszählern über alle Mitgliedsprojekte.",
+  "code_refs": [
+   "apps/api/plane/app/views/workspace/{label,state,estimate,cycle,module}.py"
+  ]
+ },
+ {
+  "name": "Favoriten mit Ordnern",
+  "area": "Sidebar",
+  "description": "Favoriten für Projekte, Cycles, Modules, Views, Pages, Issues und Ordner; Duplikaterkennung, Sichtbarkeitsprüfung der Entität, Umbenennen/Sortieren/Verschieben, hartes Löschen mit Kaskade, Ordnerinhalt.",
+  "code_refs": [
+   "apps/api/plane/app/views/workspace/favorite.py",
+   "apps/api/plane/app/serializers/favorite.py",
+   "apps/api/plane/app/views/project/base.py (ProjectFavoritesViewSet)",
+   "apps/web/services/favorite/favorite.service.ts"
+  ]
+ },
+ {
+  "name": "Entwürfe (Draft Work Items)",
+  "area": "Workspace/Drafts",
+  "description": "Private Entwürfe anlegen, auflisten (paginiert, gefiltert), bearbeiten, löschen und in echtes Issue umwandeln (inkl. Cycle/Module-Zuordnung, Activities, Asset-Übernahme).",
+  "code_refs": [
+   "apps/api/plane/app/views/workspace/draft.py",
+   "apps/api/plane/app/serializers/draft.py",
+   "apps/web/services/issue/workspace_draft.service.ts",
+   "apps/web/store/issue/workspace-draft/issue.store.ts"
+  ]
+ },
+ {
+  "name": "Home-Widgets",
+  "area": "Home",
+  "description": "Lazy geseedete Widget-Präferenzen (quick_links, recents, my_stickies) ein-/ausblenden und sortieren.",
+  "code_refs": [
+   "apps/api/plane/app/views/workspace/home.py",
+   "apps/api/plane/db/models/workspace.py (WorkspaceHomePreference)",
+   "apps/web/services/workspace.service.ts"
+  ]
+ },
+ {
+  "name": "Quick Links",
+  "area": "Home",
+  "description": "Persönliche Links je Workspace mit URL-Normalisierung, Validierung und Duplikatprüfung.",
+  "code_refs": [
+   "apps/api/plane/app/views/workspace/quick_link.py",
+   "apps/api/plane/app/serializers/workspace.py (WorkspaceUserLinkSerializer)"
+  ]
+ },
+ {
+  "name": "Zuletzt besucht (Recents)",
+  "area": "Home",
+  "description": "Bis zu 20 zuletzt besuchte Issues/Pages/Projekte mit Entitätsdaten, Filter nach entity_name; Befüllung über recent_visited_task.",
+  "code_refs": [
+   "apps/api/plane/app/views/workspace/recent_visit.py",
+   "apps/api/plane/bgtasks/recent_visited_task.py",
+   "apps/api/plane/app/serializers/workspace.py (WorkspaceRecentVisitSerializer)"
+  ]
+ },
+ {
+  "name": "Stickies (persönliche Notizen)",
+  "area": "Home",
+  "description": "Rich-Text-Notizen mit Farben, Suche, Pagination (20), nur Ersteller darf ändern/löschen, HTML-Sanitizing und Binary-Prüfung.",
+  "code_refs": [
+   "apps/api/plane/app/views/workspace/sticky.py",
+   "apps/api/plane/db/models/sticky.py",
+   "apps/web/services/sticky.service.ts"
+  ]
+ },
+ {
+  "name": "Sidebar-Navigation pinnen und sortieren",
+  "area": "Sidebar",
+  "description": "Lazy geseedete Einträge views, active_cycles, analytics, drafts, your_work, archives, stickies mit is_pinned/sort_order; Bulk-PATCH im CE, Einzel-PATCH {key} nur im Frontend (fehlt im CE-Backend).",
+  "code_refs": [
+   "apps/api/plane/app/views/workspace/user_preference.py",
+   "apps/web/services/workspace.service.ts",
+   "apps/web/store/workspace/index.ts"
+  ]
+ },
+ {
+  "name": "Workspace-Themes (nur API)",
+  "area": "Workspace",
+  "description": "CRUD benutzerdefinierter Farbthemen je Workspace (Admin/Member), kein CE-Frontend.",
+  "code_refs": [
+   "apps/api/plane/app/views/workspace/base.py (WorkspaceThemeViewSet)"
+  ]
+ },
+ {
+  "name": "Projektliste und Projektdetails",
+  "area": "Projekte",
+  "description": "Schlanke Liste und Detailliste mit Rolle, Favorit, Sortierung, Mitglieder-IDs, Anchor, nächster Sequenz; Sichtbarkeit nach WS-Rolle und Netzwerk; Detail mit 403/409 für Nicht-Mitglieder und Recent-Visit-Erfassung.",
+  "code_refs": [
+   "apps/api/plane/app/views/project/base.py (ProjectViewSet.list, list_detail, retrieve)",
+   "apps/api/plane/app/serializers/project.py (ProjectListSerializer)",
+   "apps/web/services/project/project.service.ts"
+  ]
+ },
+ {
+  "name": "Projekt anlegen",
+  "area": "Projekte",
+  "description": "Name/Identifier-Validierung mit Fehlercodes PROJECT_NAME_ALREADY_EXIST etc., Identifier-Reservierung, Admin-Mitgliedschaft, Lead, Default-States, Webhook-Event.",
+  "code_refs": [
+   "apps/api/plane/app/views/project/base.py (ProjectViewSet.create)",
+   "apps/api/plane/app/serializers/project.py (ProjectSerializer)",
+   "apps/api/plane/db/models/state.py (DEFAULT_STATES)",
+   "apps/web/components/projects/create/root.tsx"
+  ]
+ },
+ {
+  "name": "Projekt-Einstellungen und Feature-Toggles",
+  "area": "Projekt-Einstellungen",
+  "description": "PATCH durch WS- oder Projekt-Admin: Stammdaten, Netzwerk, Lead/Default-Assignee, Cover, Emoji/Logo, Zeitzone, Estimate-Aktivierung, Toggles für Cycles/Modules/Views/Pages/Intake/Time-Tracking/Work-Item-Typen/Gastzugriff, Auto-Archiv/-Close; Intake-Anlage, Webhook-Diffs.",
+  "code_refs": [
+   "apps/api/plane/app/views/project/base.py (ProjectViewSet.partial_update)",
+   "apps/api/plane/db/models/project.py"
+  ]
+ },
+ {
+  "name": "Projekt archivieren, wiederherstellen, löschen",
+  "area": "Projekte",
+  "description": "Archivieren entfernt alle Projekt-Favoriten; Löschen als Soft-Delete mit Webhook, Deploy-Board- und Favoriten-Bereinigung.",
+  "code_refs": [
+   "apps/api/plane/app/views/project/base.py (ProjectArchiveUnarchiveEndpoint, ProjectViewSet.destroy)",
+   "apps/web/services/project/project-archive.service.ts"
+  ]
+ },
+ {
+  "name": "Projekt-Identifier prüfen und freigeben",
+  "area": "Projekte",
+  "description": "Verfügbarkeitsprüfung gegen reservierte Identifier und Freigabe reservierter Identifier gelöschter Projekte.",
+  "code_refs": [
+   "apps/api/plane/app/views/project/base.py (ProjectIdentifierEndpoint)"
+  ]
+ },
+ {
+  "name": "Projekten beitreten",
+  "area": "Projekte",
+  "description": "Selbstbeitritt zu öffentlichen Projekten (geheime nur WS-Admin) mit WS-Rolle als Projektrolle; Annahme von Projekt-Einladungen per Token.",
+  "code_refs": [
+   "apps/api/plane/app/views/project/invite.py (UserProjectInvitationsViewset.create, ProjectJoinEndpoint)",
+   "apps/web/services/user.service.ts (joinProject)"
+  ]
+ },
+ {
+  "name": "Projektmitglieder verwalten",
+  "area": "Projekt-Einstellungen/Mitglieder",
+  "description": "Mitglieder hinzufügen (Rollen-Regeln ggü. WS-Rolle, E-Mail-Benachrichtigung), Rollen/Status ändern mit Hierarchieprüfungen, entfernen, Projekt verlassen mit Einziger-Admin-Schutz, eigene Mitgliedschaft lesen.",
+  "code_refs": [
+   "apps/api/plane/app/views/project/member.py (ProjectMemberViewSet, ProjectMemberUserEndpoint)",
+   "apps/api/plane/bgtasks/project_add_user_email_task.py",
+   "apps/web/services/project/project-member.service.ts"
+  ]
+ },
+ {
+  "name": "Projekt-Einladungen per E-Mail (im CE defekt)",
+  "area": "Projekte",
+  "description": "Endpunkte für Einladungsliste/-anlage/-löschung existieren; Anlage immer 500, Liste/Löschen ohne Rechteprüfung, kein CE-Frontend.",
+  "code_refs": [
+   "apps/api/plane/app/views/project/invite.py (ProjectInvitationsViewset)"
+  ]
+ },
+ {
+  "name": "Projekt veröffentlichen (Deploy Board/Space)",
+  "area": "Projekt/Publish",
+  "description": "Veröffentlichung mit Anchor, erlaubten Layouts, Kommentaren/Reaktionen/Votes, Intake; Einstellungen ändern, Veröffentlichung aufheben.",
+  "code_refs": [
+   "apps/api/plane/app/views/project/base.py (DeployBoardViewSet)",
+   "apps/api/plane/app/serializers/project.py (DeployBoardSerializer)",
+   "apps/web/services/project/project-publish.service.ts"
+  ]
+ },
+ {
+  "name": "Projektmitglied-Präferenzen und Ansichten",
+  "area": "Projekt",
+  "description": "view_props/default_props/preferences/sort_order der eigenen Mitgliedschaft; Preferences-Merge je Mitglied (ohne Self-Check).",
+  "code_refs": [
+   "apps/api/plane/app/views/project/base.py (ProjectUserViewsEndpoint)",
+   "apps/api/plane/app/views/project/member.py (ProjectMemberPreferenceEndpoint)"
+  ]
+ },
+ {
+  "name": "Projekt-Statistiken (Projektkarten)",
+  "area": "Projekte",
+  "description": "Zähler total_issues, completed_issues (inkl. cancelled), total_members, total_cycles, total_modules je sichtbarem Projekt.",
+  "code_refs": [
+   "apps/api/plane/app/views/analytic/base.py (ProjectStatsEndpoint)",
+   "apps/web/services/project/project.service.ts (getProjectAnalyticsCount)"
+  ]
+ },
+ {
+  "name": "Eigenes Benutzerkonto bearbeiten",
+  "area": "Profil-Einstellungen",
+  "description": "Lesen/Ändern von Name, Anzeigename, Zeitzone, Avatar/Cover (nur eigene Assets), Session-Status.",
+  "code_refs": [
+   "apps/api/plane/app/views/user/base.py (UserEndpoint.retrieve, partial_update, UserSessionEndpoint)",
+   "apps/api/plane/app/serializers/user.py"
+  ]
+ },
+ {
+  "name": "Profil-Einstellungen, Onboarding und Tour",
+  "area": "Profil-Einstellungen",
+  "description": "Profile-Felder (Theme, App-Rail, Sprache, Wochenstart, Smooth Cursor, Notification-View-Mode, Tour-/Onboarding-Flags), onboard/tour-completed.",
+  "code_refs": [
+   "apps/api/plane/app/views/user/base.py (ProfileEndpoint, UpdateUserOnBoardedEndpoint, UpdateUserTourCompletedEndpoint)",
+   "apps/api/plane/db/models/user.py (Profile)"
+  ]
+ },
+ {
+  "name": "E-Mail-Adresse ändern mit Bestätigungscode",
+  "area": "Profil-Einstellungen",
+  "description": "Code anfordern und bestätigen mit Throttles, Versuchszählern, Logout und Bestätigungsmails an alte/neue Adresse.",
+  "code_refs": [
+   "apps/api/plane/app/views/user/base.py (generate_email_verification_code, update_email)",
+   "apps/api/plane/bgtasks/user_email_update_task.py",
+   "apps/web/services/user.service.ts"
+  ]
+ },
+ {
+  "name": "Konto deaktivieren",
+  "area": "Profil-Einstellungen",
+  "description": "Deaktivierung aller Mitgliedschaften, Sessions löschen, Profil-Reset, Passwort randomisieren, Mail, Logout; Sperre für Instanz-Admins.",
+  "code_refs": [
+   "apps/api/plane/app/views/user/base.py (UserEndpoint.deactivate)",
+   "apps/api/plane/bgtasks/user_deactivation_email_task.py"
+  ]
+ },
+ {
+  "name": "Verknüpfte OAuth-Konten",
+  "area": "Profil-Einstellungen",
+  "description": "Liste/Detail/Entfernen verknüpfter Google/GitHub/GitLab-Konten.",
+  "code_refs": [
+   "apps/api/plane/app/views/user/base.py (AccountEndpoint)"
+  ]
+ },
+ {
+  "name": "Persönliche API-Tokens",
+  "area": "Profil-Einstellungen/Entwickler",
+  "description": "Tokens anlegen (Klartext nur einmal), auflisten mit berechnetem is_active, Label/Beschreibung ändern, löschen.",
+  "code_refs": [
+   "apps/api/plane/app/views/api.py",
+   "apps/api/plane/app/serializers/api.py",
+   "packages/services/src/developer/api-token.service.ts"
+  ]
+ },
+ {
+  "name": "Login-Redirect-Einstellungen und Instanz-Admin-Status",
+  "area": "User",
+  "description": "users/me/settings mit last/fallback Workspace und Einladungszähler; users/me/instance-admin.",
+  "code_refs": [
+   "apps/api/plane/app/serializers/user.py (UserMeSettingsSerializer)",
+   "apps/api/plane/app/views/user/base.py (retrieve_user_settings, retrieve_instance_admin)"
+  ]
+ },
+ {
+  "name": "States verwalten",
+  "area": "Projekt-Einstellungen/States",
+  "description": "States je Gruppe anlegen/ändern/löschen (nur leere, nicht Default), Default setzen (atomar), gruppierte Liste mit order, Triage-State für Intake.",
+  "code_refs": [
+   "apps/api/plane/app/views/state/base.py",
+   "apps/api/plane/app/serializers/state.py",
+   "apps/web/services/project/project-state.service.ts"
+  ]
+ },
+ {
+  "name": "Estimates verwalten",
+  "area": "Projekt-Einstellungen/Estimates",
+  "description": "Schätzsysteme (categories/points) mit Punkten anlegen, lesen, Punkte hinzufügen/ändern, Punkt löschen mit Umhängen und Umnummerierung, Estimate löschen; Aktivierung über Projekt-PATCH.",
+  "code_refs": [
+   "apps/api/plane/app/views/estimate/base.py",
+   "apps/api/plane/app/serializers/estimate.py",
+   "apps/web/services/estimate.service.ts",
+   "apps/web/components/estimates/"
+  ]
+ },
+ {
+  "name": "Zeitzonenauswahl",
+  "area": "Allgemein",
+  "description": "Statische Liste von 120 Zeitzonen mit aktuellem UTC/GMT-Offset, sortiert.",
+  "code_refs": [
+   "apps/api/plane/app/views/timezone/base.py",
+   "apps/web/services/timezone.service.ts"
+  ]
+ },
+ {
+  "name": "Notification-Inbox",
+  "area": "Notifications",
+  "description": "Liste mit Tabs (alle/Mentions), Filtern (created/assigned/subscribed, snoozed, archived, ungelesen), Pagination, gelesen/ungelesen, archivieren/wiederherstellen, snoozen, Ungelesen-Zähler, alle als gelesen markieren.",
+  "code_refs": [
+   "apps/api/plane/app/views/notification/base.py",
+   "apps/web/services/workspace-notification.service.ts",
+   "apps/web/store/notifications/workspace-notifications.store.ts"
+  ]
+ },
+ {
+  "name": "E-Mail-Benachrichtigungseinstellungen",
+  "area": "Profil-Einstellungen",
+  "description": "Schalter property_change, state_change, comment, mention, issue_completed.",
+  "code_refs": [
+   "apps/api/plane/app/views/notification/base.py (UserNotificationPreferenceEndpoint)",
+   "apps/web/services/user.service.ts"
+  ]
+ },
+ {
+  "name": "Webhooks",
+  "area": "Workspace-Einstellungen",
+  "description": "Webhooks mit Event-Flags anlegen (SSRF-geprüft), ändern, löschen, Secret regenerieren, Logs lesen (nur Admin).",
+  "code_refs": [
+   "apps/api/plane/app/views/webhook/base.py",
+   "apps/api/plane/app/serializers/webhook.py",
+   "apps/api/plane/utils/ip_address.py",
+   "apps/web/services/webhook.service.ts"
+  ]
+ },
+ {
+  "name": "Datei- und Bild-Uploads",
+  "area": "Assets",
+  "description": "Avatar, Cover, Workspace-Logo, Projekt-Cover, Editor-Bilder/Beschreibungs-Assets per Presigned POST, Bestätigung, Löschen/Wiederherstellen, Existenzprüfung, Duplizieren, Bulk-Zuordnung, Downloads und öffentliche Static-Redirects; Legacy-v1-Endpunkte.",
+  "code_refs": [
+   "apps/api/plane/app/views/asset/v2.py",
+   "apps/api/plane/app/views/asset/base.py",
+   "apps/api/plane/settings/storage.py",
+   "apps/api/plane/db/models/asset.py",
+   "apps/web/services/file.service.ts"
+  ]
+ },
+ {
+  "name": "Globale Suche (Command Palette)",
+  "area": "Suche",
+  "description": "Suche über Workspaces, Projekte, Issues (inkl. Sequenznummer), Cycles, Modules, Views, Pages, Intake mit Sichtbarkeits- und Gast-Regeln, optional projektbeschränkt.",
+  "code_refs": [
+   "apps/api/plane/app/views/search/base.py (GlobalSearchEndpoint)",
+   "apps/web/services/workspace.service.ts (searchWorkspace)"
+  ]
+ },
+ {
+  "name": "Entity-Suche für Mentions und Picker",
+  "area": "Suche/Editor",
+  "description": "user_mention, project, issue, cycle (mit Status), module, page mit count-Limit, workspace- oder projektbezogen.",
+  "code_refs": [
+   "apps/api/plane/app/views/search/base.py (SearchEndpoint)",
+   "apps/web/services/workspace.service.ts (searchEntity)"
+  ]
+ },
+ {
+  "name": "Issue-Picker-Suche",
+  "area": "Suche/Work Items",
+  "description": "Suche für Parent-, Relation-, Sub-Issue-, Cycle-, Module- und Gantt-Picker mit Ausschlusslogik.",
+  "code_refs": [
+   "apps/api/plane/app/views/search/issue.py",
+   "apps/api/plane/utils/issue_search.py",
+   "apps/web/services/project/project.service.ts (projectIssuesSearch)"
+  ]
+ },
+ {
+  "name": "Issue-Export und Export-Historie",
+  "area": "Workspace-Einstellungen/Export",
+  "description": "Asynchroner Export als CSV/XLSX/JSON (optional je Projekt eine Datei), ZIP in S3 mit 7-Tage-Link, paginierte Historie.",
+  "code_refs": [
+   "apps/api/plane/app/views/exporter/base.py",
+   "apps/api/plane/bgtasks/export_task.py",
+   "apps/web/services/project/project-export.service.ts",
+   "apps/web/services/integrations/integration.service.ts"
+  ]
+ },
+ {
+  "name": "Advance Analytics (Workspace)",
+  "area": "Analytics",
+  "description": "Tabs Overview und Work Items mit Datumsfiltern und Projektauswahl, Projekt-Statistiktabelle, Charts (Projekte, Work-Item-Verlauf, benutzerdefinierte x-Achse/Gruppierung).",
+  "code_refs": [
+   "apps/api/plane/app/views/analytic/advance.py",
+   "apps/api/plane/utils/date_utils.py",
+   "apps/api/plane/utils/build_chart.py",
+   "apps/web/services/analytics.service.ts"
+  ]
+ },
+ {
+  "name": "Projekt-, Cycle- und Module-Analytics (Peek-View)",
+  "area": "Analytics",
+  "description": "Work-Item-Kennzahlen, Assignee-Statistik und Charts je Projekt bzw. Cycle/Module (Tagesreihe) oder Projekt (Monatsreihe).",
+  "code_refs": [
+   "apps/api/plane/app/views/analytic/project_analytics.py",
+   "apps/web/services/analytics.service.ts (processUrl isPeekView)"
+  ]
+ },
+ {
+  "name": "Legacy-Analytics, gespeicherte Analytics-Views und CSV-Export per Mail (nur API)",
+  "area": "Analytics",
+  "description": "x/y-Achsen-Plot mit Segment, Default-Analytics, gespeicherte Views, E-Mail-Export; kein CE-Frontend.",
+  "code_refs": [
+   "apps/api/plane/app/views/analytic/base.py",
+   "apps/api/plane/utils/analytics_plot.py",
+   "apps/api/plane/bgtasks/analytic_plot_export.py"
+  ]
+ },
+ {
+  "name": "KI-Assistent (Beschreibung generieren, GPT-Popover)",
+  "area": "AI",
+  "description": "LLM-Antwort auf task+prompt über konfigurierten Provider; UI nur bei has_llm_configured.",
+  "code_refs": [
+   "apps/api/plane/app/views/external/base.py (WorkspaceGPTIntegrationEndpoint, GPTIntegrationEndpoint)",
+   "apps/web/services/ai.service.ts",
+   "apps/web/components/issues/issue-modal/components/description-editor.tsx",
+   "apps/web/components/core/modals/gpt-assistant-popover.tsx"
+  ]
+ },
+ {
+  "name": "Editor-KI „Pi“ / Rephrase (Bezahl-Feature, Backend fehlt im CE)",
+  "area": "AI/Pages",
+  "description": "Frontend ruft POST /workspaces/{slug}/rephrase-grammar/ mit ASK_ANYTHING und Tonalitäts-Scores; muss neu gebaut werden.",
+  "code_refs": [
+   "apps/web/services/ai.service.ts (performEditorTask)",
+   "apps/web/components/pages/editor/ai/menu.tsx",
+   "packages/constants/src/ai.ts"
+  ]
+ },
+ {
+  "name": "Unsplash-Bildsuche",
+  "area": "Bild-Picker",
+  "description": "Proxy zur Unsplash-API für Cover-Bilder, leer ohne Access-Key.",
+  "code_refs": [
+   "apps/api/plane/app/views/external/base.py (UnsplashEndpoint)",
+   "apps/web/services/file.service.ts (getUnsplashImages)",
+   "apps/web/components/core/image-picker-popover.tsx"
+  ]
+ },
+ {
+  "name": "Legacy-Dashboard und Aktivitätsgraphen (nur API)",
+  "area": "User",
+  "description": "users/me/workspaces/{slug}/dashboard, activity-graph, issues-completed-graph, users/me/activities, last-visited-workspace (defekt); kein CE-Frontend.",
+  "code_refs": [
+   "apps/api/plane/app/views/workspace/base.py (UserWorkspaceDashboardEndpoint)",
+   "apps/api/plane/app/views/workspace/user.py (UserActivityGraphEndpoint, UserIssueCompletedGraphEndpoint, UserLastProjectWithWorkspaceEndpoint)",
+   "apps/api/plane/app/views/user/base.py (UserActivityEndpoint)"
+  ]
+ }
+]

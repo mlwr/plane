@@ -1,0 +1,527 @@
+[
+ {
+  "name": "Sign-in-Seite",
+  "area": "Auth/Account",
+  "description": "Startseite '/' mit Login: E-Mail-Check, dann Passwort oder Magic-Code, OAuth-Buttons (Google/GitHub/GitLab/Gitea); bereits eingeloggte Nutzer werden zum Workspace oder Onboarding geleitet.",
+  "code_refs": [
+   "apps/web/app/(home)/page.tsx",
+   "apps/web/components/auth-screens/auth-base.tsx",
+   "apps/web/components/account/auth-forms/password.tsx",
+   "apps/web/components/account/auth-forms/unique-code.tsx",
+   "apps/web/hooks/oauth/core.tsx"
+  ]
+ },
+ {
+  "name": "Sign-up-Seite",
+  "area": "Auth/Account",
+  "description": "Registrierung unter /sign-up (gleiche AuthBase im SIGN_UP-Modus, Passwort mit Bestätigung oder Magic-Code).",
+  "code_refs": [
+   "apps/web/app/(all)/sign-up/page.tsx",
+   "apps/web/app/(all)/sign-up/layout.tsx"
+  ]
+ },
+ {
+  "name": "Passwort vergessen / zurücksetzen / setzen",
+  "area": "Auth/Account",
+  "description": "Seiten /accounts/forgot-password, /accounts/reset-password (Formular-POST an /auth/reset-password/{uidb64}/{token}/) und /accounts/set-password (für is_password_autoset, CSRF-geschützt).",
+  "code_refs": [
+   "apps/web/app/(all)/accounts/forgot-password/page.tsx",
+   "apps/web/app/(all)/accounts/reset-password/page.tsx",
+   "apps/web/app/(all)/accounts/set-password/page.tsx",
+   "apps/web/components/account/auth-forms/reset-password.tsx"
+  ]
+ },
+ {
+  "name": "Auth-Fehlercodes als Banner",
+  "area": "Auth/Account",
+  "description": "Fehlercodes 5000–5900 (z. B. Sign-up disabled, Rate-Limit, abgelaufener Code) werden als Banner mit Titel und Text angezeigt.",
+  "code_refs": [
+   "apps/web/helpers/authentication.helper.tsx"
+  ]
+ },
+ {
+  "name": "Onboarding",
+  "area": "Auth/Account",
+  "description": "Onboarding-Flow unter /onboarding mit Anzeige offener Workspace-Einladungen.",
+  "code_refs": [
+   "apps/web/app/(all)/onboarding/page.tsx",
+   "apps/web/components/onboarding"
+  ]
+ },
+ {
+  "name": "Workspace erstellen",
+  "area": "Workspace",
+  "description": "/create-workspace mit Name, Slug (Prüfung auf Verfügbarkeit und RESTRICTED_URLS) und Organisationsgröße; ist die Erstellung per Instanz-Config deaktiviert, erscheint ein Hinweis mit mailto-Anfrage.",
+  "code_refs": [
+   "apps/web/app/(all)/create-workspace/page.tsx",
+   "apps/web/components/workspace/create-workspace-form.tsx",
+   "packages/constants/src/workspace.ts"
+  ]
+ },
+ {
+  "name": "Einladungen annehmen (Mehrfachauswahl)",
+  "area": "Workspace",
+  "description": "/invitations: offene Einladungen auswählen und gemeinsam annehmen; danach wird der Workspace der ersten Einladung als last_workspace gesetzt.",
+  "code_refs": [
+   "apps/web/app/(all)/invitations/page.tsx",
+   "apps/web/services/workspace.service.ts"
+  ]
+ },
+ {
+  "name": "Einladung per E-Mail-Link",
+  "area": "Workspace",
+  "description": "/workspace-invitations?invitation_id&slug&token: Einladung annehmen oder ignorieren; Zustände 'already member' und 'link not active'.",
+  "code_refs": [
+   "apps/web/app/(all)/workspace-invitations/page.tsx"
+  ]
+ },
+ {
+  "name": "Workspace-Shell mit Top-Navigation",
+  "area": "Shell/Navigation",
+  "description": "Top-Navigation mit Workspace-Menü, Power-K-Suche, Inbox-Badge (ungelesene Benachrichtigungen bzw. Mentions), Hilfe-Menü, GitHub-Star-Link und User-Menü.",
+  "code_refs": [
+   "apps/web/components/workspace/content-wrapper.tsx",
+   "apps/web/components/navigation/top-navigation-root.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/star-us-link.tsx"
+  ]
+ },
+ {
+  "name": "Resizable App-Sidebar mit Peek",
+  "area": "Shell/Navigation",
+  "description": "Sidebar 236–350 px breit (Breite persistiert), einklappbar, Peek-Modus beim Hover; enthält Quick-Actions, Menüpunkte, Favoriten und Projektliste.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/_sidebar.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/sidebar.tsx",
+   "apps/web/components/sidebar/resizable-sidebar.tsx",
+   "apps/web/components/workspace/sidebar"
+  ]
+ },
+ {
+  "name": "Erweiterte Sidebar 'More' mit Pin/Sortierung",
+  "area": "Shell/Navigation",
+  "description": "Overlay mit den dynamischen Navigationspunkten (Views, Analytics, Archives) abhängig von der Rolle; Pinning und Drag&Drop-Reihenfolge werden als sidebar-preferences gespeichert.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/extended-sidebar.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/extended-sidebar-wrapper.tsx",
+   "apps/web/hooks/use-navigation-preferences.ts"
+  ]
+ },
+ {
+  "name": "Erweiterte Projekt-Sidebar",
+  "area": "Shell/Navigation",
+  "description": "Overlay mit allen beigetretenen Projekten: Suche, Projekt anlegen, Link kopieren, Drag&Drop-Reihenfolge (sort_order).",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/extended-project-sidebar.tsx"
+  ]
+ },
+ {
+  "name": "Projekt-Navigationsmodus Accordion/Tabbed",
+  "area": "Shell/Navigation",
+  "description": "Workspace-Präferenz: Projekte als Akkordeon in der Sidebar oder als Tab-Leiste (Work items, Cycles, Modules, Views, Pages, Intake); Default-Tab und versteckte Tabs pro Projekt; optional begrenzte Projektanzahl.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/layout.tsx",
+   "apps/web/components/navigation/tab-navigation-root.tsx",
+   "apps/web/components/navigation/use-navigation-items.ts",
+   "apps/web/components/navigation/tab-navigation-utils.ts"
+  ]
+ },
+ {
+  "name": "Workspace-Home",
+  "area": "Workspace",
+  "description": "/:ws mit Widgets (Quick Links, Recents, My Stickies, Quick Tutorial, New at Plane); Widget-Verwaltung (an/aus, Reihenfolge).",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/header.tsx",
+   "apps/web/store/workspace/home.ts",
+   "apps/web/store/workspace/link.store.ts"
+  ]
+ },
+ {
+  "name": "Workspace Active Cycles (nur Upsell in CE)",
+  "area": "Cycles",
+  "description": "/:ws/active-cycles zeigt in der CE nur einen Upgrade-Screen mit Pro-Badge; nach ADR-001 als echte Funktion umzusetzen.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/active-cycles/page.tsx",
+   "apps/web/components/active-cycles/workspace-active-cycles-upgrade.tsx",
+   "apps/web/components/workspace/upgrade-badge.tsx"
+  ]
+ },
+ {
+  "name": "Workspace-Analytics",
+  "area": "Analytics",
+  "description": "/:ws/analytics/:tabId mit den Tabs Overview und Work items sowie Filteraktionen; ohne Projekte ein Leerzustand.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/analytics/[tabId]/page.tsx",
+   "apps/web/components/analytics/tabs.tsx",
+   "apps/web/store/analytics.store.ts",
+   "apps/web/services/analytics.service.ts"
+  ]
+ },
+ {
+  "name": "Work-Item-Detail per Identifier",
+  "area": "Work Items",
+  "description": "/:ws/browse/PROJ-123 ist die kanonische Detailseite; Intake-Items werden ins Intake umgeleitet; die Legacy-URL /projects/:pid/issues/:id leitet über den meta-Endpoint dorthin weiter.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/browse/[workItem]/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/issues/(detail)/[issueId]/page.tsx",
+   "apps/web/store/issue/issue-details/issue.store.ts"
+  ]
+ },
+ {
+  "name": "Workspace-Drafts",
+  "area": "Work Items",
+  "description": "/:ws/drafts: Entwurfsliste mit Zähler und 'Draft an issue' (Admin/Member).",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/drafts/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/drafts/header.tsx",
+   "apps/web/store/issue/workspace-draft/issue.store.ts"
+  ]
+ },
+ {
+  "name": "Benachrichtigungen (Inbox)",
+  "area": "Notifications",
+  "description": "/:ws/notifications mit Sidebar-Liste, Tabs (inkl. Mentions), Filtern (read/archived/snoozed/type), Mark-all-read und Snooze.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/notifications/layout.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/notifications/page.tsx",
+   "apps/web/store/notifications/workspace-notifications.store.ts"
+  ]
+ },
+ {
+  "name": "Benutzerprofil im Workspace",
+  "area": "Profile",
+  "description": "/:ws/profile/:userId mit Summary (Stats, Workload, Distributionen), assigned/created/subscribed-Listen und Activity mit Download; Tabs abhängig von der Rolle.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/profile/[userId]/layout.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/profile/[userId]/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/profile/[userId]/[profileViewId]/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/profile/[userId]/activity/page.tsx"
+  ]
+ },
+ {
+  "name": "Stickies",
+  "area": "Stickies",
+  "description": "/:ws/stickies: Masonry-Liste mit Suche, 'Add sticky', Pagination (30) und Drag-Reihenfolge.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/stickies/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/stickies/header.tsx",
+   "apps/web/store/sticky/sticky.store.ts"
+  ]
+ },
+ {
+  "name": "Workspace-Views (Global Views)",
+  "area": "Views",
+  "description": "/:ws/workspace-views mit Default-Views (all-issues, assigned, created, subscribed) und eigenen Views; Detail als Spreadsheet mit View-Switcher, Filtern, Display-Optionen und Quick-Actions.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/workspace-views/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/workspace-views/header.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/workspace-views/[globalViewId]/page.tsx",
+   "apps/web/store/global-view.store.ts",
+   "apps/web/store/issue/workspace/filter.store.ts"
+  ]
+ },
+ {
+  "name": "Projektliste und archivierte Projekte",
+  "area": "Projects",
+  "description": "/:ws/projects und /:ws/projects/archives mit Filtern, Suche, Sortierung und Mobile-Header.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(list)/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/archives/page.tsx",
+   "apps/web/store/project/project.store.ts",
+   "apps/web/store/project/project_filter.store.ts"
+  ]
+ },
+ {
+  "name": "Projekt-Zugriffsschutz und Join",
+  "area": "Projects",
+  "description": "Ohne Projektrolle: 'Join project' (bei 409 oder 403 als WS-Admin), sonst 'restricted' oder 'invalid project'.",
+  "code_refs": [
+   "apps/web/layouts/auth-layout/project-wrapper.tsx",
+   "apps/web/components/auth-screens/project/project-access-restriction.tsx"
+  ]
+ },
+ {
+  "name": "Projekt-Work-Items (5 Layouts)",
+  "area": "Work Items",
+  "description": "/:ws/projects/:pid/issues mit List, Kanban, Kalender, Gantt und Spreadsheet; Rich-Filter, Display-Filter/-Properties, Gruppierung, Sub-Gruppierung, Sortierung, Quick-Add, Peek, Bulk-Auswahl und Analytics-Modal.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/issues/(list)/page.tsx",
+   "apps/web/components/issues/issue-layouts/roots/project-layout-root.tsx",
+   "apps/web/components/issues/header.tsx",
+   "apps/web/store/issue/helpers/base-issues.store.ts",
+   "apps/web/store/issue/project/filter.store.ts"
+  ]
+ },
+ {
+  "name": "Cycles-Liste und Cycle-Detail",
+  "area": "Cycles",
+  "description": "Liste mit Filtern und Leerzuständen; Detail mit Cycle-Switcher, 5 Layouts, Analytics-Sidebar (Zustand persistiert), Analytics-Modal und Quick-Actions; bei abgeschlossenem Cycle kein 'Add work item'.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/cycles/(list)/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/cycles/(detail)/[cycleId]/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/cycles/(detail)/header.tsx",
+   "apps/web/store/cycle.store.ts",
+   "apps/web/store/issue/cycle/issue.store.ts"
+  ]
+ },
+ {
+  "name": "Modules-Liste und Module-Detail",
+  "area": "Modules",
+  "description": "Liste, Board und Timeline mit Filtern und Favoriten; Detail mit Module-Switcher, 5 Layouts, Analytics-Sidebar und Quick-Actions.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/modules/(list)/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/modules/(detail)/[moduleId]/page.tsx",
+   "apps/web/store/module.store.ts",
+   "apps/web/store/module_filter.store.ts"
+  ]
+ },
+ {
+  "name": "Projekt-Views",
+  "area": "Views",
+  "description": "View-Liste mit Filtern; View-Detail mit Switcher, Lock/Private-Anzeige, Layout/Display (nicht bei gesperrten Views) und 'Add work item'.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/views/(list)/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/views/(detail)/[viewId]/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/views/(detail)/[viewId]/header.tsx",
+   "apps/web/store/project-view.store.ts"
+  ]
+ },
+ {
+  "name": "Pages (Liste und kollaborativer Editor)",
+  "area": "Pages",
+  "description": "Tabs public/private/archived; Editor mit Realtime-Kollaboration, Versionen, Asset-Upload, Mentions, Lock/Archive/Access/Favorit/Duplicate und Fallback-Save.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/pages/(list)/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/pages/(detail)/[pageId]/page.tsx",
+   "apps/web/store/pages/base-page.ts",
+   "apps/web/store/pages/project-page.ts",
+   "apps/web/hooks/use-page-fallback.ts",
+   "apps/web/hooks/use-realtime-page-events.tsx"
+  ]
+ },
+ {
+  "name": "Intake",
+  "area": "Intake",
+  "description": "/:ws/projects/:pid/intake mit Tabs open/closed, Filtern/Sortierung, Accept/Decline/Duplicate/Snooze; Deep-Link über inboxIssueId.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/intake/page.tsx",
+   "apps/web/store/inbox/project-inbox.store.ts",
+   "apps/web/store/inbox/inbox-issue.store.ts"
+  ]
+ },
+ {
+  "name": "Disabled-Feature-Zustände",
+  "area": "Projects",
+  "description": "Ist Cycles, Modules, Views, Pages oder Intake im Projekt deaktiviert, erscheint ein Leerzustand mit Link zu den Feature-Settings (nur Admin).",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/cycles/(list)/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/modules/(list)/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/views/(list)/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/pages/(list)/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/intake/page.tsx"
+  ]
+ },
+ {
+  "name": "Projekt-Archive",
+  "area": "Archives",
+  "description": "Archivierte Work Items (Liste und read-only-Detail mit Banner), archivierte Cycles und archivierte Modules.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/archives/issues/(list)/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/archives/issues/(detail)/[archivedIssueId]/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/archives/cycles/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/archives/modules/page.tsx",
+   "apps/web/store/issue/archived/issue.store.ts"
+  ]
+ },
+ {
+  "name": "Workspace-Einstellungen General/Members/Exports/Webhooks",
+  "area": "Settings",
+  "description": "Workspace-Details; Mitglieder mit Suche, Rollenfilter und Einladen; Exporte; Webhooks (Liste, Anlegen mit Secret, Bearbeiten, Löschen, Secret regenerieren). Zugriff abhängig von der Rolle.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/(workspace)/layout.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/(workspace)/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/(workspace)/members/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/(workspace)/exports/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/(workspace)/webhooks/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/(workspace)/webhooks/[webhookId]/page.tsx",
+   "packages/constants/src/settings/workspace.ts"
+  ]
+ },
+ {
+  "name": "Billing & Plans (entfällt)",
+  "area": "Settings",
+  "description": "In der CE die Seite /:ws/settings/billing mit Plänen/Vergleich (nur Admin); entfällt nach ADR-001.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/(workspace)/billing/page.tsx",
+   "apps/web/components/workspace/billing"
+  ]
+ },
+ {
+  "name": "Projekt-Einstellungen",
+  "area": "Settings",
+  "description": "General (Details, Archivieren/Löschen), Members (Defaults, Liste), Feature-Toggles (cycle_view, module_view, issue_views_view, page_view, inbox_view), States, Labels (Drag&Drop), Estimates, Automations (Auto-Archive/Auto-Close); Redirect zum ersten Projekt.",
+  "code_refs": [
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/layout.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/layout.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/features/cycles/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/states/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/labels/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/estimates/page.tsx",
+   "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/automations/page.tsx",
+   "packages/constants/src/settings/project.ts"
+  ]
+ },
+ {
+  "name": "Profil-Einstellungen (Seite und Modal)",
+  "area": "Settings",
+  "description": "/settings/profile/{general,preferences,notifications,security,api-tokens}; dieselbe UI auch als globales Modal.",
+  "code_refs": [
+   "apps/web/app/(all)/settings/profile/layout.tsx",
+   "apps/web/app/(all)/settings/profile/[profileTabId]/page.tsx",
+   "apps/web/components/common/modal/global.tsx",
+   "packages/constants/src/settings/profile.ts",
+   "apps/web/store/workspace/api-token.store.ts"
+  ]
+ },
+ {
+  "name": "Legacy-Redirects",
+  "area": "Routing",
+  "description": "Weiterleitungen von alten URLs: projects/:pid/settings/*, analytics, settings/api-tokens, projects/:pid/inbox, accounts/sign-up, sign-in, signin, login, register, profile/*, settings/account/*.",
+  "code_refs": [
+   "apps/web/app/routes/core.ts",
+   "apps/web/app/routes/redirects/core"
+  ]
+ },
+ {
+  "name": "404-, Fehler- und Wartungsseiten",
+  "area": "Fehlerbehandlung",
+  "description": "404-Catch-All, Fehlerseite in DEV (Stack) und PROD (freundlich mit Links), MaintenanceView, InstanceNotReady, Workspace not found/Not authorized, NotAuthorizedView.",
+  "code_refs": [
+   "apps/web/app/not-found.tsx",
+   "apps/web/app/error/dev.tsx",
+   "apps/web/app/error/prod.tsx",
+   "apps/web/components/instance/maintenance-view.tsx",
+   "apps/web/components/instance/not-ready-view.tsx",
+   "apps/web/layouts/auth-layout/workspace-wrapper.tsx",
+   "apps/web/components/auth-screens/not-authorized-view.tsx"
+  ]
+ },
+ {
+  "name": "Stale-Chunk-Auto-Reload",
+  "area": "Fehlerbehandlung",
+  "description": "Nach einem Deploy führen fehlende Chunks zu einem einmaligen Reload (höchstens 1× pro 30 s), danach greift die Fehlerseite.",
+  "code_refs": [
+   "apps/web/lib/stale-asset-error.ts",
+   "apps/web/app/entry.client.tsx",
+   "apps/web/app/root.tsx"
+  ]
+ },
+ {
+  "name": "Navigations-Progressbar",
+  "area": "Shell/Navigation",
+  "description": "Fortschrittsbalken oben bei Routenwechsel (BProgress).",
+  "code_refs": [
+   "apps/web/lib/b-progress/AppProgressBar.tsx"
+  ]
+ },
+ {
+  "name": "Themes inkl. Custom-Theme",
+  "area": "Shell/UI",
+  "description": "Themes light, dark, light-contrast, dark-contrast, custom und system; Custom-Farben aus dem Profil; einmalige Server-Synchronisation pro Session.",
+  "code_refs": [
+   "apps/web/app/root.tsx",
+   "apps/web/lib/wrappers/store-wrapper.tsx",
+   "apps/web/store/user/profile.store.ts"
+  ]
+ },
+ {
+  "name": "Mehrsprachigkeit",
+  "area": "Shell/UI",
+  "description": "Sprache wird vor der Hydration initialisiert und in localStorage userLanguage persistiert; nach dem Logout gilt die Fallback-Sprache.",
+  "code_refs": [
+   "apps/web/app/entry.client.tsx",
+   "apps/web/app/provider.tsx",
+   "packages/i18n/src/core/set-language.ts"
+  ]
+ },
+ {
+  "name": "Command-Palette / Power K und Shortcuts",
+  "area": "Shell/Navigation",
+  "description": "Globale Suche und Befehle (Power-K-Modal, Shortcut-Liste), eingebunden in Projects-, Settings- und Profil-Layouts.",
+  "code_refs": [
+   "apps/web/store/base-power-k.store.ts",
+   "apps/web/components/power-k/projects-app-provider.tsx",
+   "apps/web/components/navigation/top-nav-power-k.tsx"
+  ]
+ },
+ {
+  "name": "Favoriten mit Ordnern",
+  "area": "Shell/Navigation",
+  "description": "Favoriten in der Sidebar (Projekte, Cycles, Modules, Views, Pages) mit Ordnern und Drag-Reihenfolge; nur Admin/Member.",
+  "code_refs": [
+   "apps/web/store/favorite.store.ts",
+   "apps/web/components/workspace/sidebar/favorites/favorites-menu.tsx",
+   "apps/web/hooks/use-favorite-item-details.tsx"
+  ]
+ },
+ {
+  "name": "Session-Ablauf und Sign-out",
+  "area": "Auth/Account",
+  "description": "Bei 401 wird zum Login mit next_path umgeleitet; Sign-out per Formular-POST setzt alle Stores zurück.",
+  "code_refs": [
+   "apps/web/services/api.service.ts",
+   "apps/web/services/auth.service.ts",
+   "apps/web/store/root.store.ts"
+  ]
+ },
+ {
+  "name": "Datei-/Bild-Uploads mit Fortschritt",
+  "area": "Querschnitt",
+  "description": "Uploads per Presigned-Upload mit Fortschrittsanzeige im Editor, für Attachments, Logos und Cover; Unsplash-Suche für Cover.",
+  "code_refs": [
+   "apps/web/services/file.service.ts",
+   "apps/web/services/file-upload.service.ts",
+   "apps/web/store/editor/asset.store.ts",
+   "apps/web/helpers/cover-image.helper.ts"
+  ]
+ },
+ {
+  "name": "Ungespeicherte-Änderungen-Warnung",
+  "area": "Querschnitt",
+  "description": "Warnung bei beforeunload und Klick auf Links, solange Änderungen ungespeichert sind.",
+  "code_refs": [
+   "apps/web/hooks/use-reload-confirmation.tsx"
+  ]
+ },
+ {
+  "name": "Mehrfachauswahl und Tastaturnavigation in Tabellen",
+  "area": "Work Items",
+  "description": "Auswahl mit Shift/Ctrl, aktive Zeile und Pfeiltasten-Navigation im Spreadsheet.",
+  "code_refs": [
+   "apps/web/store/multiple_select.store.ts",
+   "apps/web/hooks/use-multiple-select.ts",
+   "apps/web/hooks/use-table-keyboard-navigation.tsx"
+  ]
+ },
+ {
+  "name": "Timeline/Gantt-Grundlage",
+  "area": "Work Items",
+  "description": "Timeline-Stores für Issues, Modules, Projekt und gruppiert; Drag zum Verschieben/Verlängern; Abhängigkeiten in der CE deaktiviert.",
+  "code_refs": [
+   "apps/web/store/timeline/base-timeline.store.ts",
+   "apps/web/store/timeline/timeline.store.ts",
+   "apps/web/hooks/use-timeline-chart.ts"
+  ]
+ },
+ {
+  "name": "Zeitzonen-Auswahl und -Hinweise",
+  "area": "Querschnitt",
+  "description": "Zeitzonenliste über /api/timezones/ (gruppiert, inkl. UTC); Hinweis, wenn die Projekt-Zeitzone von der eigenen abweicht.",
+  "code_refs": [
+   "apps/web/hooks/use-timezone.tsx",
+   "apps/web/hooks/use-timezone-converter.tsx",
+   "apps/web/services/timezone.service.ts"
+  ]
+ }
+]

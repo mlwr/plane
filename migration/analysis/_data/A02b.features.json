@@ -1,0 +1,320 @@
+[
+ {
+  "name": "Work Items anlegen und bearbeiten (Name, Beschreibung, Priorität, Start-/Zieldatum, State, Assignees, Labels, Schätzung, Typ)",
+  "area": "Work Items",
+  "description": "Kernobjekt Issue mit Prioritäten urgent/high/medium/low/none, Datumsfeldern, M2M zu Bearbeitern und Labels, Schätzpunkt und Work-Item-Typ; ohne gewählten State wird automatisch der Default-State gesetzt.",
+  "code_refs": [
+   "apps/api/plane/db/models/issue.py:104-255",
+   "apps/api/plane/db/models/issue.py:345-368",
+   "apps/api/plane/db/models/issue.py:543-554"
+  ]
+ },
+ {
+  "name": "Fortlaufende Work-Item-ID (PROJ-123)",
+  "area": "Work Items",
+  "description": "Projektbezogene, nie wiederverwendete Nummer, vergeben unter einem Advisory-Lock; die nächste Nummer wird im Projekt angezeigt.",
+  "code_refs": [
+   "apps/api/plane/db/models/issue.py:180-214",
+   "apps/api/plane/db/models/issue.py:557-571",
+   "apps/api/plane/app/serializers/project.py:132-135",
+   "apps/api/plane/db/management/commands/fix_duplicate_sequences.py"
+  ]
+ },
+ {
+  "name": "Sub-Work-Items (Parent-Hierarchie)",
+  "area": "Work Items",
+  "description": "Hierarchie über issues.parent_id (CASCADE); das Löschen des Elternteils löscht die Kinder (soft) mit.",
+  "code_refs": [
+   "apps/api/plane/db/models/issue.py:114-120",
+   "apps/api/plane/bgtasks/deletion_task.py:17-107"
+  ]
+ },
+ {
+  "name": "Relationen zwischen Work Items",
+  "area": "Work Items",
+  "description": "blocked_by/blocking, relates_to, duplicate, start_before/after, finish_before/after, implemented_by/implements; eine Zeile je gerichtetem Paar, Gegenrichtung wird berechnet.",
+  "code_refs": [
+   "apps/api/plane/db/models/issue.py:272-320",
+   "apps/api/plane/utils/exporters/schemas/issue.py:194-202"
+  ]
+ },
+ {
+  "name": "Links an Work Items mit automatischem Titel/Favicon",
+  "area": "Work Items",
+  "description": "IssueLink mit unbegrenzter URL; Titel und Favicon (Data-URI) werden asynchron in metadata gecrawlt.",
+  "code_refs": [
+   "apps/api/plane/db/models/issue.py:371-384",
+   "apps/api/plane/bgtasks/work_item_link_task.py"
+  ]
+ },
+ {
+  "name": "Anhänge an Work Items",
+  "area": "Work Items",
+  "description": "Seit MIG/0079 als FileAsset(entity_type=ISSUE_ATTACHMENT); die Legacy-Tabelle issue_attachments ist ungenutzt.",
+  "code_refs": [
+   "apps/api/plane/db/models/issue.py:387-412",
+   "apps/api/plane/db/migrations/0079_auto_20241009_0619.py",
+   "apps/api/plane/db/models/asset.py:50-56"
+  ]
+ },
+ {
+  "name": "Erwähnungen (@Mentions) in Beschreibung und Kommentaren",
+  "area": "Work Items",
+  "description": "IssueMention; Erwähnte werden automatisch Abonnenten und erhalten Mention-Benachrichtigungen.",
+  "code_refs": [
+   "apps/api/plane/db/models/issue.py:323-342",
+   "apps/api/plane/bgtasks/notification_task.py:145-190"
+  ]
+ },
+ {
+  "name": "Work Items abonnieren",
+  "area": "Work Items",
+  "description": "IssueSubscriber; Grundlage der In-App- und E-Mail-Benachrichtigungen.",
+  "code_refs": [
+   "apps/api/plane/db/models/issue.py:574-597"
+  ]
+ },
+ {
+  "name": "Emoji-Reaktionen auf Work Items und Kommentare",
+  "area": "Work Items",
+  "description": "IssueReaction und CommentReaction, eindeutig je (Objekt, Akteur, Emoji).",
+  "code_refs": [
+   "apps/api/plane/db/models/issue.py:600-651"
+  ]
+ },
+ {
+  "name": "Up-/Downvotes (Public Board)",
+  "area": "Work Items / Space",
+  "description": "IssueVote mit Werten -1/1, eindeutig je Akteur.",
+  "code_refs": [
+   "apps/api/plane/db/models/issue.py:654-674",
+   "apps/api/plane/space/views/issue.py"
+  ]
+ },
+ {
+  "name": "Kommentare (intern/extern, bearbeitet-Kennzeichen, Antworten)",
+  "area": "Kommentare",
+  "description": "IssueComment mit HTML/JSON/Stripped, access INTERNAL/EXTERNAL (Public Board), edited_at, parent für Antworten (EE) und Description-Spiegel.",
+  "code_refs": [
+   "apps/api/plane/db/models/issue.py:451-540",
+   "apps/api/plane/db/models/description.py",
+   "apps/api/plane/app/views/issue/comment.py:28-30,140"
+  ]
+ },
+ {
+  "name": "Aktivitätsverlauf",
+  "area": "Verlauf",
+  "description": "IssueActivity mit verb/field/old/new/identifier/epoch; der Verlauf bleibt nach dem Löschen des Issues erhalten (DO_NOTHING).",
+  "code_refs": [
+   "apps/api/plane/db/models/issue.py:415-448",
+   "apps/api/plane/bgtasks/issue_activities_task.py"
+  ]
+ },
+ {
+  "name": "Beschreibungs-Versionshistorie (Work Items und Intake)",
+  "area": "Verlauf",
+  "description": "IssueDescriptionVersion mit 600-s-Merge-Fenster je Nutzer; der Cleanup behält 20 Versionen je Issue; Liste und Detail per Endpunkt.",
+  "code_refs": [
+   "apps/api/plane/db/models/issue.py:782-822",
+   "apps/api/plane/bgtasks/issue_description_version_task.py",
+   "apps/api/plane/bgtasks/cleanup_task.py:128-146",
+   "apps/api/plane/app/views/issue/version.py",
+   "apps/api/plane/app/urls/issue.py:256-275"
+  ]
+ },
+ {
+  "name": "Eigenschafts-Historie (IssueVersion)",
+  "area": "Verlauf",
+  "description": "Snapshots von State, Assignees, Labels, Cycle und Modules; in CE nur per Backfill, der Live-Task wird nicht aufgerufen.",
+  "code_refs": [
+   "apps/api/plane/db/models/issue.py:677-779",
+   "apps/api/plane/bgtasks/issue_version_sync.py"
+  ]
+ },
+ {
+  "name": "Archivieren und automatisches Archivieren/Schließen",
+  "area": "Work Items",
+  "description": "archived_at (Datum); Auto-Archiv und Auto-Close nach archive_in/close_in Monaten, täglich.",
+  "code_refs": [
+   "apps/api/plane/db/models/issue.py:160",
+   "apps/api/plane/bgtasks/issue_automation_task.py:26-148"
+  ]
+ },
+ {
+  "name": "Erledigt-Zeitpunkt (completed_at) für Analytics",
+  "area": "Work Items",
+  "description": "Wird beim Wechsel in einen completed-State gesetzt und sonst geleert.",
+  "code_refs": [
+   "apps/api/plane/db/models/issue.py:240-255"
+  ]
+ },
+ {
+  "name": "Entwürfe (Drafts)",
+  "area": "Drafts",
+  "description": "DraftIssue mit Assignees, Labels, Modulen und Cycle auf Workspace-Ebene (Projekt optional).",
+  "code_refs": [
+   "apps/api/plane/db/models/draft.py"
+  ]
+ },
+ {
+  "name": "States mit Gruppen, Farbe, Reihenfolge und Default-State",
+  "area": "Stammdaten",
+  "description": "Gruppen backlog/unstarted/started/completed/cancelled/triage; 6 Default-States bei Projekt-Anlage; Slug automatisch; leere States sind löschbar, der Default-State nicht.",
+  "code_refs": [
+   "apps/api/plane/db/models/state.py",
+   "apps/api/plane/app/views/project/base.py:282-296",
+   "apps/api/plane/app/views/state/base.py:117-138"
+  ]
+ },
+ {
+  "name": "Triage-State für Intake",
+  "area": "Intake",
+  "description": "Unsichtbarer State je Projekt; neue Intake-Issues landen darin.",
+  "code_refs": [
+   "apps/api/plane/db/migrations/0112_auto_20251124_0603.py",
+   "apps/api/plane/app/views/intake/base.py:247-257"
+  ]
+ },
+ {
+  "name": "Labels (hierarchisch, Farbe, Sortierung, Bulk-Import)",
+  "area": "Stammdaten",
+  "description": "Label mit parent und sort_order; eindeutig je Projekt; Bulk-Anlage mit Zufallsfarbe.",
+  "code_refs": [
+   "apps/api/plane/db/models/label.py",
+   "apps/api/plane/app/views/issue/label.py:90-112"
+  ]
+ },
+ {
+  "name": "Schätzungen (Points, Categories; Time in EE)",
+  "area": "Stammdaten",
+  "description": "Estimate je Projekt mit EstimatePoints (key/value); aktives System über Project.estimate und last_used.",
+  "code_refs": [
+   "apps/api/plane/db/models/estimate.py",
+   "packages/constants/src/estimates.ts:12-140"
+  ]
+ },
+ {
+  "name": "Cycles (Zeitraum, Owner, Archiv, Logo, Sortierung, Fortschritts-Snapshot, Transfer)",
+  "area": "Planung",
+  "description": "Cycle mit timestamptz-Zeitraum, progress_snapshot beim Transfer und version (1/2); Zuordnung über CycleIssue (fachlich max. ein Cycle je Issue).",
+  "code_refs": [
+   "apps/api/plane/db/models/cycle.py",
+   "apps/api/plane/utils/cycle_transfer_issues.py:405-431",
+   "apps/api/plane/app/views/cycle/issue.py:230-299"
+  ]
+ },
+ {
+  "name": "Anzeige-/Filtereinstellungen je Nutzer für Cycles und Modules",
+  "area": "Planung",
+  "description": "filters, display_filters, display_properties und rich_filters je (Cycle|Module, User).",
+  "code_refs": [
+   "apps/api/plane/db/models/cycle.py:130-157",
+   "apps/api/plane/db/models/module.py:190-217"
+  ]
+ },
+ {
+  "name": "Modules (Status, Lead, Mitglieder, Links, Zeitraum, Archiv, Logo)",
+  "area": "Planung",
+  "description": "Module mit 6 Status, Lead, ModuleMember, ModuleLink (URL max. 200) und n:m-Zuordnung zu Issues.",
+  "code_refs": [
+   "apps/api/plane/db/models/module.py"
+  ]
+ },
+ {
+  "name": "Gespeicherte Ansichten (Projekt und Workspace)",
+  "area": "Views",
+  "description": "IssueView mit Legacy- und Rich-Filtern, Layout/Properties, privat/öffentlich, Sperre, Archiv, Logo und Sortierung.",
+  "code_refs": [
+   "apps/api/plane/db/models/view.py",
+   "apps/api/plane/utils/issue_filters.py:428-463"
+  ]
+ },
+ {
+  "name": "Pages (Zugriff, Sperre, Archiv, Logo, Full-Width, Labels, Projektzuordnung, Verschachtelung)",
+  "area": "Pages",
+  "description": "Page mit access 0/1, is_locked, archived_at (Datum), view_props.full_width, PageLabel und ProjectPage; parent/is_global/moved_to_* als EE-Gerüst.",
+  "code_refs": [
+   "apps/api/plane/db/models/page.py",
+   "apps/api/plane/app/serializers/page.py"
+  ]
+ },
+ {
+  "name": "Kollaborative Page-Bearbeitung (Persistenz der Yjs-Dokumente)",
+  "area": "Pages",
+  "description": "description_binary, html und json werden vom Live-Server per PATCH /description/ gespeichert und als Octet-Stream geladen.",
+  "code_refs": [
+   "apps/api/plane/app/serializers/page.py:173-222",
+   "apps/api/plane/app/urls/page.py:57",
+   "packages/editor/src/helpers/yjs-utils.ts",
+   "apps/web/hooks/use-page-fallback.ts"
+  ]
+ },
+ {
+  "name": "Page-Versionshistorie",
+  "area": "Pages",
+  "description": "PageVersion mit 600-s-Merge und max. 20 Versionen; im Original durch einen Bug nie erzeugt.",
+  "code_refs": [
+   "apps/api/plane/db/models/page.py:158-182",
+   "apps/api/plane/bgtasks/page_version_task.py",
+   "apps/api/plane/bgtasks/cleanup_task.py:107-125"
+  ]
+ },
+ {
+  "name": "Referenzprotokoll von Seiteninhalten (Mentions, Bilder)",
+  "area": "Pages",
+  "description": "PageLog aus mention-component/image-component, erzeugt per page_transaction.",
+  "code_refs": [
+   "apps/api/plane/db/models/page.py:80-117",
+   "apps/api/plane/bgtasks/page_transaction_task.py"
+  ]
+ },
+ {
+  "name": "Intake: Annehmen, Ablehnen, Snoozen, Duplikat markieren",
+  "area": "Intake",
+  "description": "IntakeIssue-Status -2/-1/0/1/2, duplicate_to, Quelle (IN_APP; FORMS/EMAIL in EE), source_email, extra; automatischer Intake je Projekt.",
+  "code_refs": [
+   "apps/api/plane/db/models/intake.py",
+   "apps/api/plane/app/views/project/base.py:359-366",
+   "packages/types/src/inbox.ts:19-31"
+  ]
+ },
+ {
+  "name": "Tagesgenaues Snooze mit Auto-Unsnooze und Zeitzonen-Umrechnung",
+  "area": "Intake",
+  "description": "snoozed_till = 00:00 Projekt-TZ; Beat alle 5 Minuten; Umrechnung bei TZ-Wechsel des Projekts.",
+  "code_refs": [
+   "apps/api/plane/db/models/intake.py:100-110",
+   "apps/api/plane/db/models/project.py:169-227",
+   "apps/api/plane/bgtasks/issue_automation_task.py:151-170",
+   "apps/api/plane/utils/timezone_converter.py:98-112"
+  ]
+ },
+ {
+  "name": "In-App-Benachrichtigungen (gelesen, snoozen, archivieren)",
+  "area": "Benachrichtigungen",
+  "description": "Notification mit sender-Kategorien created/assigned/subscribed/mentioned, Snapshot in data und Indizes für Inbox-Abfragen.",
+  "code_refs": [
+   "apps/api/plane/db/models/notification.py:13-69",
+   "apps/api/plane/bgtasks/notification_task.py"
+  ]
+ },
+ {
+  "name": "E-Mail-Benachrichtigungen mit Präferenzen und Digest",
+  "area": "Benachrichtigungen",
+  "description": "UserNotificationPreference (property_change, state_change, comment, mention, issue_completed); EmailNotificationLog wird alle 5 Minuten gestackt.",
+  "code_refs": [
+   "apps/api/plane/db/models/notification.py:81-149",
+   "apps/api/plane/bgtasks/email_notification_task.py"
+  ]
+ },
+ {
+  "name": "Work-Item-Typen und Epics (EE-Gerüst)",
+  "area": "Work Items (EE)",
+  "description": "IssueType workspaceweit (is_epic, is_default, level, logo_props) und ProjectIssueType; Issue.type und DraftIssue.type.",
+  "code_refs": [
+   "apps/api/plane/db/models/issue_type.py",
+   "apps/api/plane/api/serializers/issue.py:66-67,190-197",
+   "apps/api/plane/app/views/issue/archive.py:99"
+  ]
+ }
+]

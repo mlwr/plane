@@ -1,0 +1,505 @@
+{
+ "doc_path": "/home/user/plane/migration/features/25-paid-workflows-automation-templates.md",
+ "summary": "IST-Analyse Cluster P06 (Workflows, Approvals, Automationen, Templates, Recurring Work Items) für Plane CE v1.4.2, Stand 2026-10-21. 26 Bezahl-Features (F01–F24, F26, F27) plus das CE-Basisfeature Auto-Archive/Auto-Close (F25) sind spezifiziert. Jedes Feature hat Funktionsbeschreibung (UI-Texte wörtlich aus den mitgelieferten EE-i18n-Dateien), Plan-Tier mit Quelle, CE-Status (gegen das Repo per grep geprüft), Datenmodell- und API-Hinweise (Feldnamen aus der öffentlichen REST-API v2), UI-Hinweise, Edge-Cases, .NET-Migrationshinweise nach ADR-000 bis 006 und Konfidenz. Wichtigste Befunde: (1) Die Plan-Matrix im CE-Repo (plans.tsx, subscription.ts) ist älter als die Doku 2026 und widerspricht ihr. Custom Automations: Matrix Pro, Doku Business. Approvals: Matrix Business (coming soon), Doku Enterprise Grid. Workflows: Business mit einem Default-Workflow. Typ-spezifische Workflows, Approval Flows und Transition Conditions: Enterprise Grid. Nach ADR-001 ist das nur dokumentarisch. (2) Das CE enthält Erweiterungspunkte, aber keine Funktion: einen No-op-Workflow-Drag-and-Drop-Hook mit Aufrufstellen in Kanban und List, das allowedStateIds-Gating im State-Select, Work-Item-Template-Context mit fertiger Formularlogik bei No-op-Provider, templateId-Props im Projekt-Create sowie vollständige EE-Texte zweier Workflow-UI-Generationen. Anhang B listet sie vollständig. (3) Die Automation-Architektur der Commercial Edition ist aus Helm-Charts, Env-Doku und Engineering-Blog rekonstruiert: PostgreSQL-Trigger → Outbox → outbox-poller (Batch 250) → RabbitMQ-Fanout plane.event_stream → automation-consumer (Queue plane.event_stream.automations, event_types issue) bzw. webhook-consumer, dazu node-runner (10 s, 5 s, 128 MB, HMAC). Datenmodell: Regel-Graph aus Nodes, Edges, Versions, Runs und Activities. (4) Im CE-Auto-Close gibt es einen Bug: der Fallback auf einen cancelled-State ist nicht projektbezogen. (5) Konflikte mit ADR-002 (Runner ohne Node) und ADR-004 (Broker und Marketplace airgapped) sind als offene Punkte geführt. Anhang A enthält das vollständige i18n-Schlüsselinventar der Cluster-Texte. Einschränkung: docs.plane.so, plane.so und developers.plane.so waren nur über WebSearch-Zusammenfassungen lesbar. Unsichere Details sind als UNVERIFIZIERT markiert.",
+ "paid_features": [
+  {
+   "name": "Workflows: Default-Workflow je Projekt (erlaubte State-Wechsel, Mover/Reviewer, Allow new work items, Enforcement)",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Business",
+   "tier_details": "Business: ein Default-Workflow je Projekt (Doku 2026). Enterprise Grid: zusätzlich typ-spezifische Workflows, Approvals, Transition Conditions. Repo subscription.ts: 'Workflows + Approvals' unter Business. Release v1.9.0: Workflows im Business-Plan.",
+   "ce_status": "Stub/UI-Hülle im CE (No-op-Hook useWorkFlowFDragNDrop, allowedStateIds, i18n workflow.json und project_settings.workflows, Fetch-Keys; kein Modell, keine API, keine Route)",
+   "description": "Project Settings → Workflows → 'Enable workflows'. Erlaubte Transitionen zwischen States mit 'by' (Default All, einschränkbar auf Mitglieder), Flag 'Allow new work items' je State (Default-State immer erlaubt), ohne Transitionen ist alles erlaubt. Enforcement in Kanban/List-Drag-and-Drop (Overlay bg-danger-subtle, Warn-Toast, 'You can't move this work item here.'), Quick-Add je Gruppe, State-Dropdown (nur erlaubte States), Bulk Ops (invalid_state_transition), REST (403 workflow_transition_denied), Integrationen. Löschen eines Workflows: Fallback auf Default.",
+   "sources": [
+    "apps/web/components/workflow/use-workflow-drag-n-drop.ts",
+    "apps/web/components/issues/issue-layouts/kanban/kanban-group.tsx",
+    "apps/web/components/issues/issue-layouts/list/list-group.tsx",
+    "apps/web/components/issues/issue-layouts/group-drag-overlay.tsx",
+    "apps/web/components/dropdowns/state/state-select.tsx",
+    "packages/i18n/src/locales/en/workflow.json",
+    "packages/i18n/src/locales/en/project-settings.json",
+    "packages/constants/src/subscription.ts",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/plane-compose.md",
+    "https://docs.plane.so/workflows-and-approvals/workflows",
+    "https://plane.so/changelog/self-hosted-v1_9_0",
+    "https://developers.plane.so/api-reference/v2/work-items/update-work-item"
+   ],
+   "confidence": "hoch",
+   "api_hints": "/api/v2/workspaces/{slug}/projects/{project_id}/workflows/ (CRUD), …/workflows/{id}/states/, …/transitions/; PATCH Work Item → 403 workflow_transition_denied; 409 workflow_in_use beim Löschen eines verwendeten Workflows; EE-Web nutzt eine 'State-lite'-Ressource mit typeId, isForWorkItemCreation, scopedProjectIds",
+   "data_model_hints": "Workflow{name,description,is_active,is_default,work_item_type_ids}; WorkflowState{workflow_id,state_id,sequence,type transition|approval,is_default,allow_issue_creation=true}; WorkflowTransition{workflow_state_id,transition_state_id,rejection_state_id,member_ids,required_approvals}; Project.is_workflow_enabled",
+   "ui_hints": "Zwei UI-Generationen in i18n (Regeln je State: 'Add permitted state change', 'Change state to', 'When reviewed by'; Multi-Workflow-Liste: 'Add new workflow', 'Define workflow', 'Add states', Banner 'Unmapped states detected'); Icons WorkflowsOutline, GitBranchOutline; Empty-State-Illustration workflow"
+  },
+  {
+   "name": "Mehrere, typ-spezifische Workflows je Projekt",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Enterprise Grid",
+   "tier_details": "Business: nur Default-Workflow. Enterprise Grid: beliebig viele Workflows je Work Item Type. Typ-spezifischer Workflow hat Vorrang vor dem Default.",
+   "ce_status": "Stub/UI-Hülle im CE (nur i18n project_settings.workflows.*, settings_empty_state.workflows; IssueType ohne Workflow-Bezug)",
+   "description": "Workflows werden Work Item Types zugeordnet (Feld 'Work item type'). Footer am Default: 'This workflow applies to any work item type that is not assigned to a workflow.' Items in nicht abgebildeten States gehen beim Aktivieren in den Initial-State. API verlangt state_mapping, sonst 409 workflow_state_orphans; über 500 Items läuft die Verschiebung im Hintergrund.",
+   "sources": [
+    "packages/i18n/src/locales/en/project-settings.json",
+    "packages/i18n/src/locales/en/empty-state.json",
+    "apps/api/plane/db/models/issue_type.py",
+    "https://docs.plane.so/workflows-and-approvals/workflows",
+    "https://plane.so/blog/introducing-custom-workflows-and-approval-flows",
+    "https://plane.so/changelog/release-v3-0-0-desktop-app-smarter-workflows-powerful-plane-ai-upgrades",
+    "https://developers.plane.so/api-reference/v2/workspace-workflow-states/overview"
+   ],
+   "confidence": "mittel",
+   "api_hints": "Workflow.work_item_type_ids (ersetzt das Set); preview-workflow-fallback; remove-state mit state_mapping",
+   "data_model_hints": "n:m Workflow↔WorkItemType (je Projekt eindeutig je WIT)",
+   "ui_hints": "Create-Modal 'Create new workflow' (Name ≤255, Regex Buchstaben/Ziffern/Leerzeichen/Bindestrich/Apostroph), Suchfeld 'Search workflows'"
+  },
+  {
+   "name": "Approval Flows (Workflow-Genehmigungen)",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Enterprise Grid",
+   "tier_details": "Doku und Blog 2026: Enterprise Grid; API: Plan-Feature 'Workflow approvals', sonst 402. Repo: 'Workflows + Approvals' Business (subscription.ts), Matrix 'Approvals' Business coming soon.",
+   "ce_status": "fehlt",
+   "description": "State vom Typ approval: Wechsel aus ihm heraus braucht Entscheidung der Approver (member_ids, Default All). required_approvals (null = alle). Approve → transition_state_id, Reject → rejection_state_id. Item bleibt pending. Approve/Reject-Buttons oben in der Work-Item-Detailansicht. Entscheidungen im Transitions-Log.",
+   "sources": [
+    "packages/constants/src/subscription.ts",
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "/home/user/makeplane/developer-docs/docs/dev-tools/plane-compose.md",
+    "https://docs.plane.so/workflows-and-approvals/workflows",
+    "https://plane.so/blog/introducing-custom-workflows-and-approval-flows",
+    "https://developers.plane.so/api-reference/v2/workspace-workflow-transitions/overview"
+   ],
+   "confidence": "mittel",
+   "api_hints": "…/workflows/{id}/transitions/ mit state_id, transition_state_id, rejection_state_id, member_ids, required_approvals; 400 bei Approvern ohne aktive Workspace-Mitgliedschaft; Approve/Reject-Endpunkt nicht dokumentiert",
+   "data_model_hints": "Vorschlag WorkflowApprovalRequest{work_item_id,transition_id,status pending|approved|rejected} + WorkflowApprovalDecision{approver_id,decision}",
+   "ui_hints": "Icon ApproverOutline; Member-Picker mit Option ALL; Buttons Approve/Reject im Detail-Header"
+  },
+  {
+   "name": "Transition Conditions / Workflow Hooks (pre/post, run_script, send_webhook)",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Enterprise Grid",
+   "tier_details": "Enterprise Grid; run_script braucht zusätzlich Plane Runner, send_webhook das Feature 'Webhook transition conditions' (sonst 402)",
+   "ce_status": "fehlt",
+   "description": "Runner-Skripte oder signierte Webhooks an Transitionen. Pre-Hooks laufen in Reihenfolge und blockieren bei success:false oder throw (der Nutzer sieht die Fehlermeldung). Post-Hooks blockieren nicht, Fehler landen in der Historie. Webhook-Secret wird nur einmal angezeigt (config.secret_plaintext). Timeout 30 s, keine Redirects, Event workflow.transition.",
+   "sources": [
+    "https://plane.so/blog/introducing-custom-workflows-and-approval-flows",
+    "https://docs.plane.so/automations/plane-runner",
+    "https://developers.plane.so/api-reference/v2/workflow-hooks/overview",
+    "https://developers.plane.so/api-reference/v2/workspace-workflow-hooks/overview"
+   ],
+   "confidence": "mittel",
+   "api_hints": "…/workflows/…/hooks/ CRUD, executions (status pending|running|success|failed), regenerate secret; handler_name unveränderlich",
+   "data_model_hints": "WorkflowHook{transition_id,phase pre|post,handler_name,config jsonb,order}; WorkflowHookExecution{status,input,output}",
+   "ui_hints": "Hook-Liste je Transition, nummerierte Reihenfolge"
+  },
+  {
+   "name": "Workflow-Änderungshistorie und Reset workflow",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Business",
+   "tier_details": "mit Workflows (Business)",
+   "ce_status": "fehlt",
+   "description": "Quick Actions 'View change history' und 'Reset workflow'. Reset löscht alle State-Change-Regeln. Historie mit actor_id, verb (created/added/updated/removed/deleted/enabled/disabled), field (workflow_state, state_approvers, transition_rule, workflow_description), old/new value und identifier.",
+   "sources": [
+    "packages/i18n/src/locales/en/workflow.json",
+    "https://developers.plane.so/api-reference/v2/workflow-activities/overview"
+   ],
+   "confidence": "mittel",
+   "api_hints": "GET …/workflows/{id}/activities/ (Filter verb, field, actor_id, created_at__gt; älteste zuerst)",
+   "data_model_hints": "WorkflowActivity analog IssueActivity",
+   "ui_hints": "Bestätigungsdialog Reset mit i18n workflows.confirmation_modals.reset_workflow"
+  },
+  {
+   "name": "Transitions-Tab mit Time-in-State",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Business",
+   "tier_details": "'Time in state + transitions' Business und höher",
+   "ce_status": "fehlt",
+   "description": "Tab Transitions im Work-Item-Activity-Bereich: jeder State-Wechsel mit Akteur, Zeit, von → nach, Badges mit Verweildauer. Enthält Enforcement- und Approval-Ereignisse. Duration-Badges auch in Sidebar und Peek.",
+   "sources": [
+    "packages/i18n/src/locales/en/common.json",
+    "https://plane.so/blog/new-work-item-detail-view-custom-relations-and-more",
+    "https://plane.so/changelog/release-v3-0-0-desktop-app-smarter-workflows-powerful-plane-ai-upgrades"
+   ],
+   "confidence": "mittel",
+   "api_hints": "aus Work-Item-Activity (field state) ableitbar",
+   "data_model_hints": "keine eigene Entität nötig (IssueActivity field=state)",
+   "ui_hints": "Tabs All, Comments, History, Transitions, Worklogs; Leerzustand 'No transitions yet'"
+  },
+  {
+   "name": "Workspace Governance für Workflows (Modi, Pins, effektiver Workflow)",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Enterprise Grid",
+   "tier_details": "nur Enterprise Grid, Self-hosted ab v3.2.0, irreversibel",
+   "ce_status": "fehlt",
+   "description": "Zentrale Workflows im Workspace-Katalog. Modus je WIT: any, constrained, required (UI: free/constrained/mandated/pinned). Pins je Projekt. Auflösung: required → pin → pick → workspace_default. Sperrt Projekt-Admins für States, Workflows, WITs, Templates, Automationen und Recurring. Projekt-Automationen werden migriert.",
+   "sources": [
+    "https://docs.plane.so/workspace-administration/workspace-governance",
+    "https://plane.so/blog/introducing-workspace-governance",
+    "https://developers.plane.so/api-reference/v2/work-item-type-workflows/overview",
+    "https://developers.plane.so/api-reference/v2/work-item-type-governance/overview"
+   ],
+   "confidence": "mittel",
+   "api_hints": "work-item-type-workflows (source required|pin|pick|workspace_default; 409 states_managed_at_project ohne Governance); governance update/preview/pins",
+   "data_model_hints": "Workflow-Tabellen zweistufig (workspace_id, project_id nullable); WorkItemTypeGovernance{mode, allowlist}, WorkflowPin{project_id, wit_id, workflow_id}",
+   "ui_hints": "Typ-Label free/constrained/mandated/pinned, Remapping-Vorschau"
+  },
+  {
+   "name": "Approvals auf Workspace-, Projekt- und Work-Item-Type-Ebene",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Business",
+   "tier_details": "Repo-Matrix: Business und Enterprise, coming soon. Kein öffentlicher Detail-Spec.",
+   "ce_status": "fehlt",
+   "description": "Einzige Quelle: 'Set workspace, project, and work item type approvals to designated admins.' Doku 2026 kennt nur Workflow-Approval-Flows. Angrenzend: Timesheet-Approvals (Worklogs-Cluster) und Beitrittsfreigabe privater Projekte.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "https://docs.plane.so/roles-and-permissions/permissions-matrix"
+   ],
+   "confidence": "niedrig",
+   "api_hints": "nicht dokumentiert",
+   "data_model_hints": "offen (siehe Offene Punkte O4)",
+   "ui_hints": "nicht dokumentiert"
+  },
+  {
+   "name": "Custom Automations (Trigger → Bedingungen → Aktionen), Projektebene",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Business",
+   "tier_details": "Repo-Matrix: 'Trigger And Action' ab Pro. Doku 2026: Business = Projekt-Automationen mit Change property und Add comment. Enterprise Grid = zusätzlich Workspace-Automationen, Send webhook, Run script, Scheduled.",
+   "ce_status": "fehlt (nur i18n automation.json und Power-K-Text; CE-Automations-Seite zeigt nur Auto-Archive und Auto-Close)",
+   "description": "Project Settings → Automations → 'Custom automations' mit Tabelle (Title, Scope, Projects, Last run on, Created on, Last updated on, Last run status, Average duration, Owner, Executions). Editor 'If [Trigger] Provided [Bedingungen] Then [Aktionen]'. Entwurf bis Enable. Enable braucht Trigger und mindestens eine Aktion. Löschen nur deaktiviert. Einzige Aktion nur bei deaktivierter Automation löschbar. Trigger-Typ nach Anlage fix. Aktionen sequenziell, Abbruch beim ersten Fehler. Wirkt nur auf das auslösende Item. Loop-Schutz und Ausführung als 'Automation Bot'.",
+   "sources": [
+    "packages/i18n/src/locales/en/automation.json",
+    "packages/i18n/src/locales/en/power-k.json",
+    "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/automations/page.tsx",
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/constants/src/subscription.ts",
+    "https://docs.plane.so/automations/custom-automations",
+    "https://plane.so/changelog/release-v-1-14-0-automations-recurring-work-and-integrations-for-self-running-projects",
+    "https://developers.plane.so/api-reference/v2/project-automations/overview"
+   ],
+   "confidence": "hoch",
+   "api_hints": "/api/v2/workspaces/{slug}/projects/{project_id}/automations/ CRUD; POST …/{pk}/status/ {is_enabled} → 204; nodes (handler_name, node_type trigger|condition|action, config), edges (source_node_id, target_node_id, execution_order), activities",
+   "data_model_hints": "Automation{name,description,scope,status draft…,is_enabled,is_global,project_ids,bot_user_id,current_version_id,run_count,last_run_at}; AutomationNode; AutomationEdge; AutomationVersion; AutomationRun; AutomationNodeExecution; AutomationActivity",
+   "ui_hints": "Icons AutomationsOutline, TriggerOutline; Sidebar 'Trigger configuration' und 'Actions'; Konjunktionen And/Or/If/Then"
+  },
+  {
+   "name": "Automation-Trigger (Work item created/updated, State changed, Assignee changed, Comment added, Scheduled)",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Business",
+   "tier_details": "Event-Trigger Business; Scheduled Enterprise Grid",
+   "ce_status": "fehlt",
+   "description": "Trigger-Gruppen 'Plane events' und 'Time based'. Event-Payload: event_type (z. B. work_item.updated), entity_type, entity_id, project, workspace, initiator_id, timestamp, payload.data, payload.previous_attributes. Consumer verarbeitet im Default event_types 'issue'.",
+   "sources": [
+    "packages/i18n/src/locales/en/automation.json",
+    "/home/user/makeplane/helm-charts/charts/plane-enterprise/templates/config-secrets/automations-consumer.yaml",
+    "https://docs.plane.so/automations/custom-automations",
+    "https://docs.plane.so/automations/plane-runner"
+   ],
+   "confidence": "mittel",
+   "api_hints": "handler_name 'record_created' belegt, weitere Handler-Namen UNVERIFIZIERT",
+   "data_model_hints": "AutomationNode node_type=trigger",
+   "ui_hints": "'What’s the trigger for this automation?', Warnung 'You can't change the trigger type once created'"
+  },
+  {
+   "name": "Automation-Bedingungen ('Provided')",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Business",
+   "tier_details": "mit Custom Automations",
+   "ce_status": "fehlt",
+   "description": "Felder State, Priority, Assignees, Labels, Work item type, Created by. Operatoren Is, Is not, In, Contains, Vergleichsoperatoren. Standard AND, OR-Gruppen möglich. Optional.",
+   "sources": [
+    "packages/i18n/src/locales/en/automation.json",
+    "https://docs.plane.so/automations/custom-automations"
+   ],
+   "confidence": "mittel",
+   "api_hints": "AutomationNode node_type=condition, config jsonb",
+   "data_model_hints": "Bedingungsbaum als JSON (AND/OR-Gruppen); Wiederverwendung CE-Rich-Filter-Modell empfohlen",
+   "ui_hints": "'Add condition', 'Adding condition'"
+  },
+  {
+   "name": "Automation-Aktionen (Change property, Add comment, Send webhook, Run script)",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Business",
+   "tier_details": "Business: Change property, Add comment. Enterprise Grid: Send webhook, Run script.",
+   "ce_status": "fehlt",
+   "description": "Change property: Priority, State, Assignees add/remove, Labels add/remove/replace, Start/Due set/update/remove, seit 2026 Cycle, Module, Milestone (einer je Item), Release. Add comment: intern, Autor Automation Bot, Template-Variablen. Send webhook: ein Versuch, 30 s, kein Retry, bis 20 Header (secret verschlüsselt), reservierte Header, HMAC-SHA256 über Raw-Body. Run script: Runner-Skript mit Variablen.",
+   "sources": [
+    "packages/i18n/src/locales/en/automation.json",
+    "apps/api/plane/bgtasks/webhook_task.py",
+    "https://docs.plane.so/automations/custom-automations",
+    "https://plane.so/changelog/release-v3-1-0-audit-logs-skills-in-plane-ai-dashboards-and-more",
+    "https://plane.so/changelog/2026-07-31-skills-plane-ai-richer-pages-audit-logs"
+   ],
+   "confidence": "mittel",
+   "api_hints": "handler_name add_comment, change_property, run_script (aus i18n-Keys); send_webhook UNVERIFIZIERT",
+   "data_model_hints": "AutomationNode node_type=action, config {property, change_type, values} bzw. {comment_html} bzw. {url, headers, secret} bzw. {script_id, variables}",
+   "ui_hints": "Placeholders 'Select a property', 'Select', 'Select value(s)', 'Select date'; Blocktitel 'Add comment', 'Run script', 'Change property'"
+  },
+  {
+   "name": "Global (Workspace-)Automations",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Enterprise Grid",
+   "tier_details": "nur Enterprise Grid",
+   "ce_status": "fehlt (nur i18n automations.global_automations.*)",
+   "description": "Workspace Settings → Automations: 'Standardize processes across your workspace with global automations.' Projektwahl 'All projects' oder 'Select projects'. Scope-Labels Global/Project (Multiple/All). Owner/Admin verwalten.",
+   "sources": [
+    "packages/i18n/src/locales/en/automation.json",
+    "https://docs.plane.so/automations/custom-automations",
+    "https://developers.plane.so/api-reference/v2/workspace-automations/overview",
+    "https://docs.plane.so/roles-and-permissions/permissions-matrix"
+   ],
+   "confidence": "mittel",
+   "api_hints": "/api/v2/workspaces/{slug}/automations/ (Filter is_global), …/{pk}/status/, nodes, edges, activities",
+   "data_model_hints": "Automation.is_global, project_ids",
+   "ui_hints": "Projekt-Multiselect 'Select projects'"
+  },
+  {
+   "name": "Scheduled Automations (Fixed Daily/Weekly/Monthly oder Cron)",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Enterprise Grid",
+   "tier_details": "nur Enterprise Grid; einzige Aktion Run script",
+   "ce_status": "fehlt",
+   "description": "Schedule mode Fixed oder Cron. Fixed: Frequency, Wochentage (mindestens einer), Monatstag, Uhrzeit (hr/min, AM/PM), Timezone. Cron: 5 Felder (Placeholder 0 9 * * 1-5), Validierung und Vorschau. Auswertung etwa alle 5 Minuten. Runs im Activity-Tab mit Zeit, Rückgabewert und Fehler.",
+   "sources": [
+    "packages/i18n/src/locales/en/automation.json",
+    "https://plane.so/blog/introducing-plane-runner-and-scheduled-automations",
+    "https://docs.plane.so/automations/custom-automations"
+   ],
+   "confidence": "hoch",
+   "api_hints": "Trigger-Node mit schedule-config (Schema UNVERIFIZIERT)",
+   "data_model_hints": "config {mode fixed|cron, frequency, days[], day_of_month, hour, minute, timezone, cron}; next_run_at",
+   "ui_hints": "Zusammenfassungen 'Every day at {time} ({timezone}).' usw."
+  },
+  {
+   "name": "Decisions and Loops Automation",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Business",
+   "tier_details": "Repo-Matrix: Business und Enterprise, coming soon; Enterprise-Liste: 'Unlimited and full Automation Flows'",
+   "ce_status": "fehlt",
+   "description": "'Use actions as triggers indefinitely in an automation flow.' Keine öffentliche UI-Doku. Das API-Modell ist bereits ein Graph (condition-Nodes, Edges mit execution_order).",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/constants/src/subscription.ts",
+    "https://developers.plane.so/api-reference/v2/project-automations/create-automation-edge"
+   ],
+   "confidence": "niedrig",
+   "api_hints": "edges mit execution_order",
+   "data_model_hints": "Graph-Modell, Schutz vor Endlosschleifen (Tiefe, Knotenzahl)",
+   "ui_hints": "nicht dokumentiert; Icon LoopOutline vorhanden"
+  },
+  {
+   "name": "Anzahl Automationen je Workspace",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Pro",
+   "tier_details": "Pro 5.000; Business 10.000; Enterprise unbegrenzt",
+   "ce_status": "fehlt",
+   "description": "'Total number of automation flows in your workspace'. Nach ADR-001 Instanz-Einstellung mit Default unbegrenzt.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx"
+   ],
+   "confidence": "hoch",
+   "api_hints": "keine",
+   "data_model_hints": "Instanz-Setting Automations:MaxPerWorkspace",
+   "ui_hints": "keine"
+  },
+  {
+   "name": "Automation-Ausführungslogs (Activity / Run History)",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Business",
+   "tier_details": "mit Custom Automations",
+   "ce_status": "fehlt",
+   "description": "Activity-Button in der Automation: jeder Run, betroffene Items, Erfolg oder Fehler, volles Log. Filter 'Show fails', 'All', 'Only activity', 'Only run history'. Initiator je Run. Tabellen-Metriken Last run on/status, Average duration, Executions.",
+   "sources": [
+    "packages/i18n/src/locales/en/automation.json",
+    "https://docs.plane.so/automations/custom-automations",
+    "https://developers.plane.so/api-reference/v2/project-automations/list-automation-activities"
+   ],
+   "confidence": "mittel",
+   "api_hints": "GET …/automations/{id}/activities/ (Filter created_at__gt, field)",
+   "data_model_hints": "AutomationActivity{actor_id, automation_node_id, automation_edge_id, automation_run_id, automation_version_id, node_execution_id, field, verb, old/new value/identifier, epoch}",
+   "ui_hints": "Filter-Toggles und Run-History-Liste"
+  },
+  {
+   "name": "Automation-Consumer / Outbox-Architektur",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "unklar",
+   "tier_details": "Commercial-Infrastruktur in allen Commercial-Images (backend-commercial); kein Plan-Feature",
+   "ce_status": "fehlt",
+   "description": "PostgreSQL-Trigger (pgtrigger) schreiben in derselben Transaktion in eine Outbox (event_id, event_type, entity_id, payload mit previous_attributes, workspace_id, initiator_type, claimed_at, processed_at). outbox-poller claimt Batches zu 250 (Intervall 0.25–2 s), publiziert an RabbitMQ-Fanout plane.event_stream. automation-consumer liest Queue plane.event_stream.automations (prefetch 10, event_types issue), webhook-consumer plane.webhook. At-least-once mit Dedup über event_id.",
+   "sources": [
+    "/home/user/makeplane/developer-docs/docs/self-hosting/govern/environment-variables.md",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/methods/airgapped-edition.md",
+    "/home/user/makeplane/helm-charts/charts/plane-enterprise/templates/config-secrets/automations-consumer.yaml",
+    "/home/user/makeplane/helm-charts/charts/plane-enterprise/templates/config-secrets/outbox-poller.yaml",
+    "/home/user/makeplane/helm-charts/charts/plane-enterprise/templates/workloads/automation-consumer.deployment.yaml",
+    "https://plane.so/blog/building-zero-loss-event-streaming-with-postgresql-django-and-rabbitmq"
+   ],
+   "confidence": "hoch",
+   "api_hints": "intern; Env-Keys AUTOMATION_EVENT_STREAM_QUEUE_NAME/PREFETCH, AUTOMATION_EXCHANGE_NAME, AUTOMATION_EVENT_TYPES, OUTBOX_POLLER_*",
+   "data_model_hints": "Outbox-Tabelle mit partiellen Indizes; initiator_type per Session-Variable (Loop-Schutz)",
+   "ui_hints": "keine"
+  },
+  {
+   "name": "Plane Runner (Skripte für Automationen, Transitionen, Cron)",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Enterprise Grid",
+   "tier_details": "nur Enterprise Grid",
+   "ce_status": "fehlt (nur i18n workspace_settings.settings.runners, Icon ScriptsOutline)",
+   "description": "Workspace Settings → Plane Runner → Scripts. Script-Typen Automation, Workflow Transition, Cron Trigger. JS/TS mit async main(input, variables), Functions-Global (getSiblings, addComment, addLabel, postToSlack, httpRequest), Plane SDK, Domain-Allowlist, Limits 10 s, 5 s Init, 128 MB, Test-Modus. Betrieb: node-runner :3000, HMAC zur API, runnerctl/health.",
+   "sources": [
+    "packages/i18n/src/locales/en/workspace-settings.json",
+    "/home/user/makeplane/developer-docs/docs/self-hosting/manage/health-checks.md",
+    "/home/user/makeplane/helm-charts/charts/plane-enterprise/templates/config-secrets/runner-env.yaml",
+    "https://plane.so/blog/introducing-plane-runner-and-scheduled-automations",
+    "https://docs.plane.so/automations/plane-runner"
+   ],
+   "confidence": "mittel",
+   "api_hints": "GET /api/workspaces/{slug}/runnerctl/health/ → {is_available}",
+   "data_model_hints": "Script{name, type, code, variables, allowed_domains}, ScriptExecution",
+   "ui_hints": "'Scripts', 'New Script'; Konflikt mit ADR-002 (kein Node) → .NET-JS-Engine nötig"
+  },
+  {
+   "name": "Project Templates",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Business",
+   "tier_details": "Business und Enterprise (Matrix, planHighlights, v1.9.0, Pricing 2026)",
+   "ce_status": "Stub/UI-Hülle im CE (templateId-Props in CreateProjectModal/CreateProjectForm, handleTemplateSelect in ProjectCreateHeader ohne Wirkung; i18n template.json)",
+   "description": "Workspace Settings → Templates → Project template: Template-Name und -Beschreibung, Projektname und -beschreibung, Cover, Properties (Network, Lead, Daten), optional States, Labels, WITs, initiale Work Items inkl. Sub-Work-Items. Laut Matrix auch Workflows und Automationen. Anwendung über den Picker 'Pick a project template' im Projekt-Create-Modal oder 'Use template'. Synchron: Projekt, Members, States; im Hintergrund: Labels, Estimates, WITs, Epics, Modules, Work Items. Nur Owner/Admin verwalten.",
+   "sources": [
+    "apps/web/components/project/create-project-modal.tsx",
+    "apps/web/components/projects/create/root.tsx",
+    "apps/web/components/project/create/header.tsx",
+    "packages/i18n/src/locales/en/template.json",
+    "/home/user/makeplane/developer-docs/docs/api-reference/project/create-project-with-template.md",
+    "https://docs.plane.so/templates/project-templates",
+    "https://developers.plane.so/api-reference/v2/project-templates/overview",
+    "https://plane.so/changelog/2025-07-30-templates-initiatives"
+   ],
+   "confidence": "mittel",
+   "api_hints": "/api/v2/workspaces/{slug}/project-templates/ CRUD, …/{pk}/use/, …/copy/; v1 POST /api/v1/workspaces/{slug}/projects/templates/use/ {template_id, name, identifier, description, network, project_lead}",
+   "data_model_hints": "ProjectTemplate{name, short_description, description_html, is_published, is_verified, category_ids, template_data jsonb (Feature-Toggles, states, project_state, labels, estimates, workitem_types, epics, members, intake_settings, workflows, milestones, modules, recurring_work_items, automations, workitems, cover_asset)}",
+   "ui_hints": "Dropdown 'Create template' (Project/Work item/Page), Herkunftsinfo 'Derived from workspace/project', Empty-State-Illustration template"
+  },
+  {
+   "name": "Work Item Templates (Projekt und Workspace, inkl. Sub-Work-Items)",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Pro",
+   "tier_details": "Pro, Business, Enterprise (planHighlights.pro, v1.9.0 'Pro and Business')",
+   "ce_status": "Stub/UI-Hülle im CE (IssueModalContext mit workItemTemplateId, handleTemplateChange, isApplyingTemplate; Formularlogik vorhanden, Provider No-op)",
+   "description": "Templates mit Titel, Beschreibung, Type, Priority, State, Labels, Assignees, Modules, Custom Properties und Sub-Work-Items. Anwendung im Create-Modal über das Templates-Icon ('Pick a work item template'). Projektwechsel setzt Template und Formular zurück. Create-more wendet das Template erneut an. Projekt-Admin verwaltet, Workspace-Templates Owner/Admin.",
+   "sources": [
+    "apps/web/components/issues/issue-modal/context/issue-modal-context.tsx",
+    "apps/web/components/issues/issue-modal/provider.tsx",
+    "apps/web/components/issues/issue-modal/form.tsx",
+    "packages/i18n/src/locales/en/template.json",
+    "https://docs.plane.so/templates/work-item-templates",
+    "https://developers.plane.so/api-reference/v2/project-work-item-templates/overview",
+    "https://developers.plane.so/api-reference/v2/workspace-work-item-templates/overview"
+   ],
+   "confidence": "mittel",
+   "api_hints": "/api/v2/workspaces/{slug}/projects/{project_id}/work-item-templates/ CRUD + {pk}/use/ (name, project_id optional); /api/v2/workspaces/{slug}/work-item-templates/",
+   "data_model_hints": "WorkItemTemplate{workspace_id, project_id?, name, short_description, description_html, is_published, template_data{name, description_html, priority, state, labels, assignees, modules, type, properties, sub_work_items?}}",
+   "ui_hints": "Templates-Icon neben Type-Auswahl, 'Add new template', 'No templates found.'"
+  },
+  {
+   "name": "Page Templates",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Pro",
+   "tier_details": "Pro und höher (Matrix 'Templates' unter Knowledge management; Pricing 2026)",
+   "ce_status": "fehlt (nur i18n templates.dropdown.label.page, templates.empty_state.page)",
+   "description": "Workspace und Projekt: Name, Beschreibung, Seiteninhalt. Anwendung in Projekt-Pages oder Wiki über '+' → 'Choose from template'. Leer- und Suchzustände vorhanden.",
+   "sources": [
+    "packages/i18n/src/locales/en/template.json",
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "https://docs.plane.so/templates/page-templates",
+    "https://developers.plane.so/api-reference/v2/workspace-page-templates/overview"
+   ],
+   "confidence": "mittel",
+   "api_hints": "/api/v2/workspaces/{slug}/page-templates/, /api/v2/workspaces/{slug}/projects/{project_id}/page-templates/ (409 templates_managed_at_workspace unter Governance)",
+   "data_model_hints": "PageTemplate{name, short_description, description_html, is_published, template_data{description_html, logo_props, view_props, color, parent{id, project_id, project_identifier}}}; PATCH ersetzt den Seed",
+   "ui_hints": "Template-Picker mit Suche; Initial-Y-Doc aus HTML erzeugen"
+  },
+  {
+   "name": "Pre-defined Templates und Template-Marketplace (Publish, Kategorien, Verifizierung, Kopie)",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Pro",
+   "tier_details": "Pre-defined Work Item Templates: Pro, Business, Enterprise (coming soon); Marketplace-Publish ohne Plan-Angabe",
+   "ce_status": "fehlt (nur i18n templates.settings.form.publish.*, unpublish)",
+   "description": "Galerie plane.so/templates ('By Plane'). Publish-Formular: Name, Short description, Description, Kategorien (mehrfach), Keywords, Website, Company, Contact email, Privacy-/Terms-URL, Cover-Image, Screenshots. Unpublish. API: is_published, is_verified (Plane-gesetzt), category_ids, Kopie veröffentlichter Templates.",
+   "sources": [
+    "apps/web/components/workspace/billing/comparison/plans.tsx",
+    "packages/i18n/src/locales/en/template.json",
+    "https://plane.so/templates",
+    "https://developers.plane.so/api-reference/v2/project-templates/copy-project-template"
+   ],
+   "confidence": "mittel",
+   "api_hints": "POST /api/v2/workspaces/{slug}/project-templates/copy/ {template_id}",
+   "data_model_hints": "TemplateCategory, Publish-Metadaten (keywords, website, company_name, contact_email, privacy_policy_url, terms_of_service_url, cover, screenshots)",
+   "ui_hints": "Airgapped: mitgelieferter Seed-Katalog statt externer Galerie"
+  },
+  {
+   "name": "Recurring Work Items",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Business",
+   "tier_details": "Business und Enterprise ('Upgrade to Business' in i18n; Pricing 2026)",
+   "ce_status": "fehlt (nur i18n recurring_work_items.*, settings_empty_state.recurring_work_items, Icon)",
+   "description": "Project Settings → Recurring work items. Blueprint-Work-Item plus Schedule (Start Pflicht, Intervalltyp Pflicht, Ende optional). daily/weekly/monthly/yearly × interval_count (Changelog zusätzlich quarterly). Lauf 00:05 Projekt-TZ. Start heute ⇒ sofort, Start in der Vergangenheit ⇒ nächster Termin. Edits wirken nur auf die Zukunft. Kein Pause. Run-Historie mit Fehlern. Nur Projekt-Admin legt an, Commenter und Guest ohne Zugriff.",
+   "sources": [
+    "packages/i18n/src/locales/en/work-item.json",
+    "packages/i18n/src/locales/en/empty-state.json",
+    "https://docs.plane.so/core-concepts/projects/recurring-work-items",
+    "https://developers.plane.so/api-reference/v2/recurring-work-items/overview",
+    "https://plane.so/changelog/2025-09-01-recurring-items-doc-imports-nested-pages"
+   ],
+   "confidence": "mittel",
+   "api_hints": "/api/v2/workspaces/{slug}/projects/{project_id}/recurring-work-items/ CRUD",
+   "data_model_hints": "RecurringWorkItem{work_item_blueprint_id, start_at, end_at, interval_type, interval_count, next_scheduled_at, last_run_at, enabled, schedule_description} + Blueprint + Run-Log",
+   "ui_hints": "Abschnitt 'Schedule' im Work-Item-Formular, Icon RecurringWorkItemsOutline"
+  },
+  {
+   "name": "Auto-Reminders (Fälligkeits-Erinnerungen)",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "Business",
+   "tier_details": "Business und höher",
+   "ce_status": "fehlt (nur i18n project_settings.automations.auto-remind.*)",
+   "description": "Project Settings → Automations → Toggle 'Auto-reminders', 'Send reminder before' (z. B. 3 Tage). Nur Items mit Due Date und Assignee oder Subscriber. Eine Erinnerung je Fenster. Completed und Cancelled ausgenommen. In-App und E-Mail.",
+   "sources": [
+    "packages/i18n/src/locales/en/project-settings.json",
+    "https://docs.plane.so/automations/overview",
+    "https://docs.plane.so/communication-and-collaboration/notifications",
+    "https://plane.so/changelog/release-v2-6-0-pql-releases-wiki-collections-and-more"
+   ],
+   "confidence": "mittel",
+   "api_hints": "nicht dokumentiert (vermutlich Project-Feld)",
+   "data_model_hints": "Project.reminder_before_days + ReminderLog zur Deduplizierung",
+   "ui_hints": "gleiche Kachel-Optik wie Auto-Archive/Auto-Close"
+  },
+  {
+   "name": "Auto-Schedule Cycles (Querverweis Cycles)",
+   "cluster": "P06 Workflows, Automationen, Templates",
+   "tier": "unklar",
+   "tier_details": "nicht belegt; Changelog v1.16.0 'Recurring cycles'",
+   "ce_status": "fehlt (nur i18n project_settings.cycles.auto_schedule.*)",
+   "description": "Automatische Cycle-Erzeugung: Titel mit Nummer, Dauer 1–30 Wochen, Cooldown in Tagen, Starttag, 1–3 künftige Cycles, Auto-Rollover offener Items.",
+   "sources": [
+    "packages/i18n/src/locales/en/project-settings.json",
+    "https://plane.so/changelog/release-v-1-16-0-introducing-milestones-and-recurring-cycles"
+   ],
+   "confidence": "niedrig",
+   "api_hints": "nicht dokumentiert",
+   "data_model_hints": "CycleAutoSchedule{title, duration_weeks, cooldown_days, start_date, number_of_cycles, auto_rollover}",
+   "ui_hints": "Settings-Block 'Auto-schedule cycles' mit Edit-Button"
+  }
+ ],
+ "open_questions": [
+  "O2: Welche Workflow-UI-Generation ist für die 1:1-Nachbildung maßgeblich? Das CE enthält Texte der regelbasierten v1.9-UI (workflow.json) und der Multi-Workflow-UI ab v3.0 (project_settings.workflows). Referenz-Screenshots einer aktuellen Commercial-Instanz werden benötigt.",
+  "O3: Approval-Laufzeit ist nicht öffentlich dokumentiert: Endpunkt für Approve/Reject, Position des Items während 'pending', Wirkung eines einzelnen Reject vor Erreichen von required_approvals, Benachrichtigung der Approver.",
+  "O4: 'Approvals auf Workspace-, Projekt- und Work-Item-Type-Ebene' (plans.tsx, coming soon) hat keinen Inhalt: weglassen, auf Workflow-Approvals reduzieren oder neu spezifizieren?",
+  "O5: Sollen 'Decisions and Loops' (Verzweigungen, Schleifen) gebaut werden? Das Datenmodell wird als Graph angelegt, die UI vorerst linear.",
+  "O6/O7: Fehlende Handler-Namen (außer record_created, add_comment, change_property, run_script), Template-Variablen von 'Add comment', Operatorliste je Bedingungsfeld, Statuswerte einer Automation außer 'draft'.",
+  "O8: Unterliegen Automation-Aktionen (State-Änderung durch den Automation Bot) den Workflow-Regeln?",
+  "O9: Plane Runner ohne Node.js (ADR-002): Wahl der .NET-JS-Sandbox (Jint vs. ClearScript V8) und TypeScript-Transpilation ohne Node.",
+  "O10: Event-Broker: RabbitMQ wie im Original oder reiner PostgreSQL-Outbox-Konsum für Airgapped-Betrieb (ADR-004)? Architektur-ADR nötig.",
+  "O11/O12: Project-Template-PATCH (Merge vs. Ersetzung von template_data) und fehlende Schemata für workflows, milestones, modules, recurring_work_items, automations, estimates, members im Template.",
+  "O13: Pre-defined Templates und Marketplace im Airgapped-Betrieb: welche Templates mitliefern, instanzweiter Marketplace gewünscht?",
+  "O14/O15: Recurring Work Items: Gibt es 'quarterly' in der UI? Verhalten bei Start am 29., 30. oder 31.?",
+  "O16: Auto-Reminders: verfügbare Werte für 'Send reminder before', Verhalten bei geändertem Due Date.",
+  "O17: Soll die Irreversibilität von Workspace Governance trotz ADR-001 als fachliche Regel erhalten bleiben?",
+  "O18: Der CE-Bug im Auto-Close-Fallback (cancelled-State ohne Projektfilter, issue_automation_task.py) soll bei der Portierung projektbezogen korrigiert werden. Bestätigung als bewusste Abweichung erforderlich.",
+  "O19: Die Volltexte der API-v2-Referenz (developers.plane.so) und der Doku waren nur über Suchzusammenfassungen zugänglich. Das GitHub-Repo makeplane/developer-docs war in der Session nicht freigegeben. Für die Implementierung einen aktuellen Offline-Clone bereitstellen, um die UNVERIFIZIERT-Stellen zu schließen."
+ ]
+}

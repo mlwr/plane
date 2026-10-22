@@ -1,0 +1,51 @@
+{
+ "doc_path": "/home/user/plane/migration/analysis/02b-datenmodell-arbeitsobjekte.md",
+ "summary": "IST-Analyse Datenmodell Teil 2 (Arbeitsobjekte) für Plane v1.4.2 CE: alle 49 Models aus issue.py, issue_type.py, draft.py, description.py, state.py, label.py, estimate.py, cycle.py, module.py, view.py, page.py, intake.py und notification.py sind vollständig inventarisiert: Tabellenname, Basisklasse, alle Felder mit Typ, null-Verhalten, Default, Choices und Validatoren, alle FKs mit on_delete und related_name, M2M-/through-Beziehungen, Meta-Constraints, Indizes und ordering.\nDazu kommen die Manager-Semantik, alle Enums mit ihren Werten, die JSON-Strukturen, alle save()-Overrides, die Soft-Delete-Kaskadenmatrix, die Sortierlogik, die Versionierung, Triage/Intake mit der Snooze-Zeitlogik und der Notification-/E-Mail-Lebenszyklus.\nZentrale Befunde: Der Default-Manager von Issue ist issue_objects. Er filtert Triage-, archivierte und Draft-Issues sowie Issues archivierter Projekte heraus, und das wirkt auf alle Rückwärts-Relationen.\nDie sequence_id wird über pg_advisory_xact_lock plus MAX+1 vergeben; einen Unique-Constraint auf (project_id, sequence_id) gibt es nicht.\nRich-Text liegt in vier Formaten vor (html, json, binary = Yjs-Update, stripped). Für Work Items sendet die Web-UI nur HTML; alle drei Primärformate pflegt nur der Live-Server bei Pages.\nMigrationen: kein RunSQL, keine Trigger, Funktionen, Sequenzen oder Extensions, keine GIN-/Trigram-/Volltext-Indizes. Gefunden wurden 23 aktive partielle Unique-Constraints in diesem Bereich, ein partieller Index (intake_issue_snoozed_till_idx WHERE status=0), 22 AddIndexConcurrently-Operationen in 3 nicht-atomaren Migrationen sowie 56 RunPython-Operationen in 33 Dateien; alle sind mit ihrer Logik beschrieben. Anhang A gibt einen Überblick über alle 126 Dateien.\nDas Dokument listet 25 Bugs/Quirks mit je einer Empfehlung (u. a. werden Page-Versionen nie erzeugt, IssueVersion.log_issue_version scheitert immer, der Hard-Delete kollidiert vermutlich mit DO_NOTHING-FKs, Workspace-Labels sind global eindeutig, die access-Werte von View und Page sind invertiert).\nEnthalten sind außerdem drei Mermaid-ER-Diagramme, die Abhängigkeiten zu 02a/03/04/08/11/12/Features, konkrete EF-Core-10-/Npgsql-/Angular-Hinweise (gefilterte Indizes, benannte Query-Filter, Zähler-Tabelle für Nummern, Yjs-Pipeline in .NET, pg_trgm/pgvector) und 10 offene Punkte.",
+ "key_facts": [
+  "49 konkrete Models in diesem Bereich: 31 ProjectBaseModel, 9 WorkspaceBaseModel (project optional), 9 direkt BaseModel (IssueType, Page, PageLog, PageLabel, ProjectPage, PageVersion, Notification, UserNotificationPreference, EmailNotificationLog) – apps/api/plane/db/models/*",
+  "Default-Manager von Issue ist issue_objects (IssueManager: ohne deleted, State-Gruppe triage, archived_at, archivierte Projekte, is_draft); MIG/0082 zeichnet ihn per AlterModelManagers auf – apps/api/plane/db/models/issue.py Z. 92-101, 172",
+  "State.objects schließt Triage-States aus; all_state_objects (inkl. gelöschter) und triage_objects existieren zusätzlich – apps/api/plane/db/models/state.py Z. 65-97",
+  "Issue.save(): Default-State, completed_at nur bei State-Wechsel (completed→now, sonst NULL), pg_advisory_xact_lock(SHA-256-int64(project_id)), sequence_id = MAX(issue_sequences.sequence)+1, description_stripped, sort_order = max(project,state)+10000, IssueSequence-Zeile – issue.py Z. 180-255, apps/api/plane/utils/uuid.py",
+  "Kein Unique auf issues(project_id, sequence_id); Reparatur-Command fix_duplicate_sequences; Nummern werden nie wiederverwendet (IssueSequence.issue SET_NULL)",
+  "Sortierregeln: Issue/DraftIssue/Label/IssueView max+10000, State max+15000 (überschreibt übergebene sequence), Cycle/Module min−10000; Default 65535; alle double precision",
+  "Vier Beschreibungsformate: description_html (kanonisch), description_json (ProseMirror-JSON), description_binary (Yjs-Update, XmlFragment 'default' + optional 'title' bei Pages), description_stripped (serverseitig in save()); Work Items erhalten von der Web-UI nur HTML (Debounce 1500 ms)",
+  "Zwei strip_tags-Varianten: plane.utils.html_processor (Entities dekodiert) vs. django.utils.html (Entities bleiben) in Description/DescriptionVersion",
+  "23 aktive partielle Unique-Constraints (WHERE deleted_at IS NULL) in diesem Bereich; unique_together inkl. deleted_at ist in PostgreSQL faktisch wirkungslos; page_logs(page,transaction) ist voll eindeutig",
+  "Label-Constraint unique_name_when_project_null_and_not_deleted ist workspaceübergreifend global – apps/api/plane/db/models/label.py Z. 26-40",
+  "IssueView.access 0=Private/1=Public, Page.access 0=Public/1=Private (invertiert)",
+  "Migrationen: kein RunSQL/Trigger/Funktion/Sequenz/Extension/GIN/Trigram/Volltext; 22 AddIndexConcurrently in MIG/0103, 0111, 0124 (atomic=False); partieller Index intake_issue_snoozed_till_idx WHERE status=0; 56 RunPython in 33 Dateien; 27 Migrationen importieren App-Code",
+  "Seit MIG/0112 hat jedes Projekt genau einen Triage-State (Triage, #4E5355, 65000); offene Intake-Issues stehen im Triage-State; is_triage wird bei neuen Triage-States nicht gesetzt",
+  "CycleIssue war bis MIG/0082 OneToOne; heute erzwingt nur die App 'max. ein Cycle je Issue' (Verschieben statt Neuanlage); ModuleIssue ist seit MIG/0058 n:m",
+  "IntakeIssue.snoozed_till wird auf 00:00 des Tages in Projekt-TZ normalisiert; Project-TZ-Wechsel rechnet offene Snoozes um (SELECT FOR UPDATE); Beat-Task alle 5 Minuten setzt abgelaufene Snoozes auf PENDING",
+  "Versionierung: IssueDescriptionVersion mit 600-s-Merge-Fenster je Owner, Cleanup täglich 03:15 auf 20 je Issue (Korrektur zu 04-Dokument); track_page_version ist wegen page.description defekt → keine Page-Versionen; IssueVersion nur Backfill, log_issue_version wirft FieldError",
+  "IssueActivity.issue und issue_comment sind DO_NOTHING; der Hard-Delete einzelner Issues verletzt statisch betrachtet den FK und bricht den hard_delete-Task ab (nicht durch Ausführung verifiziert)",
+  "UserNotificationPreference ohne Unique; Code erwartet genau eine globale Zeile je User; E-Mail-Logs werden alle 5 Minuten gestackt (processed_at/sent_at), Retention 7 Tage nach sent_at"
+ ],
+ "migration_risks": [
+  "Issue-Sichtbarkeit (issue_objects als Default-Manager) darf nicht als globaler EF-Query-Filter nachgebaut werden, sonst werden Navigationen und Rückwärts-Relationen gefiltert – explizite Visible()-Spezifikation je Endpunkt",
+  "Nummernvergabe sequence_id: ohne transaktionssichere Zähler-Tabelle bzw. Advisory-Lock und ohne Unique-Index entstehen Duplikate",
+  "Serverseitige Yjs↔ProseMirror-JSON↔HTML-Konvertierung muss in reinem .NET (YDotNet + eigene Schema-Serialisierung) erfolgen (ADR-002) – hohes Risiko für Page-Speichern, Erst-Laden aus HTML, Duplizieren, PDF-Export und Templates",
+  "Zwei unterschiedliche strip_tags-Semantiken; description_stripped ist Basis für Export und künftige Volltext-/Vektorsuche",
+  "Soft-Delete-Kaskade (CASCADE rekursiv, SET_NULL sofort, DO_NOTHING übersprungen) muss inklusive Sonderfällen (Drafts im State, verwaiste Description, gefilterte SET_NULL-Fälle) entschieden und nachgebildet werden",
+  "Hard-Delete einzelner Issues/Kommentare vs. DO_NOTHING-Activity-FKs: das Zielschema braucht eine weiche Referenz oder eine definierte Kaskade",
+  "Invertierte access-Werte (IssueView 0=privat, Page 0=öffentlich) und Datum- vs. Zeitstempel-archived_at sind leicht zu verwechseln",
+  "State.save() überschreibt sequence beim Anlegen (Triage-State bekommt 70000 statt 65000) – Reihenfolgen weichen in UI-Vergleichstests sonst ab",
+  "Snooze-Normalisierung auf 00:00 der Projekt-TZ und Umrechnung bei TZ-Wechsel – IANA-Zeitzonenliste muss pytz.common_timezones entsprechen",
+  "Page-Versionen entstehen im Original nie (Bug) – Referenz-Screenshots der Versions-UI müssen anders gewonnen werden",
+  "Fehlende Unique-Constraints im Original (issue_labels, page_labels, intake_issues.issue, user_notification_preferences, cycle_issues.issue) – Greenfield-Korrektur ändert Fehlerverhalten (409/400 statt Duplikat)",
+  "Bezahl-Erweiterungen des Datenmodells (Custom Properties, Worklogs, Time-Estimates, Intake-Formulare/E-Mail, Kommentar-Antworten, Nested Pages/Wiki, Cycle version 2) fehlen im CE-Schema und müssen aus den Feature-Analysen entworfen werden",
+  "Celery-Jobs (Unsnooze, E-Mail-Stacking mit Redis-Lock, Auto-Archive/-Close, Cleanups, Hard-Delete) brauchen einen .NET-Worker mit PostgreSQL-Outbox und Advisory-Locks"
+ ],
+ "open_questions": [
+  "Sollen die Versionslimits (20 je Issue/Page) beibehalten oder als Instanz-Einstellung (Default unbegrenzt) umgesetzt werden (ADR-001, PF-76)?",
+  "Werden die 25 dokumentierten Original-Bugs/Quirks (3.14) korrigiert oder für Verhaltensgleichheit nachgebaut?",
+  "Wie wird IssueActivity beim endgültigen Löschen eines Issues behandelt (weiche Referenz ohne FK vs. Kaskade)? Das Original-Verhalten sollte gegen eine laufende Instanz verifiziert werden.",
+  "Wird die Eigenschafts-Historie (IssueVersion) benötigt, z. B. für Baselines/Time Capsule, oder entfällt sie?",
+  "Sollen Workspace-Labels (labels.project_id IS NULL) als Funktion angeboten werden (dann mit Unique je Workspace)?",
+  "Lösung der Yjs↔JSON↔HTML-Konvertierung in reinem .NET vs. clientseitig gelieferte Formate – Ergebnis des ADR-002-Spikes",
+  "Sollen Work-Item-Beschreibungen im Zielsystem kollaborativ (Yjs) werden oder wie im Original HTML-basiert bleiben?",
+  "Cycle.timezone: eigene Zeitzone je Cycle oder immer die Projekt-Zeitzone?",
+  "Detailliertes Datenmodell der EE-Erweiterungen (Custom Properties, Worklogs, Intake-Formulare, Cycle-Version 2, Workflows) – Ableitung aus migration/features/* bzw. Rückfrage beim Auftraggeber",
+  "Sollen pg_trgm, PostgreSQL-Volltext und pgvector bereits im MVP angelegt werden?"
+ ]
+}

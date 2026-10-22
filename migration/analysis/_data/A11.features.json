@@ -1,0 +1,555 @@
+[
+ {
+  "name": "Instanz-Erst-Einrichtung (erster Instanz-Admin)",
+  "area": "admin",
+  "description": "Formular mit Vorname, Nachname, E-Mail, Firmenname, Passwort plus Stärkeanzeige, Passwortbestätigung und Telemetrie-Checkbox; nativer POST an /api/instances/admins/sign-up/, legt User, Profil und InstanceAdmin an, setzt is_setup_done und Instanzname, danach Redirect auf /god-mode/general/",
+  "code_refs": [
+   "apps/admin/components/instance/setup-form.tsx",
+   "apps/admin/app/(all)/(home)/page.tsx",
+   "apps/admin/components/common/password-strength-indicator.tsx",
+   "apps/api/plane/license/api/views/admin.py"
+  ]
+ },
+ {
+  "name": "Admin-Anmeldung",
+  "area": "admin",
+  "description": "E-Mail/Passwort-Login per nativem POST an /api/instances/admins/sign-in/ mit CSRF; Fehlerbanner für Admin-Codes 5150–5190, E-Mail-Vorbelegung aus der Query",
+  "code_refs": [
+   "apps/admin/app/(all)/(home)/sign-in-form.tsx",
+   "apps/admin/app/(all)/(home)/auth-helpers.tsx",
+   "apps/admin/app/(all)/(home)/auth-banner.tsx"
+  ]
+ },
+ {
+  "name": "Admin-Abmeldung",
+  "area": "admin",
+  "description": "Menüeintrag 'Sign out' löst ein verstecktes Formular aus (POST /api/instances/admins/sign-out/), setzt Stores und Theme auf system zurück",
+  "code_refs": [
+   "apps/admin/app/(all)/(dashboard)/sidebar-dropdown.tsx",
+   "apps/admin/store/root.store.ts"
+  ]
+ },
+ {
+  "name": "Instanzfehler-Ansicht",
+  "area": "admin",
+  "description": "'Unable to fetch instance details.' mit themenabhängiger Illustration und Retry (Reload)",
+  "code_refs": [
+   "apps/admin/components/instance/failure.tsx"
+  ]
+ },
+ {
+  "name": "Dashboard-Shell mit Sidebar-Navigation",
+  "area": "admin",
+  "description": "Sidebar mit 6 Einträgen (General, Email, Authentication, Workspaces, Artificial intelligence, Images in Plane), ein- und ausklappbar (290/70 px), auf Mobile ein Overlay mit Auto-Collapse ab 768 px, Zustand in localStorage god_mode_sidebar_collapsed",
+  "code_refs": [
+   "apps/admin/app/(all)/(dashboard)/layout.tsx",
+   "apps/admin/app/(all)/(dashboard)/sidebar.tsx",
+   "apps/admin/app/(all)/(dashboard)/sidebar-menu.tsx",
+   "apps/admin/hooks/use-sidebar-menu/core.ts",
+   "apps/admin/store/theme.store.ts"
+  ]
+ },
+ {
+  "name": "Header mit Breadcrumb und Hamburger",
+  "area": "admin",
+  "description": "Breadcrumb 'Settings' plus Pfadsegmente mit festen Labels; Hamburger nur unter md",
+  "code_refs": [
+   "apps/admin/components/common/header/index.tsx",
+   "apps/admin/components/common/header/core.ts"
+  ]
+ },
+ {
+  "name": "Konto-Menü und Theme-Umschaltung",
+  "area": "admin",
+  "description": "Kopfzeile 'Instance admin' mit Avatar-Menü (E-Mail, 'Switch to dark/light mode', 'Sign out')",
+  "code_refs": [
+   "apps/admin/app/(all)/(dashboard)/sidebar-dropdown.tsx"
+  ]
+ },
+ {
+  "name": "Hilfe-Bereich der Sidebar",
+  "area": "admin",
+  "description": "'Redirect to Plane' (Web-App-Link), Hilfe-Popover (Documentation, Join our Forum, Report a bug, Version v{current_version}), Sidebar-Toggle",
+  "code_refs": [
+   "apps/admin/app/(all)/(dashboard)/sidebar-help-section.tsx"
+  ]
+ },
+ {
+  "name": "Allgemeine Einstellungen",
+  "area": "admin",
+  "description": "Instanzname bearbeiten, Admin-E-Mail und Instance-ID read-only, Telemetrie-Switch; PATCH /api/instances/",
+  "code_refs": [
+   "apps/admin/app/(all)/(dashboard)/general/page.tsx",
+   "apps/admin/app/(all)/(dashboard)/general/form.tsx",
+   "apps/admin/store/instance.store.ts"
+  ]
+ },
+ {
+  "name": "SMTP-Konfiguration",
+  "area": "admin",
+  "description": "SMTP-Switch im Header (Ausschalten leert die Konfiguration per DELETE disable-email-feature), Formular Host/Port/Absender/Security (TLS/SSL/None)/Username/Passwort, Speichern setzt ENABLE_SMTP=1",
+  "code_refs": [
+   "apps/admin/app/(all)/(dashboard)/email/page.tsx",
+   "apps/admin/app/(all)/(dashboard)/email/email-config-form.tsx"
+  ]
+ },
+ {
+  "name": "Test-E-Mail senden",
+  "area": "admin",
+  "description": "Dialog in 3 Schritten (Eingabe, Erfolg, Fehler), sendet mit der gespeicherten SMTP-Konfiguration über POST /api/instances/email-credentials-check/",
+  "code_refs": [
+   "apps/admin/app/(all)/(dashboard)/email/test-email-modal.tsx",
+   "apps/api/plane/license/api/views/configuration.py"
+  ]
+ },
+ {
+  "name": "Authentifizierungsmethoden-Übersicht",
+  "area": "admin",
+  "description": "Switch 'Allow anyone to sign up even without an invite' (ENABLE_SIGNUP), Karten für Unique codes, Passwords, Google, GitHub, GitLab, Gitea mit Configure/Edit/Switch; Regel, dass mindestens eine Methode aktiv bleiben muss",
+  "code_refs": [
+   "apps/admin/app/(all)/(dashboard)/authentication/page.tsx",
+   "apps/admin/hooks/oauth/core.tsx",
+   "apps/admin/components/authentication/authentication-method-card.tsx",
+   "apps/admin/helpers/authentication.ts",
+   "apps/admin/components/authentication/email-config-switch.tsx",
+   "apps/admin/components/authentication/password-config-switch.tsx"
+  ]
+ },
+ {
+  "name": "Google-OAuth-Konfiguration",
+  "area": "admin",
+  "description": "Client ID/Secret, Sync-Switch, kopierbare Origin-URL und Callback-URI, Aktiv-Switch im Kopf",
+  "code_refs": [
+   "apps/admin/app/(all)/(dashboard)/authentication/google/page.tsx",
+   "apps/admin/app/(all)/(dashboard)/authentication/google/form.tsx",
+   "apps/admin/components/authentication/google-config.tsx"
+  ]
+ },
+ {
+  "name": "GitHub-OAuth-Konfiguration",
+  "area": "admin",
+  "description": "Client ID/Secret, Organization ID, Sync-Switch, kopierbare Origin-URL und Callback-URI, Aktiv-Switch",
+  "code_refs": [
+   "apps/admin/app/(all)/(dashboard)/authentication/github/page.tsx",
+   "apps/admin/app/(all)/(dashboard)/authentication/github/form.tsx",
+   "apps/admin/components/authentication/github-config.tsx"
+  ]
+ },
+ {
+  "name": "GitLab-OAuth-Konfiguration",
+  "area": "admin",
+  "description": "Host, Application ID, Secret, Sync-Switch, kopierbare Callback-URL, Aktiv-Switch",
+  "code_refs": [
+   "apps/admin/app/(all)/(dashboard)/authentication/gitlab/page.tsx",
+   "apps/admin/app/(all)/(dashboard)/authentication/gitlab/form.tsx",
+   "apps/admin/components/authentication/gitlab-config.tsx"
+  ]
+ },
+ {
+  "name": "Gitea-OAuth-Konfiguration",
+  "area": "admin",
+  "description": "Gitea-Host (Default https://gitea.com), Client ID/Secret, Sync-Switch, kopierbare Callback-URI, Aktiv-Switch",
+  "code_refs": [
+   "apps/admin/app/(all)/(dashboard)/authentication/gitea/page.tsx",
+   "apps/admin/app/(all)/(dashboard)/authentication/gitea/form.tsx",
+   "apps/admin/components/authentication/gitea-config.tsx"
+  ]
+ },
+ {
+  "name": "Dialog für ungespeicherte Änderungen",
+  "area": "admin",
+  "description": "'You have unsaved changes' beim Zurückgehen aus einem Provider-Formular mit geänderten Werten",
+  "code_refs": [
+   "apps/admin/components/common/confirm-discard-modal.tsx"
+  ]
+ },
+ {
+  "name": "Kopierfelder für Plane-URLs",
+  "area": "admin",
+  "description": "Button mit URL-Text, kopiert in die Zwischenablage, Info-Toast",
+  "code_refs": [
+   "apps/admin/components/common/copy-field.tsx"
+  ]
+ },
+ {
+  "name": "AI-Einstellungen",
+  "area": "admin",
+  "description": "LLM Model und API key (OpenAI) mit Hinweis-CTA 'get in touch with us'",
+  "code_refs": [
+   "apps/admin/app/(all)/(dashboard)/ai/page.tsx",
+   "apps/admin/app/(all)/(dashboard)/ai/form.tsx"
+  ]
+ },
+ {
+  "name": "Bildbibliotheken (Unsplash)",
+  "area": "admin",
+  "description": "Pflichtfeld Unsplash Access Key",
+  "code_refs": [
+   "apps/admin/app/(all)/(dashboard)/image/page.tsx",
+   "apps/admin/app/(all)/(dashboard)/image/form.tsx"
+  ]
+ },
+ {
+  "name": "Workspace-Liste der Instanz",
+  "area": "admin",
+  "description": "Liste mit Logo, Name, Slug, Owner, Projekt- und Mitgliederzahl, öffnet den Workspace in der Web-App, 'Load more' mit 10 je Seite",
+  "code_refs": [
+   "apps/admin/app/(all)/(dashboard)/workspace/page.tsx",
+   "apps/admin/components/workspace/list-item.tsx",
+   "apps/admin/store/workspace.store.ts"
+  ]
+ },
+ {
+  "name": "Workspace-Anlage sperren",
+  "area": "admin",
+  "description": "Switch 'Prevent anyone else from creating a workspace.' (DISABLE_WORKSPACE_CREATION)",
+  "code_refs": [
+   "apps/admin/app/(all)/(dashboard)/workspace/page.tsx"
+  ]
+ },
+ {
+  "name": "Workspace anlegen",
+  "area": "admin",
+  "description": "Name, automatisch erzeugter und prüfbarer Slug mit URL-Präfix, Organisationsgröße; Slug-Check plus Liste reservierter Slugs",
+  "code_refs": [
+   "apps/admin/app/(all)/(dashboard)/workspace/create/form.tsx",
+   "packages/constants/src/workspace.ts",
+   "packages/utils/src/validation.ts"
+  ]
+ },
+ {
+  "name": "Willkommens-Popup 'Create workspace'",
+  "area": "admin",
+  "description": "Karte unten rechts nach dem Setup, solange keine Workspaces existieren",
+  "code_refs": [
+   "apps/admin/components/common/new-user-popup.tsx",
+   "apps/admin/store/instance.store.ts"
+  ]
+ },
+ {
+  "name": "404-Seite und Fehlerbehandlung",
+  "area": "admin",
+  "description": "404 mit Button 'Go to general settings', Root-ErrorBoundary, HydrateFallback-Spinner, Navigations-Progressbar",
+  "code_refs": [
+   "apps/admin/app/components/404.tsx",
+   "apps/admin/app/root.tsx",
+   "apps/admin/lib/b-progress/AppProgressBar.tsx"
+  ]
+ },
+ {
+  "name": "OIDC-SSO (instanzweit, Bezahl-Edition)",
+  "area": "admin (EE)",
+  "description": "Zusätzliche Auth-Methode mit Konfigurationsseite (Client-Daten, IdP-URLs, Plane-URLs); im CE-Repo nicht implementiert, nur belegt",
+  "code_refs": [
+   "apps/web/components/workspace/billing/comparison/plans.tsx",
+   "packages/i18n/src/locales/en/auth.json",
+   "packages/types/src/instance/auth-ee.ts"
+  ]
+ },
+ {
+  "name": "SAML-SSO (instanzweit, Bezahl-Edition)",
+  "area": "admin (EE)",
+  "description": "Zusätzliche Auth-Methode mit Entity-ID, SSO-/SLO-URL, Zertifikat und Attribut-Mapping; nicht implementiert",
+  "code_refs": [
+   "apps/web/components/workspace/billing/comparison/plans.tsx",
+   "packages/i18n/src/locales/en/auth.json"
+  ]
+ },
+ {
+  "name": "LDAP-Login (Bezahl-Edition Enterprise)",
+  "area": "admin (EE)",
+  "description": "LDAP-Server-Konfiguration und Login mit Username; nicht implementiert",
+  "code_refs": [
+   "apps/web/components/workspace/billing/comparison/plans.tsx",
+   "packages/constants/src/subscription.ts",
+   "packages/i18n/src/locales/en/auth.json"
+  ]
+ },
+ {
+  "name": "Space-Login: E-Mail-Check",
+  "area": "space",
+  "description": "E-Mail eingeben, POST /auth/spaces/email-check/ entscheidet SIGN_IN/SIGN_UP und Passwort- oder Unique-Code-Schritt",
+  "code_refs": [
+   "apps/space/components/account/auth-forms/auth-root.tsx",
+   "apps/space/components/account/auth-forms/email.tsx",
+   "packages/services/src/auth/sites-auth.service.ts"
+  ]
+ },
+ {
+  "name": "Space-Login und Sign-up mit Passwort",
+  "area": "space",
+  "description": "Passwort-Schritt mit Stärkeanzeige und Bestätigung beim Sign-up, nativer POST an /auth/spaces/sign-in/ bzw. /auth/spaces/sign-up/, Wechsel zu 'Sign in with unique code'",
+  "code_refs": [
+   "apps/space/components/account/auth-forms/password.tsx"
+  ]
+ },
+ {
+  "name": "Space-Login mit Unique Code",
+  "area": "space",
+  "description": "Code per E-Mail (POST /auth/spaces/magic-generate/), Resend-Timer 5 s, nativer POST an magic-sign-in bzw. magic-sign-up",
+  "code_refs": [
+   "apps/space/components/account/auth-forms/unique-code.tsx",
+   "apps/space/hooks/use-timer.tsx"
+  ]
+ },
+ {
+  "name": "OAuth-Buttons im Space",
+  "area": "space",
+  "description": "'Sign in/up with Google/GitHub/GitLab/Gitea' für aktivierte Provider, kompakt im Passwort-Schritt",
+  "code_refs": [
+   "apps/space/hooks/oauth/core.tsx",
+   "packages/blocks/src/auth/oauth/oauth-options.tsx"
+  ]
+ },
+ {
+  "name": "Fehlerbanner aus Auth-Redirects",
+  "area": "space",
+  "description": "Mapping der Fehlercodes 5000–5185 auf Banner, teilweise mit Wechsel von Modus und Schritt",
+  "code_refs": [
+   "apps/space/helpers/authentication.helper.tsx",
+   "apps/space/components/account/auth-forms/auth-banner.tsx"
+  ]
+ },
+ {
+  "name": "Rechtshinweis Terms/Privacy",
+  "area": "space",
+  "description": "Hinweis abhängig von Sign-up oder Sign-in mit Links zu den plane.so-Rechtsseiten",
+  "code_refs": [
+   "apps/space/components/account/terms-and-conditions.tsx"
+  ]
+ },
+ {
+  "name": "Eingeloggt-Ansicht und next_path-Weiterleitung",
+  "area": "space",
+  "description": "'Nice! Just one more step.' oder automatische Weiterleitung auf einen gültigen next_path",
+  "code_refs": [
+   "apps/space/app/page.tsx",
+   "apps/space/components/account/user-logged-in.tsx"
+  ]
+ },
+ {
+  "name": "Instanzfehler-Ansicht (Space)",
+  "area": "space",
+  "description": "Vollbild mit Hintergrundmuster, Logo und Retry",
+  "code_refs": [
+   "apps/space/lib/instance-provider.tsx",
+   "apps/space/components/instance/instance-failure-view.tsx"
+  ]
+ },
+ {
+  "name": "Legacy-URL-Weiterleitung",
+  "area": "space",
+  "description": "/:workspaceSlug/:projectId wird auf /issues/{anchor} umgeleitet (übernimmt board und peekId)",
+  "code_refs": [
+   "apps/space/app/[workspaceSlug]/[projectId]/page.tsx"
+  ]
+ },
+ {
+  "name": "Öffentliches Projekt-Board mit Social-Meta",
+  "area": "space",
+  "description": "/issues/:anchor lädt Publish-Settings, States und Labels; SSR setzt Titel, Beschreibung und OG/Twitter-Tags inklusive Cover-Bild",
+  "code_refs": [
+   "apps/space/app/issues/[anchor]/layout.tsx",
+   "apps/space/app/issues/[anchor]/page.tsx",
+   "apps/space/store/publish/publish_list.store.ts"
+  ]
+ },
+ {
+  "name": "Board-Navbar",
+  "area": "space",
+  "description": "Projektlogo und -name, Layout-Umschalter List/Board, Filter, Theme-Toggle, User-Menü (Sign out) bzw. 'Sign in'; synchronisiert board und Filter mit der URL",
+  "code_refs": [
+   "apps/space/components/issues/navbar/root.tsx",
+   "apps/space/components/issues/navbar/controls.tsx",
+   "apps/space/components/issues/navbar/layout-selection.tsx",
+   "apps/space/components/issues/navbar/theme.tsx",
+   "apps/space/components/issues/navbar/user-avatar.tsx"
+  ]
+ },
+ {
+  "name": "List-Layout (read-only)",
+  "area": "space",
+  "description": "Gruppen je State (auf- und zuklappbar, leere sichtbar), Zeilen mit Kennung, Titel und Eigenschaften, 'Load more' je Gruppe",
+  "code_refs": [
+   "apps/space/components/issues/issue-layouts/list/base-list-root.tsx",
+   "apps/space/components/issues/issue-layouts/list/list-group.tsx",
+   "apps/space/components/issues/issue-layouts/list/block.tsx"
+  ]
+ },
+ {
+  "name": "Kanban-Layout (read-only)",
+  "area": "space",
+  "description": "Spalten je State (350 px), Karten mit Eigenschaften und Reaktionsleiste, Infinite-Scroll je Spalte",
+  "code_refs": [
+   "apps/space/components/issues/issue-layouts/kanban/base-kanban-root.tsx",
+   "apps/space/components/issues/issue-layouts/kanban/default.tsx",
+   "apps/space/components/issues/issue-layouts/kanban/kanban-group.tsx",
+   "apps/space/components/issues/issue-layouts/kanban/block.tsx",
+   "apps/space/components/issues/issue-layouts/kanban/block-reactions.tsx"
+  ]
+ },
+ {
+  "name": "Eigenschafts-Chips",
+  "area": "space",
+  "description": "State, Priorität, Labels (bis 2 einzeln, sonst Anzahl), Fälligkeitsdatum mit Überfällig-Hervorhebung, jeweils mit Tooltip",
+  "code_refs": [
+   "apps/space/components/issues/issue-layouts/properties/all-properties.tsx",
+   "apps/space/components/issues/issue-layouts/properties/state.tsx",
+   "apps/space/components/issues/issue-layouts/properties/priority.tsx",
+   "apps/space/components/issues/issue-layouts/properties/labels.tsx",
+   "apps/space/components/issues/issue-layouts/properties/due-date.tsx",
+   "apps/space/helpers/issue.helper.ts"
+  ]
+ },
+ {
+  "name": "Filter-Popover",
+  "area": "space",
+  "description": "Suche plus Filter nach Priorität und State (Mehrfachauswahl, 'View all'); Label-Filter ist auskommentiert",
+  "code_refs": [
+   "apps/space/components/issues/filters/root.tsx",
+   "apps/space/components/issues/filters/selection.tsx",
+   "apps/space/components/issues/filters/priority.tsx",
+   "apps/space/components/issues/filters/state.tsx",
+   "apps/space/store/issue-filters.store.ts"
+  ]
+ },
+ {
+  "name": "Leiste aktiver Filter",
+  "area": "space",
+  "description": "Chips je Filterwert mit Entfernen, Gruppen-Entfernen und 'Clear all'",
+  "code_refs": [
+   "apps/space/components/issues/filters/applied-filters/root.tsx",
+   "apps/space/components/issues/filters/applied-filters/filters-list.tsx"
+  ]
+ },
+ {
+  "name": "Peek-Ansicht eines Work Items",
+  "area": "space",
+  "description": "Modi Side Peek, Modal und Full Screen; Kennung, Titel, Beschreibung read-only, Eigenschaften State/Priority/Due date, Link kopieren, Escape/Outside-Click schließt, Fokusfalle",
+  "code_refs": [
+   "apps/space/components/issues/peek-overview/layout.tsx",
+   "apps/space/components/issues/peek-overview/side-peek-view.tsx",
+   "apps/space/components/issues/peek-overview/full-screen-peek-view.tsx",
+   "apps/space/components/issues/peek-overview/header.tsx",
+   "apps/space/components/issues/peek-overview/issue-details.tsx",
+   "apps/space/components/issues/peek-overview/issue-properties.tsx"
+  ]
+ },
+ {
+  "name": "Kommentare lesen, schreiben, bearbeiten, löschen",
+  "area": "space",
+  "description": "Liste öffentlicher Kommentare, Lite-Editor mit Toolbar, Enter zum Senden und Bild-Upload, Bearbeiten und Löschen eigener Kommentare, Sign-in-Hinweis für Anonyme",
+  "code_refs": [
+   "apps/space/components/issues/peek-overview/issue-activity.tsx",
+   "apps/space/components/issues/peek-overview/comment/add-comment.tsx",
+   "apps/space/components/issues/peek-overview/comment/comment-detail-card.tsx",
+   "apps/space/components/editor/lite-text-editor.tsx",
+   "apps/space/components/editor/toolbar.tsx",
+   "apps/space/helpers/editor.helper.ts"
+  ]
+ },
+ {
+  "name": "Kommentar-Reaktionen",
+  "area": "space",
+  "description": "Emoji-Reaktionen auf Kommentare mit Picker; Anonyme werden zum Login geleitet",
+  "code_refs": [
+   "apps/space/components/issues/peek-overview/comment/comment-reactions.tsx"
+  ]
+ },
+ {
+  "name": "Emoji-Reaktionen auf Work Items",
+  "area": "space",
+  "description": "Reaktionsgruppe mit Anzahl und Nutzernamen, Picker, Toggle eigener Reaktionen (Peek und Kanban-Karte)",
+  "code_refs": [
+   "apps/space/components/issues/reactions/issue-emoji-reactions.tsx",
+   "apps/space/components/issues/peek-overview/issue-reaction.tsx"
+  ]
+ },
+ {
+  "name": "Up- und Down-Votes",
+  "area": "space",
+  "description": "Zwei Vote-Buttons mit Zählern und Namens-Tooltips, Toggle bzw. Wechsel des eigenen Votes",
+  "code_refs": [
+   "apps/space/components/issues/reactions/issue-vote-reactions.tsx"
+  ]
+ },
+ {
+  "name": "iframe-Einbettung",
+  "area": "space",
+  "description": "Im iframe sind Login, Composer, Kommentar-Menü und Peek-Reaktionen ausgeblendet; Votes und Kommentar-Reaktionen ohne Wirkung",
+  "code_refs": [
+   "apps/space/hooks/use-is-in-iframe.tsx",
+   "apps/space/components/issues/navbar/controls.tsx"
+  ]
+ },
+ {
+  "name": "Mention-Darstellung",
+  "area": "space",
+  "description": "@Name bzw. '@deactivated user', eigene Mentions hervorgehoben",
+  "code_refs": [
+   "apps/space/components/editor/embeds/mentions/user.tsx",
+   "apps/space/hooks/use-parse-editor-content.ts"
+  ]
+ },
+ {
+  "name": "Fehler- und 404-Seiten",
+  "area": "space",
+  "description": "Catch-all 'That didn't work', Anchor-404, 'The public board does not exist', globale Fehlerseite 'Yikes!', Leerzustand 'No work items found'",
+  "code_refs": [
+   "apps/space/app/not-found.tsx",
+   "apps/space/components/ui/not-found.tsx",
+   "apps/space/components/issues/issue-layouts/error.tsx",
+   "apps/space/app/error.tsx",
+   "apps/space/components/issues/issue-layouts/issue-layout-HOC.tsx"
+  ]
+ },
+ {
+  "name": "'Powered by Plane Publish'-Badge",
+  "area": "space",
+  "description": "Fester Link-Badge unten rechts auf Auth-, Eingeloggt- und Board-Seiten",
+  "code_refs": [
+   "apps/space/components/common/powered-by.tsx"
+  ]
+ },
+ {
+  "name": "Publish Views (Bezahl-Edition Pro+)",
+  "area": "space (EE)",
+  "description": "Öffentliche Ansichten mit Layouts und Filtern; nicht implementiert, nur belegt",
+  "code_refs": [
+   "apps/web/components/workspace/billing/comparison/plans.tsx",
+   "apps/api/plane/db/models/deploy_board.py",
+   "apps/space/components/account/user-logged-in.tsx"
+  ]
+ },
+ {
+  "name": "Publish Pages (Bezahl-Edition One+)",
+  "area": "space (EE)",
+  "description": "Öffentliche Seiten mit read-only Document-Editor und Kommentaren; nicht implementiert",
+  "code_refs": [
+   "apps/web/components/workspace/billing/comparison/plans.tsx",
+   "packages/types/src/publish.ts",
+   "apps/space/hooks/use-editor-flagging.ts"
+  ]
+ },
+ {
+  "name": "Intake Forms (Bezahl-Edition Business+)",
+  "area": "space (EE)",
+  "description": "Öffentliches Formular zum Einreichen von Work Items in die Intake inklusive Bestätigungsbild; UI fehlt, Backend-Endpunkt existiert",
+  "code_refs": [
+   "apps/space/types/intake.d.ts",
+   "apps/space/app/assets/instance/intake-sent-light.png",
+   "apps/api/plane/space/urls/intake.py",
+   "apps/api/plane/space/views/intake.py"
+  ]
+ },
+ {
+  "name": "Weitere Board-Layouts Calendar/Spreadsheet/Gantt",
+  "area": "space (EE/vorbereitet)",
+  "description": "Über view_props schaltbar, im CE aber nicht gerendert",
+  "code_refs": [
+   "packages/types/src/publish.ts",
+   "apps/space/store/issue-filters.store.ts",
+   "packages/constants/src/issue/filter.ts"
+  ]
+ }
+]
