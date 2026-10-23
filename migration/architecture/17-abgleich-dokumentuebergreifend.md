@@ -444,3 +444,9 @@ Die Architektur-Dokumente 01–16 verwenden noch die Schreibweise `Plane…` fü
 | Images/Charts/CLI | bereits `funk-*` (Teil 2) |
 
 Ausnahmen: Verweise auf das Original (Pfade, Module, Header, Cookies des Originals) und Kompatibilitätstests, die das Original-Verhalten beschreiben.
+
+### Referenzinstanz des Originals (23.10.2026)
+
+**Kein dauerhaft betriebener Referenz-Server.** Das Original wird bei Bedarf über `tools/parity/` (offizielle Images, Commit `053b2c0`/Branch `funk-referenz-1.4.2`, deterministischer Seed) in der jeweiligen Session gestartet. Referenzen (API-Antworten, Screenshots, Golden Files, Protokoll-Mitschnitte) werden je Spike bzw. Inkrement **aufgezeichnet und in `funk.` eingecheckt**; die Tests von funk. laufen gegen diese gespeicherten Referenzen. Original und funk. laufen nacheinander, nicht gleichzeitig (Ressourcen der Cloud-Sessions: 4 CPU, 15 GB RAM). Neu aufgezeichnet wird nur bei geänderten Seeds oder neuen Prüffällen.
+
+Netzwerkfreigaben (dotnet, quay.io, codeberg.org, data.forgejo.org, NuGet-Suche) und Standard-Branch `develop` in `mlwr/funk.` sind eingerichtet (geprüft 23.10.2026).
