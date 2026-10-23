@@ -18,7 +18,7 @@
    - 3.2 Querschnitts-Reservierungen (Permission-Namensräume, Routen-Präfixe, Activity-Felder, Queues, Event-Typen, Feature-Toggles)
    - 3.3 Paketkatalog: Andockstellen je Paket (55 Pakete, Bereiche A–H)
    - 3.4 Paket F2 Forgejo: Andockstellen im Detail (Verbindungen, Webhook-Empfang, Sync-Mappings, Commit-/PR-Verknüpfungen, API-Client)
-4. Vollständige Mapping-Tabellen Original → Ziel
+4. Vollständige Mapping-Tabellen Original → Ziel (inkl. 4.6 Träger-CE-IDs)
 5. Code-Skelette (je 🧱-Paket C# und TypeScript; F2 erweitert)
 6. Erweiterungspunkte für Bezahl-Pakete – Verfahren für die Detailplanung je Welle
 7. Akzeptanzkriterien & Tests
@@ -59,17 +59,17 @@ Prüfsumme: 14 + 38 = 52 gewählte Pakete (F30: „Ausgewählt: 52 Pakete“; A1
 
 ### 1.4 Was wird in welchem Inkrement gebraucht
 
-Die Inkremente folgen 01 §1.3; Spalte „ab“ in 01 §1.4 ist bindend. Diese Tabelle listet **alle P-Andockstellen** (CE-Pflicht) nach Inkrement – sie ist die Checkliste für die CE-Arbeitspakete. Jede Zeile ist erst „fertig“, wenn Contract + CE-Default + Test-Erweiterung (§7) grün sind.
+Die Inkremente folgen 01 §1.3; Spalte „ab“ in 01 §1.4 ist bindend. Diese Tabelle listet **alle P-Andockstellen** (CE-Pflicht) nach Inkrement – sie ist die Checkliste für die CE-Arbeitspakete. Jede Zeile ist erst „fertig“, wenn Contract + CE-Default + Test-Erweiterung (§7) grün sind und die Andockstelle im Inventar `tests/extension-points.yaml` steht (D15 EP-T09, geprüft durch `Plane.ArchitectureTests/ExtensionPointInventoryTests` bzw. `frontend/tools/extension-registry-check`).
 
 | Inkrement | P-Andockstellen, die in diesem Inkrement fertig sein müssen | Pakete | Zuständiges Dok. |
 |---|---|---|---|
-| **I0 Walking Skeleton** | Event-Katalog-Gerüst (`IIntegrationEvent`, `EventType`-Schema, Snapshot-Test), Outbox/Inbox-Gerüst, `IEventConsumer`-Registrierung, `IRecurringJobRegistry`, benannte Queues (§3.2.5); `ScopeLevel`/`ScopeRef`/`IScopeResolver` (CE: Workspace/Project); Permission-Katalog mit `Permission(Key, Scope, ApiScope)`, `roles`-Tabelle + System-Rollen-Seeds, `role_id` in Mitgliedschaften, `IRoleDefinitionProvider`, `IVisibilityFilter<T>`, reservierte Permission-Namensräume (§3.2.1); `PlanePrincipal` mit `Kind`/`Groups`/`ApiScopes`, Policy-Scheme `Cookies│ApiKey│Bearer` (Bearer aus), `users.is_bot`; `IUserProvisioningStep`-Kette mit freien `Order`-Slots; Oberfläche `Integrations` (`/api/integrations/{provider}/webhooks/{connection_id}/`, 404 ohne Verifier), `IWebhookSignatureVerifier`-Registry, `IWebhookIngress` (E-25), Inbox-Idempotenz, leere Tabellen `integration_connections`/`external_links`; Reservierungen §3.2 + Kollisionstests (E-17), Regeln R11/R12; `IScopeAncestorContributor` (E-20), `IRealtimeGroupAuthorizer` (E-22), `ISystemRoleGrantContributor` (E-09), `ProvisioningOrder`-Slots; Platzhalter-Projekte `Plane.Integrations.Contracts`, `Plane.Forgejo.Contracts`, `Plane.Forgejo.Client` (nur Interface + DTOs), `Plane.Apps.Contracts`, `Plane.Properties.Contracts`, `Plane.Teamspaces.Contracts`; Forgejo-Container + Keycloak-Client `plane-forgejo` + `forgejo-init`; SignalR-Hub `/live/events/` mit Gruppen, `IRealtimePublisher`; Frontend: `PermissionService` + `PERMISSION_EVALUATOR`, `SCOPE_LEVELS`, `ROUTE_EXTENSIONS` + `mergeRoutes`, `SIDEBAR_ITEMS` (statisch), `ADMIN_SETTINGS_PAGES`, `LiveEventsService` + `LIVE_EVENT_HANDLERS`, `RouterStore.teamspaceId` | C3, B1, E5, H1, E3, F1, F2, H6, A1/A2 (nur Platzhalter) | D02, D05, D08, D14, D15 |
+| **I0 Walking Skeleton** | Event-Katalog-Gerüst (`IIntegrationEvent`, `EventType`-Schema, Snapshot-Test), Outbox/Inbox-Gerüst, `IEventConsumer`-Registrierung, `IRecurringJobRegistry`, benannte Queues (§3.2.5); `ScopeLevel`/`ScopeRef`/`IScopeResolver` (CE: Workspace/Project); Permission-Katalog mit `Permission(Key, Scope, ApiScope)`, `roles`-Tabelle + System-Rollen-Seeds, `role_id` in Mitgliedschaften, `IRoleDefinitionProvider`, `IVisibilityFilter<T>` (+ `CompositeVisibilityFilter<T>`), reservierte Permission-Namensräume (§3.2.1) in `ReservedPermissionKeys` (D05 §6.1); `PlanePrincipal` mit `Kind`/`Groups`/`ApiScopes`, Policy-Scheme `Cookies│ApiKey│Bearer` (Bearer aus), `users.is_bot`; `IUserProvisioningStep`-Kette mit freien `Order`-Slots; Oberfläche `Integrations` (`/api/integrations/{provider}/webhooks/{connection_id}/`, 404 ohne Verifier), `IWebhookSignatureVerifier`-Registry, `IWebhookIngress` (E-25), Inbox-Idempotenz, leere Tabellen `integration_connections`/`external_links`; Reservierungen §3.2 + Kollisionstests (E-17), Regeln R11/R12; `IScopeAncestorContributor` (E-20), `IRealtimeGroupAuthorizer` (E-22), `ISystemRoleGrantContributor` (E-09), `ProvisioningOrder`-Slots; Platzhalter-Projekte `Plane.Integrations.Contracts`, `Plane.Forgejo.Contracts`, `Plane.Forgejo.Client` (nur Interface + DTOs), `Plane.Apps.Contracts`, `Plane.Properties.Contracts`, `Plane.Teamspaces.Contracts`; Forgejo-Container + Keycloak-Client `plane-forgejo` + `forgejo-init`; SignalR-Hub `/live/events/` mit Gruppen, `IRealtimePublisher`; Frontend: `PermissionService` + `PERMISSION_EVALUATOR`, `SCOPE_LEVELS`, `ROUTE_EXTENSIONS` + `mergeRoutes`, `SIDEBAR_ITEMS` (statisch), `ADMIN_SETTINGS_PAGES`, `ADMIN_ROUTE_EXTENSIONS`, `ADMIN_HEADER_SEGMENT_LABELS` (S41), `APP_RAIL_ENABLED`, `LiveEventsService` + `LIVE_EVENT_HANDLERS`, `RouterStore.teamspaceId` | C3, B1, E5, H1, E3, F1, F2, H6, A1/A2 (nur Platzhalter) | D02, D05, D08, D14, D15 |
 | **I1 Workspace, Projekte, Konto** | `IStateCatalog`/`ILabelCatalog` als einzige Lesewege (A17), `IScopedCatalogEntry` an `State`/`Label`; Feature-Toggle-Kataloge `IProjectFeatureCatalog`/`IWorkspaceFeatureCatalog` + Frontend `PROJECT_FEATURES`/`WORKSPACE_FEATURES` (§3.2.6); `SETTINGS_PAGES`, `SIDEBAR_ITEMS` (dynamisch), `FAVORITE_ENTITY_RENDERERS`, `MEMBER_ROW_DECORATORS`, `ROLE_OPTIONS`; Activity-Grundgerüst mit `IActivityFieldResolver`-Registry und reservierten Feldnamen (§3.2.3); nullable `teamspace_id` in den in §3.3 B1 genannten Tabellen | A17, B1, E3, E5, H1, F2, C3 | D02, D03, D05, D08 |
 | **I2 Work Items & Layouts** | Filter-AST + `IFilterParser`-Liste (legacy, rich), `IFilterFieldProvider`/`IGroupKeyProvider`/`IOrderKeyProvider`, `IWorkItemPayloadExtension`, erweiterbarer Operator-Katalog; `work_items.type_id` + Minimal-Tabelle `work_item_types`; Relationstyp-Katalog `work_item_relation_types` (10 Seeds); State-Change-Pipeline `IWorkItemStateChanger` + Guard/Hook; `IWorkItemReferenceResolver` (Identifier → Work Item, F2/D6); `IIntegrationLinkProvider` (E-13, `[]`); `IWorkItemCommands` (E-18); Frontend: `PROPERTY_RENDERERS`, `SPREADSHEET_COLUMNS`, `GROUP_BY_OPTIONS`, `FILTER_FIELDS`, `FILTER_OPERATORS`, `RELATION_TYPES`, `TIMELINE_FLAGS`, `ISSUE_MODAL_CONTEXT`, `WORK_ITEM_PROPERTIES_LOADER`, `WORK_ITEM_DETAIL_WIDGETS`, `WORK_ITEM_ACTIONS`, `ACTIVITY_RENDERERS`, `WORKFLOW_GUARD`, `INTEGRATION_LINK_PREVIEWS`, `DUPLICATE_DETECTION`, `EDITOR_EXTENSIONS`/`EDITOR_FLAGS` (Lite) | A1, A2, A9, B6, C1, F1, F2, G1 | D02, D03, D08, D10 |
 | **I3 Planung** | keine zusätzliche P-Andockstelle; die I2-Registries werden von Cycles/Modules/Intake/Views mitbenutzt (Filter-AST in Views, State-Pipeline bei Cycle-Transfer und Intake-Annahme) | (C1, B6) | D02 |
 | **I4 Pages & Realtime** | Pages ohne Projektpflicht (`pages.workspace_id`, `project_pages`), `pages.parent_id`, `IPageHierarchy` (flach), `IPageAccessExtension` (Default `false`), Dokumenttyp-Registry `ICollaborationDocumentType` (CE: `project_page`), Realtime-Event `affectedPages` erzeugbar; Frontend: `PAGE_STORES`, `PAGE_TREE`, `PAGE_FLAGS`, `PAGE_PANE_EXTENSIONS`, `EDITOR_BLOCKS`, `EDITOR_MENTION_TYPES`, `APP_RAIL_ENABLED` | D1, D2 (D8) | D07, D08, D10 |
 | **I5 Überblick** | `ISearchProvider`, `IIndexingPipeline` als `IEventConsumer`, `search_documents` (`tsvector`), Extension `vector` aktiv, `IEmbeddingGenerator<string, Embedding<float>>` mit `NullEmbeddingGenerator`; erste Nutzung `LIVE_EVENT_HANDLERS` (Notification-Zähler); `SEARCH_RESULT_RENDERERS`, `POWER_K_COMMANDS` | G1, B6, H6 | D11, D08 |
-| **I6 Außenwirkung** | Public-API-Adapter-Erweiterung `IV1PayloadExtension` (Typ-/Property-Felder in v1-Antworten), OpenAPI-Dokumentgruppen erweiterbar, Webhook-Event-Katalog erweiterbar (`IWebhookEventSource`) | A1, H3 (Vorbereitung), C3 | D04, D06 |
+| **I6 Außenwirkung** | Public-API-Adapter-Erweiterung `IV1PayloadExtension` (Typ-/Property-Felder in v1-Antworten), `IV1FilterParameterBinding` (E-19, Original-400 für `pql`/`filters`), OpenAPI-Dokumentgruppen erweiterbar, Webhook-Event-Katalog erweiterbar (`IWebhookEventSource`), `IExportTypeProvider` (E-16); Frontend: `SPACE_ROUTE_EXTENSIONS`, `EDITOR_EXTENSIONS` im Space-Scope (S44) | A1, B5, B6, A10, D5, H3 (Vorbereitung), C3 | D04, D06, D08 |
 | **I7 Härtung** | Contract-Snapshot aller Erweiterungs-Interfaces (`ExtensionContractsSnapshotTests`), Architekturtest R11/R12 (§2), Airgap-Test mit gebündeltem Forgejo | alle | D15, D14 |
 | **W1** | Implementierung F1, H1, H6 (Vollausbau), F2 – auf den obigen Andockstellen; **keine** CE-Änderung außer additiven Migrationen | F1, F2, H1, H6 | Wellenplan W1 |
 
@@ -98,16 +98,16 @@ Die Ergänzungen E-01…E-26 aus §3.3.0 sind in dieser Tabelle enthalten bzw. f
 | **D16-ADR-03** | Abhängigkeitsrichtung | Neue Architekturregeln: **R11** CE-Module (`BE/modules/*` außer `extensions/*`) dürfen **keine** Paket-Module referenzieren – auch nicht deren Contracts, außer den sechs in der CE angelegten Platzhalter-Contracts (`Plane.Properties.Contracts`, `Plane.Teamspaces.Contracts`, `Plane.Integrations.Contracts`, `Plane.Forgejo.Contracts`, `Plane.Forgejo.Client`, `Plane.Apps.Contracts`). **R12** Paket-Module referenzieren CE-Module nur über `*.Contracts` (wie R1). Frontend analog per Sheriff: `scope:web` (CE-Libs) importiert nie `domain:package-*`; Pakete importieren nur `libs/web/extensions` und `public-api.ts` der CE-Libs. | Nur Konvention | Pakete müssen ohne CE-Änderung ein- und ausbaubar sein; Agenten erhalten maschinelles Feedback (ADR-050). | I0 |
 | **D16-ADR-04** | Registrierung | Paket-Module werden über die Modul-Liste `PlaneModuleCatalog` in `BE/hosts/Plane.Hosting/` registriert (eine Zeile je Modul, Reihenfolge = Abhängigkeit). Kein Assembly-Scanning, keine Plug-in-DLLs zur Laufzeit. Im Frontend registriert jedes Paket genau einen `provide<Paket>Extensions()` in `apps/web/src/app.config.ts` **hinter** `provideWebExtensions()` (D08 §6). | Plug-in-Loader (`AssemblyLoadContext`); Feature-Flags je Paket | ADR-001: alles ist immer aktiv; statische Registrierung ist AOT-/Trim-fähig und testbar. | I0 |
 | **D16-ADR-05** | Fachliche Schalter statt Plan-Gates | Paketfunktionen, die das Original per **Projekt-/Workspace-Feature-Toggle** steuert (`is_issue_type_enabled`, `is_time_tracking_enabled`, `is_epic_enabled`, `is_workflow_enabled`, `is_project_updates_enabled`, `is_milestone_enabled`, Workspace-Features `teams`, `wiki`, `initiatives`, `customers`, `project_grouping`, `pi`), werden über **Feature-Kataloge** angeboten (`IProjectFeatureCatalog`, `IWorkspaceFeatureCatalog`, Frontend `PROJECT_FEATURES`, `WORKSPACE_FEATURES`; §3.2.6, §5.1). CE-Katalog = die fünf CE-Toggles (`cycle_view`, `module_view`, `issue_views_view`, `page_view`, `intake_view`) bzw. leer. | Toggles hart in `Project`-Entität und `features-list.tsx` (Original) | ADR-001 erlaubt fachliche Toggles; ohne Katalog müsste jedes Paket CE-Entität, Serializer und Settings-Liste ändern. Bedient A1 (🧱), B1 (🧱), D1 (🧱) → Klasse P. | I1 |
-| **D16-ADR-06** | Schemaerweiterung | Pakete erweitern das Schema **nur additiv** (neue Tabellen, neue nullable Spalten, neue Indizes; Expand/Contract laut D14 §3.17). Spalten, die das Original-CE-Modell bereits besitzt und die im JSON-Vertrag erscheinen (`projects.is_time_tracking_enabled`, `projects.is_issue_type_enabled`, `projects.default_assignee_id`, `work_items.type_id`, `work_item_comments.parent_id`, `intake_work_items.source/source_email/extra`, `pages.parent_id`/`is_global`/`moved_to_page`/`moved_to_project`, `cycles.progress_snapshot`), legt **die CE** an (Klasse V, D03). Paket-Tabellen tragen `[OwnedBy("<Paketmodul>")]`. | Paketeigene Schemas (`pg schema` je Paket) | Ein `PlaneDbContext` (ADR-037) erlaubt Joins der Work-Item-Listen auch mit Property-Werten; Präfix-freie Tabellennamen wie Original-EE-API (`work_item_properties`, `teamspaces`). | I0 |
+| **D16-ADR-06** | Schemaerweiterung | Pakete erweitern das Schema **nur additiv** (neue Tabellen, neue nullable Spalten, neue Indizes; Expand/Contract laut D14 §3.17). Spalten, die das Original-CE-Modell bereits besitzt und die im JSON-Vertrag erscheinen (`projects.is_time_tracking_enabled`, `projects.is_issue_type_enabled`, `projects.default_assignee_id`, `work_items.type_id`, `work_item_comments.parent_id`, `intake_work_items.source/source_email/extra`, `pages.parent_id`/`is_global`/`moved_to_page`/`moved_to_project`, `cycles.progress_snapshot`), legt **die CE** an (Klasse V, D03). Paket-Tabellen tragen `[OwnedBy("<Paketmodul>")]`; ihre Entitäts- und Konfigurationsklassen liegen nach Regel R3 als **neue Dateien** in `BE/data/Plane.Data/Entities/<Paket>/` bzw. `Configurations/<Paket>/` (Aufnahme über `ApplyConfigurationsFromAssembly`, kein `DbSet`-Eintrag in einer CE-Datei nötig); Migrationen `W<n>_<Paket>_<Beschreibung>` liegen in `Plane.Data/Migrations/`, die dabei neu generierte `PlaneDbContextModelSnapshot.cs` ist die einzige zulässige, generierte Änderung einer bestehenden CE-Datei. | Paketeigene Schemas (`pg schema` je Paket) | Ein `PlaneDbContext` (ADR-037) erlaubt Joins der Work-Item-Listen auch mit Property-Werten; Präfix-freie Tabellennamen wie Original-EE-API (`work_item_properties`, `teamspaces`). | I0 |
 | **D16-ADR-07** | Vertrags-Stabilität der Andockstellen | Alle Erweiterungs-Interfaces (C#) und Tokens (TS) sind **öffentlicher Vertrag**: C#-Snapshot per `PublicApiGenerator` (MIT ⚠ Lizenz-Gate) + Verify, TS-Snapshot per `api-extractor`-Report von `EXT/public-api.ts` (MIT). Änderung nur additiv; Breaking Change braucht ADR-Änderung in diesem Dokument. | Keine Snapshots | Pakete werden Monate nach der CE gebaut; stille Signaturänderungen würden sie brechen. | I7 (Snapshot), Contracts ab Entstehung |
 | **D16-ADR-08** | Test-Erweiterungen | Jede P-Andockstelle hat eine **Fake-Erweiterung** in `BE/building-blocks/Plane.BuildingBlocks.Testing/Extensions/` (z. B. `FakeFilterFieldProvider`, `FakeStateTransitionGuard`, `FakeWebhookSignatureVerifier`) bzw. `FE/libs/web/extensions/testing/` (`provideFakeExtensions()`), die in mindestens einem Test zeigt, dass der Punkt ohne CE-Änderung wirkt (D15 Typ X). | Tests erst mit dem Paket | Nur so ist „ohne Umbau erweiterbar“ in der CE messbar (01 P7). | jeweiliges Inkrement |
 | **D16-ADR-09** | Integrationen (F1/F2) | `Plane.Integrations` (Framework: Verbindungen, Webhook-Eingang, Inbox, Sync-Lauf, External Links, Token-Tresor) und `Plane.Forgejo` (Provider) sind **Module im Monolithen** (ADR-049); externe Pfade: Webhook `POST /api/integrations/forgejo/webhooks/{connection_id}/`, OAuth-Callbacks `GET /api/integrations/forgejo/oauth/callback/` (Workspace-Verbindung) und `GET /api/integrations/forgejo/oauth/user-callback/` (persönliches Konto). Damit ist der in D14 §3.4.3 Schritt 8 mit ⚠ markierte Redirect-Pfad festgelegt; für die persönliche Verknüpfung registriert `forgejo-init` den zweiten Redirect-URI zusätzlich. | Pfade `/silo/api/…` wie EE | Es gibt keine EE-Vorlage für Forgejo; einheitliche Oberfläche `Integrations` (D02-ADR-06) mit eigener Rate-Limit-Policy und Roh-Body. | I0 (Route), W1 |
-| **D16-ADR-10** | Forgejo-Webhook-Signatur | `ForgejoSignatureVerifier` prüft HMAC-SHA256 (Hex, lowercase, ohne Präfix) über den **rohen** Body mit dem Verbindungs-Secret, Header-Reihenfolge `X-Forgejo-Signature` → `X-Gitea-Signature` → `X-Hub-Signature-256` (Präfix `sha256=`); Vergleich `CryptographicOperations.FixedTimeEquals`. Ereignis aus `X-Forgejo-Event` (Fallback `X-Gitea-Event`), Untertyp aus `X-Forgejo-Event-Type` (Fallback `X-Gitea-Event-Type`), Idempotenz-Schlüssel `X-Forgejo-Delivery` (Fallback `X-Gitea-Delivery`). | Nur ein Header | Forgejo ist Gitea-kompatibel und sendet die Gitea-/GitHub-kompatiblen Header mit (Gitea `services/webhook/deliver.go`: `X-Gitea-Signature` = HMAC-SHA256-Hex ohne Präfix, `X-Hub-Signature-256` = `sha256=`-Präfix); die Forgejo-Doku zeigt `X-Forgejo-Delivery`/`X-Forgejo-Event` (⚠ Header-Name `X-Forgejo-Signature` im Spike S-F2-1 gegen den gepinnten Forgejo-15-Container bestätigen). | W1 (Verifier), I0 (Registry) |
+| **D16-ADR-10** | Forgejo-Webhook-Signatur | `ForgejoSignatureVerifier` prüft HMAC-SHA256 (Hex, lowercase, ohne Präfix) über den **rohen** Body mit dem Verbindungs-Secret, Header-Reihenfolge `X-Forgejo-Signature` → `X-Gitea-Signature` → `X-Hub-Signature-256` (Präfix `sha256=`); Vergleich `CryptographicOperations.FixedTimeEquals`. Die Header-Map, die `IWebhookIngress` an den Verifier übergibt, ist **case-insensitiv** (`StringComparer.OrdinalIgnoreCase`, HTTP-Header-Semantik). **Fachlicher Dispatch-Schlüssel** ist der feine Ereignistyp aus `X-Forgejo-Event-Type` (Fallback `X-Gitea-Event-Type`); `X-Forgejo-Event` (Fallback `X-Gitea-Event`) ist nur die grobe Familie (z. B. `issues` für `issue_label`, `issue_comment` für `pull_request_comment`, §3.4.3). Idempotenz-Schlüssel `X-Forgejo-Delivery` (Fallback `X-Gitea-Delivery`). | Nur ein Header; Dispatch über `X-*-Event` | Forgejo ist Gitea-kompatibel und sendet die Gitea-/GitHub-kompatiblen Header mit (Gitea `services/webhook/deliver.go`: `X-Gitea-Signature` = HMAC-SHA256-Hex ohne Präfix, `X-Hub-Signature-256` = `sha256=`-Präfix; Familien-Abbildung `HookEventType.Event()` in Gitea `modules/webhook/type.go`, Zweig `release/v1.24`, im Review abgerufen). Für `X-Forgejo-Signature` (Hex ohne Präfix, zusätzlich `X-Gitea-Signature`/`X-Gogs-Signature`, `X-Hub-Signature-256` mit `sha256=`) gibt es im Review nur einen **mittelbaren** Beleg (Commit-Spiegel eines Forgejo-Derivats, Websuche 23.10.2026; forgejo.org/codeberg.org aus der Planungsumgebung nicht erreichbar) → ⚠ Bestätigung im Spike S-F2-1 gegen eine Test-Delivery des gepinnten Forgejo-15-Containers bleibt Pflicht. | W1 (Verifier), I0 (Registry) |
 | **D16-ADR-11** | Work-Item-Referenzen in Texten | Ein zentraler Dienst `IWorkItemReferenceResolver` (`Plane.WorkItems.Contracts`, CE-Pflicht ab I2) löst `<IDENTIFIER>-<sequence>` (case-insensitiv, Identifier ≤ 12 Zeichen wie `API/db/models/project.py` `identifier max_length=12`) innerhalb eines Workspace auf. Nutzer: F2 (Branch/PR/Commit), D6 (Mentions), H4 (MCP), B6 (PQL-Literale). Erkennungsmuster (Präfix-Schlüsselwörter, Branch-Konventionen) gehören **nicht** in die CE, sondern in das Paket. | Jedes Paket parst selbst | Eine Auflösungsregel (Archiv, Löschung, Gast-Sichtbarkeit) statt mehrerer; die CE nutzt sie selbst für `browse/:workItem` (`WEB/app/(all)/[workspaceSlug]/(projects)/browse/[workItem]/page.tsx`). | I2 |
 | **D16-ADR-12** | Aktor für Integrations-Aktionen | Schreibaktionen aus Integrationen laufen mit einem **Bot-Benutzer** je Verbindung (`users.is_bot = true`, `bot_type = "integration"`) oder – falls verknüpft – im Namen des verknüpften Plane-Nutzers; `ICurrentActor` im Worker wird aus `EventContext`/Job-Kontext gesetzt; `StateChangeOrigin.Integration`. Echo-Unterdrückung erkennt Änderungen dieses Aktors. | Systemaktor ohne Benutzerzeile | Activity, Notifications und Webhooks des Originals setzen immer einen Akteur voraus (`actor_id`); `is_bot` existiert im Original. | I0 (Feld), W1 |
-| **D16-ADR-13** | Sekrete der Pakete | Alle Verbindungs-Secrets (Forgejo-OAuth-Client-Secret, Webhook-Secret, Access-/Refresh-Tokens, Bot-Tokens) werden mit **ASP.NET Core Data Protection** (Purpose `Plane.Integrations.Secrets.v1`) verschlüsselt in `integration_secrets` gespeichert; Klartext nie in Logs, Activity oder API-Antworten. | Klartext-JSON in `config` (EE `app_config`) | D14-ADR-09 (Key-Ring in PostgreSQL); Schlüsselrotation ohne Re-Encryption-Skript. | I0 (Purpose reserviert), W1 |
+| **D16-ADR-13** | Sekrete der Pakete | Alle Secrets werden mit **ASP.NET Core Data Protection** verschlüsselt in `integration_secrets` gespeichert; Klartext nie in Logs, Activity oder API-Antworten. Purposes **wie D05 §6.1** (Rang D05 > D16): `Plane.Integrations.ConnectionSecret.v1` für Secrets einer Workspace-Verbindung (`oauth_client_secret`, `webhook_secret`, Access-/Refresh-Token der Verbindung, `bot_token`) und `Plane.Forgejo.UserToken.v1` für Tokens der **persönlichen** Konto-Verknüpfung (`user_integration_connections`). Konstanten in `IntegrationSecretPurposes` (§5.10). | Klartext-JSON in `config` (EE `app_config`); ein gemeinsamer Purpose | D14-ADR-09 (Key-Ring in PostgreSQL); Schlüsselrotation ohne Re-Encryption-Skript; getrennte Purposes verhindern, dass ein Nutzer-Token als Verbindungs-Secret entschlüsselt werden kann. | I0 (Purposes reserviert), W1 |
 | **D16-ADR-14** | Upsell-Stellen in der CE | Upsell-Elemente des Originals entfallen in der CE ersatzlos (ADR-001); die echte Funktion erscheint erst mit dem Paket über die Registries. Ausnahme, bereits in D08 (Routen-Zeile 11) entschieden: Workspace-Active-Cycles (EE-P05-022, Paket B4) wird in der CE (I3) aus CE-Bausteinen gebaut. Weitere Vorziehungen nur per Eintrag in §4.1. | Platzhalterseiten „kommt später“ | Ehrliche CE ohne tote Navigation; Paritätstests vergleichen CE-Screens ohne Upsell. | I0 |
-| **D16-ADR-15** | Original-`extended.ts`-Dateien | Die TS-Dateien des Originals, die genau als EE-Override-Punkt existieren, werden mit gleichem Pfad übernommen (Klasse V) und sind – neben je einer Registrierungszeile in `PlaneModuleCatalog` und `app.config.ts` (D16-ADR-04) und additiven Migrationen/Seeds – die **einzigen** CE-Dateien, die ein Paket-PR ändern darf, ausschließlich additiv (Liste und Prüfung §3.1, Absatz „D16-ADR-15“; §6.2 Punkt 4). | Alles per DI | TS-Unions sind nicht per DI erweiterbar; das Original nutzt genau diese Dateien. | I0 |
+| **D16-ADR-15** | Original-`extended.ts`-Dateien | Die TS-Dateien des Originals, die genau als EE-Override-Punkt existieren, werden mit gleichem Pfad übernommen (Klasse V) und sind – neben je einer Registrierungszeile in `PlaneModuleCatalog` und `app.config.ts` (D16-ADR-04), additiven Migrationen/Seeds und neuen Entitätsdateien in `Plane.Data` (D16-ADR-06) – die **einzigen** CE-Dateien, die ein Paket-PR ändern darf, ausschließlich additiv (Liste und Prüfung §3.1, Absatz „D16-ADR-15“; §6.2 Punkt 4). | Alles per DI | TS-Unions sind nicht per DI erweiterbar; das Original nutzt genau diese Dateien. | I0 |
 
 ---
 
@@ -134,11 +134,11 @@ Jede Paket-Andockstelle in §3.3 ist eine Instanz einer der folgenden Arten. Die
 | X13 | **Editor** | Client: `EDITOR_EXTENSIONS`, `EDITOR_BLOCKS`, `EDITOR_MENTION_TYPES`, `EDITOR_FLAGS`, `PAGE_PANE_EXTENSIONS`; Server: Schema aus DI-Sammlung `IEnumerable<IDocumentNodeSpec>`/`IDocumentMarkSpec` (eine Klasse je Tiptap-Extension, ADR-031) | `FE/libs/shared/editor`, `BE/documents/Plane.Documents/Schema/` | neue Nodes/Marks client- **und** serverseitig, Golden-Files je Node; Schema-Freeze (ADR-042) gilt nur für CE-Nodes | D10, D07 |
 | X14 | **Suche & Index** | `ISearchProvider`, `IIndexingPipeline`, `search_documents`, `IEmbeddingGenerator` (Null-Provider) | `Plane.Platform.Search`, `Plane.Platform.Ai` | weitere Entitätstypen indexieren, Provider tauschen (B6), Embeddings (G1) | D11 |
 
-**D16-ADR-15 (Ergänzung zu §2) – Original-`extended.ts`-Dateien.** Die TS-Dateien des Originals, die genau für EE-Erweiterungen existieren (abschließend, per `find apps packages -iname '*extended*'` am 23.10.2026 erhoben und um zwei gleichartige Dateien ergänzt: `PKG/types/src/page/extended.ts` (S51), `PKG/types/src/base-layouts/gantt/extended.ts` (S54), `PKG/types/src/rich-filters/derived/extended.ts`, `…/field-types/extended.ts`, `…/operator-configs/extended.ts`, `…/operators/extended.ts` (S55), `PKG/constants/src/rich-filters/operator-labels/extended.ts` (S55), `PKG/editor/src/types/editor-extended.ts` (S48), `PKG/types/src/issues/issue-property-values.ts` (S56), `WEB/store/pages/extended-base-page.ts` (S21), `WEB/components/workspace-notifications/notification-card/content.ts` (S20), `ADM/components/common/header/extended.ts` (S41). **Nicht** dazu gehören: `PKG/constants/src/auth/extended.ts`, `WEB/hooks/oauth/extended.tsx`, `SPC/hooks/oauth/extended.tsx` (entfallen, ADR-008), `ADM/providers/extended.tsx` (Lizenz-Provider, ADR-001), `WEB/app/routes/extended.ts` und `…/redirects/extended` (ersetzt durch `ROUTE_EXTENSIONS`), die React-Hooks `WEB/hooks/**/use-extended-*.ts`/`use-workspace-issue-properties-extended.tsx` (ersetzt durch Tokens `EDITOR_EXTENSIONS`, `WORKSPACE_ISSUE_PROPERTIES_EXTENDED`), die CE-Funktionsdateien `WEB/app/(all)/[workspaceSlug]/(projects)/extended-*.tsx`, `WEB/components/common/extended-app-header.tsx`, `WEB/components/workspace/sidebar/extended-sidebar-item.tsx`, `WEB/hooks/use-extended-sidebar-overview-outside-click.tsx` (CE-Funktion „erweiterte Sidebar“, normale Portierung), `LIVE/services/page/extended.service.ts` (ersetzt durch `ICollaborationDocumentType`), `API/utils/instance_config_variables/extended.py` (ersetzt durch `IInstanceConfigKeyProvider`, §3.3.0)), werden **1:1 mit gleichem Pfad** nach `FE/libs/shared/*` bzw. `FE/libs/web/*` übernommen (Klasse V) und sind neben den Registrierungszeilen (D16-ADR-04) die **einzigen** CE-Dateien, die Pakete ändern dürfen – ausschließlich additiv (neue Union-Mitglieder, Map-Einträge). Grund: Typ-Unions sind nicht per DI erweiterbar; das Original nutzt genau diese Dateien als Override-Punkt. Ein Lint-Check (`tools/ci/extended-files-check`) listet sie; jede andere Änderung an CE-Libs durch einen Paket-PR schlägt fehl.
+**D16-ADR-15 (Ergänzung zu §2) – Original-`extended.ts`-Dateien.** Die TS-Dateien des Originals, die genau für EE-Erweiterungen existieren (abschließend, per `find apps packages -iname '*extended*'` am 23.10.2026 erhoben und um zwei gleichartige Dateien ergänzt: `PKG/types/src/page/extended.ts` (S51), `PKG/types/src/base-layouts/gantt/extended.ts` (S54), `PKG/types/src/rich-filters/derived/extended.ts`, `…/field-types/extended.ts`, `…/operator-configs/extended.ts`, `…/operators/extended.ts` (S55), `PKG/constants/src/rich-filters/operator-labels/extended.ts` (S55), `PKG/editor/src/types/editor-extended.ts` (S48), `PKG/types/src/issues/issue-property-values.ts` (S56), `WEB/store/pages/extended-base-page.ts` (S21), `WEB/components/workspace-notifications/notification-card/content.ts` (S20). **Nicht** dazu gehören: `ADM/components/common/header/extended.ts` (S41; ersetzt durch Token `ADMIN_HEADER_SEGMENT_LABELS` in `libs/admin/extensions`, D08 §6.1 – Rang D08 > D16), `PKG/constants/src/auth/extended.ts`, `WEB/hooks/oauth/extended.tsx`, `SPC/hooks/oauth/extended.tsx` (entfallen, ADR-008), `ADM/providers/extended.tsx` (Lizenz-Provider, ADR-001), `WEB/app/routes/extended.ts` und `…/redirects/extended` (ersetzt durch `ROUTE_EXTENSIONS`), die React-Hooks `WEB/hooks/**/use-extended-*.ts`/`use-workspace-issue-properties-extended.tsx` (ersetzt durch Tokens `EDITOR_EXTENSIONS`, `WORKSPACE_ISSUE_PROPERTIES_EXTENDED`), die CE-Funktionsdateien `WEB/app/(all)/[workspaceSlug]/(projects)/extended-*.tsx`, `WEB/components/common/extended-app-header.tsx`, `WEB/components/workspace/sidebar/extended-sidebar-item.tsx`, `WEB/hooks/use-extended-sidebar-overview-outside-click.tsx` (CE-Funktion „erweiterte Sidebar“, normale Portierung), `LIVE/services/page/extended.service.ts` (ersetzt durch `ICollaborationDocumentType`), `API/utils/instance_config_variables/extended.py` (ersetzt durch `IInstanceConfigKeyProvider`, §3.3.0)), werden **1:1 mit gleichem Pfad** nach `FE/libs/shared/*` bzw. `FE/libs/web/*` übernommen (Klasse V) und sind neben den Registrierungszeilen (D16-ADR-04) und den neuen Dateien/generierten Snapshots in `Plane.Data` (D16-ADR-06) die **einzigen** CE-Dateien, die Pakete ändern dürfen – ausschließlich additiv (neue Union-Mitglieder, Map-Einträge). Grund: Typ-Unions sind nicht per DI erweiterbar; das Original nutzt genau diese Dateien als Override-Punkt. Ein Lint-Check (`tools/ci/extended-files-check`) listet sie; jede andere Änderung an CE-Libs durch einen Paket-PR schlägt fehl.
 
 ### 3.2 Querschnitts-Reservierungen
 
-Alle Reservierungen liegen maschinenlesbar in `BE/building-blocks/Plane.BuildingBlocks/Extensions/Reservations.cs` (C#-Konstanten) und `funk./docs/extensions/reservations.yaml` (gleiche Inhalte, für Frontend-/CI-Checks). Der Test `ReservationCollisionTests` (I0) prüft: keine CE-Permission, keine CE-Route, kein CE-Activity-Feld, keine CE-Queue und kein CE-Event-Typ kollidiert mit einer Reservierung.
+Alle Reservierungen liegen maschinenlesbar in `BE/building-blocks/Plane.BuildingBlocks/Extensions/Reservations.cs` (C#-Konstanten) und `funk./docs/extensions/reservations.yaml` (gleiche Inhalte, für Frontend-/CI-Checks). Der Test `ReservationCollisionTests` (I0) prüft: keine CE-Permission, keine CE-Route, kein CE-Activity-Feld, keine CE-Queue und kein CE-Event-Typ kollidiert mit einer Reservierung. **Verhältnis zu D05:** Für Permission-Keys ist `ReservedPermissionKeys` (`Plane.Authorization.Contracts`, D05 §6.1, Architekturtests 2 und `ReservedKeysUnusedInCe`) der C#-Ort; `Reservations.PermissionPrefixes` verweist darauf (`= ReservedPermissionKeys.Prefixes`), damit es genau eine Liste gibt. `ReservedPermissionKeys` muss deshalb **alle** Präfixe aus §3.2.1 enthalten (D05 nennt bisher nur eine Teilmenge – Ergänzungsauftrag an D05, §9).
 
 #### 3.2.1 Permission-Namensräume (Klasse R)
 
@@ -177,12 +177,12 @@ Key-Schema `<ebene>.<ressource>.<aktion>` (D05 §3.13.2). Die CE nutzt 258 Keys 
 | `workspace.database.` | D10 | – |
 | `workspace.page_analytics.` | D11 | – |
 | `instance.scim.`, `workspace.group_sync.` | E3 | – |
-| `workspace.role.`, `project.role.`, `workspace.permission_scheme.` | E5 | – |
+| `workspace.role.`, `project.role.`, `workspace.permission_scheme.`; Einzel-Key `project.work_item.read_all` | E5 | Einzel-Key aus D05 §6.1/§6.3 (Gast-Sichtbarkeit als Grant statt Level-Prädikat), in der CE unbenutzt |
 | `workspace.audit_log.`, `workspace.activity_log.` | E6 | – |
 | `instance.user.`, `instance.session_settings.`, `instance.system_check.`, `instance.organization.` | E7 | – |
 | `workspace.pii.` | E8 | – |
 | `workspace.integration.`, `user.integration_connection.`, `project.integration_mapping.` | F1 | gemeinsam für alle Provider |
-| `workspace.forgejo.`, `project.forgejo.` | F2 | provider-spezifische Aktionen (z. B. Importer) |
+| `workspace.forgejo.`, `project.forgejo.`, `workspace.forgejo_connection.`, `project.forgejo_mapping.` | F2 | provider-spezifische Aktionen (z. B. Importer); die beiden letzten Präfixe stammen aus D05 §6.1 und werden hier übernommen (ohne sie wäre `workspace.forgejo_connection.read` nicht durch `workspace.forgejo.` gedeckt) |
 | `workspace.ai.`, `project.ai_search.` | G1 | nicht gewählt, trotzdem reserviert |
 | `workspace.app.`, `workspace.app_installation.`, `user.app_authorization.` | H1 | – |
 | `workspace.agent_run.` | H2 | – |
@@ -273,7 +273,7 @@ Pakete (C3, E6, F2, G1, H3, H6, A12, A14, B7) hängen an diesen Ereignissen. Nam
 | Intake | `plane.intake_work_item.created`, `.status_changed` | I3 | A15, C3, G1 |
 | Page | `plane.page.created`, `.updated`, `.description_updated`, `.archived`, `.deleted`, `.moved` (reserviert D2) | I4 | D1, D2, D8, D11, G1, H6 |
 | View | `plane.view.created`, `.updated`, `.deleted` | I3 | B5 |
-| Benutzer / Session | `plane.user.provisioned`, `plane.user.deactivated`, `plane.user.logged_in` | I0/I1 | E3, E6, E7 |
+| Benutzer / Session (Namensraum `plane.identity.` wie D05 §3.17.8) | `plane.identity.user_provisioned` (nach jeder Provisioning-Kette mit `is_new_user`), `plane.identity.user_deactivated` (CE-PROF-005), `plane.identity.user_disabled_in_idp` (D05 `IdpUserStateSyncJob`); Sicherheitsereignisse `plane.identity.<ereignis>` (Login, Logout, Session-Revoke, D05 §3.17.8) nur bei `Plane:Audit:Enabled=true` (Default `false`) | I0/I1 | E3, E6, E7 |
 | Instanz | `plane.instance_configuration.updated` | I1 | E7 |
 
 Reservierte Event-Namensräume für Pakete (Klasse R): `plane.work_item_type.`, `plane.work_item_property.`, `plane.epic.`, `plane.initiative.`, `plane.milestone.`, `plane.release.`, `plane.customer.`, `plane.worklog.`, `plane.teamspace.`, `plane.dashboard.`, `plane.workflow.`, `plane.automation.`, `plane.collection.`, `plane.role.`, `plane.audit.`, `plane.integration.`, `plane.forgejo.`, `plane.app.`, `plane.agent_run.`.
@@ -355,7 +355,7 @@ Spalten: **DM** Datenmodell · **EV** Events · **PERM** Permission-Katalog · *
 | **A6** Releases (W6) | `Plane.Releases` · `FE/libs/web/releases` | **DM:** S; Release-Labels über Label-Scope `release` (S39) im `ILabelCatalog`. **EV:** R. **PERM:** R. **QE:** S. **UI:** `ROUTE_EXTENSIONS` (`LWS`), `SIDEBAR_ITEMS`, `SETTINGS_PAGES`, `PROPERTY_RENDERERS` (Release-Picker). **API:** R. **JOB:** – | nein – S | D08 |
 | **A7** Customers (W7) | `Plane.Customers` · `FE/libs/web/customers` | **DM:** S; Customer-Properties über die A1-Property-Engine (Owner-Typ wird im A1-Fachdesign festgelegt); V `display_properties` (jsonb) reicht unbekannte Schlüssel unverändert durch (Seed-Schlüssel `customer_count`, `customer_request_count`, `API/bgtasks/workspace_seed_task.py` Z. 145–164). **EV:** R. **PERM:** R. **QE:** S Filter-/Spaltenfelder. **UI:** `ROUTE_EXTENSIONS`, `SIDEBAR_ITEMS`, `WORKSPACE_FEATURES` (`customers`), `WORK_ITEM_DETAIL_WIDGETS`, `SPREADSHEET_COLUMNS`. **API:** R. **JOB:** – | nein – S | D03, D08 |
 | **A8** Bulk Ops, Transfers, projektübergreifende Kopien (W2) | `Plane.WorkItems` (`Extensions/BulkOps/`) · `FE/libs/web/work-items` (`extensions/bulk-ops/`) | **DM:** – (S optional Herkunftsfeld `copied_from_id`). **EV:** R `plane.work_item.moved`; Bulk erzeugt je Item die CE-Events. **PERM:** R `project.work_item.bulk_*`, `…copy_cross_project`, `…move_cross_project`. **QE:** – (Auswahl = ID-Liste). Pipeline: P `IWorkItemStateChanger` (C1) für jeden State-Wechsel, `IActivityRecorder`. **UI:** P `BULK_OPERATIONS_ENABLED` (S8), `WORK_ITEM_ACTIONS` (S65 `createCopyMenuWithDuplication`); V `bulkUpdateProperties` im Store (`WEB/store/issue/helpers/base-issues.store.ts` Z. 718–753) und Service-URL. **API:** R `…/bulk-operation-issues/`, `…/duplicate/`, `…/transfer/`. **JOB:** S Queue `exports`/Default für große Bulks | nein – S (Token P) | D02, D08 |
-| **A9** Relationen & Abhängigkeiten (W2, 🧱) | `Plane.WorkItems` (`Relations/`) · `FE/libs/web/work-items` | **DM:** P Katalog `work_item_relation_types` (10 Seeds §5.3), `work_item_relations.relation_type` referenziert Katalogschlüssel, Relationen **projektübergreifend** zulässig (nur `workspace_id` gleich); S Workspace-eigene Typen (`workspace_id` gesetzt, `is_system=false`). **EV:** P `plane.work_item.relation_added/.relation_removed`. **PERM:** R `workspace.relation_type.*`. **QE:** P Relationsfelder registry-fähig, `expand=issue_relation,issue_related` katalogbasiert (E-07 `IExpandProvider`); P E-05 `IWorkItemHierarchyPolicy`. **UI:** P `RELATION_TYPES` (CE: 4 aus `ISSUE_RELATION_OPTIONS`, S29), `TIMELINE_FLAGS` (S63 `isDependencyEnabled=false`), Gantt-Slot `ganttDependencyLayer`. **API:** V CE-Backend akzeptiert alle 10 Original-Werte (`IssueRelationChoices`), R `…/dependencies/`, `workspaces/{slug}/relation-types/`. **JOB:** S abhängige Verschiebung | **ja – P, I2** | D02 §6, D03, D08 §6.4 |
+| **A9** Relationen & Abhängigkeiten (W2, 🧱) | `Plane.WorkItems` (`Relations/`) · `FE/libs/web/work-items` | **DM:** P Katalog `work_item_relation_types` (10 Seeds §5.3), `work_item_relations.relation_type` referenziert Katalogschlüssel, Relationen **projektübergreifend** zulässig (nur `workspace_id` gleich); S Workspace-eigene Typen (`workspace_id` gesetzt, `is_system=false`). **EV:** P `plane.work_item.relation_added/.relation_removed`. **PERM:** R `workspace.relation_type.*`. **QE:** P Relationsfelder registry-fähig, `expand=issue_relation,issue_related` katalogbasiert (E-07 `IExpandProvider`); P E-05 `IWorkItemHierarchyPolicy`. **PERM:** P Regel-Hook `IRelatedScopeCheck` (D05 §6.1: CE verlangt `project.work_item.read` im Projekt jedes referenzierten Work Items bei `POST …/issue-relation/` und Sub-Item-Zuordnung). **UI:** P `RELATION_TYPES` (CE: 4 aus `ISSUE_RELATION_OPTIONS`, S29), `TIMELINE_FLAGS` (S63 `isDependencyEnabled=false`), Gantt-Slot `ganttDependencyLayer`. **API:** V CE-Backend akzeptiert alle 10 Original-Werte (`IssueRelationChoices`), R `…/dependencies/`, `workspaces/{slug}/relation-types/`. **JOB:** S abhängige Verschiebung | **ja – P, I2** | D02 §6, D03, D08 §6.4 |
 | **A10** Time Tracking, Worklogs, Timesheets (W2) | `Plane.TimeTracking` · `FE/libs/web/time-tracking` | **DM:** V `projects.is_time_tracking_enabled`; S `worklogs`, `timesheet_approvals`. **EV:** R `plane.worklog.*`. **PERM:** R. **QE:** S Spalte „Tracked time“ (`IOrderKeyProvider`, `IWorkItemPayloadExtension`). **UI:** `WORK_ITEM_DETAIL_WIDGETS` (Worklogs-Tab), `ACTIVITY_RENDERERS` (`worklog`), `SETTINGS_PAGES` (Workspace „Worklogs“), `SPREADSHEET_COLUMNS`, `PROJECT_FEATURES`; V Benachrichtigungs-Map (S20). **API:** R. **JOB:** P E-16 `IExportTypeProvider` (`issue_worklogs`) | nein – S | D06, D08 |
 | **A11** Advanced Estimates (W2) | `Plane.Projects` (`Extensions/Estimates/`) · `FE/libs/web/project-settings` | **DM:** V `estimates.type` kennt `time` (Original `EEstimateSystem.TIME`). **UI:** P E-14 `ESTIMATE_SYSTEM_FLAGS` (statt S26), V `case TIME` in `estimates/inputs/root.tsx` (S27), `onEditClick` (S28). **API:** V Estimate-Endpunkte; S Systemwechsel-Endpunkt. **EV/PERM/QE/JOB:** – (CE-Keys `project.estimate.*`) | nein – S (Token P) | D08 |
 | **A12** Module Overview & Auto-Assignment (W6) | `Plane.ProjectModules` (`Extensions/`) · `FE/libs/web/modules` | **DM:** S `module_assignment_rules`. **EV:** P Konsum `plane.work_item.module_changed`, `.created`. **PERM:** R. **UI:** `ROUTE_EXTENSIONS` (`LPRJ`, Modul-Overview), P E-14 `ENTITY_QUICK_ACTIONS` (`module`). **API:** R. **JOB:** S | nein – S | D06, D08 |
@@ -369,12 +369,12 @@ Spalten: **DM** Datenmodell · **EV** Events · **PERM** Permission-Katalog · *
 
 | Paket | Ziel-Modul (BE · FE) | Andockstellen | CE-Pflicht? | Dok. |
 |---|---|---|---|---|
-| **B1** Teamspaces (W5, 🧱) | `Plane.Teamspaces` (+ `.Contracts` schon in CE) · `FE/libs/web/teamspaces` | **DM:** P `ScopeLevel.Teamspace`; P nullable `teamspace_id` (ohne FK, Index) in `issue_views`, `pages`, `work_item_comments` (01 §1.4) und `user_favorites` (Favoriten auf Teamspaces/Teamspace-Views); S `teamspaces`, `teamspace_members`, `teamspace_projects`, `teamspace_updates`; das Legacy-Modell `Team` (`API/db/models/workspace.py` Z. 261) wird **nicht** portiert. **EV:** R `plane.teamspace.*`; P Konsum `plane.project_member.*`. **PERM:** P Ebene `teamspace` im Katalog-Validator, `IScopeResolver` (CE: Teamspace → `NotSupported`), `IVisibilityFilter<T>` mit `ScopeRef`, `PERMISSION_EVALUATOR`/`SCOPE_LEVELS`. **QE:** S Basismenge „Teamspace-Work-Items“ über E-04; P `GROUP_BY_OPTIONS` (`team_project`). **UI:** P `ROUTE_EXTENSIONS` (`LWS`), `SIDEBAR_ITEMS`, `PAGE_STORES`, `FAVORITE_ENTITY_RENDERERS`, `WORKSPACE_FEATURES` (`teams`); V `RouterStore.teamspaceId`, Team-Stores im `IssueRootStore` (`teamIssues`, `teamViewIssues`, `teamProjectWorkItems`, S23), Dropdown-Inputs `teamspaceId`/`scopedProjectIds` (S39, optional, ignoriert). **API:** R `workspaces/{slug}/teamspaces/`; P Scope-Binder kennt `teamspace_id` (D02 §6). **JOB:** R Realtime-Gruppe `teamspace:{id}`; S Dokumenttyp `teamspace_page` (E-10) | **ja – P, I0 (Scope/Router), I1 (Schema/Permissions), I2 (Stores)** | D02 §6, D03, D05, D08 §6.4 |
+| **B1** Teamspaces (W5, 🧱) | `Plane.Teamspaces` (+ `.Contracts` schon in CE) · `FE/libs/web/teamspaces` | **DM:** P `ScopeLevel.Teamspace`; P nullable `teamspace_id` (ohne FK, Index) in `issue_views`, `pages`, `work_item_comments` (01 §1.4) und `user_favorites` (Favoriten auf Teamspaces/Teamspace-Views); S `teamspaces`, `teamspace_members`, `teamspace_projects`, `teamspace_updates`; das Legacy-Modell `Team` (`API/db/models/workspace.py` Z. 261) wird **nicht** portiert. **EV:** R `plane.teamspace.*`; P Konsum `plane.project_member.*`. **PERM:** P Ebene `teamspace` im Katalog-Validator, `roles.namespace` akzeptiert `teamspace` (D05 §6.1), `IScopeResolver` (CE: Teamspace → `NotSupported`), `IVisibilityFilter<T>` mit `ScopeRef` und komponierbar über `CompositeVisibilityFilter<T>` (D05 §6.1), `PERMISSION_EVALUATOR`/`SCOPE_LEVELS`. **QE:** S Basismenge „Teamspace-Work-Items“ über E-04; P `GROUP_BY_OPTIONS` (`team_project`). **UI:** P `ROUTE_EXTENSIONS` (`LWS`), `SIDEBAR_ITEMS`, `PAGE_STORES`, `FAVORITE_ENTITY_RENDERERS`, `WORKSPACE_FEATURES` (`teams`); V `RouterStore.teamspaceId`, Team-Stores im `IssueRootStore` (`teamIssues`, `teamViewIssues`, `teamProjectWorkItems`, S23), Dropdown-Inputs `teamspaceId`/`scopedProjectIds` (S39, optional, ignoriert). **API:** R `workspaces/{slug}/teamspaces/`; P Scope-Binder kennt `teamspace_id` (D02 §6). **JOB:** R Realtime-Gruppe `teamspace:{id}`; S Dokumenttyp `teamspace_page` (E-10) | **ja – P, I0 (Scope/Router), I1 (Schema/Permissions), I2 (Stores)** | D02 §6, D03, D05, D08 §6.4 |
 | **B2** Dashboards & Widgets (W5) | `Plane.Dashboards` · `FE/libs/web/dashboards` | **DM:** S. **EV:** R. **PERM:** R. **QE:** P (B6) Widget-Quellen als Filter-AST; S Aggregations-Queries im eigenen Modul (Lesen über `IWorkItemQueryService`). **UI:** `ROUTE_EXTENSIONS` (`LWS`), `SIDEBAR_ITEMS` (Original S32 „Dashboards“), V Chart-Bausteine `FE/libs/shared/blocks/charts` (ADR-044), `EDITOR_BLOCKS` (Widget-Embed in Pages, P05-13). **API:** R. **JOB:** – | nein – S | D08, D09 |
 | **B3** Analytics-Erweiterungen, Reports, Time Capsule (W5) | `Plane.Analytics` (`Extensions/`) · `FE/libs/web/analytics` | **DM:** V `cycles.progress_snapshot`; S Report-Definitionen, Snapshots. **EV:** P Konsum Work-Item-Events. **UI:** V Store-Override `BaseAnalyticsStore` (D08 §6.3) für zusätzliche Tabs. **API:** R `reports/`, `insights/`. **JOB:** R Queue `snapshots` | nein – S | D08 |
 | **B4** Cycle-Erweiterungen (W5) | `Plane.Cycles` (`Extensions/`) · `FE/libs/web/cycles` | **DM:** V `cycles.progress_snapshot`. **QE:** –. **Pipeline:** P E-15 `ICycleSchedulingPolicy`; P `IWorkItemStateChanger` (Auto-Rollover). **UI:** P E-14 `CYCLE_FLAGS`, `ENTITY_QUICK_ACTIONS` (`cycle`); Workspace-Active-Cycles bereits CE (D16-ADR-14). **API:** R `…/cycle-progress/` (Original-Frontend `workspaceActiveCyclesProgressPro`). **JOB:** `IRecurringJobRegistry` (Auto-Schedule, Auto-Rollover); Teamspace-Cycles setzt B1 voraus | nein – S (Policy/Flags P) | D02, D08 |
-| **B5** Shared Views und Publish Views (W5) | `Plane.Views`, `Plane.PublicSpace` (`Extensions/`) · `FE/libs/web/views`, `FE/libs/space/views` | **DM:** V Deploy-Board-Typ `view` (`API/db/models/deploy_board.py` Z. 20–28); S `view_shares`. **PERM:** R; P `IVisibilityFilter<View>` (geteilte Views). **UI:** `ROUTE_EXTENSIONS` (`SPC_ROOT` im Space), `ENTITY_QUICK_ACTIONS` (`view`). **API:** R. **JOB:** – | nein – S | D05, D08 |
-| **B6** Erweiterte Filter, PQL, Advanced Search (W5, 🧱) | `Plane.WorkItems` (`Query/Parsing/PqlParser`), `Plane.Search` · `FE/libs/web/work-items` (`rich-filters`) | **DM:** –. **QE:** P Filter-AST als einzige Abfragesprache, `IFilterParser`-Liste (`legacy`, `rich`), erweiterbarer Operator-Katalog (`FilterOperator` + Compiler-`default → invalid_filterset`), P Ablehnung der v1-Parameter `pql`/`filters` (Original `API/api/views/issue.py` Z. 324–335, Antwort `{"pql": "…", "unsupported_parameters": […]}`) **über die Bindungs-Registry** `IV1FilterParameterBinding` (CE leer → Original-400; B6 registriert Bindungen), P `ISearchProvider`. **UI:** P `FILTER_OPERATORS` (CE `CORE_OPERATORS`, `allowNegative: false`, S18), `FILTER_FIELDS`, Slot `filterInputMode` in `WorkItemFiltersRow` (S19), `SEARCH_RESULT_RENDERERS`; V Rich-Filter-`extended.ts` (S55). **API:** R `pql/`, `advanced-search/`. **JOB:** R Queue `indexing`. Text-to-PQL (EE-P05-032) entfällt ohne G1 | **ja – P, I2 (AST), I5 (Suche)** | D02 §3.11, D11, D08 |
+| **B5** Shared Views und Publish Views (W5) | `Plane.Views`, `Plane.PublicSpace` (`Extensions/`) · `FE/libs/web/views`, `FE/libs/space/views` | **DM:** V Deploy-Board-Typ `view` (`API/db/models/deploy_board.py` Z. 20–28); S `view_shares`. **PERM:** R; P `IVisibilityFilter<View>` (geteilte Views). **UI:** `SPACE_ROUTE_EXTENSIONS` (`SPC_ROOT`/`SPC_ANCHOR`, `libs/space/extensions`, D08 §6.1), `ENTITY_QUICK_ACTIONS` (`view`). **API:** R. **JOB:** – | nein – S | D05, D08 |
+| **B6** Erweiterte Filter, PQL, Advanced Search (W5, 🧱) | `Plane.WorkItems` (`Query/Parsing/PqlParser`), `Plane.Search` · `FE/libs/web/work-items` (`rich-filters`) | **DM:** –. **QE:** P Filter-AST als einzige Abfragesprache, `IFilterParser`-Liste (`legacy`, `rich`), erweiterbarer Operator-Katalog (`FilterOperator` + Compiler-`default → invalid_filterset`), P Ablehnung der v1-Parameter `pql`/`filters` (Original `API/api/views/issue.py` Z. 324–335, Antwort `{"pql": "…", "unsupported_parameters": […]}`) **über die Bindungs-Registry** `IV1FilterParameterBinding` (CE leer → Original-400; B6 registriert Bindungen), P `ISearchProvider`; P Pflicht „Sichtbarkeit nach AST“: jede Query-Engine-Ausführung wendet `IVisibilityFilter<WorkItem>` **nach** dem Filter-AST an (Architekturtest `WorkItemQueriesApplyVisibility`, D05 §6.1) – auch für künftige Parser. **UI:** P `FILTER_OPERATORS` (CE `CORE_OPERATORS`, `allowNegative: false`, S18), `FILTER_FIELDS`, Slot `filterInputMode` in `WorkItemFiltersRow` (S19), `SEARCH_RESULT_RENDERERS`; V Rich-Filter-`extended.ts` (S55). **API:** R `pql/`, `advanced-search/`. **JOB:** R Queue `indexing`. Text-to-PQL (EE-P05-032) entfällt ohne G1 | **ja – P, I2 (AST), I5 (Suche)** | D02 §3.11, D11, D08 |
 | **B7** Scheduled Comms (W7) | `Plane.ScheduledComms` · `FE/libs/web/scheduled-comms` | **DM:** S. **EV:** P Konsum. **JOB:** R Queue `scheduled_comms`, `IRecurringJobRegistry`; V `IMailSender` + Fluid-Templates (ADR-027). **UI:** `SETTINGS_PAGES`. **API:** R | nein – S | D06 |
 | **B8** Home-/Navigations-Erweiterungen, Product Tour (W7) | `Plane.Home` (`Extensions/`) · `FE/libs/web/home` | **UI:** P E-14 `HOME_WIDGETS`; `SIDEBAR_ITEMS`; V i18n-Namespace `tour` (Locales 1:1), `SidebarUserMenu` (S32). **DM:** S Tour-Status im Profil (`profiles` jsonb). **Sonst:** – | nein – S (Token P) | D08 |
 
@@ -382,7 +382,7 @@ Spalten: **DM** Datenmodell · **EV** Events · **PERM** Permission-Katalog · *
 
 | Paket | Ziel-Modul (BE · FE) | Andockstellen | CE-Pflicht? | Dok. |
 |---|---|---|---|---|
-| **C1** Workflows (nicht gewählt, 🧱) | `Plane.Workflows` (später) · `FE/libs/web/workflows` | **Pipeline:** P `IWorkItemStateChanger` mit `IStateTransitionGuard`/`IStateTransitionHook`, `StateChangeOrigin` (`User`, `PublicApi`, `Intake`, `CycleTransfer`, `AutoClose`, `AutoArchive`, `Integration`, `Automation`); **alle** State-Wechsel (App, v1, Intake-Annahme, Cycle-Transfer, Auto-Close/-Archive, Bulk, Forgejo) laufen hindurch; Architekturtest: kein Schreiben von `WorkItem.StateId` außerhalb `WorkItemStateChanger`. **Fehler:** P Fehlercode `invalid_state_transition` (400) generisch im Frontend-Toast. **DM:** S. **PERM:** R `project.workflow.*`. **UI:** P `WORKFLOW_GUARD` (S5), `PlBlkStateSelect.allowedStateIds` (D09), `ACTIVITY_RENDERERS` (`workflow`), `PROJECT_FEATURES` (`is_workflow_enabled`). **API:** R `…/workflows/`. **JOB:** – | **ja – P, I2** | D02 §6, D08 §6.4, D09 |
+| **C1** Workflows (nicht gewählt, 🧱) | `Plane.Workflows` (später) · `FE/libs/web/workflows` | **Pipeline:** P `IWorkItemStateChanger` mit `IStateTransitionGuard`/`IStateTransitionHook`, `StateChangeOrigin` (`User`, `PublicApi`, `Intake`, `CycleTransfer`, `AutoClose`, `AutoArchive`, `Integration`, `Automation`); **alle** State-Wechsel (App, v1, Intake-Annahme, Cycle-Transfer, Auto-Close, Bulk, Forgejo) laufen hindurch; `AutoArchive` bleibt als Enum-Wert (01 §5.5) reserviert, erzeugt in der CE aber **keinen** State-Wechsel (Original `API/bgtasks/issue_automation_task.py` `archive_old_issues` setzt nur `archived_at`; `close_old_issues` setzt den State); Architekturtest: kein Schreiben von `WorkItem.StateId` außerhalb `WorkItemStateChanger`. **Fehler:** P Fehlercode `invalid_state_transition` (400) generisch im Frontend-Toast. **DM:** S. **PERM:** R `project.workflow.*`. **UI:** P `WORKFLOW_GUARD` (S5), `PlBlkStateSelect.allowedStateIds` (D09), `ACTIVITY_RENDERERS` (`workflow`), `PROJECT_FEATURES` (`is_workflow_enabled`). **API:** R `…/workflows/`. **JOB:** – | **ja – P, I2** | D02 §6, D08 §6.4, D09 |
 | **C3** Automation-Engine (nicht gewählt, 🧱) | `Plane.Automations` (später) · `FE/libs/web/automations` | **EV:** P versionierter Event-Katalog (§3.2.4), transaktionale Outbox, `IEventConsumer<T>` + Inbox, `IJobScheduler`, `IRecurringJobRegistry`, Event-Katalog-Snapshot-Test, `EventContext` mit `ActorId`/`Origin`/`CorrelationId`; Rekursionsschutz: `EventContext.CausationDepth` (CE setzt 0, Consumer erhöhen; > 5 → verwerfen + Log). **Pipeline:** `StateChangeOrigin.Automation`. **PERM:** R. **UI:** `SETTINGS_PAGES`, `ACTIVITY_RENDERERS` (Aktor „Automation“). **JOB:** R Queue `automations`; Scripting (C4) nur später mit Jint-Sandbox | **ja – P, I0 (Gerüst), I1 (produktiv)** | D02 §3.2/§6, D06, D14 §6.1 |
 
 #### 3.3.4 D – Wissen: Pages & Wiki
@@ -406,25 +406,25 @@ Spalten: **DM** Datenmodell · **EV** Events · **PERM** Permission-Katalog · *
 
 | Paket | Ziel-Modul (BE · FE) | Andockstellen | CE-Pflicht? | Dok. |
 |---|---|---|---|---|
-| **E3** IdP Group Sync, SCIM (W4, 🧱) | `Plane.Identity` (`Provisioning/Steps/GroupSync…`), `Plane.Scim` · `FE/libs/admin/group-sync` | **Identity:** P `PlanePrincipal.Groups` aus Claim `groups` (Client-Scope `plane-groups`, D14 §3.3.2), P `IUserProvisioningStep`-Kette mit freiem Slot `Order = 750` (D05 §3.7.3), V `AccountStateGuardStep` aktiviert vorprovisionierte Konten (`is_active=false`, `last_logout_time = null`). **DM:** S `group_role_mappings`. **EV:** P `plane.user.provisioned`. **PERM:** R. **UI:** P `ADMIN_SETTINGS_PAGES`, `MEMBER_ROW_DECORATORS` („synced“-Badge). **API:** R `/api/scim/v2/` (eigenes Schema `ScimBearer`, keine Session). **JOB:** S periodischer Abgleich über Keycloak-Admin-API | **ja – P, I0 (Claims/Pipeline), I1 (UI)** | D05 §3.7/§6, D14 §6.1, D08 |
-| **E5** Rollenmodell RBAC/Custom Roles/GAC (W4, 🧱) | `Plane.Authorization` · `FE/libs/web/core/permissions`, `FE/libs/web/roles` | **PERM:** P Katalog (258 CE-Keys, eingefroren per Snapshot), `roles` (System-Seeds 20/15/5, `is_system`), `role_permissions` (CE leer, für Custom Roles), `workspace_members.role_id`/`project_members.role_id`, API liefert `role: 20│15│5` (= `roles.level`), `IRoleDefinitionProvider` (`SystemRoleProvider`), E-09 `ISystemRoleGrantContributor`, `IPermissionEvaluator`, `IVisibilityFilter<T>`, Analyzer `PLANE0001` (keine Rollenzahlen außerhalb `SystemRoles`). **UI:** P `PermissionService.allowPermissions(...)` als einzige Prüf-API, `PERMISSION_EVALUATOR`, `ROLE_OPTIONS`, `SETTINGS_PAGES`. **API:** R `permissions/me/`, `roles/`, `permission-schemes/`. **EV:** P `plane.project_member.*`, `plane.workspace_member.*` | **ja – P, I0** | D05 §3.13/§6, D02 §6, D08 §6.4 |
+| **E3** IdP Group Sync, SCIM (W4, 🧱) | `Plane.Identity` (`Provisioning/Steps/GroupSync…`), `Plane.Scim` · `FE/libs/admin/group-sync` | **Identity:** P `PlanePrincipal.Groups` aus Claim `groups` (Client-Scope `plane-groups`, D14 §3.3.2), P `IUserProvisioningStep`-Kette mit freiem Slot `Order = 750` (D05 §3.7.3), V `AccountStateGuardStep` aktiviert vorprovisionierte Konten (`is_active=false`, `last_logout_time = null`). P In-Process-Ereignis `IdentityClaimsChanged(userId, oldGroups, newGroups)` aus dem `SessionRevalidator` (D05 §6.2, CE ohne Konsument), P `MembershipSource` (`Invitation`│`Manual`│`IdpSync`) an `IWorkspaceMembershipService`/`IProjectMembershipService.AddOrActivateAsync` (D05 §6.2). **DM:** S `idp_group_mappings` (Name wie D05 §6.2). **EV:** P `plane.identity.user_provisioned`. **PERM:** R. **UI:** P `ADMIN_SETTINGS_PAGES`, `ADMIN_ROUTE_EXTENSIONS` (`ADM_DASHBOARD`, D08 §6.1), `MEMBER_ROW_DECORATORS` („synced“-Badge). **API:** R `/api/scim/v2/` (eigenes Schema `ScimBearer`, keine Session). **JOB:** S periodischer Abgleich über Keycloak-Admin-API | **ja – P, I0 (Claims/Pipeline), I1 (UI)** | D05 §3.7/§6, D14 §6.1, D08 |
+| **E5** Rollenmodell RBAC/Custom Roles/GAC (W4, 🧱) | `Plane.Authorization` · `FE/libs/web/core/permissions`, `FE/libs/web/roles` | **PERM:** P Katalog (258 CE-Keys, eingefroren per Snapshot `SystemRolePermissionsSnapshotTests`), `roles` (sechs System-Rollen `workspace.admin/member/guest`, `project.admin/member/guest` mit Level 20/15/5, `is_system`, Grants aus `SystemRoleGrants.g.cs`, D05 §3.13.3), `role_permissions` (CE leer, für Custom Roles), `workspace_members.role_id`/`project_members.role_id`, API liefert `role: 20│15│5` (= `roles.level`), `IRoleDefinitionProvider` (`SystemRoleProvider`), E-09 `ISystemRoleGrantContributor`, `IPermissionEvaluator`, `IVisibilityFilter<T>`, Analyzer `PLANE0001` (keine Rollenzahlen außerhalb `SystemRoles`). **UI:** P `PermissionService.allowPermissions(...)` als einzige Prüf-API, `PERMISSION_EVALUATOR`, `ROLE_OPTIONS`, `SETTINGS_PAGES`. **API:** R `permissions/me/`, `roles/`, `permission-schemes/`. **EV:** P `plane.project_member.*`, `plane.workspace_member.*` | **ja – P, I0** | D05 §3.13/§6, D02 §6, D08 §6.4 |
 | **E6** Admin Interface, Activity Logs, Audit Logs (W4) | `Plane.Audit` · `FE/libs/web/audit` | **EV:** P Konsum aller Events §3.2.4 (Payload enthält `actor_id`, `origin`, `principal_kind`); V `mutateWorkspaceMembersActivity` (S22, no-op). **DM:** S `audit_log_entries` (append-only). **UI:** `SETTINGS_PAGES`. **API:** R `audit-logs/`, `activity-logs/` | nein – S (nutzt C3-P) | D06 |
-| **E7** God-Mode-Erweiterungen (W4) | `Plane.Instance` (`Extensions/`) · `FE/libs/admin/*` | **UI:** P `ADMIN_SETTINGS_PAGES`; V `EXTENDED_HEADER_SEGMENT_LABELS` (S41). **Konfig:** P E-12 `IInstanceConfigKeyProvider` (Session-Laufzeiten). **API:** R `/api/instances/users/`, `…/session-settings/`, `…/system-checks/`; V Health-Endpunkte `/health/live`, `/health/ready`, `/live/health/`. **Identity:** S Benutzerverwaltung über Keycloak-Admin-API (ADR-008) | nein – S | D05, D14 |
+| **E7** God-Mode-Erweiterungen (W4) | `Plane.Instance` (`Extensions/`) · `FE/libs/admin/*` | **UI:** P `ADMIN_SETTINGS_PAGES`, `ADMIN_ROUTE_EXTENSIONS`, `ADMIN_HEADER_SEGMENT_LABELS` (ersetzt S41 `EXTENDED_HEADER_SEGMENT_LABELS`, D08 §6.1). **Konfig:** P E-12 `IInstanceConfigKeyProvider` (Session-Laufzeiten). **API:** R `/api/instances/users/`, `…/session-settings/`, `…/system-checks/`; V Health-Endpunkte `/health/live`, `/health/ready`, `/live/health/`. **Identity:** S Benutzerverwaltung über Keycloak-Admin-API (ADR-008) | nein – S | D05, D14 |
 | **E8** PII-Scanner (W9) | `Plane.Pii` | **EV:** P Konsum `plane.work_item.updated`, `plane.work_item_comment.*`, `plane.page.description_updated`; **JOB:** R Queue `pii`; **DM/API/UI:** S/R | nein – S | D06 |
 
 #### 3.3.6 F – Integrationen
 
 | Paket | Ziel-Modul (BE · FE) | Andockstellen | CE-Pflicht? | Dok. |
 |---|---|---|---|---|
-| **F1** Integrations-Framework (W1, 🧱) | `Plane.Integrations` (+ `.Contracts` schon in CE) · `FE/libs/web/integrations` | vollständig in §3.4.1–§3.4.4: P Oberfläche `Integrations` + Route `/api/integrations/{provider}/webhooks/{connection_id}/` (404 ohne Verifier), P `IWebhookSignatureVerifier`-Registry, P Inbox-Idempotenz, P `IIntegrationProvider`-Contract, P `ExternalLinkDto` + E-13 Lesepfad, P Purpose `Plane.Integrations.Secrets.v1`, R Queues `integrations`/`importers`, R Activity-/Event-/Permission-Präfixe; UI P `SETTINGS_PAGES` (Workspace „Integrations“, Profil „Connections“, Projekt „Integrations“), `WORK_ITEM_DETAIL_WIDGETS`, `INTEGRATION_LINK_PREVIEWS`, `ACTIVITY_RENDERERS`, `ROUTE_EXTENSIONS` (`LWSET`) | **ja – P, I0 (Contracts/Route), I2 (UI-Registries, Lesepfad)**; Implementierung W1 | §3.4, D02 §6, D14 §6.1, D08 §6.4 |
-| **F2** Forgejo (W1, 🧱) | `Plane.Forgejo`, `Plane.Forgejo.Client` (+ `.Contracts` schon in CE) · `FE/libs/web/forgejo` | vollständig in §3.4: P Forgejo-Container/Keycloak-Client/Init (D14), P `IForgejoClient` + DTOs (R10), P reservierte Activity-Felder, `StateChangeOrigin.Integration`, P `IWorkItemReferenceResolver`, P `WORK_ITEM_ACTIONS`/`LIVE_EVENT_HANDLERS`; S Verbindungen, Mappings, Sync, PR-Automation, Importer (W1) | **ja – P, I0 (Infra/Contracts), I2 (Registries)** | §3.4, D14 §3.4, D02 §6 |
+| **F1** Integrations-Framework (W1, 🧱) | `Plane.Integrations` (+ `.Contracts` schon in CE) · `FE/libs/web/integrations` | vollständig in §3.4.1–§3.4.4: P Oberfläche `Integrations` + Route `/api/integrations/{provider}/webhooks/{connection_id}/` (404 ohne Verifier), P `IWebhookSignatureVerifier`-Registry, P Inbox-Idempotenz, P `IIntegrationProvider`-Contract, P `ExternalLinkDto` + E-13 Lesepfad, P Purpose `Plane.Integrations.ConnectionSecret.v1` (D05 §6.1), P SSRF-Client `AddSsrfSafeHttpClient("integrations", …)` für nutzerkonfigurierte Ziel-URLs (D05 §6.1), R Queues `integrations`/`importers`, R Activity-/Event-/Permission-Präfixe; UI P `SETTINGS_PAGES` (Workspace „Integrations“, Profil „Connections“, Projekt „Integrations“), `WORK_ITEM_DETAIL_WIDGETS`, `INTEGRATION_LINK_PREVIEWS`, `ACTIVITY_RENDERERS`, `ROUTE_EXTENSIONS` (`LWSET`) | **ja – P, I0 (Contracts/Route), I2 (UI-Registries, Lesepfad)**; Implementierung W1 | §3.4, D02 §6, D14 §6.1, D08 §6.4 |
+| **F2** Forgejo (W1, 🧱) | `Plane.Forgejo`, `Plane.Forgejo.Client` (+ `.Contracts` schon in CE) · `FE/libs/web/forgejo` | vollständig in §3.4: P Forgejo-Container/Keycloak-Client `plane-forgejo`/Init (D14, D05 §3.15.1), P `IForgejoClient` + DTOs (R10), P Options `PlaneForgejoOptions` (D02 §6), P SSRF-Client `AddSsrfSafeHttpClient("forgejo", …)` mit Allowlist `Plane:Forgejo:AllowedHosts` (D05 §6.1, gebündeltes Forgejo vorbelegt), P Purpose `Plane.Forgejo.UserToken.v1` (D05 §6.1), P Smoke-Test `ForgejoSsoSmokeTests` (D05/D15), P reservierte Activity-Felder, `StateChangeOrigin.Integration`, P `IWorkItemReferenceResolver`, P `WORK_ITEM_ACTIONS`/`LIVE_EVENT_HANDLERS`; S Verbindungen, Mappings, Sync, PR-Automation, Importer (W1) | **ja – P, I0 (Infra/Contracts), I2 (Registries)** | §3.4, D14 §3.4, D02 §6 |
 | **F6** Sentry (W9) | `Plane.Sentry` (Provider auf F1) | **F1:** Provider `sentry` als `IIntegrationProvider`, `IWebhookSignatureVerifier` (Header `Sentry-Hook-Signature`), `external_links.external_type = "sentry_issue"`; **Infra:** Egress nur bei konfiguriertem `SENTRY_BASE_URL` (Self-hosted, ADR-004) | nein – S (auf F1) | D14 §6.3 |
 
 #### 3.3.7 G – Plane AI (nur G1 als 🧱; G2/G3 nicht gewählt)
 
 | Paket | Ziel-Modul (BE · FE) | Andockstellen | CE-Pflicht? | Dok. |
 |---|---|---|---|---|
-| **G1** AI-Basis (nicht gewählt, 🧱) | `Plane.Platform.Ai`, `Plane.Platform.Search`, `Plane.Search` | **DM:** P `search_documents` (`tsvector`, `unaccent`), `CREATE EXTENSION vector` per Migration (Spalte `embedding vector(n)` **nicht** in CE), Instanz-Keys `LLM_API_KEY`, `LLM_MODEL`, `LLM_PROVIDER` (V, CE-AI) + `LLM_BASE_URL` (ADR-025). **EV:** P `IIndexingPipeline` als `IEventConsumer` der Work-Item-/Page-/Kommentar-Events. **Platform:** P `IEmbeddingGenerator<string, Embedding<float>>` = `NullEmbeddingGenerator`, `IChatClient` (CE-AI). **UI:** P `DUPLICATE_DETECTION` (S64, liefert `[]`), `EDITOR_FLAGS` (`ai` deaktiviert), `SEARCH_RESULT_RENDERERS`, `APP_RAIL_ENABLED`, `WORKSPACE_FEATURES` (`pi`). **JOB:** R Queue `indexing` | **ja – P, I5** | D11, D14 §6.1 |
+| **G1** AI-Basis (nicht gewählt, 🧱) | `Plane.Platform.Ai`, `Plane.Platform.Search`, `Plane.Search` | **DM:** P `search_documents` (`tsvector`, `unaccent`), `CREATE EXTENSION vector` per Migration (Spalte `embedding vector(n)` **nicht** in CE), Instanz-Keys `LLM_API_KEY`, `LLM_MODEL`, `LLM_PROVIDER` (V, CE-AI) + `LLM_BASE_URL` (ADR-025). **EV:** P `IIndexingPipeline` als `IEventConsumer` der Work-Item-/Page-/Kommentar-Events. **Platform:** P `IEmbeddingGenerator<string, Embedding<float>>` = `NullEmbeddingGenerator`, `IChatClient` (CE-AI), Option `PlaneAiOptions.EmbeddingDimensions` (D02 §6), ausgehende LLM-Aufrufe nur über `AddSsrfSafeHttpClient("llm", …)` (D05 §6.1). **PERM:** P `SearchVisibilityFilter` – Such-/Embedding-Treffer laufen durch die Sichtbarkeitsprüfung (D05 §3.14, CE-Pflicht). **UI:** P `DUPLICATE_DETECTION` (S64, liefert `[]`), `EDITOR_FLAGS` (`ai` deaktiviert), `SEARCH_RESULT_RENDERERS`, `APP_RAIL_ENABLED`, `WORKSPACE_FEATURES` (`pi`). **JOB:** R Queue `indexing` | **ja – P, I5** | D11, D14 §6.1 |
 
 #### 3.3.8 H – Plattform, API & Betrieb
 
@@ -478,7 +478,7 @@ Abhängigkeiten (R12): `Plane.Forgejo` → `Plane.Forgejo.Client`, `Plane.Forgej
 |---|---|---|---|---|
 | `integration_connections` | **CE (I0, leer)** | `id`, `workspace_id`, `provider` (`forgejo`), `base_url`, `external_account_id` (Forgejo-Org-ID bzw. Instanz-Kennung), `external_account_name`, `status` (`active`│`disconnected`│`error`), `bot_user_id` (FK `users`, `is_bot=true`, `bot_type="integration"`), `config` jsonb (nicht geheim), `connected_by_id`, `connected_at`, `last_error`, Audit, `deleted_at` | unique `(provider, base_url, external_account_id)` WHERE `deleted_at IS NULL` (Regel „ein externes Konto ↔ ein Workspace“, F28 P09-F01 `cannot_create_multiple_connections`); Index `(workspace_id, provider)` | Workspace-Verbindung zu einer Forgejo-Instanz/-Organisation (mehrere je Workspace erlaubt) |
 | `external_links` | **CE (I0, leer)** | `id`, `workspace_id`, `project_id`, `work_item_id` (FK, `ON DELETE CASCADE`), `comment_id` (nullable, FK `work_item_comments`), `connection_id`, `provider`, `external_type` (`issue`│`pull_request`│`branch`│`commit`│`check`│`comment`), `external_id` (Forgejo-ID bzw. SHA bzw. Branch-Name), `external_key` (`owner/repo#12`, `owner/repo@sha`, `owner/repo:branch`), `url`, `title`, `state` (`open`│`draft`│`merged`│`closed`│`success`│`failure`│`pending`│`deleted`), `metadata` jsonb, `sync_hash`, `external_updated_at`, `last_synced_at`, Audit | unique `(connection_id, external_type, external_id, work_item_id, comment_id)` (NULLS NOT DISTINCT); Index `(work_item_id)`, `(connection_id, external_type, external_id)` | Verknüpfung Work Item ↔ Branch/Commit/PR/Issue/Check (ersetzt EE-`ExternalLink` bzw. CE-Alt `GithubIssueSync`/`GithubCommentSync`) |
-| `integration_secrets` | W1 | `id`, `connection_id`, `user_connection_id` (nullable), `kind` (`oauth_client_secret`│`webhook_secret`│`access_token`│`refresh_token`│`bot_token`), `protected_value` bytea (Data Protection, Purpose `Plane.Integrations.Secrets.v1`), `expires_at`, `rotated_at` | unique `(connection_id, user_connection_id, kind)` | Token-Tresor (D16-ADR-13) |
+| `integration_secrets` | W1 | `id`, `connection_id`, `user_connection_id` (nullable), `kind` (`oauth_client_secret`│`webhook_secret`│`access_token`│`refresh_token`│`bot_token`), `protected_value` bytea (Data Protection; Purpose `Plane.Integrations.ConnectionSecret.v1` bei `user_connection_id IS NULL`, sonst `Plane.Forgejo.UserToken.v1`, D16-ADR-13), `expires_at`, `rotated_at` | unique `(connection_id, user_connection_id, kind)` | Token-Tresor (D16-ADR-13) |
 | `user_integration_connections` | W1 | `id`, `workspace_id`, `connection_id`, `user_id`, `external_user_id`, `external_login`, `status`, `connected_at` | unique `(connection_id, user_id)`, `(connection_id, external_user_id)` | persönliche Konto-Verknüpfung (ADR-007), Nutzerzuordnung für Assignees/Autoren |
 | `integration_entity_mappings` | W1 | `id`, `connection_id`, `project_id`, `external_entity_type` (`repository`), `external_entity_id` (Repo-ID), `external_entity_name` (`owner/repo`), `direction` (`bidirectional`│`to_plane`│`to_external`│`links_only`), `config` jsonb (`ForgejoRepositoryMappingConfig`, §5.10), `external_webhook_id`, `enabled`, `last_synced_at`, `sync_cursor` | unique `(connection_id, external_entity_id, project_id)` | Repository ↔ Projekt-Mapping inkl. State-/Label-/Prioritäts-/Nutzer-Abbildung und PR-Automation |
 | `integration_webhook_deliveries` | W1 | `id`, `connection_id`, `provider`, `delivery_id`, `event`, `event_type`, `received_at`, `payload` jsonb, `status` (`received`│`processed`│`ignored`│`failed`), `attempts`, `error`, `processed_at` | unique `(provider, delivery_id)`; Retention-Job `integrations.deliveries_cleanup` (Default 14 Tage) | Idempotenter Eingang, Wiederholung, Diagnose |
@@ -527,10 +527,10 @@ sequenceDiagram
 | Antwortzeit | Eingang < 200 ms p95 (keine Fachlogik im Request) | W1 |
 | Signatur | D16-ADR-10 | W1 (Verifier), CE (Registry) |
 | Idempotenz | `X-Forgejo-Delivery` (Fallback `X-Gitea-Delivery`) als Schlüssel; zusätzlich Inbox des Consumers (ADR-020) | W1 |
-| Ereignisse | `push`, `create`, `delete` (Branch), `pull_request` (Untertypen über `X-Forgejo-Event-Type`: `pull_request`, `pull_request_sync`, `pull_request_review_request`, `pull_request_review_approved`, `pull_request_review_rejected`, `pull_request_comment`, `pull_request_label`, `pull_request_assign`), `issues`, `issue_comment`, `issue_label`, `issue_assign`, `issue_milestone`, `status` (Commit-Status/Forgejo-Actions-Checks ⚠ Verfügbarkeit im Forgejo-15-Container prüfen; Fallback: Abfrage `GetCombinedStatusAsync` bei `pull_request_sync`), `repository` (Umbenennen/Löschen) | W1 |
+| Ereignisse | Dispatch über den **feinen Typ** `X-Forgejo-Event-Type` (Fallback `X-Gitea-Event-Type`); in Klammern die grobe Familie im Header `X-Forgejo-Event` nach Gitea `HookEventType.Event()`: `push` (`push`); `create`, `delete` (`create`/`delete`, nur `ref_type = branch` relevant); `pull_request`, `pull_request_assign`, `pull_request_label`, `pull_request_milestone`, `pull_request_sync`, `pull_request_review_request` (alle Familie `pull_request`); `pull_request_review_approved` (`pull_request_approved`), `pull_request_review_rejected` (`pull_request_rejected`), `pull_request_review_comment` (`pull_request_comment`); `pull_request_comment` (Familie `issue_comment`!); `issues`, `issue_assign`, `issue_label`, `issue_milestone` (alle Familie `issues`); `issue_comment` (`issue_comment`); `status` (`status`, Commit-Status/Forgejo-Actions-Checks – in Gitea 1.24 vorhanden, ⚠ im Forgejo-15-Container prüfen; Fallback: Abfrage `GetCombinedStatusAsync` bei `pull_request_sync`); `repository` (`repository`, Umbenennen/Löschen). Abonniert werden beim Anlegen des Hooks genau diese Typen (`CreateForgejoHook.Events`). `IWebhookEventHandler.CanHandle(event, eventType)` entscheidet primär über `eventType`; fehlt der Header, wird `event` verwendet | W1 |
 | Unbekannte Ereignisse | Delivery `ignored`, 202 | W1 |
 | Echo-Unterdrückung | Ereignisse, deren `sender.id` dem Bot-Konto der Verbindung entspricht, oder deren berechneter `sync_hash` dem gespeicherten entspricht, ändern nichts (nur `last_synced_at`) | W1 |
-| Registrierung der Webhooks | beim Anlegen eines Mappings per `IForgejoClient.CreateRepositoryHookAsync` (Typ `forgejo`, Fallback `gitea` ⚠, `content_type: json`, Secret aus `integration_secrets`, `branch_filter: "*"`); Org-Webhook optional über `CreateOrganizationHookAsync` | W1 |
+| Registrierung der Webhooks | beim Anlegen eines Mappings per `IForgejoClient.CreateRepositoryHookAsync` (Typ `forgejo`, Fallback `gitea` – die Gitea-Swagger-Aufzählung `CreateHookOption.type` kennt `forgejo` **nicht** (nur `gitea`, `gogs`, `slack` …), der Wert ist Forgejo-spezifisch ⚠ S-F2-1; beide Typen liefern dasselbe JSON-Payload-Format; `config.content_type: json`, `config.url`, `config.secret` aus `integration_secrets`, `branch_filter: "*"`); Org-Webhook optional über `CreateOrganizationHookAsync` | W1 |
 | Forgejo-seitige Freigabe | `FORGEJO__webhook__ALLOWED_HOST_LIST` enthält den Plane-Host (D14 §3.4.1) | CE (Dev/Test), Betreiber (Prod) |
 
 #### 3.4.4 Sync-Mappings und Automationen
@@ -539,8 +539,8 @@ sequenceDiagram
 |---|---|---|---|
 | States/Labels lesen | `IStateCatalog`, `ILabelCatalog` (A17-P) | Mapping-Dialoge und Sync nutzen **nur** diese Kataloge; `plane.state.deleted`/`plane.label.deleted` invalidieren Mapping-Einträge (Consumer in `Plane.Forgejo`) | CE (Kataloge), W1 |
 | State-Wechsel | `IWorkItemStateChanger.ChangeAsync(…, StateChangeOrigin.Integration)` (C1-P) | PR-Ereignis → gemappter State aller referenzierten Work Items; Option `skip_backward_state_movement` vergleicht über State-Gruppen-Rang `backlog < unstarted < started < completed < cancelled`, bei gleicher Gruppe über `sequence` (Vorschlag F28 P09-F03) | CE (Pipeline), W1 |
-| PR-Zustände | `ForgejoPrStateKey`: `DRAFT_PR_OPENED`, `PR_OPENED`, `PR_REVIEW_REQUESTED`, `PR_READY_FOR_MERGE`, `PR_MERGED`, `PR_CLOSED` | aus ADR-007 (Draft, Open, Review requested, Merged, Closed) + „Ready for merge“ (EE-Vorbild `MR_READY_FOR_MERGE`) | W1 |
-| Work-Item-Referenzen | `IWorkItemReferenceResolver` (E-06) | Kandidaten aus Branch-Name, PR-Titel, PR-Beschreibung, Commit-Nachricht; Schlüsselwörter für „schließt“ (`close(s|d)`, `fix(es|ed)`, `resolve(s|d)`, case-insensitiv) markieren nur die Absicht – der State-Wechsel folgt ausschließlich dem PR-State-Mapping; Muster liegen in `Plane.Forgejo` (nicht CE) | CE (Resolver), W1 |
+| PR-Zustände | `ForgejoPrStateKey`: `DRAFT_PR_OPENED`, `PR_OPENED`, `PR_REVIEW_REQUESTED`, `PR_READY_FOR_MERGE`, `PR_MERGED`, `PR_CLOSED` | aus ADR-007 (Draft, Open, Review requested, Merged, Closed) + „Ready for merge“ (EE-Vorbild `MR_READY_FOR_MERGE`). Ableitung (Rahmen): Draft = API-Feld `draft` des PR (in Forgejo/Gitea = Titel mit WIP-Präfix aus `[repository.pull-request] WORK_IN_PROGRESS_PREFIXES`, kein eigenes Flag); Merged = `merged = true`; Closed = `state = closed` ∧ ¬`merged`; Review requested = Ereignistyp `pull_request_review_request`; Ready for merge = mindestens eine Approval-Review und kein offener Rejected-Review (`ListPullRequestReviewsAsync`) | W1 |
+| Work-Item-Referenzen | `IWorkItemReferenceResolver` (E-06) | Kandidaten aus Branch-Name, PR-Titel, PR-Beschreibung, Commit-Nachricht; Schlüsselwörter für „schließt“ (`close(s\|d)`, `fix(es\|ed)`, `resolve(s\|d)`, case-insensitiv) markieren nur die Absicht – der State-Wechsel folgt ausschließlich dem PR-State-Mapping; Muster liegen in `Plane.Forgejo` (nicht CE) | CE (Resolver), W1 |
 | Issue-Sync eingehend | `IWorkItemCommands` (Contracts-Fassade für Anlegen/Ändern, D02 R5) | Titel, Beschreibung (Markdown → HTML über `Plane.Documents`), State (über `ISSUE_OPEN`/`ISSUE_CLOSED`-Mapping), Labels, Assignees (über `user_integration_connections`), Kommentare, Abhängigkeiten (`/issues/{index}/dependencies`, `/blocks` → Relationstyp `blocked_by`/`blocking`, A9-Katalog); Forgejo kennt keine Sub-Issues – Parent-Beziehungen bleiben Plane-intern | W1 |
 | Issue-Sync ausgehend | `IEventConsumer<WorkItemUpdatedV1>` u. a. (§3.2.4) in `Plane.Forgejo` | nur wenn `origin ≠ Integration` und Mapping-Richtung erlaubt; Debounce 5 s je Work Item (`dedupeKey = work_item_id`); HTML → Markdown | CE (Events), W1 |
 | Konflikte | `ForgejoRepositoryMappingConfig.ConflictPolicy` | `last_writer_wins` (Default, Vergleich `external_updated_at` vs. `updated_at` je Feld), `plane_wins`, `forgejo_wins`; unidirektional `to_plane` = Forgejo überschreibt (wie EE-Warntext F28 P09-F04) | W1 |
@@ -597,12 +597,12 @@ Gitea-kompatible REST-API unter `{base_url}/api/v1`. Die Pfade unten sind gegen 
 | `CreateOrganizationHookAsync` | POST | `/orgs/{org}/hooks` | optional Org-Webhook |
 | OAuth (`IForgejoOAuthClient`): `BuildAuthorizeUrl`, `ExchangeCodeAsync`, `RefreshAsync` | GET / POST | `/login/oauth/authorize`, `/login/oauth/access_token` | Verbindungen (Authorization Code + PKCE) |
 
-Konventionen: Authentisierung `Authorization: token <access_token>` (OAuth-Tokens zusätzlich als `Bearer`); Paginierung `page`/`limit` mit Antwort-Headern `Link` und `X-Total-Count` → `IAsyncEnumerable<T>`-Helfer `PageAllAsync`; Fehler → `ForgejoApiException(int Status, string? Message, string? Url)`; Resilienz (W1): `AddResilienceHandler("forgejo")` mit Retry nur für idempotente Methoden (GET/PUT/DELETE) bei 429/5xx/Timeouts, Circuit-Breaker je `base_url`; Timeout 15 s; Named Client je Verbindung **ohne** Standard-Resilience des ServiceDefaults (D14 §6.1 F1); TLS mit Betreiber-CA (Airgap, ADR-004). JSON: `snake_case` wie die Forgejo-API (eigener `JsonSerializerContext`, Source-Generated).
+Konventionen: HTTP-Basis ist der SSRF-geschützte Named Client `forgejo` (`AddSsrfSafeHttpClient("forgejo", …)`, D05 §6.1) – jede `base_url` einer Verbindung muss beim Anlegen gegen `Plane:Forgejo:AllowedHosts` geprüft werden (gebündeltes Forgejo vorbelegt; Airgap: nur interne Hosts); `IForgejoClientFactory.Create(baseUrl, credential)` setzt `BaseAddress` je Aufruf, nicht je registriertem Client. Authentisierung `Authorization: token <access_token>` (OAuth-Tokens zusätzlich als `Bearer`); Paginierung `page`/`limit` mit Antwort-Headern `Link` und `X-Total-Count` → `IAsyncEnumerable<T>`-Helfer `PageAllAsync`; Fehler → `ForgejoApiException(int Status, string? Message, string? Url)`; Resilienz (W1): `AddResilienceHandler("forgejo")` mit Retry nur für idempotente Methoden (GET/PUT/DELETE) bei 429/5xx/Timeouts, Circuit-Breaker je `base_url`; Timeout 15 s; Named-Client-Muster **ohne** Standard-Resilience des ServiceDefaults (D14 §6.1 F1), Resilienz-Pipeline-Schlüssel je `base_url`; TLS mit Betreiber-CA (Airgap, ADR-004). JSON: `snake_case` wie die Forgejo-API (eigener `JsonSerializerContext`, Source-Generated).
 
 #### 3.4.7 Login und Nutzerzuordnung
 
 - Kein Forgejo-Login in Plane; beide Systeme hängen an Keycloak (ADR-007/-008). Der Keycloak-Client `plane-forgejo` und die Forgejo-Auth-Source `keycloak` existieren ab I0 (D14 §3.3.2, §3.4.2).
-- Zuordnung Plane-Nutzer ↔ Forgejo-Nutzer (W1), in dieser Reihenfolge: (1) persönliche OAuth-Verknüpfung (`user_integration_connections`); (2) gleiche Keycloak-Identität – Forgejo legt OIDC-Konten mit `login_name = sub` an (D14 §3.4.3 Schritt 2), lesbar über die Admin-API nur mit Admin-Token der Verbindung; (3) verifizierte E-Mail. Treffer aus (2)/(3) werden als **vorgeschlagene** Zuordnung gespeichert und erst nach erster persönlicher Verknüpfung für Schreibaktionen im Namen des Nutzers verwendet; bis dahin handelt der Bot.
+- Zuordnung Plane-Nutzer ↔ Forgejo-Nutzer (W1), in dieser Reihenfolge: (1) persönliche OAuth-Verknüpfung (`user_integration_connections`); (2) gleiche Keycloak-Identität – Forgejo legt OIDC-Konten mit `login_name = sub` an (D14 §3.4.3 Schritt 2), lesbar über die Admin-API nur mit Admin-Token der Verbindung; Plane-seitig ist der Schlüssel `user_identities.subject` = Forgejo „external login user id“ der Auth-Source `keycloak` (D05 §6.1 F2); (3) verifizierte E-Mail. Treffer aus (2)/(3) werden als **vorgeschlagene** Zuordnung gespeichert und erst nach erster persönlicher Verknüpfung für Schreibaktionen im Namen des Nutzers verwendet; bis dahin handelt der Bot.
 
 #### 3.4.8 Was entsteht wann (F1/F2)
 
@@ -667,7 +667,7 @@ Jede Stelle, an der das Original den EE-Code andocken lässt, hat genau eine Zie
 | S38 | `WEB/components/issues/issue-modal/modal.tsx` Z. 33, 51 (`templateId`) | Input 1:1 (ungenutzt) | V | (C5) | I2 |
 | S39 | `WEB/components/dropdowns/{member,label,project,module,cycle,state,intake-state}/*-select.tsx` („CE change: EE …“) | Dropdown-Komponenten mit optionalen Inputs `teamspaceId`, `scopedProjectIds`, `labelScope`, `typeId`, `isForWorkItemCreation`; CE ignoriert sie | V | B1, A4, A6, A13, C1 | I2 |
 | S40 | `WEB/components/workspace/edition-badge.tsx` | entfällt (ADR-001) | – | – | – |
-| S41 | `ADM/components/common/header/extended.ts` (`EXTENDED_HEADER_SEGMENT_LABELS`) | gleiche Datei 1:1 (D16-ADR-15) + `ADMIN_SETTINGS_PAGES` | V/P | E3, E7 | I0 |
+| S41 | `ADM/components/common/header/extended.ts` (`EXTENDED_HEADER_SEGMENT_LABELS`) | Token `ADMIN_HEADER_SEGMENT_LABELS` (`libs/admin/extensions`, CE-Default `{}`, D08 §6.1) + `ADMIN_SETTINGS_PAGES`/`ADMIN_ROUTE_EXTENSIONS` | P | E3, E7 | I0 |
 | S42 | `ADM/providers/extended.tsx` | entfällt (Lizenz-/Flag-Provider, ADR-001) | – | – | – |
 | S43 | `SPC/hooks/oauth/extended.tsx` | entfällt (ADR-008) | – | – | – |
 | S44 | `SPC/components/editor/{rich-text,lite-text}-editor.tsx` (`extendedEditorProps={{}}`) | `EDITOR_EXTENSIONS` im Space-Scope (`FE/libs/space/editor`) | P | D5, D7 | I6 |
@@ -714,7 +714,7 @@ Ergänzung durch dieses Dokument: der in S30/S61 benötigte Multi-Token `GLOBAL_
 | `IntakeIssue.source`, `source_email`, `extra` | `API/db/models/intake.py` Z. 76–80 | Spalten vorhanden (`source` Default `IN_APP`) | V | A15 |
 | `DeployBoard.TYPE_CHOICES` (`project`, `issue`, `module`, `cycle`, `page`, `view`, `intake`) | `API/db/models/deploy_board.py` Z. 20–28 | Enum mit allen sieben Werten (CE nutzt `project`) | V | B5, D5, A15 |
 | `Page.parent`, `is_global`, `moved_to_page`, `moved_to_project` | `API/db/models/page.py` Z. 40–55 | Spalten vorhanden (CE: `parent_id` immer `null`) | V/P | D1, D2 |
-| `PageVersion.sub_pages_data` | `API/db/models/page.py` Z. 167 | Spalte vorhanden (CE `[]`) | V | D2, D3 |
+| `PageVersion.sub_pages_data` | `API/db/models/page.py` Z. 167 | Spalte vorhanden (jsonb, Default `{}` wie Original `default=dict`) | V | D2, D3 |
 | `Cycle.progress_snapshot` | `API/db/models/cycle.py` Z. 74 | Spalte vorhanden (CE-CYC-011 nutzt sie) | V | B3, B4 |
 | `ExporterHistory.type = "issue_worklogs"` | `API/db/models/exporter.py` Z. 31 | Export-Typ-Enum erweiterbar über `IExportTypeProvider` (E-16); CE registriert nur CE-Typen | P | A10 |
 | `Integration`, `WorkspaceIntegration`, `GithubRepository`, `GithubRepositorySync`, `GithubIssueSync`, `GithubCommentSync`, `SlackProjectSync` | `API/db/models/integration/{base,github,slack}.py` | **nicht portiert** (ADR-003/-007); Ersatz §3.4.2 | – | F1, F2 |
@@ -774,6 +774,47 @@ Ergänzung durch dieses Dokument: der in S30/S61 benötigte Multi-Token `GLOBAL_
 
 Vollständig in 01 §4.2. Ergänzungen aus diesem Dokument: `silo` → §3.4; `outbox-poller`/`automation-consumer` → C3-Andockstelle §3.3.3; `worker-importers` → Queue `importers` (§3.2.5); `mcp-server` → Host `Plane.Mcp` (H4, Route `/mcp/` reserviert §3.2.2); `email` (E-Mail-Intake) → A15 (§3.3.1).
 
+### 4.6 Träger-CE-IDs: in welchem CE-Arbeitspaket jede P-Andockstelle entsteht (Review-Ergänzung)
+
+Eine P-Andockstelle wird **im Arbeitspaket der CE-ID gebaut, die sie zuerst benutzt** (kein eigenes Arbeitspaket „Erweiterungspunkte“, Schnittregel 01 §1.3). Die Tabelle ist die Brücke zu `migration/plan/_data/wp-ce.json`; jede Zeile ist dort als DoD-Bestandteil Typ X (D15 §3.15.3) des genannten Arbeitspakets einzutragen.
+
+| P-Andockstelle (Kurzname) | Träger-CE-ID(s) (CE-Katalog `10-ce-feature-katalog.md`) | Inkrement |
+|---|---|---|
+| Event-Katalog, Outbox/Inbox, `IEventConsumer`, `IRecurringJobRegistry`, `EventContext` (C3) | CE-OPS-021, CE-OPS-022 (Walking-Skeleton-Gerüst); erste produktive Events mit CE-WS-001, CE-PRJ-004 | I0 |
+| Permission-Katalog, `roles`/`role_permissions`, `role_id`, `ISystemRoleGrantContributor`, `ReservedPermissionKeys` (E5, E-09) | CE-WS-008, CE-WS-012 | I0 |
+| `PlanePrincipal` (`Kind`, `Groups`, `ApiScopes`), Policy-Scheme inkl. deaktiviertem Bearer, `users.is_bot` (H1, E3) | CE-AUTH-001, CE-AUTH-024, CE-AUTH-025 (angepasst, ADR-008) | I0 |
+| `IUserProvisioningStep`-Kette mit Slots 750/760 (E3) | CE-AUTH-028, CE-AUTH-029 | I0/I1 |
+| Oberfläche `Integrations`, Webhook-Route, Verifier-Registry, `IWebhookIngress`, leere Tabellen `integration_connections`/`external_links`, Platzhalter-Contracts (F1, F2, E-13, E-25) | CE-OPS-021 (AppHost inkl. Forgejo/Keycloak), CE-OPS-022 | I0 |
+| SignalR-Hub `/live/events/`, `IRealtimePublisher`, `IRealtimeGroupAuthorizer` (H6, E-22) | CE-OPS-021 (Hub-Gerüst); erste Nutzung CE-NOTIF-001 (Zähler) | I0 / I5 |
+| `ScopeRef`/`IScopeResolver`/`IScopeAncestorContributor` (B1, E-20), `RouterStore.teamspaceId` | CE-WS-001, CE-PRJ-006 | I0 |
+| Feature-Kataloge, `project_feature_settings`/`workspace_feature_settings`, `IProjectPayloadExtension`, `PROJECT_FEATURES` (E-01, E-02, E-26) | CE-PRJ-019, CE-PRJ-020 | I1 |
+| `IStateCatalog`/`ILabelCatalog` + Sources (A17, E-21) | CE-PRJ-023 … CE-PRJ-033 | I1 |
+| `ESTIMATE_SYSTEM_FLAGS` (E-14) | CE-PRJ-034, CE-PRJ-035 | I1 |
+| `IInstanceConfigKeyProvider` (E-12) | CE-INST-002 | I1 |
+| `SETTINGS_PAGES`, `SIDEBAR_ITEMS` (dynamisch), `FAVORITE_ENTITY_RENDERERS`, `MEMBER_ROW_DECORATORS`, `ROLE_OPTIONS`, `GLOBAL_MODALS` | CE-WS-023 (Favoriten), CE-WS-010 (Mitglieder/Rollen), CE-PRJ-019 (Settings) | I1 |
+| Activity-Grundgerüst + `IActivityFieldResolver` + reservierte Felder | CE-WI-039, CE-WI-040 (Gerüst ab I1 laut D02-ADR-25) | I1/I2 |
+| Filter-AST, Parser-Liste, Feld-/Gruppen-/Sortier-Registries, `IWorkItemPayloadExtension`, `IWorkItemBaseSetFilter` (B6, A1, E-04) | CE-LV-006 … CE-LV-010, CE-LV-017, CE-LV-046 (Archiv-Basismenge) | I2 |
+| `work_items.type_id`, `work_item_types` (minimal), `IWorkItemTypeResolver` (A1, E-03) | CE-WI-001, CE-WI-049 (Drafts) | I2 |
+| Relationstyp-Katalog, `IWorkItemHierarchyPolicy`, `IRelatedScopeCheck`, `RELATION_TYPES`, `TIMELINE_FLAGS` (A9, E-05) | CE-WI-031, CE-WI-032, CE-WI-033, CE-LV-033, CE-API-024 | I2 |
+| `IWorkItemStateChanger` + Guards/Hooks (C1) | CE-WI-021, CE-WI-003; weitere Origins: CE-API-017 (`PublicApi`, I6), CE-INT-006 (`Intake`, I3), CE-CYC-011/CE-API-028 (`CycleTransfer`, I3/I6), CE-PRJ-040 (`AutoClose`, I3) | I2 (Pipeline), Origins im jeweiligen Inkrement |
+| `IWorkItemReferenceResolver` (E-06) | CE-WI-009, CE-WI-002; v1: CE-API-018 | I2 / I6 |
+| `IWorkItemCommands` (E-18) | CE-WI-001, CE-WI-003, CE-WI-037; Nutzung CE-INT-006 | I2 / I3 |
+| `IIntegrationLinkProvider` (E-13, Lesefassade) | CE-WI-010 (Detaildaten) | I2 |
+| Server-Schema per `IDocumentNodeSpec` (E-11), `EDITOR_*` (Lite) | CE-WI-037, CE-WI-044 | I2 |
+| Work-Item-UI-Registries (`PROPERTY_RENDERERS` … `DUPLICATE_DETECTION`, S5–S19, S29, S62–S65) | CE-WI-001 (Modal), CE-WI-010/-014/-034 (Detail), CE-LV-017 … CE-LV-037 (Layouts), CE-LV-008 (Filterwerte) | I2 |
+| `ICycleSchedulingPolicy`, `CYCLE_FLAGS`, `ENTITY_QUICK_ACTIONS` (E-14, E-15) | CE-CYC-002 … CE-CYC-013, CE-MOD-011, CE-LV-050 | I3 |
+| Pages ohne Projektpflicht, `parent_id`, `IPageHierarchy(+Queries)`, `IPageAccessExtension`, `ICollaborationDocumentType`, `affectedPages`, `PAGE_*` (D1, D2, E-10, E-23) | CE-PAGE-001, CE-PAGE-003, CE-PAGE-004, CE-PAGE-006, CE-PAGE-007, CE-RT-001, CE-RT-004, CE-RT-005 | I4 |
+| `ISearchProvider`, `IIndexingPipeline`, `search_documents`, `vector`, `NullEmbeddingGenerator`, `IIndexDocumentEnricher`, `SearchVisibilityFilter` (G1, B6, E-24) | CE-SRCH-001, CE-SRCH-002, CE-SRCH-003 | I5 |
+| `HOME_WIDGETS` (E-14), `POWER_K_COMMANDS`, `SEARCH_RESULT_RENDERERS`, `LIVE_EVENT_HANDLERS` (erste Nutzung) | CE-HOME-001, CE-HOME-002, CE-NOTIF-001, CE-SRCH-004 | I5 |
+| `IV1PayloadExtension`, `IV1FilterParameterBinding` (E-07, E-19) | CE-API-017, CE-API-019 | I6 |
+| `IWebhookEventSource` (E-08) | CE-WH-001, CE-WH-007, CE-WH-008 | I6 |
+| `IExportTypeProvider` (E-16) | CE-EXP-001, CE-EXP-002 | I6 |
+| `ADMIN_SETTINGS_PAGES`, `ADMIN_ROUTE_EXTENSIONS`, `ADMIN_HEADER_SEGMENT_LABELS` (E3, E7) | CE-INST-003, CE-INST-025 (Admin-Navigation); Gerüst ab I0 mit CE-INST-006 | I0 / I6 |
+| `SPACE_ROUTE_EXTENSIONS`, `EDITOR_EXTENSIONS` (Space) (B5, S44) | CE-SPACE-001, CE-SPACE-018, CE-SPACE-025 | I6 |
+| Contract-Snapshots, R11/R12, Airgap mit Forgejo | CE-OPS-023 (CI) | I0 (R11/R12), I7 (Snapshots, Airgap) |
+
+**Bewusst ohne Träger-CE-ID** (reine Reservierungen, Klasse R): Permission-Präfixe §3.2.1, Routen-Präfixe §3.2.2, Activity-Felder §3.2.3, Event-Namensräume §3.2.4, Queues §3.2.5 – sie entstehen mit `ReservationCollisionTests` im Arbeitspaket CE-OPS-022 (I0).
+
 ---
 
 ## 5. Code-Skelette (je 🧱-Paket C# und TypeScript; F2 erweitert)
@@ -829,22 +870,30 @@ public static class PlaneModuleCatalog
 
 ```csharp
 // tests/Plane.ArchitectureTests/ExtensionRules.cs                                          // D16-ADR-03 (R11, R12)
+// Assembly-Mengen werden aus dem Verzeichnisbaum abgeleitet (01 §5.1), nicht per Namensmuster:
+//   PackageAssemblies           = alle Projekte unter src/modules/extensions/**           (inkl. Contracts/Client)
+//   CePlaceholderContracts      = die sechs in der CE angelegten Platzhalter (R10)
+//   CeAssemblies                = src/building-blocks/**, src/platform/**, src/documents/**, src/data/**,
+//                                 src/modules/** ohne extensions/**, src/hosts/** ohne Plane.Hosting (Modulliste, D16-ADR-04)
+//                                 und ohne die ausführbaren Hosts Plane.Api/Plane.Worker/Plane.Realtime (referenzieren Plane.Hosting)
+//   CeImplementationAssemblies  = CeAssemblies ohne *.Contracts und ohne Plane.BuildingBlocks*/Plane.Platform.*/Plane.Documents*
 public sealed class ExtensionRules
 {
     static readonly string[] CePlaceholderContracts =
         ["Plane.Properties.Contracts", "Plane.Teamspaces.Contracts", "Plane.Integrations.Contracts",
          "Plane.Forgejo.Contracts", "Plane.Forgejo.Client", "Plane.Apps.Contracts"];
 
-    [Fact] public void R11_CeModules_DoNotReferencePackageModules() =>
-        Types().That().ResideInAssemblyMatching(@"^Plane\.(?!.*Tests)[A-Za-z]+(\.Contracts)?$")
-               .And().DoNotResideInAssembly(PackageAssemblies())
+    [Fact] public void R11_CeAssemblies_DoNotReferencePackageModules() =>
+        Types().That().ResideInAssembly(CeAssemblies())
                .Should().NotDependOnAny(Types().That().ResideInAssembly(PackageAssemblies().Except(CePlaceholderContracts)))
                .Check(Architecture);
 
     [Fact] public void R12_PackageModules_UseOnlyContractsOfCeModules() =>
-        Types().That().ResideInAssembly(PackageImplementationAssemblies())
+        Types().That().ResideInAssembly(PackageAssemblies().Except(CePlaceholderContracts))
                .Should().NotDependOnAny(Types().That().ResideInAssembly(CeImplementationAssemblies()))
                .Check(Architecture);
+    // Ausnahme für R12 (zulässig nach 01 §5.2): Plane.Data (Entitäten, R3), Plane.BuildingBlocks*, Plane.Platform.*, Plane.Documents*.
+    // Hilfsfunktionen liefern System.Reflection.Assembly[] aus Architecture.Assemblies (ArchUnitNET-Overload ResideInAssembly(Assembly, params Assembly[])).
 }
 ```
 
@@ -860,6 +909,8 @@ export function provideFakeExtensions(): EnvironmentProviders {
     // … je Token aus D08 §6.1 und §5.x dieses Dokuments genau ein Fake
   ]);
 }
+// Hinweis: D15 EP-T08 nennt denselben Baustein `provideTestExtensions({...})` unter frontend/libs/shared/testing/extensions/;
+// verbindlich ist der Name/Ort aus D08 (Frontend-Eigentümer, AK-D08-36). Konflikt an D15 gemeldet (§9).
 ```
 
 ### 5.1 A1 / A2 – Typen, Properties, Feature-Kataloge (I1/I2)
@@ -1066,7 +1117,11 @@ public interface IFilterParser
 // D16: v1-Work-Item-Liste (Port API/api/views/issue.py Z. 324–335) lehnt "pql"/"filters" nur ab, solange kein Paket
 // eine v1-Bindung registriert. CE: keine Bindung → Original-Antwort 400
 //   {"pql": "PQL and structured filters are not supported on this Plane edition. …", "unsupported_parameters": ["pql", …]}
+// Plane.WorkItems.Contracts/Query/IV1FilterParameterBinding.cs (nur BCL-Typen, R2)
 public interface IV1FilterParameterBinding { string QueryParameter { get; } string ParserName { get; } }   // B6: ("pql","pql"), ("filters","rich")
+
+// src/modules/PublicApi/Plane.PublicApi/V1/WorkItems/V1FilterParameterGuard.cs – ASP.NET-Typen, daher NICHT in *.Contracts (R2)
+// Reihenfolge der Kandidaten und Text exakt wie Original; Prüfung nur bei nicht-leerem Wert (request.GET.get(param) truthy)
 internal static class V1FilterParameterGuard
 {
     static readonly string[] Candidates = ["pql", "filters"];
@@ -1107,7 +1162,8 @@ public interface ISystemRoleGrantContributor
 {
     IEnumerable<(string RoleNamespace, int Level, string PermissionKey)> Grants();   // z. B. ("project", 15, "project.worklog.create")
 }
-// SystemRoleProvider: Grants = generierte CE-Grants (PermissionKeys.g.cs) ∪ alle Contributor-Beiträge; Snapshot-Test nur über CE-Teil.
+// SystemRoleProvider: Grants = generierte CE-Grants (SystemRoleGrants.g.cs, D05 §3.13.3) ∪ alle Contributor-Beiträge;
+// SystemRolePermissionsSnapshotTests friert nur den CE-Teil ein; ein Contributor-Key außerhalb der reservierten Präfixe (§3.2.1) → Startfehler.
 
 // src/data/Plane.Data/Entities/Authorization/Role.cs (D05 §3.13.3) + RolePermission (CE leer)
 [OwnedBy("Authorization")] public sealed class RolePermission { public Guid RoleId { get; private set; } public string PermissionKey { get; private set; } = ""; }
@@ -1115,17 +1171,20 @@ public interface ISystemRoleGrantContributor
 
 ```ts
 // frontend/libs/web/core/permissions/src/permission-evaluator.ts (D05 §3.13.8, D08 §6.1)
-export type PermissionEvaluator = (input: {
-  allowed: ETempUserRole[]; level: TUserPermissionsLevel;
+// Name und Grundform wie D08 §6.5 / D05 §3.13.8 (`PermissionEvaluatorFn`, `PermissionCheck`); D16 ergänzt nur das optionale Feld teamspaceId (B1).
+export interface PermissionCheck {
+  allowed: EUserPermissions[]; level: EUserPermissionsLevel;
   workspaceRole?: EUserPermissions; projectRole?: EUserPermissions;
-  workspaceSlug?: string; projectId?: string; teamspaceId?: string;     // teamspaceId: B1
-}) => boolean;
-export const PERMISSION_EVALUATOR = new InjectionToken<PermissionEvaluator>('PERMISSION_EVALUATOR',
+  workspaceSlug?: string; projectId?: string;
+  teamspaceId?: string;                                                 // D16, additiv: B1 (CE setzt es nie)
+}
+export type PermissionEvaluatorFn = (ctx: PermissionCheck) => boolean;
+export const PERMISSION_EVALUATOR = new InjectionToken<PermissionEvaluatorFn>('PERMISSION_EVALUATOR',
   { factory: () => roleBasedEvaluator });
 // PermissionService.allowPermissions(allowPermissions, level, workspaceSlug?, projectId?, onPermissionAllowed?) – Signatur 1:1
 // zu WEB/store/user/base-permissions.store.ts Z. 46–52; ruft intern PERMISSION_EVALUATOR.
-export interface RoleOption { value: number; i18nLabel: string; namespace: 'workspace' | 'project'; }
-export const ROLE_OPTIONS = new InjectionToken<RoleOption[]>('ROLE_OPTIONS', { factory: () => CE_ROLE_OPTIONS }); // Admin/Member/Guest
+export interface RoleOptionDefinition { value: number; i18nLabel: string; scope: 'workspace' | 'project'; roleId?: string; } // roleId: E5 (Custom Roles), CE leer
+export const ROLE_OPTIONS = new InjectionToken<RoleOptionDefinition[]>('ROLE_OPTIONS', { factory: () => CE_ROLE_OPTIONS }); // Admin/Member/Guest (D08 §6.5)
 ```
 
 ### 5.7 E3 – Gruppen-Claims und Provisioning-Slot (I0/I1)
@@ -1181,7 +1240,9 @@ public interface IStateTransitionHook  { ValueTask OnChangedAsync(StateTransitio
 
 // D16: Payload der Pipeline
 public sealed record StateTransition(Guid WorkItemId, Guid WorkspaceId, Guid ProjectId, Guid? TypeId,
-                                     Guid? FromStateId, Guid ToStateId, StateChangeOrigin Origin, PrincipalRef Actor);
+                                     Guid? FromStateId, Guid ToStateId, StateChangeOrigin Origin,
+                                     PlanePrincipal Actor);   // D05 §6.1 C1: Guards brauchen den vollen Prinzipal (Rollen, Gruppen, Kind);
+                                                              // Worker-Pfade (AutoClose, AutoArchive, Integration, Automation) übergeben den Bot-/System-Prinzipal aus ICurrentActor
 // Reihenfolge: alle Guards (nach Order, erster Fehler gewinnt → 400 {"error_code": …, "error": "invalid_state_transition"}
 // Text/Code im W-Plan von C1) → Zustand setzen → Activity → Event plane.work_item.state_changed.v1 → Hooks (gleiche Transaktion).
 // Architekturtest: Setter WorkItem.SetState(...) ist internal und wird nur von WorkItemStateChanger aufgerufen.
@@ -1248,7 +1309,11 @@ public interface IIntegrationLinkProvider                   // D16 (E-13) – CE
 { ValueTask<IReadOnlyList<ExternalLinkDto>> ListAsync(Guid workItemId, CancellationToken ct); }
 
 public static class IntegrationQueues { public const string Integrations = "integrations", Importers = "importers"; }
-public static class IntegrationSecretPurposes { public const string V1 = "Plane.Integrations.Secrets.v1"; }   // D16-ADR-13
+public static class IntegrationSecretPurposes                                  // D16-ADR-13, Werte wie D05 §6.1
+{
+    public const string ConnectionSecret = "Plane.Integrations.ConnectionSecret.v1";   // Workspace-Verbindung (F1)
+    public const string ForgejoUserToken = "Plane.Forgejo.UserToken.v1";              // persönliche Verknüpfung (F2)
+}
 ```
 
 ```csharp
@@ -1363,10 +1428,11 @@ public sealed class ForgejoApiException(int status, string? message, string? url
 ```
 
 ```csharp
-// CE (I0): Route + Registry + 404. Registrierung im Host Plane.Api, weil das Eigentümer-Modul Plane.Integrations erst mit W1 entsteht;
-// W1 verschiebt die Datei unverändert nach Plane.Integrations/Endpoints/Integrations/ (einzige erlaubte Verschiebung, AK-16-07).
-// src/hosts/Plane.Api/Integrations/IntegrationWebhookEndpoint.cs
-internal static class IntegrationWebhookEndpoint
+// CE (I0): Route + Registry + 404. Der Endpunkt ist provider- und paketneutral (er delegiert nur an IWebhookIngress) und bleibt
+// DAUERHAFT in Plane.BuildingBlocks.Web; Plane.Api mappt ihn einmal (app.MapIntegrationWebhooks()). W1 registriert nur
+// IWebhookIngress + Verifier per DI – keine Datei wird verschoben oder geändert (D16-ADR-15, AK-16-07).
+// src/building-blocks/Plane.BuildingBlocks.Web/Integrations/IntegrationWebhookEndpoint.cs
+public static class IntegrationWebhookEndpoint
 {
     public static void Map(PlaneEndpointRouteBuilder e) =>
         e.Integrations("{provider}/webhooks/{connection_id:guid}")
@@ -1387,7 +1453,7 @@ public interface IWebhookIngress   // Plane.BuildingBlocks.Web/Integrations/ (R2
 { ValueTask<IResult> AcceptAsync(string provider, Guid connectionId, HttpRequest request, IWebhookSignatureVerifier verifier, CancellationToken ct); }
 ```
 
-Hinweis zu `IWebhookIngress`: Weil Regel R2 ASP.NET-Typen in `*.Contracts` verbietet, liegt dieses Interface **nicht** in `Plane.Integrations.Contracts`, sondern in `Plane.BuildingBlocks.Web/Integrations/IWebhookIngress.cs` (darf ASP.NET referenzieren). `Plane.Integrations` (W1) implementiert es und referenziert dafür `Plane.BuildingBlocks.Web` (zulässig, Modul → BuildingBlocks laut 01 §5.2).
+Hinweis zu `IWebhookIngress`: Weil Regel R2 ASP.NET-Typen in `*.Contracts` verbietet, liegt dieses Interface **nicht** in `Plane.Integrations.Contracts`, sondern in `Plane.BuildingBlocks.Web/Integrations/IWebhookIngress.cs` (darf ASP.NET referenzieren). `Plane.Integrations` (W1) implementiert es und referenziert dafür `Plane.BuildingBlocks.Web` (zulässig, Modul → BuildingBlocks laut 01 §5.2). Pflichten der W1-Implementierung, die die CE-Tests mit `FakeWebhookIngress` bereits festschreiben (AK-16-07): Header-Map case-insensitiv aufbauen, Body vor dem Lesen mit `EnableBuffering()` puffern und als `byte[]` an den Verifier geben (kein `Span` über `await` hinweg), Secret per `IntegrationSecretPurposes.ConnectionSecret` entschlüsseln, Antworten 401 `{"error": "Invalid signature"}` / 200 `{"status": "duplicate"}` / 202 `{"status": "accepted"}`. Die Rate-Limit-Policy `integration_webhook` muss ab I0 **registriert** sein, weil `RequireRateLimiting` auf eine unbekannte Policy beim ersten Request mit `InvalidOperationException` scheitert (D02-ADR-17 nennt „ab W1“ – Konflikt §9).
 
 ```csharp
 // W1 (Skizze, kein CE-Code): Signaturprüfung nach D16-ADR-10
@@ -1463,6 +1529,10 @@ public sealed record EventContext(
     Guid? WorkspaceId, Guid? ProjectId,
     string? CorrelationId, string? TraceParent,
     int CausationDepth);                                              // CE: 0; jede durch einen Consumer ausgelöste Folgeänderung +1; > 5 → verwerfen
+// Persistenz: outbox_messages (D02 §3.2.2 Nr. 5: Typ, Payload, traceparent, occurred_at) erhält zusätzlich die Spalten
+//   actor_id uuid NULL, actor_kind smallint NULL, origin text NOT NULL, workspace_id uuid NULL, project_id uuid NULL,
+//   correlation_id text NULL, causation_depth int NOT NULL DEFAULT 0  – der OutboxInterceptor füllt sie aus ICurrentActor/ICommandOrigin,
+//   der Dispatcher rekonstruiert daraus EventContext (I0; Ergänzungsauftrag an D02/D06, §9).
 
 // Beispiel CE-Event (Plane.WorkItems.Contracts/Events/WorkItemStateChangedV1.cs)
 public sealed record WorkItemStateChangedV1(Guid WorkItemId, Guid WorkspaceId, Guid ProjectId, Guid? FromStateId, Guid ToStateId,
@@ -1471,7 +1541,7 @@ public sealed record WorkItemStateChangedV1(Guid WorkItemId, Guid WorkspaceId, G
 ```
 
 ```csharp
-// tests/Plane.BuildingBlocks.Tests/Messaging/EventCatalogSnapshotTests.cs (I0; D15 Typ B/X)
+// tests/Plane.Contracts.Tests/EventCatalogSnapshotTests.cs (I0; Ort und Name wie D15 EP-T11)
 [Fact] public Task Catalog_is_stable() => Verify(EventCatalog.All.Select(e => new { e.EventType, Schema = JsonSchemaOf(e.ClrType) }));
 [Fact] public void Catalog_contains_minimum_set_of_D16() =>
     D16MinimumEvents.All.ShouldBeSubsetOf(EventCatalog.All.Select(e => e.EventType));   // nur die bis zum laufenden Inkrement fälligen Einträge (§3.2.4 Spalte „ab“)
@@ -1561,7 +1631,7 @@ internal sealed class NullEmbeddingGenerator : IEmbeddingGenerator<string, Embed
 
 ```ts
 // frontend/libs/web/extensions/src/ai.ts (D08 §6.1)
-export type DuplicateDetectionFn = (input: { title: string; projectId: string; workspaceSlug: string }) => Signal<TDeDupeIssue[]>;
+// DuplicateDetectionFn: Signatur siehe §5.16 (getreuer Port des Original-Hooks)
 export const DUPLICATE_DETECTION = new InjectionToken<DuplicateDetectionFn>('DUPLICATE_DETECTION',
   { factory: () => () => signal<TDeDupeIssue[]>([]) });                                         // S64
 ```
@@ -1592,6 +1662,73 @@ export const CYCLE_FLAGS = new InjectionToken<{ parallelCycles: boolean }>('CYCL
 export const GLOBAL_MODALS = new InjectionToken<GlobalModalDefinition[][]>('GLOBAL_MODALS');        // S30/S61
 ```
 
+### 5.16 Work-Item-Fassaden für Pakete (E-06, E-18) und fehlende Registry-Typen (Review-Ergänzung)
+
+Die in §3.3.0 als P geführten Fassaden `IWorkItemReferenceResolver` (E-06) und `IWorkItemCommands` (E-18) hatten in der Erstfassung keine Signatur. Sie sind Pflicht ab I2, weil F2 (W1) ohne sie die CE ändern müsste.
+
+```csharp
+// src/modules/WorkItems/Plane.WorkItems.Contracts/Services/IWorkItemReferenceResolver.cs        // D16 (E-06, D16-ADR-11)
+public interface IWorkItemReferenceResolver
+{
+    /// Löst "<IDENTIFIER>-<sequence>" (case-insensitiv, Identifier 1–12 Zeichen wie projects.identifier) im Workspace auf.
+    /// Liefert null für unbekannte, gelöschte (deleted_at) Work Items und für Projekte, die der Prinzipal nicht sehen darf
+    /// (IVisibilityFilter<WorkItem>, Gast-Regel); archivierte Work Items werden geliefert (IsArchived = true) wie browse/:workItem.
+    ValueTask<WorkItemReference?> ResolveAsync(Guid workspaceId, string identifier, int sequence, PlanePrincipal principal, CancellationToken ct);
+    /// Mehrfachauflösung für Texte (Branch, PR-Titel, Commit-Nachricht): Kandidaten liefert das Paket, nicht die CE.
+    ValueTask<IReadOnlyList<WorkItemReference>> ResolveManyAsync(Guid workspaceId, IReadOnlyList<(string Identifier, int Sequence)> keys,
+                                                                 PlanePrincipal principal, CancellationToken ct);
+}
+public sealed record WorkItemReference(Guid WorkItemId, Guid ProjectId, string ProjectIdentifier, int SequenceId, string Name,
+                                       Guid StateId, bool IsArchived);
+// CE-Nutzer: Endpunkt browse/:workItem (CE-WI-009, `GET …/work-items/{IDENTIFIER}-{seq}/`) und v1 „Work Item per Identifier“ (CE-API-018).
+
+// src/modules/WorkItems/Plane.WorkItems.Contracts/Services/IWorkItemCommands.cs                  // D16 (E-18)
+// Synchrone Schreibfassade (R5) – läuft im Modul-Scope von WorkItems, schreibt Activity, Outbox-Events und Notifications genau wie
+// die App-Endpunkte; Akteur aus ICurrentActor, Herkunft explizit. State-Wechsel laufen intern IMMER über IWorkItemStateChanger (C1).
+public interface IWorkItemCommands
+{
+    ValueTask<Result<Guid>> CreateAsync(CreateWorkItemCommand cmd, StateChangeOrigin origin, CancellationToken ct);
+    ValueTask<Result> UpdateAsync(Guid workItemId, WorkItemPatch patch, StateChangeOrigin origin, CancellationToken ct);
+    ValueTask<Result> SetLabelsAsync(Guid workItemId, IReadOnlyList<Guid> labelIds, StateChangeOrigin origin, CancellationToken ct);
+    ValueTask<Result> SetAssigneesAsync(Guid workItemId, IReadOnlyList<Guid> userIds, StateChangeOrigin origin, CancellationToken ct);
+    ValueTask<Result<Guid>> AddCommentAsync(Guid workItemId, string commentHtml, ExternalRef? external, StateChangeOrigin origin, CancellationToken ct);
+    ValueTask<Result> UpdateCommentAsync(Guid commentId, string commentHtml, StateChangeOrigin origin, CancellationToken ct);
+    ValueTask<Result> DeleteCommentAsync(Guid commentId, StateChangeOrigin origin, CancellationToken ct);
+    ValueTask<Result> AddRelationAsync(Guid workItemId, Guid relatedWorkItemId, string relationTypeKey, StateChangeOrigin origin, CancellationToken ct);
+    ValueTask<Result> RemoveRelationAsync(Guid workItemId, Guid relatedWorkItemId, string relationTypeKey, StateChangeOrigin origin, CancellationToken ct);
+}
+public sealed record CreateWorkItemCommand(Guid ProjectId, string Name, string? DescriptionHtml, Guid? StateId, string? Priority,
+                                           IReadOnlyList<Guid> LabelIds, IReadOnlyList<Guid> AssigneeIds, Guid? ParentId, Guid? TypeId,
+                                           ExternalRef? External);
+public sealed record WorkItemPatch(Optional<string> Name, Optional<string?> DescriptionHtml, Optional<Guid> StateId,
+                                   Optional<string> Priority, Optional<DateOnly?> StartDate, Optional<DateOnly?> TargetDate);
+public sealed record ExternalRef(string Source, string Id);   // → external_source/external_id (IExternallyReferenced, §3.4.2)
+// Validierung, Fehlercodes und Felder folgen 1:1 den App-Endpunkten (CE-WI-001/-003/-037/-033); die CE nutzt die Fassade selbst
+// für Intake-Annahme (CE-INT-006) und die v1-Adapter (R6), damit sie nicht ungetestet bleibt.
+```
+
+```ts
+// frontend/libs/web/extensions/src/features.ts, home.ts, modals.ts, filters.ts, ai.ts – Typen, die §5.1/§5.5/§5.14/§5.15 nur benannt hatten
+export interface WorkspaceFeatureDefinition {
+  key: string;                                  // 'teams' | 'wiki' | 'initiatives' | 'customers' | 'project_grouping' | 'pi' (§3.2.6)
+  i18nTitle: string; i18nDescription: string; icon: Type<unknown>; sortOrder: number;
+  isEnabled: (features: Record<string, boolean>) => boolean;   // Quelle: workspace_feature_settings (E-01)
+}
+export interface HomeWidgetDefinition {
+  key: string;                                  // CE: THomeWidgetKeys aus PKG/types/src/home.ts ('quick_links' | 'recents' | 'my_stickies' | 'quick_tutorial' | 'new_at_plane')
+  i18nTitle: string; component: Type<unknown>; sortOrder: number;
+}
+export interface GlobalModalDefinition { key: string; scope: 'workspace' | 'project' | 'work-item'; component: Type<unknown>; }
+export interface FilterInputModeDefinition { mode: FilterInputMode; i18nLabel: string; component: Type<unknown>; }
+// DUPLICATE_DETECTION – getreuer Port der Original-Signatur WEB/hooks/use-debounced-duplicate-issues.tsx (D08 §6.1 kürzt sie):
+export type DuplicateDetectionFn = (input: {
+  workspaceSlug?: string; workspaceId?: string; projectId?: string;
+  formData: { name?: string; description_html?: string; issueId?: string };
+}) => Signal<TDeDupeIssue[]>;
+```
+
+Akzeptanz: `WorkItemCommandsParityTests` (I2) – derselbe Änderungsfall über App-Endpunkt und über `IWorkItemCommands` erzeugt identische Zeilen in `work_items`, `work_item_activities` und `outbox_messages` (außer `origin`); `ReferenceResolverTests` (§7.2).
+
 ---
 
 ## 6. Erweiterungspunkte für Bezahl-Pakete – Verfahren für die Detailplanung je Welle
@@ -1600,13 +1737,15 @@ Dieses ganze Dokument ist der Katalog der Erweiterungspunkte. Dieser Abschnitt r
 
 ### 6.1 Definition of Ready je Welle
 
+Regel für die Spalte „CE-Voraussetzung“: Standard ist die abgenommene CE (I7, Strategie „CE zuerst vollständig“). F30 („Wellen laufen ab dem Zeitpunkt, an dem die nötigen CE-Teile stehen“) erlaubt einen früheren Start; der **frühestmögliche** Start ist das in Klammern genannte Inkrement – er setzt eine ausdrückliche Freigabe des Auftraggebers voraus und ändert nichts an der CE-Abnahme (D15 EP-T14).
+
 | Welle | Pakete | CE-Voraussetzung (abgenommen) | P-Andockstellen, die grün sein müssen | Spikes vor Start |
 |---|---|---|---|---|
-| W1 | F1, H1, H6, F2 | CE vollständig (I7) | §3.4.8 vollständig; H1 §5.8; H6 §5.12 inkl. erster Nutzung (I5); C1 (`StateChangeOrigin.Integration`); E-06, E-13, E-18, E-25 | **S-F2-1** Forgejo-API-/Webhook-Header-Abgleich gegen gepinnten Forgejo-15-Container (Swagger, `X-Forgejo-Signature`, Hook-Typ `forgejo`, Ereignis `status`, `actions/tasks`), **S-H1-1** Keycloak-Admin-REST für App-Clients + Token-Exchange/Client-Credentials mit Audience `plane-api` |
-| W2 | A1, A3, A5, A8, A9, A10, A11 | CE (I7) | §5.1 (A1/A2), §5.3 (A9), E-01…E-05, E-07, E-14 (`ESTIMATE_SYSTEM_FLAGS`), E-16 | S-A1-1 Abfrage-Performance Property-Filter/-Gruppierung auf 50 000 Work Items (EF-Ausdrücke vs. SQL-CTE) |
-| W3 | D1, D2, D3, D4, D5, D6 | CE (I7) | §5.13, E-10, E-11, E-23, `EDITOR_*`, `PAGE_*` | S-D5-1 DOCX-Erzeugung mit `DocumentFormat.OpenXml` (MIT) aus PM-JSON |
-| W4 | E5, E3, E6, E7 | CE (I7) | §5.6, §5.7, E-09, E-12, Event-Mindestmenge §3.2.4 | S-E5-1 Evaluator-Latenz mit Custom Roles (p95 < 2 ms je Prüfung, Cache) |
-| W5 | B1, B4, B5, B6, B2, B3 | CE (I7) + W2 (A1) + W4 (E5) | §5.4, §5.5, E-15, E-19, E-20, E-22 | S-B6-1 PQL-Grammatik (Parser-Bibliothek: handgeschrieben vs. Parlot (MIT) ⚠) |
+| W1 | F1, H1, H6, F2 | CE vollständig (I7); frühestens I5 (Pipeline/Resolver/Fassaden aus I2, erste H6-Nutzung I5) | §3.4.8 vollständig; H1 §5.8; H6 §5.12 inkl. erster Nutzung (I5); C1 (`StateChangeOrigin.Integration`); E-06, E-13, E-18, E-25 | **S-F2-1** Forgejo-API-/Webhook-Header-Abgleich gegen gepinnten Forgejo-15-Container (Swagger, `X-Forgejo-Signature`, Hook-Typ `forgejo`, Ereignis `status`, `actions/tasks`), **S-H1-1** Keycloak-Admin-REST für App-Clients + Token-Exchange/Client-Credentials mit Audience `plane-api` |
+| W2 | A1, A3, A5, A8, A9, A10, A11 | CE (I7); frühestens I3, A10 (Export `issue_worklogs`, E-16) frühestens I6 | §5.1 (A1/A2), §5.3 (A9), E-01…E-05, E-07, E-14 (`ESTIMATE_SYSTEM_FLAGS`), E-16 | S-A1-1 Abfrage-Performance Property-Filter/-Gruppierung auf 50 000 Work Items (EF-Ausdrücke vs. SQL-CTE) |
+| W3 | D1, D2, D3, D4, D5, D6 | CE (I7); frühestens I4, D5 (Space-Publish) frühestens I6 | §5.13, E-10, E-11, E-23, `EDITOR_*`, `PAGE_*` | S-D5-1 DOCX-Erzeugung mit `DocumentFormat.OpenXml` (MIT) aus PM-JSON |
+| W4 | E5, E3, E6, E7 | CE (I7); frühestens I6 (God Mode vollständig, alle Event-Aggregate vorhanden) | §5.6, §5.7, E-09, E-12, Event-Mindestmenge §3.2.4 | S-E5-1 Evaluator-Latenz mit Custom Roles (p95 < 2 ms je Prüfung, Cache) |
+| W5 | B1, B4, B5, B6, B2, B3 | CE (I7) + W2 (A1) + W4 (E5); B5 setzt I6 (Space) voraus | §5.4, §5.5, E-15, E-19, E-20, E-22 | S-B6-1 PQL-Grammatik (Parser-Bibliothek: handgeschrieben vs. Parlot (MIT) ⚠) |
 | W6 | A2, A4, A6, A12, A13, A16, A17 | W2, W4 | §5.2, E-21 | – |
 | W7 | A7, A14, A15, B7, B8 | W2 | E-14 (`HOME_WIDGETS`), Queues `sla`, `scheduled_comms` | S-A15-1 E-Mail-Eingang (IMAP-Poll vs. SMTP-Listener, Airgap) |
 | W8 | D7, D8, D9, D10, D11, D12 | W3, W4, W2 | E-11 (Schema-Erweiterung je Block), `PAGE_PANE_EXTENSIONS` | S-D9-1 Draw.io-Container offline |
@@ -1618,7 +1757,7 @@ Dieses ganze Dokument ist der Katalog der Erweiterungspunkte. Dieser Abschnitt r
 1. **Fachdesign** je EE-ID (bzw. ADR-007-Umfang bei F2): Verhalten, Felder, Regeln, Texte (Quelle F21–F28 bzw. Developer-Docs), Screens.
 2. **Benutzte Andockstellen** – ausschließlich aus §3.3/§3.3.0 dieses Dokuments; jede mit Verweis auf Zeile und Klasse.
 3. **Neue Artefakte** im Paketmodul: Tabellen + additive Migration (`W<n>_<Paket>_<Beschreibung>`), Permission-Keys (nur innerhalb der reservierten Präfixe §3.2.1) + `ISystemRoleGrantContributor`, Routen (nur unter reservierten Präfixen §3.2.2), Events (reservierte Namensräume §3.2.4), Activity-Felder (§3.2.3), Queues/Crons (§3.2.5), Feature-Schlüssel (§3.2.6), Frontend-Provider `provide<Paket>Extensions()`.
-4. **Erlaubte CE-Berührungen:** nur (a) die `extended.ts`-Dateien (D16-ADR-15), (b) eine Zeile in `PlaneModuleCatalog` und in `app.config.ts`, (c) Seeds/Migrationen additiv. Alles andere braucht ein Änderungsverfahren (§6.3).
+4. **Erlaubte CE-Berührungen:** nur (a) die `extended.ts`-Dateien (D16-ADR-15), (b) eine Zeile in `PlaneModuleCatalog` und in `app.config.ts`, (c) Seeds/Migrationen additiv, (d) **neue** Entitäts-/Konfigurationsdateien unter `Plane.Data/Entities/<Paket>/`, `Configurations/<Paket>/` samt generiertem `PlaneDbContextModelSnapshot.cs` (D16-ADR-06), (e) neue i18n-Schlüssel in den Locale-Dateien (additiv, Skill `translate`), (f) neue Einträge in `tests/extension-points.yaml`, `docs/extensions/reservations.yaml` nur per §6.3. Alles andere braucht ein Änderungsverfahren (§6.3); `tools/ci/extended-files-check` erzwingt die Liste.
 5. **Tests:** Contract-Tests gegen die EE-Developer-Docs (wo vorhanden: `/home/user/makeplane/developer-docs/docs/api-reference`), Visual-Tests gegen EE-Screenshots (wo vorhanden; sonst Gestaltungsregeln D09 §6), die CE-Regressionssuite **unverändert grün**.
 6. **i18n:** Schlüssel aus den Original-Locales, sofern vorhanden (F20 §7, Anhang A), sonst neue Schlüssel nach Skill `translate`.
 
@@ -1674,13 +1813,13 @@ flowchart LR
 
 | ID | Kriterium | Messung | Inkrement |
 |---|---|---|---|
-| AK-16-01 | Jede P-Andockstelle aus §1.4 und §3.3.0 existiert mit Contract (Interface/Token/Schema), CE-Default und Fake-Erweiterungstest (D15 Typ X). | `tools/ci/extension-points-check` liest `docs/extensions/extension-points.yaml` (maschinenlesbare Fassung von §3.3.0 + §1.4) und prüft je Eintrag: Typ existiert (Roslyn/TS-Compiler-API), Default registriert, Test mit Trait `ExtensionPoint=<id>` grün | je Inkrement laut Spalte „ab“ |
+| AK-16-01 | Jede P-Andockstelle aus §1.4 und §3.3.0 existiert mit Contract (Interface/Token/Schema), CE-Default und Fake-Erweiterungstest (D15 Typ X). | Inventar `tests/extension-points.yaml` (D15 EP-T09; maschinenlesbare Fassung von §1.4 + §3.3.0 + §5, je Eintrag `id` (z. B. `E-06`, `X7.IFilterFieldProvider`), `contract`, `owner`, `ce_default`, `inc`, `tests`) wird von `Plane.ArchitectureTests/ExtensionPointInventoryTests` (Reflection: Typ existiert, genau eine CE-Default-Registrierung, Test mit Trait `extension-point=<id>` existiert und ist grün) bzw. `frontend/tools/extension-registry-check` (Tokens) geprüft; 0 fehlende Einträge für Inkremente ≤ aktuellem | je Inkrement laut Spalte „ab“ |
 | AK-16-02 | Die CE-Defaults verändern kein Original-Verhalten. | Contract-Replay (S11/D15) und Visual-Suite mit aktivierten CE-Defaults = ohne Andockstellen-Registrierung (0 Abweichungen) | I2, I4, I7 |
 | AK-16-03 | Keine Kollision mit Reservierungen. | `ReservationCollisionTests`, `RouteReservationTests`: 0 CE-Keys/-Routen/-Activity-Felder/-Queues/-Event-Typen unter reservierten Präfixen | I0 ff. (jeder Build) |
 | AK-16-04 | Abhängigkeitsrichtung. | ArchUnitNET R11/R12 + Sheriff-Regel `scope:web ↛ domain:package-*`: 0 Verstöße | I0 ff. |
 | AK-16-05 | Vertragsstabilität. | `ExtensionContractsSnapshotTests` (PublicApiGenerator + Verify) und `api-extractor`-Report von `EXT/public-api.ts`: Diff nur additiv; ein entfernter/geänderter Member bricht den Build | I7 (danach dauerhaft) |
-| AK-16-06 | State-Wechsel nur über die Pipeline. | Architekturtest: `WorkItem.SetState` nur aus `WorkItemStateChanger`; Integrationstest je Origin (`User`, `PublicApi`, `Intake`, `CycleTransfer`, `AutoClose`, `AutoArchive`) ruft einen registrierten `FakeStateTransitionGuard` genau einmal auf; Guard-Ablehnung → 400 und kein Event | I2/I3 |
-| AK-16-07 | Integrations-Route. | `POST /api/integrations/forgejo/webhooks/{uuid}/` ohne Cookie: CE → 404 `{"error": "Page not found."}`; mit `FakeWebhookSignatureVerifier` + `FakeWebhookIngress`: gültige Signatur → 202, ungültig → 401, gleiche Delivery-ID zweimal → 200 `duplicate`; Body > 5 MiB → 413; Rate-Limit greift (600/min) | I0 |
+| AK-16-06 | State-Wechsel nur über die Pipeline. | Architekturtest: `WorkItem.SetState` nur aus `WorkItemStateChanger`; Integrationstest je Origin (`User`, `PublicApi`, `Intake`, `CycleTransfer`, `AutoClose`) ruft einen registrierten `FakeStateTransitionGuard` genau einmal auf, `AutoArchive`-Lauf ruft ihn **nicht** auf (kein State-Wechsel); Guard-Ablehnung → 400 `invalid_state_transition` und kein Event, im Auto-Close-Job → Eintrag übersprungen + Log | I2/I3 |
+| AK-16-07 | Integrations-Route. | `POST /api/integrations/forgejo/webhooks/{uuid}/` ohne Cookie: CE → 404 `{"error": "Page not found."}`; `…/webhooks/not-a-guid/` → 404; mit `FakeWebhookSignatureVerifier` + `FakeWebhookIngress`: gültige Signatur → 202, ungültig → 401, gleiche Delivery-ID zweimal → 200 `duplicate`, Header-Name in Kleinbuchstaben (`x-forgejo-signature`) wird erkannt; Body > 5 MiB → 413; 601. Request/min derselben `connection_id` → 429; Endpunkt-Datei liegt in `Plane.BuildingBlocks.Web/Integrations/` und wird in W1 nicht geändert (Git-Diff-Check im W1-PR) | I0 |
 | AK-16-08 | Forgejo im Stack. | `aspire run` (dev/test): Forgejo erreichbar (`/api/healthz` 200), SSO-Login `member@plane.local` in Forgejo über Keycloak erfolgreich, `artifacts/dev/forgejo.json` enthält OAuth-App mit **beiden** Redirect-URIs aus D16-ADR-09 (D14 AK-14-08/-09) | I0 |
 | AK-16-09 | Event-Mindestmenge. | `EventCatalogSnapshotTests.Catalog_contains_minimum_set_of_D16`: alle Event-Typen aus §3.2.4, deren Aggregat im Inkrement entsteht, sind registriert und werden im zugehörigen Integrationstest genau einmal je Änderung in die Outbox geschrieben | I1–I4 |
 | AK-16-10 | Feature-Kataloge. | `GET …/projects/{id}/` liefert die fünf CE-Toggles wie Original; mit `FakeProjectFeatureContributor("is_fake_enabled")` erscheint das Feld in der Antwort und in der Settings-Liste „Features“ (DOM-Snapshot), ohne CE-Codeänderung | I1 |
@@ -1697,9 +1836,12 @@ flowchart LR
 | Test (Klasse) | Projekt | Andockstelle(n) | ab |
 |---|---|---|---|
 | `ReservationCollisionTests`, `RouteReservationTests` | `Plane.ArchitectureTests` | §3.2 | I0 |
+| `ExtensionPointInventoryTests` (D15 EP-T09) | `Plane.ArchitectureTests` | alle P-Einträge §1.4/§3.3.0 | I0 ff. |
+| `ReservedKeysUnusedInCe` (D05) – deckt alle Präfixe aus §3.2.1 ab | `Plane.ArchitectureTests` | §3.2.1 | I0 |
+| `ForgejoSsoSmokeTests` (D05/D15, Keycloak + Forgejo-Container) | `Plane.AppHost.Tests` | F2 | I0 |
 | `ExtensionRules` (R11, R12) | `Plane.ArchitectureTests` | D16-ADR-03 | I0 |
 | `ExtensionContractsSnapshotTests` | `Plane.ArchitectureTests` | D16-ADR-07 | I7 |
-| `EventCatalogSnapshotTests` | `Plane.BuildingBlocks.Tests` | C3, §3.2.4 | I0 |
+| `EventCatalogSnapshotTests` | `Plane.Contracts.Tests` (D15 EP-T11) | C3, §3.2.4 | I0 |
 | `ConsumerRegistrationTests` (Fake-Consumer erhält Event genau einmal, Inbox) | `Plane.BuildingBlocks.Tests` | C3 | I0 |
 | `RecurringJobRegistryTests` (Fake-Cron registrierbar, Leader-Lock) | `Plane.Worker.Tests` | C3 | I0 |
 | `PermissionCatalogExtensionTests` (Teamspace-Scope, Grant-Contributor, `ApiScope`) | `Plane.Authorization.Tests` | E5, B1, H1 | I0 |
@@ -1718,6 +1860,8 @@ flowchart LR
 | `WorkItemTypeMinimalSchemaTests` (`type_id` nullable, Resolver `null`) | `Plane.WorkItems.Tests` | A1, E-03 | I2 |
 | `BaseSetFilterTests`, `HierarchyPolicyTests`, `ReferenceResolverTests` (Identifier case-insensitiv, archiviert/gelöscht, Gast-Sichtbarkeit) | `Plane.WorkItems.Tests` | E-04, E-05, E-06 | I2 |
 | `IntegrationLinkProviderNullTests` | `Plane.WorkItems.Tests` | E-13 | I2 |
+| `WorkItemCommandsParityTests` (App-Endpunkt vs. Fassade: identische Zeilen außer `origin`) | `Plane.WorkItems.Tests` | E-18 | I2 |
+| `RelatedScopeCheckTests` (Relation/Sub-Item in fremdes Projekt ohne Leserecht → Original-Fehler) | `Plane.Authorization.Tests` | A9, `IRelatedScopeCheck` (D05) | I2 |
 | `CycleSchedulingPolicyTests` | `Plane.Cycles.Tests` | E-15 | I3 |
 | `PageHierarchyDefaultsTests`, `PageAccessExtensionTests`, `CollaborationDocumentTypeRegistryTests` | `Plane.Pages.Tests`, `Plane.Collaboration.Tests` | D1, D2, D8, E-10, E-23 | I4 |
 | `DocumentSchemaRegistryTests` (Fake-Node roundtrip HTML↔JSON↔Yjs) | `Plane.Documents.Tests` | E-11 | I2/I4 |
@@ -1744,20 +1888,26 @@ Frontend: je Token ein Spec `*.extension.spec.ts` in `FE/libs/web/extensions/src
 | R-16-08 | D16-ADR-14 (Active Cycles in CE) widerspricht der Strategie „Bezahl-Features erst nach CE“. | niedrig / niedrig | bewusst entschieden in D08 (ADR-001: echte Funktion statt Upsell); weitere Vorziehungen nur per Eintrag in §4.1. |
 | R-16-09 | Nicht gewählte Pakete (C2, C4, C5, C6, F5, F7–F11, G2, G3, H5) werden später doch gewünscht und brauchen Andockstellen jenseits C1/C3/G1/F1. | niedrig / mittel | C5 (Templates) braucht A1/C1 (vorhanden); F8–F11 brauchen Queue `importers` (reserviert) und `IWorkItemCommands`; G2/G3 brauchen G1 + H4; Restbedarf über §6.3. |
 | R-16-10 | Rollen-Snapshot (258 Keys) und E5-Custom-Roles divergieren (neue CE-Keys nach Snapshot). | niedrig / mittel | Snapshot ist Teil der CE-Abnahme; neue CE-Keys erfordern Grant-Entscheidung im selben PR. |
+| R-16-11 | Gemeinsamer `PlaneDbContext` (ADR-037): Paket-Entitäten aus mehreren parallel laufenden Paketen einer Welle kollidieren im generierten `PlaneDbContextModelSnapshot.cs` und in der Migrationsreihenfolge. | mittel / niedrig | Paket-Migrationen werden seriell gemergt (Merge-Queue); bei Snapshot-Konflikt Rebase und Migration neu erzeugen (`dotnet ef migrations add` erneut), nie Snapshot von Hand mergen; `Plane.Migrator.Tests` (Drift-Check) im Gate. |
+| R-16-12 | Fehlinterpretation der Forgejo-Webhook-Familien (`X-Forgejo-Event`) statt der feinen Typen führt zu verpassten Label-/Assignee-/Review-Ereignissen. | mittel / mittel | D16-ADR-10 legt `X-Forgejo-Event-Type` als Dispatch-Schlüssel fest; W1-Test je feinem Typ aus §3.4.3 mit aufgezeichneter Delivery des Forgejo-Containers. |
 
 ### 8.2 Offene Punkte (mit Empfehlung)
 
 | Nr. | Offener Punkt | Empfehlung | Entscheidung bis |
 |---|---|---|---|
-| O-16-01 | Header-Name `X-Forgejo-Signature` und Hook-Typ `forgejo` im gepinnten Forgejo 15 | per S-F2-1 gegen `/swagger.v1.json` und eine Test-Delivery prüfen; Verifier akzeptiert ohnehin drei Header | Start W1 |
+| O-16-01 | Header-Name `X-Forgejo-Signature` und Hook-Typ `forgejo` im gepinnten Forgejo 15 | Review: mittelbarer Beleg für `X-Forgejo-Signature` (Hex ohne Präfix) gefunden, Hook-Typ `forgejo` fehlt in der Gitea-Aufzählung (Forgejo-spezifisch); per S-F2-1 gegen `/swagger.v1.json` und eine Test-Delivery prüfen; Verifier akzeptiert ohnehin drei Header | Start W1 |
 | O-16-02 | Forgejo-OAuth2-Scopes für App-Tokens (granulare Scopes `read:repository`, `write:issue` …) | in S-F2-1 klären; Fallback: volle Scopes, Einschränkung über Forgejo-Org-Rechte des Bot-Kontos | Start W1 |
 | O-16-03 | Zuordnung Forgejo-Milestones beim Import (→ Plane-Module, -Cycles oder A5-Milestones) | A5 (W2) läuft nach W1 → W1 importiert Milestones als Plane-**Module**; Umstellung auf A5 nach W2 per Option | W1-Plan |
 | O-16-04 | `states.project_id` NOT NULL vs. Workspace-States (A17) | CE NOT NULL; W6 lockert per Expand-Migration; Alternative: getrennte Tabelle `workspace_states` – Entscheidung im W6-Plan | W6-Plan |
 | O-16-05 | `teamspace_id` in `work_item_comments` (01 §1.4) – fachlich betreffen Teamspace-Kommentare Teamspace-Updates, nicht Work-Item-Kommentare | Spalte trotzdem anlegen (01 bindend, kostenlos), Nutzung entscheidet B1-Plan | W5-Plan |
-| O-16-06 | D08 nennt `PERMISSION_EVALUATOR` als `InjectionToken<PermissionEvaluator>`, D05 als `PermissionEvaluatorFn` | einheitlich `PermissionEvaluator` (Funktionstyp, §5.6); D05/D08 bei nächster Überarbeitung angleichen | I0 |
+| O-16-06 | ~~Name des Evaluator-Typs~~ | **im Review erledigt:** D05 und D08 nennen beide `PermissionEvaluatorFn`; §5.6 übernimmt den Namen. Offen bleibt nur der Feldname der Rollenliste (`roles` in D05 §5.x vs. `allowed` in D08 §6.5) – D16 folgt D08 (`allowed`), Angleichung in D05 (§9) | I0 |
 | O-16-07 | `ExternalLinkDto` (01 §5.5) hat keine Felder für Titel/Status | 01-Signatur bleibt; Anzeige-Felder in `Metadata` mit festen Schlüsseln (§5.10); bei 01-Überarbeitung als additive Felder aufnehmen | nächste 01-Revision |
 | O-16-08 | Event-Namen der Mindestmenge (§3.2.4) vs. künftiges D06 | D06 übernimmt die Namen; Abweichung nur additiv | Erstellung D06 |
-| O-16-09 | 00 ADR-004 nennt noch „Integrationen wie GitHub/Slack“ (überholt durch ADR-007; bereits in 01 Review-Protokoll vermerkt) | Wortlaut in 00 angleichen | nächste 00-Revision |
+| O-16-09 | ~~00 ADR-004 nennt noch „Integrationen wie GitHub/Slack“~~ | **im Review geprüft:** 00 ADR-004 nennt inzwischen „Integrationen wie Forgejo (ADR-007)“ – erledigt | – |
+| O-16-10 | D02-ADR-17 führt die Rate-Limit-Policy `integration_webhook` „ab W1“, die CE-Route nutzt sie ab I0 | Policy ab I0 registrieren (Optionen stehen in D02 bereits mit I0), D02-ADR-17 angleichen | I0 |
+| O-16-11 | `ReservedPermissionKeys` (D05 §6.1) enthält nur 10 Präfixe + 1 Key, §3.2.1 reserviert 95 Präfixe + 1 Key | D05 übernimmt die vollständige Liste aus `docs/extensions/reservations.yaml` (Generator); bis dahin prüft `ReservationCollisionTests` gegen §3.2.1 | I0 |
+| O-16-12 | `outbox_messages` (D02 §3.2.2) hat keine Spalten für `EventContext` (Akteur, Origin, Kausaltiefe) | Spalten laut §5.11 in D02/D06 aufnehmen | I0 |
+| O-16-13 | Fake-Bausteine Frontend: D08 `provideFakeExtensions()` in `libs/web/extensions/testing/`, D15 `provideTestExtensions({...})` in `libs/shared/testing/extensions/` | D08-Name verbindlich (Frontend-Eigentümer); D15 angleichen | I0 |
 
 ---
 
@@ -1765,21 +1915,21 @@ Frontend: je Token ein Spec `*.extension.spec.ts` in `FE/libs/web/extensions/src
 
 | Dokument | Beziehung | Was D16 von dort nutzt | Was D16 dorthin liefert / verlangt |
 |---|---|---|---|
-| `00-grundsatzentscheidungen.md` | bindend | ADR-001 (keine Gates, fachliche Toggles), ADR-004 (Airgap), ADR-007 (Forgejo-Umfang), ADR-008 (Keycloak, entfallene Pakete), ADR-009 (`funk.`) | O-16-09 |
+| `00-grundsatzentscheidungen.md` | bindend | ADR-001 (keine Gates, fachliche Toggles), ADR-004 (Airgap), ADR-007 (Forgejo-Umfang), ADR-008 (Keycloak, entfallene Pakete), ADR-009 (`funk.`) | – (O-16-09 erledigt) |
 | `01-zielarchitektur-und-tech-stack.md` | bindend | §1.3 Inkremente, §1.4 🧱-Andockstellen, §5.1 Baum (`extensions/`), §5.2 Regeln R1–R10, §5.5 Signaturen, §6.4 Registries, ADR-018/-020/-049 | Regeln R11/R12 (D16-ADR-03), O-16-07 |
-| `02-backend-solution-und-konventionen.md` | nutzt | Modul-Schablone, `ApiSurface.Integrations`, Query-Engine (§3.11, `FilterValue`), Activity (`IActivityFieldResolver`), Event-Namensschema, §6 | E-03…E-07, E-18…E-21, E-25 in die Schablone/Engine aufnehmen; `IWebhookIngress` in `Plane.BuildingBlocks.Web/Integrations/` |
+| `02-backend-solution-und-konventionen.md` | nutzt | Modul-Schablone, `ApiSurface.Integrations`, Query-Engine (§3.11, `FilterValue`), Activity (`IActivityFieldResolver`), Event-Namensschema, §6 | E-03…E-07, E-18…E-21, E-25 in die Schablone/Engine aufnehmen; `IWebhookIngress` **und** `IntegrationWebhookEndpoint` dauerhaft in `Plane.BuildingBlocks.Web/Integrations/`; Rate-Limit-Policy `integration_webhook` ab I0 registrieren (O-16-10); `outbox_messages` um `EventContext`-Spalten erweitern (O-16-12); Signaturen `IWorkItemReferenceResolver`/`IWorkItemCommands` (§5.16) |
 | `03-datenmodell-efcore.md` (noch nicht vorhanden) | liefert an | – | Tabellen/Spalten der Klassen P/V aus §3.3, §4.2, §5.1, §5.3, §3.4.2 (`integration_connections`, `external_links`), `project_feature_settings`, `workspace_feature_settings`, `teamspace_id`-Spalten |
 | `04-api-design-und-endpunktkatalog.md` (noch nicht vorhanden) | liefert an | – | Routen-Reservierungen §3.2.2, v1-Guard E-19, `IV1PayloadExtension`, Abweichungsliste für nicht portierte tote Aufrufe (§4.3) |
-| `05-auth-sicherheit-berechtigungen.md` | nutzt | Permission-Katalog (258 Keys), System-Rollen, Evaluator, Provisioning-Pipeline (Order-Slots), Schemata, `IPageAccessExtension`, §6 | Permission-Präfixe §3.2.1, `ISystemRoleGrantContributor` (E-09), Slot 750/760, O-16-06 |
+| `05-auth-sicherheit-berechtigungen.md` | nutzt | Permission-Katalog (258 Keys), System-Rollen, Evaluator, Provisioning-Pipeline (Order-Slots), Schemata, `IPageAccessExtension`, §6 | Permission-Präfixe §3.2.1 vollständig in `ReservedPermissionKeys` (O-16-11), `ISystemRoleGrantContributor` (E-09), Slot 750/760, Feldname `allowed` statt `roles` in `PermissionEvaluatorFn` (O-16-06); D16 übernimmt aus D05: DP-Purposes `Plane.Integrations.ConnectionSecret.v1`/`Plane.Forgejo.UserToken.v1`, SSRF-Clients `integrations`/`forgejo`/`llm`, `IRelatedScopeCheck`, `CompositeVisibilityFilter<T>`, `SearchVisibilityFilter`, `IdentityClaimsChanged`, `MembershipSource`, `idp_group_mappings`, Event-Namensraum `plane.identity.*`, `StateTransition` mit `PlanePrincipal` |
 | `06-hintergrundjobs-events-benachrichtigungen.md` (noch nicht vorhanden) | liefert an | – | Event-Mindestmenge §3.2.4, `EventContext.CausationDepth`, Queues/Crons §3.2.5, `IWebhookEventSource`, `IExportTypeProvider` |
 | `07-realtime-kollaboration-dokumente.md` (noch nicht vorhanden) | liefert an | – | `ICollaborationDocumentType` (E-10), `IDocumentNodeSpec`-Registry (E-11), Gruppen-Präfixe/`IRealtimeGroupAuthorizer` (E-22), `affectedPages` |
-| `08-frontend-angular-architektur.md` | nutzt | §6.1 Registries, §6.2 `ROUTE_EXTENSIONS`, §6.3 Store-Overrides, §6.4 🧱-Tabelle, §6.5 Typen | zusätzliche Tokens `PROJECT_FEATURES`, `WORKSPACE_FEATURES`, `GLOBAL_MODALS`, `ESTIMATE_SYSTEM_FLAGS`, `ENTITY_QUICK_ACTIONS`, `HOME_WIDGETS`, `CYCLE_FLAGS`, `FILTER_INPUT_MODES`; D16-ADR-15 (`extended.ts`-Dateien) |
+| `08-frontend-angular-architektur.md` | nutzt | §6.1 Registries, §6.2 `ROUTE_EXTENSIONS`, §6.3 Store-Overrides, §6.4 🧱-Tabelle, §6.5 Typen | zusätzliche Tokens `PROJECT_FEATURES`, `WORKSPACE_FEATURES`, `GLOBAL_MODALS`, `ESTIMATE_SYSTEM_FLAGS`, `ENTITY_QUICK_ACTIONS`, `HOME_WIDGETS`, `CYCLE_FLAGS`, `FILTER_INPUT_MODES`; D16-ADR-15 (`extended.ts`-Dateien); D16 übernimmt aus D08: `ADMIN_HEADER_SEGMENT_LABELS` statt 1:1-Datei S41, `ADMIN_ROUTE_EXTENSIONS`, `SPACE_ROUTE_EXTENSIONS`, `PermissionCheck`/`RoleOptionDefinition`; Bitte an D08: `DUPLICATE_DETECTION`-Signatur auf den getreuen Port §5.16 erweitern |
 | `09-ui-paritaet-designsystem.md` | nutzt | `PlBlkStateSelect.allowedStateIds` (C1), Gestaltungsregeln für Screens ohne Original (§6) | Visual-Prüfpunkte „CE-Default = Original“ für alle Registries (AK-16-02/-16) |
 | `10-editor-angular.md` (noch nicht vorhanden) | liefert an | – | `EDITOR_*`-Tokens, Server-/Client-Schema-Erweiterung je Node (E-11), `EDITOR_FLAGS`-Defaults |
 | `11-suche-und-ai-basis.md` (noch nicht vorhanden) | liefert an | – | `ISearchProvider`, `IIndexingPipeline`, `IIndexDocumentEnricher` (E-24), Null-Embeddings, Queue `indexing` |
 | `12-…`, `13-…` | – | in 01 Anhang A nicht vergeben | – |
-| `14-infrastruktur-deployment-betrieb.md` | nutzt | §3.4 Forgejo (Container, Bootstrap, Init, Testdaten), §3.3 Keycloak-Clients/Scopes, §6 Infrastruktur-Andockstellen, benannte Worker-Pools | Redirect-URIs D16-ADR-09 für `forgejo-init` Schritt 8 (löst dessen ⚠), Keycloak-Client-IDs `plane-desktop`/`plane-mobile` reserviert (H8), Merkposten W1–W9 |
-| `15-teststrategie-qualitaet-paritaet.md` | nutzt | Testtyp X (§3.15.3), Fake-Ort `Plane.BuildingBlocks.Testing/Extensions`, Quality-Gates | Testinventar §7.2, `tools/ci/extension-points-check`, `assert-no-package-code`, Build-Konfiguration `fake-extensions` |
+| `14-infrastruktur-deployment-betrieb.md` | nutzt | §3.4 Forgejo (Container, Bootstrap, Init, Testdaten), §3.3 Keycloak-Clients/Scopes, §6 Infrastruktur-Andockstellen, benannte Worker-Pools | Redirect-URIs D16-ADR-09 für `forgejo-init` Schritt 8 (löst dessen ⚠), Keycloak-Client-IDs `plane-desktop`/`plane-mobile` reserviert (H8), Merkposten W1–W9; Keycloak-Client für Forgejo heißt `plane-forgejo` (01 §4.1, D05) – D14 §3.3.2 nennt noch `forgejo` |
+| `15-teststrategie-qualitaet-paritaet.md` | nutzt | Testtyp X (§3.15.3), Fake-Ort `Plane.BuildingBlocks.Testing/Extensions`, Quality-Gates | Testinventar §7.2 (Einträge in `tests/extension-points.yaml`, EP-T09), `assert-no-package-code`, Build-Konfiguration `fake-extensions`; Bitte an D15: `provideFakeExtensions()` (D08) statt `provideTestExtensions`, `AutoArchive` aus `StateChangeOriginTests` nehmen (kein State-Wechsel, §3.3.3 C1) |
 | `migration/plan/01-roadmap-ce.md`, `migration/plan/_data/wp-ce.json` (noch nicht vorhanden) | liefert an | – | P-Andockstellen je Inkrement (§1.4, §3.3.0 Spalte „ab“) als Arbeitspaket-Bestandteile |
 | `migration/plan/waves/W<n>-<paket>.md` (später) | Vorgabe | – | §6 (DoR, Inhalt, Änderungsverfahren) |
 | `features/29-paid-feature-matrix.md`, `30-paid-auswahlliste.md`, `20`–`28` | Quelle | Paketzuschnitt, Wellen, EE-IDs, Stubs S1–S66, EE-API/-Konzepte | – |
@@ -1794,7 +1944,69 @@ Frontend: je Token ein Spec `*.extension.spec.ts` in `FE/libs/web/extensions/src
 | 🧱-Pakete | Abgleich der 17 🧱-Pakete (F30) mit §1.4, §3.3 (Klasse P) und §5 (Skizze C# + TS) | 17/17 mit P-Andockstelle und Skizze (A1/A2 §5.1, A17 §5.2, A9 §5.3, B1 §5.4, B6 §5.5, E5 §5.6, E3 §5.7, H1 §5.8, C1 §5.9, F1/F2 §5.10, C3 §5.11, H6 §5.12, D1/D2 §5.13, G1 §5.14) |
 | Stub-Inventar | Skript: Zeilen S1–S66 in §4.1 gegen F20 §6 | 66/66 |
 | `extended`-Dateien | `find apps packages -iname '*extended*'` im Original | 27 Treffer; jede Datei in D16-ADR-15 (§3.1) als übernommen oder ersetzt/entfallen eingeordnet |
-| Permission-Präfixe | Skript: 94 reservierte Präfixe §3.2.1 gegen 258 CE-Keys aus `architecture/_data/05-permission-matrix.json` | 0 Kollisionen |
+| Permission-Präfixe | Skript: 93 reservierte Präfixe §3.2.1 (Erstfassung; nach Review 95 Präfixe + 1 Einzel-Key, erneut 0 Kollisionen) gegen 258 CE-Keys aus `architecture/_data/05-permission-matrix.json` | 0 Kollisionen |
 | Routen-Präfixe | Abgleich mit `API/app/urls/*.py`, `API/api/urls/*.py` | Überschneidung nur bei lesenden CE-Routen `workspaces/{slug}/states/`, `…/labels/` → als „(schreibend)“ reserviert |
 | Original-Bezüge | Stichproben: `API/db/models/{issue,issue_type,project,page,intake,user}.py`, `API/api/views/issue.py` Z. 324–335, `WEB/store/user/base-permissions.store.ts` Z. 46–52 | Feldnamen, Relationstypen (6 Choices + Paare → 10 Schlüssel), Toggles, PQL-Antwortform, `allowPermissions`-Signatur bestätigt |
 | Forgejo-API | Gitea-Swagger `release/v1.24` (`templates/swagger/v1_json.tmpl`): alle Pfade aus §3.4.6; Gitea `services/webhook/deliver.go`: Signatur-Header | alle Pfade vorhanden (Ausnahme `actions/runs` – nicht verwendet); Header-Semantik `X-Gitea-Signature`/`X-Hub-Signature-256` bestätigt; Forgejo-spezifische Header-Namen (`X-Forgejo-*`) laut Forgejo-Doku für `Delivery`/`Event` belegt, `X-Forgejo-Signature` offen (O-16-01) |
+
+---
+
+## Review-Protokoll
+
+**Review:** adversarialer Review am 23.10.2026 gegen `00`, `01` (§1.3, §1.4, §5.1–§5.5, §6.4), D02 §6, D05 §3.7.3/§3.13/§3.17.8/§6, D08 §6.1–§6.5, D14 §3.3/§3.4/§6.1, D15 §3.15.3/§6, F30 („Priorisierung“), den CE-Katalog (`_data/ce-features.json`, 507 IDs), die Permission-Matrix (`_data/05-permission-matrix.json`, 258 Keys) und den Original-Code. Externe Belege: Gitea `release/v1.24` (`templates/swagger/v1_json.tmpl`, `modules/webhook/type.go`) per raw.githubusercontent.com abgerufen; Forgejo-Quellen und -Doku (codeberg.org, forgejo.org) aus der Planungsumgebung gesperrt, Ersatz: eine Websuche (Treffer: Forgejo-Doku-Versionen v15–v17 und ein Commit-Spiegel eines Forgejo-Derivats mit den Signatur-Headern).
+
+### Prüfmethode
+
+| Prüfung | Verfahren | Ergebnis |
+|---|---|---|
+| Paket- und 🧱-Abdeckung | Abgleich §1.2/§3.3 mit F30 (52 gewählt + C1, C3, G1; 68 Pakete nach Wegfall E1/E2/E4/F3/F4) | 55/55, 17/17 🧱 mit P-Andockstelle und Skizze – bestätigt |
+| Permission-Reservierungen | Skript gegen 258 CE-Keys, nach Ergänzung um die D05-Präfixe | 95 Präfixe + 1 Einzel-Key, 0 Kollisionen |
+| Routen-Reservierungen | `grep` der URL-Muster in `API/app/urls`, `API/api/urls`, `API/space/urls` | keine neue Überschneidung (Space-`anchor/…/votes/` liegt auf anderer Oberfläche) |
+| Original-Zeilenbezüge | Stichproben `project.py` Z. 71/79/95–101, `issue.py` Z. 162–170/272–293/475/654, `draft.py` Z. 70, `page.py` Z. 40–55/167, `intake.py` Z. 76–80, `deploy_board.py` Z. 20–28, `exporter.py` Z. 31, `user.py` Z. 115–116, `api/views/issue.py` Z. 324–335, `api/serializers/issue.py` Z. 190–197, `app/views/issue/archive.py` Z. 99, `issue_automation_task.py` | bestätigt; ein Fehler (`sub_pages_data`-Default), eine semantische Lücke (Auto-Archive) |
+| `extended`-Dateien | `find apps packages -iname '*extended*'` | 27 Treffer bestätigt; S41 abweichend von D08 eingeordnet (korrigiert) |
+| CE-IDs | alle im Dokument genannten `CE-*`-IDs gegen `ce-features.json` | 0 unbekannte IDs; Träger-Zuordnung fehlte (ergänzt §4.6) |
+| Forgejo-API | 15 Pfade aus §3.4.6 gegen Gitea-Swagger 1.24 maschinell geprüft, Schemas `PullRequest.draft`, `CreateHookOption.type`, `CreateBranchRepoOption`, `IssueMeta` | Pfade vorhanden (inkl. `actions/tasks`, `requested_reviewers`, `blocks`); Hook-Typ `forgejo` fehlt in der Gitea-Aufzählung (vermerkt) |
+| Querverweise | Namensabgleich aller Tokens/Interfaces mit D02/D05/D08/D14/D15 | 14 Abweichungen, davon 11 in D16 korrigiert, 6 als Konflikt an andere Dokumente gemeldet |
+
+### Korrekturen im Dokument
+
+| Nr. | Stelle | Befund | Korrektur |
+|---|---|---|---|
+| K-01 | D16-ADR-13, §3.3.6 F1/F2, §3.4.2, §5.10 | DP-Purpose `Plane.Integrations.Secrets.v1` widersprach D05 §6.1 (`Plane.Integrations.ConnectionSecret.v1`, `Plane.Forgejo.UserToken.v1`; Rang D05 > D16) | Purposes von D05 übernommen, Zuordnung je Secret-Art, `IntegrationSecretPurposes` mit zwei Konstanten |
+| K-02 | §3.2.1, §3.2 | D05 reserviert `workspace.forgejo_connection.`, `project.forgejo_mapping.` und `project.work_item.read_all`; D16-Präfix `workspace.forgejo.` deckt die ersten beiden nicht ab; zwei getrennte Listen (`Reservations.cs` vs. `ReservedPermissionKeys`) | Präfixe/Key ergänzt; `ReservedPermissionKeys` (D05) als einziger C#-Ort, `Reservations` verweist darauf (O-16-11) |
+| K-03 | §3.2.4, §3.3.5 E3 | Event-Namen `plane.user.*` kollidierten mit D05-Namensraum `plane.identity.*` | auf `plane.identity.user_provisioned/_deactivated/_disabled_in_idp` umgestellt, Sicherheitsereignisse hinter `Plane:Audit:Enabled` |
+| K-04 | D16-ADR-15, §4.1 S41, §3.3.5 E7 | S41 als 1:1-Datei geführt, D08 ersetzt sie durch Token `ADMIN_HEADER_SEGMENT_LABELS` | Einordnung „ersetzt“, Klasse P, Token und `ADMIN_ROUTE_EXTENSIONS` ergänzt |
+| K-05 | §3.3.2 B5, §1.4 I6 | Space-Routen über `ROUTE_EXTENSIONS` (`SPC_ROOT`), D08 hat `SPACE_ROUTE_EXTENSIONS` | korrigiert, I6-Zeile um E-16/E-19/Space-Tokens ergänzt |
+| K-06 | §5.9, D05 §6.1 C1 | `StateTransition.Actor` als `PrincipalRef`; D05 verlangt `PlanePrincipal` für rollenbasierte Guards | auf `PlanePrincipal` umgestellt, Worker-Prinzipal beschrieben |
+| K-07 | §3.3.3 C1, AK-16-06 | `AutoArchive` als State-Wechsel-Origin getestet, das Original archiviert ohne State-Wechsel (`archive_old_issues` setzt nur `archived_at`) – Test wäre nie grün | Enum-Wert bleibt (01), Test erwartet **keinen** Guard-Aufruf |
+| K-08 | D16-ADR-10, §3.4.3 | Dispatch über `X-*-Event` unterstellt; Gitea fasst feine Typen zu Familien zusammen (`issue_label` → `issues`, `pull_request_comment` → `issue_comment`, Reviews → `pull_request_approved/rejected`) | feiner Typ `X-Forgejo-Event-Type` als Dispatch-Schlüssel, vollständige Typ-/Familien-Tabelle, case-insensitive Header-Map, Beleglage zu `X-Forgejo-Signature` aktualisiert |
+| K-09 | §3.4.3, §3.4.4 | Hook-Typ `forgejo` unbelegt; Draft-Erkennung offen | Swagger-Befund vermerkt; Draft = Feld `draft` (WIP-Präfix), Ableitungsregeln aller sechs PR-Zustände |
+| K-10 | §3.4.6 | HTTP-Client ohne SSRF-Schutz beschrieben; D05 verlangt `AddSsrfSafeHttpClient("forgejo")` mit `Plane:Forgejo:AllowedHosts` | ergänzt, `BaseAddress` je Aufruf |
+| K-11 | §5.10, AK-16-07 | Webhook-Endpunkt im Host mit geplanter „Verschiebung“ in W1 – widerspricht „Ausbau ohne Umbau“ | Endpunkt dauerhaft in `Plane.BuildingBlocks.Web/Integrations/`, W1 registriert nur DI; Rate-Limit-Policy ab I0 (O-16-10) |
+| K-12 | §5.5 | `V1FilterParameterGuard` (ASP.NET-Typen) im Contracts-Codeblock – Verstoß gegen R2 | Ort `Plane.PublicApi/V1/WorkItems/` festgelegt |
+| K-13 | §5.0 R11 | Regex-Auswahl `^Plane\.[A-Za-z]+(\.Contracts)?$` erfasste BuildingBlocks/Platform/Data nicht | Assembly-Mengen aus dem Verzeichnisbaum, Ausnahmen für Hosts/`Plane.Hosting` |
+| K-14 | D16-ADR-06, §6.2 | Paket-Entitäten liegen nach R3 in `Plane.Data` (CE-Projekt), die Liste erlaubter CE-Berührungen kannte das nicht | neue Dateien in `Plane.Data/Entities/<Paket>/` bzw. `Configurations/<Paket>/`, generierter ModelSnapshot, i18n-Schlüssel ergänzt; Risiko R-16-11 |
+| K-15 | §5.6 | TS-Evaluator `PermissionEvaluator` mit `ETempUserRole`/`TUserPermissionsLevel`, `RoleOption.namespace` – weicht von D08 §6.5 ab | `PermissionCheck`/`PermissionEvaluatorFn`/`RoleOptionDefinition` wie D08, `teamspaceId` als einzige additive Ergänzung; O-16-06 geschlossen |
+| K-16 | §3.3.0 E-06/E-18 | P-Fassaden ohne Signatur – für W1 nicht umsetzbar | neuer §5.16 mit `IWorkItemReferenceResolver`, `IWorkItemCommands`, DTOs, Paritätstest |
+| K-17 | §5.1/§5.14/§5.15 | Typen `WorkspaceFeatureDefinition`, `HomeWidgetDefinition`, `GlobalModalDefinition`, `FilterInputModeDefinition` nur benannt; `DUPLICATE_DETECTION` nicht originalgetreu | Typen in §5.16, getreue Hook-Signatur |
+| K-18 | §5.11 | `EventContext` ohne Persistenzort (Outbox hat keine Akteur-/Origin-Spalten) | Spalten festgelegt, Auftrag an D02/D06 (O-16-12); Snapshot-Test-Ort nach D15 (`Plane.Contracts.Tests`) |
+| K-19 | AK-16-01, §1.4 | eigenes Inventar `docs/extensions/extension-points.yaml` + Trait `ExtensionPoint=` neben D15 `tests/extension-points.yaml` + `extension-point=` | auf D15 EP-T09 vereinheitlicht |
+| K-20 | §6.1 | jede Welle verlangte I7, F30 erlaubt Start, sobald nötige CE-Teile stehen | Standard I7 + frühestmögliches Inkrement je Welle mit Freigabevorbehalt |
+| K-21 | §3.3 A9/B1/B6/G1/E3/E5 | D05-Andockstellen fehlten (`IRelatedScopeCheck`, `CompositeVisibilityFilter<T>`, `roles.namespace=teamspace`, Sichtbarkeit nach AST, `SearchVisibilityFilter`, SSRF `llm`, `IdentityClaimsChanged`, `MembershipSource`, `idp_group_mappings`, `SystemRoleGrants.g.cs`) | ergänzt |
+| K-22 | §4 | keine Zuordnung P-Andockstelle → CE-ID/Arbeitspaket (Forderung „welcher Teil in welchem Inkrement“) | §4.6 Träger-CE-IDs (35 Zeilen), alle IDs gegen den Katalog validiert |
+| K-23 | §4.2 | `PageVersion.sub_pages_data` „CE `[]`“, Original `default=dict` | Default `{}` |
+| K-24 | §8.2 | O-16-09 bereits erledigt (00 nennt Forgejo); O-16-06 erledigt | als erledigt markiert, neue O-16-10…13, Risiken R-16-11/-12 |
+| K-25 | §3.4.4 (Work-Item-Referenzen) | unmaskierte Pipe-Zeichen in Regex-Code-Spans zerbrachen die Tabellenzeile (GFM) | mit Backslash maskiert; Tabellen maschinell auf Spaltenzahl geprüft (0 Abweichungen) |
+
+### Machbarkeitsbewertung (geprüfte Technik)
+
+- `HMACSHA256.HashData(ReadOnlySpan<byte>, ReadOnlySpan<byte>)` (.NET 6+), `Convert.ToHexStringLower` (.NET 9+), `CryptographicOperations.FixedTimeEquals` – in .NET 10 verfügbar.
+- `IEmbeddingGenerator<string, Embedding<float>>` aus `Microsoft.Extensions.AI.Abstractions` (MIT): `GenerateAsync(IEnumerable<string>, EmbeddingGenerationOptions?, CancellationToken)`, `GetService(Type, object?)`, `IDisposable` – das Null-Skelett entspricht der Schnittstelle.
+- Minimal-API-Parameter `[FromServices] IWebhookIngress?` ist optional (nicht registriert → `null`); `RequireRateLimiting` mit nicht registrierter Policy scheitert zur Laufzeit → Policy ab I0 registrieren.
+- System.Text.Json serialisiert `Dictionary`-Schlüssel vom Typ Enum/`long` (für `ForgejoRepositoryMappingConfig`) auch im Source-Generator-Modus.
+- Lizenzen unverändert: PublicApiGenerator (MIT), api-extractor (MIT), ArchUnitNET (Apache-2.0), Parlot ⚠ weiter im Lizenz-Gate prüfen (S-B6-1), DocumentFormat.OpenXml (MIT). Forgejo GPL-3.0-or-later als eigenständiger Dienst (kein Linking).
+
+### Verbleibende Punkte (nicht im Dokument lösbar)
+
+- Forgejo-spezifische Header-/Hook-Typ-Belege nur mittelbar (O-16-01) – Spike S-F2-1 bleibt Startbedingung W1.
+- Gegenläufige Festlegungen in D02 (Rate-Limit-Policy ab W1, Outbox-Spalten), D05 (`ReservedPermissionKeys` unvollständig, Feld `roles`), D14 (Client `forgejo`), D15 (`provideTestExtensions`, `AutoArchive` in `StateChangeOriginTests`, `Plane__Auth__BearerEnabled`) – als Konflikte gemeldet, Auflösung in den jeweiligen Dokumenten.

@@ -13,7 +13,7 @@
 2. [Entscheidungen (D02-ADR-01 ff.)](#2-entscheidungen-d02-adr-01-ff)
 3. [Detaildesign](#3-detaildesign)
    - 3.1 Solution, Projekte, Modul-Schablone
-   - 3.2 Persistenz-Basisklassen (Entity, Audit, Soft-Delete, Scoping)
+   - 3.2 Persistenz-Basisklassen (Entity, Audit, Soft-Delete, Scoping, DbContext-Registrierung)
    - 3.3 Endpunkt-Konventionen (Oberflächen, Präfixe, Routen, Statuscodes)
    - 3.4 Request-Pipeline (Middleware + Endpoint-Filter)
    - 3.5 Tenant-Auflösung über den Workspace-Slug
@@ -37,6 +37,7 @@
 7. [Akzeptanzkriterien & Tests](#7-akzeptanzkriterien--tests)
 8. [Risiken & offene Punkte](#8-risiken--offene-punkte)
 9. [Abhängigkeiten zu anderen Dokumenten](#9-abhängigkeiten-zu-anderen-dokumenten-0216)
+10. [Review-Protokoll](#review-protokoll)
 
 ---
 
@@ -116,7 +117,7 @@ Spalte „ab“ = Inkrement der ersten Umsetzung. Alle Entscheidungen sind Präz
 | **D02-ADR-14** | Filter-AST als einzige Abfragesprache (01 §1.4 B6, CE-LV-006) | Legacy-Query-Parameter (`issue_filters`) und Rich-Filter-JSON (`filters`) werden von **zwei Parsern** in **denselben** `FilterExpression`-AST übersetzt, dann von einem **Compiler** über eine **Feld-Registry** (`IFilterFieldProvider` + `IWorkItemFilterTranslator`) in `Expression<Func<WorkItem,bool>>`. Kein Parser erzeugt SQL oder LINQ direkt. | Zwei getrennte Filterpfade wie Original; Dynamic-LINQ-Strings | Ein Ausdrucksbaum ist Voraussetzung für B6 (PQL als dritter Parser) und A1 (Custom-Property-Felder als weitere Registry-Einträge). | I2 |
 | **D02-ADR-15** | Gruppierte Abfragen (S9, `A04` §5.2) | Zweiphasig: Phase 1 ermittelt per **SQL-Baustein** (`GroupedPageSqlBuilder`, CTE mit `ROW_NUMBER() OVER (PARTITION BY …)`, nur allowlist-geprüfte Ausdrücke aus der Group-Key-Registry, Ausführung über `Database.SqlQuery<GroupedRow>`) die Tupel `(issue_id, group_key, sub_group_key, rn)` sowie Gruppensummen; Phase 2 projiziert die Issue-Felder per EF (`WHERE id = ANY(@ids)`) und ID-Arrays per zweiter Abfrage (`array_agg`). Die gefilterte Basismenge gelangt entweder als materialisiertes ID-Array (Variante A) oder als aus demselben AST erzeugtes, parametrisiertes SQL-Prädikat (Variante B) in den CTE (§3.11.6). | Alles in LINQ (EF übersetzt Window-Functions nicht); `linq2db` | Performance-Ziele aus S9; ein schmaler, gut testbarer SQL-Baustein statt vieler handgeschriebener Queries. | I2 |
 | **D02-ADR-16** | Caching (ADR-021) | Fassade **`IPlaneCache`** über `HybridCache` mit Schlüssel-Präfix `plane:`, Tag-Invalidierung und **knotenübergreifender L1-Invalidierung** über Valkey-Pub/Sub-Kanal `plane:cache:invalidate` (HybridCache invalidiert L1 nur auf dem eigenen Knoten). **Berechtigungen/Mitgliedschaften werden nicht request-übergreifend gecacht** (nur Memoisierung pro Request). Kein generisches Response-Caching; gecacht werden benannte Lesemodelle (§3.12). | `@cache_response`-Nachbau (Schlüssel = Pfad+User); Output-Caching | Original-Invalidierungen treffen ihre Schlüssel nicht (`A03` §2.1.6) → Tags lösen das korrekt; Rechteänderungen müssen sofort wirken (Sicherheit). | I1 |
-| **D02-ADR-17** | Rate Limiting (ADR-034) | Benannte Policies `anon`, `authentication`, `email_verification`, `asset_duplicate`, `api_key`, gebunden an Oberflächen bzw. Endpunkte; Raten im Original-Format `n/period`; Partitionierung exakt wie Original (IP, User, Asset-ID, API-Key → **`token_hash`**, D05-ADR-16); Ablehnung 429 `{"error_code": 5900, "error_message": "RATE_LIMIT_EXCEEDED"}` + `Retry-After`; `/api/v1/` zusätzlich `X-RateLimit-Remaining`/`X-RateLimit-Reset` auf **jeder** Antwort. Algorithmus Sliding Window (DRF-History-Semantik). | Token Bucket; nur Gateway-Limit | Paritätsvertrag CE-API-002; API-Key nicht im Klartext als Schlüssel (Korrektur gegenüber `api_key:<key>`, Sicherheitskorrektur nach 01 §7.20). | I1 |
+| **D02-ADR-17** | Rate Limiting (ADR-034) | Benannte Policies `anon`, `authentication`, `asset_duplicate`, `api_key` (+ `integration_webhook` ab W1; `email_verification` entfällt, D05-ADR-08), gebunden an Oberflächen bzw. Endpunkte; Raten im Original-Format `n/period`; Partitionierung exakt wie Original (IP, User, Asset-ID, API-Key → **`token_hash`**, D05-ADR-16); Ablehnung 429 `{"error_code": 5900, "error_message": "RATE_LIMIT_EXCEEDED"}` + `Retry-After`; `/api/v1/` zusätzlich `X-RateLimit-Remaining`/`X-RateLimit-Reset` auf **jeder** Antwort. Algorithmus Sliding Window (DRF-History-Semantik). | Token Bucket; nur Gateway-Limit | Paritätsvertrag CE-API-002; API-Key nicht im Klartext als Schlüssel (Korrektur gegenüber `api_key:<key>`, Sicherheitskorrektur nach 01 §7.20). | I1 |
 | **D02-ADR-18** | Logging/Tracing (ADR-035, 01 §7.16) | `ILogger<T>` mit **festen Kategorien** über `PlaneLogCategories` (`plane.api.request`, `plane.api`, `plane.worker`, `plane.realtime`, `plane.exception`, `plane.external`, `plane.authentication`, `plane.migrations`, `plane.query`, `plane.config`); `RequestLoggingMiddleware` schreibt eine Zeile pro Request (`"{Method} {Path} {StatusCode}"` + Felder wie Original), nicht für `GET /` und `/health/*`; `ActivitySource`-Namen `Plane.Api`, `Plane.Worker`, `Plane.Realtime`, `Plane.Messaging`, `Plane.Query`; Redaktion über `Microsoft.Extensions.Compliance.Redaction` für Felder mit `[PersonalData]`/`[SecretData]`. | Serilog; freie Kategorien | Betreiber-Dashboards/Alerts des Originals bleiben übertragbar; keine PII in Logs. | I0 |
 | **D02-ADR-19** | Konfiguration (ADR-036, 01 §7.13) | Eine Options-Klasse je Bereich `Plane<Bereich>Options` unter `Plane:<Bereich>`; **ENV-Aliase** der Original-Variablen über die Konfigurationsquelle `LegacyEnvironmentConfigurationSource` (Tabelle §4.9), die vor den Standard-ENV-Variablen geladen wird (`Plane__…` hat Vorrang); Validierung per `IValidateOptions<T>` + `ValidateOnStart`; Raten-Strings (`60/minute`) per `RateExpression.Parse`. | Direktes Lesen von `Environment.GetEnvironmentVariable`; nur neue Namen | Betreiber können vorhandene `.env`-Dateien des Originals weiterverwenden; ungültige Werte fallen beim Start auf, nicht beim ersten Request. | I0 |
 | **D02-ADR-20** | Instanz-Konfiguration (ADR-036, CE-INST-002) | Tabelle `instance_configurations` (Key, Value, Category, IsEncrypted), Zugriff nur über **`IInstanceConfigurationStore`** (`Plane.Instance.Contracts`); geheime Werte mit **ASP.NET Core Data Protection** (Purpose `Plane.InstanceConfiguration.v1`, Key-Ring in PostgreSQL); Seed **nur fehlender** Keys aus ENV beim Migrator-Lauf (`configure_instance`-Semantik); Lesemodus `Database` (Default, `SKIP_ENV_VAR=1`) oder `Environment`; Key-Katalog als Code (`InstanceConfigurationKeys`) – OAuth-/Passwort-Keys entfallen (ADR-008). | Fernet-Nachbau mit `SECRET_KEY`; Speicherung im Klartext | Key-Rotation eingebaut, kein selbst gebautes Krypto; Greenfield erlaubt neuen Verschlüsselungsweg (ADR-003). | I0 |
@@ -140,11 +141,11 @@ Alle Projekte nutzen `Directory.Build.props` (Nullable, `TreatWarningsAsErrors`,
 | Projekt (Pfad relativ zu `funk.`) | SDK | Referenziert (nur diese) | Inhalt (Ordner) | ab |
 |---|---|---|---|---|
 | `src/building-blocks/Plane.BuildingBlocks/Plane.BuildingBlocks.csproj` | `Microsoft.NET.Sdk` | – (nur `Mediator.Abstractions`, `Microsoft.Extensions.*.Abstractions`) | `Ids/` (`IIdGenerator`, `UuidV7Generator`), `Time/` (`IClock`, `SystemClock`, `IRequestTimeZone`), `Results/` (`Result`, `Result<T>`, `PlaneError`, `PlaneErrorKind`), `Scoping/` (`ScopeLevel`, `ScopeRef`, `IScopeResolver`, `WorkspaceScope`, `ProjectScope`), `Security/` (`PlanePrincipal`, `PrincipalRef`, `PrincipalKind`, `Permission`, `ICurrentActor`), `Modules/` (`IModule`, `IMessagingRegistry`), `Messaging/` (`IIntegrationEvent`, `IDomainEvent`, `IEventConsumer<T>`, `IJob`, `IJobScheduler`, `IRecurringJobRegistry`, `EventContext`), `Pagination/` (`Cursor`, `PageRequest`, `PaginatedResponse<T>`, `GlobalPage<T>`), `Optional/` (`Optional<T>`, `Omittable<T>`), `Activity/` (Marker `IActivityFieldResolver` nur als Contract-Basis) | I0 |
-| `src/building-blocks/Plane.BuildingBlocks.Web/Plane.BuildingBlocks.Web.csproj` | `Microsoft.NET.Sdk` + `FrameworkReference Microsoft.AspNetCore.App` | `Plane.BuildingBlocks`, `Plane.Authorization.Contracts` | `Surfaces/` (`ApiSurface`, `PlaneEndpointRouteBuilder`, `SurfaceConventions`), `Routing/` (`TrailingSlashMiddleware`, `PlaneRouteConstraints`), `Json/` (`PlaneJsonOptions`, Converter), `Errors/` (`PlaneErrors`, `PlaneErrorCodes`, `DrfMessages`, `PlaneExceptionHandler`, `ResultExtensions`, `StatusCodeBodiesMiddleware`), `Validation/` (`ValidationEndpointFilter<T>`, `DrfValidationErrorMapper`), `Scoping/` (`ScopeBindingFilter`, `WorkspaceScopeBinder`), `Permissions/` (`PermissionEndpointFilter`, `RequirePermissionExtensions`, `AllowAnonymousSurfaceExtensions`), `Pagination/` (`CursorPaginator`, `GlobalPaginator`, `PaginationQuery`), `Security/` (`OriginCheckMiddleware`, `RequestBodyLimitMiddleware`, `ApiKeyAuthenticationHandler`), `RateLimiting/` (`PlaneRateLimitPolicies`, `SlidingWindowByKeyPolicy`), `Logging/` (`RequestLoggingMiddleware`, `PlaneLogCategories`), `ReadReplica/` (`UseReadReplicaMetadata`), `OpenApi/` (`PlaneOpenApiTransformers`) | I0 |
-| `src/building-blocks/Plane.BuildingBlocks.Persistence/Plane.BuildingBlocks.Persistence.csproj` | `Microsoft.NET.Sdk` | `Plane.BuildingBlocks` + EF Core/Npgsql | `Entities/` (`Entity`, `AuditableEntity`, `WorkspaceEntity`, `ProjectEntity`, Marker-Interfaces, `OwnedByAttribute`), `Configuration/` (`PlaneEntityConfiguration<T>`, `PlaneModelConventions`), `Interceptors/` (`AuditInterceptor`, `SoftDeleteInterceptor`, `OwnershipGuardInterceptor`, `DomainEventDispatchInterceptor`, `OutboxInterceptor`), `SoftDelete/` (`SoftDeleteCascadeRegistry`, `CascadeMode`, `SoftDeleteCascadeJob`), `Filters/` (`QueryFilterNames`), `Sequences/` (`ISequenceAllocator`, `SequenceAllocator`), `Errors/` (`PostgresErrorClassifier` für `23505` Unique, `23503` FK) | I0 |
+| `src/building-blocks/Plane.BuildingBlocks.Web/Plane.BuildingBlocks.Web.csproj` | `Microsoft.NET.Sdk` + `FrameworkReference Microsoft.AspNetCore.App` | `Plane.BuildingBlocks`, `Plane.Authorization.Contracts` | `Surfaces/` (`ApiSurface`, `PlaneEndpointRouteBuilder`, `SurfaceConventions`), `Routing/` (`TrailingSlashMiddleware`, `PlaneRouteConstraints`), `Json/` (`PlaneJsonOptions`, Converter), `Errors/` (HTTP-Abbildung von `PlaneErrors`/`PlaneErrorCodes` aus `Plane.BuildingBlocks/Results`, `DrfMessages`, `PlaneExceptionHandler`, `ResultExtensions`, `StatusCodeBodiesMiddleware`), `Validation/` (`ValidationEndpointFilter<T>`, `DrfValidationErrorMapper`), `Scoping/` (`ScopeBindingFilter`, `WorkspaceScopeBinder`), `Permissions/` (`PermissionEndpointFilter`, `RequirePermissionExtensions`, `AllowAnonymousSurfaceExtensions`), `Pagination/` (`CursorPaginator`, `GlobalPaginator`, `PaginationQuery`), `Security/` (`OriginCheckMiddleware`, `RequestBodyLimitMiddleware`, `ApiKeyAuthenticationHandler`), `RateLimiting/` (`PlaneRateLimitPolicies`, `SlidingWindowByKeyPolicy`), `Logging/` (`RequestLoggingMiddleware`, `PlaneLogCategories`), `ReadReplica/` (`UseReadReplicaMetadata`), `OpenApi/` (`PlaneOpenApiTransformers`) | I0 |
+| `src/building-blocks/Plane.BuildingBlocks.Persistence/Plane.BuildingBlocks.Persistence.csproj` | `Microsoft.NET.Sdk` | `Plane.BuildingBlocks` + EF Core/Npgsql | `Entities/` (`Entity`, `AuditableEntity`, `WorkspaceEntity`, `ProjectEntity`, Marker-Interfaces, `OwnedByAttribute`), `Configuration/` (`PlaneEntityConfiguration<T>`, `PlaneModelConventions`), `Interceptors/` (`IPlaneSaveChangesInterceptor`, `OwnershipGuardInterceptor`, `SoftDeleteInterceptor`, `AuditInterceptor`, `ScopeConsistencyInterceptor`, `OutboxInterceptor`), `Events/` (`DomainEventDispatcher`, vom `TransactionBehavior` genutzt), `SoftDelete/` (`SoftDeleteCascadeRegistry`, `CascadeMode`, `SoftDeleteCascadeJob`), `Filters/` (`QueryFilterNames`), `Sequences/` (`ISequenceAllocator`, `SequenceAllocator`), `Errors/` (`PostgresErrorClassifier` für `23505` Unique, `23503` FK) | I0 |
 | `src/building-blocks/Plane.BuildingBlocks.Messaging/…` | `Microsoft.NET.Sdk` | `Plane.BuildingBlocks`, `Plane.BuildingBlocks.Persistence` | Outbox/Inbox/Job-Queue/Scheduler (Detail: 06) | I0 |
 | `src/building-blocks/Plane.BuildingBlocks.Testing/…` | `Microsoft.NET.Sdk` | alle BuildingBlocks, `Plane.Data`, Test-Pakete | Namen verbindlich nach 15 §9.2: `Hosting/PlaneApiFactory` (`CreateClientAs(SeedUser)`, `Query<PlaneDbContext>(…)`), `PostgresContainerFixture` + `TemplateDatabase` + `PlaneRespawner`, `ModuleIntegrationTest`, `Builders/*` mit Fassade `ScenarioBuilder` (`Factory.Scenario()`, legt Daten über Commands an), `GoldenSettings` (Verify), `ContractScenarioRunner`, `Security/PermissionMatrixTest`, `FixedClock`, `TestPrincipalHeader`/`SeedUser` | I0 |
-| `src/data/Plane.Data/Plane.Data.csproj` | `Microsoft.NET.Sdk` | `Plane.BuildingBlocks.Persistence` | `PlaneDbContext`, `PlaneReadDbContext`, `Entities/<Modul>/`, `Configurations/<Modul>/`, `Querying/` (`IWorkItemFilterTranslator`, `WorkItemQueryableExtensions`), `Migrations/`, `Seeds/` | I0 |
+| `src/data/Plane.Data/Plane.Data.csproj` | `Microsoft.NET.Sdk` | `Plane.BuildingBlocks.Persistence` (+ `Mediator.Abstractions`, `FluentValidation`) | `PlaneDbContext`, `PlaneReadDbContext`, `PlaneDataServiceCollectionExtensions` (§3.2.4), `Entities/<Modul>/`, `Configurations/<Modul>/` + `AuditForeignKeyConvention`, `Querying/` (`IWorkItemFilterTranslator`, `WorkItemQueryableExtensions`), `Pipeline/` (Mediator-Behaviors `LoggingBehavior<,>`, `ModuleScopeBehavior<,>`, `ValidationBehavior<,>`, `TransactionBehavior<,>`, `ICacheInvalidationCollector`, `IPostCommitAction`, `IUniqueViolationMap` – Review-Ergänzung: Ort war offen), `Migrations/`, `Seeds/` | I0 |
 | `src/modules/<M>/Plane.<M>.Contracts` | `Microsoft.NET.Sdk` | **nur** `Plane.BuildingBlocks` (R2) | `Dtos/`, `Requests/`, `Events/`, `Permissions/`, `Services/`, `Extensions/` | je Modul |
 | `src/modules/<M>/Plane.<M>` | `Microsoft.NET.Sdk` + `FrameworkReference Microsoft.AspNetCore.App` | `Plane.<M>.Contracts`, andere `*.Contracts`, `Plane.Data`, `Plane.BuildingBlocks.*`, `platform/*`, `documents/*` | Schablone §3.1.2 | je Modul |
 | `src/hosts/Plane.Api` | `Microsoft.NET.Sdk.Web` | alle `Plane.<M>`, `Plane.ServiceDefaults`, `Plane.BuildingBlocks.Web` | `Program.cs`, `ModuleCatalog.cs`, `PipelineExtensions.cs`, `appsettings.json` | I0 |
@@ -543,20 +544,18 @@ Der Vergleich `pm.level > 5` steht ausschließlich in `Plane.Authorization/Visib
 | `OperationCanceledException` bei abgebrochener Verbindung | – | 499 (kein Körper), kein Error-Log | Debug |
 | alle anderen | `Exception` | 500 `{"error": "Something went wrong please try again later"}` | Error `plane.exception` mit Exception + Trace-ID |
 
-#### 3.8.3 Fehlercode-Katalog `PlaneErrorCodes` (vollständig, Werte aus `API/utils/error_codes.py` und `API/authentication/adapter/error.py`)
+#### 3.8.3 Fehlercode-Katalog (Werte aus `API/utils/error_codes.py` und `API/authentication/adapter/error.py`)
 
-| Bereich | Codes (Name = `error_message`) | Status in der Zielplattform |
-|---|---|---|
-| Work Items | `INVALID_ARCHIVE_STATE_GROUP` 4091, `INVALID_ISSUE_DATES` 4100, `INVALID_ISSUE_START_DATE` 4101, `INVALID_ISSUE_TARGET_DATE` 4102 | übernommen (4100–4102 im Original definiert, aber ungenutzt – Konstanten bleiben, Nutzung in 04) |
-| Pages | `PAGE_LOCKED` 4701, `PAGE_ARCHIVED` 4702 | übernommen |
-| Auth (Instanz) | `INSTANCE_NOT_CONFIGURED` 5000 | übernommen (`GET /api/instances/` vor Erst-Einrichtung) |
-| Auth (Konto) | `BOT_USER_LOGIN_FORBIDDEN` 5017, `USER_ACCOUNT_DEACTIVATED` 5019 | übernommen (Redirect-Fehler nach OIDC-Callback, 05) |
-| Auth (E-Mail) | `INVALID_EMAIL` 5005, `EMAIL_REQUIRED` 5010 | übernommen nur, falls E-Mail-Änderungs-Endpunkte bleiben (Entscheidung 05) |
-| Rate Limit | `RATE_LIMIT_EXCEEDED` 5900 | übernommen |
-| Neu (ADR-008) | `OIDC_PROVIDER_ERROR` 5200, `OIDC_EMAIL_NOT_VERIFIED` 5201, `OIDC_STATE_MISMATCH` 5202 | **neu**, Bereich 5200–5299 reserviert für Keycloak-Flows; Frontend-Texte in 05/08 |
-| entfällt (ADR-008) | 5015, 5016, 5018, 5020, 5021, 5025, 5030, 5035, 5040, 5045, 5050, 5055, 5056, 5060, 5065, 5070, 5075, 5080, 5085, 5090, 5092, 5095, 5097, 5100, 5102, 5104, 5105, 5110, 5111, 5112, 5115, 5120, 5121, 5122, 5123, 5124, 5125, 5130, 5135, 5138, 5140, 5145, 5150, 5155, 5160, 5165, 5170, 5175, 5180, 5185, 5190, 5999 | Konstanten **nicht** angelegt; Codes bleiben reserviert (keine Wiederverwendung) |
+Zwei Kataloge, eine Fabrik (`PlaneErrors.Coded(status, code)`):
 
-Test `PlaneErrorCodesTests`: Werte eindeutig, Namen = Konstantennamen, kein entfallener Code im Katalog.
+| Katalog | Ort | Inhalt | Status in der Zielplattform |
+|---|---|---|---|
+| `PlaneErrorCodes` (fachlich, `ERROR_CODES`) | `Plane.BuildingBlocks/Results/PlaneErrorCodes.cs` | `INVALID_ARCHIVE_STATE_GROUP` 4091, `INVALID_ISSUE_DATES` 4100, `INVALID_ISSUE_START_DATE` 4101, `INVALID_ISSUE_TARGET_DATE` 4102, `PAGE_LOCKED` 4701, `PAGE_ARCHIVED` 4702, `RATE_LIMIT_EXCEEDED` 5900 | übernommen (4100–4102 im Original definiert, aber ungenutzt – Konstanten bleiben, Nutzung in 04) |
+| `AuthErrorCodes` (`AUTHENTICATION_ERROR_CODES`) | `Plane.Identity.Contracts/AuthErrorCodes.cs` – **verbindlich 05 §4.3** | **alle** Original-Codes 5000–5999 (Vertrag mit den Frontend-Enums, E-26), je Code Status „aktiv“ oder „ruhend“; aktiv u. a. 5000, 5005, 5010, 5015 `SIGNUP_DISABLED`, 5017, 5019, 5124 `OAUTH_PROVIDER_UNVERIFIED_EMAIL`, 5150, 5155, 5175, 5190, 5900, 5999; **neu** 5200 `OIDC_AUTHENTICATION_FAILED`, 5201 `IDENTITY_PROVIDER_UNAVAILABLE`, 5202 `IDENTITY_ALREADY_LINKED`, 5210 `ADMIN_REAUTHENTICATION_REQUIRED` | Bereich 5200–5299 für Keycloak-Flows reserviert |
+
+Korrektur im Review: Die Erstfassung legte die entfallenen Login-Codes **nicht** an und vergab 5200–5202 mit anderen Namen (`OIDC_PROVIDER_ERROR`, `OIDC_EMAIL_NOT_VERIFIED`, `OIDC_STATE_MISMATCH`); maßgeblich ist 05 §4.3 (ruhende Codes bleiben im Katalog, damit die portierten Frontend-Enums unverändert bleiben).
+
+Test `PlaneErrorCodesTests`: Werte beider Kataloge eindeutig und disjunkt, Namen = Konstantennamen, Inhalt von `AuthErrorCodes` = Tabelle 05 §4.3.
 
 ### 3.9 JSON-Konventionen
 
@@ -884,8 +883,8 @@ public sealed record CacheEntryPolicy(TimeSpan Expiration, TimeSpan LocalExpirat
 | Policy (`PlaneRateLimitPolicies`) | Rate (Default, Konfig-Schlüssel) | Partition | Gilt für | Original | ab |
 |---|---|---|---|---|---|
 | `anon` | `30/minute` (`Plane:RateLimits:Anon`) | Client-IP (nach ForwardedHeaders) – **nur nicht authentifizierte Requests**; authentifizierte → kein Limit | Oberflächen App, Space, Instance, Auth (Default) | DRF `AnonRateThrottle` | I0 |
-| `authentication` | `10/minute` (`Plane:RateLimits:Authentication`, Alias `AUTHENTICATION_RATE_LIMIT`) | Client-IP (auch angemeldet) | `GET /auth/oidc/login/`, `GET /auth/oidc/callback/`, E-Mail-Änderungs-Endpunkte (falls in 05 beibehalten) | `AuthenticationThrottle` | I0 |
-| `email_verification` | `3/hour` | User-ID | E-Mail-Verifizierungscode (falls beibehalten) | `EmailVerificationThrottle` | I1 |
+| `authentication` | `10/minute` (`Plane:RateLimits:Authentication`, Alias `AUTHENTICATION_RATE_LIMIT`) | Client-IP (auch angemeldet) | `GET /auth/oidc/login/`, `GET /auth/oidc/callback/` und die übrigen Auth-Endpunkte laut 05 §3.17.6 | `AuthenticationThrottle` | I0 |
+| `email_verification` | – | – | **entfällt** (E-Mail-Änderung nur in Keycloak, D05-ADR-08) | `EmailVerificationThrottle` | – |
 | `asset_duplicate` | `5/minute` | Quell-Asset-ID (Routenwert `asset_id`), ohne ID kein Limit | `POST {W}/assets/v2/duplicate/…` | `AssetRateThrottle` | I1 |
 | `api_key` | `60/minute` (`Plane:RateLimits:ApiKey`, Alias `API_KEY_RATE_LIMIT`) | `token_hash` (SHA-256 des API-Keys, D05-ADR-16; nicht Klartext) | Oberfläche V1 (inkl. Einladungen/Stickies, 05 B-04) | `ApiKeyRateThrottle` | I6 |
 | `integration_webhook` | `600/minute` | `connection_id` | Oberfläche Integrations | – (F1) | W1 |
@@ -931,7 +930,7 @@ Mechanik:
 | `PlaneGatewayOptions`, `PlaneTlsOptions` | `Plane:Gateway`, `Plane:Tls` | nur `Plane.Gateway`; Felder verbindlich in 14 §3.9.1 (hier nur gelistet, damit die Options-Liste vollständig ist) | Gateway | I0 |
 | `PlaneStorageOptions` | `Plane:Storage` | `Provider` = `S3` (`S3`\|`FileSystem`), `Bucket` = `uploads`, `Region` = `""`, `InternalEndpoint`, `PublicEndpoint`, `AccessKey`, `SecretKey`, `ForcePathStyle` = true, `PresignExpirySeconds` = 3600, `UploadMode` = `Direct`, `FileSystemRoot` | Platform.Storage | I1 |
 | `PlaneUploadsOptions` | `Plane:Uploads` | `MaxFileSizeBytes` = 5242880, `AttachmentMimeTypes` (Liste `A01` §2.12), `InlineSafeMimeTypes` = `image/jpeg, image/jpg, image/png, image/gif, image/webp` | Platform.Storage | I1 |
-| `PlaneRateLimitOptions` | `Plane:RateLimits` | `Anon` = `30/minute`, `Authentication` = `10/minute`, `EmailVerification` = `3/hour`, `AssetDuplicate` = `5/minute`, `ApiKey` = `60/minute`, `IntegrationWebhook` = `600/minute` | BuildingBlocks.Web | I0 |
+| `PlaneRateLimitOptions` | `Plane:RateLimits` | `Anon` = `30/minute`, `Authentication` = `10/minute`, `AssetDuplicate` = `5/minute`, `ApiKey` = `60/minute`, `IntegrationWebhook` = `600/minute` | BuildingBlocks.Web | I0 |
 | `PlaneRetentionOptions` | `Plane:Retention` | `HardDeleteDays` = 60, `ApiActivityLogDays` = 14, `WebhookLogDays` = 14, `EmailLogDays` = 7, `UnuploadedAssetDays` = 7, `PageVersionsKeep` = 20, `DescriptionVersionsKeep` = 20, `ExportLinkDays` = 8 | Messaging/Module | I1 |
 | `PlaneWebhookOptions` | `Plane:Webhooks` | `AllowedNetworks` (CIDR[]), `AllowedHosts` (string[]), `DisallowedDomains` (string[]), `MaxAttempts` = 5, `BackoffBaseSeconds` = 600 | Webhooks | I6 |
 | `PlaneOpenApiOptions` | `Plane:OpenApi` | `Enabled` = false, `ServerUrls` (string[]) | Api | I0 |
@@ -962,7 +961,7 @@ Mechanik:
 
 #### 3.16.2 Abgeleitete `config`-Felder von `GET /api/instances/` (Bezug für 04/05)
 
-`is_workspace_creation_disabled` (`DISABLE_WORKSPACE_CREATION == "1"`), `has_unsplash_configured`, `has_llm_configured`, `file_size_limit` (float aus `Plane:Uploads:MaxFileSizeBytes`), `is_smtp_configured` (`EMAIL_HOST` nicht leer), `admin_base_url`, `space_base_url`, `app_base_url`, `instance_changelog_url`, `is_self_managed = true`. Die OAuth-/Passwort-Flags (`enable_signup`, `is_google_enabled`, `is_github_enabled`, `is_gitlab_enabled`, `is_gitea_enabled`, `is_magic_login_enabled`, `is_email_password_enabled`, `github_app_name`, `slack_client_id`) entfallen inhaltlich (ADR-008/ADR-007); ob sie mit festen Werten (`false`/`""`) im Vertrag bleiben, damit `packages/types` unverändert kompiliert, entscheidet 05 (Empfehlung: ja, feste Werte).
+Verbindliche Feldliste in 05 §4.4: `enable_signup` (`ENABLE_SIGNUP == "1"`), `is_workspace_creation_disabled` (`DISABLE_WORKSPACE_CREATION == "1"`), `has_unsplash_configured`, `has_llm_configured`, `file_size_limit` (float aus `Plane:Uploads:MaxFileSizeBytes`), `is_smtp_configured` (`EMAIL_HOST` nicht leer), `admin_base_url`, `space_base_url`, `app_base_url`, `instance_changelog_url`, `is_self_managed = true`; feste Werte für die entfallenen Flags (`is_google_enabled`, `is_github_enabled`, `is_gitlab_enabled`, `is_gitea_enabled`, `is_magic_login_enabled`, `is_email_password_enabled` = `false`, `github_app_name` = `""`, `slack_client_id` = `null`), damit `packages/types` unverändert kompiliert; neu `is_oidc_auto_redirect_enabled`, `oidc_account_console_url`, `oidc_provider_name` (O-D02-03 damit entschieden).
 
 ### 3.17 Health-Endpunkte
 
@@ -1118,7 +1117,7 @@ Vollständige Abbildung in §3.6.3 (Vorlagen). Zusätzlich:
 | Original | Ziel | Status |
 |---|---|---|
 | `handle_exception` (`API/app/views/base.py` + Space/Instance/V1-Pendants) | `PlaneExceptionHandler` (§3.8.2) | 1:1 |
-| `AUTHENTICATION_ERROR_CODES` (`API/authentication/adapter/error.py`) | `PlaneErrorCodes` (§3.8.3) | angepasst (ADR-008) |
+| `AUTHENTICATION_ERROR_CODES` (`API/authentication/adapter/error.py`) | `AuthErrorCodes` (`Plane.Identity.Contracts`, 05 §4.3) | 1:1 (ruhende Codes bleiben) |
 | `AuthenticationException.get_error_dict` | `PlaneErrors.Coded` | 1:1 |
 | `ERROR_CODES` (`API/utils/error_codes.py`) | `PlaneErrorCodes` | 1:1 |
 | DRF `ValidationError` (Serializer) | `PlaneError.Fields` | 1:1 |
@@ -1213,7 +1212,8 @@ Spalte „Ziel“: Konfigurationsschlüssel (ENV-Form `Plane__Bereich__Feld`); d
 | `METRICS_PUSH_INTERVAL_MINUTES`, `OTLP_ENDPOINT`, `OTLP_METRICS_PROTOCOL`, `OTEL_EXPORTER_OTLP_METRICS_INSECURE`, `SERVICE_NAME` | entfällt | kein Telemetrie-Push; Standard-`OTEL_*` der ServiceDefaults |
 | `LLM_API_KEY`, `LLM_PROVIDER`, `LLM_MODEL` | Instanz-Keys (Seed) | – |
 | `DISABLE_WORKSPACE_CREATION` | Instanz-Key (Seed) | – |
-| `ENABLE_SIGNUP`, `ENABLE_EMAIL_PASSWORD`, `ENABLE_MAGIC_LINK_LOGIN` | entfällt | ADR-008 (Keycloak) |
+| `ENABLE_SIGNUP` | Instanz-Key (Seed) | Signup-Gate (D05-ADR-12) |
+| `ENABLE_EMAIL_PASSWORD`, `ENABLE_MAGIC_LINK_LOGIN` | entfällt | ADR-008 (Keycloak); Warnung `plane.config`, falls gesetzt |
 | `EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_PORT`, `EMAIL_USE_TLS`, `EMAIL_USE_SSL`, `EMAIL_FROM` | Instanz-Keys (Seed) | – |
 | `GOOGLE_*`, `GITHUB_CLIENT_ID/_SECRET/_ORGANIZATION_ID`, `GITLAB_*`, `GITEA_*`, `IS_*_ENABLED`, `ENABLE_*_SYNC` | entfällt | ADR-008 |
 | `GITHUB_APP_NAME`, `SLACK_CLIENT_ID` | entfällt | ADR-007, Paket F7 nicht gewählt |
@@ -1231,7 +1231,7 @@ Spalte „Ziel“: Konfigurationsschlüssel (ENV-Form `Plane__Bereich__Feld`); d
 
 | # | Key | Kategorie | verschlüsselt | Seed-Default | Lese-Default | Ziel |
 |---|---|---|---|---|---|---|
-| 1 | `ENABLE_SIGNUP` | AUTHENTICATION | nein | `1` | `0` | **entfällt** (ADR-008) |
+| 1 | `ENABLE_SIGNUP` | AUTHENTICATION | nein | `1` | `1` (überall, Korrektur E-03) | **übernommen** als Signup-Gate der JIT-Anlage (D05-ADR-12; Erstfassung „entfällt“ korrigiert) |
 | 2 | `ENABLE_EMAIL_PASSWORD` | AUTHENTICATION | nein | `1` | `1` | entfällt |
 | 3 | `ENABLE_MAGIC_LINK_LOGIN` | AUTHENTICATION | nein | `0` | `1` | entfällt |
 | 4 | `DISABLE_WORKSPACE_CREATION` | WORKSPACE_MANAGEMENT | nein | `0` | `0` | übernommen |
@@ -1252,9 +1252,9 @@ Spalte „Ziel“: Konfigurationsschlüssel (ENV-Form `Plane__Bereich__Feld`); d
 | 34 | `LLM_MODEL` | AI | nein | `gpt-4o-mini` | – | übernommen |
 | 35 | `GPT_ENGINE` | AI | nein | `gpt-3.5-turbo` | – | entfällt (kein Leser) |
 | 36 | `UNSPLASH_ACCESS_KEY` | UNSPLASH | **ja** | `""` | `""` | übernommen |
-| neu | `LLM_BASE_URL` | AI | nein | `""` | `""` | **neu** (lokaler OpenAI-kompatibler Endpunkt, ADR-004/ADR-025) |
+| neu | `LLM_BASE_URL` | AI | nein | `""` | `""` | **neu**, Festlegung und Name in 11 (lokaler OpenAI-kompatibler Endpunkt, ADR-004/ADR-025); zählt nicht zu den 14 CE-Basisschlüsseln aus 05 §4.4 |
 
-Ergebnis CE: **14 Keys** (13 übernommen: Nr. 4, 24–34 ohne 35, 36 + neu `LLM_BASE_URL`). Präzisierung zu 01 ADR-036 („36 Keys“): Durch ADR-008 entfallen 22 Original-Keys (Nr. 1–3, 5–23), zusätzlich `GPT_ENGINE` (Nr. 35, ohne Leser); 13 + 23 = 36.
+Ergebnis CE (deckungsgleich mit 05 §4.4): **14 Keys** übernommen – Nr. 1, 4, 24–31, 32–34, 36 – plus die AI-Erweiterungen aus 11. Präzisierung zu 01 ADR-036 („36 Keys“): Durch ADR-008 entfallen 21 Original-Keys (Nr. 2–3, 5–23), zusätzlich `GPT_ENGINE` (Nr. 35, ohne Leser); 14 + 22 = 36. `PATCH /api/instances/configurations/` mit unbekanntem Key → 400 `{"error": "Invalid configuration key: <KEY>"}` (05 §4.4).
 
 ### 4.11 Django-Settings-Konstanten (`A01` §2.12) mit Backend-Bezug
 
@@ -2465,12 +2465,12 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 |---|---|---|---|
 | O-D02-01 | Zeitzone der Datum-Zeit-Ausgabe (UTC gemäß 01 §7.3 vs. DRF-Nutzerzeitzone, Befund B-02) | UTC beibehalten; nur bei nachgewiesener textueller Auswertung im Frontend `RequestTimeZone` für betroffene DTOs; ggf. Änderungsantrag an 01 §7.3 | Ende S11 |
 | O-D02-02 | `IModule.Permissions` als `IEnumerable<PermissionDescriptor>` und `IRequestScope` statt `ProjectScope`-Parameter (Präzisierungen zu 01 §5.3/§5.5) | in 01 §5.3-Skelett nachziehen | Start I0 |
-| O-D02-03 | Instanz-Konfiguration: Anzahl der Keys sinkt von 36 auf 14 (ADR-008); feste Werte der entfallenen `config`-Flags in `GET /api/instances/` | 05 entscheidet; Empfehlung feste Werte, damit `packages/types` unverändert bleibt | Start I0 |
+| O-D02-03 | Instanz-Konfiguration: Anzahl der Keys sinkt von 36 auf 14 (ADR-008); feste Werte der entfallenen `config`-Flags in `GET /api/instances/` | **entschieden durch 05 §4.4:** 14 Keys inkl. `ENABLE_SIGNUP`, feste Werte für entfallene Flags (§3.16.2) | erledigt |
 | O-D02-04 | Gruppensummen-Quirk 0 → 1 (`DEV-GRP-001`) beibehalten? | beibehalten (Visual-Parität), per Schalter abschaltbar | Ende I2 (Abnahme Fachseite) |
 | O-D02-05 | CE-PRJ-032 nennt „entfernt das Label … aus View-Filtern“; im Original-Code (`label.py`, `deletion_task.py`, `label.store.ts`) ist keine Bereinigung von View-Filtern auffindbar | im Paritäts-Harness prüfen; ohne Nachweis **nicht** implementieren (gespeicherte Views behalten die ID, Filter trifft dann nichts) | I1 |
 | O-D02-06 | OpenAPI 3.1 (Default .NET 10) vs. 3.0.3 (drf-spectacular) für `v1` | 3.1; falls externe Generatoren der Betreiber 3.0 verlangen, Option `Plane:OpenApi:Version` | I6 |
 | O-D02-07 | Rate-Limit-Algorithmus: Sliding Window mit 6 Segmenten statt exakter DRF-Historie | akzeptieren (`DEV-RL-001`); Contract-Test prüft nur Grenzwert ±1 | I1 |
-| O-D02-08 | E-Mail-Änderungs-/Verifizierungs-Endpunkte (`UserEndpoint.generate_email_verification_code`, `update_email`) bei Keycloak-Login | **entschieden durch 05 (D05-ADR-08):** entfallen; Policy `email_verification` und Codes 5005/5010 werden **nicht** angelegt | erledigt |
+| O-D02-08 | E-Mail-Änderungs-/Verifizierungs-Endpunkte (`UserEndpoint.generate_email_verification_code`, `update_email`) bei Keycloak-Login | **entschieden durch 05 (D05-ADR-08):** entfallen; Policy `email_verification` wird **nicht** angelegt; Codes 5005/5010 bleiben aktiv (Claim-Validierung `ValidateIdentityClaimsStep`, 05 §4.3) | erledigt |
 | O-D02-09 | Fallback, falls `InternalsVisibleTo` für Mediator nicht greift (R-D02-09) | Commands/Queries/Handler `public sealed`, R9 (01 §5.2) um Ausnahme ergänzen | Ende S0 |
 | O-D02-10 | Widersprüche zu 05/14 bei ENV-Zielschlüsseln (`SKIP_ENV_VAR`, `FILE_SIZE_LIMIT`, `WEBHOOK_*`, `SigningKey`) – Review-Protokoll K-06/K-07 | 02-Schlüssel beibehalten (14 erklärt 02 für maßgeblich); 05 §4.4 nachziehen | Start I0 |
 
@@ -2496,3 +2496,65 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 | `15-teststrategie-qualitaet-paritaet.md` | nutzt | Akzeptanzkriterien §7, Testprojekte, `deviations.yaml`-Einträge | Parity-Harness (S11), Golden-File-Format |
 | `16-erweiterungspunkte-bezahl-features.md` | nutzt | §6 (Andockstellen in den D02-Bausteinen) | Paket-Skizzen; keine Rückwirkung auf CE-Bausteine |
 | `migration/plan/01-roadmap-ce.md`, `plan/_data/wp-ce.json` | nutzt | Inkrement-Zuordnung §1.3 | Arbeitspakete für I0 (Building Blocks), I1 (Labels-Referenzmodul als erster Schnitt nach I0), I2 (Engine) |
+
+---
+
+## Review-Protokoll
+
+**Review vom 23.10.2026** (adversarial, gegen 00, 01, 05, 14, 15, 16, `A01`/`A03`/`A04`/`A06`, CE-Katalog und Original-Code `apps/api/plane/{app/views/base.py, app/views/issue/label.py, app/serializers/issue.py, app/permissions/*.py, authentication/adapter/exception.py, db/mixins.py, db/models/label.py, utils/paginator.py, settings/common.py}`). Belege für Library-Aussagen: Microsoft Learn (`AddDbContextPool` – Remarks zu scoped Diensten bei Pooling; „DbContext pooling“ mit Tenant-Beispiel), Context7 `/martinothamar/mediator` v3 (Optionen `ServiceLifetime`, `Assemblies`, `GenerateTypesAsInternal`, `PipelineBehaviors`, Behavior-Signatur `Handle(message, next, ct)`).
+
+### Geprüfte Punkte ohne Befund
+
+- Gliederung 1–9 vollständig; Inkrement-Zuordnung je Baustein vorhanden; Bezahl-Pakete nur als Andockstellen (§6), alle 🧱-Pakete A1, A2, A9, A17, B1, B6, C1, C3, D1, D2, E3, E5, F1, F2, G1, H1, H6 abgedeckt.
+- Fehlertexte von `BaseViewSet.handle_exception`, `auth_exception_handler` (401 für `NotAuthenticated`, 429 + 5900), Paginator-Fehlertexte (`Invalid per_page parameter.`, `Invalid per_page value. Cannot exceed {n}.`, `Invalid cursor parameter.`, `Error in parsing`, `Invalid group_by field: …`) und `offset = cursor.offset * limit` gegen den Original-Code verifiziert.
+- `LabelSerializer`-Feldreihenfolge (`parent, name, color, id, project_id, workspace_id, sort_order`), Unique-Constraints und `Label.save()`-Sortierregel gegen `db/models/label.py` verifiziert; Reihenfolge der Namensprüfungen in `partial_update` korrekt portiert.
+- Inventar `apps/api/plane/utils/` (alle 33 Einträge inkl. Unterpakete `core`, `filters`, `openapi`, `exporters`, `porters`, `instance_config_variables`) und `apps/api/plane/middleware/` vollständig in §4.2/§4.3.
+- EF-10-benannte Query-Filter (`HasQueryFilter(name, …)`, `IgnoreQueryFilters([name])`), `Database.SqlQuery<T>` für unmapped Typen, partielle Indizes per `HasFilter` – API-konform.
+
+### Korrigiert im Dokument
+
+| Nr. | Befund | Korrektur (Abschnitt) |
+|---|---|---|
+| F-01 | `PlaneEntityConfiguration<T>` referenzierte `User` aus `Plane.Data` in `Plane.BuildingBlocks.Persistence` → Zyklus/Kompilierfehler | Audit-FKs in `AuditForeignKeyConvention` (Plane.Data) (§3.2.3, §5.1.3) |
+| F-02 | `DomainEventDispatchInterceptor` lief **nach** Audit/Soft-Delete/Ownership → von Domain-Handlern erzeugte Änderungen ohne Audit-Felder und ohne Guard | Dispatch im `TransactionBehavior` vor `SaveChanges`, Interceptor entfernt, `IHasDomainEvents` getrennt (D02-ADR-24, §3.2.2, §3.19, §5.1.1) |
+| F-03 | Inline-Soft-Delete-Kaskaden per `ExecuteUpdateAsync` in `SavingChanges` liefen ohne explizite Transaktion **vor** und außerhalb der SaveChanges-Transaktion; keine Rekursion, keine `updated_at` | immer explizite Transaktion, Kaskade in `SavedChangesAsync` vor Commit, rekursiv, Guard ohne Transaktion (D02-ADR-24, §3.2.2) |
+| F-04 | DbContext-Pooling (Default von `AddNpgsqlDbContext`) bricht den Tenant-Filter `workspace_tenant` und scoped Interceptors | D02-ADR-26, §3.2.4, AK-23 |
+| F-05 | Aspire-Retry-Strategie verbietet benutzerinitiierte Transaktionen | Kapselung in `CreateExecutionStrategy().ExecuteAsync` (§3.2.4, §3.19, R-D02-10) |
+| F-06 | Mediator: Default-Lifetime `Singleton` + `internal` Handler in fremden Assemblies nicht berücksichtigt | D02-ADR-27, R-D02-09, O-D02-09, AK-24; Ort der Behaviors (`Plane.Data/Pipeline/`) festgelegt |
+| F-07 | Validatoren als `Singleton` registriert (§3.7), Stufe-2-Validatoren injizieren aber `PlaneDbContext`; Widerspruch zu §5.2.11 (`Scoped`) | einheitlich `Scoped` (§3.7) |
+| F-08 | `CORS` vor `UseRouting`; implizites `UseRouting` von `WebApplication` nicht erwähnt (Trailing-Slash-Rewrite wäre wirkungslos) | Reihenfolge Routing → CORS → Auth, expliziter Aufruf (§3.4.1) |
+| F-09 | `UseExceptionHandler()` mit `IExceptionHandler` wirft ohne `AddProblemDetails` beim Start | Registrierung ergänzt (§3.4.1 Nr. 2) |
+| F-10 | Request-/API-Activity-Log hätten den um den Slash gekürzten Pfad protokolliert | `IOriginalPathFeature` (§3.4.1 Nr. 6, AK-26) |
+| F-11 | Scope-Übergabe widersprüchlich (Parameter-Binding in §3.4.2/§3.5.2 vs. `IRequestScope` in §5) | einheitlich `IRequestScope` |
+| F-12 | Permission-Mechanik wich von 05 ab (Vorbedingungen fest im Deskriptor, eigene Regelnamen, `RoleDefinition`-Signatur, `SystemRole`, Laufzeit-Berechnung der Grants, `workspace.admin_override`, `project.work_item.read_all` aktiv) | an 05 angeglichen: Deskriptoren generiert, Regeln am Endpunkt, `Prerequisite`-Regel als Ergänzung, HARM-00, `SystemRoleLevel`, Grants aus Generator, Gast-Sichtbarkeit über `pm.level > 5` (§3.6, §5.1.7) |
+| F-13 | Labels-Referenzmodul nutzte Keys/Konstanten, die 05 nicht kennt (`project.label.bulk_create`, `LabelRead` mit WS-Scope) und ignorierte SEC-21 | Keys/Konstanten nach 05 Anhang A, SEC-21 in L1/L3, Tests angepasst (§5.2) |
+| F-14 | API-Activity-Log mit HMAC-Schlüssel `ApiLogHmacKey` – 05 verlangt `token_hash` | übernommen (§3.4.1 Nr. 14, §3.15, §4.2) |
+| F-15 | Session-Optionen doppelt (`PlaneSessionOptions` hier, `PlaneAuthOptions` in 05); `Bearer`-Schlüsselnamen abweichend | 05-Namen übernommen (§3.15, §4.9, §6 H1) |
+| F-16 | Options-Liste unvollständig gegenüber 14 (`Valkey`, `Scale`, `DataProtection`, `Telemetry`, `Gateway`, `Tls`, `Urls.Idp`, `Database.MaxPoolSize`), `ForwardLimit = null` (ASP.NET: unbegrenzt) | ergänzt, Default `1` (§3.15) |
+| F-17 | CSRF-Fehler der Formular-Endpunkte als JSON statt Original-HTML (05 §3.5, CE-AUTH-016); `Sec-Fetch-Site`-Härtung und `TrustedOrigins` fehlten | §4.5, §3.4.1 Nr. 11, §3.15 |
+| F-18 | X-RateLimit-Header: Mechanik nicht umsetzbar beschrieben (eingebaute Middleware liefert Restkontingent nicht) | eigene Policy + `GetStatistics` + `OnStarting`; 429 ohne Header (§3.13, AK-15) |
+| F-19 | Minimal-API-Binding vor Filtern: Aussage „Gast erhält auch bei ungültigem Körper 403“ für JSON-Parse-/Content-Type-Fehler falsch | Grenze dokumentiert, `DEV-JSON-002`, Nachrüstoption `PlaneBody<T>` (§3.4.2) |
+| F-20 | Inkrement von `GlobalPaginator` widersprüchlich (I2 vs. I5) | I2 (§3.10.4) |
+| F-21 | Test-Bezeichner wichen von der verbindlichen Konsolidierung in 15 §9.2 ab (`PlaneAppFactory`, `PostgresFixture`, `FakeClock`, Golden-Pfade, `ContractTest`) | angeglichen (§3.1.1, §3.1.2, §5.2.13, §7.2) |
+| F-22 | Fehlende Bausteine: `Result` (nicht generisch) mit `IsFailure`, `PlaneErrorException`, Prev-Cursor-Quirk im Paginator-Skelett, `IPlaneCache.ClearAsync` (CE-OPS-020), Bulk-Validator, `DEV-LBL-05/-06`, Host-Kataloge (Collaboration nur Realtime), Integrations-OAuth-Callbacks mit Session, `{connection_id:guid}` | ergänzt (§5.1.4, §3.8.2, §5.1.9, §3.12.1, §5.2.5, §7.3, §3.1.3, §3.3.1/§3.3.2, §6) |
+| F-23 | CE-ID-Zuordnung: CE-OPS-018/-020 fehlten, Verweis „§5.3“ für Labels falsch, CE-PRJ-022 nannte reservierten Key | §4.12 |
+| F-24 | §1.3 „Werte bei Erstnutzung validiert“ widersprach D02-ADR-19 (`ValidateOnStart`) | präzisiert (§1.3) |
+| F-26 | Fehlercode-Katalog widersprach 05 §4.3 (entfallene Codes nicht angelegt, 5015/5124/5150/5155/5175/5190 als entfallen geführt, 5200–5202 anders benannt) | Auth-Codes nach 05 §4.3 (`AuthErrorCodes`, aktiv/ruhend), `PlaneErrorCodes` nur fachlich (§3.8.3) |
+| F-25 | `ENABLE_SIGNUP` als „entfällt“ geführt, 05 behält ihn als Signup-Gate (D05-ADR-12); Key-Zählung dadurch falsch; `config`-Feldliste wich von 05 ab | angeglichen (§4.9, §4.10, §3.16.2, O-D02-03 erledigt) |
+
+### Offene Konflikte mit anderen Dokumenten (nicht in diesem Dokument lösbar)
+
+| Nr. | Dokument | Konflikt | Empfehlung |
+|---|---|---|---|
+| K-01 | 05 §3.13.4 / Anhang B | 05 bildet „∧“-Zeilen (`WS(A,M) ∧ PRJ⁺(A)`, `PRJ⁺(A) ∧ PRJ⁺(A)`) auf einen Key mit **einem** DenyStyle ab; die Original-Körper unterscheiden sich je fehlgeschlagener Stufe (D05-ADR-20 verlangt Original-Körper) | Generator erzeugt `Prerequisite`-Regel für jede „∧“-Zeile (§3.6.2 Schritt P); 05 §3.13.4/§5.8 um Schritt P und `PermissionRule.Prerequisite` ergänzen |
+| K-02 | 05 Anhang B | `POST {P}/bulk-create-labels/` und L2 teilen `project.label.create` – nur mit endpunktbezogener Vorbedingung korrekt | wie K-01 |
+| K-03 | 05 §3.13.4 / D05-ADR-18 | WS-Admin-Override in 05 ohne Grant-Key; E5-Custom-Roles können ihn nur über `Level = 20` erhalten | E5-Paketplanung; ggf. Key `workspace.admin_override` in 05 Anhang A reservieren |
+| K-04 | 05 Anhang A | Vorbedingungs-Keys (`workspace.project_base.read/create`, `project.project_base.write`, `project.project_entity.*`, `project.project_member.*`, `workspace.workspace_entity.*`) sind nicht als „intern“ geführt; Architekturtest 2 („keine toten Keys“) würde sie bemängeln | in 05 Anhang A aufnehmen oder in `ReservedPermissionKeys` führen |
+| K-05 | 05 Anhang B | `PUT {P}/issue-labels/{pk}/` mit `project.label.update` gelistet; 02/`A04` §5.1 registrieren die tote Route nicht (Architekturtest 3 aus 05 würde fehlschlagen) | Zeile in 05 als `entfällt` markieren |
+| K-06 | 05 §4.4 vs. 02 §4.9 / 14 §3.9.1 | `SKIP_ENV_VAR` (05: entfällt, immer DB; 02/14: `Plane:Instance:ConfigurationSource`), `FILE_SIZE_LIMIT` (05: `Plane:Storage:FileSizeLimit`; 02/14: `Plane:Uploads:MaxFileSizeBytes`), `WEBHOOK_*` (05: `Plane:Webhooks:Ssrf:*`; 02: `Plane:Webhooks:AllowedNetworks/AllowedHosts/DisallowedDomains`) | 14 erklärt 02 für maßgeblich → 05 §4.4 angleichen (O-D02-10) |
+| K-07 | 14 §3.9.1 | `PlaneSecurityOptions.ApiLogHmacKey` „abgeleitet aus `SigningKey`“ – entfällt nach 05 (`token_hash`) | 14 nachziehen; Zweck von `SigningKey` dort klären |
+| K-08 | 05 §3.18 | Ausnahmeliste `tests/parity/exceptions.yaml`; 02, 14, 15 nutzen `tests/contracts/deviations.yaml` | 05 auf `tests/contracts/deviations.yaml` umstellen (15 ist für Test-Orte maßgeblich) |
+| K-09 | 01 §5.3 / §5.5 | Skelett nutzt `ProjectScope`-Parameter, `IModule.Permissions` als `IEnumerable<Permission>`, `.RequirePermission(ProjectsPermissions.LabelsWrite)` | O-D02-02: 01 auf `IRequestScope`, `IEnumerable<PermissionDescriptor>`, generierte `ProjectLabel*`-Konstanten umstellen |
+| K-10 | 01 §5.1 R9 | Mediator-Generator braucht Zugriff auf `internal` Handler (D02-ADR-27) | `InternalsVisibleTo` als zulässige Ausnahme in R9 nennen; Fallback O-D02-09 |
+| K-11 | 01 ADR-037 | „Read-Replica als zweiter DbContext-**Pool**“ und `Aspire.Npgsql.EntityFrameworkCore.PostgreSQL` legen Pooling nahe | D02-ADR-26: ohne Pooling, `EnrichNpgsqlDbContext`; 01 ADR-037 umformulieren |
+| K-12 | 16 D16-ADR-09 | OAuth-Callbacks unter `/api/integrations/forgejo/oauth/…` brauchen Session-Auth, die Oberfläche `Integrations` war nur signaturbasiert | `.WithSessionAuthentication()` (§3.3.2) – 16 §3.4 sollte darauf verweisen |
