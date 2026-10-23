@@ -2,6 +2,9 @@
 
 Jedes EE-Feature wird genau einem Paket zugeordnet; das Skript bricht ab, wenn eine ID fehlt
 oder doppelt vergeben ist. Aufruf: python3 -I migration/_werkzeuge/paid-auswahl/build.py
+
+ACHTUNG: Die erzeugte Datei enthält inzwischen die Auswahl des Auftraggebers (Ankreuzungen) und die
+Priorisierung in Wellen. Ein erneuter Lauf überschreibt beides; vorher sichern bzw. nachtragen.
 """
 import json
 import os
