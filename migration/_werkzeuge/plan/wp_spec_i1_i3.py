@@ -55,9 +55,10 @@ W("WP-I1-201", "Erweiterungspunkt A17: IStateCatalog/ILabelCatalog als einzige L
   arch=["16 §5.2, §3.3.0 E-21", "02 §5.2.4", "01 §1.4 Zeile A17"],
   ep="01 §1.4 A17; 16 §3.3.0 E-21; 16 §4.6 (Träger CE-PRJ-023…033)",
   ak=["Architekturtest: kein Modul außer `Funk.Projects` greift direkt auf `states`/`labels` zu.",
-      "Fake-Quelle (Order 50) liefert zusätzliche Workspace-States ohne CE-Änderung (Typ X)."])
+      "Fake-Quelle (Order 50) liefert zusätzliche Workspace-States ohne CE-Änderung (Typ X)."],
+  tests=["16 §7.2: `StateCatalogSourceTests`, `LabelCatalogSourceTests` (`Funk.Projects.Tests`)."])
 
-W("WP-I1-202", "Erweiterungspunkt Feature-Kataloge: IProjectFeatureCatalog, IWorkspaceFeatureCatalog, Contributors, PROJECT_FEATURES", "X", "S", False,
+W("WP-I1-202", "Erweiterungspunkt Feature-Kataloge: IProjectFeatureCatalog, IWorkspaceFeatureCatalog, IProjectFeatureContributor/IWorkspaceFeatureContributor, PROJECT_FEATURES", "X", "S", False,
   [], [M0],
   "Projekt- und Workspace-Feature-Toggles laufen über Kataloge (E-01, E-26) mit Tabellen `project_feature_settings`/`workspace_feature_settings` und `IProjectPayloadExtension`; Frontend-Tokens `PROJECT_FEATURES`/`WORKSPACE_FEATURES` (E-02, CE: `PROJECT_FEATURES_LIST` des Originals).",
   be=["`src/modules/Projects/Funk.Projects.Contracts/Features/`", "`src/modules/Workspaces/Funk.Workspaces.Contracts/Features/`"],
@@ -65,7 +66,9 @@ W("WP-I1-202", "Erweiterungspunkt Feature-Kataloge: IProjectFeatureCatalog, IWor
   arch=["16 §3.2.6, §5.1, §3.3.0 E-01/E-02/E-26, D16-ADR-05"],
   ep="16 §3.3.0 E-01, E-02, E-26; 16 §4.6 (Träger CE-PRJ-019, CE-PRJ-020)",
   ak=["Die fünf CE-Toggles (`cycle_view`, `module_view`, `issue_views_view`, `page_view`, `intake_view`) verhalten sich wie das Original (Contract-Golden des Projekt-Payloads unverändert).",
-      "Fake-Contributor fügt einen Schalter hinzu, der in der Settings-Liste erscheint und im Payload ausgegeben wird – ohne CE-Änderung (Typ X)."])
+      "Fake-Contributor fügt einen Schalter hinzu, der in der Settings-Liste erscheint und im Payload ausgegeben wird – ohne CE-Änderung (Typ X).",
+      "AK-16-10: mit `FakeProjectFeatureContributor(\"is_fake_enabled\")` (Implementierung von `IProjectFeatureContributor`, E-26) erscheint das Feld in `GET …/projects/{id}/` und in der Settings-Liste „Features“ (DOM-Snapshot), ohne CE-Codeänderung; `IWorkspaceFeatureContributor` analog mit `WORKSPACE_FEATURES` (CE: leer)."],
+  tests=["16 §7.2: `FeatureCatalogTests` (`Funk.Projects.Tests`, `Funk.Workspaces.Tests`)."])
 
 W("WP-I1-203", "Erweiterungspunkte UI-Registries I1: SETTINGS_PAGES, SIDEBAR_ITEMS (dynamisch), FAVORITE_ENTITY_RENDERERS, MEMBER_ROW_DECORATORS, ROLE_OPTIONS, GLOBAL_MODALS, ESTIMATE_SYSTEM_FLAGS", "X", "S", False,
   [], [M0],
@@ -73,7 +76,8 @@ W("WP-I1-203", "Erweiterungspunkte UI-Registries I1: SETTINGS_PAGES, SIDEBAR_ITE
   fe=["`frontend/libs/web/extensions/src/{settings,sidebar,favorites,members,roles,modals,estimates}.ts`"],
   arch=["08 §6.1, §6.4, §6.5", "16 §3.3.0 E-14 (I1-Teil), §1.4 Zeile I1", "17 ABG-030"],
   ep="16 §1.4 Zeile I1; 16 §4.6 (Träger CE-WS-023, CE-WS-010, CE-PRJ-019, CE-PRJ-034/-035)",
-  ak=["`extension-registry-check` meldet für jede Registry CE-Einträge und einen Fake-Eintrag-Test (Typ X)."])
+  ak=["`extension-registry-check` meldet für jede Registry CE-Einträge und einen Fake-Eintrag-Test (Typ X).",
+      "AK-16-16: je Token dieses Pakets (`SETTINGS_PAGES`, `SIDEBAR_ITEMS`, `FAVORITE_ENTITY_RENDERERS`, `MEMBER_ROW_DECORATORS`, `ROLE_OPTIONS`, `GLOBAL_MODALS`, `ESTIMATE_SYSTEM_FLAGS`) zwei Vitest-Fälle: CE-Default = Original-DOM, Fake erscheint an der richtigen Stelle; `extensions.spec.ts` findet die Fake-Settings-Seite."])
 
 W("WP-I1-204", "Erweiterungspunkt Activity-Grundgerüst: IActivityRecorder, IActivityFieldResolver-Registry, reservierte Felder", "X", "S", False,
   [], [M0, "WP-I0-201"],
@@ -90,13 +94,19 @@ W("WP-I1-205", "Erweiterungspunkte IInstanceConfigKeyProvider und B1-Schema-Vorh
   arch=["16 §3.3.0 E-12, §3.3.2 (B1), §5.4", "02 §4.10", "01 §1.4 Zeile B1 (ABG-058)"],
   ep="16 §3.3.0 E-12; 01 §1.4 B1 (I1-Teil); 16 §4.6 (Träger CE-INST-002)",
   ak=["Fake-Key-Provider ergänzt einen Instanz-Key, der in `GET /api/instances/` (Admin) erscheint – ohne CE-Änderung (Typ X).",
-      "Spalten `teamspace_id` existieren nullable, werden in CE-Verträgen nicht ausgegeben (Contract-Goldens unverändert)."])
+      "Spalten `teamspace_id` existieren nullable, werden in CE-Verträgen nicht ausgegeben (Contract-Goldens unverändert).",
+      "Die 14 Instanz-Schlüssel aus WP-I0-003 werden als CE-Default-Provider `CoreInstanceConfigKeyProvider` registriert; `InstanceConfigurationStore` enthält danach keine fest verdrahtete Schlüsselliste mehr (Architekturtest), `GET /api/instances/` bleibt Golden-gleich."],
+  tests=["16 §7.2: `InstanceConfigKeyProviderTests` (`Funk.Instance.Tests`)."])
 
 W("WP-I1-001", "Workspace-Einstellungen (General, Löschen, Settings-Rahmen, Stammdatenlisten, Themes-API)", "V", "M", True,
   ["CE-WS-003", "CE-WS-004", "CE-WS-006", "CE-WS-007", "CE-WS-024"], [M0, "WP-I1-203", "WP-I1-103"],
   "Workspace-Settings-Rahmen mit Navigation (über `SETTINGS_PAGES`), Seite General (Name, Logo, Organisationsgröße), Workspace löschen mit Bestätigung, workspace-weite Stammdatenlisten und die Themes-API.",
   be=["`src/modules/Workspaces/Funk.Workspaces`"], fe=["`frontend/libs/web/workspace`, `frontend/libs/web/settings`"],
-  arch=["04 §4.3", "03 §3.4.3", "08 §4.1", "09 §4.14"])
+  arch=["04 §4.3", "03 §3.4.3", "08 §4.1", "09 §4.14"],
+  ak=["`PATCH /api/workspaces/{slug}/` (Name, Logo, Zeitzone, Organisationsgröße) liefert für Admin 200 und für Member/Guest den Original-403-Körper (Contract-Golden); „Update workspace“ ist für Nicht-Admins deaktiviert (DOM-Snapshot je Rolle).",
+      "Workspace löschen: Bestätigung erst aktiv, wenn Workspace-Name und `delete my workspace` exakt eingegeben sind; danach Soft-Delete, Slug = `<slug>__<epoch>`, `profiles.last_workspace_id` geleert; der tägliche Bereinigungs-Job entfernt den Workspace endgültig nach 60 Tagen (`FixedClock`: Tag 59 vorhanden, Tag 60 entfernt).",
+      "Settings-Sidebar mit den Kategorien Administration und Developer und genau den CE-Einträgen aus `SETTINGS_PAGES` (General, Members, Exports, Webhooks; kein Billing nach ADR-001); Einträge späterer Inkremente erscheinen erst mit ihrem Paket (01 §7.19).",
+      "Stammdatenlisten Labels, States (mit berechnetem `order`) und aktive Estimates mit Punkten sowie das Workspace-Themes-CRUD entsprechen den Original-Goldens; die Cycle-/Modul-Listen entstehen „verschoben“ in I3 (`EP_OVERRIDE`)."])
 
 W("WP-I1-002", "Mitglieder, Rollen, Einladungen (inkl. automatischer Beitritt beim Login)", "V", "L", True,
   ["CE-WS-008", "CE-WS-009", "CE-WS-010", "CE-WS-011", "CE-WS-012", "CE-AUTH-028"], [M0, "WP-I1-102", "WP-I1-203"],
@@ -118,13 +128,17 @@ W("WP-I1-004", "Favoriten mit Ordnern", "V", "M", True,
   ["CE-WS-023"], ["WP-I1-005", "WP-I1-203"],
   "Favoriten (Projekte, Views, Cycles, Module, Pages) mit Ordnern, Drag-and-Drop-Sortierung und Sidebar-Darstellung über `FAVORITE_ENTITY_RENDERERS`; Entitätstypen späterer Inkremente werden mit deren Schnitt registriert.",
   be=["`src/modules/Workspaces/Funk.Workspaces` (Favorites)"], fe=["`frontend/libs/web/favorites`"],
-  arch=["04 §4.3", "03 §3.4.3", "08 §4.5 (favorite.store)"])
+  arch=["04 §4.3", "03 §3.4.3", "08 §4.5 (favorite.store)"],
+  ak=["Ordner mit vorhandenem Namen anlegen liefert den Original-Fehler und -Toast; Umbenennen, Entfernen und Drag&Drop in/aus Ordnern setzen `sequence` wie das Original (Golden der Favoritenliste nach jeder Aktion).",
+      "Die Favoriten-Endpunkte akzeptieren alle Original-`entity_type`-Werte (project, cycle, module, view, page, issue, folder); die Sidebar rendert nur Typen mit `FAVORITE_ENTITY_RENDERERS`-Eintrag – in I1 genau `project` und `folder`, weitere mit WP-I3-002/-005/-008 und WP-I4-001 (Vitest)."])
 
 W("WP-I1-005", "Projektliste, Projektkarten, Projekt-Statistiken", "V", "M", True,
   ["CE-PRJ-001", "CE-PRJ-002", "CE-PRJ-003"], [M0, "WP-I1-105"],
   "Projektliste mit Filtern/Sortierung/Suche, Projektkarten (Cover, Logo, Mitglieder, Beitreten) und Projekt-Statistiken.",
   be=["`src/modules/Projects/Funk.Projects`"], fe=["`frontend/libs/web/project`"],
-  arch=["04 §4.4", "03 §3.4.4", "02 §3.10 (Cursor-Paginator)"])
+  arch=["04 §4.4", "03 §3.4.4", "02 §3.10 (Cursor-Paginator)"],
+  ak=["Filter (My projects, Access, Lead, Members, Created date), Sortierung und Suche der Projektliste liefern auf dem Parity-Seed dieselbe Reihenfolge und Treffermenge wie das Original (Dual-Target-E2E, ≥ 1 Fall je Filter).",
+      "`total_issues`, `completed_issues` (inkl. cancelled), `total_members`, `total_cycles`, `total_modules` stimmen je sichtbarem Projekt mit dem Original-Golden überein (je Rolle Admin/Member/Guest ein Szenario)."])
 
 W("WP-I1-006", "Projekt-Detail, Zugriffsschutz, Beitreten/Verlassen, Projekt-Einladungen per E-Mail", "V", "M", True,
   ["CE-PRJ-006", "CE-PRJ-007", "CE-PRJ-010"], ["WP-I1-002", "WP-I1-005"],
@@ -137,32 +151,47 @@ W("WP-I1-007", "Projekt archivieren/wiederherstellen und löschen", "V", "S", Tr
   ["CE-PRJ-008", "CE-PRJ-009"], ["WP-I1-005", "WP-I1-101"],
   "Archivieren und Wiederherstellen von Projekten sowie Löschen mit Soft-Delete-Kaskade (Deferred für Projekt-Wurzel).",
   be=["`src/modules/Projects/Funk.Projects`"], fe=["`frontend/libs/web/project`, `frontend/libs/web/archives`"],
-  arch=["04 §4.4", "03 §3.5.4", "02 R-D02-04"])
+  arch=["04 §4.4", "03 §3.5.4", "02 R-D02-04"],
+  ak=["Archivieren setzt `archived_at`, löscht alle Favoriten des Projekts (DB-Assertion) und macht das Projekt schreibgeschützt (Schreib-Request → Original-Fehler); Wiederherstellen hebt beides auf; je Aktion genau ein Event `funk.project.archived.v1` bzw. `funk.project.unarchived.v1`.",
+      "Löschen ist Soft-Delete mit Kaskade (Deferred für die Projekt-Wurzel, 02 R-D02-04), entfernt Deploy-Board und Favoriten und schreibt genau ein `funk.project.deleted.v1` (Event-Katalog-Snapshot)."])
 
 W("WP-I1-008", "Projekt-Sidebar, Kontextmenü, erweiterte Sidebar, Feature-Navigation, Tabs", "V", "M", True,
   ["CE-PRJ-011", "CE-PRJ-012", "CE-PRJ-013", "CE-PRJ-014", "CE-PRJ-015"], ["WP-I1-005", "WP-I1-202"],
   "Projektliste in der Sidebar mit Kontextmenü und Sortierung, erweiterte Projekt-Sidebar, Feature-Navigation je aktiviertem Feature (über `PROJECT_FEATURES`) und Tab-Navigation (TABBED).",
   fe=["`frontend/libs/web/project` (sidebar)", "`frontend/libs/web/core/sidebar`"],
   arch=["08 §4.1, §4.4", "16 §3.2.6"],
-  note="Feature-Einträge erscheinen erst, wenn der Ziel-Screen abgenommen ist (01 §7.19); bis I4 sind z. B. Pages/Intake/Cycles ausgeblendet.")
+  note="Feature-Einträge erscheinen erst, wenn der Ziel-Screen abgenommen ist (01 §7.19); bis I4 sind z. B. Pages/Intake/Cycles ausgeblendet.",
+  ak=["Drag&Drop der Sidebar-Projekte schreibt `sort_order` in die Projekt-User-Properties mit denselben Werten wie die Berechnung in `packages/utils` des Originals (portierte Unit-Tests); „More/Hide“ greift bei derselben Projektanzahl wie das Original.",
+      "Die Feature-Navigation zeigt je Projekt genau die Einträge, deren Toggle im Feature-Katalog aktiv ist und die die Rolle sehen darf (Matrix 5 Toggles × 3 Rollen gegen Original-DOM); „Leave project“ erscheint nur für Gäste.",
+      "Tab-Navigation persistiert `preferences.navigation.default_tab` und `hide_in_more_menu` (Contract-Golden des PATCH)."])
 
 W("WP-I1-009", "Projekt-Settings-Rahmen, General, Benutzerpräferenzen", "V", "M", True,
   ["CE-PRJ-016", "CE-PRJ-017", "CE-PRJ-018"], ["WP-I1-005", "WP-I1-203"],
   "Projekt-Settings-Rahmen mit Navigation (über `SETTINGS_PAGES`), Seite General (Name, Identifier, Beschreibung, Cover, Logo, Netzwerk, Zeitzone) und Projekt-Benutzerpräferenzen.",
   be=["`src/modules/Projects/Funk.Projects`"], fe=["`frontend/libs/web/project-settings`"],
-  arch=["04 §4.4", "03 §3.4.4", "08 §4.1"])
+  arch=["04 §4.4", "03 §3.4.4", "08 §4.1"],
+  ak=["Projekt-Settings zeigt General, Members, Features, States, Labels, Estimates, Automations in Original-Reihenfolge aus `SETTINGS_PAGES`; ohne Projekte erscheint die Original-Leerseite, sonst Weiterleitung auf das erste Projekt (E2E).",
+      "„Update project“ ist für Workspace- und Projekt-Admins erlaubt, sonst 403 (Permission-Matrix); die Identifier-Prüfung liefert dieselben Codes wie WP-I0-005; ohne eigene Angabe erbt das Projekt die Workspace-Zeitzone (Golden).",
+      "`ProjectUserViewsEndpoint` (view_props, default_props, preferences inkl. `pages.block_display`, sort_order) entspricht dem Original-Golden; der Preferences-Merge je Mitglied folgt der Entscheidung in 04 (Spalte `decision`) zum fehlenden Self-Check."])
 
 W("WP-I1-010", "Projekt-Features (Toggles), Disabled-Zustände, Projektmitglieder, Gastzugriff", "V", "M", True,
   ["CE-PRJ-019", "CE-PRJ-020", "CE-PRJ-021", "CE-PRJ-022"], ["WP-I1-009", "WP-I1-202", "WP-I1-002"],
   "Feature-Toggles über den Feature-Katalog, Disabled-Feature-Zustände, Projektmitglieder verwalten und `guest_view_all_features`.",
   be=["`src/modules/Projects/Funk.Projects`"], fe=["`frontend/libs/web/project-settings`"],
-  arch=["04 §4.4", "05 §3.14 (Gast-Sichtbarkeit)", "16 §3.2.6"])
+  arch=["04 §4.4", "05 §3.14 (Gast-Sichtbarkeit)", "16 §3.2.6"],
+  ak=["Aktivieren von `intake_view` legt genau einen Default-Intake an (idempotent bei erneutem Aktivieren); jede Toggle-Änderung wirkt sofort per PATCH und erscheint im Projekt-Payload (Contract-Golden).",
+      "Deaktivierte Features zeigen den Original-Leerzustand; der Link zu den Feature-Settings erscheint nur für Admins (DOM-Snapshot je Rolle).",
+      "Rollenwechsel von Projektmitgliedern prüft die Hierarchie gegen die Workspace-Rolle wie das Original (Permission-Matrix inkl. HARM-00); neu hinzugefügte Mitglieder erhalten die Original-Mail (G-MAIL).",
+      "Ohne „Guest access“ (`guest_view_all_features = false`) sehen Gäste nur eigene Objekte; die Regel ist eine zentrale Prüfung (05 §3.14) mit L3-Tests, die von den Paketen der Work Items (I2), Views (I3) und Pages (I4) wiederverwendet wird."])
 
 W("WP-I1-011", "States: Gruppen, Anlage/Bearbeitung, Reihenfolge per DnD, Default-State, Löschen", "V", "M", True,
   ["CE-PRJ-023", "CE-PRJ-024", "CE-PRJ-025", "CE-PRJ-026", "CE-PRJ-027"], ["WP-I1-009", "WP-I1-201", "WP-I0-913"],
   "State-Verwaltung nach dem Muster des Referenzmoduls (02 §5.2) über `IStateCatalog`.",
   be=["`src/modules/Projects/Funk.Projects` (States)"], fe=["`frontend/libs/web/project-settings` (project-states)"],
-  arch=["04 §4.4", "03 §3.4.4", "02 §5.2", "16 §5.2"])
+  arch=["04 §4.4", "03 §3.4.4", "02 §5.2", "16 §5.2"],
+  ak=["Gruppen backlog/unstarted/started/completed/cancelled mit Original-Farben und -Default-Namen; der unsichtbare `triage`-State erscheint nicht in der Liste (DOM-Snapshot, Golden).",
+      "„Mark as default“ setzt atomar genau einen Default-State je Projekt (10 parallele Requests → genau ein Default); Löschen ist für Default-State, einzigen State einer Gruppe und States mit Work Items gesperrt (je Fall Original-Fehlercode).",
+      "Drag&Drop innerhalb und zwischen Gruppen berechnet `sequence` wie das Original (portierte Unit-Tests); Name max. 100 Zeichen (101 → Original-Validierungsfehler)."])
 
 W("WP-I1-012", "Labels – Referenzmodul (Hierarchie, Anlage, DnD-Gruppierung, Löschen, Bulk-Import)", "V", "M", True,
   ["CE-PRJ-028", "CE-PRJ-029", "CE-PRJ-030", "CE-PRJ-031", "CE-PRJ-032", "CE-PRJ-033"], ["WP-I1-009", "WP-I1-201", "WP-I1-204", "WP-I0-913"],
@@ -176,19 +205,27 @@ W("WP-I1-013", "Estimates: Einstellungen, Schätzsystem anlegen/ändern/löschen
   ["CE-PRJ-034", "CE-PRJ-035", "CE-PRJ-036", "CE-PRJ-037", "CE-PRJ-038"], ["WP-I1-009", "WP-I1-203"],
   "Estimates-Einstellungen mit Schätzsystemen (Punkte, Kategorien; Zeit über `ESTIMATE_SYSTEM_FLAGS` aus), Schätzwert-Validierung, Ändern/Löschen von Punkten und Systemen.",
   be=["`src/modules/Projects/Funk.Projects` (Estimates)"], fe=["`frontend/libs/web/project-settings` (estimates)"],
-  arch=["04 §4.4", "03 §3.4.4", "16 §3.3.0 E-14"])
+  arch=["04 §4.4", "03 §3.4.4", "16 §3.3.0 E-14"],
+  ak=["Assistent: Templates Fibonacci, Linear, Squares, T-Shirt Sizes, Easy to hard, Custom liefern die Original-Werte; 2–6 Werte erzwungen; Validierung (leer, Duplikat, Zahl > 0 bei Points, Text bei Categories, max. 20 Zeichen) zeigt die Original-Inline-Fehler (Vitest je Regel).",
+      "Zeit-Schätzung bleibt über `ESTIMATE_SYSTEM_FLAGS = { points: true, categories: true, time: false }` ausgeblendet (DOM wie Original); Löschen eines Punkts hängt betroffene Work Items um und nummeriert neu (L3), Löschen eines Systems schaltet Estimates im Projekt ab.",
+      "Aktivierung über `Project.estimate` per Projekt-PATCH; `last_used` kennzeichnet genau ein aktives System (Golden)."])
 
 W("WP-I1-014", "Profil und persönliche Einstellungen (inkl. angepasster E-Mail-Änderung und Konto-Deaktivierung)", "V", "M", True,
   ["CE-PROF-001", "CE-PROF-002", "CE-PROF-003", "CE-PROF-004", "CE-PROF-005", "CE-PROF-006"], [M0, "WP-I1-103"],
   "Profil-Datenmodell, Profil-Einstellungen (Modal und Seite), Profil bearbeiten, Sprache/Zeitzone/Wochenstart; E-Mail-Änderung öffnet die Keycloak-Kontokonsole (DEV-UI-04), Konto deaktivieren wirkt in funk., Sperre in Keycloak.",
   be=["`src/modules/Identity/Funk.Identity` (Profile, Preferences)"], fe=["`frontend/libs/web/profile`"],
-  arch=["05 §3.10, §4.1, D05-ADR-08", "04 §4.1", "03 §3.4.1"])
+  arch=["05 §3.10, §4.1, D05-ADR-08", "04 §4.1", "03 §3.4.1"],
+  ak=["„Change email“ öffnet die Keycloak-Kontokonsole (Deep-Link aus `FunkAuthOptions`, DEV-UI-04); funk. übernimmt E-Mail und `is_email_verified` beim nächsten Login aus den Claims (`EmailSyncOnLoginTests`); die Endpunkte `email/generate-code/` und `PATCH email/` existieren nicht (404).",
+      "`DELETE /api/users/me/` (nicht für Instanz-Admins → 400) deaktiviert Mitgliedschaften, löscht Workspace-Einladungen der E-Mail, setzt das Profil zurück, löscht alle `user_sessions`, deaktiviert API-Tokens, sendet `user_deactivation_email` (G-MAIL) und antwortet 204; das Keycloak-Konto bleibt unverändert, funk. hält kein Keycloak-Admin-Token (D05-ADR-08, `DeactivateAccountTests`).",
+      "`PATCH /api/users/me/` akzeptiert nur die Whitelist aus 05 SEC-36 (`UserMassAssignmentTests`); Avatar/Cover nur mit eigenen Assets; Sprache nur `de`/`en`, Zeitzone und Wochenstart speichern sofort (Golden)."])
 
 W("WP-I1-015", "Onboarding", "V", "M", True,
   ["CE-AUTH-030"], ["WP-I1-014", "WP-I1-002"],
   "Onboarding-Ablauf nach dem ersten Login (Profil, Workspace anlegen oder Einladung annehmen) wie Original, ohne Passwortschritt.",
   be=["`src/modules/Identity/Funk.Identity`"], fe=["`frontend/libs/web/auth` (onboarding)"],
-  arch=["05 §4.1", "08 §4.1"])
+  arch=["05 §4.1", "08 §4.1"],
+  ak=["Onboarding-Schritte wie Original ohne Passwortschritt (Eintrag in `ui-deviations.yaml`); der Rollen-/Use-Case-Schritt erscheint nicht (im Original nur Cloud); offene Einladungen werden angeboten, sonst Workspace-Anlage (E2E für beide Pfade).",
+      "`PATCH /api/users/me/onboard/` setzt `is_onboarded = true` (Contract-Golden); ein erneuter Aufruf von `/onboarding` leitet in den Workspace; „Konto wechseln“ löst den RP-Logout aus."])
 
 W("WP-I1-016", "Rate-Limits gegen Brute-Force und Missbrauch", "B", "S", True,
   ["CE-AUTH-026"], ["WP-I1-104"],
@@ -209,19 +246,30 @@ W("WP-I1-018", "Themes: Varianten, Auswahl mit Server-Persistenz, Custom Theme, 
   ["CE-I18N-005", "CE-I18N-006", "CE-I18N-007", "CE-I18N-008", "CE-I18N-009"], ["WP-I1-014"],
   "Theme-System mit hell/dunkel/system, High-Contrast-Varianten, Custom Theme und Server-Persistenz; Farb-Token-System 1:1.",
   fe=["`frontend/libs/shared/theme`", "`frontend/libs/web/settings` (appearance)"],
-  arch=["08 §3.8, §5.1", "09 §3.9, §5.8", "17 ABG-031"])
+  arch=["08 §3.8, §5.1", "09 §3.9, §5.8", "17 ABG-031"],
+  ak=["Vor dem ersten Paint ist `<html data-theme>` aus `localStorage.theme` gesetzt (Default `system` über `prefers-color-scheme`, OS-Wechsel live); Web kennt `light`, `dark`, `light-contrast`, `dark-contrast`, `custom`, Admin/Space nur `light`/`dark`/`system` (Theme-Flash-Test).",
+      "Die Auswahl im Profil speichert `profiles.theme` mit Promise-Toast und lädt neu; das Profil-Theme wird genau einmal je Sitzung übernommen (E2E); der Power-K-Befehl folgt mit WP-I5-009.",
+      "Der Custom-Theme-Generator erzeugt für 20 Referenz-Farbpaare dieselben 14-stufigen OKLCH-Paletten, Alpha-Stufen und Kontrastfarben wie der Original-Generator (Golden aus dem Original-Code, exakte Gleichheit); Import/Download als JSON ist roundtrip-stabil.",
+      "High Contrast: genau 33 Token-Overrides je Variante (18 Rahmen-, 15 Label-/Text-Tokens) wie Original (G-CSS); Visual aller fünf Web-Themes je Galerie-Seite ≤ 0,1 %."])
 
 W("WP-I1-019", "UI-Querschnitt 1: Seiten-Header, Breadcrumbs, Leerzustände, Modal-Hosts, Dialog-/Dropdown-Verhalten, Tab-Reihenfolge", "F", "M", True,
   ["CE-UIX-001", "CE-UIX-002", "CE-UIX-003", "CE-UIX-004", "CE-UIX-005"], [M0, "WP-I1-105", "WP-I1-203"],
   "Querschnittliche UI-Bausteine, die alle folgenden Screens verwenden.",
   fe=["`frontend/libs/web/core/{breadcrumbs,empty-state,modals,common}`"],
-  arch=["08 §4.10", "09 §3.5"])
+  arch=["08 §4.10", "09 §3.5"],
+  ak=["Escape schließt nur den obersten Dialog; Outside-Click ignoriert Portale und Elemente mit `data-prevent-outside-click` (Vitest mit verschachtelten Dialogen).",
+      "Die festen Tab-Indizes der Formulare (Work Item, Intake, Label, Projekt, Cycle, Modul, View, Page) stammen aus den Original-Konstanten und sind mobil deaktiviert (Unit-Test gegen `packages/constants`).",
+      "Leerzustände (Detailed/Simple/Section) und Skeletons DOM-gleich zur Referenz-Galerie, Visual ≤ 0,1 %; globale Modal-Hosts öffnen über `GLOBAL_MODALS` (CE-Einträge registriert, Fake-Modal erscheint)."])
 
 W("WP-I1-020", "UI-Querschnitt 2: LocalStorage-Präferenzen, Zwischenablage/CSV, ungespeicherte Änderungen, Fehlerseiten, Stale-Chunk, Legacy-Redirects, Link-Icons", "F", "M", True,
   ["CE-UIX-006", "CE-UIX-007", "CE-UIX-008", "CE-UIX-010", "CE-UIX-011", "CE-UIX-012", "CE-UIX-013"], [M0],
   "Weitere Querschnittsfunktionen des Web-Frontends.",
   fe=["`frontend/libs/shared/cdk`", "`frontend/libs/web/core/{common,lib}`", "`frontend/apps/web/src/pages/routes/redirects/`"],
-  arch=["08 §3.3.5, §3.14, §3.15, §4.10, §5.4", "08 O-D08-09"])
+  arch=["08 §3.3.5, §3.14, §3.15, §4.10, §5.4", "08 O-D08-09"],
+  ak=["LocalStorage-Präferenzen synchronisieren sich zwischen Komponenten derselben Seite per Event ohne Reload (Vitest mit zwei Konsumenten).",
+      "Stale-Chunk: ein fehlender Chunk führt zu höchstens einem Reload je 30 s, danach Fehlerseite (E2E mit manipuliertem Chunk).",
+      "Alle Legacy-Redirects aus CE-UIX-012 (`projects/:pid/settings/*`, `analytics`, `settings/api-tokens`, `projects/:pid/inbox`, `accounts/sign-up`, `sign-in`, `signin`, `login`, `register`, `profile/*`, `settings/account/*`) führen auf dieselben Ziele wie das Original; Anmelde-Ziele führen auf den Keycloak-Einstieg (tabellengetriebener E2E-Test).",
+      "404-, Fehler- und Zugriffsseiten DOM-/Visual-gleich; die Warnung bei ungespeicherten Änderungen erscheint bei `beforeunload` und bei Link-Klick (E2E); Link-Icons und URL-/E-Mail-/IP-Erkennung bestehen die portierten Original-Tests aus `packages/utils`."])
 
 W("WP-I1-999", "Abnahme I1 – Workspace, Projekte, Konto (G5)", "A", "S", False,
   [], ["WP-I1-%03d" % i for i in range(1, 21)] + ["WP-I1-101", "WP-I1-102", "WP-I1-103", "WP-I1-104", "WP-I1-105", "WP-I1-201", "WP-I1-202", "WP-I1-203", "WP-I1-204", "WP-I1-205"],
@@ -247,14 +295,19 @@ W("WP-I2-102", "SSRF-sicherer HTTP-Client und Link-Crawler", "B", "S", True,
   "`SsrfSafeHttpHandler` mit Ziel-Allowlists, IP-Pinning, ohne Redirects/Proxy; benannte Clients (`webhooks`, `link-crawler`, `integrations`, `forgejo`, `llm`, `unsplash`); Link-Crawler-Job für Work-Item-Links.",
   be=["`src/platform/Funk.Platform.Security/Ssrf/`", "`tests/Funk.Platform.Tests/Ssrf/`"],
   arch=["05 §3.17.2, §5.9", "17 ABG-040"],
-  orig=["`apps/api/plane/bgtasks/work_item_link_task.py`", "`apps/api/plane/utils/url.py`"])
+  orig=["`apps/api/plane/bgtasks/work_item_link_task.py`", "`apps/api/plane/utils/url.py`"],
+  ak=["`SsrfSafeHttpHandler` blockiert Ziele in privaten, Loopback-, Link-Local-, CGNAT-, Multicast- und Cloud-Metadaten-Bereichen (IPv4, IPv6 inkl. IPv4-mapped) und verhindert DNS-Rebinding durch IP-Pinning nach der Auflösung (je Kategorie ≥ 1 L1-Test); Redirects und Proxies sind abgeschaltet (Test mit 302-Ziel).",
+      "Allow-/Blocklisten aus der Options-Klasse laut 05 §3.17.2 (ENV-Aliasse wie Original) wirken je benanntem Client (`webhooks`, `link-crawler`, `integrations`, `forgejo`, `llm`, `unsplash`); ohne Allowlist-Eintrag bleibt ein internes Ziel gesperrt (OE-11).",
+      "Der Link-Crawler liest Titel und Favicon (Data-URI) mit Timeout und Größenlimit wie Original, revalidiert jede Redirect-Stufe und liefert für 10 Referenz-Seiten (WireMock) dieselben Werte wie das Original-Golden."])
 
 W("WP-I2-103", "Dummy-Daten-Generator und Volumen-Seeder (S/M/L/XL)", "I", "S", True,
   ["CE-OPS-024"], ["WP-I2-001"],
   "`funk-cli create-dummy-data` (Port des Management-Commands) und die Volumenprofile aus `tests/seed/volume-profiles.yaml` für Last- und Performancetests.",
   be=["`src/tools/Funk.Cli` (create-dummy-data)", "`tests/seed/volume-profiles.yaml`"],
   arch=["03 §3.15", "15 §3.14.3", "14 §3.1.2 Zeile I2/I3"],
-  orig=["`apps/api/plane/db/management/commands/create_dummy_data.py`"])
+  orig=["`apps/api/plane/db/management/commands/create_dummy_data.py`"],
+  ak=["`VolumeSeeder` (Bogus, `Randomizer.Seed = new Random(1337)`) erzeugt die Profile S/M/L aus 15 §3.14.3 in den Zielzeiten (S < 10 s, M < 60 s, L < 4 min auf Runner `perf`); zwei Läufe ergeben dasselbe Manifest (Anzahl und Hash je Tabelle). Profil XL folgt in WP-I7-109.",
+      "`funk-cli create-dummy-data` nutzt denselben `VolumeSeeder` und bietet die Parameter des Original-Commands `create_dummy_data`; Smoke-Test gegen eine leere Instanz grün."])
 
 W("WP-I2-201", "Erweiterungspunkt B6/A1: Filter-AST, Parser-Liste, Feld-/Gruppen-/Sortier-Registries, Payload-Extension, Basismengen-Filter", "X", "M", False,
   [], [M1, "WP-I0-909"],
@@ -263,7 +316,11 @@ W("WP-I2-201", "Erweiterungspunkt B6/A1: Filter-AST, Parser-Liste, Feld-/Gruppen
   arch=["02 §3.11", "16 §5.5, §3.3.0 E-04", "01 §1.4 Zeilen A1, B6"],
   ep="01 §1.4 A1/B6; 16 §3.3.0 E-04; 16 §4.6 (Träger CE-LV-006…010, CE-LV-017, CE-LV-046)",
   ak=["Property-Test: Legacy- und Rich-Parser erzeugen für äquivalente Eingaben denselben AST.",
-      "Fake-Feld-Provider ergänzt ein filter-, gruppier- und sortierbares Feld ohne CE-Änderung (Typ X)."])
+      "Fake-Feld-Provider ergänzt ein filter-, gruppier- und sortierbares Feld ohne CE-Änderung (Typ X).",
+      "AK-16-11: Fake-Provider registriert Feld `fake_field`, Gruppe `fake_group`, Sortierung `fake_order`, Payload-Feld `fake_payload`: der Rich-Filter akzeptiert das Feld, der Legacy-Parameter nicht; die gruppierte Liste enthält die Gruppe; die Parser-Liste enthält genau `legacy` und `rich`; unbekannter Operator → 400 `invalid_filterset`.",
+      "`FILTER_INPUT_MODES` ist mit CE-Default `[]` registriert (nur Chip-Eingabe wie Original; Vitest: Fake-Modus erscheint als Umschalter)."],
+  fe=["`frontend/libs/web/extensions/src/filters.ts` (`FILTER_FIELDS`, `FILTER_OPERATORS`, `FILTER_INPUT_MODES` – CE: `[]`, nur Chips; 16 §5.5)"],
+  tests=["16 §7.2: `FilterRegistryExtensionTests`, `GroupOrderRegistryExtensionTests`, `PayloadExtensionTests`, `FilterParserRegistryTests`, `BaseSetFilterTests` (`Funk.WorkItems.Tests`)."])
 
 W("WP-I2-202", "Erweiterungspunkt A1: work_items.type_id, Minimal-Tabelle work_item_types, IWorkItemTypeResolver", "X", "S", False,
   [], [M1],
@@ -271,7 +328,8 @@ W("WP-I2-202", "Erweiterungspunkt A1: work_items.type_id, Minimal-Tabelle work_i
   be=["`src/data/Funk.Data/Entities/WorkItems/WorkItemType.cs`", "`src/modules/WorkItems/Funk.WorkItems.Contracts/IWorkItemTypeResolver.cs`"],
   arch=["16 §5.1, §3.3.0 E-03", "01 §1.4 Zeile A1", "03 §3.4.5"],
   ep="01 §1.4 A1; 16 §3.3.0 E-03; 16 §4.6 (Träger CE-WI-001, CE-WI-049)",
-  ak=["Contract-Goldens der Work-Item-Payloads unverändert (Feld `type_id` wie Original); Fake-Resolver setzt einen Default-Typ ohne CE-Änderung (Typ X)."])
+  ak=["Contract-Goldens der Work-Item-Payloads unverändert (Feld `type_id` wie Original); Fake-Resolver setzt einen Default-Typ ohne CE-Änderung (Typ X)."],
+  tests=["16 §7.2: `WorkItemTypeMinimalSchemaTests` (`Funk.WorkItems.Tests`)."])
 
 W("WP-I2-203", "Erweiterungspunkt A9: Relationstyp-Katalog, IWorkItemHierarchyPolicy, IRelatedScopeCheck, RELATION_TYPES, TIMELINE_FLAGS", "X", "S", False,
   [], [M1],
@@ -280,7 +338,9 @@ W("WP-I2-203", "Erweiterungspunkt A9: Relationstyp-Katalog, IWorkItemHierarchyPo
   fe=["`frontend/libs/web/extensions/src/relations.ts`"],
   arch=["16 §5.3, §3.3.0 E-05", "01 §1.4 Zeile A9"],
   ep="01 §1.4 A9; 16 §3.3.0 E-05; 16 §4.6 (Träger CE-WI-031…033, CE-LV-033, CE-API-024)",
-  ak=["Seeds entsprechen `IssueRelationChoices`; Fake-Relationstyp erscheint in Dropdown und Gantt ohne CE-Änderung (Typ X)."])
+  ak=["Seeds entsprechen `IssueRelationChoices`; Fake-Relationstyp erscheint in Dropdown und Gantt ohne CE-Änderung (Typ X).",
+      "AK-16-13: der Seed enthält exakt die 10 Relationsschlüssel aus 16 §5.3; die API akzeptiert alle 10 `relation_type`-Werte wie das Original, die UI zeigt nur 4 (DOM-Snapshot = Original)."],
+  tests=["16 §7.2: `RelationTypeSeedTests` (`Funk.Migrator.Tests`), `CrossProjectRelationTests`, `HierarchyPolicyTests` (`Funk.WorkItems.Tests`), `RelatedScopeCheckTests` (`Funk.Authorization.Tests`)."])
 
 W("WP-I2-204", "Erweiterungspunkt C1: State-Change-Pipeline IWorkItemStateChanger mit Guards/Hooks, WORKFLOW_GUARD", "X", "S", False,
   [], [M1, "WP-I1-201"],
@@ -288,7 +348,10 @@ W("WP-I2-204", "Erweiterungspunkt C1: State-Change-Pipeline IWorkItemStateChange
   be=["`src/modules/WorkItems/Funk.WorkItems.Contracts/StateChanges/`"], fe=["`frontend/libs/web/extensions/src/workflow.ts`"],
   arch=["16 §5.9", "01 §1.4 Zeile C1", "06 §6.1"],
   ep="01 §1.4 C1; 16 §4.6 (Träger CE-WI-021, CE-WI-003; weitere Origins in I3/I6)",
-  ak=["Architekturtest: kein Schreibzugriff auf `work_items.state_id` außerhalb der Pipeline.", "Fake-Guard verhindert einen Übergang mit Original-Fehlerform; Fake-Hook wird aufgerufen (Typ X)."])
+  ak=["Architekturtest: kein Schreibzugriff auf `work_items.state_id` außerhalb der Pipeline.",
+      "Fake-Guard verhindert einen Übergang mit Original-Fehlerform; Fake-Hook wird aufgerufen (Typ X).",
+      "AK-16-06: Architekturtest – `WorkItem.SetState` wird nur aus `WorkItemStateChanger` aufgerufen; ein registrierter `FakeStateTransitionGuard` wird je Origin (`User` in I2; `Intake`, `CycleTransfer`, `AutoClose` in I3; `PublicApi` in I6) genau einmal aufgerufen; Ablehnung → 400 `invalid_state_transition` ohne Event."],
+  tests=["16 §7.2: `StateChangerPipelineTests` (`Funk.WorkItems.Tests`), `StateWriteArchitectureTest` (`Funk.ArchitectureTests`)."])
 
 W("WP-I2-205", "Erweiterungspunkte Work-Item-Fassaden: IWorkItemReferenceResolver, IWorkItemCommands, IIntegrationLinkProvider + external_links, IExpandProvider", "X", "S", False,
   [], [M1, "WP-I0-205"],
@@ -296,7 +359,8 @@ W("WP-I2-205", "Erweiterungspunkte Work-Item-Fassaden: IWorkItemReferenceResolve
   be=["`src/modules/WorkItems/Funk.WorkItems.Contracts/Services/`", "`src/data/Funk.Data/Entities/Integrations/ExternalLink.cs`", "Migration `…_Integrations_ExternalLinks`"],
   arch=["16 §5.16, §3.3.0 E-06/E-13/E-18, D16-ADR-11", "16 §3.4.2", "17 ABG-141"],
   ep="16 §3.3.0 E-06, E-07 (Teil `expand`), E-13, E-18; 16 §4.6 (Träger CE-WI-009, CE-WI-002, CE-WI-001, CE-WI-010)",
-  ak=["Resolver löst case-insensitiv, respektiert Archiv/Löschung/Gast-Sichtbarkeit; Fake-Link-Provider liefert Einträge, die im Detail über `INTEGRATION_LINK_PREVIEWS` erscheinen (Typ X)."])
+  ak=["Resolver löst case-insensitiv, respektiert Archiv/Löschung/Gast-Sichtbarkeit; Fake-Link-Provider liefert Einträge, die im Detail über `INTEGRATION_LINK_PREVIEWS` erscheinen (Typ X)."],
+  tests=["16 §7.2: `ReferenceResolverTests` (Identifier case-insensitiv, archiviert/gelöscht, Gast-Sichtbarkeit), `IntegrationLinkProviderNullTests`, `WorkItemCommandsParityTests` (`Funk.WorkItems.Tests`)."])
 
 W("WP-I2-206", "Erweiterungspunkte Work-Item-UI-Registries (Property-Renderer bis Duplicate-Detection)", "X", "M", False,
   [], [M1],
@@ -304,7 +368,8 @@ W("WP-I2-206", "Erweiterungspunkte Work-Item-UI-Registries (Property-Renderer bi
   fe=["`frontend/libs/web/extensions/src/work-items/`"],
   arch=["08 §6.1, §6.4, §6.5", "16 §1.4 Zeile I2", "17 ABG-030"],
   ep="16 §1.4 Zeile I2 (Frontend); 16 §4.6 (Träger CE-WI-001/-010/-014/-034, CE-LV-008/-017…037)",
-  ak=["Jede Registry hat CE-Einträge (Original-Verhalten) und einen Fake-Eintrag-Test (Typ X)."])
+  ak=["Jede Registry hat CE-Einträge (Original-Verhalten) und einen Fake-Eintrag-Test (Typ X).",
+      "AK-16-16 für die Tokens dieses Pakets (je zwei Vitest-Fälle); `extensions.spec.ts` findet Fake-Detail-Widget und Fake-Spreadsheet-Spalte."])
 
 W("WP-I2-207", "Erweiterungspunkt Editor/Dokument-Schema: IDocumentNodeSpec/IDocumentMarkSpec, EDITOR_EXTENSIONS, EDITOR_FLAGS (Lite)", "X", "S", False,
   [], [M0, "WP-I0-905"],
@@ -312,7 +377,8 @@ W("WP-I2-207", "Erweiterungspunkt Editor/Dokument-Schema: IDocumentNodeSpec/IDoc
   be=["`src/documents/Funk.Documents/Schema/`"], fe=["`frontend/libs/shared/editor/extensibility`"],
   arch=["10 §5.10, §6.1", "07 §5.7", "16 §3.3.0 E-11"],
   ep="16 §3.3.0 E-11; 16 §4.6 (Träger CE-WI-037, CE-WI-044)",
-  ak=["G-SCHEMA unverändert mit CE-Defaults; Fake-Node erweitert Client- und Server-Schema ohne CE-Änderung (Typ X)."])
+  ak=["G-SCHEMA unverändert mit CE-Defaults; Fake-Node erweitert Client- und Server-Schema ohne CE-Änderung (Typ X)."],
+  tests=["16 §7.2: `DocumentSchemaRegistryTests` (HTML↔JSON-Teil; Yjs-Teil mit WP-I4-202)."])
 
 W("WP-I2-021", "Editor ED-1: Lite-Text-Editor (Kommentare), Mentions, Emojis, Links", "D", "M", False,
   ["CE-PAGE-022", "CE-PAGE-034", "CE-PAGE-035", "CE-PAGE-036"], ["WP-I1-103", "WP-I0-905", "WP-I2-101", "WP-I2-207"],
@@ -355,37 +421,55 @@ W("WP-I2-002", "Work-Item-Detailseite (Identifier, Detaildaten, Meta, Delta-Sync
   rng("CE-WI", 9, 14), ["WP-I2-001", "WP-I2-205"],
   "Detailseite per Identifier (`browse/:workItem`), Detaildaten, Meta und Mehrfachabruf, Delta-Sync für den Client-Cache (`GlobalPaginator`), Identifier mit Klick-zum-Kopieren, Kopfaktionen.",
   be=["`src/modules/WorkItems/Funk.WorkItems`"], fe=["`frontend/libs/web/work-items` (issue-detail)"],
-  arch=["04 §4.5", "02 §3.10.4", "08 §4.1"])
+  arch=["04 §4.5", "02 §3.10.4", "08 §4.1"],
+  ak=["`/:ws/browse/IDENT-seq` löst über `IWorkItemReferenceResolver` auf; Intake-Items leiten ins Intake, die Legacy-URL `/projects/:pid/issues/:id` leitet über den Meta-Endpunkt um, ein unbekannter Identifier zeigt „View other work items“ (E2E, je Fall ein Schritt).",
+      "Der Detail-Endpunkt liefert `cycle_id`, `module_ids`, `label_ids`, `assignee_ids`, Zähler, `is_subscribed` und alle `expand`-Varianten (`issue_reactions`, `issue_attachments`, `issue_link`, `parent`) wie das Original-Golden; Gäste ohne Freigabe erhalten den Original-Fehler.",
+      "Delta-Sync (v2-Paginierung nach `updated_at`, optional mit Beschreibung, IDs archivierter/gelöschter Items seit `updated_at__gt`) liefert bei drei Abrufen mit Änderungen dazwischen genau die geänderten Datensätze (L3, `GlobalPaginator`).",
+      "Kopfaktionen (Subscribe/Unsubscribe, Copy link mit absoluter URL, Make a copy, Open in new tab, Archive/Restore, Delete) erzeugen dieselben Requests und Weiterleitungen wie das Original (Dual-Target-E2E)."])
 
 W("WP-I2-003", "Peek-Overview und Hover-Vorschau", "V", "M", True,
   rng("CE-WI", 15, 19), ["WP-I2-002"],
   "Peek mit drei Modi (Side, Modal, Full), Inhalt, Schließen per Outside-Click/Escape, Fehler-/Ladezustand, Hover-Vorschaukarte.",
-  fe=["`frontend/libs/web/work-items` (peek-overview)"], arch=["08 §3.9, §4.1", "09 §4.14"])
+  fe=["`frontend/libs/web/work-items` (peek-overview)"], arch=["08 §3.9, §4.1", "09 §4.14"],
+  ak=["Peek in Side Peek, Modal und Full Screen mit Moduswechsel und persistiertem Modus wie Original; Visual je Modus ≤ 0,2 %.",
+      "Schließen per Escape/Outside-Click beachtet die Ausnahmen für Portale, Modals und Eingabefelder; danach liegt der Fokus wieder auf dem auslösenden Listenelement (Playwright prüft `document.activeElement`).",
+      "Die Beschreibung im Peek speichert per Autosave mit der Debounce-Zeit des Originals (Request-Zählung im E2E); Fehlerzustand „Work item does not exist“, Skeleton und Hover-Vorschaukarte (Identifier, State, Name, Priority, Datum) DOM-gleich."])
 
 W("WP-I2-004", "Sidebar-Properties und Dropdowns (State, Priority, Assignees, Labels, Estimate, Projekt, Datum, Read-only-Labels)", "V", "L", True,
-  ["CE-WI-020", "CE-WI-021", "CE-WI-022", "CE-WI-023", "CE-WI-024", "CE-WI-027", "CE-WI-028", "CE-WI-029", "CE-WI-030"], ["WP-I2-001"],
+  ["CE-WI-020", "CE-WI-021", "CE-WI-022", "CE-WI-023", "CE-WI-024", "CE-WI-027", "CE-WI-028", "CE-WI-029", "CE-WI-030"], ["WP-I2-001", "WP-I2-002"],
   "Property-Sidebar und alle Dropdowns außer Cycle/Modul (diese folgen mit I3); State-Wechsel über die State-Change-Pipeline; Date-Picker (Propel `Calendar`).",
   fe=["`frontend/libs/web/work-items` (dropdowns)"], be=["`src/modules/WorkItems/Funk.WorkItems`"],
   arch=["04 §4.5", "08 §1.3 (Date-Picker I2)", "16 §5.9"],
-  note="CE-WI-025 (Cycle-Dropdown) und CE-WI-026 (Module-Dropdown) liegen in WP-I3-007 bzw. WP-I3-010, weil Cycles/Module erst in I3 existieren (Abweichung von 15 Anhang B, plan/04 OP-PLAN-03).")
+  note="CE-WI-025 (Cycle-Dropdown) und CE-WI-026 (Module-Dropdown) liegen in WP-I3-007 bzw. WP-I3-010, weil Cycles/Module erst in I3 existieren (Abweichung von 15 Anhang B, plan/04 OP-PLAN-03).",
+  ak=["Jede Sidebar-Property speichert sofort per PATCH; State-Wechsel laufen ausschließlich über `IWorkItemStateChanger` (Origin `User`; `StateWriteArchitectureTest` grün).",
+      "Member-Dropdown: aktueller Nutzer zuerst mit „(You)“, deaktivierte Mitglieder nicht wählbar, „No assignee“, Avatar-Gruppe max. 2 + „+N“ (Vitest); das Label-Dropdown legt für Projekt-Admins ein Label aus dem Suchbegriff an, für andere Rollen nicht (Permission-Matrix).",
+      "Estimate-Dropdown lädt lazy und zeigt nur Punkte des aktiven Systems; Projekt-Dropdown ohne archivierte Projekte mit Suche über Name und Identifier; Datumsauswahl mit min/max und Wochenstart aus dem Profil (Vitest); Cycle-/Module-Dropdown folgen mit WP-I3-007/-010."])
 
 W("WP-I2-005", "Hierarchie und Relationen (Parent, Sub-Work-Items, Relationen, Widget-Aktionsleiste)", "V", "M", True,
   rng("CE-WI", 31, 34), ["WP-I2-002", "WP-I2-203"],
   "Parent setzen/ändern/entfernen mit `IWorkItemHierarchyPolicy`, Sub-Work-Items, Relationen über den Relationstyp-Katalog, Widget-Aktionsleiste.",
   be=["`src/modules/WorkItems/Funk.WorkItems` (Relations, Hierarchy)"], fe=["`frontend/libs/web/work-items` (relations, sub-issues)"],
-  arch=["04 §4.5", "16 §5.3"])
+  arch=["04 §4.5", "16 §5.3"],
+  ak=["Parent setzen prüft über `IWorkItemHierarchyPolicy` „gleiches Projekt, kein Zyklus“ mit Original-Fehlercodes (L3: direkter Zyklus, Zyklus über drei Ebenen, fremdes Projekt).",
+      "Die UI bietet genau `relates_to`, `duplicate`, `blocked_by`, `blocking`; die API akzeptiert alle 10 Relationstypen und speichert eine Zeile je Paar in Original-Richtung (AK-16-13, Golden).",
+      "Das Sub-Work-Items-Widget zeigt „x/y Done“ nach der Zählregel des Originals mit eigenen Display-Filtern; die Widget-Aktionsleiste öffnet nach einer Aktion die betreffende Sektion (E2E)."])
 
 W("WP-I2-006", "Links und Anhänge an Work Items", "V", "M", True,
   ["CE-WI-035", "CE-WI-036"], ["WP-I2-002", "WP-I2-102"],
   "Links mit Metadaten-Crawling (SSRF-sicher) und Anhänge über Datei-Assets.",
   be=["`src/modules/WorkItems/Funk.WorkItems` (Links, Attachments)", "`src/modules/Assets/Funk.Assets`"], fe=["`frontend/libs/web/work-items` (links, attachments)"],
-  arch=["04 §4.5, §4.13", "06 §3.18"])
+  arch=["04 §4.5, §4.13", "06 §3.18"],
+  ak=["Links: URL-Normalisierung und Duplikatprüfung je Work Item wie Original (Golden mit 5 Normalisierungsfällen); Titel/Favicon ergänzt der Link-Crawler aus WP-I2-102 asynchron.",
+      "Anhänge: Presigned POST mit `ATTACHMENT_MIME_TYPES` und `FILE_SIZE_LIMIT` (unerlaubter Typ bzw. zu groß → Original-Fehler), Upload-Bestätigung setzt `is_uploaded`, Löschen nur nach Bestätigung und für berechtigte Rollen (Permission-Matrix); Fortschrittsanzeige im E2E sichtbar."])
 
 W("WP-I2-007", "Kommentare, Emoji-Reaktionen, Mentions", "V", "M", True,
   ["CE-WI-037", "CE-WI-038", "CE-WI-044", "CE-I18N-017"], ["WP-I2-008", "WP-I2-021"],
   "Kommentare mit Lite-Editor, Emoji-Reaktionen auf Work Items und Kommentare (Reaktions-Komponenten), @Mentions in Beschreibung und Kommentaren mit `work_item_mentions`.",
   be=["`src/modules/WorkItems/Funk.WorkItems` (Comments, Reactions, Mentions)"], fe=["`frontend/libs/web/work-items` (comments)", "`frontend/libs/shared/blocks` (emoji-reaction)"],
-  arch=["04 §4.5", "06 §3.9.5", "10 §3.11, §3.17"])
+  arch=["04 §4.5", "06 §3.9.5", "10 §3.11, §3.17"],
+  ak=["Kommentare: Enter sendet; nur der Autor bearbeitet (`edited_at` gesetzt) bzw. löscht; „Copy link“ springt zum hervorgehobenen Kommentar; INTERNAL/EXTERNAL umschaltbar nur bei veröffentlichtem Projekt; `issue_comment.description` wird als `null` ausgegeben (OE-69, DEV-DM-03).",
+      "Reaktionen sind eindeutig je (Objekt, Akteur, Emoji), werden als Dezimal-Codepoint gespeichert und erzeugen Activity (Golden); eine doppelte Reaktion liefert den Original-Fehler.",
+      "`work_item_mentions` wird bei jedem Speichern aus den `mention-component`-Knoten von Beschreibung und Kommentar abgeglichen (hinzugefügt/entfernt, L3); Erwähnte werden Abonnenten; die Mention-Benachrichtigung erzeugt WP-I5-005 aus den Outbox-Events."])
 
 W("WP-I2-008", "Aktivitätsverlauf, Activity-Filter, Beschreibungs-Versionen, Eigenschafts-Historie, Abonnements", "V", "L", True,
   rng("CE-WI", 39, 43), ["WP-I2-002", "WP-I2-024", "WP-I1-204"],
@@ -398,18 +482,25 @@ W("WP-I2-009", "Work Items archivieren/wiederherstellen und löschen (einzeln un
   rng("CE-WI", 45, 48), ["WP-I2-002"],
   "Archivieren und Wiederherstellen, Bulk-Archivieren (Backend), Löschen einzeln und mehrfach mit Soft-Delete-Kaskade.",
   be=["`src/modules/WorkItems/Funk.WorkItems`"], fe=["`frontend/libs/web/work-items`"],
-  arch=["04 §4.5, §3.10.1 (Bulk)", "03 §3.5"])
+  arch=["04 §4.5, §3.10.1 (Bulk)", "03 §3.5"],
+  ak=["Archivieren nur in State-Gruppe completed/cancelled (sonst Original-Fehler, Bulk: Fehlercode 4091); Wiederherstellen im Archiv-Menü und auf der Detailseite (Golden).",
+      "Löschen ist Soft-Delete mit Kaskade inkl. Sub-Issues und Activity (03 §3.5), nur für Ersteller oder Admin; Bulk-Delete nur für Admins (Permission-Matrix).",
+      "Archivliste mit Filter, Gruppierung und `show_sub_issues`; Archiv-Detail read-only mit Banner (Visual)."])
 
 W("WP-I2-010", "Workspace-Drafts", "V", "M", True,
   ["CE-WI-049"], ["WP-I2-001"],
   "Workspace-Drafts mit Anlage, Bearbeitung, Umwandlung in Work Items und Liste.",
   be=["`src/modules/WorkItems/Funk.WorkItems` (Drafts)"], fe=["`frontend/libs/web/work-items` (drafts)"],
-  arch=["04 §4.5", "03 §3.4.5"])
+  arch=["04 §4.5", "03 §3.4.5"],
+  ak=["Drafts liegen auf Workspace-Ebene mit optionalem Projekt; „Move to project“ erzeugt ein Work Item mit fortlaufender `sequence_id` und entfernt den Draft (L3, Golden); den Empty-State-Button sehen nur Admin/Member.",
+      "Liste mit Zähler und „Load more“ (Cursor-Golden); Doppelklick öffnet die Bearbeitung, „Make a copy“ dupliziert den Draft (E2E)."])
 
 W("WP-I2-011", "Layout-Umschaltung, Projekt-Work-Items-Seite und Kopf, Layout-Kontextmenü", "V", "M", False,
   ["CE-LV-001", "CE-LV-002", "CE-LV-003"], ["WP-I2-012"],
   "Projekt-Work-Items-Seite mit Kopf, Layout-Umschaltung und Layout-Kontextmenü; Layout-Kontexte Cycle/Modul/View/Archiv/Profil folgen mit WP-I3-001.",
-  fe=["`frontend/libs/web/work-items` (issue-layouts/roots, headers)"], arch=["08 §4.1, §3.4.6", "09 §4.14"])
+  fe=["`frontend/libs/web/work-items` (issue-layouts/roots, headers)"], arch=["08 §4.1, §3.4.6", "09 §4.14"],
+  ak=["Ein Layout-Wechsel sendet genau einen PATCH auf `display_filters.layout` und lädt die Liste neu (Request-Zählung im E2E); das Segment-Control erscheint ab Breakpoint `@4xl`, darunter das Mobil-Menü (Visual in zwei Viewports).",
+      "Seitenkopf mit Breadcrumb „Work Items“, Anzahl-Chip mit Tooltip, Badge „Public“ bei veröffentlichtem Projekt, Filter, Display und „Add work item“ DOM-gleich; der Button „Analytics“ erscheint erst mit WP-I5-002 (01 §7.19); „…“-Menü mit „Open in new tab“ und „Copy link“."])
 
 W("WP-I2-012", "Work-Item-Liste mit Gruppierung/Pagination (Backend), Rich-Filter (AND/OR/NOT), Filterzeile, Filterwerte, Filterfelder", "V", "L", False,
   rng("CE-LV", 5, 10), ["WP-I2-201", "WP-I0-909", "WP-I2-001"],
@@ -421,12 +512,17 @@ W("WP-I2-012", "Work-Item-Liste mit Gruppierung/Pagination (Backend), Rich-Filte
 W("WP-I2-013", "Klassische Filter, Applied-Filter-Chips, Display-Dropdown, Anzeige-Einstellungen je Nutzer/Projekt und Workspace", "V", "M", True,
   ["CE-LV-012", "CE-LV-013", "CE-LV-014", "CE-LV-015"], ["WP-I2-012"],
   "Klassische Filter-Sektionen mit Chips, Display-Dropdown, Anzeige-Einstellungen je Nutzer und Projekt sowie workspace-weit.",
-  be=["`src/modules/WorkItems/Funk.WorkItems` (Display-Properties)"], fe=["`frontend/libs/web/work-items` (filters, display)"], arch=["04 §4.5", "08 §3.4.6"])
+  be=["`src/modules/WorkItems/Funk.WorkItems` (Display-Properties)"], fe=["`frontend/libs/web/work-items` (filters, display)"], arch=["04 §4.5", "08 §3.4.6"],
+  ak=["Die Filtersektionen Assignee, Created by, Mention, Label, Priority, State, State group, Project, Start/Due date (before/after/range) erzeugen dieselben Query-Parameter wie das Original (Vitest-Tabelle je Sektion); Cycle/Module folgen mit WP-I3-007/-010.",
+      "Das Display-Dropdown bietet je Seite und Layout genau die Original-Optionen und -Defaults (Group by, Sub-group by nur Kanban, Order by, Show sub-work items, Show empty groups, 13 Property-Toggles; Tabellentest gegen `packages/constants`).",
+      "Projekt- und Workspace-User-Properties (Workspace lazy per `get_or_create`) speichern filters, rich_filters, display_filters, display_properties wie Original (Contract-Golden GET/PATCH)."])
 
 W("WP-I2-014", "List-Layout mit Gruppierung, Inline-Properties, Sub-Work-Items aufklappen", "V", "M", True,
   rng("CE-LV", 17, 19), ["WP-I2-011"],
   "List-Layout inklusive Gruppen, Inline-Property-Zeilen und aufklappbarer Sub-Work-Items mit Virtualisierung (`*plRenderIfVisible`).",
-  fe=["`frontend/libs/web/work-items` (issue-layouts/list)"], arch=["08 §3.9, §5.11"])
+  fe=["`frontend/libs/web/work-items` (issue-layouts/list)"], arch=["08 §3.9, §5.11"],
+  ak=["Gruppen mit sticky Kopf (Icon, Titel, Anzahl, Collapse), ausblendbaren leeren Gruppen und „Load more“ je Gruppe; Zeilen sind virtualisiert – bei 1 000 Work Items enthält das DOM weniger als 200 Zeilen-Elemente (Playwright-Zählung).",
+      "Klick öffnet den Peek, Ctrl/Cmd- oder Mittelklick einen neuen Tab; der Chevron lädt Sub-Items und rückt sie nach `nestingLevel` ein (E2E)."])
 
 W("WP-I2-015", "Kanban-Board, Swimlanes, Karte, Löschzone, Drag-and-Drop", "V", "L", True,
   rng("CE-LV", 20, 24), ["WP-I2-011", "WP-I0-904"],
@@ -437,7 +533,9 @@ W("WP-I2-015", "Kanban-Board, Swimlanes, Karte, Löschzone, Drag-and-Drop", "V",
 W("WP-I2-016", "Calendar-Layout (Monat/Woche, Drag, Eintrag, Quick-Add)", "V", "M", True,
   rng("CE-LV", 25, 28), ["WP-I2-011"],
   "Calendar-Layout mit Monats- und Wochenansicht, Drag auf anderen Tag, Eintrag und Quick-Add je Tag.",
-  fe=["`frontend/libs/web/work-items` (issue-layouts/calendar)"], arch=["08 §3.9"])
+  fe=["`frontend/libs/web/work-items` (issue-layouts/calendar)"], arch=["08 §3.9"],
+  ak=["Monats- und Wochenansicht mit Wochenstart aus dem Profil, Option „Wochenenden anzeigen“ und Nachbartagen wie Original (Visual beider Ansichten); Einträge nach `target_date`.",
+      "Drag auf einen anderen Tag setzt `target_date` genau auf den Zieltag, auch über Monatsgrenzen (PATCH-Golden); Quick-Add je Tag belegt `target_date` vor."])
 
 W("WP-I2-017", "Gantt/Timeline (Verschieben, Dauer, Datum setzen, Sidebar-Reorder, Relationen)", "V", "L", True,
   rng("CE-LV", 29, 33), ["WP-I2-011", "WP-I0-904", "WP-I2-203"],
@@ -448,23 +546,33 @@ W("WP-I2-017", "Gantt/Timeline (Verschieben, Dauer, Datum setzen, Sidebar-Reorde
 W("WP-I2-018", "Spreadsheet (Tabelle, Sortierung, Tastaturnavigation, Mehrfachauswahl, Sprung zu Sub-Items)", "V", "L", True,
   rng("CE-LV", 34, 37), ["WP-I2-011"],
   "Spreadsheet-Layout mit Spalten über `SPREADSHEET_COLUMNS`, Sortierung, Tastaturnavigation, Mehrfachauswahl und Sprung zu Sub-Work-Items.",
-  fe=["`frontend/libs/web/work-items` (issue-layouts/spreadsheet)"], arch=["08 §3.9", "16 §1.4 Zeile I2"])
+  fe=["`frontend/libs/web/work-items` (issue-layouts/spreadsheet)"], arch=["08 §3.9", "16 §1.4 Zeile I2"],
+  ak=["Spalten in fester Original-Reihenfolge aus `SPREADSHEET_COLUMNS`; editierbare Zellen (State, Priority, Assignees, Labels, Start, Due, Estimate) speichern per PATCH, Read-only-Spalten sind nicht editierbar; die Spalten Cycle und Modules registrieren WP-I3-007 bzw. WP-I3-010 über denselben Token (alle 14 Spalten ab I3).",
+      "Das Spaltenmenü sortiert mit den Original-Bezeichnungen je Typ und setzt `order_by` (Vitest-Tabelle); Pfeiltasten wechseln Zellen, Enter öffnet das Dropdown, Shift/Ctrl-Mehrfachauswahl wie Original (Playwright-Tastaturtest).",
+      "„N sub-work items“ öffnet die Detailseite am Anker `#sub-issues`; sticky erste Spalte mit Schatten beim horizontalen Scrollen (Visual)."])
 
 W("WP-I2-019", "Inline-Property-Leiste, Quick-Add je Layout, Gruppen-„+“, Quick-Action- und Kontextmenü", "V", "M", True,
   rng("CE-LV", 38, 41), ["WP-I2-014"],
   "Inline-Property-Leiste, Quick-Add in allen Layouts, Gruppen-„+“ mit „Create work item“/„Add an existing work item“, Quick-Action-Menü und Rechtsklick-Kontextmenü (über `WORK_ITEM_ACTIONS`).",
-  fe=["`frontend/libs/web/work-items` (quick-add, quick-action-dropdowns)"], arch=["08 §6.4", "16 §1.4 Zeile I2"])
+  fe=["`frontend/libs/web/work-items` (quick-add, quick-action-dropdowns)"], arch=["08 §6.4", "16 §1.4 Zeile I2"],
+  ak=["Quick-Add in List, Kanban, Calendar, Gantt und Spreadsheet: Titel + Enter legt optimistisch an (Promise-Toast), das Formular bleibt offen, der Gruppenwert ist vorbelegt (E2E je Layout).",
+      "Quick-Action- und Rechtsklick-Menü zeigen je Kontext genau die Original-Einträge über `WORK_ITEM_ACTIONS` (Archive nur bei completed/cancelled); die Kontexte Cycle, Modul und Archiv folgen in I3 (Vitest-Tabelle Kontext × Eintrag).",
+      "Die Inline-Property-Leiste zeigt standardmäßig die 16 Original-Properties und folgt `display_properties` (Vitest)."])
 
 W("WP-I2-020", "Layout-Zustände: Empty-States, Skeleton-Loader, Virtualisierung/Endlos-Laden, Fehlergrenze", "V", "M", True,
   rng("CE-LV", 42, 45), ["WP-I2-014"],
   "Empty-States, Skeleton-Loader je Layout, Virtualisierung mit Sentinel-Pagination und Layout-Fehlergrenze.",
-  fe=["`frontend/libs/web/work-items` (issue-layouts)"], arch=["08 §3.9, §3.13"])
+  fe=["`frontend/libs/web/work-items` (issue-layouts)"], arch=["08 §3.9, §3.13"],
+  ak=["Kontextabhängige Empty-States mit Original-Texten und -Aktionen bzw. „Clear all filters“ (DOM-Snapshot je Kontext; Kontexte späterer Inkremente mit deren Paketen).",
+      "Der IntersectionObserver-Sentinel lädt jede Folgeseite genau einmal (Request-Zählung); Skeleton je Layout und Mutations-Spinner wie Original (Visual).",
+      "Ein Fehler in einem Layout fängt die Fehlergrenze ab; die übrige Seite bleibt bedienbar (Vitest mit werfender Komponente)."])
 
 W("WP-I2-999", "Abnahme I2 – Work Items & Layouts (G5)", "A", "S", False,
   [], ["WP-I2-%03d" % i for i in range(1, 21)] + ["WP-I2-021", "WP-I2-022", "WP-I2-023", "WP-I2-024", "WP-I2-101", "WP-I2-102", "WP-I2-103"] + ["WP-I2-%03d" % i for i in range(201, 208)],
   "Inkrement-Abnahme I2 nach G5 und Meilenstein M2.",
   arch=["plan/01-roadmap-ce.md §4 (M2)", "15 §3.16 Zeile I2"],
-  ak=["Alle Abnahmekriterien M2 erfüllt; `docs/acceptance/I2.md` generiert."], tests=["G5 `--inc I2`."])
+  ak=["Alle Abnahmekriterien M2 erfüllt; `docs/acceptance/I2.md` generiert.",
+      "AK-16-02 (Zwischenstand I2): Contract-Replay und Visual-Suite der I0–I2-Screens mit CE-Defaults = ohne Andockstellen-Registrierung (0 Abweichungen)."], tests=["G5 `--inc I2`."])
 
 # =====================================================================================
 # I3 – Planung
@@ -483,80 +591,117 @@ W("WP-I3-201", "Erweiterungspunkte Planung: ICycleSchedulingPolicy, CYCLE_FLAGS,
   be=["`src/modules/Cycles/Funk.Cycles.Contracts/ICycleSchedulingPolicy.cs`"], fe=["`frontend/libs/web/extensions/src/{cycles,quick-actions}.ts`"],
   arch=["16 §5.15, §3.3.0 E-14/E-15"],
   ep="16 §3.3.0 E-14 (I3-Teil), E-15; 16 §4.6 (Träger CE-CYC-002…013, CE-MOD-011, CE-LV-050)",
-  ak=["Fake-Policy erlaubt parallele Cycles ohne CE-Änderung; Fake-Quick-Action erscheint im Cycle-Menü (Typ X)."])
+  ak=["Fake-Policy erlaubt parallele Cycles ohne CE-Änderung; Fake-Quick-Action erscheint im Cycle-Menü (Typ X).",
+      "AK-16-16 für `ENTITY_QUICK_ACTIONS` und `CYCLE_FLAGS` (je zwei Vitest-Fälle: CE-Default = Original-DOM, Fake an der richtigen Stelle)."],
+  tests=["16 §7.2: `CycleSchedulingPolicyTests` (`Funk.Cycles.Tests`)."])
 
 W("WP-I3-001", "Projekt-Archive und Layout-Kontexte (Cycle, Modul, View, Archiv, Profil)", "V", "M", True,
   ["CE-LV-004", "CE-LV-046"], [M2],
   "Projekt-Archive (Kopf, Tabs für Work Items, Cycles, Module) und die Layout-Kontexte, in denen die I2-Layouts wiederverwendet werden.",
   fe=["`frontend/libs/web/archives`", "`frontend/libs/web/work-items` (Layout-Kontexte)"], arch=["08 §4.1", "02 §3.11.4 (Basismengen)"],
-  note="CE-LV-004 wurde von I2 nach I3 verschoben, weil die Kontexte erst mit Cycles/Modulen/Views existieren (plan/04 OP-PLAN-03).")
+  note="CE-LV-004 wurde von I2 nach I3 verschoben, weil die Kontexte erst mit Cycles/Modulen/Views existieren (plan/04 OP-PLAN-03).",
+  ak=["Die I2-Layouts laufen in den Kontexten Cycle, Modul, Projekt-View, Archiv und Profil mit den Basismengen `WorkItemBaseSets`/`IWorkItemBaseSetFilter` und liefern auf dem Parity-Seed dieselben Treffer wie das Original (Contract-Golden je Kontext).",
+      "Projekt-Archiv mit Tabs Work items/Cycles/Modules, Filter-Toggle und Display (nur List-Optionen); Archiv-Detail read-only (Visual)."])
 
 W("WP-I3-002", "Projekt-Views (Liste, Anlage/Bearbeitung, Löschen, Kontextmenü/Favoriten, Detail, Speichern aus Filtern)", "V", "L", True,
   ["CE-LV-011", "CE-LV-047", "CE-LV-048", "CE-LV-049", "CE-LV-050", "CE-LV-051"], [M2, "WP-I3-201"],
   "Projekt-Views auf Basis des Filter-AST inkl. „View aus Filtern speichern/aktualisieren“.",
   be=["`src/modules/Views/Funk.Views`", "`tests/modules/Funk.Views.Tests`"], fe=["`frontend/libs/web/views`"],
-  arch=["04 §4.6", "03 §3.4.8"])
+  arch=["04 §4.6", "03 §3.4.8"],
+  ak=["Views speichern Legacy- und Rich-Filter als Filter-AST, Layout und Display; für ≥ 10 Filterkombinationen des Parity-Seeds liefert die View dieselben Work Items wie das Original (Golden).",
+      "„Update view“ schreibt nur in eigene, nicht gesperrte Views (sonst Original-Fehler); Löschen nur Owner oder Projekt-Admin (Permission-Matrix); privat/öffentlich wirkt in der Liste je Rolle.",
+      "Kontextmenü über `ENTITY_QUICK_ACTIONS` (entity `view`), Favoriten-Stern über `FAVORITE_ENTITY_RENDERERS` (Typ `view`)."])
 
 W("WP-I3-003", "Workspace-Views (Übersicht, Anlage/Bearbeitung/Löschen, All work items)", "V", "M", True,
   ["CE-LV-052", "CE-LV-053", "CE-LV-054"], ["WP-I3-002"],
   "Workspace-Views inklusive der Standard-Views und der Detailseite „All work items“.",
-  be=["`src/modules/Views/Funk.Views`"], fe=["`frontend/libs/web/views`"], arch=["04 §4.6", "08 §4.1"])
+  be=["`src/modules/Views/Funk.Views`"], fe=["`frontend/libs/web/views`"], arch=["04 §4.6", "08 §4.1"],
+  ak=["Die Default-Views All work items, Assigned, Created, Subscribed liefern für jeden Testbenutzer des Parity-Seeds dieselben Treffer wie das Original (Golden).",
+      "„All work items“ ist projektübergreifend mit Rechten und Gastfilter je Projekt: ein Gast ohne „Guest access“ sieht nur eigene Work Items (L3).",
+      "Workspace-View anlegen/bearbeiten/löschen mit Original-Validierung; Quick-Actions „Open in new tab“/„Copy link“ im Kopf."])
 
 W("WP-I3-004", "Cycle-Liste mit Gruppen, Suche/Filter, Inline-Dashboard, Workspace-weite Active Cycles", "V", "M", True,
   rng("CE-CYC", 1, 4), ["WP-I3-005", "WP-I3-101"],
   "Cycle-Liste (aktiv, kommend, abgeschlossen), Suche und Filter, Inline-Dashboard des aktiven Cycles und workspace-weite Active Cycles (vorgezogen nach D16-ADR-14).",
-  be=["`src/modules/Cycles/Funk.Cycles`"], fe=["`frontend/libs/web/cycles`"], arch=["04 §4.7", "16 D16-ADR-14"])
+  be=["`src/modules/Cycles/Funk.Cycles`"], fe=["`frontend/libs/web/cycles`"], arch=["04 §4.7", "16 D16-ADR-14"],
+  ak=["Aktiver Cycle oben, „Upcoming cycle“ aufgeklappt, „Completed cycle“ zugeklappt; Status-Badges und Leerzustände wie Original (Visual).",
+      "Das Inline-Dashboard des aktiven Cycles (Progress je State-Gruppe, Burndown nach Work Items bzw. Punkten, Tabs Priority/Assignees/Labels) zeigt dieselben Zahlen wie das Original-Golden.",
+      "`/:ws/active-cycles` zeigt alle aktiven Cycles der sichtbaren Projekte statt des Upgrade-Screens (ADR-001, PF-04, D16-ADR-14) – Eintrag in `ui-deviations.yaml` mit Entscheidungsverweis."])
 
 W("WP-I3-005", "Cycles anlegen/bearbeiten, Datumsüberschneidung, archivieren, löschen, Kontextmenü, Favoriten", "V", "L", True,
   ["CE-CYC-005", "CE-CYC-006", "CE-CYC-012", "CE-CYC-013", "CE-CYC-014", "CE-CYC-015"], [M2, "WP-I3-201"],
   "Cycle-CRUD mit Überschneidungsprüfung über `ICycleSchedulingPolicy`, Archiv, Löschen, Kontextmenü und Favoriten; Cycle-Events und Abschluss-Erkennung (`cycles.completion_detection`).",
   be=["`src/modules/Cycles/Funk.Cycles`, `Funk.Cycles.Contracts`", "`tests/modules/Funk.Cycles.Tests`"], fe=["`frontend/libs/web/cycles`"],
-  arch=["04 §4.7", "03 §3.4.6", "06 §3.17.4, O-D06-06"])
+  arch=["04 §4.7", "03 §3.4.6", "06 §3.17.4, O-D06-06"],
+  ak=["`cycles/date-check/` meldet Überschneidungen über `ICycleSchedulingPolicy` mit Original-Antwort (L3: angrenzend, überlappend, enthalten, Draft ohne Daten); `CYCLE_FLAGS.parallelCycles = false`.",
+      "Daten werden in der Projekt-Zeitzone als `timestamptz` gespeichert (Test mit `Pacific/Auckland` und Datumsgrenze); abgeschlossene Cycles sind gesperrt (Original-Fehler).",
+      "Archivieren nur abgeschlossener Cycles, Löschen entfernt Favoriten; der Cron `cycles.completion_detection` schreibt genau ein `funk.cycle.completed.v1` je Cycle (`FixedClock`, OE-71)."])
 
 W("WP-I3-006", "Cycle-Peek/Detail, Fortschritt, Verteilungen, Burndown, Anzeige je Cycle und Modul", "V", "L", True,
   ["CE-CYC-007", "CE-CYC-008", "CE-CYC-009", "CE-LV-016"], ["WP-I3-005", "WP-I3-101"],
   "Cycle-Peek und Detail-Sidebar, Fortschritt, Verteilungen und Burndown (`progress_snapshot`), Cycle-Detailseite und Anzeige-Einstellungen je Cycle und Modul.",
   be=["`src/modules/Cycles/Funk.Cycles`"], fe=["`frontend/libs/web/cycles`"], arch=["04 §4.7", "03 §3.4.6"],
-  note="CE-LV-016 aus I2 hierher verschoben (plan/04 OP-PLAN-03).")
+  note="CE-LV-016 aus I2 hierher verschoben (plan/04 OP-PLAN-03).",
+  ak=["Fortschritt je State-Gruppe (Issues und Punkte), Assignee-/Label-Verteilungen und Burndown je Tag entsprechen dem Original-Golden für einen laufenden und einen abgeschlossenen Cycle (`progress_snapshot`).",
+      "Burndown mit Ideal- und Ist-Linie, umschaltbar Anzahl/Punkte, Visual ≤ 0,5 % (S6-Schwelle); der Peek-Zustand (`peekCycle`) bleibt über Navigation erhalten.",
+      "„Add work item“ fehlt bei abgeschlossenem Cycle; Anzeige-Einstellungen je Cycle und Modul persistieren wie Original (Contract-Golden)."])
 
 W("WP-I3-007", "Work Items Cycles zuordnen, unvollständige übertragen, Cycle-Dropdown", "V", "M", True,
   ["CE-CYC-010", "CE-CYC-011", "CE-WI-025"], ["WP-I3-005"],
   "Zuordnung von Work Items zu Cycles, Transfer unvollständiger Work Items (State-Change-Origin `CycleTransfer`) und Cycle-Dropdown in den Work-Item-Properties.",
   be=["`src/modules/Cycles/Funk.Cycles`"], fe=["`frontend/libs/web/cycles`", "`frontend/libs/web/work-items` (dropdowns)"],
-  arch=["04 §4.7", "16 §5.9"])
+  arch=["04 §4.7", "16 §5.9"],
+  ak=["Ein Work Item gehört höchstens einem Cycle; die Zuordnung zu einem anderen Cycle hängt um (L3, Golden); das Cycle-Dropdown bietet nur current/upcoming/draft Cycles und „No cycle“; die Spreadsheet-Spalte Cycle ist über `SPREADSHEET_COLUMNS` registriert.",
+      "Der Transfer offener Work Items aus einem abgeschlossenen Cycle läuft über `IWorkItemCommands` und die State-Pipeline mit Origin `CycleTransfer`, friert Fortschritt, Verteilungen und Burndown im `progress_snapshot` ein und schreibt Activity (Golden, AK-16-06)."])
 
 W("WP-I3-008", "Modul-Übersicht in drei Layouts, Suche/Filter/Sortierung, Kontextmenü und Favoriten", "V", "M", True,
   ["CE-MOD-001", "CE-MOD-002", "CE-MOD-011"], ["WP-I3-009"],
   "Modul-Übersicht (Liste, Galerie, Gantt), Suche/Filter/Sortierung, Kontextmenü und Favoriten.",
-  fe=["`frontend/libs/web/modules`"], be=["`src/modules/ProjectModules/Funk.ProjectModules`"], arch=["04 §4.8"])
+  fe=["`frontend/libs/web/modules`"], be=["`src/modules/ProjectModules/Funk.ProjectModules`"], arch=["04 §4.8"],
+  ak=["Modul-Übersicht in Liste, Galerie und Timeline (Gantt-Typ MODULE) mit Fortschritt, Daten, Lead, Mitgliedern und Status (Visual je Layout).",
+      "Suche, Filter (Status, Lead, Mitglieder, Start-/Zieldatum, Favoriten) und Sortierung persistieren in `localStorage` unter dem Original-Schlüssel (Vitest); Kontextmenü über `ENTITY_QUICK_ACTIONS` (entity `module`)."])
 
 W("WP-I3-009", "Module anlegen/bearbeiten, Status, Links, Sidebar, archivieren, löschen", "V", "L", True,
   ["CE-MOD-003", "CE-MOD-004", "CE-MOD-005", "CE-MOD-006", "CE-MOD-009", "CE-MOD-010"], [M2, "WP-I3-201"],
   "Modul-CRUD mit Status, Links, Sidebar (Lead, Mitglieder, Fortschritt), Archiv und Löschen.",
   be=["`src/modules/ProjectModules/Funk.ProjectModules`, `Funk.ProjectModules.Contracts`", "`tests/modules/Funk.ProjectModules.Tests`"],
-  fe=["`frontend/libs/web/modules`"], arch=["04 §4.8", "03 §3.4.7"])
+  fe=["`frontend/libs/web/modules`"], arch=["04 §4.8", "03 §3.4.7"],
+  ak=["Modultitel eindeutig je Projekt (Konflikt → Original-Fehler); Status Backlog/Planned/In Progress/Paused/Completed/Cancelled mit Original-Farben; Lead und `ModuleMember` wie Original (Contract-Golden).",
+      "Modul-Links mit URL max. 200 Zeichen (201 → Original-Validierungsfehler); das Modul-Detail liefert Fortschritt, Schätzpunkte, Verteilungen und Burndown wie das Original-Golden.",
+      "Archivieren nur bei Status completed/cancelled; Löschen mit Bestätigung (Permission-Matrix)."])
 
 W("WP-I3-010", "Modul-Detailseite, Work Items zuordnen, Module-Dropdown", "V", "M", True,
   ["CE-MOD-007", "CE-MOD-008", "CE-WI-026"], ["WP-I3-009", "WP-I3-101"],
   "Modul-Detailseite mit Work-Item-Layouts, Zuordnung von Work Items und Module-Dropdown in den Properties.",
-  be=["`src/modules/ProjectModules/Funk.ProjectModules`"], fe=["`frontend/libs/web/modules`", "`frontend/libs/web/work-items` (dropdowns)"], arch=["04 §4.8"])
+  be=["`src/modules/ProjectModules/Funk.ProjectModules`"], fe=["`frontend/libs/web/modules`", "`frontend/libs/web/work-items` (dropdowns)"], arch=["04 §4.8"],
+  ak=["Die n:m-Zuordnung vom Modul (mehrere Work Items) und vom Work Item (Module hinzufügen/entfernen) schreibt Activity und `funk.work_item.module_changed.v1` (Golden, Event-Katalog-Snapshot).",
+      "Modul-Detailseite mit Work-Item-Layouts, einklappbarer Sidebar und mobiler Variante (Visual); Module-Dropdown mit Einzel-/Mehrfachauswahl und Suche; Spreadsheet-Spalte Modules über `SPREADSHEET_COLUMNS` registriert."])
 
 W("WP-I3-011", "Intake: je Projekt mit Triage-State, Seite Open/Closed, Filter/Sortierung, Detail, Anlage", "V", "L", True,
   rng("CE-INT", 1, 5), [M2],
   "Intake je Projekt mit Triage-State, Intake-Seite mit Tabs, Filter/Sortierung, Detail (Editor-Hüllen aus I2) und Anlage.",
   be=["`src/modules/Intake/Funk.Intake`, `Funk.Intake.Contracts`", "`tests/modules/Funk.Intake.Tests`"], fe=["`frontend/libs/web/intake`"],
-  arch=["04 §4.9", "03 §3.4.9", "10 §1.4 Zeile I3"])
+  arch=["04 §4.9", "03 §3.4.9", "10 §1.4 Zeile I3"],
+  ak=["Neue Intake-Einträge landen im unsichtbaren `triage`-State mit Status -2 (Pending) (L3, Golden); der Default-Intake entsteht beim Aktivieren von `intake_view` (WP-I1-010).",
+      "Tabs Open/Closed mit Zählern, Endlos-Laden 10 je Seite, automatische Auswahl des ersten Eintrags, Deep-Link `inboxIssueId`; Gäste sehen nur eigene Einträge (Permission-Matrix, E2E).",
+      "Filter nach Status, Priorität, Assignees, Erstellern, Labels, Erstell-/Aktualisierungsdatum (Heute, Gestern, 7 Tage, 30 Tage, Custom) und Sortierung created/updated/sequence liefern dieselbe Reihenfolge wie das Original (Golden); Anlage durch alle Rollen inkl. Gäste mit „Create more“."])
 
 W("WP-I3-012", "Intake-Aktionen: annehmen, ablehnen, zurückstellen, Duplikat, bearbeiten/löschen, Navigation, Benachrichtigungs-Detail", "V", "L", True,
   rng("CE-INT", 6, 12), ["WP-I3-011"],
   "Annehmen (über `IWorkItemCommands` und State-Pipeline mit Origin `Intake`), Ablehnen, Snooze mit Unsnooze-Cron, Duplikat, Bearbeiten/Löschen, Navigation und Intake-Detail in Benachrichtigungen.",
-  be=["`src/modules/Intake/Funk.Intake`"], fe=["`frontend/libs/web/intake`"], arch=["04 §4.9", "06 §3.17.2", "16 §5.16"])
+  be=["`src/modules/Intake/Funk.Intake`"], fe=["`frontend/libs/web/intake`"], arch=["04 §4.9", "06 §3.17.2", "16 §5.16"],
+  ak=["Annehmen (nur Admins) übernimmt das Work Item über `IWorkItemCommands` mit dem Default-State ins Projekt; der State-Wechsel läuft mit Origin `Intake` durch die Pipeline (AK-16-06); Status 1 (Accepted), Golden.",
+      "Snooze speichert `snoozed_till` als 00:00 in der Projekt-Zeitzone (frühestens morgen); der Cron (alle 5 min) setzt abgelaufene Snoozes auf Pending zurück (`FixedClock`, `CronRegistrationTests`); ein Zeitzonenwechsel des Projekts rechnet `snoozed_till` um (L3).",
+      "Ablehnen (-1), Duplikat (2, `duplicate_to`) und Löschen (Admin oder Ersteller; bei nicht angenommenen Einträgen inkl. Issue) wie Original (Contract-Golden je Aktion); Gäste bearbeiten nur Name und Beschreibung."])
 
 W("WP-I3-013", "Automationen Auto-Archive und Auto-Close", "B", "M", True,
   ["CE-PRJ-039", "CE-PRJ-040"], [M2],
   "Projekt-Einstellung und Cron `work_items.auto_archive_close` (`0 1 * * *`); Auto-Close über `IWorkItemStateChanger` (Origin `AutoClose`) mit projektbezogenem Close-State-Fallback (DEV-AUTO-001/-002).",
   be=["`src/modules/WorkItems/Funk.WorkItems/Application/Jobs/AutoArchiveAndCloseJob.cs`"], fe=["`frontend/libs/web/project-settings` (automations)"],
-  arch=["06 §3.17.1, §5.10, D06-ADR-19", "17 ABG-056"])
+  arch=["06 §3.17.1, §5.10, D06-ADR-19", "17 ABG-056"],
+  ak=["Cron `work_items.auto_archive_close` (`0 1 * * *` UTC) ist in `CronRegistrationTests` registriert; mit `FixedClock` archiviert er genau die completed/cancelled Work Items ohne laufenden Cycle/Modul, die `archive_in` Monate unverändert sind, und schreibt die Original-Activity (gespeicherter Daten-String, 17 BR-02 Nr. 3).",
+      "Auto-Close verschiebt offene Work Items nach `close_in` Monaten über `IWorkItemStateChanger` (Origin `AutoClose`) in den gewählten Close-State mit projektbezogenem Fallback (DEV-AUTO-001/-002); lehnt ein `FakeStateTransitionGuard` ab, wird der Eintrag übersprungen und geloggt (AK-16-06).",
+      "`archive_in`/`close_in` akzeptieren 0 (aus) und 1–12 Monate; andere Werte → Original-Validierungsfehler."])
 
 W("WP-I3-999", "Abnahme I3 – Planung (G5)", "A", "S", False,
   [], ["WP-I3-%03d" % i for i in range(1, 14)] + ["WP-I3-101", "WP-I3-201"],

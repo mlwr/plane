@@ -34,6 +34,29 @@ EPS = json.load(open(os.path.join(MIG, "architecture", "_data", "endpoints.json"
 WPS = wp_spec.WPS
 BY = {w["wp"]: w for w in WPS}
 ORDER = {w["wp"]: (PHASES.index(w["phase"]), w["wp"]) for w in WPS}
+# Vorlauf-Pakete (plan/01 L-8): Pakete eines Inkrements In (n >= 1), die weder direkt noch transitiv
+# von WP-I(n-1)-999 abhängen. Sie müssen in wp_spec.VORLAUF deklariert sein (Schutz gegen versehentlich
+# fehlende Meilenstein-Abhängigkeiten).
+def _ancestors(n, memo={}):
+    if n not in memo:
+        acc = set()
+        for d in BY[n]["deps"]:
+            if d in BY:
+                acc.add(d)
+                acc |= _ancestors(d)
+        memo[n] = acc
+    return memo[n]
+
+
+VORLAUF = sorted([w["wp"] for w in WPS if w["phase"] != "I0"
+                  and "WP-%s-999" % PHASES[PHASES.index(w["phase"]) - 1] not in _ancestors(w["wp"])],
+                 key=lambda x: (PHASES.index(BY[x]["phase"]), x))
+if set(VORLAUF) != set(wp_spec.VORLAUF):
+    sys.exit("Vorlauf-Pakete weichen von wp_spec.VORLAUF ab: berechnet %s, deklariert %s" % (VORLAUF, sorted(wp_spec.VORLAUF)))
+for v in VORLAUF:
+    if BY[v]["type"] in ("V", "F", "A"):
+        sys.exit("%s ist Vorlauf-Paket, registriert aber als Typ %s Screens (plan/01 L-8)" % (v, BY[v]["type"]))
+
 CE_OWNER = {}
 for w in WPS:
     for c in w["ce"]:
@@ -41,8 +64,8 @@ for w in WPS:
 
 
 def rename(s):
-    """Zielbezeichner nach ADR-009C (nur in generierten Texten aus Architekturdaten)."""
-    return s.replace("Plane.", "Funk.")
+    """Zielbezeichner nach ADR-009C (nur in generierten Texten aus Architekturdaten; Umbenennungstabelle 17)."""
+    return s.replace("Plane.", "Funk.").replace("Plane:", "Funk:").replace("Plane__", "Funk__")
 
 
 # ---------------- Endpunkte zuordnen ----------------
@@ -158,7 +181,7 @@ def endpoint_lines(w):
     for e in eps:
         out.append("| %s%s | %s | `%s` | %s | %s | %s | %s | %s |" % (
             e["ep"], " (vorab)" if e["ep"] in EP_PRE else " (verschoben)" if e["ep"] in EP_LATE else "", e["method"], e["path"], e["surface"], rename("%s.%s" % (e["endpoint_class"] or "–", e["handler"] or "–")),
-            (e["permission"] or "–").replace("|", "/"), e["increment"], ", ".join(e["ce_ids"])))
+            rename(e["permission"] or "–").replace("|", "/"), e["increment"], ", ".join(e["ce_ids"])))
     return out
 
 
@@ -199,6 +222,8 @@ def wp_section(w):
     L.append("| Größe | %s |" % w["size"])
     L.append("| parallelisierbar | %s |" % ("ja" if w["parallel"] else "nein"))
     L.append("| Abhängigkeiten | %s |" % deps)
+    if w["wp"] in VORLAUF:
+        L.append("| Vorlauf | ja – darf vor `WP-%s-999` beginnen (plan/01 L-8); abgenommen mit `WP-%s-999` |" % (PHASES[PHASES.index(w["phase"]) - 1], w["phase"]))
     L.append("| CE-IDs | %s |" % (", ".join(w["ce"]) if w["ce"] else "– (keine; %s)" % ("Erweiterungspunkt" if w["type"] == "X" else "Baustein/Spike/Abnahme")))
     if w["ep"]:
         L.append("| Andockstelle | %s |" % w["ep"])
@@ -306,7 +331,7 @@ L.append("|---|---|---|---|---|---|---|---|---|")
 for w in sorted(WPS, key=lambda x: ORDER[x["wp"]]):
     L.append("| [%s](#%s) | %s | %s | %s | %s | %s | %d | %d | %s |" % (
         w["wp"], gh_slug("%s – %s" % (w["wp"], w["title"])),
-        w["title"], w["phase"], w["type"], w["size"], "ja" if w["parallel"] else "nein", len(w["ce"]),
+        w["title"] + (" *(Vorlauf)*" if w["wp"] in VORLAUF else ""), w["phase"], w["type"], w["size"], "ja" if w["parallel"] else "nein", len(w["ce"]),
         len(EP_BY_WP.get(w["wp"], [])), ", ".join(w["deps"]) or "–"))
 L.append("")
 cnt = collections.Counter(w["phase"] for w in WPS)
@@ -328,26 +353,47 @@ L.append("### 3.2 Kritischer Pfad je Inkrement (Schätzung)")
 L.append("")
 L.append("Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete außerhalb des Inkrements gelten als erledigt. Der kritische Pfad bestimmt die Mindestdauer eines Inkrements bei unbegrenzter Parallelität.")
 L.append("")
-L.append("| Inkrement | Pakete | Summe (Tage) | kritischer Pfad (Tage) | Pfad |")
-L.append("|---|---|---|---|---|")
+L.append("Die Spalte „ab Meilenstein“ rechnet die Vorlauf-Pakete (§3.3) als bereits erledigt und gibt damit die Mindestdauer ab Abnahme des Vorgänger-Inkrements an.")
+L.append("")
+L.append("| Inkrement | Pakete | Summe (Tage) | kritischer Pfad (Tage) | Pfad | ab Meilenstein (Tage) | Pfad ab Meilenstein |")
+L.append("|---|---|---|---|---|---|---|")
 CRIT = {}
-for p in PHASES:
-    ws = [x for x in WPS if x["phase"] == p]
+
+
+def _longest(p, skip):
     memo = {}
+
     def lp(n):
         if n in memo:
             return memo[n]
         best = (0, [])
         for d in BY[n]["deps"]:
-            if d in BY and BY[d]["phase"] == p:
+            if d in BY and BY[d]["phase"] == p and d not in skip:
                 r = lp(d)
                 if r[0] > best[0]:
                     best = r
         memo[n] = (best[0] + DUR[BY[n]["size"]], best[1] + [n])
         return memo[n]
-    top = max((lp(x["wp"]) for x in ws), key=lambda r: r[0])
-    CRIT[p] = top
-    L.append("| %s | %d | %d | %d | %s |" % (p, len(ws), sum(DUR[x["size"]] for x in ws), top[0], " → ".join(top[1])))
+    return max((lp(x["wp"]) for x in WPS if x["phase"] == p and x["wp"] not in skip), key=lambda r: r[0])
+
+
+for p in PHASES:
+    ws = [x for x in WPS if x["phase"] == p]
+    top = _longest(p, set())
+    post = _longest(p, set(VORLAUF))
+    CRIT[p] = (top, post)
+    L.append("| %s | %d | %d | %d | %s | %s | %s |" % (p, len(ws), sum(DUR[x["size"]] for x in ws), top[0], " → ".join(top[1]),
+                                                   post[0] if post != top else "=", " → ".join(post[1]) if post != top else "="))
+L.append("")
+L.append("### 3.3 Vorlauf-Pakete (plan/01 L-8)")
+L.append("")
+L.append("Vorlauf-Pakete hängen nicht vom Meilenstein des Vorgänger-Inkrements ab und dürfen beginnen, sobald ihre eigenen Abhängigkeiten gemergt sind. Sie registrieren keine Screens (geprüft: kein Typ V/F) und werden mit ihrem Inkrement abgenommen. `build.py` bricht ab, wenn die berechnete Menge von `wp_spec.VORLAUF` abweicht.")
+L.append("")
+L.append("| WP | Titel | Inkr. | Typ | frühester Start |")
+L.append("|---|---|---|---|---|")
+for v in VORLAUF:
+    w = BY[v]
+    L.append("| %s | %s | %s | %s | nach %s |" % (v, w["title"], w["phase"], w["type"], ", ".join(w["deps"])))
 L.append("")
 L.append("## 4. Arbeitspakete im Detail")
 L.append("")
@@ -396,6 +442,10 @@ L.append("|---|---|---|---|---|---|")
 for e, own in sorted(ep_mismatch, key=lambda x: x[0]["ep"]):
     L.append("| %s | %s | `%s` | %s | %s | %s |" % (e["ep"], e["method"], e["path"], e["increment"], own, BY[own]["phase"]))
 L.append("")
+tail = os.path.join(HERE, "02-review.md")
+if os.path.exists(tail):
+    L.append(open(tail, encoding="utf-8").read().rstrip())
+    L.append("")
 open(os.path.join(PLAN, "02-arbeitspakete-ce.md"), "w", encoding="utf-8").write("\n".join(L) + "\n")
 
 # ---------------- Graphen in 01 ----------------

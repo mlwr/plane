@@ -20,7 +20,9 @@
    "WP-I0-105",
    "WP-I0-108",
    "WP-I0-203",
-   "WP-I0-204"
+   "WP-I0-204",
+   "WP-I0-106",
+   "WP-I0-911"
   ],
   "size": "L"
  },
@@ -92,7 +94,8 @@
   ],
   "depends_on": [
    "WP-I0-002",
-   "WP-I0-006"
+   "WP-I0-006",
+   "WP-I0-913"
   ],
   "size": "M"
  },
@@ -112,7 +115,8 @@
   ],
   "depends_on": [
    "WP-I0-105",
-   "WP-I0-910"
+   "WP-I0-910",
+   "WP-I0-106"
   ],
   "size": "L"
  },
@@ -239,7 +243,9 @@
   ],
   "depends_on": [
    "WP-I0-108",
-   "WP-I0-006"
+   "WP-I0-006",
+   "WP-I0-106",
+   "WP-I0-911"
   ],
   "size": "L"
  },
@@ -919,7 +925,7 @@
  },
  {
   "wp": "WP-I1-202",
-  "title": "Erweiterungspunkt Feature-Kataloge: IProjectFeatureCatalog, IWorkspaceFeatureCatalog, Contributors, PROJECT_FEATURES",
+  "title": "Erweiterungspunkt Feature-Kataloge: IProjectFeatureCatalog, IWorkspaceFeatureCatalog, IProjectFeatureContributor/IWorkspaceFeatureContributor, PROJECT_FEATURES",
   "phase": "I1",
   "ce_ids": [],
   "depends_on": [
@@ -1071,7 +1077,8 @@
    "CE-WI-030"
   ],
   "depends_on": [
-   "WP-I2-001"
+   "WP-I2-001",
+   "WP-I2-002"
   ],
   "size": "L"
  },
@@ -1825,7 +1832,8 @@
    "CE-PAGE-012"
   ],
   "depends_on": [
-   "WP-I4-001"
+   "WP-I4-001",
+   "WP-I4-101"
   ],
   "size": "L"
  },
@@ -1858,7 +1866,8 @@
   ],
   "depends_on": [
    "WP-I4-007",
-   "WP-I4-002"
+   "WP-I4-002",
+   "WP-I4-005"
   ],
   "size": "L"
  },
@@ -1870,7 +1879,8 @@
    "CE-PAGE-019"
   ],
   "depends_on": [
-   "WP-I4-006"
+   "WP-I4-006",
+   "WP-I4-002"
   ],
   "size": "M"
  },
@@ -1888,7 +1898,8 @@
    "WP-I4-101",
    "WP-I4-202",
    "WP-I0-107",
-   "WP-I0-901"
+   "WP-I0-901",
+   "WP-I4-201"
   ],
   "size": "L"
  },
@@ -1903,7 +1914,8 @@
   ],
   "depends_on": [
    "WP-I4-006",
-   "WP-I2-024"
+   "WP-I2-024",
+   "WP-I4-002"
   ],
   "size": "L"
  },
@@ -1949,7 +1961,7 @@
   "phase": "I4",
   "ce_ids": [],
   "depends_on": [
-   "WP-I3-999"
+   "WP-I2-999"
   ],
   "size": "S"
  },
@@ -1960,7 +1972,8 @@
   "ce_ids": [],
   "depends_on": [
    "WP-I2-999",
-   "WP-I4-101"
+   "WP-I4-101",
+   "WP-I4-201"
   ],
   "size": "S"
  },
@@ -2186,7 +2199,7 @@
  },
  {
   "wp": "WP-I6-001",
-  "title": "God Mode: Abmeldung, Fehleransicht, Dashboard-Shell, Header, Konto-Menü, Hilfe, Unsaved-Dialog, Kopierfelder, 404",
+  "title": "God Mode: Abmeldung, Fehleransicht, Dashboard-Shell, Header, Konto-Menü, Hilfe, Seite „Authentication“ (Keycloak), Unsaved-Dialog, Kopierfelder, 404",
   "phase": "I6",
   "ce_ids": [
    "CE-INST-008",
@@ -2246,7 +2259,8 @@
    "CE-SPACE-002"
   ],
   "depends_on": [
-   "WP-I5-999"
+   "WP-I5-999",
+   "WP-I6-203"
   ],
   "size": "M"
  },
@@ -2425,7 +2439,8 @@
    "CE-WH-006"
   ],
   "depends_on": [
-   "WP-I5-999"
+   "WP-I5-999",
+   "WP-I6-202"
   ],
   "size": "M"
  },
@@ -2483,7 +2498,8 @@
    "CE-AI-002"
   ],
   "depends_on": [
-   "WP-I5-999"
+   "WP-I5-999",
+   "WP-I6-002"
   ],
   "size": "M"
  },
@@ -2625,7 +2641,12 @@
   "phase": "I7",
   "ce_ids": [],
   "depends_on": [
-   "WP-I6-999"
+   "WP-I6-999",
+   "WP-I7-101",
+   "WP-I7-102",
+   "WP-I7-103",
+   "WP-I7-105",
+   "WP-I7-106"
   ],
   "size": "M"
  },
@@ -2667,7 +2688,8 @@
   "phase": "I7",
   "ce_ids": [],
   "depends_on": [
-   "WP-I6-999"
+   "WP-I6-999",
+   "WP-I7-107"
   ],
   "size": "S"
  },

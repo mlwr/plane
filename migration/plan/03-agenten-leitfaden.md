@@ -53,7 +53,7 @@
 
 ## 3. Auswahl eines Arbeitspakets
 
-1. **Aktuelles Inkrement bestimmen:** das niedrigste Inkrement `In`, dessen Abnahme `WP-In-999` noch offen ist. Pakete eines späteren Inkrements sind nur erlaubt, wenn sie als Vorlauf-Paket gekennzeichnet sind (plan/01 L-8) oder alle ihre Abhängigkeiten erfüllt sind und sie keine Route registrieren.
+1. **Aktuelles Inkrement bestimmen:** das niedrigste Inkrement `In`, dessen Abnahme `WP-In-999` noch offen ist. Pakete eines späteren Inkrements sind nur erlaubt, wenn sie Vorlauf-Pakete sind (plan/01 L-8; Liste in plan/02 §3.3, Merkmal „Vorlauf“ im Paket). Alle anderen Pakete hängen transitiv am Vorgänger-Meilenstein (`check_wp.py`) und können deshalb nicht früher beginnen.
 2. **Kandidaten filtern** (`docs/plan/_data/wp-ce.json`): alle `depends_on`-Pakete gemergt; kein abhängiger Spike rot oder offen; Paket nicht vergeben (Tracking-Issue `WP-…` ohne Assignee); keine offene Planfrage mit Label `blocker` am Paket.
 3. **Priorität:** (a) Pakete auf dem kritischen Pfad des Inkrements (02 §3.2), (b) Erweiterungspunkt-Pakete (2xx) und Bausteine (1xx), von denen viele Schnitte abhängen, (c) übrige Schnitte nach Nummer.
 4. **Parallelität:** Pakete mit „parallelisierbar = nein“ bearbeitet nur ein Agent, und in derselben Zeit arbeitet kein anderer Agent am selben Backend-Modul oder an derselben Frontend-Lib. Ein Agent bearbeitet **höchstens ein** Paket gleichzeitig (WIP-Limit 1).
@@ -331,3 +331,16 @@ Nur über Planfrage und `plan/<slug>`-PR: Spezifikation in `migration/_werkzeuge
 - [ ] Replay, Dual-Target-E2E, Visual (Chromium), `ce-coverage-check --ids …`, `./tools/ci/gate.sh g1 --affected` grün.
 - [ ] Abweichungen eingetragen und begründet; Branding und i18n (de/en) geprüft.
 - [ ] Commit-Trailer `WP:`/`CE:` gesetzt; PR-Titel `[In] WP-…`; DoD-Checkliste ausgefüllt.
+
+---
+
+## Review-Protokoll
+
+**Adversarialer Review vom 23.10.2026** (gemeinsam mit plan/01, 02, 04; Details im Review-Protokoll von plan/02).
+
+| Nr. | Stelle | Befund | Korrektur |
+|---|---|---|---|
+| 03-R1 | §3 Nr. 1 | Verwies auf „als Vorlauf-Paket gekennzeichnete“ Pakete, die in plan/02 nicht gekennzeichnet waren; die Ausnahme „alle Abhängigkeiten erfüllt und keine Route registriert“ widersprach plan/01 §7.1 und war wegen der Meilenstein-Kette wirkungslos. | Verweis auf plan/02 §3.3 und das Merkmal „Vorlauf“; Ausnahme gestrichen, Begründung über `check_wp.py`. |
+| 03-R2 | §8.1 (DoD) und §10 (Eskalation) | plan/02 und plan/01 verwiesen auf „plan/03 §7“ (DoD) bzw. „plan/03 §9“ (Planfrage). | Verweise in plan/01/02 auf §8 bzw. §10 korrigiert; dieses Dokument unverändert. |
+
+Geprüft und ohne Befund: Regeln §1 gegen 00 (ADR-001 … ADR-009D), 17 (Z-09 … Z-12, Umbenennungstabelle) und 01 §8 (Lizenz-Hygiene, verbotene Bibliotheken); Rollen §2 gegen 15 §3.1; Vorgehen §5 gegen 15 §3.15.2; DoD §8 gegen 15 §3.15.3; Typ-X-Regeln §11.2 gegen 16 §3.1/§5 (die Testklassen aus 16 §7.2 stehen jetzt je X-Paket in plan/02).

@@ -11,7 +11,9 @@ Prüft:
   4. jede Abhängigkeit existiert, liegt nicht in einer späteren Phase und der Graph ist azyklisch,
   5. Felder und Werte (phase, size) sind gültig,
   6. jede CE-ID mit Status „entfällt“ (15 Anhang B) liegt in einem Arbeitspaket, das den Ersatznachweis führt,
-  7. jedes Erweiterungspunkt-Arbeitspaket (Nummernkreis 2xx) trägt keine CE-ID.
+  7. jedes Erweiterungspunkt-Arbeitspaket (Nummernkreis 2xx) trägt keine CE-ID,
+  8. jedes Paket eines Inkrements (außer den Spikes WP-I0-9nn) liegt unter der Abnahme WP-In-999,
+  9. (Information) Vorlauf-Pakete = Pakete in In (n ≥ 1) ohne transitive Abhängigkeit auf WP-I(n-1)-999.
 Exit-Code 0 = alles in Ordnung, 1 = Fehler (Liste auf stdout).
 """
 import json
@@ -90,6 +92,34 @@ def main():
         if state.get(n) is None:
             visit(n, [])
 
+    anc_memo = {}
+
+    def ancestors(n):
+        if n not in anc_memo:
+            acc = set()
+            for d in byid[n]["depends_on"]:
+                if d in byid:
+                    acc.add(d)
+                    acc |= ancestors(d)
+            anc_memo[n] = acc
+        return anc_memo[n]
+
+    vorlauf = []
+    if not any(e.startswith("Zyklus") for e in errors):
+        for p in PHASES:
+            acc = "WP-%s-999" % p
+            if acc not in byid:
+                errors.append("Abnahme-Paket %s fehlt" % acc)
+                continue
+            under = ancestors(acc)
+            for w in wps:
+                if w["phase"] == p and w["wp"] != acc and w["wp"] not in under and not re.fullmatch(r"WP-I0-9\d\d", w["wp"]):
+                    errors.append("%s liegt nicht unter der Abnahme %s" % (w["wp"], acc))
+        for w in wps:
+            i = PHASES.index(w["phase"])
+            if i > 0 and "WP-%s-999" % PHASES[i - 1] not in ancestors(w["wp"]):
+                vorlauf.append(w["wp"])
+
     dropped = [c for c in all_ids if status.get(c) == "entfällt"]
     for c in dropped:
         for o in owner.get(c, []):
@@ -101,6 +131,7 @@ def main():
     per_phase = {p: [w for w in wps if w["phase"] == p] for p in PHASES}
     for p in PHASES:
         print("  %s: %3d WPs, %3d CE-IDs" % (p, len(per_phase[p]), sum(len(w["ce_ids"]) for w in per_phase[p])))
+    print("Vorlauf-Pakete (%d): %s" % (len(vorlauf), ", ".join(vorlauf) or "–"))
     if errors:
         print("FEHLER (%d):" % len(errors))
         for e in errors:

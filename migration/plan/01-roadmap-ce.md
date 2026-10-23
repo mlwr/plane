@@ -30,7 +30,7 @@
 | L-5 | **Ausbau ohne Umbau.** Alle 17 🧱-Pakete (A1, A2, A9, A17, B1, B6, C1, C3, D1, D2, E3, E5, F1, F2, G1, H1, H6) bekommen ihre Andockstellen als eigene Arbeitspakete (Nummernkreis 2xx) in dem Inkrement, in dem sie laut 01 §1.4/16 §1.4 entstehen müssen. | 29 X-Pakete (§6); Wellen ändern CE-Code nur additiv (16 D16-ADR-06/-15). |
 | L-6 | **Parität messbar.** Optisch 1:1, funktionale Fehler des Originals werden korrigiert und dokumentiert (17 Z-12); nur Chromium ist Test-Gate (17 Z-10). | Dual-Target-E2E, Visual-Diff gegen das Original, `deviations.yaml`/`ui-deviations.yaml`. |
 | L-7 | **Nutzungskette.** Reihenfolge nach dem Arbeitsfluss eines Teams: anmelden → Workspace/Projekt → Work Items in allen Layouts → Planung → Wissen (Pages, Realtime) → Überblick → Außenwirkung → Härtung (01 §1.3). | Inkremente I0–I7. |
-| L-8 | **Vorlauf-Tracks** für lange technische Ketten, die keinen Screen registrieren: Editor-Track (Funk.Documents Teil A, ED-1/ED-2a/ED-2b/ED-3) darf während I1 beginnen, Dokument-/Realtime-Track (Funk.Documents Teil B, Kollaborationsserver) während I3. Abgenommen werden sie mit ihrem Inkrement. | Abhängigkeiten dieser Pakete zeigen nicht auf den Vorgänger-Meilenstein (02 §1.2). |
+| L-8 | **Vorlauf-Tracks** für lange technische Ketten, die keinen Screen registrieren: Editor-Track (Funk.Documents Teil A, ED-1/ED-2a/ED-2b/ED-3) darf während I1 beginnen, Dokument-/Realtime-Track (Funk.Documents Teil B, Page-Schema/-Zugriffsregel WP-I4-201, Kollaborations-Andockstellen, Kollaborationsserver, Backplane) während I3. Abgenommen werden sie mit ihrem Inkrement. | Abhängigkeiten dieser Pakete zeigen nicht auf den Vorgänger-Meilenstein (02 §1.2); die Pakete sind in 02 §3.3 gelistet und mit „Vorlauf“ markiert, `build.py` prüft die Liste gegen `wp_spec.VORLAUF`. |
 
 ---
 
@@ -42,15 +42,15 @@
 |---|---|---|---|---|---|---|
 | **I0 Walking Skeleton** | `aspire run` startet alles; Anmeldung über Keycloak mit funk.-Login-Theme im Original-Layout; JIT-Benutzer; Workspace und Projekt anlegen; leere Workspace-Shell pixelgleich; God-Mode-Einstieg; CI mit Gates G0–G3; Paritäts-Harness vergleicht 5 Endpunkte gegen das Original; alle I0-Andockstellen (C3, B1/A2, E5, H1/E3, F1, F2, H6, Reservierungen) | 38 (davon 14 Spikes) | 66 | 49 Tage | S0, S7, S10 (Shell), S11 | M0 |
 | **I1 Workspace, Projekte, Konto** | vollständige Workspace- und Projektverwaltung: Einstellungen, Mitglieder, Einladungen (Mail), Favoriten, Navigation, States, Labels, Estimates, Feature-Toggles, Profil, Onboarding, Sprachen de/en, Themes, UI-Querschnitt, Datei-Assets | 31 | 95 | 27 Tage | S8, S12 | M1 |
-| **I2 Work Items & Layouts** | Work Items anlegen/bearbeiten, Detail/Peek, Properties, Hierarchie/Relationen, Links/Anhänge, Kommentare/Reaktionen/Mentions, Activity/Versionen, Archiv/Löschen, Drafts; alle fünf Layouts mit Rich-Filter, Gruppierung, Pagination, DnD; Lite-, Rich- und Document-Editor (read-only) | 35 | 114 | 62 Tage (37 nach Vorlauf) | S2 (HTML/JSON), S4, S5, S9 | M2 |
+| **I2 Work Items & Layouts** | Work Items anlegen/bearbeiten, Detail/Peek, Properties, Hierarchie/Relationen, Links/Anhänge, Kommentare/Reaktionen/Mentions, Activity/Versionen, Archiv/Löschen, Drafts; alle fünf Layouts mit Rich-Filter, Gruppierung, Pagination, DnD; Lite-, Rich- und Document-Editor (read-only) | 35 | 114 | 62 Tage (42 ab M1) | S2 (HTML/JSON), S4, S5, S9 | M2 |
 | **I3 Planung** | Cycles, Modules, Intake, Projekt- und Workspace-Views, Archive, Automationen, Chart-Bausteine | 16 | 55 | 24 Tage | S6 | M3 |
-| **I4 Pages & Realtime** | kollaborativer Page-Editor in reinem .NET (Hocuspocus-Protokoll), Versionen, Sperren/Archiv/Zugriff, PDF-/Markdown-Export, Offline-Cache, Mehrinstanz-Sync, vollständiger Demo-Seed | 13 | 29 | 44 Tage (22 nach Vorlauf) | S1, S2 (Yjs), S3, S5-Rest | M4 |
+| **I4 Pages & Realtime** | kollaborativer Page-Editor in reinem .NET (Hocuspocus-Protokoll), Versionen, Sperren/Archiv/Zugriff, PDF-/Markdown-Export, Offline-Cache, Mehrinstanz-Sync, vollständiger Demo-Seed | 13 | 29 | 44 Tage (37 ab M3) | S1, S2 (Yjs), S3, S5-Rest | M4 |
 | **I5 Überblick** | Home mit Widgets/Quick Links/Recents/Stickies, Notifications (In-App, E-Mail-Bündelung, Live-Zähler), Analytics, globale Suche, Power-K, Your Work | 13 | 41 | 22 Tage | – | M5 |
-| **I6 Außenwirkung & Administration** | God Mode vollständig, Space (öffentliche Boards inkl. Kommentare/Votes mit Keycloak-Login), Public API v1 + API-Tokens + OpenAPI, Webhooks, Exporte, KI-Assistent/Unsplash | 22 | 100 | 37 Tage | – | M6 |
-| **I7 Härtung & Betrieb** | Paritätsabnahme aller Screens, Last-/Sicherheitstests, Airgapped-Bundle, Docker Compose/Swarm, Helm, AIO, Backup/Restore, Upgrade-Pfad, Contract-Snapshots der Andockstellen; CE-Release-Kandidat | 12 | 7 | 12 Tage | – | M7 (CE-Release) |
+| **I6 Außenwirkung & Administration** | God Mode vollständig, Space (öffentliche Boards inkl. Kommentare/Votes mit Keycloak-Login), Public API v1 + API-Tokens + OpenAPI, Webhooks, Exporte, KI-Assistent/Unsplash | 22 | 100 | 39 Tage | – | M6 |
+| **I7 Härtung & Betrieb** | Paritätsabnahme aller Screens, Last-/Sicherheitstests, Airgapped-Bundle, Docker Compose/Swarm, Helm, AIO, Backup/Restore, Upgrade-Pfad, Contract-Snapshots der Andockstellen; CE-Release-Kandidat | 12 | 7 | 22 Tage | – | M7 (CE-Release) |
 | **W1 … W9** | Bezahl-Pakete nach `features/30-paid-auswahlliste.md` (§5) | – | EE-* | – | Paket-Spikes (z. B. S-F2-1) | MW1 … MW9 |
 
-¹ Längste Abhängigkeitskette innerhalb des Inkrements mit S = 2, M = 5, L = 10 Agenten-Arbeitstagen (02 §3.2). Die Dauer eines Inkrements ist ungefähr `max(kritischer Pfad, Summe der Pakettage / Zahl paralleler Agenten)`; bei fünf parallelen Agenten liegt die CE bei rund 240–280 Agenten-Arbeitstagen Durchlaufzeit (Schätzung, keine Zusage; Nachkalibrierung nach I0, §7.3).
+¹ Längste Abhängigkeitskette innerhalb des Inkrements mit S = 2, M = 5, L = 10 Agenten-Arbeitstagen (02 §3.2); „ab M<n>“ = Kette ab Abnahme des Vorgänger-Inkrements, wenn die Vorlauf-Pakete bereits erledigt sind (02 §3.2, Spalte „ab Meilenstein“). Die Dauer eines Inkrements ist ungefähr `max(kritischer Pfad, Summe der Pakettage / Zahl paralleler Agenten)`; bei fünf parallelen Agenten liegt die CE bei rund 240–280 Agenten-Arbeitstagen Durchlaufzeit (Schätzung, keine Zusage; Nachkalibrierung nach I0, §7.3).
 
 ### 2.2 Abhängigkeitsgraph der Inkremente, Spikes und Wellen
 
@@ -114,16 +114,16 @@ gantt
   I0 Walking Skeleton + Spike-Track      :i0, 0, 49
   section CE-Inkremente
   I1 Workspace/Projekte/Konto            :i1, 49, 28
-  Vorlauf Editor-Track (I2-101, ED-1…ED-3) :v2, 49, 35
-  I2 Work Items & Layouts                :i2, 77, 40
-  I3 Planung                             :i3, 117, 24
-  Vorlauf Dokument-/Realtime-Track (I4-101, -202, -006) :v4, 117, 25
-  I4 Pages & Realtime                    :i4, 141, 24
-  I5 Überblick                           :i5, 165, 22
-  I6 Außenwirkung & Administration       :i6, 187, 37
-  I7 Härtung & Betrieb                   :i7, 224, 14
+  Vorlauf Editor-Track (I2-101, -207, ED-1…ED-3) :v2, 49, 37
+  I2 Work Items & Layouts                :i2, 77, 42
+  I3 Planung                             :i3, 119, 24
+  Vorlauf Dokument-/Realtime-Track (I4-101, -201, -202, -006, -008) :v4, 119, 24
+  I4 Pages & Realtime                    :i4, 143, 37
+  I5 Überblick                           :i5, 180, 22
+  I6 Außenwirkung & Administration       :i6, 202, 39
+  I7 Härtung & Betrieb                   :i7, 241, 22
   section Bezahl-Wellen (Beginn)
-  W1 Forgejo (Option: verzahnt ab Ende I6) :w1, 238, 30
+  W1 Forgejo (Option: verzahnt ab Ende I6) :w1, 263, 30
 ```
 
 Die Wellen W2–W9 schließen sich nach Auswahl und Detailplanung an (§5); ihre Dauer wird erst mit dem jeweiligen Wellenplan geschätzt (Aufwandsrahmen aus 30: S 2–5, M 5–15, L 15–40, XL 40–100 PT je Paket).
@@ -194,6 +194,8 @@ flowchart LR
   WP_I0_108 --> WP_I0_001
   WP_I0_203 --> WP_I0_001
   WP_I0_204 --> WP_I0_001
+  WP_I0_106 --> WP_I0_001
+  WP_I0_911 --> WP_I0_001
   WP_I0_001 --> WP_I0_002
   WP_I0_201 --> WP_I0_002
   WP_I0_202 --> WP_I0_002
@@ -205,8 +207,10 @@ flowchart LR
   WP_I0_208 --> WP_I0_004
   WP_I0_002 --> WP_I0_005
   WP_I0_006 --> WP_I0_005
+  WP_I0_913 --> WP_I0_005
   WP_I0_105 --> WP_I0_006
   WP_I0_910 --> WP_I0_006
+  WP_I0_106 --> WP_I0_006
   WP_I0_900 --> WP_I0_102
   WP_I0_102 --> WP_I0_103
   WP_I0_104 --> WP_I0_103
@@ -220,6 +224,8 @@ flowchart LR
   WP_I0_907 --> WP_I0_108
   WP_I0_108 --> WP_I0_109
   WP_I0_006 --> WP_I0_109
+  WP_I0_106 --> WP_I0_109
+  WP_I0_911 --> WP_I0_109
   WP_I0_104 --> WP_I0_201
   WP_I0_104 --> WP_I0_202
   WP_I0_105 --> WP_I0_202
@@ -257,12 +263,10 @@ flowchart LR
   WP_I0_003 --> WP_I0_999
   WP_I0_004 --> WP_I0_999
   WP_I0_005 --> WP_I0_999
-  WP_I0_106 --> WP_I0_999
   WP_I0_109 --> WP_I0_999
   WP_I0_205 --> WP_I0_999
   WP_I0_206 --> WP_I0_999
   WP_I0_207 --> WP_I0_999
-  WP_I0_911 --> WP_I0_999
 ```
 <!-- /GEN:GRAPH:I0 -->
 
@@ -444,6 +448,7 @@ flowchart LR
   WP_I2_205 --> WP_I2_002
   WP_I2_002 --> WP_I2_003
   WP_I2_001 --> WP_I2_004
+  WP_I2_002 --> WP_I2_004
   WP_I2_002 --> WP_I2_005
   WP_I2_203 --> WP_I2_005
   WP_I2_002 --> WP_I2_006
@@ -514,7 +519,7 @@ flowchart LR
 
 **Ziel:** Planungsobjekte: Cycles (inkl. Burndown, Transfer, workspace-weite Active Cycles), Modules, Intake (inkl. Annahme über die State-Change-Pipeline), Projekt- und Workspace-Views, Archive, Auto-Archive/Auto-Close.
 
-**Vorlauf:** Während I3 beginnt der Dokument-/Realtime-Track von I4 (WP-I4-101 Funk.Documents Teil B, WP-I4-202 Kollaborations-Andockstellen, WP-I4-006 Kollaborationsserver), sobald S1 und S2 grün sind.
+**Vorlauf:** Während I3 beginnt der Dokument-/Realtime-Track von I4 (WP-I4-101 Funk.Documents Teil B, WP-I4-201 Page-Schema mit zentraler Zugriffsregel `IPageAccessPolicy`, WP-I4-202 Kollaborations-Andockstellen, WP-I4-006 Kollaborationsserver, WP-I4-008 Backplane), sobald S1 und S2 grün sind. Die Client-Kollaboration (WP-I4-007) gehört nicht zum Vorlauf, weil ihr REST-Fallback die Page-Endpunkte aus WP-I4-002 nutzt.
 
 <!-- GEN:GRAPH:I3 -->
 ```mermaid
@@ -594,29 +599,34 @@ flowchart LR
   M3 --> WP_I4_001
   WP_I4_201 --> WP_I4_001
   WP_I4_001 --> WP_I4_002
+  WP_I4_101 --> WP_I4_002
   WP_I4_002 --> WP_I4_003
   WP_I0_903_ext[WP-I0-903] -.-> WP_I4_003
   WP_I4_101 --> WP_I4_003
   WP_I4_007 --> WP_I4_004
   WP_I4_002 --> WP_I4_004
+  WP_I4_005 --> WP_I4_004
   WP_I4_006 --> WP_I4_005
+  WP_I4_002 --> WP_I4_005
   WP_I4_101 --> WP_I4_006
   WP_I4_202 --> WP_I4_006
   WP_I0_107_ext[WP-I0-107] -.-> WP_I4_006
   WP_I0_901_ext[WP-I0-901] -.-> WP_I4_006
+  WP_I4_201 --> WP_I4_006
   WP_I4_006 --> WP_I4_007
   WP_I2_024_ext[WP-I2-024] -.-> WP_I4_007
+  WP_I4_002 --> WP_I4_007
   WP_I4_006 --> WP_I4_008
   WP_I4_002 --> WP_I4_009
   WP_I2_999_ext[WP-I2-999] -.-> WP_I4_101
   WP_I0_901_ext[WP-I0-901] -.-> WP_I4_101
   WP_I0_902_ext[WP-I0-902] -.-> WP_I4_101
-  M3 --> WP_I4_201
+  WP_I2_999_ext[WP-I2-999] -.-> WP_I4_201
   WP_I2_999_ext[WP-I2-999] -.-> WP_I4_202
   WP_I4_101 --> WP_I4_202
+  WP_I4_201 --> WP_I4_202
   WP_I4_003 --> WP_I4_999
   WP_I4_004 --> WP_I4_999
-  WP_I4_005 --> WP_I4_999
   WP_I4_008 --> WP_I4_999
   WP_I4_009 --> WP_I4_999
 ```
@@ -707,6 +717,7 @@ flowchart LR
   WP_I1_102_ext[WP-I1-102] -.-> WP_I6_002
   WP_I6_001 --> WP_I6_003
   M5 --> WP_I6_004
+  WP_I6_203 --> WP_I6_004
   WP_I6_004 --> WP_I6_005
   WP_I6_203 --> WP_I6_005
   WP_I6_005 --> WP_I6_006
@@ -719,15 +730,16 @@ flowchart LR
   WP_I6_010 --> WP_I6_012
   WP_I6_012 --> WP_I6_013
   M5 --> WP_I6_014
+  WP_I6_202 --> WP_I6_014
   WP_I6_014 --> WP_I6_015
   WP_I6_202 --> WP_I6_015
   M5 --> WP_I6_016
   WP_I6_202 --> WP_I6_017
   M5 --> WP_I6_018
+  WP_I6_002 --> WP_I6_018
   M5 --> WP_I6_201
   M5 --> WP_I6_202
   M5 --> WP_I6_203
-  WP_I6_002 --> WP_I6_999
   WP_I6_003 --> WP_I6_999
   WP_I6_008 --> WP_I6_999
   WP_I6_011 --> WP_I6_999
@@ -765,18 +777,19 @@ flowchart LR
   M6 --> WP_I7_105
   M6 --> WP_I7_106
   M6 --> WP_I7_107
+  WP_I7_101 --> WP_I7_107
+  WP_I7_102 --> WP_I7_107
+  WP_I7_103 --> WP_I7_107
+  WP_I7_105 --> WP_I7_107
+  WP_I7_106 --> WP_I7_107
   M6 --> WP_I7_108
   M6 --> WP_I7_109
   M6 --> WP_I7_110
   WP_I7_107 --> WP_I7_110
   WP_I7_108 --> WP_I7_110
   M6 --> WP_I7_201
-  WP_I7_101 --> WP_I7_999
-  WP_I7_102 --> WP_I7_999
-  WP_I7_103 --> WP_I7_999
+  WP_I7_107 --> WP_I7_201
   WP_I7_104 --> WP_I7_999
-  WP_I7_105 --> WP_I7_999
-  WP_I7_106 --> WP_I7_999
   WP_I7_109 --> WP_I7_999
   WP_I7_110 --> WP_I7_999
   WP_I7_201 --> WP_I7_999
@@ -857,7 +870,7 @@ Ein Meilenstein ist erreicht, wenn das Abnahme-Paket `WP-In-999` abgeschlossen i
 | E3 IdP Group Sync | W4 | WP-I0-204 (I0), WP-I1-203 (I1) | `Groups`-Claim, Provisioning-Slots, `MEMBER_ROW_DECORATORS` |
 | E5 Rollenmodell | W4 | WP-I0-203 (I0), WP-I1-203 (I1) | Permission-Katalog, `roles`, `role_id`, `ISystemRoleGrantContributor`, `PermissionService`, `ROLE_OPTIONS` |
 | F1 Integrations-Framework | W1 | WP-I0-205 (I0), WP-I2-205 (I2) | Oberfläche `Integrations`, Verifier-Registry, `IWebhookIngress`, `integration_connections`, `external_links`, `IIntegrationLinkProvider` |
-| F2 Forgejo | W1 | WP-I0-206 (I0), WP-I2-205, WP-I2-206 (I2) | Container + SSO, `IForgejoClient`-Platzhalter, Resolver, `WORK_ITEM_ACTIONS`, `INTEGRATION_LINK_PREVIEWS` |
+| F2 Forgejo | W1 | WP-I0-205, WP-I0-206 (I0), WP-I2-205, WP-I2-206 (I2) | Container + SSO, `IForgejoClient`-Platzhalter (`Funk.Forgejo.Contracts`/`Funk.Forgejo.Client` in WP-I0-205), Resolver, `WORK_ITEM_ACTIONS`, `INTEGRATION_LINK_PREVIEWS` |
 | G1 AI-Basis (nicht gewählt) | – | WP-I5-201 (I5) | Indexierungs-Pipeline, `search_documents`, `vector`, `NullEmbeddingGenerator` |
 | H1 OAuth-App-Plattform | W1 | WP-I0-204 (I0), WP-I1-205 (I1) | Policy-Scheme mit Bearer (aus), `FunkPrincipal.Kind`, `users.is_bot`, `IInstanceConfigKeyProvider` |
 | H6 Realtime-Event-Server | W1 | WP-I0-207 (I0), WP-I5-202 (I5) | Hub `/live/events/`, Gruppen, `IRealtimePublisher`, `LIVE_EVENT_HANDLERS` |
@@ -881,7 +894,7 @@ Bestanden = alle Erfolgskriterien aus 01 §9 als automatisierte Tests grün. Bei
 
 1. Ist-Aufwand je Paket gegen die Größe vergleichen; Faktor je Typ nachkalibrieren und die Schätzung in §2.1 aktualisieren.
 2. Pakete der nächsten zwei Inkremente mit voraussichtlich > 12 Tagen teilen.
-3. Neue Erkenntnisse aus dem Original (Defekte, fehlende Endpunkte) als Planfrage aufnehmen (plan/03 §9).
+3. Neue Erkenntnisse aus dem Original (Defekte, fehlende Endpunkte) als Planfrage aufnehmen (plan/03 §10).
 4. `build.py` und `check_wp.py` laufen lassen; `docs/plan/` in `funk.` aktualisieren.
 
 ### 7.4 Kennzahlen (im Abnahmebericht je Inkrement)
@@ -916,3 +929,20 @@ Die Tabelle fasst die Inkrement-Zuordnungen der Architektur-Dokumente zusammen (
 | **I5** | – | §3.4.12–§3.4.14, §3.10 | §4.14–§4.17 | – | §3.10–§3.12 | §3.16 | §3.10 | §3.12 | §3.17 (Stickies) | §3.1–§3.12 | §3.1.2 I5 | §3.16 I5 | §5.14 |
 | **I6** | §3.18 | §3.4.15–§3.4.17 | §3.11–§3.17, §4.2, §4.18–§4.22 | §3.12, §3.17.2 | §3.14, §3.15 | – | §4.2, §4.3 | §4.14 (Admin, Space) | §3.21 (Space) | §3.13–§3.17 | §3.7.5 | §3.13, §3.16 I6 | §1.4 I6 |
 | **I7** | – | §3.13.2 | §4.29 | §3.17.7 (CSP-Enforce) | §3.19, §3.20 | §3.8.4, §3.10.5 | §3.13 | §3.14.8 | §3.20.4 | – | §3.8, §3.12–§3.18 | §3.10, §3.12, §3.15 (G6) | §1.4 I7, D16-ADR-07 |
+
+---
+
+## Review-Protokoll
+
+**Adversarialer Review vom 23.10.2026** (gemeinsam mit plan/02–04 und `_data/wp-ce.json`; vollständige Prüfmethode und Korrekturliste R-01 … R-19 im Review-Protokoll von plan/02).
+
+| Nr. | Stelle in diesem Dokument | Befund | Korrektur |
+|---|---|---|---|
+| 01-R1 | §2.1 Spalte „kritischer Pfad“ | „37 nach Vorlauf“ (I2) und „22 nach Vorlauf“ (I4) stimmten nicht mit dem Graphen überein (tatsächlich 42 bzw. 29); I7 und I6 änderten sich durch neue Abhängigkeiten (Airgap-Bundle, Space-Andockstellen). | Werte aus 02 §3.2 übernommen: I2 62 (42 ab M1), I4 44 (37 ab M3), I6 39, I7 22 Tage; Fußnote ¹ erklärt „ab M<n>“. |
+| 01-R2 | §2.3 Gantt | Dauern und Startpunkte folgten den alten Werten; der Dokument-/Realtime-Vorlauf nannte nicht WP-I4-201/-008, der Editor-Track nicht WP-I2-207. | Gantt neu berechnet (CE-Ende bei Tag 263, Spanne 240–280 eingehalten). |
+| 01-R3 | L-8, §3.5 „Vorlauf“ | Vorlauf-Pakete nicht abschließend benannt; der Kollaborationsserver brauchte Page-Schema und Zugriffsregel vor M3; die Client-Kollaboration (WP-I4-007) nutzt den REST-Fallback aus WP-I4-002. | Vorlauf = 11 Pakete (02 §3.3, `wp_spec.VORLAUF`, von `build.py` geprüft); WP-I4-201 im Vorlauf mit `IPageAccessPolicy`; WP-I4-007 kein Vorlauf (plan/04 OP-PLAN-13, R-P31). |
+| 01-R4 | §3 Graphen I0, I2, I4, I6, I7 | neue Kanten (CI/Harness vor dem ersten Schnitt, Scope-FK-Spike vor Projektanlage, Page-Kette, Webhook-/Space-Andockstellen, Airgap-Bundle) | durch `build.py` neu erzeugt. |
+| 01-R5 | §6 Zeile F2 | Platzhalter-Projekte `Funk.Forgejo.Contracts`/`Funk.Forgejo.Client` entstehen in WP-I0-205, die Zeile nannte nur WP-I0-206. | WP-I0-205 ergänzt. |
+| 01-R6 | §7.3 Nr. 3 | Verweis „plan/03 §9“ (Eskalation steht in §10). | korrigiert. |
+
+Geprüft und ohne Befund: Leitlinien L-1 … L-7 gegen 00/17; Spike-Gating §2.2 gegen 01 §9 (inkl. Scope-FK); Meilensteinkriterien §4 (messbar, mit Nachweis); Wellen W1 … W9 gegen `features/30-paid-auswahlliste.md` (52 Pakete, nicht gewählt C1–C6, F5, F7–F11, G1–G3, H5); Fahrplan §6 deckt alle 17 🧱-Pakete ab; Pflichtlektüre §8.

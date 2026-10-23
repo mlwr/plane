@@ -2,11 +2,11 @@
 
 > **Stand:** 23.10.2026. **Verbindlichkeit:** bindend für alle Implementierungs-Agenten der CE-Phase (I0–I7). Rangfolge bei Widersprüchen: `architecture/00-grundsatzentscheidungen.md` > `architecture/17-abgleich-dokumentuebergreifend.md` (Entscheidungen des Auftraggebers, Umbenennungstabelle) > `architecture/01-zielarchitektur-und-tech-stack.md` > Themen-Dokumente 02–16 > dieses Dokument. Wo dieses Dokument eine Zuordnung bewusst anders trifft als ein Architektur-Dokument, steht die Begründung in `plan/04-risiken-offene-punkte.md` (Abschnitt „Planungsentscheidungen OP-PLAN-*“).
 >
-> **Erzeugt:** Abschnitte 3 und 4 sowie die Anhänge erzeugt `migration/_werkzeuge/plan/build.py` aus den Spezifikationsdateien `wp_spec.py`, `wp_spec_i1_i3.py`, `wp_spec_i4_i7.py`; die Vollständigkeit prüft `migration/_werkzeuge/plan/check_wp.py`. **Änderungen nur in den Spezifikationsdateien**, danach `python3 -I migration/_werkzeuge/plan/build.py && python3 -I migration/_werkzeuge/plan/check_wp.py`. Maschinenlesbar: `plan/_data/wp-ce.json` (Array `{wp, title, phase, ce_ids[], depends_on[], size}`) und `plan/_data/wp-endpoints.json` (registrierter Endpunkt → Arbeitspaket).
+> **Erzeugt:** Abschnitte 3 und 4, die Anhänge und das angehängte Review-Protokoll (`02-review.md`) erzeugt `migration/_werkzeuge/plan/build.py` aus den Spezifikationsdateien `wp_spec.py`, `wp_spec_i1_i3.py`, `wp_spec_i4_i7.py`; die Vollständigkeit prüft `migration/_werkzeuge/plan/check_wp.py`. **Änderungen nur in den Spezifikationsdateien**, danach `python3 -I migration/_werkzeuge/plan/build.py && python3 -I migration/_werkzeuge/plan/check_wp.py`. Maschinenlesbar: `plan/_data/wp-ce.json` (Array `{wp, title, phase, ce_ids[], depends_on[], size}`) und `plan/_data/wp-endpoints.json` (registrierter Endpunkt → Arbeitspaket).
 >
 > **Namen:** Alle Zielbezeichner folgen ADR-009C (`Funk.*`, `FunkDbContext`, `Funk:`-Konfiguration, `X-Funk-*`, Realm `funk`, Clients `funk-*`, `@funk/*`). Wo die Architektur-Dokumente noch `Plane.*` schreiben, gilt die Umbenennungstabelle in 17. Pfade für Zielcode sind relativ zur Wurzel des Repositorys `funk.`; Original-Pfade beziehen sich auf `mlwr/plane@funk-referenz-1.4.2` (Commit `053b2c0`).
 
-> **Prüfergebnis (`check_wp.py`, 23.10.2026):** 180 Arbeitspakete (I0 38, I1 31, I2 35, I3 16, I4 13, I5 13, I6 22, I7 12); 507 von 507 CE-IDs genau einem Paket zugeordnet (27 davon „entfällt“ mit Ersatznachweis); alle Abhängigkeiten existieren, zeigen nicht in spätere Inkremente und bilden einen azyklischen Graphen; 564 registrierte Endpunkte genau einem Paket zugeordnet.
+> **Prüfergebnis (`check_wp.py`, 23.10.2026, nach Review):** 180 Arbeitspakete (I0 38, I1 31, I2 35, I3 16, I4 13, I5 13, I6 22, I7 12); 507 von 507 CE-IDs genau einem Paket zugeordnet (27 davon „entfällt“ mit Ersatznachweis); alle Abhängigkeiten existieren, zeigen nicht in spätere Inkremente und bilden einen azyklischen Graphen; jedes Paket außer den Spikes liegt unter der Abnahme seines Inkrements; 11 Vorlauf-Pakete (§3.3) deckungsgleich mit `wp_spec.VORLAUF`; 564 registrierte Endpunkte genau einem Paket zugeordnet; jedes Paket hat mindestens ein paketspezifisches Akzeptanzkriterium. Review-Protokoll am Ende dieses Dokuments (Quelle `migration/_werkzeuge/plan/02-review.md`).
 
 ## 1. Lesehilfe
 
@@ -28,13 +28,13 @@
 | Typ | DoD-Typ aus 15 §3.15.3: **V** vertikaler Schnitt, **B** Backend-only, **F** Frontend-only, **I** Infrastruktur/Baustein, **D** Editor/Dokumente, **S** Spike, **X** Erweiterungspunkt 🧱; zusätzlich **A** Inkrement-Abnahme. |
 | Größe | **S** ≤ 3 Agenten-Arbeitstage, **M** 3–7, **L** 7–12. Größer wird nicht geplant – ein Paket über 12 Tage wird geteilt (Änderungsverfahren §2.4). Für Schätzungen gilt S = 2, M = 5, L = 10 Tage (§3.2). |
 | parallelisierbar | **ja**: kann gleichzeitig mit anderen Paketen desselben Inkrements laufen, sobald die Abhängigkeiten erfüllt sind. **nein**: legt gemeinsame Grundlagen (Basis-Store, gemeinsame Registry, zentrale Migration) oder liegt auf dem kritischen Pfad; es soll von genau einem Agenten ohne parallele Arbeit am selben Modul bearbeitet werden. |
-| Abhängigkeiten | Pakete, die abgenommen (gemergt, G2 grün) sein müssen, bevor das Paket beginnt. Jedes Paket eines Inkrements `In` (n ≥ 1) hängt direkt oder transitiv an `WP-I(n-1)-999`, außer den ausdrücklich als **Vorlauf** markierten Paketen (Editor-Track ab I1, Dokument-/Realtime-Track ab I3; plan/01 §3). |
+| Abhängigkeiten | Pakete, die abgenommen (gemergt, G2 grün) sein müssen, bevor das Paket beginnt. Jedes Paket eines Inkrements `In` (n ≥ 1) hängt direkt oder transitiv an `WP-I(n-1)-999`, außer den ausdrücklich als **Vorlauf** markierten Paketen (Editor-Track ab I1, Dokument-/Realtime-Track ab I3; plan/01 L-8, Liste in §3.3, Merkmal „Vorlauf“ je Paket). |
 | CE-IDs | Features aus `features/10-ce-feature-katalog.md`. **Jede der 507 CE-IDs gehört zu genau einem Arbeitspaket** (Anhang A, `check_wp.py`). CE-IDs mit Status „entfällt“ (27, ADR-008) liegen in dem Paket, das den Ersatznachweis führt (Titelzusatz „Nachweis entfallener …“). |
 | Andockstelle | nur Typ X: Quelle in 01 §1.4 bzw. 16 §3.3.0 (E-Nummer) und die Träger-CE-IDs aus 16 §4.6. |
 | Endpunkte | registrierte Endpunkte aus dem Katalog 04 (`architecture/_data/endpoints.json`). Jeder registrierte Endpunkt gehört zu genau einem Paket: dem Paket, das eine seiner CE-IDs enthält und im Inkrement des Katalogs liegt, sonst dem frühesten Paket mit einer seiner CE-IDs; „(vorab)“ = Endpunkt wird vor dem Paket seiner CE-ID gebraucht und in einem früheren Paket gebaut; das Paket der CE-ID erweitert ihn dann nur. „(verschoben)“ = Endpunkt kann erst später entstehen, weil seine Daten erst dann existieren (z. B. workspace-weite Cycle-/Modul-Listen in I3). Beide Fälle stehen in der Liste `EP_OVERRIDE` in `wp_spec.py`. |
 | Referenzdokumente | „Architektur“ = von Hand gesetzte Abschnitte der Dokumente 00–17; „Analyse/Feature“ = automatisch aus dem Feld `doc` der enthaltenen CE-IDs übernommen. |
 | Original-Pfade | automatisch aus `backend_refs`/`frontend_refs` der CE-IDs übernommen, ergänzt um von Hand gesetzte Pfade. |
-| Akzeptanzkriterien | paketspezifische Kriterien, danach die Standardkriterien des Typs (15 §3.15.3) und der Abdeckungsnachweis `ce-coverage-check`. Der gemeinsame DoD-Kern aus 15 §3.15.3 und `plan/03-agenten-leitfaden.md` §7 gilt immer zusätzlich. |
+| Akzeptanzkriterien | paketspezifische Kriterien, danach die Standardkriterien des Typs (15 §3.15.3) und der Abdeckungsnachweis `ce-coverage-check`. Der gemeinsame DoD-Kern aus 15 §3.15.3 und `plan/03-agenten-leitfaden.md` §8 gilt immer zusätzlich. |
 | Testumfang | Pflicht-Ebenen, Testprojekte und E2E-Specs aus 15 Anhang B (automatisch) plus paketspezifische Tests. |
 
 ### 1.3 Ebenen und Gates (Kurzreferenz, Quelle 15 §3.1/§3.15)
@@ -61,18 +61,18 @@ Für die Wellen gibt es in dieser Phase **keine** Arbeitspakete. Sie stehen als 
 
 ### 2.4 Änderungsverfahren
 
-Ein Agent, der feststellt, dass ein Paket zu groß ist, eine Abhängigkeit fehlt oder eine CE-ID falsch zugeordnet ist, ändert **nicht** eigenmächtig den Plan im Repository `funk.`, sondern eröffnet eine Planfrage (plan/03 §9). Nach Freigabe werden die Spezifikationsdateien geändert, `build.py` und `check_wp.py` laufen, und `docs/plan/` in `funk.` wird aktualisiert.
+Ein Agent, der feststellt, dass ein Paket zu groß ist, eine Abhängigkeit fehlt oder eine CE-ID falsch zugeordnet ist, ändert **nicht** eigenmächtig den Plan im Repository `funk.`, sondern eröffnet eine Planfrage (plan/03 §10). Nach Freigabe werden die Spezifikationsdateien geändert, `build.py` und `check_wp.py` laufen, und `docs/plan/` in `funk.` wird aktualisiert.
 
 ## 3. Übersicht aller Arbeitspakete
 
 | WP | Titel | Inkr. | Typ | Größe | parallel | CE-IDs | Endpunkte | hängt ab von |
 |---|---|---|---|---|---|---|---|---|
-| [WP-I0-001](#wp-i0-001--schnitt-1-anmeldung-über-keycloak--jit-benutzer--landingleere-shell) | Schnitt 1: Anmeldung über Keycloak → JIT-Benutzer → Landing/leere Shell | I0 | V | L | nein | 10 | 13 | WP-I0-103, WP-I0-105, WP-I0-108, WP-I0-203, WP-I0-204 |
+| [WP-I0-001](#wp-i0-001--schnitt-1-anmeldung-über-keycloak--jit-benutzer--landingleere-shell) | Schnitt 1: Anmeldung über Keycloak → JIT-Benutzer → Landing/leere Shell | I0 | V | L | nein | 10 | 13 | WP-I0-103, WP-I0-105, WP-I0-108, WP-I0-203, WP-I0-204, WP-I0-106, WP-I0-911 |
 | [WP-I0-002](#wp-i0-002--schnitt-2-workspace-anlegen-formular-slug-prüfung-admin-mitgliedschaft) | Schnitt 2: Workspace anlegen (Formular, Slug-Prüfung, Admin-Mitgliedschaft) | I0 | V | M | nein | 1 | 3 | WP-I0-001, WP-I0-201, WP-I0-202, WP-I0-203 |
 | [WP-I0-003](#wp-i0-003--instanz-bootstrap-konfiguration-instanz-info-erst-einrichtung-god-mode-einstieg-inkl-nachweis-entfallener-admin-logins) | Instanz-Bootstrap: Konfiguration, Instanz-Info, Erst-Einrichtung, God-Mode-Einstieg (inkl. Nachweis entfallener Admin-Logins) | I0 | V | M | ja | 12 | 7 | WP-I0-001, WP-I0-208 |
 | [WP-I0-004](#wp-i0-004--schnitt-workspace-shell-11-top-navigation-sidebar-header-workspace-switcher-user-menü) | Schnitt: Workspace-Shell 1:1 (Top-Navigation, Sidebar, Header, Workspace-Switcher, User-Menü) | I0 | V | L | nein | 6 | 2 | WP-I0-002, WP-I0-006, WP-I0-208 |
-| [WP-I0-005](#wp-i0-005--schnitt-3-projekt-anlegen-identifier-prüfung-default-states-mitgliedschaft) | Schnitt 3: Projekt anlegen (Identifier-Prüfung, Default-States, Mitgliedschaft) | I0 | V | M | nein | 2 | 6 | WP-I0-002, WP-I0-006 |
-| [WP-I0-006](#wp-i0-006--designsystem-fundament-css-pipeline-schriften-icons-erste-propel-primitive-toast-galerie) | Designsystem-Fundament: CSS-Pipeline, Schriften, Icons, erste Propel-Primitive, Toast, Galerie | I0 | F | L | ja | 8 | 0 | WP-I0-105, WP-I0-910 |
+| [WP-I0-005](#wp-i0-005--schnitt-3-projekt-anlegen-identifier-prüfung-default-states-mitgliedschaft) | Schnitt 3: Projekt anlegen (Identifier-Prüfung, Default-States, Mitgliedschaft) | I0 | V | M | nein | 2 | 6 | WP-I0-002, WP-I0-006, WP-I0-913 |
+| [WP-I0-006](#wp-i0-006--designsystem-fundament-css-pipeline-schriften-icons-erste-propel-primitive-toast-galerie) | Designsystem-Fundament: CSS-Pipeline, Schriften, Icons, erste Propel-Primitive, Toast, Galerie | I0 | F | L | ja | 8 | 0 | WP-I0-105, WP-I0-910, WP-I0-106 |
 | [WP-I0-101](#wp-i0-101--repository-funk-aufsetzen-lizenz-plan-spiegel-agentsmd-grundgerüst) | Repository funk. aufsetzen (Lizenz, Plan-Spiegel, AGENTS.md, Grundgerüst) | I0 | I | S | nein | 0 | 0 | – |
 | [WP-I0-102](#wp-i0-102--aspire-apphost-und-servicedefaults-profile-devtestprodlike) | Aspire-AppHost und ServiceDefaults (Profile dev/test/prodlike) | I0 | I | M | ja | 1 | 0 | WP-I0-900 |
 | [WP-I0-103](#wp-i0-103--gateway-funkgateway-routen-statische-auslieferung-base-urls-health-robotstxt-413) | Gateway Funk.Gateway: Routen, statische Auslieferung, Base-URLs, Health, robots.txt, 413 | I0 | I | M | ja | 4 | 2 | WP-I0-102, WP-I0-104 |
@@ -81,7 +81,7 @@ Ein Agent, der feststellt, dass ein Paket zu groß ist, eine Abhängigkeit fehlt
 | [WP-I0-106](#wp-i0-106--test--und-ci-infrastruktur-gates-g0g3-lizenz-gate-g-brand-coverage--und-ledger-werkzeuge) | Test- und CI-Infrastruktur: Gates G0–G3, Lizenz-Gate, G-BRAND, Coverage- und Ledger-Werkzeuge | I0 | I | L | ja | 2 | 0 | WP-I0-101, WP-I0-900 |
 | [WP-I0-107](#wp-i0-107--realtime-host-gerüst-funkrealtime-health-origin-prüfung-live-fallback) | Realtime-Host-Gerüst Funk.Realtime (Health, Origin-Prüfung, /live-Fallback) | I0 | I | S | ja | 1 | 1 | WP-I0-103, WP-I0-104 |
 | [WP-I0-108](#wp-i0-108--keycloak-realm-als-code-devtestprod-inkl-nachweis-entfallener-auth-funktionen) | Keycloak-Realm als Code (dev/test/prod) inkl. Nachweis entfallener Auth-Funktionen | I0 | V | M | ja | 17 | 0 | WP-I0-102, WP-I0-907 |
-| [WP-I0-109](#wp-i0-109--keycloak-login-themes-funk-und-funk-space-11-optik-der-sign-in-seite-funk-branding) | Keycloak-Login-Themes funk und funk-space (1:1-Optik der Sign-in-Seite, funk.-Branding) | I0 | V | L | ja | 1 | 0 | WP-I0-108, WP-I0-006 |
+| [WP-I0-109](#wp-i0-109--keycloak-login-themes-funk-und-funk-space-11-optik-der-sign-in-seite-funk-branding) | Keycloak-Login-Themes funk und funk-space (1:1-Optik der Sign-in-Seite, funk.-Branding) | I0 | V | L | ja | 1 | 0 | WP-I0-108, WP-I0-006, WP-I0-106, WP-I0-911 |
 | [WP-I0-201](#wp-i0-201--erweiterungspunkt-c3-event-katalog-outboxinbox-gerüst-consumer-registrierung-recurring-jobs-queues) | Erweiterungspunkt C3: Event-Katalog, Outbox/Inbox-Gerüst, Consumer-Registrierung, Recurring Jobs, Queues | I0 | X | M | ja | 0 | 0 | WP-I0-104 |
 | [WP-I0-202](#wp-i0-202--erweiterungspunkt-b1a2-scoperef-scopelevel-iscoperesolver-iscopeancestorcontributor-routerstoreteamspaceid) | Erweiterungspunkt B1/A2: ScopeRef, ScopeLevel, IScopeResolver, IScopeAncestorContributor, RouterStore.teamspaceId | I0 | X | S | ja | 0 | 0 | WP-I0-104, WP-I0-105 |
 | [WP-I0-203](#wp-i0-203--erweiterungspunkt-e5-permission-katalog-rolesrole_permissions-role_id-isystemrolegrantcontributor-permissionservice) | Erweiterungspunkt E5: Permission-Katalog, roles/role_permissions, role_id, ISystemRoleGrantContributor, PermissionService | I0 | X | M | ja | 0 | 0 | WP-I0-104, WP-I0-105 |
@@ -131,7 +131,7 @@ Ein Agent, der feststellt, dass ein Paket zu groß ist, eine Abhängigkeit fehlt
 | [WP-I1-104](#wp-i1-104--valkey-hybridcache-l2-verteilte-rate-limits-tls) | Valkey: HybridCache L2, verteilte Rate-Limits, TLS | I1 | I | S | ja | 1 | 0 | WP-I0-999 |
 | [WP-I1-105](#wp-i1-105--designsystem-ausbau-status-prioritäts-icons-datei-icons-logo-picker-illustrationen-propel-vollbestand-blocks) | Designsystem-Ausbau: Status-/Prioritäts-Icons, Datei-Icons, Logo-Picker, Illustrationen, Propel-Vollbestand, Blocks | I1 | F | L | ja | 6 | 0 | WP-I0-999 |
 | [WP-I1-201](#wp-i1-201--erweiterungspunkt-a17-istatecatalogilabelcatalog-als-einzige-lesewege-catalog-sources) | Erweiterungspunkt A17: IStateCatalog/ILabelCatalog als einzige Lesewege, Catalog-Sources | I1 | X | S | nein | 0 | 0 | WP-I0-999 |
-| [WP-I1-202](#wp-i1-202--erweiterungspunkt-feature-kataloge-iprojectfeaturecatalog-iworkspacefeaturecatalog-contributors-project_features) | Erweiterungspunkt Feature-Kataloge: IProjectFeatureCatalog, IWorkspaceFeatureCatalog, Contributors, PROJECT_FEATURES | I1 | X | S | nein | 0 | 0 | WP-I0-999 |
+| [WP-I1-202](#wp-i1-202--erweiterungspunkt-feature-kataloge-iprojectfeaturecatalog-iworkspacefeaturecatalog-iprojectfeaturecontributoriworkspacefeaturecontributor-project_features) | Erweiterungspunkt Feature-Kataloge: IProjectFeatureCatalog, IWorkspaceFeatureCatalog, IProjectFeatureContributor/IWorkspaceFeatureContributor, PROJECT_FEATURES | I1 | X | S | nein | 0 | 0 | WP-I0-999 |
 | [WP-I1-203](#wp-i1-203--erweiterungspunkte-ui-registries-i1-settings_pages-sidebar_items-dynamisch-favorite_entity_renderers-member_row_decorators-role_options-global_modals-estimate_system_flags) | Erweiterungspunkte UI-Registries I1: SETTINGS_PAGES, SIDEBAR_ITEMS (dynamisch), FAVORITE_ENTITY_RENDERERS, MEMBER_ROW_DECORATORS, ROLE_OPTIONS, GLOBAL_MODALS, ESTIMATE_SYSTEM_FLAGS | I1 | X | S | nein | 0 | 0 | WP-I0-999 |
 | [WP-I1-204](#wp-i1-204--erweiterungspunkt-activity-grundgerüst-iactivityrecorder-iactivityfieldresolver-registry-reservierte-felder) | Erweiterungspunkt Activity-Grundgerüst: IActivityRecorder, IActivityFieldResolver-Registry, reservierte Felder | I1 | X | S | nein | 0 | 0 | WP-I0-999, WP-I0-201 |
 | [WP-I1-205](#wp-i1-205--erweiterungspunkte-iinstanceconfigkeyprovider-und-b1-schema-vorhalte-teamspace_id) | Erweiterungspunkte IInstanceConfigKeyProvider und B1-Schema-Vorhalte (teamspace_id) | I1 | X | S | ja | 0 | 0 | WP-I0-999 |
@@ -139,7 +139,7 @@ Ein Agent, der feststellt, dass ein Paket zu groß ist, eine Abhängigkeit fehlt
 | [WP-I2-001](#wp-i2-001--work-item-anlegen-und-bearbeiten-modal-fortlaufende-id-autosave-toasts-drafts-rückfrage-bestehende-hinzufügen) | Work Item anlegen und bearbeiten (Modal, fortlaufende ID, Autosave, Toasts, Drafts-Rückfrage, Bestehende hinzufügen) | I2 | V | L | nein | 8 | 3 | WP-I1-999, WP-I2-202, WP-I2-204, WP-I2-205, WP-I2-206, WP-I2-022 |
 | [WP-I2-002](#wp-i2-002--work-item-detailseite-identifier-detaildaten-meta-delta-sync-kopfaktionen) | Work-Item-Detailseite (Identifier, Detaildaten, Meta, Delta-Sync, Kopfaktionen) | I2 | V | M | nein | 6 | 6 | WP-I2-001, WP-I2-205 |
 | [WP-I2-003](#wp-i2-003--peek-overview-und-hover-vorschau) | Peek-Overview und Hover-Vorschau | I2 | V | M | ja | 5 | 0 | WP-I2-002 |
-| [WP-I2-004](#wp-i2-004--sidebar-properties-und-dropdowns-state-priority-assignees-labels-estimate-projekt-datum-read-only-labels) | Sidebar-Properties und Dropdowns (State, Priority, Assignees, Labels, Estimate, Projekt, Datum, Read-only-Labels) | I2 | V | L | ja | 9 | 0 | WP-I2-001 |
+| [WP-I2-004](#wp-i2-004--sidebar-properties-und-dropdowns-state-priority-assignees-labels-estimate-projekt-datum-read-only-labels) | Sidebar-Properties und Dropdowns (State, Priority, Assignees, Labels, Estimate, Projekt, Datum, Read-only-Labels) | I2 | V | L | ja | 9 | 0 | WP-I2-001, WP-I2-002 |
 | [WP-I2-005](#wp-i2-005--hierarchie-und-relationen-parent-sub-work-items-relationen-widget-aktionsleiste) | Hierarchie und Relationen (Parent, Sub-Work-Items, Relationen, Widget-Aktionsleiste) | I2 | V | M | ja | 4 | 5 | WP-I2-002, WP-I2-203 |
 | [WP-I2-006](#wp-i2-006--links-und-anhänge-an-work-items) | Links und Anhänge an Work Items | I2 | V | M | ja | 2 | 13 | WP-I2-002, WP-I2-102 |
 | [WP-I2-007](#wp-i2-007--kommentare-emoji-reaktionen-mentions) | Kommentare, Emoji-Reaktionen, Mentions | I2 | V | M | ja | 4 | 11 | WP-I2-008, WP-I2-021 |
@@ -156,11 +156,11 @@ Ein Agent, der feststellt, dass ein Paket zu groß ist, eine Abhängigkeit fehlt
 | [WP-I2-018](#wp-i2-018--spreadsheet-tabelle-sortierung-tastaturnavigation-mehrfachauswahl-sprung-zu-sub-items) | Spreadsheet (Tabelle, Sortierung, Tastaturnavigation, Mehrfachauswahl, Sprung zu Sub-Items) | I2 | V | L | ja | 4 | 0 | WP-I2-011 |
 | [WP-I2-019](#wp-i2-019--inline-property-leiste-quick-add-je-layout-gruppen--quick-action--und-kontextmenü) | Inline-Property-Leiste, Quick-Add je Layout, Gruppen-„+“, Quick-Action- und Kontextmenü | I2 | V | M | ja | 4 | 0 | WP-I2-014 |
 | [WP-I2-020](#wp-i2-020--layout-zustände-empty-states-skeleton-loader-virtualisierungendlos-laden-fehlergrenze) | Layout-Zustände: Empty-States, Skeleton-Loader, Virtualisierung/Endlos-Laden, Fehlergrenze | I2 | V | M | ja | 4 | 0 | WP-I2-014 |
-| [WP-I2-021](#wp-i2-021--editor-ed-1-lite-text-editor-kommentare-mentions-emojis-links) | Editor ED-1: Lite-Text-Editor (Kommentare), Mentions, Emojis, Links | I2 | D | M | nein | 4 | 0 | WP-I1-103, WP-I0-905, WP-I2-101, WP-I2-207 |
-| [WP-I2-022](#wp-i2-022--editor-ed-2a-rich-text-kern-textstruktur-listen-formatierungfarben-markdown-platzhalter-deep-links-anzeige-konfiguration) | Editor ED-2a: Rich-Text-Kern (Textstruktur, Listen, Formatierung/Farben, Markdown, Platzhalter, Deep-Links, Anzeige-Konfiguration) | I2 | D | L | nein | 9 | 0 | WP-I2-021 |
-| [WP-I2-023](#wp-i2-023--editor-ed-2b-menüs-und-blöcke-slash-bubble-drag-handleblock-menü-code-block-tabellen-bilder-callouts) | Editor ED-2b: Menüs und Blöcke (Slash, Bubble, Drag-Handle/Block-Menü, Code-Block, Tabellen, Bilder, Callouts) | I2 | D | L | nein | 7 | 5 | WP-I2-022 |
-| [WP-I2-024](#wp-i2-024--editor-ed-3-document-editor-read-only-beschreibungs-versionen) | Editor ED-3: Document-Editor read-only (Beschreibungs-Versionen) | I2 | D | S | nein | 1 | 0 | WP-I2-023 |
-| [WP-I2-101](#wp-i2-101--funkdocuments-teil-a-server-schema-htmlpm-json-text-extraktion-sanitizing-yjs-update-validierung) | Funk.Documents Teil A: Server-Schema, HTML↔PM-JSON, Text-Extraktion, Sanitizing, Yjs-Update-Validierung | I2 | D | L | ja | 1 | 0 | WP-I0-999, WP-I0-902 |
+| [WP-I2-021](#wp-i2-021--editor-ed-1-lite-text-editor-kommentare-mentions-emojis-links) | Editor ED-1: Lite-Text-Editor (Kommentare), Mentions, Emojis, Links *(Vorlauf)* | I2 | D | M | nein | 4 | 0 | WP-I1-103, WP-I0-905, WP-I2-101, WP-I2-207 |
+| [WP-I2-022](#wp-i2-022--editor-ed-2a-rich-text-kern-textstruktur-listen-formatierungfarben-markdown-platzhalter-deep-links-anzeige-konfiguration) | Editor ED-2a: Rich-Text-Kern (Textstruktur, Listen, Formatierung/Farben, Markdown, Platzhalter, Deep-Links, Anzeige-Konfiguration) *(Vorlauf)* | I2 | D | L | nein | 9 | 0 | WP-I2-021 |
+| [WP-I2-023](#wp-i2-023--editor-ed-2b-menüs-und-blöcke-slash-bubble-drag-handleblock-menü-code-block-tabellen-bilder-callouts) | Editor ED-2b: Menüs und Blöcke (Slash, Bubble, Drag-Handle/Block-Menü, Code-Block, Tabellen, Bilder, Callouts) *(Vorlauf)* | I2 | D | L | nein | 7 | 5 | WP-I2-022 |
+| [WP-I2-024](#wp-i2-024--editor-ed-3-document-editor-read-only-beschreibungs-versionen) | Editor ED-3: Document-Editor read-only (Beschreibungs-Versionen) *(Vorlauf)* | I2 | D | S | nein | 1 | 0 | WP-I2-023 |
+| [WP-I2-101](#wp-i2-101--funkdocuments-teil-a-server-schema-htmlpm-json-text-extraktion-sanitizing-yjs-update-validierung) | Funk.Documents Teil A: Server-Schema, HTML↔PM-JSON, Text-Extraktion, Sanitizing, Yjs-Update-Validierung *(Vorlauf)* | I2 | D | L | ja | 1 | 0 | WP-I0-999, WP-I0-902 |
 | [WP-I2-102](#wp-i2-102--ssrf-sicherer-http-client-und-link-crawler) | SSRF-sicherer HTTP-Client und Link-Crawler | I2 | B | S | ja | 1 | 0 | WP-I1-999 |
 | [WP-I2-103](#wp-i2-103--dummy-daten-generator-und-volumen-seeder-smlxl) | Dummy-Daten-Generator und Volumen-Seeder (S/M/L/XL) | I2 | I | S | ja | 1 | 0 | WP-I2-001 |
 | [WP-I2-201](#wp-i2-201--erweiterungspunkt-b6a1-filter-ast-parser-liste-feld-gruppen-sortier-registries-payload-extension-basismengen-filter) | Erweiterungspunkt B6/A1: Filter-AST, Parser-Liste, Feld-/Gruppen-/Sortier-Registries, Payload-Extension, Basismengen-Filter | I2 | X | M | nein | 0 | 0 | WP-I1-999, WP-I0-909 |
@@ -169,7 +169,7 @@ Ein Agent, der feststellt, dass ein Paket zu groß ist, eine Abhängigkeit fehlt
 | [WP-I2-204](#wp-i2-204--erweiterungspunkt-c1-state-change-pipeline-iworkitemstatechanger-mit-guardshooks-workflow_guard) | Erweiterungspunkt C1: State-Change-Pipeline IWorkItemStateChanger mit Guards/Hooks, WORKFLOW_GUARD | I2 | X | S | nein | 0 | 0 | WP-I1-999, WP-I1-201 |
 | [WP-I2-205](#wp-i2-205--erweiterungspunkte-work-item-fassaden-iworkitemreferenceresolver-iworkitemcommands-iintegrationlinkprovider--external_links-iexpandprovider) | Erweiterungspunkte Work-Item-Fassaden: IWorkItemReferenceResolver, IWorkItemCommands, IIntegrationLinkProvider + external_links, IExpandProvider | I2 | X | S | nein | 0 | 0 | WP-I1-999, WP-I0-205 |
 | [WP-I2-206](#wp-i2-206--erweiterungspunkte-work-item-ui-registries-property-renderer-bis-duplicate-detection) | Erweiterungspunkte Work-Item-UI-Registries (Property-Renderer bis Duplicate-Detection) | I2 | X | M | nein | 0 | 0 | WP-I1-999 |
-| [WP-I2-207](#wp-i2-207--erweiterungspunkt-editordokument-schema-idocumentnodespecidocumentmarkspec-editor_extensions-editor_flags-lite) | Erweiterungspunkt Editor/Dokument-Schema: IDocumentNodeSpec/IDocumentMarkSpec, EDITOR_EXTENSIONS, EDITOR_FLAGS (Lite) | I2 | X | S | nein | 0 | 0 | WP-I0-999, WP-I0-905 |
+| [WP-I2-207](#wp-i2-207--erweiterungspunkt-editordokument-schema-idocumentnodespecidocumentmarkspec-editor_extensions-editor_flags-lite) | Erweiterungspunkt Editor/Dokument-Schema: IDocumentNodeSpec/IDocumentMarkSpec, EDITOR_EXTENSIONS, EDITOR_FLAGS (Lite) *(Vorlauf)* | I2 | X | S | nein | 0 | 0 | WP-I0-999, WP-I0-905 |
 | [WP-I2-999](#wp-i2-999--abnahme-i2--work-items--layouts-g5) | Abnahme I2 – Work Items & Layouts (G5) | I2 | A | S | nein | 0 | 0 | WP-I2-001, WP-I2-002, WP-I2-003, WP-I2-004, WP-I2-005, WP-I2-006, WP-I2-007, WP-I2-008, WP-I2-009, WP-I2-010, WP-I2-011, WP-I2-012, WP-I2-013, WP-I2-014, WP-I2-015, WP-I2-016, WP-I2-017, WP-I2-018, WP-I2-019, WP-I2-020, WP-I2-021, WP-I2-022, WP-I2-023, WP-I2-024, WP-I2-101, WP-I2-102, WP-I2-103, WP-I2-201, WP-I2-202, WP-I2-203, WP-I2-204, WP-I2-205, WP-I2-206, WP-I2-207 |
 | [WP-I3-001](#wp-i3-001--projekt-archive-und-layout-kontexte-cycle-modul-view-archiv-profil) | Projekt-Archive und Layout-Kontexte (Cycle, Modul, View, Archiv, Profil) | I3 | V | M | ja | 2 | 1 | WP-I2-999 |
 | [WP-I3-002](#wp-i3-002--projekt-views-liste-anlagebearbeitung-löschen-kontextmenüfavoriten-detail-speichern-aus-filtern) | Projekt-Views (Liste, Anlage/Bearbeitung, Löschen, Kontextmenü/Favoriten, Detail, Speichern aus Filtern) | I3 | V | L | ja | 6 | 10 | WP-I2-999, WP-I3-201 |
@@ -188,17 +188,17 @@ Ein Agent, der feststellt, dass ein Paket zu groß ist, eine Abhängigkeit fehlt
 | [WP-I3-201](#wp-i3-201--erweiterungspunkte-planung-icycleschedulingpolicy-cycle_flags-entity_quick_actions) | Erweiterungspunkte Planung: ICycleSchedulingPolicy, CYCLE_FLAGS, ENTITY_QUICK_ACTIONS | I3 | X | S | nein | 0 | 0 | WP-I2-999 |
 | [WP-I3-999](#wp-i3-999--abnahme-i3--planung-g5) | Abnahme I3 – Planung (G5) | I3 | A | S | nein | 0 | 0 | WP-I3-001, WP-I3-002, WP-I3-003, WP-I3-004, WP-I3-005, WP-I3-006, WP-I3-007, WP-I3-008, WP-I3-009, WP-I3-010, WP-I3-011, WP-I3-012, WP-I3-013, WP-I3-101, WP-I3-201 |
 | [WP-I4-001](#wp-i4-001--page-liste-mit-tabs-suchefiltersortierung-anlage-favoriten) | Page-Liste mit Tabs, Suche/Filter/Sortierung, Anlage, Favoriten | I4 | V | M | nein | 4 | 5 | WP-I3-999, WP-I4-201 |
-| [WP-I4-002](#wp-i4-002--page-aktionen-datendetail-sperren-zugriff-archivieren-löschen-duplizieren-referenzprotokoll) | Page-Aktionen: Daten/Detail, sperren, Zugriff, archivieren, löschen, duplizieren, Referenzprotokoll | I4 | V | L | ja | 7 | 11 | WP-I4-001 |
+| [WP-I4-002](#wp-i4-002--page-aktionen-datendetail-sperren-zugriff-archivieren-löschen-duplizieren-referenzprotokoll) | Page-Aktionen: Daten/Detail, sperren, Zugriff, archivieren, löschen, duplizieren, Referenzprotokoll | I4 | V | L | ja | 7 | 11 | WP-I4-001, WP-I4-101 |
 | [WP-I4-003](#wp-i4-003--page-export-als-pdf-und-markdown) | Page-Export als PDF und Markdown | I4 | D | M | ja | 1 | 1 | WP-I4-002, WP-I0-903, WP-I4-101 |
-| [WP-I4-004](#wp-i4-004--kollaborativer-page-editor-seite-toolbar-kopf-outline-info--assets-panel-anzeigeoptionen--ed-4-hüllen) | Kollaborativer Page-Editor (Seite, Toolbar, Kopf, Outline, Info-, Assets-Panel, Anzeigeoptionen) – ED-4-Hüllen | I4 | V | L | nein | 7 | 0 | WP-I4-007, WP-I4-002 |
-| [WP-I4-005](#wp-i4-005--page-versionshistorie) | Page-Versionshistorie | I4 | V | M | ja | 1 | 2 | WP-I4-006 |
-| [WP-I4-006](#wp-i4-006--realtime-kollaborationsserver-protokoll-dokument-lebenszyklus-persistenz-titel-sync-fehlerforce-close-konvertierung) | Realtime-Kollaborationsserver: Protokoll, Dokument-Lebenszyklus, Persistenz, Titel-Sync, Fehler/Force-Close, Konvertierung | I4 | D | L | nein | 4 | 1 | WP-I4-101, WP-I4-202, WP-I0-107, WP-I0-901 |
-| [WP-I4-007](#wp-i4-007--client-kollaboration-echtzeit-editor-bindung-offline-cache-rest-fallback-seitenereignisse-ed-4-kern) | Client-Kollaboration: Echtzeit-Editor-Bindung, Offline-Cache, REST-Fallback, Seitenereignisse (ED-4-Kern) | I4 | D | L | nein | 3 | 0 | WP-I4-006, WP-I2-024 |
-| [WP-I4-008](#wp-i4-008--horizontale-skalierung-des-realtime-servers-valkey-backplane-postgresql-signale) | Horizontale Skalierung des Realtime-Servers (Valkey-Backplane, PostgreSQL-Signale) | I4 | B | M | ja | 1 | 0 | WP-I4-006 |
+| [WP-I4-004](#wp-i4-004--kollaborativer-page-editor-seite-toolbar-kopf-outline-info--assets-panel-anzeigeoptionen--ed-4-hüllen) | Kollaborativer Page-Editor (Seite, Toolbar, Kopf, Outline, Info-, Assets-Panel, Anzeigeoptionen) – ED-4-Hüllen | I4 | V | L | nein | 7 | 0 | WP-I4-007, WP-I4-002, WP-I4-005 |
+| [WP-I4-005](#wp-i4-005--page-versionshistorie) | Page-Versionshistorie | I4 | V | M | ja | 1 | 2 | WP-I4-006, WP-I4-002 |
+| [WP-I4-006](#wp-i4-006--realtime-kollaborationsserver-protokoll-dokument-lebenszyklus-persistenz-titel-sync-fehlerforce-close-konvertierung) | Realtime-Kollaborationsserver: Protokoll, Dokument-Lebenszyklus, Persistenz, Titel-Sync, Fehler/Force-Close, Konvertierung *(Vorlauf)* | I4 | D | L | nein | 4 | 1 | WP-I4-101, WP-I4-202, WP-I0-107, WP-I0-901, WP-I4-201 |
+| [WP-I4-007](#wp-i4-007--client-kollaboration-echtzeit-editor-bindung-offline-cache-rest-fallback-seitenereignisse-ed-4-kern) | Client-Kollaboration: Echtzeit-Editor-Bindung, Offline-Cache, REST-Fallback, Seitenereignisse (ED-4-Kern) | I4 | D | L | nein | 3 | 0 | WP-I4-006, WP-I2-024, WP-I4-002 |
+| [WP-I4-008](#wp-i4-008--horizontale-skalierung-des-realtime-servers-valkey-backplane-postgresql-signale) | Horizontale Skalierung des Realtime-Servers (Valkey-Backplane, PostgreSQL-Signale) *(Vorlauf)* | I4 | B | M | ja | 1 | 0 | WP-I4-006 |
 | [WP-I4-009](#wp-i4-009--demo-inhalte-bei-workspace-anlage-vollständiger-seed-inkl-cycles-module-views-pages) | Demo-Inhalte bei Workspace-Anlage (vollständiger Seed inkl. Cycles, Module, Views, Pages) | I4 | B | M | ja | 1 | 0 | WP-I4-002 |
-| [WP-I4-101](#wp-i4-101--funkdocuments-teil-b-yjs--prosemirror-yjsupdatewriter-document-variante-markdown) | Funk.Documents Teil B: Yjs ⇄ ProseMirror, YjsUpdateWriter, Document-Variante, Markdown | I4 | D | L | ja | 0 | 0 | WP-I2-999, WP-I0-901, WP-I0-902 |
-| [WP-I4-201](#wp-i4-201--erweiterungspunkte-d1d2-pages-ohne-projektpflicht-project_pages-parent_id-ipagehierarchyqueries-ipageaccessextension-page_-tokens) | Erweiterungspunkte D1/D2: Pages ohne Projektpflicht, project_pages, parent_id, IPageHierarchy(+Queries), IPageAccessExtension, PAGE_*-Tokens | I4 | X | S | nein | 0 | 0 | WP-I3-999 |
-| [WP-I4-202](#wp-i4-202--erweiterungspunkte-kollaboration-icollaborationdocumenttype-affectedpages-editor_blocks-editor_mention_types) | Erweiterungspunkte Kollaboration: ICollaborationDocumentType, affectedPages, EDITOR_BLOCKS, EDITOR_MENTION_TYPES | I4 | X | S | nein | 0 | 0 | WP-I2-999, WP-I4-101 |
+| [WP-I4-101](#wp-i4-101--funkdocuments-teil-b-yjs--prosemirror-yjsupdatewriter-document-variante-markdown) | Funk.Documents Teil B: Yjs ⇄ ProseMirror, YjsUpdateWriter, Document-Variante, Markdown *(Vorlauf)* | I4 | D | L | ja | 0 | 0 | WP-I2-999, WP-I0-901, WP-I0-902 |
+| [WP-I4-201](#wp-i4-201--erweiterungspunkte-d1d2-pages-ohne-projektpflicht-project_pages-parent_id-ipagehierarchyqueries-ipageaccessextension-page_-tokens) | Erweiterungspunkte D1/D2: Pages ohne Projektpflicht, project_pages, parent_id, IPageHierarchy(+Queries), IPageAccessExtension, PAGE_*-Tokens *(Vorlauf)* | I4 | X | S | nein | 0 | 0 | WP-I2-999 |
+| [WP-I4-202](#wp-i4-202--erweiterungspunkte-kollaboration-icollaborationdocumenttype-affectedpages-editor_blocks-editor_mention_types) | Erweiterungspunkte Kollaboration: ICollaborationDocumentType, affectedPages, EDITOR_BLOCKS, EDITOR_MENTION_TYPES *(Vorlauf)* | I4 | X | S | nein | 0 | 0 | WP-I2-999, WP-I4-101, WP-I4-201 |
 | [WP-I4-999](#wp-i4-999--abnahme-i4--pages--realtime-g5) | Abnahme I4 – Pages & Realtime (G5) | I4 | A | S | nein | 0 | 0 | WP-I4-001, WP-I4-002, WP-I4-003, WP-I4-004, WP-I4-005, WP-I4-006, WP-I4-007, WP-I4-008, WP-I4-009, WP-I4-101, WP-I4-201, WP-I4-202 |
 | [WP-I5-001](#wp-i5-001--workspace-analytics-tabs-kennzahlen-project-insights-active-projects-created-vs-resolved-customized-insights-insight-tabelle-mit-csv) | Workspace-Analytics: Tabs, Kennzahlen, Project Insights, Active Projects, Created vs Resolved, Customized Insights, Insight-Tabelle mit CSV | I5 | V | L | ja | 7 | 3 | WP-I4-999, WP-I3-101 |
 | [WP-I5-002](#wp-i5-002--analytics-panel-projekt-cycle-modul-legacy-analytics-gespeicherte-analytics-views-export-per-e-mail) | Analytics-Panel (Projekt, Cycle, Modul), Legacy-Analytics, gespeicherte Analytics-Views, Export per E-Mail | I5 | V | M | ja | 2 | 12 | WP-I5-001, WP-I1-102 |
@@ -213,10 +213,10 @@ Ein Agent, der feststellt, dass ein Paket zu groß ist, eine Abhängigkeit fehlt
 | [WP-I5-201](#wp-i5-201--erweiterungspunkt-g1b6-isearchprovider-iindexingpipeline-search_documents-vector-nullembeddinggenerator-iindexdocumentenricher) | Erweiterungspunkt G1/B6: ISearchProvider, IIndexingPipeline, search_documents, vector, NullEmbeddingGenerator, IIndexDocumentEnricher | I5 | X | M | nein | 0 | 0 | WP-I4-999 |
 | [WP-I5-202](#wp-i5-202--erweiterungspunkte-ui-i5-home_widgets-power_k_commands-search_result_renderers-erste-nutzung-live_event_handlers) | Erweiterungspunkte UI I5: HOME_WIDGETS, POWER_K_COMMANDS, SEARCH_RESULT_RENDERERS, erste Nutzung LIVE_EVENT_HANDLERS | I5 | X | S | nein | 0 | 0 | WP-I4-999 |
 | [WP-I5-999](#wp-i5-999--abnahme-i5--überblick-g5) | Abnahme I5 – Überblick (G5) | I5 | A | S | nein | 0 | 0 | WP-I5-001, WP-I5-002, WP-I5-003, WP-I5-004, WP-I5-005, WP-I5-006, WP-I5-007, WP-I5-008, WP-I5-009, WP-I5-010, WP-I5-201, WP-I5-202 |
-| [WP-I6-001](#wp-i6-001--god-mode-abmeldung-fehleransicht-dashboard-shell-header-konto-menü-hilfe-unsaved-dialog-kopierfelder-404) | God Mode: Abmeldung, Fehleransicht, Dashboard-Shell, Header, Konto-Menü, Hilfe, Unsaved-Dialog, Kopierfelder, 404 | I6 | V | L | ja | 9 | 0 | WP-I5-999, WP-I6-203 |
+| [WP-I6-001](#wp-i6-001--god-mode-abmeldung-fehleransicht-dashboard-shell-header-konto-menü-hilfe-seite-authentication-keycloak-unsaved-dialog-kopierfelder-404) | God Mode: Abmeldung, Fehleransicht, Dashboard-Shell, Header, Konto-Menü, Hilfe, Seite „Authentication“ (Keycloak), Unsaved-Dialog, Kopierfelder, 404 | I6 | V | L | ja | 9 | 0 | WP-I5-999, WP-I6-203 |
 | [WP-I6-002](#wp-i6-002--god-mode-allgemeine-einstellungen-smtp-test-e-mail-ai-einstellungen-bildbibliotheken) | God Mode: Allgemeine Einstellungen, SMTP, Test-E-Mail, AI-Einstellungen, Bildbibliotheken | I6 | V | M | ja | 5 | 5 | WP-I6-001, WP-I1-102 |
 | [WP-I6-003](#wp-i6-003--god-mode-workspace-liste-workspace-anlage-sperren-workspace-anlegen-willkommens-popup) | God Mode: Workspace-Liste, Workspace-Anlage sperren, Workspace anlegen, Willkommens-Popup | I6 | V | M | ja | 4 | 3 | WP-I6-001 |
-| [WP-I6-004](#wp-i6-004--projekt-veröffentlichen-publish-modal-board-einstellungen-metadaten) | Projekt veröffentlichen (Publish-Modal, Board-Einstellungen, Metadaten) | I6 | V | M | ja | 2 | 7 | WP-I5-999 |
+| [WP-I6-004](#wp-i6-004--projekt-veröffentlichen-publish-modal-board-einstellungen-metadaten) | Projekt veröffentlichen (Publish-Modal, Board-Einstellungen, Metadaten) | I6 | V | M | ja | 2 | 7 | WP-I5-999, WP-I6-203 |
 | [WP-I6-005](#wp-i6-005--space-app-shell-login-einstieg-über-keycloak-fehler-404-seiten-legacy-redirects-social-meta-iframe-badge-inkl-nachweis-entfallener-space-logins) | Space-App: Shell, Login-Einstieg über Keycloak, Fehler-/404-Seiten, Legacy-Redirects, Social-Meta, iframe, Badge (inkl. Nachweis entfallener Space-Logins) | I6 | V | L | ja | 13 | 1 | WP-I6-004, WP-I6-203 |
 | [WP-I6-006](#wp-i6-006--space-board-öffentliche-issue-liste-stammdaten-navbar-listkanban-read-only-chips-filter-popover-aktive-filter) | Space-Board: öffentliche Issue-Liste, Stammdaten, Navbar, List/Kanban read-only, Chips, Filter-Popover, aktive Filter | I6 | V | L | ja | 8 | 6 | WP-I6-005 |
 | [WP-I6-007](#wp-i6-007--space-öffentliches-issue-detail-peek-kommentarbilderasset-auslieferung-mentions-ed-6) | Space: öffentliches Issue-Detail, Peek, Kommentarbilder/Asset-Auslieferung, Mentions (ED-6) | I6 | V | M | ja | 4 | 7 | WP-I6-006 |
@@ -226,11 +226,11 @@ Ein Agent, der feststellt, dass ein Paket zu groß ist, eine Abhängigkeit fehlt
 | [WP-I6-011](#wp-i6-011--public-api-v1-stickies-user-assets-generic-workspace-assets) | Public API v1: Stickies, User-Assets, Generic Workspace Assets | I6 | B | S | ja | 3 | 14 | WP-I6-009 |
 | [WP-I6-012](#wp-i6-012--public-api-v1-work-items-identifier-suche-links-kommentare-aktivitäten-anhänge-relationen-intake) | Public API v1: Work Items, Identifier, Suche, Links, Kommentare, Aktivitäten, Anhänge, Relationen, Intake | I6 | B | L | ja | 9 | 55 | WP-I6-010 |
 | [WP-I6-013](#wp-i6-013--public-api-v1-cycles-work-items-in-cycles-transfer-cycle-archiv-modules-work-items-in-modulen-modul-archiv) | Public API v1: Cycles, Work Items in Cycles, Transfer, Cycle-Archiv, Modules, Work Items in Modulen, Modul-Archiv | I6 | B | M | ja | 7 | 26 | WP-I6-012 |
-| [WP-I6-014](#wp-i6-014--webhook-verwaltung-liste-anlage-secret-anzeigenregenerierenherunterladen-bearbeitung-löschung) | Webhook-Verwaltung: Liste, Anlage, Secret anzeigen/regenerieren/herunterladen, Bearbeitung, Löschung | I6 | V | M | ja | 5 | 6 | WP-I5-999 |
+| [WP-I6-014](#wp-i6-014--webhook-verwaltung-liste-anlage-secret-anzeigenregenerierenherunterladen-bearbeitung-löschung) | Webhook-Verwaltung: Liste, Anlage, Secret anzeigen/regenerieren/herunterladen, Bearbeitung, Löschung | I6 | V | M | ja | 5 | 6 | WP-I5-999, WP-I6-202 |
 | [WP-I6-015](#wp-i6-015--webhook-zustellung-datenmodellevent-typen-zustellung-payload-deaktivierungs-mail-protokoll-ssrf-schutz) | Webhook-Zustellung: Datenmodell/Event-Typen, Zustellung, Payload, Deaktivierungs-Mail, Protokoll, SSRF-Schutz | I6 | B | L | ja | 6 | 1 | WP-I6-014, WP-I6-202 |
 | [WP-I6-016](#wp-i6-016--api-tokens-liste-anlage-löschung) | API-Tokens: Liste, Anlage, Löschung | I6 | V | M | ja | 3 | 5 | WP-I5-999 |
 | [WP-I6-017](#wp-i6-017--work-item-export-csvxlsxjson-export-historie-und-download) | Work-Item-Export (CSV/XLSX/JSON), Export-Historie und Download | I6 | B | M | ja | 2 | 2 | WP-I6-202 |
-| [WP-I6-018](#wp-i6-018--ki-assistent-im-work-item-modal-und-unsplash-bildsuche) | KI-Assistent im Work-Item-Modal und Unsplash-Bildsuche | I6 | V | M | ja | 2 | 3 | WP-I5-999 |
+| [WP-I6-018](#wp-i6-018--ki-assistent-im-work-item-modal-und-unsplash-bildsuche) | KI-Assistent im Work-Item-Modal und Unsplash-Bildsuche | I6 | V | M | ja | 2 | 3 | WP-I5-999, WP-I6-002 |
 | [WP-I6-201](#wp-i6-201--erweiterungspunkte-public-api-iv1payloadextension-iv1filterparameterbinding-erweiterbare-openapi-gruppen) | Erweiterungspunkte Public API: IV1PayloadExtension, IV1FilterParameterBinding, erweiterbare OpenAPI-Gruppen | I6 | X | S | nein | 0 | 0 | WP-I5-999 |
 | [WP-I6-202](#wp-i6-202--erweiterungspunkte-iwebhookeventsource-und-iexporttypeprovider) | Erweiterungspunkte IWebhookEventSource und IExportTypeProvider | I6 | X | S | nein | 0 | 0 | WP-I5-999 |
 | [WP-I6-203](#wp-i6-203--erweiterungspunkte-spaceadmin-space_route_extensions-editor_extensions-space-admin-registries-mit-ce-inhalt) | Erweiterungspunkte Space/Admin: SPACE_ROUTE_EXTENSIONS, EDITOR_EXTENSIONS (Space), ADMIN-Registries mit CE-Inhalt | I6 | X | S | nein | 0 | 0 | WP-I5-999 |
@@ -241,11 +241,11 @@ Ein Agent, der feststellt, dass ein Paket zu groß ist, eine Abhängigkeit fehlt
 | [WP-I7-104](#wp-i7-104--read-replica-unterstützung) | Read-Replica-Unterstützung | I7 | B | S | ja | 1 | 0 | WP-I6-999 |
 | [WP-I7-105](#wp-i7-105--tls-modi-und-reverse-proxy-mit-automatischem-https-acme) | TLS-Modi und Reverse-Proxy mit automatischem HTTPS (ACME) | I7 | I | M | ja | 1 | 0 | WP-I6-999 |
 | [WP-I7-106](#wp-i7-106--helm-chart-deployhelmfunk) | Helm-Chart deploy/helm/funk | I7 | I | M | ja | 0 | 0 | WP-I6-999 |
-| [WP-I7-107](#wp-i7-107--airgapped-bundle-und-egress-gesperrter-e2e-lauf) | Airgapped-Bundle und Egress-gesperrter E2E-Lauf | I7 | I | M | ja | 0 | 0 | WP-I6-999 |
+| [WP-I7-107](#wp-i7-107--airgapped-bundle-und-egress-gesperrter-e2e-lauf) | Airgapped-Bundle und Egress-gesperrter E2E-Lauf | I7 | I | M | ja | 0 | 0 | WP-I6-999, WP-I7-101, WP-I7-102, WP-I7-103, WP-I7-105, WP-I7-106 |
 | [WP-I7-108](#wp-i7-108--sicherheitshärtung-csp-enforce-zap-permission-matrix-100--upgrade-pfad) | Sicherheitshärtung: CSP-Enforce, ZAP, Permission-Matrix 100 %, Upgrade-Pfad | I7 | I | M | ja | 0 | 0 | WP-I6-999 |
 | [WP-I7-109](#wp-i7-109--last--soak--und-performance-abnahme-lt-08-lt-13-lt-21-worker-kill-tests) | Last-, Soak- und Performance-Abnahme (LT-08, LT-13, LT-21, Worker-Kill-Tests) | I7 | I | M | ja | 0 | 0 | WP-I6-999 |
 | [WP-I7-110](#wp-i7-110--paritäts-gesamtabnahme-aller-screens-endpunkt-abdeckung-100--abweichungsliste) | Paritäts-Gesamtabnahme aller Screens, Endpunkt-Abdeckung 100 %, Abweichungsliste | I7 | I | M | nein | 0 | 0 | WP-I6-999, WP-I7-107, WP-I7-108 |
-| [WP-I7-201](#wp-i7-201--erweiterungspunkte-stabilisieren-contract-snapshots-aller-erweiterungs-interfaces-airgap-test-mit-forgejo) | Erweiterungspunkte stabilisieren: Contract-Snapshots aller Erweiterungs-Interfaces, Airgap-Test mit Forgejo | I7 | X | S | ja | 0 | 0 | WP-I6-999 |
+| [WP-I7-201](#wp-i7-201--erweiterungspunkte-stabilisieren-contract-snapshots-aller-erweiterungs-interfaces-airgap-test-mit-forgejo) | Erweiterungspunkte stabilisieren: Contract-Snapshots aller Erweiterungs-Interfaces, Airgap-Test mit Forgejo | I7 | X | S | ja | 0 | 0 | WP-I6-999, WP-I7-107 |
 | [WP-I7-999](#wp-i7-999--abnahme-i7--ce-release-kandidat-g5--g6) | Abnahme I7 – CE-Release-Kandidat (G5 + G6) | I7 | A | S | nein | 0 | 0 | WP-I7-101, WP-I7-102, WP-I7-103, WP-I7-104, WP-I7-105, WP-I7-106, WP-I7-107, WP-I7-108, WP-I7-109, WP-I7-110, WP-I7-201 |
 
 Summen: I0 = 38, I1 = 31, I2 = 35, I3 = 16, I4 = 13, I5 = 13, I6 = 22, I7 = 12; insgesamt 180 Arbeitspakete, 507 CE-IDs, 564 registrierte Endpunkte.
@@ -275,29 +275,49 @@ Summen: I0 = 38, I1 = 31, I2 = 35, I3 = 16, I4 = 13, I5 = 13, I6 = 22, I7 = 12; 
 | WP-I2-206 – Erweiterungspunkte Work-Item-UI-Registries (Property-Renderer bis Duplicate-Detection) | 16 §1.4 Zeile I2 (Frontend); 16 §4.6 (Träger CE-WI-001/-010/-014/-034, CE-LV-008/-017…037) | WP-I2-001 |
 | WP-I2-207 – Erweiterungspunkt Editor/Dokument-Schema | 16 §3.3.0 E-11; 16 §4.6 (Träger CE-WI-037, CE-WI-044) | WP-I2-021 |
 | WP-I3-201 – Erweiterungspunkte Planung | 16 §3.3.0 E-14 (I3-Teil), E-15; 16 §4.6 (Träger CE-CYC-002…013, CE-MOD-011, CE-LV-050) | WP-I3-002, WP-I3-005, WP-I3-009 |
-| WP-I4-201 – Erweiterungspunkte D1/D2 | 01 §1.4 D1/D2; 16 §3.3.0 E-23; 16 §4.6 (Träger CE-PAGE-001/-003/-004/-006/-007) | WP-I4-001 |
+| WP-I4-201 – Erweiterungspunkte D1/D2 | 01 §1.4 D1/D2; 16 §3.3.0 E-23; 16 §4.6 (Träger CE-PAGE-001/-003/-004/-006/-007) | WP-I4-001, WP-I4-006, WP-I4-202 |
 | WP-I4-202 – Erweiterungspunkte Kollaboration | 16 §3.3.0 E-10; 16 §4.6 (Träger CE-RT-001, CE-RT-004, CE-RT-005) | WP-I4-006 |
 | WP-I5-201 – Erweiterungspunkt G1/B6 | 01 §1.4 G1/B6; 16 §3.3.0 E-24; 16 §4.6 (Träger CE-SRCH-001…003) | WP-I5-008 |
 | WP-I5-202 – Erweiterungspunkte UI I5 | 16 §1.4 Zeile I5; 16 §4.6 (Träger CE-HOME-001/-002, CE-NOTIF-001, CE-SRCH-004) | WP-I5-003, WP-I5-005, WP-I5-009 |
 | WP-I6-201 – Erweiterungspunkte Public API | 16 §3.3.0 E-07, E-19; 16 §4.6 (Träger CE-API-017, CE-API-019) | WP-I6-009 |
-| WP-I6-202 – Erweiterungspunkte IWebhookEventSource und IExportTypeProvider | 16 §3.3.0 E-08, E-16; 16 §4.6 (Träger CE-WH-001/-007/-008, CE-EXP-001/-002) | WP-I6-015, WP-I6-017 |
-| WP-I6-203 – Erweiterungspunkte Space/Admin | 16 §1.4 Zeile I6; 16 §4.6 (Träger CE-SPACE-001/-018/-025, CE-INST-003/-025) | WP-I6-001, WP-I6-005 |
+| WP-I6-202 – Erweiterungspunkte IWebhookEventSource und IExportTypeProvider | 16 §3.3.0 E-08, E-16; 16 §4.6 (Träger CE-WH-001/-007/-008, CE-EXP-001/-002) | WP-I6-014, WP-I6-015, WP-I6-017 |
+| WP-I6-203 – Erweiterungspunkte Space/Admin | 16 §1.4 Zeile I6; 16 §4.6 (Träger CE-SPACE-001/-018/-025, CE-INST-003/-025) | WP-I6-001, WP-I6-004, WP-I6-005 |
 | WP-I7-201 – Erweiterungspunkte stabilisieren | 16 §1.4 Zeile I7; 16 §4.6 (Träger CE-OPS-023) | – (Abnahme) |
 
 ### 3.2 Kritischer Pfad je Inkrement (Schätzung)
 
 Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete außerhalb des Inkrements gelten als erledigt. Der kritische Pfad bestimmt die Mindestdauer eines Inkrements bei unbegrenzter Parallelität.
 
-| Inkrement | Pakete | Summe (Tage) | kritischer Pfad (Tage) | Pfad |
+Die Spalte „ab Meilenstein“ rechnet die Vorlauf-Pakete (§3.3) als bereits erledigt und gibt damit die Mindestdauer ab Abnahme des Vorgänger-Inkrements an.
+
+| Inkrement | Pakete | Summe (Tage) | kritischer Pfad (Tage) | Pfad | ab Meilenstein (Tage) | Pfad ab Meilenstein |
+|---|---|---|---|---|---|---|
+| I0 | 38 | 205 | 49 | WP-I0-101 → WP-I0-900 → WP-I0-104 → WP-I0-103 → WP-I0-001 → WP-I0-002 → WP-I0-004 → WP-I0-999 | = | = |
+| I1 | 31 | 138 | 27 | WP-I1-101 → WP-I1-102 → WP-I1-002 → WP-I1-006 → WP-I1-999 | = | = |
+| I2 | 35 | 198 | 62 | WP-I2-101 → WP-I2-021 → WP-I2-022 → WP-I2-001 → WP-I2-012 → WP-I2-011 → WP-I2-015 → WP-I2-999 | 42 | WP-I2-206 → WP-I2-001 → WP-I2-012 → WP-I2-011 → WP-I2-015 → WP-I2-999 |
+| I3 | 16 | 104 | 24 | WP-I3-201 → WP-I3-005 → WP-I3-006 → WP-I3-999 | = | = |
+| I4 | 13 | 81 | 44 | WP-I4-101 → WP-I4-202 → WP-I4-006 → WP-I4-007 → WP-I4-004 → WP-I4-999 | 37 | WP-I4-001 → WP-I4-002 → WP-I4-007 → WP-I4-004 → WP-I4-999 |
+| I5 | 13 | 79 | 22 | WP-I5-201 → WP-I5-008 → WP-I5-009 → WP-I5-999 | = | = |
+| I6 | 22 | 125 | 39 | WP-I6-203 → WP-I6-004 → WP-I6-005 → WP-I6-006 → WP-I6-007 → WP-I6-008 → WP-I6-999 | = | = |
+| I7 | 12 | 56 | 22 | WP-I7-101 → WP-I7-107 → WP-I7-110 → WP-I7-999 | = | = |
+
+### 3.3 Vorlauf-Pakete (plan/01 L-8)
+
+Vorlauf-Pakete hängen nicht vom Meilenstein des Vorgänger-Inkrements ab und dürfen beginnen, sobald ihre eigenen Abhängigkeiten gemergt sind. Sie registrieren keine Screens (geprüft: kein Typ V/F) und werden mit ihrem Inkrement abgenommen. `build.py` bricht ab, wenn die berechnete Menge von `wp_spec.VORLAUF` abweicht.
+
+| WP | Titel | Inkr. | Typ | frühester Start |
 |---|---|---|---|---|
-| I0 | 38 | 205 | 49 | WP-I0-101 → WP-I0-900 → WP-I0-104 → WP-I0-103 → WP-I0-001 → WP-I0-002 → WP-I0-004 → WP-I0-999 |
-| I1 | 31 | 138 | 27 | WP-I1-101 → WP-I1-102 → WP-I1-002 → WP-I1-006 → WP-I1-999 |
-| I2 | 35 | 198 | 62 | WP-I2-101 → WP-I2-021 → WP-I2-022 → WP-I2-001 → WP-I2-012 → WP-I2-011 → WP-I2-015 → WP-I2-999 |
-| I3 | 16 | 104 | 24 | WP-I3-201 → WP-I3-005 → WP-I3-006 → WP-I3-999 |
-| I4 | 13 | 81 | 44 | WP-I4-101 → WP-I4-202 → WP-I4-006 → WP-I4-007 → WP-I4-004 → WP-I4-999 |
-| I5 | 13 | 79 | 22 | WP-I5-201 → WP-I5-008 → WP-I5-009 → WP-I5-999 |
-| I6 | 22 | 125 | 37 | WP-I6-004 → WP-I6-005 → WP-I6-006 → WP-I6-007 → WP-I6-008 → WP-I6-999 |
-| I7 | 12 | 56 | 12 | WP-I7-101 → WP-I7-999 |
+| WP-I2-021 | Editor ED-1: Lite-Text-Editor (Kommentare), Mentions, Emojis, Links | I2 | D | nach WP-I1-103, WP-I0-905, WP-I2-101, WP-I2-207 |
+| WP-I2-022 | Editor ED-2a: Rich-Text-Kern (Textstruktur, Listen, Formatierung/Farben, Markdown, Platzhalter, Deep-Links, Anzeige-Konfiguration) | I2 | D | nach WP-I2-021 |
+| WP-I2-023 | Editor ED-2b: Menüs und Blöcke (Slash, Bubble, Drag-Handle/Block-Menü, Code-Block, Tabellen, Bilder, Callouts) | I2 | D | nach WP-I2-022 |
+| WP-I2-024 | Editor ED-3: Document-Editor read-only (Beschreibungs-Versionen) | I2 | D | nach WP-I2-023 |
+| WP-I2-101 | Funk.Documents Teil A: Server-Schema, HTML↔PM-JSON, Text-Extraktion, Sanitizing, Yjs-Update-Validierung | I2 | D | nach WP-I0-999, WP-I0-902 |
+| WP-I2-207 | Erweiterungspunkt Editor/Dokument-Schema: IDocumentNodeSpec/IDocumentMarkSpec, EDITOR_EXTENSIONS, EDITOR_FLAGS (Lite) | I2 | X | nach WP-I0-999, WP-I0-905 |
+| WP-I4-006 | Realtime-Kollaborationsserver: Protokoll, Dokument-Lebenszyklus, Persistenz, Titel-Sync, Fehler/Force-Close, Konvertierung | I4 | D | nach WP-I4-101, WP-I4-202, WP-I0-107, WP-I0-901, WP-I4-201 |
+| WP-I4-008 | Horizontale Skalierung des Realtime-Servers (Valkey-Backplane, PostgreSQL-Signale) | I4 | B | nach WP-I4-006 |
+| WP-I4-101 | Funk.Documents Teil B: Yjs ⇄ ProseMirror, YjsUpdateWriter, Document-Variante, Markdown | I4 | D | nach WP-I2-999, WP-I0-901, WP-I0-902 |
+| WP-I4-201 | Erweiterungspunkte D1/D2: Pages ohne Projektpflicht, project_pages, parent_id, IPageHierarchy(+Queries), IPageAccessExtension, PAGE_*-Tokens | I4 | X | nach WP-I2-999 |
+| WP-I4-202 | Erweiterungspunkte Kollaboration: ICollaborationDocumentType, affectedPages, EDITOR_BLOCKS, EDITOR_MENTION_TYPES | I4 | X | nach WP-I2-999, WP-I4-101, WP-I4-201 |
 
 ## 4. Arbeitspakete im Detail
 
@@ -311,7 +331,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Typ (DoD 15 §3.15.3) | V – Vertikaler Schnitt |
 | Größe | L |
 | parallelisierbar | nein |
-| Abhängigkeiten | WP-I0-103, WP-I0-105, WP-I0-108, WP-I0-203, WP-I0-204 |
+| Abhängigkeiten | WP-I0-103, WP-I0-105, WP-I0-108, WP-I0-203, WP-I0-204, WP-I0-106, WP-I0-911 |
 | CE-IDs | CE-AUTH-001, CE-AUTH-012, CE-AUTH-014, CE-AUTH-016, CE-AUTH-022, CE-AUTH-023, CE-AUTH-024, CE-AUTH-025, CE-AUTH-027, CE-AUTH-029 |
 
 **Ziel.** Ein Testbenutzer meldet sich per Authorization Code + PKCE über das BFF an; funk. legt beim ersten Login den Benutzer aus den Claims an (nur bei `email_verified`), setzt die HttpOnly-Session `funk-session`, beantwortet `GET /api/users/me/` und leitet nach `next_path` bzw. zur Workspace-Anlage weiter. Abmelden (RP-initiated + Back-Channel), Session-Ablauf, Sperre deaktivierter Konten und Auth-Fehlerbanner verhalten sich wie in 05 festgelegt.
@@ -649,7 +669,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Typ (DoD 15 §3.15.3) | V – Vertikaler Schnitt |
 | Größe | M |
 | parallelisierbar | nein |
-| Abhängigkeiten | WP-I0-002, WP-I0-006 |
+| Abhängigkeiten | WP-I0-002, WP-I0-006, WP-I0-913 |
 | CE-IDs | CE-PRJ-004, CE-PRJ-005 |
 
 **Ziel.** Das Create-Project-Modal legt ein Projekt mit Identifier-Prüfung (max. 12 Zeichen, Freigabe), Default-States und Admin-Mitgliedschaft an und schreibt `funk.project.created.v1`.
@@ -699,12 +719,13 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 1. Identifier-Konflikt und -Freigabe liefern dieselben Codes/Texte wie das Original (Contract-Golden).
 2. Default-States werden in Original-Reihenfolge und -Farben angelegt (Golden).
-3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-8. `ce-coverage-check --ids CE-PRJ-004,CE-PRJ-005` grün (Mindestebenen 15 Anhang B).
+3. Die neuen Tabellen mit `workspace_id` und `project_id` (`states`, `project_members`, `project_identifiers`) tragen den zusammengesetzten Scope-FK `fk_<tabelle>_project_scope (project_id, workspace_id) → projects (id, workspace_id)` nach der in WP-I0-913 bestätigten Konvention (03 D03-ADR-05, Schema-Konformitätstest); ein Insert mit `project_id` aus einem fremden Workspace scheitert in der DB.
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-PRJ-004,CE-PRJ-005` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -721,7 +742,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Typ (DoD 15 §3.15.3) | F – Frontend-only |
 | Größe | L |
 | parallelisierbar | ja |
-| Abhängigkeiten | WP-I0-105, WP-I0-910 |
+| Abhängigkeiten | WP-I0-105, WP-I0-910, WP-I0-106 |
 | CE-IDs | CE-I18N-011, CE-I18N-012, CE-I18N-013, CE-I18N-021, CE-I18N-023, CE-I18N-024, CE-I18N-025, CE-I18N-026 |
 
 **Ziel.** Tailwind-4.1-Konfiguration und CSS werden 1:1 übernommen (Vendoring, Import-Reihenfolge, `@source`-Scan), Schriften und Icons gebündelt (Airgap), die ersten Propel-Primitive (Button, Input, Menu, Tooltip, Avatar) sowie Toast, Spinner/Lade-Indikatoren, Animationen, Maßsystem und Avatare/Farbwähler stehen DOM- und pixelgleich in der Galerie; die Brand-Assets werden aus `assets/funk_logo.svg` erzeugt.
@@ -1017,7 +1038,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 | EP | Methode | Pfad | Oberfläche | Handler | Permission | Inkr. 04 | CE-IDs |
 |---|---|---|---|---|---|---|---|
-| EP-0732 (vorab) | GET | `/api/schema/internal/` | OpenApi | OpenApiEndpoints.OpenApiDocumentEndpoint(internal) | (anonym, nur mit Plane:OpenApi:Enabled) | I0 | CE-API-004 |
+| EP-0732 (vorab) | GET | `/api/schema/internal/` | OpenApi | OpenApiEndpoints.OpenApiDocumentEndpoint(internal) | (anonym, nur mit Funk:OpenApi:Enabled) | I0 | CE-API-004 |
 
 **Akzeptanzkriterien**
 
@@ -1301,7 +1322,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Typ (DoD 15 §3.15.3) | V – Vertikaler Schnitt |
 | Größe | L |
 | parallelisierbar | ja |
-| Abhängigkeiten | WP-I0-108, WP-I0-006 |
+| Abhängigkeiten | WP-I0-108, WP-I0-006, WP-I0-106, WP-I0-911 |
 | CE-IDs | CE-AUTH-015 |
 
 **Ziel.** Die Login-Themes `funk` (Web/God Mode) und `funk-space` bilden die Original-Sign-in-Seiten von `apps/web` und `apps/space` pixelgleich nach (eigenes `template.ftl` ohne PatternFly, Original-Klassen und -CSS), mit funk.-Logo und -Texten (BR-09), AGB-/Datenschutz-Hinweis und Auth-Fuß (CE-AUTH-015) sowie der Hell/Dunkel-Übernahme aus funk. (Z-08).
@@ -1385,13 +1406,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 1. Event-Katalog-Snapshot-Test schlägt bei jeder nicht additiven Änderung fehl (Typname ↔ Klasse eindeutig).
 2. Fake-Consumer aus `Funk.BuildingBlocks.Testing/Extensions` empfängt `funk.workspace.created.v1` ohne CE-Änderung (DoD Typ X).
 3. Event mit `CausationDepth > 5` wird verworfen, Metrik `funk.outbox.dropped{reason="causation_depth"}` steigt.
-4. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-5. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-6. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+4. AK-16-09 (Gerüst): `EventCatalogSnapshotTests.Catalog_contains_minimum_set_of_D16` existiert und prüft ab I0 die Event-Typen der in I0 entstehenden Aggregate (`funk.identity.user_provisioned.v1`, `funk.workspace.created.v1`, `funk.project.created.v1`); jedes spätere Inkrement ergänzt seine Aggregate.
+5. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+6. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+7. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
 - L1/L3 Outbox/Inbox/Kausaltiefe, Typ-X-Test mit Fake-Consumer.
+- 16 §7.2: `EventCatalogSnapshotTests` (`Funk.Contracts.Tests`), `ConsumerRegistrationTests` (`Funk.BuildingBlocks.Tests`), `RecurringJobRegistryTests` (`Funk.Worker.Tests`).
 
 ### WP-I0-202 – Erweiterungspunkt B1/A2: ScopeRef, ScopeLevel, IScopeResolver, IScopeAncestorContributor, RouterStore.teamspaceId
 
@@ -1423,13 +1446,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 **Akzeptanzkriterien**
 
 1. `ScopeRef`-Gleichheit, Serialisierung und Vorfahrenkette (Project → Workspace) per Unit-Test; Fake-`IScopeAncestorContributor` ergänzt eine Teamspace-Ebene ohne CE-Änderung.
-2. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-3. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-4. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+2. AK-16-14 (Scope-Teil): `IScopeResolver` mit `FakeScopeAncestorContributor` liefert einen Teamspace in der Vorfahrenkette; ohne Contributor ergibt `ScopeLevel.Teamspace` `NotSupported`.
+3. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+4. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+5. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
 - L1 Scoping, Typ-X-Test (Fake-Contributor), L2 RouterStore.
+- 16 §7.2: `ScopeResolverTests` (`Funk.BuildingBlocks.Tests`).
 
 ### WP-I0-203 – Erweiterungspunkt E5: Permission-Katalog, roles/role_permissions, role_id, ISystemRoleGrantContributor, PermissionService
 
@@ -1466,13 +1491,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 2. `SystemRoleProvider` bildet die Original-Rollenlogik inkl. WS-Admin-Override (HARM-00) ab; Matrix-Test für die I0-Endpunkte 100 %.
 3. Fake-`ISystemRoleGrantContributor` ergänzt einen neuen Key für Member ohne Änderung an `SystemRoleProvider` (Typ X).
 4. Frontend prüft Rechte ausschließlich über `PermissionService` (ESLint-Regel verbietet direkte Rollenvergleiche).
-5. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-6. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-7. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+5. AK-16-14 (Rollen-Teil): der Katalog-Validator akzeptiert die Fake-Permission `teamspace.fake.read` (Scope Teamspace); ein `ISystemRoleGrantContributor`-Fake gewährt der Rolle Member `project.fake.read`, ohne `SystemRoleProvider` zu ändern; reservierte Namensräume (16 §3.2.1) werden von keinem CE-Key verwendet.
+6. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+7. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+8. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
 - L1 Evaluator, L3 Matrix-Tests (I0-Routen), Typ-X-Test, L2 `PermissionService` gegen Original-Store-Fixtures.
+- 16 §7.2: `PermissionCatalogExtensionTests` (`Funk.Authorization.Tests`), `ReservedKeysUnusedInCe` (`Funk.ArchitectureTests`).
 
 ### WP-I0-204 – Erweiterungspunkt H1/E3: FunkPrincipal, Policy-Scheme Cookies│ApiKey│Bearer, users.is_bot, Provisioning-Kette
 
@@ -1505,13 +1532,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 1. Bearer-Schema ist registriert, liefert mit `BearerEnabled=false` immer 401 und mit `true` (Testprofil) einen gültigen Prinzipal aus einem Keycloak-Token (Typ X).
 2. Fake-`IUserProvisioningStep` (Order 750) läuft beim Login ohne CE-Änderung und sieht `Groups`.
-3. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-4. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-5. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+3. Bearer-Schema mit `Enabled=false` → 401; mit aktivem Fake-Bearer erhält ein Prinzipal `Kind = App` ohne passenden `ApiScope` 403; ein Fake-Provisioning-Schritt mit `Order = 750` läuft genau zwischen den CE-Schritten der Slots davor und danach.
+4. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+5. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+6. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
 - L1 Principal-Mapping, L3 Schemata, Typ-X-Tests (Bearer an/aus, Fake-Provisioning-Step).
+- 16 §7.2: `ProvisioningPipelineOrderTests`, `BearerSchemeDisabledTests` (`Funk.Identity.Tests`).
 
 ### WP-I0-205 – Erweiterungspunkt F1: Oberfläche Integrations, Webhook-Ingress, Verifier-Registry, integration_connections, Platzhalter-Contracts
 
@@ -1551,13 +1580,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 1. Ohne Verifier: 404; mit Fake-Verifier und Fake-Handler wird eine Test-Delivery idempotent (zweite Zustellung derselben Delivery-ID ohne Wirkung) verarbeitet – ohne CE-Änderung (Typ X).
 2. Architekturtest R10: Platzhalter-Projekte enthalten nur Interfaces, DTOs, Enums, Konstanten.
-3. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-4. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-5. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+3. AK-16-07: `POST /api/integrations/forgejo/webhooks/{connection_id}/` (beliebige GUID) ohne Cookie → 404 `{"error": "Page not found."}`; `…/webhooks/not-a-guid/` → 404; mit `FakeWebhookSignatureVerifier` + `FakeWebhookIngress`: gültige Signatur → 202, ungültige → 401, dieselbe Delivery-ID zweimal → 200 `duplicate`, Header in Kleinbuchstaben (`x-forgejo-signature`) wird erkannt, Body > 5 MiB → 413, 601. Request/min derselben `connection_id` → 429; die Endpunkt-Datei liegt in `Funk.BuildingBlocks.Web/Integrations/`.
+4. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+5. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+6. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
 - L3 Ingress (Signatur falsch → 401, Roh-Body unverändert), Typ-X-Test, L0 R10/R11.
+- 16 §7.2: `IntegrationWebhookRouteTests` (`Funk.Integrations.Tests`, CE-Teil).
 
 ### WP-I0-206 – Erweiterungspunkt F2: Forgejo-Container, Keycloak-Client funk-forgejo, forgejo-init, SSO-Smoke
 
@@ -1590,13 +1621,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 1. L6 `ForgejoSsoSmokeTests`: derselbe Keycloak-Testbenutzer meldet sich an funk. und an Forgejo an; Forgejo-Benutzer und funk.-Benutzer tragen dieselbe Keycloak-Identität.
 2. Forgejo-LTS-Tag ist gepinnt (O-04) und im Airgap-Image-Inventar `deploy/airgap/images.yaml` eingetragen.
-3. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-4. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-5. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+3. AK-16-08: `aspire run` (dev/test) – Forgejo `/api/healthz` 200, SSO-Login des Testbenutzers `member` in Forgejo über Keycloak erfolgreich, `artifacts/dev/forgejo.json` enthält die OAuth-App mit beiden Redirect-URIs aus 16 D16-ADR-09.
+4. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+5. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+6. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
 - L6 Forgejo-SSO-Smoke im Profil `test`.
+- 16 §7.2: `ForgejoSsoSmokeTests` (`Funk.AppHost.Tests`).
 
 ### WP-I0-207 – Erweiterungspunkt H6: SignalR-Hub /live/events/, Gruppen, IRealtimePublisher, IRealtimeGroupAuthorizer, LiveEventsService
 
@@ -1633,13 +1666,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 **Akzeptanzkriterien**
 
 1. `RealtimeSmokeTests` (Hub-Teil): angemeldeter Benutzer tritt `user:{id}` bei, fremde Gruppen werden abgewiesen; Fake-Gruppen-Präfix per Fake-Authorizer ohne CE-Änderung (Typ X).
-2. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-3. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-4. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+2. Beitritt zu einer fremden Gruppe `ws:{id}`/`project:{id}`/`user:{id}` wird abgewiesen; ein Fake-Präfix mit registriertem `IRealtimeGroupAuthorizer` ist beitretbar, ohne Registrierung nicht.
+3. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+4. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+5. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
 - L6 Hub-Smoke, Typ-X-Test, L2 `LiveEventsService` (Reconnect).
+- 16 §7.2: `RealtimeGroupAuthorizationTests` (`Funk.RealtimeEvents.Tests`; in 15 §6 als `HubGroupAuthorizationTests` geführt – ein Testname, Alias im Inventar).
 
 ### WP-I0-208 – Erweiterungspunkte Querschnitt: Reservierungen + Kollisionstests, R11/R12, Frontend-Registries (Routen, Sidebar, Admin), Fake-Extensions
 
@@ -1660,10 +1695,13 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 - Backend: `src/building-blocks/Funk.BuildingBlocks/Extensions/Reservations.cs`
 - Backend: `src/hosts/Funk.Hosting/FunkModuleCatalog.cs`
 - Backend: `tests/Funk.ArchitectureTests/{ReservationCollisionTests,RouteReservationTests,ExtensionPointInventoryTests}.cs`
+- Backend: `tools/ci/assert-no-package-code`
+- Backend: `tests/Funk.ArchitectureTests/{ReservationCollisionTests,RouteReservationTests,ExtensionRules,ExtensionPointInventoryTests,ReservedContractFieldsTests}.cs`
 - Frontend: `frontend/libs/web/extensions/src/`
 - Frontend: `frontend/libs/admin/extensions`, `frontend/libs/space/extensions`
 - Frontend: `frontend/libs/shared/cdk/src/extensions/` (`RouteExtension<K>`, `mergeRoutes`, `injectRegistry`)
 - Frontend: `frontend/tools/extension-registry-check`
+- Frontend: `frontend/apps/e2e/web/extensions.spec.ts`
 
 **Referenzdokumente**
 
@@ -1677,9 +1715,12 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 1. Kollisionstests schlagen fehl, wenn eine CE-Route, ein Permission-Key oder eine Queue einen reservierten Namen benutzt.
 2. Eine Fake-Route über `ROUTE_EXTENSIONS` und ein Fake-Sidebar-Eintrag erscheinen ohne Änderung an CE-Dateien (Typ X, Vitest + Playwright).
 3. `ExtensionPointInventoryTests` und `extension-registry-check` gleichen `tests/extension-points.yaml` mit dem Code ab (jede P-Andockstelle aus 16 §1.4 hat Inkrement und Test).
-4. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-5. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-6. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+4. AK-16-03, AK-16-04, AK-16-17: `ReservationCollisionTests`, `RouteReservationTests`, `ExtensionRules` (R11/R12) und `tools/ci/assert-no-package-code` (Platzhalter-Projekte nur Interfaces/DTOs/Enums/Konstanten, keine Tabellen außer den in 16 §3.3/§3.4.2 als CE markierten) laufen in jedem Build mit 0 Verstößen.
+5. AK-16-01: `ExtensionPointInventoryTests` und `frontend/tools/extension-registry-check` melden für I0 0 fehlende Einträge in `tests/extension-points.yaml`; `ReservedContractFieldsTests` (AK-16-12) ist angelegt und wird von den Paketen I1–I4 um ihre V-Felder (16 §4.1/§4.2) ergänzt.
+6. E2E `frontend/apps/e2e/web/extensions.spec.ts` startet die Web-App mit `provideFakeExtensions()` (Build-Konfiguration `fake-extensions`, nur CI) und findet Fake-Route und Fake-Sidebar-Eintrag; Fake-Settings-Seite (WP-I1-203), Fake-Detail-Widget und Fake-Spreadsheet-Spalte (WP-I2-206) folgen.
+7. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+8. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+9. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
@@ -1771,7 +1812,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 **Akzeptanzkriterien**
 
 1. Alle Erfolgskriterien aus 01 §9 S1 (u. a. 50 Editoren p95 < 150 ms, 1 h Soak < 5 % Speicherwachstum, zwei Instanzen konvergieren über Valkey) als automatisierte Tests grün – oder Fallback-Kette (y-websocket → YDotNet-Fork → Auftraggeber) aktiviert und dokumentiert.
-2. Awareness-Relay funktioniert; damit wird `collaboration-cursor` in I4 aktiviert (Z-109).
+2. Awareness-Relay: der Awareness-Zustand von Client A erscheint bei Client B und wird beim Disconnect von A bei B entfernt (Playwright, 2 Clients mit Original-Provider, je Richtung ≥ 20 Wiederholungen ohne Fehlschlag); damit wird `collaboration-cursor` in I4 aktiviert (Z-109).
 3. Ergebnisbericht `docs/spikes/<Spike>-ergebnis.md` mit Messwerten; Messungen als automatisierte Tests, die danach dauerhaft in G4 laufen (DoD Typ S).
 4. Bei Abbruchkriterium: Fallback aus 01 §9 ohne weitere Diskussion aktiviert (außer ADR-000…009 betroffen → Auftraggeber).
 
@@ -1815,7 +1856,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 **Akzeptanzkriterien**
 
 1. Erfolgskriterien 01 §9 S2 erreicht oder Fallback F-S2-1 (Jint mit gebündeltem `@tiptap/html`) bzw. F-S2-2 dokumentiert aktiviert.
-2. Typisierte Attribute aus Original-yjs werden korrekt gelesen (S2-K6a, O-07-01).
+2. Typisierte Attribute aus Original-yjs (Zahl, Bool, `null`, Objekt) werden typgleich gelesen: die Korpusfälle S2-K6a ergeben JSON ohne Diff zum Original (O-07-01).
 3. Ergebnisbericht `docs/spikes/<Spike>-ergebnis.md` mit Messwerten; Messungen als automatisierte Tests, die danach dauerhaft in G4 laufen (DoD Typ S).
 4. Bei Abbruchkriterium: Fallback aus 01 §9 ohne weitere Diskussion aktiviert (außer ADR-000…009 betroffen → Auftraggeber).
 
@@ -1856,7 +1897,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Erfolgskriterien 01 §9 S3 erreicht oder Fallback SkiaSharp `SKDocument` aktiviert; Emoji außerhalb der BMP und Surrogatpaare korrekt (S3-K6).
+1. Erfolgskriterien 01 §9 S3 erreicht oder Fallback SkiaSharp `SKDocument` aktiviert; Emoji außerhalb der BMP und Surrogatpaare werden als Glyphen gerendert (Raster-Diff im Grenzwert) und sind als identischer Text extrahierbar (S3-K6).
 2. Lizenz/Plattform des Test-Rasterizers geklärt (Docnet.Core vs. PDFtoImage, O-07-04).
 3. Ergebnisbericht `docs/spikes/<Spike>-ergebnis.md` mit Messwerten; Messungen als automatisierte Tests, die danach dauerhaft in G4 laufen (DoD Typ S).
 4. Bei Abbruchkriterium: Fallback aus 01 §9 ohne weitere Diskussion aktiviert (außer ADR-000…009 betroffen → Auftraggeber).
@@ -2360,12 +2401,16 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-WS-003,CE-WS-004,CE-WS-006,CE-WS-007,CE-WS-024` grün (Mindestebenen 15 Anhang B).
+1. `PATCH /api/workspaces/{slug}/` (Name, Logo, Zeitzone, Organisationsgröße) liefert für Admin 200 und für Member/Guest den Original-403-Körper (Contract-Golden); „Update workspace“ ist für Nicht-Admins deaktiviert (DOM-Snapshot je Rolle).
+2. Workspace löschen: Bestätigung erst aktiv, wenn Workspace-Name und `delete my workspace` exakt eingegeben sind; danach Soft-Delete, Slug = `<slug>__<epoch>`, `profiles.last_workspace_id` geleert; der tägliche Bereinigungs-Job entfernt den Workspace endgültig nach 60 Tagen (`FixedClock`: Tag 59 vorhanden, Tag 60 entfernt).
+3. Settings-Sidebar mit den Kategorien Administration und Developer und genau den CE-Einträgen aus `SETTINGS_PAGES` (General, Members, Exports, Webhooks; kein Billing nach ADR-001); Einträge späterer Inkremente erscheinen erst mit ihrem Paket (01 §7.19).
+4. Stammdatenlisten Labels, States (mit berechnetem `order`) und aktive Estimates mit Punkten sowie das Workspace-Themes-CRUD entsprechen den Original-Goldens; die Cycle-/Modul-Listen entstehen „verschoben“ in I3 (`EP_OVERRIDE`).
+5. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+6. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+7. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+8. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+9. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+10. `ce-coverage-check --ids CE-WS-003,CE-WS-004,CE-WS-006,CE-WS-007,CE-WS-024` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -2585,12 +2630,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-WS-023` grün (Mindestebenen 15 Anhang B).
+1. Ordner mit vorhandenem Namen anlegen liefert den Original-Fehler und -Toast; Umbenennen, Entfernen und Drag&Drop in/aus Ordnern setzen `sequence` wie das Original (Golden der Favoritenliste nach jeder Aktion).
+2. Die Favoriten-Endpunkte akzeptieren alle Original-`entity_type`-Werte (project, cycle, module, view, page, issue, folder); die Sidebar rendert nur Typen mit `FAVORITE_ENTITY_RENDERERS`-Eintrag – in I1 genau `project` und `folder`, weitere mit WP-I3-002/-005/-008 und WP-I4-001 (Vitest).
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-WS-023` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -2649,12 +2696,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-PRJ-001,CE-PRJ-002,CE-PRJ-003` grün (Mindestebenen 15 Anhang B).
+1. Filter (My projects, Access, Lead, Members, Created date), Sortierung und Suche der Projektliste liefern auf dem Parity-Seed dieselbe Reihenfolge und Treffermenge wie das Original (Dual-Target-E2E, ≥ 1 Fall je Filter).
+2. `total_issues`, `completed_issues` (inkl. cancelled), `total_members`, `total_cycles`, `total_modules` stimmen je sichtbarem Projekt mit dem Original-Golden überein (je Rolle Admin/Member/Guest ein Szenario).
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-PRJ-001,CE-PRJ-002,CE-PRJ-003` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -2785,12 +2834,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-PRJ-008,CE-PRJ-009` grün (Mindestebenen 15 Anhang B).
+1. Archivieren setzt `archived_at`, löscht alle Favoriten des Projekts (DB-Assertion) und macht das Projekt schreibgeschützt (Schreib-Request → Original-Fehler); Wiederherstellen hebt beides auf; je Aktion genau ein Event `funk.project.archived.v1` bzw. `funk.project.unarchived.v1`.
+2. Löschen ist Soft-Delete mit Kaskade (Deferred für die Projekt-Wurzel, 02 R-D02-04), entfernt Deploy-Board und Favoriten und schreibt genau ein `funk.project.deleted.v1` (Event-Katalog-Snapshot).
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-PRJ-008,CE-PRJ-009` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -2845,12 +2896,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-PRJ-011,CE-PRJ-012,CE-PRJ-013,CE-PRJ-014,CE-PRJ-015` grün (Mindestebenen 15 Anhang B).
+1. Drag&Drop der Sidebar-Projekte schreibt `sort_order` in die Projekt-User-Properties mit denselben Werten wie die Berechnung in `packages/utils` des Originals (portierte Unit-Tests); „More/Hide“ greift bei derselben Projektanzahl wie das Original.
+2. Die Feature-Navigation zeigt je Projekt genau die Einträge, deren Toggle im Feature-Katalog aktiv ist und die die Rolle sehen darf (Matrix 5 Toggles × 3 Rollen gegen Original-DOM); „Leave project“ erscheint nur für Gäste.
+3. Tab-Navigation persistiert `preferences.navigation.default_tab` und `hide_in_more_menu` (Contract-Golden des PATCH).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-PRJ-011,CE-PRJ-012,CE-PRJ-013,CE-PRJ-014,CE-PRJ-015` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -2912,12 +2966,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-PRJ-016,CE-PRJ-017,CE-PRJ-018` grün (Mindestebenen 15 Anhang B).
+1. Projekt-Settings zeigt General, Members, Features, States, Labels, Estimates, Automations in Original-Reihenfolge aus `SETTINGS_PAGES`; ohne Projekte erscheint die Original-Leerseite, sonst Weiterleitung auf das erste Projekt (E2E).
+2. „Update project“ ist für Workspace- und Projekt-Admins erlaubt, sonst 403 (Permission-Matrix); die Identifier-Prüfung liefert dieselben Codes wie WP-I0-005; ohne eigene Angabe erbt das Projekt die Workspace-Zeitzone (Golden).
+3. `ProjectUserViewsEndpoint` (view_props, default_props, preferences inkl. `pages.block_display`, sort_order) entspricht dem Original-Golden; der Preferences-Merge je Mitglied folgt der Entscheidung in 04 (Spalte `decision`) zum fehlenden Self-Check.
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-PRJ-016,CE-PRJ-017,CE-PRJ-018` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -2982,12 +3039,16 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-PRJ-019,CE-PRJ-020,CE-PRJ-021,CE-PRJ-022` grün (Mindestebenen 15 Anhang B).
+1. Aktivieren von `intake_view` legt genau einen Default-Intake an (idempotent bei erneutem Aktivieren); jede Toggle-Änderung wirkt sofort per PATCH und erscheint im Projekt-Payload (Contract-Golden).
+2. Deaktivierte Features zeigen den Original-Leerzustand; der Link zu den Feature-Settings erscheint nur für Admins (DOM-Snapshot je Rolle).
+3. Rollenwechsel von Projektmitgliedern prüft die Hierarchie gegen die Workspace-Rolle wie das Original (Permission-Matrix inkl. HARM-00); neu hinzugefügte Mitglieder erhalten die Original-Mail (G-MAIL).
+4. Ohne „Guest access“ (`guest_view_all_features = false`) sehen Gäste nur eigene Objekte; die Regel ist eine zentrale Prüfung (05 §3.14) mit L3-Tests, die von den Paketen der Work Items (I2), Views (I3) und Pages (I4) wiederverwendet wird.
+5. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+6. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+7. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+8. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+9. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+10. `ce-coverage-check --ids CE-PRJ-019,CE-PRJ-020,CE-PRJ-021,CE-PRJ-022` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -3053,12 +3114,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-PRJ-023,CE-PRJ-024,CE-PRJ-025,CE-PRJ-026,CE-PRJ-027` grün (Mindestebenen 15 Anhang B).
+1. Gruppen backlog/unstarted/started/completed/cancelled mit Original-Farben und -Default-Namen; der unsichtbare `triage`-State erscheint nicht in der Liste (DOM-Snapshot, Golden).
+2. „Mark as default“ setzt atomar genau einen Default-State je Projekt (10 parallele Requests → genau ein Default); Löschen ist für Default-State, einzigen State einer Gruppe und States mit Work Items gesperrt (je Fall Original-Fehlercode).
+3. Drag&Drop innerhalb und zwischen Gruppen berechnet `sequence` wie das Original (portierte Unit-Tests); Name max. 100 Zeichen (101 → Original-Validierungsfehler).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-PRJ-023,CE-PRJ-024,CE-PRJ-025,CE-PRJ-026,CE-PRJ-027` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -3201,12 +3265,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-PRJ-034,CE-PRJ-035,CE-PRJ-036,CE-PRJ-037,CE-PRJ-038` grün (Mindestebenen 15 Anhang B).
+1. Assistent: Templates Fibonacci, Linear, Squares, T-Shirt Sizes, Easy to hard, Custom liefern die Original-Werte; 2–6 Werte erzwungen; Validierung (leer, Duplikat, Zahl > 0 bei Points, Text bei Categories, max. 20 Zeichen) zeigt die Original-Inline-Fehler (Vitest je Regel).
+2. Zeit-Schätzung bleibt über `ESTIMATE_SYSTEM_FLAGS = { points: true, categories: true, time: false }` ausgeblendet (DOM wie Original); Löschen eines Punkts hängt betroffene Work Items um und nummeriert neu (L3), Löschen eines Systems schaltet Estimates im Projekt ab.
+3. Aktivierung über `Project.estimate` per Projekt-PATCH; `last_used` kennzeichnet genau ein aktives System (Golden).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-PRJ-034,CE-PRJ-035,CE-PRJ-036,CE-PRJ-037,CE-PRJ-038` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -3276,12 +3343,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-PROF-001,CE-PROF-002,CE-PROF-003,CE-PROF-004,CE-PROF-005,CE-PROF-006` grün (Mindestebenen 15 Anhang B).
+1. „Change email“ öffnet die Keycloak-Kontokonsole (Deep-Link aus `FunkAuthOptions`, DEV-UI-04); funk. übernimmt E-Mail und `is_email_verified` beim nächsten Login aus den Claims (`EmailSyncOnLoginTests`); die Endpunkte `email/generate-code/` und `PATCH email/` existieren nicht (404).
+2. `DELETE /api/users/me/` (nicht für Instanz-Admins → 400) deaktiviert Mitgliedschaften, löscht Workspace-Einladungen der E-Mail, setzt das Profil zurück, löscht alle `user_sessions`, deaktiviert API-Tokens, sendet `user_deactivation_email` (G-MAIL) und antwortet 204; das Keycloak-Konto bleibt unverändert, funk. hält kein Keycloak-Admin-Token (D05-ADR-08, `DeactivateAccountTests`).
+3. `PATCH /api/users/me/` akzeptiert nur die Whitelist aus 05 SEC-36 (`UserMassAssignmentTests`); Avatar/Cover nur mit eigenen Assets; Sprache nur `de`/`en`, Zeitzone und Wochenstart speichern sofort (Golden).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-PROF-001,CE-PROF-002,CE-PROF-003,CE-PROF-004,CE-PROF-005,CE-PROF-006` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -3336,12 +3406,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-AUTH-030` grün (Mindestebenen 15 Anhang B).
+1. Onboarding-Schritte wie Original ohne Passwortschritt (Eintrag in `ui-deviations.yaml`); der Rollen-/Use-Case-Schritt erscheint nicht (im Original nur Cloud); offene Einladungen werden angeboten, sonst Workspace-Anlage (E2E für beide Pfade).
+2. `PATCH /api/users/me/onboard/` setzt `is_onboarded = true` (Contract-Golden); ein erneuter Aufruf von `/onboarding` leitet in den Workspace; „Konto wechseln“ löst den RP-Logout aus.
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-AUTH-030` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -3505,9 +3577,13 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Galerie-Eintrag mit allen Varianten/Zuständen; DOM-Vertrag = Referenz-Galerie; Visual in allen Themes (Chromium).
-2. Tastatur/Fokus (AX3/AX4) wie Original; portierte `packages/blocks`-Tests grün (falls vorhanden).
-3. `ce-coverage-check --ids CE-I18N-005,CE-I18N-006,CE-I18N-007,CE-I18N-008,CE-I18N-009` grün (Mindestebenen 15 Anhang B).
+1. Vor dem ersten Paint ist `<html data-theme>` aus `localStorage.theme` gesetzt (Default `system` über `prefers-color-scheme`, OS-Wechsel live); Web kennt `light`, `dark`, `light-contrast`, `dark-contrast`, `custom`, Admin/Space nur `light`/`dark`/`system` (Theme-Flash-Test).
+2. Die Auswahl im Profil speichert `profiles.theme` mit Promise-Toast und lädt neu; das Profil-Theme wird genau einmal je Sitzung übernommen (E2E); der Power-K-Befehl folgt mit WP-I5-009.
+3. Der Custom-Theme-Generator erzeugt für 20 Referenz-Farbpaare dieselben 14-stufigen OKLCH-Paletten, Alpha-Stufen und Kontrastfarben wie der Original-Generator (Golden aus dem Original-Code, exakte Gleichheit); Import/Download als JSON ist roundtrip-stabil.
+4. High Contrast: genau 33 Token-Overrides je Variante (18 Rahmen-, 15 Label-/Text-Tokens) wie Original (G-CSS); Visual aller fünf Web-Themes je Galerie-Seite ≤ 0,1 %.
+5. Galerie-Eintrag mit allen Varianten/Zuständen; DOM-Vertrag = Referenz-Galerie; Visual in allen Themes (Chromium).
+6. Tastatur/Fokus (AX3/AX4) wie Original; portierte `packages/blocks`-Tests grün (falls vorhanden).
+7. `ce-coverage-check --ids CE-I18N-005,CE-I18N-006,CE-I18N-007,CE-I18N-008,CE-I18N-009` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -3556,9 +3632,12 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Galerie-Eintrag mit allen Varianten/Zuständen; DOM-Vertrag = Referenz-Galerie; Visual in allen Themes (Chromium).
-2. Tastatur/Fokus (AX3/AX4) wie Original; portierte `packages/blocks`-Tests grün (falls vorhanden).
-3. `ce-coverage-check --ids CE-UIX-001,CE-UIX-002,CE-UIX-003,CE-UIX-004,CE-UIX-005` grün (Mindestebenen 15 Anhang B).
+1. Escape schließt nur den obersten Dialog; Outside-Click ignoriert Portale und Elemente mit `data-prevent-outside-click` (Vitest mit verschachtelten Dialogen).
+2. Die festen Tab-Indizes der Formulare (Work Item, Intake, Label, Projekt, Cycle, Modul, View, Page) stammen aus den Original-Konstanten und sind mobil deaktiviert (Unit-Test gegen `packages/constants`).
+3. Leerzustände (Detailed/Simple/Section) und Skeletons DOM-gleich zur Referenz-Galerie, Visual ≤ 0,1 %; globale Modal-Hosts öffnen über `GLOBAL_MODALS` (CE-Einträge registriert, Fake-Modal erscheint).
+4. Galerie-Eintrag mit allen Varianten/Zuständen; DOM-Vertrag = Referenz-Galerie; Visual in allen Themes (Chromium).
+5. Tastatur/Fokus (AX3/AX4) wie Original; portierte `packages/blocks`-Tests grün (falls vorhanden).
+6. `ce-coverage-check --ids CE-UIX-001,CE-UIX-002,CE-UIX-003,CE-UIX-004,CE-UIX-005` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -3612,9 +3691,13 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Galerie-Eintrag mit allen Varianten/Zuständen; DOM-Vertrag = Referenz-Galerie; Visual in allen Themes (Chromium).
-2. Tastatur/Fokus (AX3/AX4) wie Original; portierte `packages/blocks`-Tests grün (falls vorhanden).
-3. `ce-coverage-check --ids CE-UIX-006,CE-UIX-007,CE-UIX-008,CE-UIX-010,CE-UIX-011,CE-UIX-012,CE-UIX-013` grün (Mindestebenen 15 Anhang B).
+1. LocalStorage-Präferenzen synchronisieren sich zwischen Komponenten derselben Seite per Event ohne Reload (Vitest mit zwei Konsumenten).
+2. Stale-Chunk: ein fehlender Chunk führt zu höchstens einem Reload je 30 s, danach Fehlerseite (E2E mit manipuliertem Chunk).
+3. Alle Legacy-Redirects aus CE-UIX-012 (`projects/:pid/settings/*`, `analytics`, `settings/api-tokens`, `projects/:pid/inbox`, `accounts/sign-up`, `sign-in`, `signin`, `login`, `register`, `profile/*`, `settings/account/*`) führen auf dieselben Ziele wie das Original; Anmelde-Ziele führen auf den Keycloak-Einstieg (tabellengetriebener E2E-Test).
+4. 404-, Fehler- und Zugriffsseiten DOM-/Visual-gleich; die Warnung bei ungespeicherten Änderungen erscheint bei `beforeunload` und bei Link-Klick (E2E); Link-Icons und URL-/E-Mail-/IP-Erkennung bestehen die portierten Original-Tests aus `packages/utils`.
+5. Galerie-Eintrag mit allen Varianten/Zuständen; DOM-Vertrag = Referenz-Galerie; Visual in allen Themes (Chromium).
+6. Tastatur/Fokus (AX3/AX4) wie Original; portierte `packages/blocks`-Tests grün (falls vorhanden).
+7. `ce-coverage-check --ids CE-UIX-006,CE-UIX-007,CE-UIX-008,CE-UIX-010,CE-UIX-011,CE-UIX-012,CE-UIX-013` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -3939,9 +4022,9 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Testumfang**
 
-- Typ-X-Tests (CE-Default unverändert, Fake-Erweiterung wirkt ohne CE-Änderung), L0-Inventarabgleich `ExtensionPointInventoryTests`/`extension-registry-check`.
+- 16 §7.2: `StateCatalogSourceTests`, `LabelCatalogSourceTests` (`Funk.Projects.Tests`).
 
-### WP-I1-202 – Erweiterungspunkt Feature-Kataloge: IProjectFeatureCatalog, IWorkspaceFeatureCatalog, Contributors, PROJECT_FEATURES
+### WP-I1-202 – Erweiterungspunkt Feature-Kataloge: IProjectFeatureCatalog, IWorkspaceFeatureCatalog, IProjectFeatureContributor/IWorkspaceFeatureContributor, PROJECT_FEATURES
 
 | Merkmal | Wert |
 |---|---|
@@ -3969,13 +4052,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 1. Die fünf CE-Toggles (`cycle_view`, `module_view`, `issue_views_view`, `page_view`, `intake_view`) verhalten sich wie das Original (Contract-Golden des Projekt-Payloads unverändert).
 2. Fake-Contributor fügt einen Schalter hinzu, der in der Settings-Liste erscheint und im Payload ausgegeben wird – ohne CE-Änderung (Typ X).
-3. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-4. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-5. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+3. AK-16-10: mit `FakeProjectFeatureContributor("is_fake_enabled")` (Implementierung von `IProjectFeatureContributor`, E-26) erscheint das Feld in `GET …/projects/{id}/` und in der Settings-Liste „Features“ (DOM-Snapshot), ohne CE-Codeänderung; `IWorkspaceFeatureContributor` analog mit `WORKSPACE_FEATURES` (CE: leer).
+4. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+5. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+6. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
-- Typ-X-Tests (CE-Default unverändert, Fake-Erweiterung wirkt ohne CE-Änderung), L0-Inventarabgleich `ExtensionPointInventoryTests`/`extension-registry-check`.
+- 16 §7.2: `FeatureCatalogTests` (`Funk.Projects.Tests`, `Funk.Workspaces.Tests`).
 
 ### WP-I1-203 – Erweiterungspunkte UI-Registries I1: SETTINGS_PAGES, SIDEBAR_ITEMS (dynamisch), FAVORITE_ENTITY_RENDERERS, MEMBER_ROW_DECORATORS, ROLE_OPTIONS, GLOBAL_MODALS, ESTIMATE_SYSTEM_FLAGS
 
@@ -4004,9 +4088,10 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 **Akzeptanzkriterien**
 
 1. `extension-registry-check` meldet für jede Registry CE-Einträge und einen Fake-Eintrag-Test (Typ X).
-2. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-3. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-4. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+2. AK-16-16: je Token dieses Pakets (`SETTINGS_PAGES`, `SIDEBAR_ITEMS`, `FAVORITE_ENTITY_RENDERERS`, `MEMBER_ROW_DECORATORS`, `ROLE_OPTIONS`, `GLOBAL_MODALS`, `ESTIMATE_SYSTEM_FLAGS`) zwei Vitest-Fälle: CE-Default = Original-DOM, Fake erscheint an der richtigen Stelle; `extensions.spec.ts` findet die Fake-Settings-Seite.
+3. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+4. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+5. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
@@ -4077,13 +4162,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 1. Fake-Key-Provider ergänzt einen Instanz-Key, der in `GET /api/instances/` (Admin) erscheint – ohne CE-Änderung (Typ X).
 2. Spalten `teamspace_id` existieren nullable, werden in CE-Verträgen nicht ausgegeben (Contract-Goldens unverändert).
-3. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-4. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-5. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+3. Die 14 Instanz-Schlüssel aus WP-I0-003 werden als CE-Default-Provider `CoreInstanceConfigKeyProvider` registriert; `InstanceConfigurationStore` enthält danach keine fest verdrahtete Schlüsselliste mehr (Architekturtest), `GET /api/instances/` bleibt Golden-gleich.
+4. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+5. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+6. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
-- Typ-X-Tests (CE-Default unverändert, Fake-Erweiterung wirkt ohne CE-Änderung), L0-Inventarabgleich `ExtensionPointInventoryTests`/`extension-registry-check`.
+- 16 §7.2: `InstanceConfigKeyProviderTests` (`Funk.Instance.Tests`).
 
 ### WP-I1-999 – Abnahme I1 – Workspace, Projekte, Konto (G5)
 
@@ -4250,12 +4336,16 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-WI-009,CE-WI-010,CE-WI-011,CE-WI-012,CE-WI-013,CE-WI-014` grün (Mindestebenen 15 Anhang B).
+1. `/:ws/browse/IDENT-seq` löst über `IWorkItemReferenceResolver` auf; Intake-Items leiten ins Intake, die Legacy-URL `/projects/:pid/issues/:id` leitet über den Meta-Endpunkt um, ein unbekannter Identifier zeigt „View other work items“ (E2E, je Fall ein Schritt).
+2. Der Detail-Endpunkt liefert `cycle_id`, `module_ids`, `label_ids`, `assignee_ids`, Zähler, `is_subscribed` und alle `expand`-Varianten (`issue_reactions`, `issue_attachments`, `issue_link`, `parent`) wie das Original-Golden; Gäste ohne Freigabe erhalten den Original-Fehler.
+3. Delta-Sync (v2-Paginierung nach `updated_at`, optional mit Beschreibung, IDs archivierter/gelöschter Items seit `updated_at__gt`) liefert bei drei Abrufen mit Änderungen dazwischen genau die geänderten Datensätze (L3, `GlobalPaginator`).
+4. Kopfaktionen (Subscribe/Unsubscribe, Copy link mit absoluter URL, Make a copy, Open in new tab, Archive/Restore, Delete) erzeugen dieselben Requests und Weiterleitungen wie das Original (Dual-Target-E2E).
+5. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+6. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+7. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+8. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+9. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+10. `ce-coverage-check --ids CE-WI-009,CE-WI-010,CE-WI-011,CE-WI-012,CE-WI-013,CE-WI-014` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -4303,12 +4393,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-WI-015,CE-WI-016,CE-WI-017,CE-WI-018,CE-WI-019` grün (Mindestebenen 15 Anhang B).
+1. Peek in Side Peek, Modal und Full Screen mit Moduswechsel und persistiertem Modus wie Original; Visual je Modus ≤ 0,2 %.
+2. Schließen per Escape/Outside-Click beachtet die Ausnahmen für Portale, Modals und Eingabefelder; danach liegt der Fokus wieder auf dem auslösenden Listenelement (Playwright prüft `document.activeElement`).
+3. Die Beschreibung im Peek speichert per Autosave mit der Debounce-Zeit des Originals (Request-Zählung im E2E); Fehlerzustand „Work item does not exist“, Skeleton und Hover-Vorschaukarte (Identifier, State, Name, Priority, Datum) DOM-gleich.
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-WI-015,CE-WI-016,CE-WI-017,CE-WI-018,CE-WI-019` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -4324,7 +4417,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Typ (DoD 15 §3.15.3) | V – Vertikaler Schnitt |
 | Größe | L |
 | parallelisierbar | ja |
-| Abhängigkeiten | WP-I2-001 |
+| Abhängigkeiten | WP-I2-001, WP-I2-002 |
 | CE-IDs | CE-WI-020, CE-WI-021, CE-WI-022, CE-WI-023, CE-WI-024, CE-WI-027, CE-WI-028, CE-WI-029, CE-WI-030 |
 
 **Ziel.** Property-Sidebar und alle Dropdowns außer Cycle/Modul (diese folgen mit I3); State-Wechsel über die State-Change-Pipeline; Date-Picker (Propel `Calendar`).
@@ -4368,12 +4461,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-WI-020,CE-WI-021,CE-WI-022,CE-WI-023,CE-WI-024,CE-WI-027,CE-WI-028,CE-WI-029,CE-WI-030` grün (Mindestebenen 15 Anhang B).
+1. Jede Sidebar-Property speichert sofort per PATCH; State-Wechsel laufen ausschließlich über `IWorkItemStateChanger` (Origin `User`; `StateWriteArchitectureTest` grün).
+2. Member-Dropdown: aktueller Nutzer zuerst mit „(You)“, deaktivierte Mitglieder nicht wählbar, „No assignee“, Avatar-Gruppe max. 2 + „+N“ (Vitest); das Label-Dropdown legt für Projekt-Admins ein Label aus dem Suchbegriff an, für andere Rollen nicht (Permission-Matrix).
+3. Estimate-Dropdown lädt lazy und zeigt nur Punkte des aktiven Systems; Projekt-Dropdown ohne archivierte Projekte mit Suche über Name und Identifier; Datumsauswahl mit min/max und Wochenstart aus dem Profil (Vitest); Cycle-/Module-Dropdown folgen mit WP-I3-007/-010.
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-WI-020,CE-WI-021,CE-WI-022,CE-WI-023,CE-WI-024,CE-WI-027,CE-WI-028,CE-WI-029,CE-WI-030` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -4434,12 +4530,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-WI-031,CE-WI-032,CE-WI-033,CE-WI-034` grün (Mindestebenen 15 Anhang B).
+1. Parent setzen prüft über `IWorkItemHierarchyPolicy` „gleiches Projekt, kein Zyklus“ mit Original-Fehlercodes (L3: direkter Zyklus, Zyklus über drei Ebenen, fremdes Projekt).
+2. Die UI bietet genau `relates_to`, `duplicate`, `blocked_by`, `blocking`; die API akzeptiert alle 10 Relationstypen und speichert eine Zeile je Paar in Original-Richtung (AK-16-13, Golden).
+3. Das Sub-Work-Items-Widget zeigt „x/y Done“ nach der Zählregel des Originals mit eigenen Display-Filtern; die Widget-Aktionsleiste öffnet nach einer Aktion die betreffende Sektion (E2E).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-WI-031,CE-WI-032,CE-WI-033,CE-WI-034` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -4510,12 +4609,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-WI-035,CE-WI-036` grün (Mindestebenen 15 Anhang B).
+1. Links: URL-Normalisierung und Duplikatprüfung je Work Item wie Original (Golden mit 5 Normalisierungsfällen); Titel/Favicon ergänzt der Link-Crawler aus WP-I2-102 asynchron.
+2. Anhänge: Presigned POST mit `ATTACHMENT_MIME_TYPES` und `FILE_SIZE_LIMIT` (unerlaubter Typ bzw. zu groß → Original-Fehler), Upload-Bestätigung setzt `is_uploaded`, Löschen nur nach Bestätigung und für berechtigte Rollen (Permission-Matrix); Fortschrittsanzeige im E2E sichtbar.
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-WI-035,CE-WI-036` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -4588,12 +4689,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-WI-037,CE-WI-038,CE-WI-044,CE-I18N-017` grün (Mindestebenen 15 Anhang B).
+1. Kommentare: Enter sendet; nur der Autor bearbeitet (`edited_at` gesetzt) bzw. löscht; „Copy link“ springt zum hervorgehobenen Kommentar; INTERNAL/EXTERNAL umschaltbar nur bei veröffentlichtem Projekt; `issue_comment.description` wird als `null` ausgegeben (OE-69, DEV-DM-03).
+2. Reaktionen sind eindeutig je (Objekt, Akteur, Emoji), werden als Dezimal-Codepoint gespeichert und erzeugen Activity (Golden); eine doppelte Reaktion liefert den Original-Fehler.
+3. `work_item_mentions` wird bei jedem Speichern aus den `mention-component`-Knoten von Beschreibung und Kommentar abgeglichen (hinzugefügt/entfernt, L3); Erwähnte werden Abonnenten; die Mention-Benachrichtigung erzeugt WP-I5-005 aus den Outbox-Events.
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-WI-037,CE-WI-038,CE-WI-044,CE-I18N-017` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -4735,12 +4839,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-WI-045,CE-WI-046,CE-WI-047,CE-WI-048` grün (Mindestebenen 15 Anhang B).
+1. Archivieren nur in State-Gruppe completed/cancelled (sonst Original-Fehler, Bulk: Fehlercode 4091); Wiederherstellen im Archiv-Menü und auf der Detailseite (Golden).
+2. Löschen ist Soft-Delete mit Kaskade inkl. Sub-Issues und Activity (03 §3.5), nur für Ersteller oder Admin; Bulk-Delete nur für Admins (Permission-Matrix).
+3. Archivliste mit Filter, Gruppierung und `show_sub_issues`; Archiv-Detail read-only mit Banner (Visual).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-WI-045,CE-WI-046,CE-WI-047,CE-WI-048` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -4801,12 +4908,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-WI-049` grün (Mindestebenen 15 Anhang B).
+1. Drafts liegen auf Workspace-Ebene mit optionalem Projekt; „Move to project“ erzeugt ein Work Item mit fortlaufender `sequence_id` und entfernt den Draft (L3, Golden); den Empty-State-Button sehen nur Admin/Member.
+2. Liste mit Zähler und „Load more“ (Cursor-Golden); Doppelklick öffnet die Bearbeitung, „Make a copy“ dupliziert den Draft (E2E).
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-WI-049` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -4854,12 +4963,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-LV-001,CE-LV-002,CE-LV-003` grün (Mindestebenen 15 Anhang B).
+1. Ein Layout-Wechsel sendet genau einen PATCH auf `display_filters.layout` und lädt die Liste neu (Request-Zählung im E2E); das Segment-Control erscheint ab Breakpoint `@4xl`, darunter das Mobil-Menü (Visual in zwei Viewports).
+2. Seitenkopf mit Breadcrumb „Work Items“, Anzahl-Chip mit Tooltip, Badge „Public“ bei veröffentlichtem Projekt, Filter, Display und „Add work item“ DOM-gleich; der Button „Analytics“ erscheint erst mit WP-I5-002 (01 §7.19); „…“-Menü mit „Open in new tab“ und „Copy link“.
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-LV-001,CE-LV-002,CE-LV-003` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -4991,12 +5102,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-LV-012,CE-LV-013,CE-LV-014,CE-LV-015` grün (Mindestebenen 15 Anhang B).
+1. Die Filtersektionen Assignee, Created by, Mention, Label, Priority, State, State group, Project, Start/Due date (before/after/range) erzeugen dieselben Query-Parameter wie das Original (Vitest-Tabelle je Sektion); Cycle/Module folgen mit WP-I3-007/-010.
+2. Das Display-Dropdown bietet je Seite und Layout genau die Original-Optionen und -Defaults (Group by, Sub-group by nur Kanban, Order by, Show sub-work items, Show empty groups, 13 Property-Toggles; Tabellentest gegen `packages/constants`).
+3. Projekt- und Workspace-User-Properties (Workspace lazy per `get_or_create`) speichern filters, rich_filters, display_filters, display_properties wie Original (Contract-Golden GET/PATCH).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-LV-012,CE-LV-013,CE-LV-014,CE-LV-015` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -5041,12 +5155,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-LV-017,CE-LV-018,CE-LV-019` grün (Mindestebenen 15 Anhang B).
+1. Gruppen mit sticky Kopf (Icon, Titel, Anzahl, Collapse), ausblendbaren leeren Gruppen und „Load more“ je Gruppe; Zeilen sind virtualisiert – bei 1 000 Work Items enthält das DOM weniger als 200 Zeilen-Elemente (Playwright-Zählung).
+2. Klick öffnet den Peek, Ctrl/Cmd- oder Mittelklick einen neuen Tab; der Chevron lädt Sub-Items und rückt sie nach `nestingLevel` ein (E2E).
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-LV-017,CE-LV-018,CE-LV-019` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -5148,12 +5264,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-LV-025,CE-LV-026,CE-LV-027,CE-LV-028` grün (Mindestebenen 15 Anhang B).
+1. Monats- und Wochenansicht mit Wochenstart aus dem Profil, Option „Wochenenden anzeigen“ und Nachbartagen wie Original (Visual beider Ansichten); Einträge nach `target_date`.
+2. Drag auf einen anderen Tag setzt `target_date` genau auf den Zieltag, auch über Monatsgrenzen (PATCH-Golden); Quick-Add je Tag belegt `target_date` vor.
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-LV-025,CE-LV-026,CE-LV-027,CE-LV-028` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -5267,12 +5385,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-LV-034,CE-LV-035,CE-LV-036,CE-LV-037` grün (Mindestebenen 15 Anhang B).
+1. Spalten in fester Original-Reihenfolge aus `SPREADSHEET_COLUMNS`; editierbare Zellen (State, Priority, Assignees, Labels, Start, Due, Estimate) speichern per PATCH, Read-only-Spalten sind nicht editierbar; die Spalten Cycle und Modules registrieren WP-I3-007 bzw. WP-I3-010 über denselben Token (alle 14 Spalten ab I3).
+2. Das Spaltenmenü sortiert mit den Original-Bezeichnungen je Typ und setzt `order_by` (Vitest-Tabelle); Pfeiltasten wechseln Zellen, Enter öffnet das Dropdown, Shift/Ctrl-Mehrfachauswahl wie Original (Playwright-Tastaturtest).
+3. „N sub-work items“ öffnet die Detailseite am Anker `#sub-issues`; sticky erste Spalte mit Schatten beim horizontalen Scrollen (Visual).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-LV-034,CE-LV-035,CE-LV-036,CE-LV-037` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -5320,12 +5441,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-LV-038,CE-LV-039,CE-LV-040,CE-LV-041` grün (Mindestebenen 15 Anhang B).
+1. Quick-Add in List, Kanban, Calendar, Gantt und Spreadsheet: Titel + Enter legt optimistisch an (Promise-Toast), das Formular bleibt offen, der Gruppenwert ist vorbelegt (E2E je Layout).
+2. Quick-Action- und Rechtsklick-Menü zeigen je Kontext genau die Original-Einträge über `WORK_ITEM_ACTIONS` (Archive nur bei completed/cancelled); die Kontexte Cycle, Modul und Archiv folgen in I3 (Vitest-Tabelle Kontext × Eintrag).
+3. Die Inline-Property-Leiste zeigt standardmäßig die 16 Original-Properties und folgt `display_properties` (Vitest).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-LV-038,CE-LV-039,CE-LV-040,CE-LV-041` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -5371,12 +5495,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-LV-042,CE-LV-043,CE-LV-044,CE-LV-045` grün (Mindestebenen 15 Anhang B).
+1. Kontextabhängige Empty-States mit Original-Texten und -Aktionen bzw. „Clear all filters“ (DOM-Snapshot je Kontext; Kontexte späterer Inkremente mit deren Paketen).
+2. Der IntersectionObserver-Sentinel lädt jede Folgeseite genau einmal (Request-Zählung); Skeleton je Layout und Mutations-Spinner wie Original (Visual).
+3. Ein Fehler in einem Layout fängt die Fehlergrenze ab; die übrige Seite bleibt bedienbar (Vitest mit werfender Komponente).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-LV-042,CE-LV-043,CE-LV-044,CE-LV-045` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -5393,6 +5520,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Größe | M |
 | parallelisierbar | nein |
 | Abhängigkeiten | WP-I1-103, WP-I0-905, WP-I2-101, WP-I2-207 |
+| Vorlauf | ja – darf vor `WP-I1-999` beginnen (plan/01 L-8); abgenommen mit `WP-I2-999` |
 | CE-IDs | CE-PAGE-022, CE-PAGE-034, CE-PAGE-035, CE-PAGE-036 |
 
 **Ziel.** `PlEdLiteTextEditor` mit Enter-Key-Verhalten, Mentions, Emoji-Suggestion (offline), Links, Bild-Upload und Lite-Toolbars der Web-Hülle; Read-only-Anzeige von Kommentaren.
@@ -5446,6 +5574,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Größe | L |
 | parallelisierbar | nein |
 | Abhängigkeiten | WP-I2-021 |
+| Vorlauf | ja – darf vor `WP-I1-999` beginnen (plan/01 L-8); abgenommen mit `WP-I2-999` |
 | CE-IDs | CE-PAGE-021, CE-PAGE-027, CE-PAGE-028, CE-PAGE-029, CE-PAGE-037, CE-PAGE-038, CE-PAGE-039, CE-PAGE-040, CE-I18N-010 |
 
 **Ziel.** `PlEdRichTextEditor` mit vollständigem Kern, Markdown-Funktionen, Clipboard/Paste, Platzhaltern, Deep-Links zu Blöcken, Anzeige-Konfiguration und Editor-Farbpalette; `value`-Sync und `isMigrationUpdate`.
@@ -5505,6 +5634,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Größe | L |
 | parallelisierbar | nein |
 | Abhängigkeiten | WP-I2-022 |
+| Vorlauf | ja – darf vor `WP-I1-999` beginnen (plan/01 L-8); abgenommen mit `WP-I2-999` |
 | CE-IDs | CE-PAGE-024, CE-PAGE-025, CE-PAGE-026, CE-PAGE-030, CE-PAGE-031, CE-PAGE-032, CE-PAGE-033 |
 
 **Ziel.** Slash-Command-Menü, Bubble-Menü, Side-Menü mit Drag-Handle und Block-Menü, Code-Block mit Syntax-Highlighting, Tabellen inkl. Handles, Bilder mit Upload-UI, Callouts mit Emoji-/Icon-Logo.
@@ -5569,6 +5699,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Größe | S |
 | parallelisierbar | nein |
 | Abhängigkeiten | WP-I2-023 |
+| Vorlauf | ja – darf vor `WP-I1-999` beginnen (plan/01 L-8); abgenommen mit `WP-I2-999` |
 | CE-IDs | CE-PAGE-023 |
 
 **Ziel.** `PlEdDocumentEditor` + `PlEdPageRenderer` + Outline-Extension für die Anzeige von Beschreibungs-Versionen.
@@ -5616,6 +5747,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Größe | L |
 | parallelisierbar | ja |
 | Abhängigkeiten | WP-I0-999, WP-I0-902 |
+| Vorlauf | ja – darf vor `WP-I1-999` beginnen (plan/01 L-8); abgenommen mit `WP-I2-999` |
 | CE-IDs | CE-OPS-017 |
 
 **Ziel.** Server-Schema aller Nodes/Marks, `HtmlSerializer`, `HtmlParser`, PM-JSON-Modell, `HtmlTextExtractor` (`description_stripped`), `YjsUpdateValidator`, `DocumentReferenceExtractor` (Mentions) und das HtmlSanitizer-Profil (Port von `nh3`) mit Binärprüfung.
@@ -5697,10 +5829,13 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract-Szenarien mit Original-Golden für alle HTTP-Endpunkte dieses Pakets; Replay grün.
-2. Job-/Consumer-Tests: Idempotenz (Inbox), Retry/Backoff, Zeitsteuerung mit `FixedClock`; neue Ereignistypen im Event-Katalog-Snapshot.
-3. Bei Cron-Jobs: Registrierung in `CronRegistrationTests` mit Original-Zeit (UTC).
-4. `ce-coverage-check --ids CE-OPS-018` grün (Mindestebenen 15 Anhang B).
+1. `SsrfSafeHttpHandler` blockiert Ziele in privaten, Loopback-, Link-Local-, CGNAT-, Multicast- und Cloud-Metadaten-Bereichen (IPv4, IPv6 inkl. IPv4-mapped) und verhindert DNS-Rebinding durch IP-Pinning nach der Auflösung (je Kategorie ≥ 1 L1-Test); Redirects und Proxies sind abgeschaltet (Test mit 302-Ziel).
+2. Allow-/Blocklisten aus der Options-Klasse laut 05 §3.17.2 (ENV-Aliasse wie Original) wirken je benanntem Client (`webhooks`, `link-crawler`, `integrations`, `forgejo`, `llm`, `unsplash`); ohne Allowlist-Eintrag bleibt ein internes Ziel gesperrt (OE-11).
+3. Der Link-Crawler liest Titel und Favicon (Data-URI) mit Timeout und Größenlimit wie Original, revalidiert jede Redirect-Stufe und liefert für 10 Referenz-Seiten (WireMock) dieselben Werte wie das Original-Golden.
+4. Contract-Szenarien mit Original-Golden für alle HTTP-Endpunkte dieses Pakets; Replay grün.
+5. Job-/Consumer-Tests: Idempotenz (Inbox), Retry/Backoff, Zeitsteuerung mit `FixedClock`; neue Ereignistypen im Event-Katalog-Snapshot.
+6. Bei Cron-Jobs: Registrierung in `CronRegistrationTests` mit Original-Zeit (UTC).
+7. `ce-coverage-check --ids CE-OPS-018` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -5746,9 +5881,11 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Unit-Tests ≥ 90 % Zeilen; Architekturtest für jede neue Regel; AppHost-Test, falls Topologie betroffen.
-2. Kurzreferenz in `docs/` des Repos `funk.`.
-3. `ce-coverage-check --ids CE-OPS-024` grün (Mindestebenen 15 Anhang B).
+1. `VolumeSeeder` (Bogus, `Randomizer.Seed = new Random(1337)`) erzeugt die Profile S/M/L aus 15 §3.14.3 in den Zielzeiten (S < 10 s, M < 60 s, L < 4 min auf Runner `perf`); zwei Läufe ergeben dasselbe Manifest (Anzahl und Hash je Tabelle). Profil XL folgt in WP-I7-109.
+2. `funk-cli create-dummy-data` nutzt denselben `VolumeSeeder` und bietet die Parameter des Original-Commands `create_dummy_data`; Smoke-Test gegen eine leere Instanz grün.
+3. Unit-Tests ≥ 90 % Zeilen; Architekturtest für jede neue Regel; AppHost-Test, falls Topologie betroffen.
+4. Kurzreferenz in `docs/` des Repos `funk.`.
+5. `ce-coverage-check --ids CE-OPS-024` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -5773,6 +5910,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 - Backend: `src/modules/WorkItems/Funk.WorkItems.Contracts/Query/`
 - Backend: `src/modules/WorkItems/Funk.WorkItems/Query/`
+- Frontend: `frontend/libs/web/extensions/src/filters.ts` (`FILTER_FIELDS`, `FILTER_OPERATORS`, `FILTER_INPUT_MODES` – CE: `[]`, nur Chips; 16 §5.5)
 
 **Referenzdokumente**
 
@@ -5784,13 +5922,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 1. Property-Test: Legacy- und Rich-Parser erzeugen für äquivalente Eingaben denselben AST.
 2. Fake-Feld-Provider ergänzt ein filter-, gruppier- und sortierbares Feld ohne CE-Änderung (Typ X).
-3. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-4. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-5. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+3. AK-16-11: Fake-Provider registriert Feld `fake_field`, Gruppe `fake_group`, Sortierung `fake_order`, Payload-Feld `fake_payload`: der Rich-Filter akzeptiert das Feld, der Legacy-Parameter nicht; die gruppierte Liste enthält die Gruppe; die Parser-Liste enthält genau `legacy` und `rich`; unbekannter Operator → 400 `invalid_filterset`.
+4. `FILTER_INPUT_MODES` ist mit CE-Default `[]` registriert (nur Chip-Eingabe wie Original; Vitest: Fake-Modus erscheint als Umschalter).
+5. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+6. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+7. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
-- Typ-X-Tests (CE-Default unverändert, Fake-Erweiterung wirkt ohne CE-Änderung), L0-Inventarabgleich `ExtensionPointInventoryTests`/`extension-registry-check`.
+- 16 §7.2: `FilterRegistryExtensionTests`, `GroupOrderRegistryExtensionTests`, `PayloadExtensionTests`, `FilterParserRegistryTests`, `BaseSetFilterTests` (`Funk.WorkItems.Tests`).
 
 ### WP-I2-202 – Erweiterungspunkt A1: work_items.type_id, Minimal-Tabelle work_item_types, IWorkItemTypeResolver
 
@@ -5826,7 +5966,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Testumfang**
 
-- Typ-X-Tests (CE-Default unverändert, Fake-Erweiterung wirkt ohne CE-Änderung), L0-Inventarabgleich `ExtensionPointInventoryTests`/`extension-registry-check`.
+- 16 §7.2: `WorkItemTypeMinimalSchemaTests` (`Funk.WorkItems.Tests`).
 
 ### WP-I2-203 – Erweiterungspunkt A9: Relationstyp-Katalog, IWorkItemHierarchyPolicy, IRelatedScopeCheck, RELATION_TYPES, TIMELINE_FLAGS
 
@@ -5856,13 +5996,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 **Akzeptanzkriterien**
 
 1. Seeds entsprechen `IssueRelationChoices`; Fake-Relationstyp erscheint in Dropdown und Gantt ohne CE-Änderung (Typ X).
-2. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-3. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-4. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+2. AK-16-13: der Seed enthält exakt die 10 Relationsschlüssel aus 16 §5.3; die API akzeptiert alle 10 `relation_type`-Werte wie das Original, die UI zeigt nur 4 (DOM-Snapshot = Original).
+3. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+4. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+5. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
-- Typ-X-Tests (CE-Default unverändert, Fake-Erweiterung wirkt ohne CE-Änderung), L0-Inventarabgleich `ExtensionPointInventoryTests`/`extension-registry-check`.
+- 16 §7.2: `RelationTypeSeedTests` (`Funk.Migrator.Tests`), `CrossProjectRelationTests`, `HierarchyPolicyTests` (`Funk.WorkItems.Tests`), `RelatedScopeCheckTests` (`Funk.Authorization.Tests`).
 
 ### WP-I2-204 – Erweiterungspunkt C1: State-Change-Pipeline IWorkItemStateChanger mit Guards/Hooks, WORKFLOW_GUARD
 
@@ -5893,13 +6034,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 1. Architekturtest: kein Schreibzugriff auf `work_items.state_id` außerhalb der Pipeline.
 2. Fake-Guard verhindert einen Übergang mit Original-Fehlerform; Fake-Hook wird aufgerufen (Typ X).
-3. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-4. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-5. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+3. AK-16-06: Architekturtest – `WorkItem.SetState` wird nur aus `WorkItemStateChanger` aufgerufen; ein registrierter `FakeStateTransitionGuard` wird je Origin (`User` in I2; `Intake`, `CycleTransfer`, `AutoClose` in I3; `PublicApi` in I6) genau einmal aufgerufen; Ablehnung → 400 `invalid_state_transition` ohne Event.
+4. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+5. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+6. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
-- Typ-X-Tests (CE-Default unverändert, Fake-Erweiterung wirkt ohne CE-Änderung), L0-Inventarabgleich `ExtensionPointInventoryTests`/`extension-registry-check`.
+- 16 §7.2: `StateChangerPipelineTests` (`Funk.WorkItems.Tests`), `StateWriteArchitectureTest` (`Funk.ArchitectureTests`).
 
 ### WP-I2-205 – Erweiterungspunkte Work-Item-Fassaden: IWorkItemReferenceResolver, IWorkItemCommands, IIntegrationLinkProvider + external_links, IExpandProvider
 
@@ -5936,7 +6078,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Testumfang**
 
-- Typ-X-Tests (CE-Default unverändert, Fake-Erweiterung wirkt ohne CE-Änderung), L0-Inventarabgleich `ExtensionPointInventoryTests`/`extension-registry-check`.
+- 16 §7.2: `ReferenceResolverTests` (Identifier case-insensitiv, archiviert/gelöscht, Gast-Sichtbarkeit), `IntegrationLinkProviderNullTests`, `WorkItemCommandsParityTests` (`Funk.WorkItems.Tests`).
 
 ### WP-I2-206 – Erweiterungspunkte Work-Item-UI-Registries (Property-Renderer bis Duplicate-Detection)
 
@@ -5965,9 +6107,10 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 **Akzeptanzkriterien**
 
 1. Jede Registry hat CE-Einträge (Original-Verhalten) und einen Fake-Eintrag-Test (Typ X).
-2. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-3. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-4. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+2. AK-16-16 für die Tokens dieses Pakets (je zwei Vitest-Fälle); `extensions.spec.ts` findet Fake-Detail-Widget und Fake-Spreadsheet-Spalte.
+3. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+4. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+5. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
@@ -5982,6 +6125,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Größe | S |
 | parallelisierbar | nein |
 | Abhängigkeiten | WP-I0-999, WP-I0-905 |
+| Vorlauf | ja – darf vor `WP-I1-999` beginnen (plan/01 L-8); abgenommen mit `WP-I2-999` |
 | CE-IDs | – (keine; Erweiterungspunkt) |
 | Andockstelle | 16 §3.3.0 E-11; 16 §4.6 (Träger CE-WI-037, CE-WI-044) |
 
@@ -6007,7 +6151,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Testumfang**
 
-- Typ-X-Tests (CE-Default unverändert, Fake-Erweiterung wirkt ohne CE-Änderung), L0-Inventarabgleich `ExtensionPointInventoryTests`/`extension-registry-check`.
+- 16 §7.2: `DocumentSchemaRegistryTests` (HTML↔JSON-Teil; Yjs-Teil mit WP-I4-202).
 
 ### WP-I2-999 – Abnahme I2 – Work Items & Layouts (G5)
 
@@ -6030,8 +6174,9 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 **Akzeptanzkriterien**
 
 1. Alle Abnahmekriterien M2 erfüllt; `docs/acceptance/I2.md` generiert.
-2. G5 `--inc <In> --strict` grün: `ce-coverage-check`, `original-test-ledger`, Parity-Report (0 ungenehmigte Abweichungen, Endpunkt-Abdeckung des Inkrements 100 %), Visual/a11y, Lastziele, Security-Report.
-3. Demo-Video der Kern-Flows (`--video on`) und Abnahmebericht `docs/acceptance/<In>.md`; fachliche Abnahme durch den Auftraggeber.
+2. AK-16-02 (Zwischenstand I2): Contract-Replay und Visual-Suite der I0–I2-Screens mit CE-Defaults = ohne Andockstellen-Registrierung (0 Abweichungen).
+3. G5 `--inc <In> --strict` grün: `ce-coverage-check`, `original-test-ledger`, Parity-Report (0 ungenehmigte Abweichungen, Endpunkt-Abdeckung des Inkrements 100 %), Visual/a11y, Lastziele, Security-Report.
+4. Demo-Video der Kern-Flows (`--video on`) und Abnahmebericht `docs/acceptance/<In>.md`; fachliche Abnahme durch den Auftraggeber.
 
 **Testumfang**
 
@@ -6089,12 +6234,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-LV-004,CE-LV-046` grün (Mindestebenen 15 Anhang B).
+1. Die I2-Layouts laufen in den Kontexten Cycle, Modul, Projekt-View, Archiv und Profil mit den Basismengen `WorkItemBaseSets`/`IWorkItemBaseSetFilter` und liefern auf dem Parity-Seed dieselben Treffer wie das Original (Contract-Golden je Kontext).
+2. Projekt-Archiv mit Tabs Work items/Cycles/Modules, Filter-Toggle und Display (nur List-Optionen); Archiv-Detail read-only (Visual).
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-LV-004,CE-LV-046` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -6166,12 +6313,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-LV-011,CE-LV-047,CE-LV-048,CE-LV-049,CE-LV-050,CE-LV-051` grün (Mindestebenen 15 Anhang B).
+1. Views speichern Legacy- und Rich-Filter als Filter-AST, Layout und Display; für ≥ 10 Filterkombinationen des Parity-Seeds liefert die View dieselben Work Items wie das Original (Golden).
+2. „Update view“ schreibt nur in eigene, nicht gesperrte Views (sonst Original-Fehler); Löschen nur Owner oder Projekt-Admin (Permission-Matrix); privat/öffentlich wirkt in der Liste je Rolle.
+3. Kontextmenü über `ENTITY_QUICK_ACTIONS` (entity `view`), Favoriten-Stern über `FAVORITE_ENTITY_RENDERERS` (Typ `view`).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-LV-011,CE-LV-047,CE-LV-048,CE-LV-049,CE-LV-050,CE-LV-051` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -6232,12 +6382,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-LV-052,CE-LV-053,CE-LV-054` grün (Mindestebenen 15 Anhang B).
+1. Die Default-Views All work items, Assigned, Created, Subscribed liefern für jeden Testbenutzer des Parity-Seeds dieselben Treffer wie das Original (Golden).
+2. „All work items“ ist projektübergreifend mit Rechten und Gastfilter je Projekt: ein Gast ohne „Guest access“ sieht nur eigene Work Items (L3).
+3. Workspace-View anlegen/bearbeiten/löschen mit Original-Validierung; Quick-Actions „Open in new tab“/„Copy link“ im Kopf.
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-LV-052,CE-LV-053,CE-LV-054` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -6297,12 +6450,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-CYC-001,CE-CYC-002,CE-CYC-003,CE-CYC-004` grün (Mindestebenen 15 Anhang B).
+1. Aktiver Cycle oben, „Upcoming cycle“ aufgeklappt, „Completed cycle“ zugeklappt; Status-Badges und Leerzustände wie Original (Visual).
+2. Das Inline-Dashboard des aktiven Cycles (Progress je State-Gruppe, Burndown nach Work Items bzw. Punkten, Tabs Priority/Assignees/Labels) zeigt dieselben Zahlen wie das Original-Golden.
+3. `/:ws/active-cycles` zeigt alle aktiven Cycles der sichtbaren Projekte statt des Upgrade-Screens (ADR-001, PF-04, D16-ADR-14) – Eintrag in `ui-deviations.yaml` mit Entscheidungsverweis.
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-CYC-001,CE-CYC-002,CE-CYC-003,CE-CYC-004` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -6372,12 +6528,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-CYC-005,CE-CYC-006,CE-CYC-012,CE-CYC-013,CE-CYC-014,CE-CYC-015` grün (Mindestebenen 15 Anhang B).
+1. `cycles/date-check/` meldet Überschneidungen über `ICycleSchedulingPolicy` mit Original-Antwort (L3: angrenzend, überlappend, enthalten, Draft ohne Daten); `CYCLE_FLAGS.parallelCycles = false`.
+2. Daten werden in der Projekt-Zeitzone als `timestamptz` gespeichert (Test mit `Pacific/Auckland` und Datumsgrenze); abgeschlossene Cycles sind gesperrt (Original-Fehler).
+3. Archivieren nur abgeschlossener Cycles, Löschen entfernt Favoriten; der Cron `cycles.completion_detection` schreibt genau ein `funk.cycle.completed.v1` je Cycle (`FixedClock`, OE-71).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-CYC-005,CE-CYC-006,CE-CYC-012,CE-CYC-013,CE-CYC-014,CE-CYC-015` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -6445,12 +6604,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-CYC-007,CE-CYC-008,CE-CYC-009,CE-LV-016` grün (Mindestebenen 15 Anhang B).
+1. Fortschritt je State-Gruppe (Issues und Punkte), Assignee-/Label-Verteilungen und Burndown je Tag entsprechen dem Original-Golden für einen laufenden und einen abgeschlossenen Cycle (`progress_snapshot`).
+2. Burndown mit Ideal- und Ist-Linie, umschaltbar Anzahl/Punkte, Visual ≤ 0,5 % (S6-Schwelle); der Peek-Zustand (`peekCycle`) bleibt über Navigation erhalten.
+3. „Add work item“ fehlt bei abgeschlossenem Cycle; Anzeige-Einstellungen je Cycle und Modul persistieren wie Original (Contract-Golden).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-CYC-007,CE-CYC-008,CE-CYC-009,CE-LV-016` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -6512,12 +6674,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-CYC-010,CE-CYC-011,CE-WI-025` grün (Mindestebenen 15 Anhang B).
+1. Ein Work Item gehört höchstens einem Cycle; die Zuordnung zu einem anderen Cycle hängt um (L3, Golden); das Cycle-Dropdown bietet nur current/upcoming/draft Cycles und „No cycle“; die Spreadsheet-Spalte Cycle ist über `SPREADSHEET_COLUMNS` registriert.
+2. Der Transfer offener Work Items aus einem abgeschlossenen Cycle läuft über `IWorkItemCommands` und die State-Pipeline mit Origin `CycleTransfer`, friert Fortschritt, Verteilungen und Burndown im `progress_snapshot` ein und schreibt Activity (Golden, AK-16-06).
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-CYC-010,CE-CYC-011,CE-WI-025` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -6577,12 +6741,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-MOD-001,CE-MOD-002,CE-MOD-011` grün (Mindestebenen 15 Anhang B).
+1. Modul-Übersicht in Liste, Galerie und Timeline (Gantt-Typ MODULE) mit Fortschritt, Daten, Lead, Mitgliedern und Status (Visual je Layout).
+2. Suche, Filter (Status, Lead, Mitglieder, Start-/Zieldatum, Favoriten) und Sortierung persistieren in `localStorage` unter dem Original-Schlüssel (Vitest); Kontextmenü über `ENTITY_QUICK_ACTIONS` (entity `module`).
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-MOD-001,CE-MOD-002,CE-MOD-011` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -6655,12 +6821,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-MOD-003,CE-MOD-004,CE-MOD-005,CE-MOD-006,CE-MOD-009,CE-MOD-010` grün (Mindestebenen 15 Anhang B).
+1. Modultitel eindeutig je Projekt (Konflikt → Original-Fehler); Status Backlog/Planned/In Progress/Paused/Completed/Cancelled mit Original-Farben; Lead und `ModuleMember` wie Original (Contract-Golden).
+2. Modul-Links mit URL max. 200 Zeichen (201 → Original-Validierungsfehler); das Modul-Detail liefert Fortschritt, Schätzpunkte, Verteilungen und Burndown wie das Original-Golden.
+3. Archivieren nur bei Status completed/cancelled; Löschen mit Bestätigung (Permission-Matrix).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-MOD-003,CE-MOD-004,CE-MOD-005,CE-MOD-006,CE-MOD-009,CE-MOD-010` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -6721,12 +6890,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-MOD-007,CE-MOD-008,CE-WI-026` grün (Mindestebenen 15 Anhang B).
+1. Die n:m-Zuordnung vom Modul (mehrere Work Items) und vom Work Item (Module hinzufügen/entfernen) schreibt Activity und `funk.work_item.module_changed.v1` (Golden, Event-Katalog-Snapshot).
+2. Modul-Detailseite mit Work-Item-Layouts, einklappbarer Sidebar und mobiler Variante (Visual); Module-Dropdown mit Einzel-/Mehrfachauswahl und Suche; Spreadsheet-Spalte Modules über `SPREADSHEET_COLUMNS` registriert.
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-MOD-007,CE-MOD-008,CE-WI-026` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -6805,12 +6976,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-INT-001,CE-INT-002,CE-INT-003,CE-INT-004,CE-INT-005` grün (Mindestebenen 15 Anhang B).
+1. Neue Intake-Einträge landen im unsichtbaren `triage`-State mit Status -2 (Pending) (L3, Golden); der Default-Intake entsteht beim Aktivieren von `intake_view` (WP-I1-010).
+2. Tabs Open/Closed mit Zählern, Endlos-Laden 10 je Seite, automatische Auswahl des ersten Eintrags, Deep-Link `inboxIssueId`; Gäste sehen nur eigene Einträge (Permission-Matrix, E2E).
+3. Filter nach Status, Priorität, Assignees, Erstellern, Labels, Erstell-/Aktualisierungsdatum (Heute, Gestern, 7 Tage, 30 Tage, Custom) und Sortierung created/updated/sequence liefern dieselbe Reihenfolge wie das Original (Golden); Anlage durch alle Rollen inkl. Gäste mit „Create more“.
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-INT-001,CE-INT-002,CE-INT-003,CE-INT-004,CE-INT-005` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -6876,12 +7050,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-INT-006,CE-INT-007,CE-INT-008,CE-INT-009,CE-INT-010,CE-INT-011,CE-INT-012` grün (Mindestebenen 15 Anhang B).
+1. Annehmen (nur Admins) übernimmt das Work Item über `IWorkItemCommands` mit dem Default-State ins Projekt; der State-Wechsel läuft mit Origin `Intake` durch die Pipeline (AK-16-06); Status 1 (Accepted), Golden.
+2. Snooze speichert `snoozed_till` als 00:00 in der Projekt-Zeitzone (frühestens morgen); der Cron (alle 5 min) setzt abgelaufene Snoozes auf Pending zurück (`FixedClock`, `CronRegistrationTests`); ein Zeitzonenwechsel des Projekts rechnet `snoozed_till` um (L3).
+3. Ablehnen (-1), Duplikat (2, `duplicate_to`) und Löschen (Admin oder Ersteller; bei nicht angenommenen Einträgen inkl. Issue) wie Original (Contract-Golden je Aktion); Gäste bearbeiten nur Name und Beschreibung.
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-INT-006,CE-INT-007,CE-INT-008,CE-INT-009,CE-INT-010,CE-INT-011,CE-INT-012` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -6932,10 +7109,13 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract-Szenarien mit Original-Golden für alle HTTP-Endpunkte dieses Pakets; Replay grün.
-2. Job-/Consumer-Tests: Idempotenz (Inbox), Retry/Backoff, Zeitsteuerung mit `FixedClock`; neue Ereignistypen im Event-Katalog-Snapshot.
-3. Bei Cron-Jobs: Registrierung in `CronRegistrationTests` mit Original-Zeit (UTC).
-4. `ce-coverage-check --ids CE-PRJ-039,CE-PRJ-040` grün (Mindestebenen 15 Anhang B).
+1. Cron `work_items.auto_archive_close` (`0 1 * * *` UTC) ist in `CronRegistrationTests` registriert; mit `FixedClock` archiviert er genau die completed/cancelled Work Items ohne laufenden Cycle/Modul, die `archive_in` Monate unverändert sind, und schreibt die Original-Activity (gespeicherter Daten-String, 17 BR-02 Nr. 3).
+2. Auto-Close verschiebt offene Work Items nach `close_in` Monaten über `IWorkItemStateChanger` (Origin `AutoClose`) in den gewählten Close-State mit projektbezogenem Fallback (DEV-AUTO-001/-002); lehnt ein `FakeStateTransitionGuard` ab, wird der Eintrag übersprungen und geloggt (AK-16-06).
+3. `archive_in`/`close_in` akzeptieren 0 (aus) und 1–12 Monate; andere Werte → Original-Validierungsfehler.
+4. Contract-Szenarien mit Original-Golden für alle HTTP-Endpunkte dieses Pakets; Replay grün.
+5. Job-/Consumer-Tests: Idempotenz (Inbox), Retry/Backoff, Zeitsteuerung mit `FixedClock`; neue Ereignistypen im Event-Katalog-Snapshot.
+6. Bei Cron-Jobs: Registrierung in `CronRegistrationTests` mit Original-Zeit (UTC).
+7. `ce-coverage-check --ids CE-PRJ-039,CE-PRJ-040` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -7017,13 +7197,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 **Akzeptanzkriterien**
 
 1. Fake-Policy erlaubt parallele Cycles ohne CE-Änderung; Fake-Quick-Action erscheint im Cycle-Menü (Typ X).
-2. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-3. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-4. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+2. AK-16-16 für `ENTITY_QUICK_ACTIONS` und `CYCLE_FLAGS` (je zwei Vitest-Fälle: CE-Default = Original-DOM, Fake an der richtigen Stelle).
+3. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+4. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+5. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
-- Typ-X-Tests (CE-Default unverändert, Fake-Erweiterung wirkt ohne CE-Änderung), L0-Inventarabgleich `ExtensionPointInventoryTests`/`extension-registry-check`.
+- 16 §7.2: `CycleSchedulingPolicyTests` (`Funk.Cycles.Tests`).
 
 ### WP-I3-999 – Abnahme I3 – Planung (G5)
 
@@ -7110,12 +7291,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-PAGE-001,CE-PAGE-002,CE-PAGE-003,CE-PAGE-010` grün (Mindestebenen 15 Anhang B).
+1. Tabs Public, Private, Archived (Query `type`) mit den Root-Pages des Projekts (eigene und öffentliche, Gast-Filter über `IPageAccessPolicy`), Favoriten zuerst; `summary` liefert die Zähler public/private/archived wie das Original-Golden.
+2. „Add page“ legt mit genau einem POST eine leere Page an und öffnet sie (E2E); Suche, Filter (Favorites, Created date, Created by) und Sortierung wie Original; Favoriten über `FAVORITE_ENTITY_RENDERERS` (Typ `page`).
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-PAGE-001,CE-PAGE-002,CE-PAGE-003,CE-PAGE-010` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -7131,7 +7314,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Typ (DoD 15 §3.15.3) | V – Vertikaler Schnitt |
 | Größe | L |
 | parallelisierbar | ja |
-| Abhängigkeiten | WP-I4-001 |
+| Abhängigkeiten | WP-I4-001, WP-I4-101 |
 | CE-IDs | CE-PAGE-004, CE-PAGE-005, CE-PAGE-006, CE-PAGE-007, CE-PAGE-008, CE-PAGE-009, CE-PAGE-012 |
 
 **Ziel.** Page-Detail, Sperren/Entsperren, Zugriff öffentlich/privat (Page-Zugriffsregel 05 §3.13.5), Archivieren/Wiederherstellen, Löschen, Duplizieren mit Asset-Umschreibung und PageLog (synchron über `PageReferenceIndexer`).
@@ -7191,12 +7374,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-PAGE-004,CE-PAGE-005,CE-PAGE-006,CE-PAGE-007,CE-PAGE-008,CE-PAGE-009,CE-PAGE-012` grün (Mindestebenen 15 Anhang B).
+1. Alle Page-Endpunkte prüfen den Zugriff über `IPageAccessPolicy` (WP-I4-201, 05 §3.13.5): private Pages nur für den Eigentümer, Gastregel, DELETE nur Admin (Permission-Matrix inkl. Fake-`IPageAccessExtension`).
+2. Lock/Unlock nur Owner oder Admin; Archivieren/Wiederherstellen rekursiv inkl. Nachkommen; Löschen nur archivierter Pages, Kinder werden abgehängt (L3, Golden).
+3. Duplizieren erzeugt „(Copy)“, kopiert eingebettete Bilder in neue Assets, schreibt das HTML um (Golden: keine Asset-ID der Quelle im Ergebnis) und erzeugt JSON/Binary in-process über `Funk.Documents` (kein Live-Server-Aufruf); `PageReferenceIndexer` indiziert `mention-component`/`image-component` synchron je Speichern (L3).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-PAGE-004,CE-PAGE-005,CE-PAGE-006,CE-PAGE-007,CE-PAGE-008,CE-PAGE-009,CE-PAGE-012` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -7269,7 +7455,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Typ (DoD 15 §3.15.3) | V – Vertikaler Schnitt |
 | Größe | L |
 | parallelisierbar | nein |
-| Abhängigkeiten | WP-I4-007, WP-I4-002 |
+| Abhängigkeiten | WP-I4-007, WP-I4-002, WP-I4-005 |
 | CE-IDs | CE-PAGE-013, CE-PAGE-014, CE-PAGE-015, CE-PAGE-016, CE-PAGE-017, CE-PAGE-018, CE-PAGE-020 |
 
 **Ziel.** Page-Seite mit `PlEdCollaborativeDocumentEditor`, `PlEdTitleEditor`, Navigation Titel↔Inhalt, Toolbar, Kopf, Outline, Info-Panel, Assets-Panel und Anzeigeoptionen.
@@ -7308,12 +7494,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-PAGE-013,CE-PAGE-014,CE-PAGE-015,CE-PAGE-016,CE-PAGE-017,CE-PAGE-018,CE-PAGE-020` grün (Mindestebenen 15 Anhang B).
+1. Titel-Editor mit Platzhalter „Untitled“ und Tastaturnavigation Titel↔Inhalt wie Original (Playwright); das Inhaltslimit-Banner erscheint bei Überschreitung des Original-Limits.
+2. Outline listet alle Überschriften in Dokumentreihenfolge, Klick scrollt dorthin; das Info-Panel zählt Words, Characters, Paragraphs und Read time für 5 Referenzdokumente identisch zum Original und zeigt die Versionsliste aus WP-I4-005; das Assets-Panel listet alle eingebetteten Bilder.
+3. Anzeigeoptionen Full width, Sticky toolbar, Copy markdown und Version history persistieren wie Original; Visual der Editor-Seite ≤ 0,5 % (S5-Schwelle).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-PAGE-013,CE-PAGE-014,CE-PAGE-015,CE-PAGE-016,CE-PAGE-017,CE-PAGE-018,CE-PAGE-020` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -7329,7 +7518,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Typ (DoD 15 §3.15.3) | V – Vertikaler Schnitt |
 | Größe | M |
 | parallelisierbar | ja |
-| Abhängigkeiten | WP-I4-006 |
+| Abhängigkeiten | WP-I4-006, WP-I4-002 |
 | CE-IDs | CE-PAGE-019 |
 
 **Ziel.** Versionierung beim Speichern (Fix CE-PAGE-019 laut 07), Versionsliste und -anzeige mit Document-Editor read-only, Versions-Cleanup.
@@ -7369,12 +7558,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-PAGE-019` grün (Mindestebenen 15 Anhang B).
+1. Versionen entstehen beim Speichern in 600-s-Merge-Fenstern je Besitzer, höchstens 20 je Page (Korrektur des Original-Fehlers, dass nie Versionen entstehen; Eintrag laut 07 §3.20): `FixedClock` – 3 Speicherungen in 10 min → 1 Version, eine weitere nach 11 min → 2 Versionen, die 21. Version verdrängt die älteste.
+2. Versionsliste und read-only-Anzeige über den Document-Editor (ED-3); „Wiederherstellen“ ersetzt den Editorinhalt und erzeugt eine neue Version (E2E); `GET …/versions/` und `…/versions/{pk}/` entsprechen dem Ziel-Golden (`golden_source: target`).
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-PAGE-019` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -7390,7 +7581,8 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Typ (DoD 15 §3.15.3) | D – Editor/Dokumente |
 | Größe | L |
 | parallelisierbar | nein |
-| Abhängigkeiten | WP-I4-101, WP-I4-202, WP-I0-107, WP-I0-901 |
+| Abhängigkeiten | WP-I4-101, WP-I4-202, WP-I0-107, WP-I0-901, WP-I4-201 |
+| Vorlauf | ja – darf vor `WP-I3-999` beginnen (plan/01 L-8); abgenommen mit `WP-I4-999` |
 | CE-IDs | CE-RT-001, CE-RT-005, CE-RT-006, CE-RT-008 |
 
 **Ziel.** `Funk.Collaboration` (+ `.Protocol`) nach dem Ergebnis von S1: Wire-Protokoll, Zustandsautomaten, Auth über Session-Ticket, Laden/Migration HTML→Binary, Merge-on-Store mit 10-s-Debounce, Titel-Sync, Stateless-Ereignisse, Fehler-Broadcast, Force-Close, Admin-Kanal, Graceful Shutdown und `/live/convert-document/`.
@@ -7436,9 +7628,10 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 1. Protokollfälle P-01…P-30 mit dem Original-Provider im Browser grün (`ProviderConformanceTests`).
 2. LT-16…LT-18 im Zielbereich.
-3. G-SCHEMA unverändert (Schema-Freeze) oder genehmigte Änderung; G-DOC-Fälle für jeden betroffenen Node/Mark.
-4. Browser-Roundtrip-Test (Playwright) für Yjs, sofern Kollaboration betroffen; Visual-Prüfpunkte des Editors.
-5. `ce-coverage-check --ids CE-RT-001,CE-RT-005,CE-RT-006,CE-RT-008` grün (Mindestebenen 15 Anhang B).
+3. Die Verbindungsprüfung je Dokument läuft über `ICollaborationDocumentType.AuthorizeAsync` → `IPageAccessPolicy` (WP-I4-201); Token-Mismatch → nur `PermissionDenied`, Rechteentzug in der Sitzung → `PermissionDenied` + Close 4403, `read-write` → `readonly` → 4205, Upgrade ohne Session-Cookie → 403 (17 ABG-107; je Fall ein `ProviderConformanceTests`-Schritt).
+4. G-SCHEMA unverändert (Schema-Freeze) oder genehmigte Änderung; G-DOC-Fälle für jeden betroffenen Node/Mark.
+5. Browser-Roundtrip-Test (Playwright) für Yjs, sofern Kollaboration betroffen; Visual-Prüfpunkte des Editors.
+6. `ce-coverage-check --ids CE-RT-001,CE-RT-005,CE-RT-006,CE-RT-008` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -7454,10 +7647,12 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Typ (DoD 15 §3.15.3) | D – Editor/Dokumente |
 | Größe | L |
 | parallelisierbar | nein |
-| Abhängigkeiten | WP-I4-006, WP-I2-024 |
+| Abhängigkeiten | WP-I4-006, WP-I2-024, WP-I4-002 |
 | CE-IDs | CE-RT-002, CE-RT-003, CE-RT-004 |
 
 **Ziel.** `CollaborationSession` mit `HocuspocusProvider` 2.15.2, IndexedDB-Offline-Cache, Sync-Status, Stateless-Kanal, REST-Fallback-Speicherung (`setProviderDocument`, `getDocument`) und Echtzeit-Seitenereignisse; `collaboration-cursor` aktiv, sobald S1-Awareness grün ist (Z-109).
+
+> **Hinweis:** Kein Vorlauf-Paket: Der REST-Fallback nutzt die Page-Endpunkte und Zugriffsregeln aus WP-I4-001/-002; die Client-Bindung kann gegen den Vorlauf-Server (WP-I4-006) vorentwickelt, aber erst nach WP-I4-002 gemergt werden.
 
 **Enthaltene CE-IDs**
 
@@ -7510,6 +7705,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Größe | M |
 | parallelisierbar | ja |
 | Abhängigkeiten | WP-I4-006 |
+| Vorlauf | ja – darf vor `WP-I3-999` beginnen (plan/01 L-8); abgenommen mit `WP-I4-999` |
 | CE-IDs | CE-RT-007 |
 
 **Ziel.** Valkey-Backplane (`BackplaneEnvelope`), In-Memory-Backplane für Einzelknoten/AIO, PostgreSQL-Signale (`CollaborationSignalListener`), Multi-Instanz-Setup (2 × `realtime`) im Profil `test`.
@@ -7611,6 +7807,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Größe | L |
 | parallelisierbar | ja |
 | Abhängigkeiten | WP-I2-999, WP-I0-901, WP-I0-902 |
+| Vorlauf | ja – darf vor `WP-I3-999` beginnen (plan/01 L-8); abgenommen mit `WP-I4-999` |
 | CE-IDs | – (keine; Baustein/Spike/Abnahme) |
 
 **Ziel.** Yjs-Abbildung (Port `y-prosemirror` 1.3.7) mit `YjsUpdateWriter`, Typ-Rückwandlung beim Lesen, Document-Variante des Schemas sowie `HtmlToMarkdownConverter` und `MarkdownRenderer`.
@@ -7644,16 +7841,18 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Typ (DoD 15 §3.15.3) | X – Erweiterungspunkt 🧱 |
 | Größe | S |
 | parallelisierbar | nein |
-| Abhängigkeiten | WP-I3-999 |
+| Abhängigkeiten | WP-I2-999 |
+| Vorlauf | ja – darf vor `WP-I3-999` beginnen (plan/01 L-8); abgenommen mit `WP-I4-999` |
 | CE-IDs | – (keine; Erweiterungspunkt) |
 | Andockstelle | 01 §1.4 D1/D2; 16 §3.3.0 E-23; 16 §4.6 (Träger CE-PAGE-001/-003/-004/-006/-007) |
 
-**Ziel.** `pages.workspace_id` mit Projektzuordnung über `project_pages`, `pages.parent_id` (CE immer `null`), `IPageHierarchy` und `IPageHierarchyQueries` (E-23, CE flach/`[]`), `IPageAccessExtension` (Default `false`); Frontend `PAGE_STORES`, `PAGE_TREE`, `PAGE_FLAGS`, `PAGE_PANE_EXTENSIONS`.
+**Ziel.** `pages.workspace_id` mit Projektzuordnung über `project_pages`, `pages.parent_id` (CE immer `null`), `IPageHierarchy` und `IPageHierarchyQueries` (E-23, CE flach/`[]`), `IPageAccessExtension` (Default `false`) und die zentrale Prüfstelle `IPageAccessPolicy` mit der CE-Regel aus 05 §3.13.5 (öffentlich/privat, Eigentümer, Gastregel, DELETE nur Admin), die REST (WP-I4-002) und Kollaboration (WP-I4-006) gemeinsam nutzen; Frontend `PAGE_STORES`, `PAGE_TREE`, `PAGE_FLAGS`, `PAGE_PANE_EXTENSIONS`. Vorlauf-Paket des Dokument-/Realtime-Tracks (plan/01 L-8): registriert weder Route noch Screen.
 
 **Betroffene Module/Libs in `funk.`**
 
 - Backend: `src/modules/Pages/Funk.Pages.Contracts/Hierarchy/`
 - Backend: `src/data/Funk.Data/Entities/Pages/`
+- Backend: `src/modules/Pages/Funk.Pages.Contracts/Access/IPageAccessPolicy.cs`, `src/modules/Pages/Funk.Pages/Access/ProjectPageAccessPolicy.cs`
 - Frontend: `frontend/libs/web/extensions/src/pages.ts`
 
 **Referenzdokumente**
@@ -7661,17 +7860,20 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 - Architektur: 16 §5.13, §3.3.0 E-23
 - Architektur: 01 §1.4 Zeilen D1, D2
 - Architektur: 03 §3.4.10
+- Architektur: 05 §3.13.5 (Page-Zugriffsregel)
+- Architektur: 07 §3.5 (`ICollaborationDocumentType.AuthorizeAsync`), 17 ABG-107
 
 **Akzeptanzkriterien**
 
 1. Contract-Goldens der Page-Payloads unverändert; Fake-Hierarchie liefert Kinder, die im `PAGE_TREE` erscheinen (Typ X).
-2. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-3. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-4. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+2. `IPageAccessPolicy` ist die einzige Prüfstelle für Page-Zugriff: Architekturtest – kein Endpunkt und kein `ICollaborationDocumentType` prüft `pages.access`/`owned_by_id` selbst; L3-Matrix (öffentlich/privat × Eigentümer/Admin/Member/Guest mit und ohne `guest_view_all_features`) = Original-Verhalten aus 05 §3.13.5.
+3. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+4. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+5. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
-- Typ-X-Tests (CE-Default unverändert, Fake-Erweiterung wirkt ohne CE-Änderung), L0-Inventarabgleich `ExtensionPointInventoryTests`/`extension-registry-check`.
+- 16 §7.2: `PageHierarchyDefaultsTests`, `PageAccessExtensionTests` (`Funk.Pages.Tests`).
 
 ### WP-I4-202 – Erweiterungspunkte Kollaboration: ICollaborationDocumentType, affectedPages, EDITOR_BLOCKS, EDITOR_MENTION_TYPES
 
@@ -7681,7 +7883,8 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Typ (DoD 15 §3.15.3) | X – Erweiterungspunkt 🧱 |
 | Größe | S |
 | parallelisierbar | nein |
-| Abhängigkeiten | WP-I2-999, WP-I4-101 |
+| Abhängigkeiten | WP-I2-999, WP-I4-101, WP-I4-201 |
+| Vorlauf | ja – darf vor `WP-I3-999` beginnen (plan/01 L-8); abgenommen mit `WP-I4-999` |
 | CE-IDs | – (keine; Erweiterungspunkt) |
 | Andockstelle | 16 §3.3.0 E-10; 16 §4.6 (Träger CE-RT-001, CE-RT-004, CE-RT-005) |
 
@@ -7701,13 +7904,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 **Akzeptanzkriterien**
 
 1. Fake-Dokumenttyp wird über das Protokoll geladen/gespeichert ohne CE-Änderung; Fake-Block erscheint im Slash-Menü (Typ X).
-2. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-3. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-4. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+2. AK-16-15: Hocuspocus-Verbindung mit `documentType=fake_page` und registriertem `FakeCollaborationDocumentType` synchronisiert; ohne Registrierung Original-Fehler „Invalid document type …“.
+3. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+4. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+5. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
-- Typ-X-Tests (CE-Default unverändert, Fake-Erweiterung wirkt ohne CE-Änderung), L0-Inventarabgleich `ExtensionPointInventoryTests`/`extension-registry-check`.
+- 16 §7.2: `CollaborationDocumentTypeRegistryTests` (`Funk.Collaboration.Tests`), `DocumentSchemaRegistryTests` (Yjs-Teil, `Funk.Documents.Tests`).
 
 ### WP-I4-999 – Abnahme I4 – Pages & Realtime (G5)
 
@@ -7730,8 +7934,9 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 **Akzeptanzkriterien**
 
 1. Alle Abnahmekriterien M4 erfüllt; `docs/acceptance/I4.md` generiert.
-2. G5 `--inc <In> --strict` grün: `ce-coverage-check`, `original-test-ledger`, Parity-Report (0 ungenehmigte Abweichungen, Endpunkt-Abdeckung des Inkrements 100 %), Visual/a11y, Lastziele, Security-Report.
-3. Demo-Video der Kern-Flows (`--video on`) und Abnahmebericht `docs/acceptance/<In>.md`; fachliche Abnahme durch den Auftraggeber.
+2. AK-16-02 (Zwischenstand I4): Contract-Replay und Visual-Suite der I0–I4-Screens mit CE-Defaults = ohne Andockstellen-Registrierung (0 Abweichungen).
+3. G5 `--inc <In> --strict` grün: `ce-coverage-check`, `original-test-ledger`, Parity-Report (0 ungenehmigte Abweichungen, Endpunkt-Abdeckung des Inkrements 100 %), Visual/a11y, Lastziele, Security-Report.
+4. Demo-Video der Kern-Flows (`--video on`) und Abnahmebericht `docs/acceptance/<In>.md`; fachliche Abnahme durch den Auftraggeber.
 
 **Testumfang**
 
@@ -7797,12 +8002,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-ANA-001,CE-ANA-002,CE-ANA-003,CE-ANA-004,CE-ANA-005,CE-ANA-006,CE-ANA-007` grün (Mindestebenen 15 Anhang B).
+1. Kennzahlen, Project Insights (Radar), Active Projects (grün > 50 %, sonst rot), Created vs Resolved und Customized Insights liefern auf dem Parity-Seed für „letzte 7 Tage“, einen Custom-Bereich und zwei Projektauswahlen dieselben Zahlen wie das Original-Golden.
+2. Charts (Radar, Area, Bar) Visual ≤ 0,5 % (S6-Schwelle); Insight-Tabelle mit Suche in der ersten Spalte; der clientseitige CSV-Export ist byte-gleich zum Original-Export derselben Daten.
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-ANA-001,CE-ANA-002,CE-ANA-003,CE-ANA-004,CE-ANA-005,CE-ANA-006,CE-ANA-007` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -7870,12 +8077,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-ANA-008,CE-ANA-009` grün (Mindestebenen 15 Anhang B).
+1. Das Analytics-Panel in Projekt-, Cycle- und Modul-Kontext (auch im Vollbild) zeigt den gefilterten Work-Items-Tab; Tagesreihe für Cycle/Modul, Monatsreihe für Projekt wie Original-Golden; der Button „Analytics“ in den Layout-Köpfen erscheint mit diesem Paket.
+2. Legacy-Analytics (x/y-Achsen, Segment), gespeicherte Analytics-Views (`query_dict`) und Export per E-Mail (Template M11 mit CSV-Anhang, G-MAIL) entsprechen dem Original (Contract-Golden, nur API).
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-ANA-008,CE-ANA-009` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -7951,12 +8160,16 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-HOME-001,CE-HOME-002,CE-HOME-003,CE-HOME-004,CE-HOME-005,CE-HOME-006,CE-HOME-007` grün (Mindestebenen 15 Anhang B).
+1. `HOME_WIDGETS` enthält die CE-Widgets quick_links, recents, my_stickies; „Manage widgets“ schaltet und sortiert per Drag&Drop; `WorkspaceHomePreference` wird beim ersten Abruf lazy angelegt (Golden).
+2. Recents: Besuche von Projekten, Work Items, Cycles, Modulen, Views und Pages werden per Job erfasst, höchstens 20 je Nutzer und Workspace (L3: 25 Besuche → 20 Einträge, die ältesten verdrängt); Filter All/Work items/Pages/Projects.
+3. Quick links: `http://` wird ergänzt, ungültige URL und Duplikat je Owner → Original-Fehler; Quickstart-Fortschritt nur in `localStorage` (`quickstart-guide-{ws}`); Produkt-Tour mit fünf Schritten und `tour-completed`; Legacy-Dashboard-Endpunkte wie in 04 (`decision`) entschieden.
+4. Texte mit „Plane“ erscheinen als „funk.“ (ADR-009B, z. B. „Make funk. yours“, Widget „New at funk.“); das Changelog-Widget zeigt nur eine konfigurierte Quelle und entfällt ohne Ziel (wie WP-I1-003); G-BRAND grün.
+5. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+6. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+7. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+8. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+9. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+10. `ce-coverage-check --ids CE-HOME-001,CE-HOME-002,CE-HOME-003,CE-HOME-004,CE-HOME-005,CE-HOME-006,CE-HOME-007` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -8019,12 +8232,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-HOME-008,CE-HOME-009,CE-HOME-010` grün (Mindestebenen 15 Anhang B).
+1. Der Sticky-Editor speichert per Autosave nach 500 ms (Request-Zählung im E2E); das Backend sanitisiert HTML und prüft das Binary (G-SANITIZE-Fälle).
+2. Stickies-Seite: Suche über `description_stripped`, Masonry 2–6 Spalten je Breakpoint, Infinite Scroll (Frontend 30 je Seite, Backend-Default 20), Drag&Drop-Sortierung, neue Notizen oben; nur der Owner hat Zugriff (fremder Zugriff → Original-Fehler).
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-HOME-008,CE-HOME-009,CE-HOME-010` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -8144,12 +8359,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-NOTIF-004,CE-NOTIF-005,CE-NOTIF-006,CE-NOTIF-007` grün (Mindestebenen 15 Anhang B).
+1. Tabs All/Mentions mit Ungelesen-Zählern; das Badge in der Top-Navigation aktualisiert sich über `LIVE_EVENT_HANDLERS` < 2 s nach dem auslösenden Commit (`LiveEventLatencyTests`, mit und ohne Valkey).
+2. Optionen Show unread/archived/snoozed und Filter Assigned to me/Created by me/Subscribed by me liefern dieselben Listen wie das Original-Golden; „Mark all as read“ setzt `read_at` für genau die gefilterte Menge.
+3. Snooze 1 day, 3 days, 5 days, 1 week, 2 weeks, Custom (Datum + Uhrzeit) setzt `snoozed_till` wie Original; Klick auf eine Benachrichtigung markiert sie als gelesen und zeigt Work Item bzw. Intake-Inhalt im eingebetteten Peek.
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-NOTIF-004,CE-NOTIF-005,CE-NOTIF-006,CE-NOTIF-007` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -8205,10 +8423,12 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract-Szenarien mit Original-Golden für alle HTTP-Endpunkte dieses Pakets; Replay grün.
-2. Job-/Consumer-Tests: Idempotenz (Inbox), Retry/Backoff, Zeitsteuerung mit `FixedClock`; neue Ereignistypen im Event-Katalog-Snapshot.
-3. Bei Cron-Jobs: Registrierung in `CronRegistrationTests` mit Original-Zeit (UTC).
-4. `ce-coverage-check --ids CE-NOTIF-008,CE-NOTIF-009` grün (Mindestebenen 15 Anhang B).
+1. Cron `notifications.email_digest` (alle 5 min, UTC) gruppiert `email_notification_logs` je (Empfänger, Work Item) und sendet genau eine Mail „issue-updates“ (M12) je Gruppe mit genau den IDs der Gruppe (L3 mit `FixedClock`; ein Doppellauf versendet nichts doppelt).
+2. Die Profil-Schalter property_change, state_change, issue_completed, comment, mention unterdrücken jeweils genau ihren Mail-Typ (5 L3-Fälle); M12 besteht G-MAIL in der nach OE-01 festgelegten Sprache.
+3. Contract-Szenarien mit Original-Golden für alle HTTP-Endpunkte dieses Pakets; Replay grün.
+4. Job-/Consumer-Tests: Idempotenz (Inbox), Retry/Backoff, Zeitsteuerung mit `FixedClock`; neue Ereignistypen im Event-Katalog-Snapshot.
+5. Bei Cron-Jobs: Registrierung in `CronRegistrationTests` mit Original-Zeit (UTC).
+6. `ce-coverage-check --ids CE-NOTIF-008,CE-NOTIF-009` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -8327,9 +8547,12 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Galerie-Eintrag mit allen Varianten/Zuständen; DOM-Vertrag = Referenz-Galerie; Visual in allen Themes (Chromium).
-2. Tastatur/Fokus (AX3/AX4) wie Original; portierte `packages/blocks`-Tests grün (falls vorhanden).
-3. `ce-coverage-check --ids CE-SRCH-004,CE-SRCH-005,CE-SRCH-006,CE-SRCH-007,CE-SRCH-008,CE-SRCH-009` grün (Mindestebenen 15 Anhang B).
+1. Ctrl/⌘ K öffnet die Palette; DOM (Gruppen, Überschriften, Items mit Fokus-/Auswahl-/Disabled-Zustand) gleich zur cmdk-Struktur des Originals, Visual ≤ 0,2 %.
+2. Alle Befehle aus CE-SRCH-005 … -008 sind über `POWER_K_COMMANDS` registriert (Tabellentest Befehl → Ziel/Aktion gegen die Original-Befehlsliste); Kontextbefehle erscheinen nur im passenden Kontext (Work Item, Cycle, Module, Page); der Theme-Befehl nutzt die Theme-Auswahl aus WP-I1-018.
+3. Shortcut-Sequenzen (G+…) werden innerhalb von 1 000 ms erkannt und in Eingabefeldern ignoriert (Vitest mit Fake-Timern); „Keyboard shortcuts“ listet dieselben Kürzel wie das Original; der Identifier-Defekt bei Pages bleibt 1:1 (OE-10).
+4. Galerie-Eintrag mit allen Varianten/Zuständen; DOM-Vertrag = Referenz-Galerie; Visual in allen Themes (Chromium).
+5. Tastatur/Fokus (AX3/AX4) wie Original; portierte `packages/blocks`-Tests grün (falls vorhanden).
+6. `ce-coverage-check --ids CE-SRCH-004,CE-SRCH-005,CE-SRCH-006,CE-SRCH-007,CE-SRCH-008,CE-SRCH-009` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -8391,12 +8614,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-PROF-008,CE-PROF-009,CE-PROF-010,CE-PROF-011` grün (Mindestebenen 15 Anhang B).
+1. Summary-Kennzahlen (Created/Assigned/Subscribed), Workload je State-Gruppe und Charts nach Priorität/Zustand zählen nur für den Betrachter sichtbare Work Items (L3: ohne Projektzugang 0 für dieses Projekt; Golden).
+2. Work-Item-Tabs Assigned/Created/Subscribed in List/Kanban nur für Admin/Member; Activity paginiert mit „Load more“; „Download today's activity“ erzeugt eine CSV mit den Original-Spalten.
+3. Die Profil-Sidebar zeigt Zeitzone mit aktueller Uhrzeit und Projekt-Statistiken (Fertigstellungsgrad, Created/Assigned/Due/Completed) wie Original (Visual).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-PROF-008,CE-PROF-009,CE-PROF-010,CE-PROF-011` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -8439,7 +8665,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Testumfang**
 
-- Typ-X-Tests (CE-Default unverändert, Fake-Erweiterung wirkt ohne CE-Änderung), L0-Inventarabgleich `ExtensionPointInventoryTests`/`extension-registry-check`.
+- 16 §7.2: `IndexingPipelineConsumerTests`, `NullEmbeddingGeneratorTests`, `IndexEnricherTests` (`Funk.Search.Tests`, `Funk.Platform.Tests`).
 
 ### WP-I5-202 – Erweiterungspunkte UI I5: HOME_WIDGETS, POWER_K_COMMANDS, SEARCH_RESULT_RENDERERS, erste Nutzung LIVE_EVENT_HANDLERS
 
@@ -8469,9 +8695,10 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 **Akzeptanzkriterien**
 
 1. Fake-Widget, Fake-Befehl und Fake-Renderer erscheinen ohne CE-Änderung (Typ X).
-2. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-3. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-4. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+2. AK-16-16 für `HOME_WIDGETS` (CE-Widgets aus `WEB/components/home/widgets`; Fake-Widget erscheint in „Manage widgets“).
+3. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+4. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+5. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
@@ -8507,7 +8734,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 ## 4.7 Inkrement I6
 
-### WP-I6-001 – God Mode: Abmeldung, Fehleransicht, Dashboard-Shell, Header, Konto-Menü, Hilfe, Unsaved-Dialog, Kopierfelder, 404
+### WP-I6-001 – God Mode: Abmeldung, Fehleransicht, Dashboard-Shell, Header, Konto-Menü, Hilfe, Seite „Authentication“ (Keycloak), Unsaved-Dialog, Kopierfelder, 404
 
 | Merkmal | Wert |
 |---|---|
@@ -8556,12 +8783,16 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-INST-008,CE-INST-009,CE-INST-010,CE-INST-011,CE-INST-012,CE-INST-013,CE-INST-014,CE-INST-015,CE-INST-016` grün (Mindestebenen 15 Anhang B).
+1. Admin-Sidebar mit genau 6 Einträgen (General, Email, Authentication, Workspaces, Artificial intelligence, Images in funk.) aus `ADMIN_SETTINGS_PAGES`; 290/70 px, mobil Overlay mit Auto-Collapse ab 768 px, Zustand in `localStorage.god_mode_sidebar_collapsed` (Visual, Vitest).
+2. Die Seite „Authentication“ ist die `AuthenticationStatusPageComponent` (08 §4.2 R6, 05 §4.4): Karte „Keycloak“ (Issuer, Realm, Discovery-Status, Link zur Admin-Konsole), Schalter „Allow anyone to sign up even without an invite“ (`ENABLE_SIGNUP`) und die Kopierfelder (CE-INST-015) Redirect URI, Post-logout redirect URI, Back-channel logout URL; die Provider-Routen leiten auf `/god-mode/authentication/` um (`admin/routes.spec.ts`).
+3. Der Unsaved-Changes-Dialog (CE-INST-014) greift als `canDeactivate` + `beforeunload` an den God-Mode-Formularen mit geänderten Werten (08 §4.2); Statuskonflikt zu 05 (dort „entfällt“) siehe plan/04 N-P13.
+4. „Sign out“ löst den RP-Logout über `/auth/sign-out/?app=admin` aus und setzt Stores und Theme auf `system` zurück (E2E); Hilfe-Bereich mit „Redirect to funk.“ und Version `v{current_version}`, externe Links nur auf konfigurierte Ziele (G-BRAND, `no-external-urls`); 404 mit „Go to general settings“, Instanzfehler-Ansicht mit Retry (Visual).
+5. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+6. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+7. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+8. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+9. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+10. `ce-coverage-check --ids CE-INST-008,CE-INST-009,CE-INST-010,CE-INST-011,CE-INST-012,CE-INST-013,CE-INST-014,CE-INST-015,CE-INST-016` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -8625,12 +8856,16 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-INST-017,CE-INST-018,CE-INST-019,CE-INST-025,CE-INST-026` grün (Mindestebenen 15 Anhang B).
+1. Instanzname per `PATCH /api/instances/`; Admin-E-Mail (erster Spiegel-Admin) und Instance-ID read-only; der Telemetrie-Schalter wird gespeichert, ein Export nach außen findet nicht statt (Netzwerk-Allowlist-Test, ADR-004).
+2. SMTP: Ausschalten leert die Konfiguration per `DELETE …/disable-email-feature/`, Speichern setzt `ENABLE_SMTP=1`; das Passwort ist verschlüsselt und in jeder API-Antwort maskiert (`MaskInstanceSecrets = true`, Z-112; L3 prüft, dass kein Klartext ausgeliefert wird).
+3. Test-E-Mail-Dialog in 3 Schritten; `POST /api/instances/email-credentials-check/` liefert die differenzierten Original-Fehlermeldungen für Verbindungs-, Anmelde- und TLS-Fehler (Mailpit-/Fehler-Fälle).
+4. AI-Einstellungen akzeptieren neben OpenAI einen OpenAI-kompatiblen Basis-Endpunkt (lokal betreibbar, ADR-004); `has_llm_configured` wird daraus berechnet (Golden); der Unsplash Access Key ist Pflichtfeld.
+5. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+6. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+7. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+8. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+9. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+10. `ce-coverage-check --ids CE-INST-017,CE-INST-018,CE-INST-019,CE-INST-025,CE-INST-026` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -8690,12 +8925,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-INST-027,CE-INST-028,CE-INST-029,CE-INST-030` grün (Mindestebenen 15 Anhang B).
+1. Workspace-Liste der Instanz mit Logo, Name, Slug, Owner, Projekt- und Mitgliederzahl, „Load more“ mit 10 je Seite und Suche (Contract-Golden).
+2. „Prevent anyone else from creating a workspace.“ setzt `DISABLE_WORKSPACE_CREATION`; danach zeigt `/create-workspace` für Nicht-Instanz-Admins den Original-Hinweis (E2E, Bezug WP-I0-002).
+3. Workspace-Anlage im God Mode mit automatisch erzeugtem, prüfbarem Slug nach denselben Regeln wie WP-I0-002; das Willkommens-Popup erscheint genau solange keine Workspaces existieren (E2E).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-INST-027,CE-INST-028,CE-INST-029,CE-INST-030` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -8711,7 +8949,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Typ (DoD 15 §3.15.3) | V – Vertikaler Schnitt |
 | Größe | M |
 | parallelisierbar | ja |
-| Abhängigkeiten | WP-I5-999 |
+| Abhängigkeiten | WP-I5-999, WP-I6-203 |
 | CE-IDs | CE-SPACE-001, CE-SPACE-002 |
 
 **Ziel.** Publish-Modal im Web und Board-Einstellungen/-Metadaten (`deploy_boards`, Anchor als 32-Zeichen-Hex).
@@ -8758,12 +8996,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-SPACE-001,CE-SPACE-002` grün (Mindestebenen 15 Anhang B).
+1. Der Publish-Dialog speichert Layouts, Kommentare, Reaktionen, Voting und Intake in `deploy_boards`; der Anchor besteht aus 32 Hex-Zeichen und ist eindeutig; „Unpublish“ macht die öffentliche URL ungültig (Original-404).
+2. Board-Settings und Projekt-Metadaten per Anchor sowie die Anchor-Ermittlung per Projekt-ID entsprechen dem Original-Golden; nur Projekt-Admins veröffentlichen (Permission-Matrix).
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-SPACE-001,CE-SPACE-002` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -8905,12 +9145,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-SPACE-003,CE-SPACE-005,CE-SPACE-018,CE-SPACE-019,CE-SPACE-020,CE-SPACE-021,CE-SPACE-022,CE-SPACE-023` grün (Mindestebenen 15 Anhang B).
+1. Die anonyme öffentliche Issue-Liste mit Filter, Sortierung, Gruppierung und Sub-Gruppierung entspricht dem Original-Golden; nicht veröffentlichte Projekte → Original-404.
+2. Die Navbar synchronisiert `board` und Filter mit der URL (Reload stellt den Zustand her, E2E); List und Kanban sind read-only (kein Schreib-Request im Netzwerkprotokoll); Kanban-Spalten 350 px mit Infinite Scroll je Spalte.
+3. Filter-Popover mit Priorität und State (Label-Filter wie im Original nicht angeboten); Chips mit Fälligkeitsdatum und Überfällig-Hervorhebung (Visual).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-SPACE-003,CE-SPACE-005,CE-SPACE-018,CE-SPACE-019,CE-SPACE-020,CE-SPACE-021,CE-SPACE-022,CE-SPACE-023` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -8973,12 +9216,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-SPACE-004,CE-SPACE-007,CE-SPACE-024,CE-SPACE-030` grün (Mindestebenen 15 Anhang B).
+1. Öffentliches Issue-Detail und Peek (Side, Modal, Full Screen) mit Beschreibung read-only (ED-6), Escape/Outside-Click und Fokusfalle (Playwright-Tastaturtest).
+2. Kommentarbilder: MIME-Erkennung über die Datei-Signatur (Datei mit falscher Endung wird nach Inhalt erkannt bzw. abgewiesen), Bindung an eigene Kommentare, Auslieferung per Redirect über Anchor-Asset-URLs; fremde Assets → Original-Fehler.
+3. Mentions zeigen `@Name` bzw. „@deactivated user“, eigene Mentions hervorgehoben (DOM-Snapshot).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-SPACE-004,CE-SPACE-007,CE-SPACE-024,CE-SPACE-030` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -9058,12 +9304,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-SPACE-006,CE-SPACE-025,CE-SPACE-026,CE-SPACE-027,CE-SPACE-028` grün (Mindestebenen 15 Anhang B).
+1. Anonyme Nutzer lesen EXTERNAL-Kommentare; Schreiben, Reagieren und Voten erfordern die Keycloak-Anmeldung über `funk-space` (anonymer Klick → Login mit Rücksprung, E2E).
+2. Votes −1/1 eindeutig je Akteur und Work Item, Umschalten und Wechsel wie Original (L3, Golden); Reaktionen auf Work Items und EXTERNAL-Kommentare mit Picker und Umschalten eigener Reaktionen.
+3. Öffentliche Intake-Einreichung (nur API): angemeldete Nutzer reichen nur bei am Board aktiviertem Intake ein und sehen, ändern und löschen nur eigene Einreichungen (Permission-Matrix).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-SPACE-006,CE-SPACE-025,CE-SPACE-026,CE-SPACE-027,CE-SPACE-028` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -9120,9 +9369,9 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | EP | Methode | Pfad | Oberfläche | Handler | Permission | Inkr. 04 | CE-IDs |
 |---|---|---|---|---|---|---|---|
 | EP-0540 | GET | `/api/v1/users/me/` | V1 | V1CurrentUserEndpoints.GetCurrentUserQuery | user.user.read | I6 | CE-API-005 |
-| EP-0711 | GET | `/api/schema/` | OpenApi | OpenApiEndpoints.OpenApiDocumentEndpoint(v1) | (anonym, nur mit Plane:OpenApi:Enabled) | I6 | CE-API-004 |
-| EP-0712 | GET | `/api/schema/redoc/` | OpenApi | OpenApiEndpoints.ScalarUi | (anonym, nur mit Plane:OpenApi:Enabled) | I6 | CE-API-004 |
-| EP-0713 | GET | `/api/schema/swagger-ui/` | OpenApi | OpenApiEndpoints.ScalarUi | (anonym, nur mit Plane:OpenApi:Enabled) | I6 | CE-API-004 |
+| EP-0711 | GET | `/api/schema/` | OpenApi | OpenApiEndpoints.OpenApiDocumentEndpoint(v1) | (anonym, nur mit Funk:OpenApi:Enabled) | I6 | CE-API-004 |
+| EP-0712 | GET | `/api/schema/redoc/` | OpenApi | OpenApiEndpoints.ScalarUi | (anonym, nur mit Funk:OpenApi:Enabled) | I6 | CE-API-004 |
+| EP-0713 | GET | `/api/schema/swagger-ui/` | OpenApi | OpenApiEndpoints.ScalarUi | (anonym, nur mit Funk:OpenApi:Enabled) | I6 | CE-API-004 |
 
 **Akzeptanzkriterien**
 
@@ -9222,10 +9471,13 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract-Szenarien mit Original-Golden für alle HTTP-Endpunkte dieses Pakets; Replay grün.
-2. Job-/Consumer-Tests: Idempotenz (Inbox), Retry/Backoff, Zeitsteuerung mit `FixedClock`; neue Ereignistypen im Event-Katalog-Snapshot.
-3. Bei Cron-Jobs: Registrierung in `CronRegistrationTests` mit Original-Zeit (UTC).
-4. `ce-coverage-check --ids CE-API-006,CE-API-007,CE-API-008,CE-API-009,CE-API-010,CE-API-011,CE-API-012,CE-API-013` grün (Mindestebenen 15 Anhang B).
+1. Alle v1-Endpunkte dieses Pakets bestehen die Contract-Szenarien gegen `v1.original.json` und die Original-Goldens (Erfolg, 400, 403/404, 409 bei Namens-/External-ID-Konflikt).
+2. Projektanlage über v1 legt Default-States, Admin-Mitgliedschaft und bei `intake_view` den Default-Intake an und löst die Webhook-Ereignisse aus (L3 mit Webhook-Recorder); Archivieren löscht die Favoriten.
+3. HARM-03/-04/-06 sind umgesetzt und in `deviations.yaml` mit Verweis auf 17 Z-09 dokumentiert; Einladungs-Endpunkte senden keine Mail und geben kein Token aus (wie Original).
+4. Contract-Szenarien mit Original-Golden für alle HTTP-Endpunkte dieses Pakets; Replay grün.
+5. Job-/Consumer-Tests: Idempotenz (Inbox), Retry/Backoff, Zeitsteuerung mit `FixedClock`; neue Ereignistypen im Event-Katalog-Snapshot.
+6. Bei Cron-Jobs: Registrierung in `CronRegistrationTests` mit Original-Zeit (UTC).
+7. `ce-coverage-check --ids CE-API-006,CE-API-007,CE-API-008,CE-API-009,CE-API-010,CE-API-011,CE-API-012,CE-API-013` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -9288,10 +9540,12 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract-Szenarien mit Original-Golden für alle HTTP-Endpunkte dieses Pakets; Replay grün.
-2. Job-/Consumer-Tests: Idempotenz (Inbox), Retry/Backoff, Zeitsteuerung mit `FixedClock`; neue Ereignistypen im Event-Katalog-Snapshot.
-3. Bei Cron-Jobs: Registrierung in `CronRegistrationTests` mit Original-Zeit (UTC).
-4. `ce-coverage-check --ids CE-API-014,CE-API-015,CE-API-016` grün (Mindestebenen 15 Anhang B).
+1. Stickies-CRUD nur auf eigene Stickies mit Volltextsuche über `query` (Golden); fremde Stickies → Original-404.
+2. Die im Original v1.4.2 defekten Varianten (User-Assets Server-Variante, Generic Workspace Assets POST/GET) funktionieren korrigiert mit `golden_source: target` und `DEV-*`-Eintrag (17 Z-12); die Upload-Bestätigung setzt `is_uploaded`.
+3. Contract-Szenarien mit Original-Golden für alle HTTP-Endpunkte dieses Pakets; Replay grün.
+4. Job-/Consumer-Tests: Idempotenz (Inbox), Retry/Backoff, Zeitsteuerung mit `FixedClock`; neue Ereignistypen im Event-Katalog-Snapshot.
+5. Bei Cron-Jobs: Registrierung in `CronRegistrationTests` mit Original-Zeit (UTC).
+6. `ce-coverage-check --ids CE-API-014,CE-API-015,CE-API-016` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -9403,10 +9657,13 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract-Szenarien mit Original-Golden für alle HTTP-Endpunkte dieses Pakets; Replay grün.
-2. Job-/Consumer-Tests: Idempotenz (Inbox), Retry/Backoff, Zeitsteuerung mit `FixedClock`; neue Ereignistypen im Event-Katalog-Snapshot.
-3. Bei Cron-Jobs: Registrierung in `CronRegistrationTests` mit Original-Zeit (UTC).
-4. `ce-coverage-check --ids CE-API-017,CE-API-018,CE-API-019,CE-API-020,CE-API-021,CE-API-022,CE-API-023,CE-API-024,CE-API-025` grün (Mindestebenen 15 Anhang B).
+1. Die Alias-Routen `issues` und `work-items` liefern identische Antworten (Contract-Test je Endpunkt mit beiden Präfixen).
+2. Anlage mit Override von `created_at`/`created_by`, Default-Assignee und Default-Typ (`IWorkItemTypeResolver`) wie Original; State-Wechsel mit Origin `PublicApi` (AK-16-06); `GET {W}/work-items/{PROJ}-{seq}/` über `IWorkItemReferenceResolver`.
+3. Aktivitätsliste ohne Kommentar-, Vote-, Reaction- und Draft-Einträge; Relationen gruppiert nach den 8 v1-Typen mit Mapping auf die gespeicherte Richtung; Anhänge per Presigned POST mit MIME-Allowlist und 302-Download (Golden).
+4. Contract-Szenarien mit Original-Golden für alle HTTP-Endpunkte dieses Pakets; Replay grün.
+5. Job-/Consumer-Tests: Idempotenz (Inbox), Retry/Backoff, Zeitsteuerung mit `FixedClock`; neue Ereignistypen im Event-Katalog-Snapshot.
+6. Bei Cron-Jobs: Registrierung in `CronRegistrationTests` mit Original-Zeit (UTC).
+7. `ce-coverage-check --ids CE-API-017,CE-API-018,CE-API-019,CE-API-020,CE-API-021,CE-API-022,CE-API-023,CE-API-024,CE-API-025` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -9485,10 +9742,12 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract-Szenarien mit Original-Golden für alle HTTP-Endpunkte dieses Pakets; Replay grün.
-2. Job-/Consumer-Tests: Idempotenz (Inbox), Retry/Backoff, Zeitsteuerung mit `FixedClock`; neue Ereignistypen im Event-Katalog-Snapshot.
-3. Bei Cron-Jobs: Registrierung in `CronRegistrationTests` mit Original-Zeit (UTC).
-4. `ce-coverage-check --ids CE-API-026,CE-API-027,CE-API-028,CE-API-029,CE-API-030,CE-API-031,CE-API-032` grün (Mindestebenen 15 Anhang B).
+1. Filter `cycle_view` (all/current/upcoming/completed/draft/incomplete) liefert auf dem Parity-Seed dieselben Mengen wie das Original; Datumsangaben in Projekt-Zeitzone (Golden).
+2. Work Items werden aus anderen Cycles verschoben; der Cycle-Transfer friert den `progress_snapshot` ein und nutzt Origin `CycleTransfer` (AK-16-06); Cycle-/Modul-Archiv nur für abgeschlossene bzw. completed/cancelled Objekte (sonst Original-Fehler).
+3. Contract-Szenarien mit Original-Golden für alle HTTP-Endpunkte dieses Pakets; Replay grün.
+4. Job-/Consumer-Tests: Idempotenz (Inbox), Retry/Backoff, Zeitsteuerung mit `FixedClock`; neue Ereignistypen im Event-Katalog-Snapshot.
+5. Bei Cron-Jobs: Registrierung in `CronRegistrationTests` mit Original-Zeit (UTC).
+6. `ce-coverage-check --ids CE-API-026,CE-API-027,CE-API-028,CE-API-029,CE-API-030,CE-API-031,CE-API-032` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -9503,7 +9762,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Typ (DoD 15 §3.15.3) | V – Vertikaler Schnitt |
 | Größe | M |
 | parallelisierbar | ja |
-| Abhängigkeiten | WP-I5-999 |
+| Abhängigkeiten | WP-I5-999, WP-I6-202 |
 | CE-IDs | CE-WH-002, CE-WH-003, CE-WH-004, CE-WH-005, CE-WH-006 |
 
 **Ziel.** Settings-Seiten für Webhooks mit Secret-Verwaltung (`funk_wh_`-Präfix).
@@ -9552,12 +9811,15 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-WH-002,CE-WH-003,CE-WH-004,CE-WH-005,CE-WH-006` grün (Mindestebenen 15 Anhang B).
+1. Die Webhook-Anlage prüft die Payload-URL serverseitig nach den `SsrfSafeHttpHandler`-Regeln (internes Ziel → Original-Validierungsfehler); Ereignisauswahl „alle“ oder einzeln aus den über `IWebhookEventSource` registrierten CE-Arten (`project`, `issue`, `module`, `cycle`, `issue_comment`).
+2. Das Secret mit Präfix `funk_wh_` ist nur bei Anlage und Regenerierung sichtbar; der CSV-Download enthält URL, Ereignisse und Secret wie das Original; Regenerieren macht das alte Secret ungültig (nächste Zustellung trägt die neue Signatur `X-Funk-Signature`).
+3. Liste, Detailseite, Aktiv-Schalter und Löschen nur für Workspace-Admins (Permission-Matrix).
+4. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+5. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+6. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+7. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+8. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+9. `ce-coverage-check --ids CE-WH-002,CE-WH-003,CE-WH-004,CE-WH-005,CE-WH-006` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -9686,12 +9948,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-WH-012,CE-WH-013,CE-WH-014` grün (Mindestebenen 15 Anhang B).
+1. Der Token-Klartext mit Präfix `funk_api_` wird genau einmal (Antwort der Anlage) angezeigt; kein späterer Abruf liefert ihn (L3); Speicherung nach 05 §3.12.3.
+2. Ablaufoptionen 1 week, 1 month, 3 months, 1 year, Custom, Never expires; `is_active` wird aus dem Ablauf berechnet (`FixedClock`: Active → Expired); der CSV-Download enthält die Original-Spalten; nach dem Widerruf liefert der nächste v1-Request 401.
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-WH-012,CE-WH-013,CE-WH-014` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -9768,7 +10032,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Typ (DoD 15 §3.15.3) | V – Vertikaler Schnitt |
 | Größe | M |
 | parallelisierbar | ja |
-| Abhängigkeiten | WP-I5-999 |
+| Abhängigkeiten | WP-I5-999, WP-I6-002 |
 | CE-IDs | CE-AI-001, CE-AI-002 |
 
 **Ziel.** KI-Assistent über `IChatClient` (Microsoft.Extensions.AI, OpenAI-kompatibler Endpunkt, lokal betreibbar) und Unsplash-Suche; beides optional und abschaltbar (ADR-004).
@@ -9813,12 +10077,14 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
-2. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
-3. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
-4. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
-5. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
-6. `ce-coverage-check --ids CE-AI-001,CE-AI-002` grün (Mindestebenen 15 Anhang B).
+1. Ohne konfigurierten Provider ist `has_llm_configured = false` und die KI-UI unsichtbar; mit einem WireMock-OpenAI-kompatiblen Endpunkt liefern „I'm feeling lucky“ und der Assistent die Antwort für `task`+`prompt` in der Antwortform des Originals (Golden).
+2. Ausgehende Aufrufe nur über die benannten Clients `llm` und `unsplash` mit SSRF-Schutz (OE-11); ohne Unsplash-Key liefert die Suche eine leere Liste; ohne beide Dienste ist die Anwendung im Airgap-Profil voll bedienbar (E2E ohne Egress).
+3. Contract: je Endpunkt dieses Pakets ≥ 1 Szenario mit Golden vom Original (Erfolg, Berechtigungsfehler, Validierungsfehler); Replay grün (L5).
+4. Permission-Matrix (05 Anhang B) für alle Endpunkte dieses Pakets als L3-Test grün; Tenant-Isolation geprüft.
+5. Signal-Stores strukturgleich zum MobX-Original (`store-parity-check`), Vitest je Action (L2).
+6. E2E-Specs dieses Pakets grün gegen Original **und** funk. (Dual-Target, Pflichtszenarien 15 §3.9.3).
+7. Visual-/DOM-/a11y-Prüfpunkte der betroffenen Screens (09 §4.14, 15 §3.10.2) innerhalb der Schwellwerte 15 §3.10.3 (Chromium); i18n-Schlüssel nur aus den Original-Locales (de/en).
+8. `ce-coverage-check --ids CE-AI-001,CE-AI-002` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -9859,7 +10125,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Testumfang**
 
-- Typ-X-Tests (CE-Default unverändert, Fake-Erweiterung wirkt ohne CE-Änderung), L0-Inventarabgleich `ExtensionPointInventoryTests`/`extension-registry-check`.
+- 16 §7.2: `V1PayloadExtensionTests`, `V1FilterParameterGuardTests` (Original-400-Körper für `pql`/`filters`) (`Funk.PublicApi.Tests`).
 
 ### WP-I6-202 – Erweiterungspunkte IWebhookEventSource und IExportTypeProvider
 
@@ -9894,7 +10160,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Testumfang**
 
-- Typ-X-Tests (CE-Default unverändert, Fake-Erweiterung wirkt ohne CE-Änderung), L0-Inventarabgleich `ExtensionPointInventoryTests`/`extension-registry-check`.
+- 16 §7.2: `WebhookEventSourceTests` (`Funk.Webhooks.Tests`), `ExportTypeProviderTests` (`Funk.Exports.Tests`).
 
 ### WP-I6-203 – Erweiterungspunkte Space/Admin: SPACE_ROUTE_EXTENSIONS, EDITOR_EXTENSIONS (Space), ADMIN-Registries mit CE-Inhalt
 
@@ -10100,9 +10366,12 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Unit-Tests ≥ 90 % Zeilen; Architekturtest für jede neue Regel; AppHost-Test, falls Topologie betroffen.
-2. Kurzreferenz in `docs/` des Repos `funk.`.
-3. `ce-coverage-check --ids CE-OPS-004` grün (Mindestebenen 15 Anhang B).
+1. `funk-aio` startet Gateway, Api, Realtime und Worker in einem Prozess, führt die Migration unter Advisory-Lock aus und meldet erst danach Ready; `docker-compose.aio.yaml` (postgres, keycloak, keycloak-config, funk-aio) besteht den `@smoke`-Satz.
+2. Der Start bricht mit Exit-Code ≠ 0 und Log-Meldung ab, wenn `WEB_URL`/`DOMAIN_NAME` fehlen oder ungültig sind (FQDN ≤ 253 Zeichen oder IPv4), Secrets Bekannt-Defaults sind oder `ExpectMultipleInstances=true` gesetzt ist (je Fall ein Container-Test).
+3. Alle Queues inkl. `live` laufen im Prozess: Notification-Zähler-Push < 2 s ohne Valkey (`LiveEventLatencyTests` gegen AIO).
+4. Unit-Tests ≥ 90 % Zeilen; Architekturtest für jede neue Regel; AppHost-Test, falls Topologie betroffen.
+5. Kurzreferenz in `docs/` des Repos `funk.`.
+6. `ce-coverage-check --ids CE-OPS-004` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -10145,10 +10414,12 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Contract-Szenarien mit Original-Golden für alle HTTP-Endpunkte dieses Pakets; Replay grün.
-2. Job-/Consumer-Tests: Idempotenz (Inbox), Retry/Backoff, Zeitsteuerung mit `FixedClock`; neue Ereignistypen im Event-Katalog-Snapshot.
-3. Bei Cron-Jobs: Registrierung in `CronRegistrationTests` mit Original-Zeit (UTC).
-4. `ce-coverage-check --ids CE-OPS-010` grün (Mindestebenen 15 Anhang B).
+1. Mit gesetztem `ConnectionStrings__funk-replica` gehen GET/HEAD/OPTIONS genau der Endpunkte mit `read_replica: true` (Katalog 04) an die Replica, alle Schreibzugriffe und Migrationen an die Primary (L3 mit zwei Datenbanken und Abfrage-Zähler je Verbindung).
+2. Ohne Replica-Konfiguration nutzen alle Endpunkte die Primary; Architekturtest: kein schreibender Handler trägt `read_replica: true`.
+3. Contract-Szenarien mit Original-Golden für alle HTTP-Endpunkte dieses Pakets; Replay grün.
+4. Job-/Consumer-Tests: Idempotenz (Inbox), Retry/Backoff, Zeitsteuerung mit `FixedClock`; neue Ereignistypen im Event-Katalog-Snapshot.
+5. Bei Cron-Jobs: Registrierung in `CronRegistrationTests` mit Original-Zeit (UTC).
+6. `ce-coverage-check --ids CE-OPS-010` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -10193,9 +10464,12 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Unit-Tests ≥ 90 % Zeilen; Architekturtest für jede neue Regel; AppHost-Test, falls Topologie betroffen.
-2. Kurzreferenz in `docs/` des Repos `funk.`.
-3. `ce-coverage-check --ids CE-OPS-005` grün (Mindestebenen 15 Anhang B).
+1. Modus `None`: nur HTTP 8080, HSTS nur hinter vertrautem Proxy mit `X-Forwarded-Proto=https`; Modus `Certificate`: 8443 mit PEM/PFX, 8080 → 308 (außer `/.well-known/acme-challenge/`), Zertifikatswechsel ohne Neustart (Datei ersetzen → neue Verbindung erhält das neue Zertifikat < 10 s).
+2. Das Compose-Profil `acme` mit gepinntem `caddy` erhält gegen eine Test-ACME-CA (nur Test) ein Zertifikat und leitet auf das Gateway weiter (Compose-Smoke); Header- und Body-Limits wie Original.
+3. Eine eigene CA unter `/etc/funk/ca/*.crt` wird von .NET, Keycloak und Forgejo vertraut (AK-14-26); in Produktion startet funk. ohne Zertifikat für Data Protection nicht (Konfigurationstest).
+4. Unit-Tests ≥ 90 % Zeilen; Architekturtest für jede neue Regel; AppHost-Test, falls Topologie betroffen.
+5. Kurzreferenz in `docs/` des Repos `funk.`.
+6. `ce-coverage-check --ids CE-OPS-005` grün (Mindestebenen 15 Anhang B).
 
 **Testumfang**
 
@@ -10242,7 +10516,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Typ (DoD 15 §3.15.3) | I – Infrastruktur/Baustein |
 | Größe | M |
 | parallelisierbar | ja |
-| Abhängigkeiten | WP-I6-999 |
+| Abhängigkeiten | WP-I6-999, WP-I7-101, WP-I7-102, WP-I7-103, WP-I7-105, WP-I7-106 |
 | CE-IDs | – (keine; Baustein/Spike/Abnahme) |
 
 **Ziel.** `funk-airgap-<version>-<arch>.tar.zst` mit vollständiger Image-Liste (inkl. Forgejo, Keycloak), Prüfliste „keine externen Calls“ und E2E-Lauf mit gesperrtem Egress in CI.
@@ -10326,8 +10600,11 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Unit-Tests ≥ 90 % Zeilen; Architekturtest für jede neue Regel; AppHost-Test, falls Topologie betroffen.
-2. Kurzreferenz in `docs/` des Repos `funk.`.
+1. LT-08 (XL, 200 VU, 30 min): p95 < 500 ms, p99 < 1 s, Fehler < 0,1 %, CPU `api` < 70 %, DB-Verbindungen < 60 % von `max_connections`; LT-13 (50 Logins/s): p95 Callback < 300 ms ohne Keycloak-Zeit; LT-21 (Einzelknoten 2 vCPU/4 GB, 60 min): p95 Listen < 500 ms, RSS nach 60 min ≤ 110 % des 10-min-Werts – jeweils auf Runner `perf` (`artifacts/load/<LT>.json`).
+2. Worker-Kill-Test im LT-12-Aufbau: `kill -9` eines von 3 Workern bei 1 000 Jobs/s verliert keine Nachricht und verarbeitet keine doppelt (Inbox-Nachweis).
+3. Volumenprofil XL (20 Projekte, 200 000 Items, 500 Benutzer, 2 000 Pages, 1 Mio. Activities) entsteht in < 20 min und wird als Dump zwischengespeichert (15 §3.14.3).
+4. Unit-Tests ≥ 90 % Zeilen; Architekturtest für jede neue Regel; AppHost-Test, falls Topologie betroffen.
+5. Kurzreferenz in `docs/` des Repos `funk.`.
 
 **Testumfang**
 
@@ -10354,8 +10631,11 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 
 **Akzeptanzkriterien**
 
-1. Unit-Tests ≥ 90 % Zeilen; Architekturtest für jede neue Regel; AppHost-Test, falls Topologie betroffen.
-2. Kurzreferenz in `docs/` des Repos `funk.`.
+1. Jeder Eintrag des Screenshot-Katalogs (09 §4.14) liegt innerhalb der Schwellwerte 15 §3.10.3 (Chromium) oder hat einen genehmigten `ui-deviations.yaml`-Eintrag; Visual-Quote 100 %.
+2. `coverage --fail-under 100` für alle 564 registrierten Endpunkte (`_data/wp-endpoints.json`); 0 Abweichungen ohne Entscheidung in `deviations.yaml`, `ui-deviations.yaml` und `BRAND-*`.
+3. Die konsolidierte Abweichungsliste liegt als `docs/acceptance/deviations-I7.md` vor und trägt den Freigabevermerk des Auftraggebers.
+4. Unit-Tests ≥ 90 % Zeilen; Architekturtest für jede neue Regel; AppHost-Test, falls Topologie betroffen.
+5. Kurzreferenz in `docs/` des Repos `funk.`.
 
 **Testumfang**
 
@@ -10369,7 +10649,7 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 | Typ (DoD 15 §3.15.3) | X – Erweiterungspunkt 🧱 |
 | Größe | S |
 | parallelisierbar | ja |
-| Abhängigkeiten | WP-I6-999 |
+| Abhängigkeiten | WP-I6-999, WP-I7-107 |
 | CE-IDs | – (keine; Erweiterungspunkt) |
 | Andockstelle | 16 §1.4 Zeile I7; 16 §4.6 (Träger CE-OPS-023) |
 
@@ -10387,9 +10667,11 @@ Dauer-Schätzung je Paket: S = 2, M = 5, L = 10 Agenten-Arbeitstage; Pakete auß
 **Akzeptanzkriterien**
 
 1. Jede nicht additive Änderung an einem Erweiterungs-Interface bricht den Snapshot-Test.
-2. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
-3. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
-4. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
+2. AK-16-05: `ExtensionContractsSnapshotTests` und der `api-extractor`-Report von `libs/web/extensions/public-api.ts` lassen nur additive Diffs zu (Testfixture: entfernter Member bricht den Build).
+3. AK-16-02: Contract-Replay und Visual-Suite mit allen CE-Default-Registrierungen = Lauf ohne Andockstellen-Registrierung (0 Abweichungen); Airgap-Lauf mit gebündeltem Forgejo aus dem Bundle von WP-I7-107 grün.
+4. Contract (Interface/Schema/Token) + CE-Default-Implementierung; Eintrag in `tests/extension-points.yaml`.
+5. Test „CE-Default = Original-Verhalten“ (Contract-Replay unverändert grün).
+6. Test mit Fake-Erweiterung aus `Funk.BuildingBlocks.Testing/Extensions` bzw. `provideFakeExtensions()` beweist Erweiterbarkeit ohne CE-Änderung (DoD Typ X).
 
 **Testumfang**
 
@@ -10977,4 +11259,59 @@ Ein registrierter Endpunkt gehört zu genau einem Arbeitspaket: dem Paket, das e
 | EP-0271 | DELETE | `/api/workspaces/{slug}/projects/{project_id}/issues/{pk}/archive/` | I3 | WP-I2-009 | I2 |
 | EP-0419 | GET | `/api/assets/v2/workspaces/{slug}/projects/{project_id}/download/{asset_id}/` | I2 | WP-I1-103 | I1 |
 | EP-0480 | GET | `/api/workspaces/{slug}/project-stats/` | I5 | WP-I1-005 | I1 |
+
+## Review-Protokoll
+
+**Adversarialer Review vom 23.10.2026** über `plan/01`–`04` und `plan/_data/wp-ce.json`. Alle Korrekturen sind in den Spezifikationsdateien (`wp_spec*.py`), im Generator (`build.py`, `check_wp.py`) bzw. direkt in `plan/01`, `03`, `04` vorgenommen; dieses Dokument und `_data/*.json` sind danach neu erzeugt. Architektur-Dokumente wurden nicht geändert; ihr Nachpflegebedarf steht in plan/04 §6 (N-P13 … N-P16).
+
+### Prüfmethode
+
+| Nr. | Prüfung | Werkzeug / Quelle | Ergebnis vor Review | Ergebnis nach Review |
+|---|---|---|---|---|
+| P-1 | Jede CE-ID aus `features/_data/ce-features.json` genau einem Paket zugeordnet, keine unbekannten IDs | `check_wp.py` und unabhängiges Prüfskript gegen `ce-features.json` | 507/507, 0 doppelt, 0 unbekannt | unverändert 507/507 |
+| P-2 | „entfällt“-IDs in Paketen mit Ersatznachweis; Status-Abgleich 00 ↔ 05 ↔ 15 | `15-ce-testmatrix.json`, 00 ADR-008, 05 Matrix CE-AUTH/PROF/INST/SPACE | 27 korrekt platziert; 2 Statuskonflikte zwischen den Architektur-Dokumenten | Konflikt dokumentiert (plan/04 N-P13), WP-I6-001 präzisiert |
+| P-3 | Abhängigkeiten existent, nicht in spätere Inkremente, azyklisch | `check_wp.py`, DFS | grün | grün |
+| P-4 | Jedes Paket unter der Abnahme seines Inkrements (außer Spikes) | neu in `check_wp.py` | grün | grün |
+| P-5 | Meilenstein-Kette: jedes Paket in In (n ≥ 1) transitiv an `WP-I(n-1)-999`, außer Vorlauf | neu in `build.py`/`check_wp.py` | 12 Pakete ohne Kette, davon 3 fachlich falsch (WP-I4-005, WP-I4-007, Pages-Schema fehlte dem Vorlauf); Vorlauf nirgends markiert | 11 Vorlauf-Pakete, deklariert in `wp_spec.VORLAUF`, markiert in §3.3 und je Paket |
+| P-6 | Spike-Gating nach 01 §9 Spalte „blockiert“ | Abgleich der direkten Nutzer je Spike | S11 (Paritäts-Harness) gatete keinen I0-Schnitt, Scope-FK-Spike gatete nicht die erste Tabelle mit Scope-FK (WP-I0-005) | ergänzt (R-01, R-02) |
+| P-7 | Alle P-Andockstellen aus 16 §1.4, §3.3.0 (E-01 … E-26) und §4.6 in X-Paketen | Bezeichner-Abgleich (147 Contracts/Tokens/Tabellen) | 2 Bezeichner fehlten namentlich (`IProjectFeatureContributor`, `IWorkspaceFeatureContributor`), `FILTER_INPUT_MODES` (16 §5.5, AK-16-16) fehlte | ergänzt (WP-I1-202, WP-I2-201) |
+| P-8 | Träger-Pakete (16 §4.6) hängen vom X-Paket ab (02 §2.1 Nr. 3) | Prüfskript über die Träger-CE-IDs je X-Paket | 4 fachliche Lücken (WP-I6-014, WP-I6-004, WP-I4-006, WP-I4-202) | ergänzt; verbleibende Treffer sind nominelle Träger aus dem Fundament (siehe „Bewusst nicht geändert“) |
+| P-9 | Test-Inventar 16 §7.2 und AK-16-01 … AK-16-17 in den X-Paketen | Abgleich Testklassen/AK-IDs | 40 von 45 Testklassen aus 16 §7.2 und alle 17 AK-16-IDs in keinem Paket genannt | in die X-Pakete übernommen (Namen nach ADR-009C) |
+| P-10 | Messbare Akzeptanzkriterien | Paketliste ohne paketspezifische AK; Suche nach vagen Begriffen („korrekt“, „funktioniert“, „performant“ …) | 62 Pakete nur mit Standardkriterien; 3 vage Kriterien in Spikes | jedes Paket ≥ 1 paketspezifisches, prüfbares Kriterium (Golden, Zählung, Schwellwert, Testname); vage Kriterien präzisiert |
+| P-11 | Namen nach ADR-009C / Umbenennungstabelle 17 | Suche nach `Plane.`, `Plane:`, `X-Plane-`, `plane_*`, `@plane/` in generierten Texten | 4 × `Plane:OpenApi:Enabled` (Permission-Spalte aus `endpoints.json` nicht umbenannt) | `rename()` erweitert (`Plane:`, `Plane__`) und auf die Permission-Spalte angewandt |
+| P-12 | Querverweise zwischen den Plan-Dokumenten | Abgleich `plan/0x §n` mit den Überschriften | 3 falsche Ziele (`plan/03 §9` statt §10 Eskalation, zweimal; `plan/03 §7` statt §8 DoD) | korrigiert |
+| P-13 | Kennzahlen in plan/01 gegen 02 §3.2 | Neuberechnung kritischer Pfade inkl. „ab Meilenstein“ | „37 nach Vorlauf“ (I2, tatsächlich 42), „22 nach Vorlauf“ (I4, tatsächlich 29), I7 12 Tage | nach Korrekturen: I2 62/42, I4 44/37, I6 39, I7 22 Tage; Gantt angepasst |
+
+### Korrekturen
+
+| Nr. | Fundstelle | Befund | Korrektur |
+|---|---|---|---|
+| R-01 | WP-I0-001, WP-I0-006, WP-I0-109 | Erste V/F-Pakete ohne Abhängigkeit auf CI/Gates (WP-I0-106) bzw. Paritäts-Harness (WP-I0-911), obwohl ihre DoD „G2 grün“ und Contract-Replay/Visual gegen das Original verlangt (01 §9 S11: „Definition of Done aller WPs“). | `WP-I0-106` (alle drei) und `WP-I0-911` (WP-I0-001, WP-I0-109) als Abhängigkeit; kritischer Pfad I0 unverändert 49 Tage. |
+| R-02 | WP-I0-005 | Projektanlage legt `states`/`project_members` an, die nach 03 D03-ADR-05 bereits in I0 den zusammengesetzten Scope-FK tragen; der Scope-FK-Spike (WP-I0-913) gatete nur I1-Pakete. | Abhängigkeit `WP-I0-913`, AK zum Scope-FK. |
+| R-03 | WP-I4-201, WP-I4-202, WP-I4-006 | Der Vorlauf-Kollaborationsserver (ab M2) speichert in `pages` und prüft Page-Zugriff je Verbindung (17 ABG-107), Schema und Zugriffsregel entstanden aber erst nach M3 (WP-I4-201 bzw. WP-I4-002). | WP-I4-201 wird Vorlauf-Paket (Abhängigkeit M2) und baut die zentrale Prüfstelle `IPageAccessPolicy` (05 §3.13.5); WP-I4-202 und WP-I4-006 hängen von WP-I4-201 ab (plan/04 OP-PLAN-13). |
+| R-04 | WP-I4-007 | Lief als Vorlauf, nutzt aber den REST-Fallback `…/pages/{id}/description/` aus WP-I4-002. | Abhängigkeit `WP-I4-002`, Hinweis „kein Vorlauf-Paket“; kritischer Pfad I4 ab M3 37 Tage (plan/04 R-P31). |
+| R-05 | WP-I4-005, WP-I4-004 | Versionshistorie (Typ V mit App-Endpunkten) hing nur am Vorlauf-Server und nicht an der Page-Verwaltung; das Info-Panel (WP-I4-004) zeigt die Versionsliste ohne Abhängigkeit. | WP-I4-005 → WP-I4-002; WP-I4-004 → WP-I4-005. |
+| R-06 | WP-I4-002 | Duplizieren erzeugt JSON/Binary (CE-PAGE-009) ohne Abhängigkeit auf Funk.Documents Teil B. | Abhängigkeit `WP-I4-101`; AK „in-process, kein Live-Server-Aufruf“. |
+| R-07 | WP-I2-004 | Sidebar-Properties der Detailseite ohne Abhängigkeit auf die Detailseite. | Abhängigkeit `WP-I2-002`. |
+| R-08 | WP-I6-014, WP-I6-004 | Träger-CE-IDs (CE-WH-002/-003 Ereignisauswahl; CE-SPACE-001) ohne Abhängigkeit auf ihr X-Paket (WP-I6-202 bzw. WP-I6-203), entgegen 02 §2.1 Nr. 3. | Abhängigkeiten ergänzt; I6 kritischer Pfad 39 Tage. |
+| R-09 | WP-I6-018 | KI-Assistent ohne Abhängigkeit auf die AI-Einstellungen (`has_llm_configured`, WP-I6-002). | Abhängigkeit `WP-I6-002`. |
+| R-10 | WP-I7-107, WP-I7-201 | Airgap-Bundle enthält Compose, AIO-Compose, Helm-Chart, `funk-cli` und ACME-Profil (14 §3.14.1), hing aber nur an M6; der Airgap-Lauf mit Forgejo (WP-I7-201) hing nicht am Bundle. | WP-I7-107 → WP-I7-101, -102, -103, -105, -106; WP-I7-201 → WP-I7-107; I7 kritischer Pfad 22 Tage. |
+| R-11 | 62 Pakete (u. a. alle I3-Schnitte, Public API v1, God Mode, Space, WP-I7-103/-104/-105/-109/-110) | Nur Standardkriterien des Typs; keine paketspezifischen Prüfpunkte (z. B. Lastziele LT-08/-13/-21 in WP-I7-109, Start-Abbruchregeln in WP-I7-103). | Paketspezifische AK mit Golden-, Zähl-, Zeit- oder Testnachweis ergänzt; Quelle je Kriterium aus CE-Katalog, 05, 07, 14, 15, 16. |
+| R-12 | X-Pakete | Testinventar 16 §7.2 und AK-16-01 … -17 nicht zugeordnet; `assert-no-package-code`, `ReservedContractFieldsTests`, `e2e/web/extensions.spec.ts` ohne Paket. | Je X-Paket Testklassen und AK-16-Nachweise ergänzt; Querschnitt in WP-I0-208, AK-16-02 als Zwischenstand in WP-I2-999/WP-I4-999 und final in WP-I7-201. |
+| R-13 | WP-I1-202, WP-I2-201 | E-26-Contributors nicht namentlich; Token `FILTER_INPUT_MODES` fehlte. | Titel/AK WP-I1-202 (AK-16-10), Lib und AK in WP-I2-201. |
+| R-14 | WP-I1-205 | E-12 (`IInstanceConfigKeyProvider`) entsteht in I1, die 14 Instanz-Schlüssel aber schon in I0 (WP-I0-003) – Umbau der I0-Lösung war nicht beschrieben. | AK: Überführung in `CoreInstanceConfigKeyProvider`, Golden unverändert (plan/04 N-P14). |
+| R-15 | WP-I6-001 | Paket nannte „Unsaved-Dialog“, aber nicht die Ersatzseite „Authentication“ (Keycloak-Karte, `ENABLE_SIGNUP`, Kopierfelder CE-INST-015; 05 §4.4, 08 §4.2 R6); 05 und 00/08/15 widersprechen sich im Status von CE-INST-014/-020. | Titel und AK präzisiert; Konflikt in plan/04 N-P13. |
+| R-16 | `build.py` | `Plane:OpenApi:Enabled` in vier Endpunktzeilen (Permission-Spalte). | `rename()` deckt `Plane.`, `Plane:`, `Plane__` ab und wirkt auch auf die Permission-Spalte. |
+| R-17 | `build.py`, `check_wp.py`, 02 §1.2/§3 | Vorlauf-Pakete nirgends gekennzeichnet (plan/03 §3 verlangte „gekennzeichnet“); keine Prüfung, dass nur gewollte Pakete den Meilenstein überspringen. | `wp_spec.VORLAUF`, Abbruch bei Abweichung oder Typ V/F/A, Merkmal „Vorlauf“ je Paket, Liste §3.3, Spalte „ab Meilenstein“ in §3.2, Abnahme-Vollständigkeit in `check_wp.py`. |
+| R-18 | 02 §1.2, §2.4; plan/01 §7.3 | Verweise `plan/03 §9` (Eskalation steht in §10) und `plan/03 … §7` (DoD steht in §8). | korrigiert. |
+| R-19 | WP-I0-901, WP-I0-902, WP-I0-903 | „funktioniert“, „korrekt gelesen“, „korrekt“. | messbar umformuliert (Wiederholungen ohne Fehlschlag, JSON ohne Diff, Glyphen + identischer Text). |
+
+### Bewusst nicht geändert
+
+| Punkt | Begründung |
+|---|---|
+| Nominelle Träger aus dem Fundament: CE-OPS-021/-022 (WP-I0-102, WP-I0-106) für WP-I0-201/-205/-208, CE-OPS-023 (WP-I0-106) für WP-I7-201, CE-INST-002/-003 (WP-I0-003) für WP-I1-205/WP-I6-203 | Die Andockstellen bauen auf diesen Fundament-Paketen auf (umgekehrte Richtung wäre ein Zyklus bzw. eine Abhängigkeit auf ein späteres Inkrement); 16 §4.6 nennt sie als „Walking-Skeleton-Gerüst“. Die Nutzung ist über WP-I1-205 (R-14) bzw. die Abnahmen abgesichert. |
+| Spikes WP-I0-901 … -906, -908, -909, -912, -913 nicht unter WP-I0-999 | 01 §9: sie gaten erst das Inkrement in Spalte „blockiert“; `check_wp.py` nimmt Spikes von der Abnahme-Prüfung aus, die Folgepakete hängen direkt am Spike. |
+| Plan-eigene Messgrößen ohne Vorgabe in den Architektur-Dokumenten | z. B. „< 200 Zeilen-Elemente bei 1 000 Items“ (WP-I2-014), „Zertifikatswechsel < 10 s“ (WP-I7-105), Korpusgrößen (20 Farbpaare, 5 Referenzdokumente, 10 Referenz-Seiten). Sie machen die Kriterien prüfbar; Änderungen nur über Planfrage (plan/03 §10). |
+| Statuskonflikt CE-INST-014/-020 | Rangfolge 00 > 05: CE-INST-020 bleibt „entfällt“ (00 ADR-008), CE-INST-014 bleibt umgesetzt (08, 15). Die Zuordnung in diesem Plan ändert sich nicht; 05 ist nachzupflegen (plan/04 N-P13). |
 

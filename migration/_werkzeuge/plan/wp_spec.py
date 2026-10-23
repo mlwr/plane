@@ -167,7 +167,7 @@ W("WP-I0-108", "Keycloak-Realm als Code (dev/test/prod) inkl. Nachweis entfallen
   tests=["L3 `KeycloakRealmConfigTests`, G-BRAND über den Realm-Export."])
 
 W("WP-I0-109", "Keycloak-Login-Themes funk und funk-space (1:1-Optik der Sign-in-Seite, funk.-Branding)", "V", "L", True,
-  ["CE-AUTH-015"], ["WP-I0-108", "WP-I0-006"],
+  ["CE-AUTH-015"], ["WP-I0-108", "WP-I0-006", "WP-I0-106", "WP-I0-911"],
   "Die Login-Themes `funk` (Web/God Mode) und `funk-space` bilden die Original-Sign-in-Seiten von `apps/web` und `apps/space` pixelgleich nach (eigenes `template.ftl` ohne PatternFly, Original-Klassen und -CSS), mit funk.-Logo und -Texten (BR-09), AGB-/Datenschutz-Hinweis und Auth-Fuß (CE-AUTH-015) sowie der Hell/Dunkel-Übernahme aus funk. (Z-08).",
   be=["`deploy/keycloak/themes/{funk,funk-space}` (`.ftl`, `messages_{de,en}.properties`, `theme.properties`, Ressourcen)"],
   fe=["`frontend/apps/e2e/visual/` Suite `keycloak-login`", "`frontend/tools/brand/render-brand-assets.mjs` (Theme-Logo)"],
@@ -180,7 +180,7 @@ W("WP-I0-109", "Keycloak-Login-Themes funk und funk-space (1:1-Optik der Sign-in
 
 W("WP-I0-006", "Designsystem-Fundament: CSS-Pipeline, Schriften, Icons, erste Propel-Primitive, Toast, Galerie", "F", "L", True,
   ["CE-I18N-011", "CE-I18N-012", "CE-I18N-013", "CE-I18N-021", "CE-I18N-023", "CE-I18N-024", "CE-I18N-025", "CE-I18N-026"],
-  ["WP-I0-105", "WP-I0-910"],
+  ["WP-I0-105", "WP-I0-910", "WP-I0-106"],
   "Tailwind-4.1-Konfiguration und CSS werden 1:1 übernommen (Vendoring, Import-Reihenfolge, `@source`-Scan), Schriften und Icons gebündelt (Airgap), die ersten Propel-Primitive (Button, Input, Menu, Tooltip, Avatar) sowie Toast, Spinner/Lade-Indikatoren, Animationen, Maßsystem und Avatare/Farbwähler stehen DOM- und pixelgleich in der Galerie; die Brand-Assets werden aus `assets/funk_logo.svg` erzeugt.",
   fe=["`frontend/libs/shared/tailwind-config`", "`frontend/libs/shared/propel` (button, input, menu, tooltip, avatar, toast, spinner, headless/portal, floating)", "`frontend/libs/shared/icons-lucide` (generiert)", "`frontend/tools/propel-port/{fetch-propel,vendor-css,extract-classes,port-variants,port-icons.mjs}`", "`frontend/tools/visual/{css-diff.ts,capture-reference.ts}`", "`frontend/tools/reference-gallery`", "`frontend/apps/gallery`", "`frontend/tools/brand/{render-brand-assets.mjs,brand-i18n.mjs}`"],
   arch=["09 §1.4 Zeile I0, §3.1–§3.10, §4.1–§4.6, §4.11, §5.1–§5.8", "01 §7.17", "17 ABG-026, ABG-027, ABG-148", "15 §3.10"],
@@ -192,7 +192,7 @@ W("WP-I0-006", "Designsystem-Fundament: CSS-Pipeline, Schriften, Icons, erste Pr
 
 W("WP-I0-001", "Schnitt 1: Anmeldung über Keycloak → JIT-Benutzer → Landing/leere Shell", "V", "L", False,
   ["CE-AUTH-001", "CE-AUTH-012", "CE-AUTH-014", "CE-AUTH-016", "CE-AUTH-022", "CE-AUTH-023", "CE-AUTH-024", "CE-AUTH-025", "CE-AUTH-027", "CE-AUTH-029"],
-  ["WP-I0-103", "WP-I0-105", "WP-I0-108", "WP-I0-203", "WP-I0-204"],
+  ["WP-I0-103", "WP-I0-105", "WP-I0-108", "WP-I0-203", "WP-I0-204", "WP-I0-106", "WP-I0-911"],
   "Ein Testbenutzer meldet sich per Authorization Code + PKCE über das BFF an; funk. legt beim ersten Login den Benutzer aus den Claims an (nur bei `email_verified`), setzt die HttpOnly-Session `funk-session`, beantwortet `GET /api/users/me/` und leitet nach `next_path` bzw. zur Workspace-Anlage weiter. Abmelden (RP-initiated + Back-Channel), Session-Ablauf, Sperre deaktivierter Konten und Auth-Fehlerbanner verhalten sich wie in 05 festgelegt.",
   be=["`src/modules/Identity/Funk.Identity` (OIDC-Schemata `oidc-web`/`oidc-admin`/`oidc-space`, `OidcBffEndpoints`, `PostgresTicketStore`, `SessionRevalidator`, `BackChannelLogoutEndpoint`)", "`src/modules/Identity/Funk.Identity.Contracts`", "`src/data/Funk.Data/Entities/Identity/` (`users`, `user_identities`, `user_sessions`)", "`tests/modules/Funk.Identity.Tests`"],
   fe=["`frontend/libs/web/auth` (Landing, Sign-out, Fehlerbanner)", "`frontend/libs/web/core/wrappers/authentication-wrapper.component.ts`", "`frontend/apps/web/src/pages/(all)/…` (Sign-in-Einstieg)"],
@@ -241,13 +241,14 @@ W("WP-I0-004", "Schnitt: Workspace-Shell 1:1 (Top-Navigation, Sidebar, Header, W
 
 W("WP-I0-005", "Schnitt 3: Projekt anlegen (Identifier-Prüfung, Default-States, Mitgliedschaft)", "V", "M", False,
   ["CE-PRJ-004", "CE-PRJ-005"],
-  ["WP-I0-002", "WP-I0-006"],
+  ["WP-I0-002", "WP-I0-006", "WP-I0-913"],
   "Das Create-Project-Modal legt ein Projekt mit Identifier-Prüfung (max. 12 Zeichen, Freigabe), Default-States und Admin-Mitgliedschaft an und schreibt `funk.project.created.v1`.",
   be=["`src/modules/Projects/Funk.Projects` (`CreateProjectCommand`, Identifier-Endpunkte)", "`src/data/Funk.Data/Entities/Projects/`", "`tests/modules/Funk.Projects.Tests`"],
   fe=["`frontend/libs/web/project` (create-project-modal)"],
   arch=["04 §4.4", "03 §3.4.4", "02 §5.2 (Referenzmodul-Muster)"],
   ak=["Identifier-Konflikt und -Freigabe liefern dieselben Codes/Texte wie das Original (Contract-Golden).",
-      "Default-States werden in Original-Reihenfolge und -Farben angelegt (Golden)."],
+      "Default-States werden in Original-Reihenfolge und -Farben angelegt (Golden).",
+      "Die neuen Tabellen mit `workspace_id` und `project_id` (`states`, `project_members`, `project_identifiers`) tragen den zusammengesetzten Scope-FK `fk_<tabelle>_project_scope (project_id, workspace_id) → projects (id, workspace_id)` nach der in WP-I0-913 bestätigten Konvention (03 D03-ADR-05, Schema-Konformitätstest); ein Insert mit `project_id` aus einem fremden Workspace scheitert in der DB."],
   tests=["L3 Projects (Anlage), L5 Contract `POST {W}/projects/`, Identifier-Endpunkte, L7 `create-project.spec.ts`, L8 Visual Create-Project-Modal."])
 
 # --- Erweiterungspunkte I0 (Typ X) -----------------------------------------------------
@@ -260,8 +261,10 @@ W("WP-I0-201", "Erweiterungspunkt C3: Event-Katalog, Outbox/Inbox-Gerüst, Consu
   ep="01 §1.4 C3; 16 §5.11; 16 §4.6 Zeile „Event-Katalog …“ (Träger CE-OPS-021/-022, erste Events CE-WS-001/CE-PRJ-004)",
   ak=["Event-Katalog-Snapshot-Test schlägt bei jeder nicht additiven Änderung fehl (Typname ↔ Klasse eindeutig).",
       "Fake-Consumer aus `Funk.BuildingBlocks.Testing/Extensions` empfängt `funk.workspace.created.v1` ohne CE-Änderung (DoD Typ X).",
-      "Event mit `CausationDepth > 5` wird verworfen, Metrik `funk.outbox.dropped{reason=\"causation_depth\"}` steigt."],
-  tests=["L1/L3 Outbox/Inbox/Kausaltiefe, Typ-X-Test mit Fake-Consumer."])
+      "Event mit `CausationDepth > 5` wird verworfen, Metrik `funk.outbox.dropped{reason=\"causation_depth\"}` steigt.",
+      "AK-16-09 (Gerüst): `EventCatalogSnapshotTests.Catalog_contains_minimum_set_of_D16` existiert und prüft ab I0 die Event-Typen der in I0 entstehenden Aggregate (`funk.identity.user_provisioned.v1`, `funk.workspace.created.v1`, `funk.project.created.v1`); jedes spätere Inkrement ergänzt seine Aggregate."],
+  tests=["L1/L3 Outbox/Inbox/Kausaltiefe, Typ-X-Test mit Fake-Consumer.",
+      "16 §7.2: `EventCatalogSnapshotTests` (`Funk.Contracts.Tests`), `ConsumerRegistrationTests` (`Funk.BuildingBlocks.Tests`), `RecurringJobRegistryTests` (`Funk.Worker.Tests`)."])
 
 W("WP-I0-202", "Erweiterungspunkt B1/A2: ScopeRef, ScopeLevel, IScopeResolver, IScopeAncestorContributor, RouterStore.teamspaceId", "X", "S", True,
   [], ["WP-I0-104", "WP-I0-105"],
@@ -270,8 +273,10 @@ W("WP-I0-202", "Erweiterungspunkt B1/A2: ScopeRef, ScopeLevel, IScopeResolver, I
   fe=["`frontend/libs/web/extensions/src/scope.ts`", "`frontend/libs/web/core/router.store.ts` (`teamspaceId`)"],
   arch=["16 §5.4, §3.3.0 E-20", "01 §1.4 Zeile B1, §5.5", "02 §3.5"],
   ep="01 §1.4 B1/A2; 16 §3.3.0 E-20; 16 §4.6 (Träger CE-WS-001, CE-PRJ-006)",
-  ak=["`ScopeRef`-Gleichheit, Serialisierung und Vorfahrenkette (Project → Workspace) per Unit-Test; Fake-`IScopeAncestorContributor` ergänzt eine Teamspace-Ebene ohne CE-Änderung."],
-  tests=["L1 Scoping, Typ-X-Test (Fake-Contributor), L2 RouterStore."])
+  ak=["`ScopeRef`-Gleichheit, Serialisierung und Vorfahrenkette (Project → Workspace) per Unit-Test; Fake-`IScopeAncestorContributor` ergänzt eine Teamspace-Ebene ohne CE-Änderung.",
+      "AK-16-14 (Scope-Teil): `IScopeResolver` mit `FakeScopeAncestorContributor` liefert einen Teamspace in der Vorfahrenkette; ohne Contributor ergibt `ScopeLevel.Teamspace` `NotSupported`."],
+  tests=["L1 Scoping, Typ-X-Test (Fake-Contributor), L2 RouterStore.",
+      "16 §7.2: `ScopeResolverTests` (`Funk.BuildingBlocks.Tests`)."])
 
 W("WP-I0-203", "Erweiterungspunkt E5: Permission-Katalog, roles/role_permissions, role_id, ISystemRoleGrantContributor, PermissionService", "X", "M", True,
   [], ["WP-I0-104", "WP-I0-105"],
@@ -283,8 +288,10 @@ W("WP-I0-203", "Erweiterungspunkt E5: Permission-Katalog, roles/role_permissions
   ak=["Generator erzeugt aus `_data/05-permission-matrix.json` Deskriptoren und Matrix-Datei deterministisch (`--check` in G1).",
       "`SystemRoleProvider` bildet die Original-Rollenlogik inkl. WS-Admin-Override (HARM-00) ab; Matrix-Test für die I0-Endpunkte 100 %.",
       "Fake-`ISystemRoleGrantContributor` ergänzt einen neuen Key für Member ohne Änderung an `SystemRoleProvider` (Typ X).",
-      "Frontend prüft Rechte ausschließlich über `PermissionService` (ESLint-Regel verbietet direkte Rollenvergleiche)."],
-  tests=["L1 Evaluator, L3 Matrix-Tests (I0-Routen), Typ-X-Test, L2 `PermissionService` gegen Original-Store-Fixtures."])
+      "Frontend prüft Rechte ausschließlich über `PermissionService` (ESLint-Regel verbietet direkte Rollenvergleiche).",
+      "AK-16-14 (Rollen-Teil): der Katalog-Validator akzeptiert die Fake-Permission `teamspace.fake.read` (Scope Teamspace); ein `ISystemRoleGrantContributor`-Fake gewährt der Rolle Member `project.fake.read`, ohne `SystemRoleProvider` zu ändern; reservierte Namensräume (16 §3.2.1) werden von keinem CE-Key verwendet."],
+  tests=["L1 Evaluator, L3 Matrix-Tests (I0-Routen), Typ-X-Test, L2 `PermissionService` gegen Original-Store-Fixtures.",
+      "16 §7.2: `PermissionCatalogExtensionTests` (`Funk.Authorization.Tests`), `ReservedKeysUnusedInCe` (`Funk.ArchitectureTests`)."])
 
 W("WP-I0-204", "Erweiterungspunkt H1/E3: FunkPrincipal, Policy-Scheme Cookies│ApiKey│Bearer, users.is_bot, Provisioning-Kette", "X", "M", True,
   [], ["WP-I0-104", "WP-I0-907"],
@@ -293,8 +300,10 @@ W("WP-I0-204", "Erweiterungspunkt H1/E3: FunkPrincipal, Policy-Scheme Cookies│
   arch=["05 §3.7.3, §3.12.1, §5.6, §5.7, §6.2", "16 §5.7, §5.8", "01 §1.4 Zeilen E3, H1"],
   ep="01 §1.4 E3/H1; 16 §4.6 (Träger CE-AUTH-001/-024/-025, CE-AUTH-028/-029)",
   ak=["Bearer-Schema ist registriert, liefert mit `BearerEnabled=false` immer 401 und mit `true` (Testprofil) einen gültigen Prinzipal aus einem Keycloak-Token (Typ X).",
-      "Fake-`IUserProvisioningStep` (Order 750) läuft beim Login ohne CE-Änderung und sieht `Groups`."],
-  tests=["L1 Principal-Mapping, L3 Schemata, Typ-X-Tests (Bearer an/aus, Fake-Provisioning-Step)."])
+      "Fake-`IUserProvisioningStep` (Order 750) läuft beim Login ohne CE-Änderung und sieht `Groups`.",
+      "Bearer-Schema mit `Enabled=false` → 401; mit aktivem Fake-Bearer erhält ein Prinzipal `Kind = App` ohne passenden `ApiScope` 403; ein Fake-Provisioning-Schritt mit `Order = 750` läuft genau zwischen den CE-Schritten der Slots davor und danach."],
+  tests=["L1 Principal-Mapping, L3 Schemata, Typ-X-Tests (Bearer an/aus, Fake-Provisioning-Step).",
+      "16 §7.2: `ProvisioningPipelineOrderTests`, `BearerSchemeDisabledTests` (`Funk.Identity.Tests`)."])
 
 W("WP-I0-205", "Erweiterungspunkt F1: Oberfläche Integrations, Webhook-Ingress, Verifier-Registry, integration_connections, Platzhalter-Contracts", "X", "M", True,
   [], ["WP-I0-104", "WP-I0-201"],
@@ -303,8 +312,10 @@ W("WP-I0-205", "Erweiterungspunkt F1: Oberfläche Integrations, Webhook-Ingress,
   arch=["16 §3.4.1–§3.4.3, §5.10, D16-ADR-09, -10, -13", "04 §4.23", "02 §3.3.1 (Oberflächen), §3.13", "01 §1.4 Zeile F1"],
   ep="01 §1.4 F1/F2; 16 §3.3.0 E-13 (Teil `integration_connections`), E-25; 16 §4.6 (Träger CE-OPS-021, CE-OPS-022)",
   ak=["Ohne Verifier: 404; mit Fake-Verifier und Fake-Handler wird eine Test-Delivery idempotent (zweite Zustellung derselben Delivery-ID ohne Wirkung) verarbeitet – ohne CE-Änderung (Typ X).",
-      "Architekturtest R10: Platzhalter-Projekte enthalten nur Interfaces, DTOs, Enums, Konstanten."],
-  tests=["L3 Ingress (Signatur falsch → 401, Roh-Body unverändert), Typ-X-Test, L0 R10/R11."])
+      "Architekturtest R10: Platzhalter-Projekte enthalten nur Interfaces, DTOs, Enums, Konstanten.",
+      "AK-16-07: `POST /api/integrations/forgejo/webhooks/{connection_id}/` (beliebige GUID) ohne Cookie → 404 `{\"error\": \"Page not found.\"}`; `…/webhooks/not-a-guid/` → 404; mit `FakeWebhookSignatureVerifier` + `FakeWebhookIngress`: gültige Signatur → 202, ungültige → 401, dieselbe Delivery-ID zweimal → 200 `duplicate`, Header in Kleinbuchstaben (`x-forgejo-signature`) wird erkannt, Body > 5 MiB → 413, 601. Request/min derselben `connection_id` → 429; die Endpunkt-Datei liegt in `Funk.BuildingBlocks.Web/Integrations/`."],
+  tests=["L3 Ingress (Signatur falsch → 401, Roh-Body unverändert), Typ-X-Test, L0 R10/R11.",
+      "16 §7.2: `IntegrationWebhookRouteTests` (`Funk.Integrations.Tests`, CE-Teil)."])
 
 W("WP-I0-206", "Erweiterungspunkt F2: Forgejo-Container, Keycloak-Client funk-forgejo, forgejo-init, SSO-Smoke", "X", "S", True,
   [], ["WP-I0-102", "WP-I0-108"],
@@ -313,8 +324,10 @@ W("WP-I0-206", "Erweiterungspunkt F2: Forgejo-Container, Keycloak-Client funk-fo
   arch=["14 §3.4", "16 §3.4.7, §3.4.8", "00 ADR-007", "17 ABG-003, Z-13"],
   ep="01 §1.4 F2; 16 §3.4.8 (Zeile I0)",
   ak=["L6 `ForgejoSsoSmokeTests`: derselbe Keycloak-Testbenutzer meldet sich an funk. und an Forgejo an; Forgejo-Benutzer und funk.-Benutzer tragen dieselbe Keycloak-Identität.",
-      "Forgejo-LTS-Tag ist gepinnt (O-04) und im Airgap-Image-Inventar `deploy/airgap/images.yaml` eingetragen."],
-  tests=["L6 Forgejo-SSO-Smoke im Profil `test`."])
+      "Forgejo-LTS-Tag ist gepinnt (O-04) und im Airgap-Image-Inventar `deploy/airgap/images.yaml` eingetragen.",
+      "AK-16-08: `aspire run` (dev/test) – Forgejo `/api/healthz` 200, SSO-Login des Testbenutzers `member` in Forgejo über Keycloak erfolgreich, `artifacts/dev/forgejo.json` enthält die OAuth-App mit beiden Redirect-URIs aus 16 D16-ADR-09."],
+  tests=["L6 Forgejo-SSO-Smoke im Profil `test`.",
+      "16 §7.2: `ForgejoSsoSmokeTests` (`Funk.AppHost.Tests`)."])
 
 W("WP-I0-207", "Erweiterungspunkt H6: SignalR-Hub /live/events/, Gruppen, IRealtimePublisher, IRealtimeGroupAuthorizer, LiveEventsService", "X", "S", True,
   [], ["WP-I0-107", "WP-I0-105", "WP-I0-201"],
@@ -323,19 +336,32 @@ W("WP-I0-207", "Erweiterungspunkt H6: SignalR-Hub /live/events/, Gruppen, IRealt
   fe=["`frontend/libs/web/core/live-events`"],
   arch=["07 §3.16, §5.11", "06 §3.12, D06-ADR-12", "16 §5.12, §3.3.0 E-22", "17 ABG-106, ABG-112"],
   ep="01 §1.4 H6; 16 §3.3.0 E-22; 16 §4.6 (Walking Skeleton, `RealtimeSmokeTests`)",
-  ak=["`RealtimeSmokeTests` (Hub-Teil): angemeldeter Benutzer tritt `user:{id}` bei, fremde Gruppen werden abgewiesen; Fake-Gruppen-Präfix per Fake-Authorizer ohne CE-Änderung (Typ X)."],
-  tests=["L6 Hub-Smoke, Typ-X-Test, L2 `LiveEventsService` (Reconnect)."])
+  ak=["`RealtimeSmokeTests` (Hub-Teil): angemeldeter Benutzer tritt `user:{id}` bei, fremde Gruppen werden abgewiesen; Fake-Gruppen-Präfix per Fake-Authorizer ohne CE-Änderung (Typ X).",
+      "Beitritt zu einer fremden Gruppe `ws:{id}`/`project:{id}`/`user:{id}` wird abgewiesen; ein Fake-Präfix mit registriertem `IRealtimeGroupAuthorizer` ist beitretbar, ohne Registrierung nicht."],
+  tests=["L6 Hub-Smoke, Typ-X-Test, L2 `LiveEventsService` (Reconnect).",
+      "16 §7.2: `RealtimeGroupAuthorizationTests` (`Funk.RealtimeEvents.Tests`; in 15 §6 als `HubGroupAuthorizationTests` geführt – ein Testname, Alias im Inventar)."])
 
 W("WP-I0-208", "Erweiterungspunkte Querschnitt: Reservierungen + Kollisionstests, R11/R12, Frontend-Registries (Routen, Sidebar, Admin), Fake-Extensions", "X", "M", True,
   [], ["WP-I0-104", "WP-I0-105"],
   "Reservierte Permission-Namensräume, Routen-Präfixe, Activity-Felder, Event-Namensräume, Queues und Suche/AI-Bezeichner (`Reservations.cs`, `docs/extensions/reservations.yaml`) mit `ReservationCollisionTests`/`RouteReservationTests` (E-17); Architekturregeln R11/R12; Inventar `tests/extension-points.yaml`; Frontend-Registries `ROUTE_EXTENSIONS` + `mergeRoutes`, `SIDEBAR_ITEMS` (statisch), `ADMIN_SETTINGS_PAGES`, `ADMIN_ROUTE_EXTENSIONS`, `ADMIN_HEADER_SEGMENT_LABELS`, `APP_RAIL_ENABLED`, `provideWebExtensions()`/`provideAdminExtensions()`/`provideSpaceExtensions()`; Test-Erweiterungen `provideFakeExtensions()`, `provideFakeAdminExtensions()`, `provideFakeSpaceExtensions()`; Modulkatalog `FunkModuleCatalog`.",
-  be=["`src/building-blocks/Funk.BuildingBlocks/Extensions/Reservations.cs`", "`src/hosts/Funk.Hosting/FunkModuleCatalog.cs`", "`tests/Funk.ArchitectureTests/{ReservationCollisionTests,RouteReservationTests,ExtensionPointInventoryTests}.cs`"],
-  fe=["`frontend/libs/web/extensions/src/`", "`frontend/libs/admin/extensions`, `frontend/libs/space/extensions`", "`frontend/libs/shared/cdk/src/extensions/` (`RouteExtension<K>`, `mergeRoutes`, `injectRegistry`)", "`frontend/tools/extension-registry-check`"],
+  be=["`src/building-blocks/Funk.BuildingBlocks/Extensions/Reservations.cs`",
+      "`src/hosts/Funk.Hosting/FunkModuleCatalog.cs`",
+      "`tests/Funk.ArchitectureTests/{ReservationCollisionTests,RouteReservationTests,ExtensionPointInventoryTests}.cs`",
+      "`tools/ci/assert-no-package-code`",
+      "`tests/Funk.ArchitectureTests/{ReservationCollisionTests,RouteReservationTests,ExtensionRules,ExtensionPointInventoryTests,ReservedContractFieldsTests}.cs`"],
+  fe=["`frontend/libs/web/extensions/src/`",
+      "`frontend/libs/admin/extensions`, `frontend/libs/space/extensions`",
+      "`frontend/libs/shared/cdk/src/extensions/` (`RouteExtension<K>`, `mergeRoutes`, `injectRegistry`)",
+      "`frontend/tools/extension-registry-check`",
+      "`frontend/apps/e2e/web/extensions.spec.ts`"],
   arch=["16 §3.1, §3.2, §3.3.0 E-17, D16-ADR-03, -04, -15", "08 §6.1–§6.5", "01 §6.4", "17 ABG-023, ABG-032, ABG-135"],
   ep="16 §1.4 Zeile I0 (Reservierungen, Registries); 16 §4.6 „Bewusst ohne Träger-CE-ID“ (CE-OPS-022)",
   ak=["Kollisionstests schlagen fehl, wenn eine CE-Route, ein Permission-Key oder eine Queue einen reservierten Namen benutzt.",
       "Eine Fake-Route über `ROUTE_EXTENSIONS` und ein Fake-Sidebar-Eintrag erscheinen ohne Änderung an CE-Dateien (Typ X, Vitest + Playwright).",
-      "`ExtensionPointInventoryTests` und `extension-registry-check` gleichen `tests/extension-points.yaml` mit dem Code ab (jede P-Andockstelle aus 16 §1.4 hat Inkrement und Test)."],
+      "`ExtensionPointInventoryTests` und `extension-registry-check` gleichen `tests/extension-points.yaml` mit dem Code ab (jede P-Andockstelle aus 16 §1.4 hat Inkrement und Test).",
+      "AK-16-03, AK-16-04, AK-16-17: `ReservationCollisionTests`, `RouteReservationTests`, `ExtensionRules` (R11/R12) und `tools/ci/assert-no-package-code` (Platzhalter-Projekte nur Interfaces/DTOs/Enums/Konstanten, keine Tabellen außer den in 16 §3.3/§3.4.2 als CE markierten) laufen in jedem Build mit 0 Verstößen.",
+      "AK-16-01: `ExtensionPointInventoryTests` und `frontend/tools/extension-registry-check` melden für I0 0 fehlende Einträge in `tests/extension-points.yaml`; `ReservedContractFieldsTests` (AK-16-12) ist angelegt und wird von den Paketen I1–I4 um ihre V-Felder (16 §4.1/§4.2) ergänzt.",
+      "E2E `frontend/apps/e2e/web/extensions.spec.ts` startet die Web-App mit `provideFakeExtensions()` (Build-Konfiguration `fake-extensions`, nur CI) und findet Fake-Route und Fake-Sidebar-Eintrag; Fake-Settings-Seite (WP-I1-203), Fake-Detail-Widget und Fake-Spreadsheet-Spalte (WP-I2-206) folgen."],
   tests=["L0 Architektur-/Inventartests, Typ-X-Tests Frontend."])
 
 # --- Spikes I0 (Spike-Track) -----------------------------------------------------------
@@ -347,7 +373,7 @@ W("WP-I0-901", "Spike S1 – YDotNet + Hocuspocus-Protokoll in .NET", "S", "L", 
   arch=["01 §9 Zeile S1", "07 §3.3–§3.10, §7.3 (P-01…P-30), §7.6 S1", "17 Z-101, Z-109"],
   orig=["`apps/live/src/hocuspocus.ts`", "`apps/live/src/extensions/`", "`apps/live/src/types/admin-commands.ts`", "`packages/editor/src/core/constants/document-collaborative-events.ts`"],
   ak=["Alle Erfolgskriterien aus 01 §9 S1 (u. a. 50 Editoren p95 < 150 ms, 1 h Soak < 5 % Speicherwachstum, zwei Instanzen konvergieren über Valkey) als automatisierte Tests grün – oder Fallback-Kette (y-websocket → YDotNet-Fork → Auftraggeber) aktiviert und dokumentiert.",
-      "Awareness-Relay funktioniert; damit wird `collaboration-cursor` in I4 aktiviert (Z-109)."],
+      "Awareness-Relay: der Awareness-Zustand von Client A erscheint bei Client B und wird beim Disconnect von A bei B entfernt (Playwright, 2 Clients mit Original-Provider, je Richtung ≥ 20 Wiederholungen ohne Fehlschlag); damit wird `collaboration-cursor` in I4 aktiviert (Z-109)."],
   tests=["Browser-Protokolltests mit Original-Provider (Playwright), Last LT-16-Vorstufe."])
 
 W("WP-I0-902", "Spike S2 – Yjs → ProseMirror-JSON → HTML (und HTML → JSON) ohne Node", "S", "L", True,
@@ -357,7 +383,7 @@ W("WP-I0-902", "Spike S2 – Yjs → ProseMirror-JSON → HTML (und HTML → JSO
   arch=["01 §9 Zeile S2", "07 §3.12, §3.13, §7.6 S2", "10 §3.2", "17 Z-102"],
   orig=["`packages/editor/src/core/extensions/`", "`apps/live/src/lib/`", "`packages/editor/src/core/helpers/yjs-utils.ts`"],
   ak=["Erfolgskriterien 01 §9 S2 erreicht oder Fallback F-S2-1 (Jint mit gebündeltem `@tiptap/html`) bzw. F-S2-2 dokumentiert aktiviert.",
-      "Typisierte Attribute aus Original-yjs werden korrekt gelesen (S2-K6a, O-07-01)."],
+      "Typisierte Attribute aus Original-yjs (Zahl, Bool, `null`, Objekt) werden typgleich gelesen: die Korpusfälle S2-K6a ergeben JSON ohne Diff zum Original (O-07-01)."],
   tests=["L4 Golden-Korpus (G-DOC), Durchsatz-Benchmark als Test."])
 
 W("WP-I0-903", "Spike S3 – PDF-Export mit PDFsharp/MigraDoc", "S", "M", True,
@@ -366,7 +392,7 @@ W("WP-I0-903", "Spike S3 – PDF-Export mit PDFsharp/MigraDoc", "S", "M", True,
   be=["`src/documents/Funk.Documents.Pdf` (Prototyp)", "`tests/Funk.Documents.Pdf.Tests`", "`docs/spikes/S3-ergebnis.md`"],
   arch=["01 §9 Zeile S3, O-09", "07 §3.15, §7.6 S3", "17 Z-103"],
   orig=["`apps/live/src/lib/pdf/`", "`apps/live/tests/`", "`apps/web/core/components/editor/pdf/document.tsx`"],
-  ak=["Erfolgskriterien 01 §9 S3 erreicht oder Fallback SkiaSharp `SKDocument` aktiviert; Emoji außerhalb der BMP und Surrogatpaare korrekt (S3-K6).",
+  ak=["Erfolgskriterien 01 §9 S3 erreicht oder Fallback SkiaSharp `SKDocument` aktiviert; Emoji außerhalb der BMP und Surrogatpaare werden als Glyphen gerendert (Raster-Diff im Grenzwert) und sind als identischer Text extrahierbar (S3-K6).",
       "Lizenz/Plattform des Test-Rasterizers geklärt (Docnet.Core vs. PDFtoImage, O-07-04)."],
   tests=["L4 G-PDF (Text + Raster-Diff), 21 Fälle aus `apps/live/tests`."])
 
@@ -461,6 +487,16 @@ W("WP-I0-999", "Abnahme I0 – Walking Skeleton (G5)", "A", "S", False,
 
 # Endpunkte, die vor dem Arbeitspaket ihrer CE-ID gebraucht werden (Vorab-Endpunkte;
 # das spätere CE-Paket erweitert sie nur). Schlüssel = EP-ID aus architecture/_data/endpoints.json.
+# Vorlauf-Pakete (plan/01 L-8, plan/04 OP-PLAN-11): dürfen vor dem Meilenstein des Vorgänger-Inkrements
+# beginnen, registrieren keine Screens und werden mit ihrem Inkrement abgenommen. build.py prüft, dass genau
+# diese Pakete nicht (transitiv) vom Vorgänger-Meilenstein abhängen.
+VORLAUF = {
+    # Editor-Track (ab M0 bzw. nach WP-I1-103)
+    "WP-I2-101", "WP-I2-207", "WP-I2-021", "WP-I2-022", "WP-I2-023", "WP-I2-024",
+    # Dokument-/Realtime-Track (ab M2)
+    "WP-I4-101", "WP-I4-201", "WP-I4-202", "WP-I4-006", "WP-I4-008",
+}
+
 EP_OVERRIDE = {
     "EP-0049": "WP-I0-001",  # PATCH /api/users/me/ (Profil-Grunddaten nach JIT)
     "EP-0052": "WP-I0-001",  # PATCH /api/users/me/onboard/
