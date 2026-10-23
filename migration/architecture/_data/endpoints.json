@@ -1,5 +1,5 @@
 {
- "generated": "2026-10-23",
+ "generated": "2026-10-23 (Review-Stand)",
  "source": "migration/architecture/04-api-design-und-endpunktkatalog.md §4 (Generator: Abgleich A03/A04/A05/A06/A12 × 05-permission-matrix.json × Original-URL-Konfiguration)",
  "legend": {
   "surface": "App=/api/, V1=/api/v1/, Space=/api/public/, Instance=/api/instances/, Auth=/auth/, Integrations=/api/integrations/, Live=/live/ (Host Plane.Realtime), OpenApi=/api/schema/, Root=/",
@@ -10,7 +10,9 @@
   "dt": "Zeilen der Entscheidungstabelle §3.13",
   "read_replica": "Original-View setzt use_read_replica = True → .UseReadReplica() (02 D02-ADR-22)",
   "frontend_call_detected": "heuristisch (Pfadvergleich mit Original-Services apps/web, packages/services, apps/space, apps/admin); maßgeblich ist frontend/tools/contract-check (08 AK-D08-16)",
-  "pagination": "cursor = CursorPaginator (02 §3.10.3), cursor-grouped = Work-Item-Engine (02 §3.11.6), cursor-when-requested = nur mit per_page und cursor, cursor-required = 400 ohne beide, global = GlobalPaginator (02 §3.10.4)"
+  "pagination": "cursor = CursorPaginator (02 §3.10.3), cursor-grouped = Work-Item-Engine (02 §3.11.6), cursor-when-requested = nur mit per_page und cursor, cursor-required = 400 ohne beide, global = GlobalPaginator (02 §3.10.4)",
+  "rate_limit": "Rate-Limit-Policy der Route (§3.12, Zuordnung nach 05 §3.17.6): anon = nur anonyme Requests (30/min), authentication = 10/min je IP (EP-0017 über AuthCallbackRateLimiter), api_key, asset_duplicate, integration_webhook; null = .DisableRateLimiting() bzw. kein Limit (Root, Live, Sign-out, Backchannel)",
+  "cache_control": "Cache-Control-Header bei 200 (§3.4 Nr. 5; no-store an EP-0073 = DT-INST-07); null = kein Header"
  },
  "counts": {
   "total": 732,
@@ -102,7 +104,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0002",
@@ -140,7 +144,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0003",
@@ -178,7 +184,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0004",
@@ -216,7 +224,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0005",
@@ -254,7 +264,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0006",
@@ -292,7 +304,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0007",
@@ -330,7 +344,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0008",
@@ -368,7 +384,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0009",
@@ -406,7 +424,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0010",
@@ -444,7 +464,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0011",
@@ -482,7 +504,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0012",
@@ -520,7 +544,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0013",
@@ -558,7 +584,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0014",
@@ -596,7 +624,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0015",
@@ -634,7 +664,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0016",
@@ -672,7 +704,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0017",
@@ -713,7 +747,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "authentication",
+   "cache_control": null
   },
   {
    "ep": "EP-0018",
@@ -751,7 +787,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "authentication",
+   "cache_control": null
   },
   {
    "ep": "EP-0019",
@@ -787,7 +825,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0020",
@@ -825,7 +865,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0021",
@@ -863,7 +905,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0022",
@@ -901,7 +945,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0023",
@@ -939,7 +985,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0024",
@@ -977,7 +1025,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0025",
@@ -1015,7 +1065,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0026",
@@ -1053,7 +1105,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0027",
@@ -1091,7 +1145,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0028",
@@ -1129,7 +1185,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0029",
@@ -1167,7 +1225,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0030",
@@ -1205,7 +1265,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0031",
@@ -1243,7 +1305,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0032",
@@ -1281,7 +1345,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0033",
@@ -1319,7 +1385,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0034",
@@ -1357,7 +1425,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0035",
@@ -1395,7 +1465,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0036",
@@ -1433,7 +1505,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0037",
@@ -1471,7 +1545,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0038",
@@ -1509,7 +1585,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0039",
@@ -1547,7 +1625,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0040",
@@ -1585,7 +1665,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0041",
@@ -1623,7 +1705,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0042",
@@ -1659,7 +1743,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0043",
@@ -1697,7 +1783,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0044",
@@ -1733,7 +1821,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0045",
@@ -1771,7 +1861,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0046",
@@ -1807,7 +1899,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0047",
@@ -1845,7 +1939,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0048",
@@ -1882,7 +1978,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": "private, max-age=12"
   },
   {
    "ep": "EP-0049",
@@ -1933,7 +2031,9 @@
      "status": null,
      "body": "{\"avatar_asset\": [\"Invalid asset.\"]}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0050",
@@ -1984,7 +2084,9 @@
      "status": null,
      "body": "{\"error\": \"You cannot deactivate account as you are the only admin in some workspaces.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0051",
@@ -2022,7 +2124,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0052",
@@ -2063,7 +2167,9 @@
      "status": 200,
      "body": "{\"message\": \"Updated successfully\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0053",
@@ -2100,7 +2206,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": "private, max-age=12"
   },
   {
    "ep": "EP-0054",
@@ -2141,7 +2249,9 @@
      "status": 200,
      "body": "{\"message\": \"Updated successfully\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0055",
@@ -2177,7 +2287,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0056",
@@ -2213,7 +2325,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0057",
@@ -2251,7 +2365,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": "max-age=7200"
   },
   {
    "ep": "EP-0058",
@@ -2287,7 +2403,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0059",
@@ -2323,7 +2441,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": "private, max-age=12"
   },
   {
    "ep": "EP-0060",
@@ -2359,7 +2479,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0061",
@@ -2395,7 +2517,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0062",
@@ -2431,7 +2555,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0063",
@@ -2467,7 +2593,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0064",
@@ -2507,7 +2635,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0065",
@@ -2545,7 +2675,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0066",
@@ -2585,7 +2717,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0067",
@@ -2625,7 +2759,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0068",
@@ -2682,7 +2818,9 @@
      "status": 400,
      "body": "{\"error\": \"Failed to verify code. Please try again.\"}"
     }
-   ]
+   ],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0069",
@@ -2747,7 +2885,9 @@
      "status": 400,
      "body": "{\"error\": \"Failed to generate verification code. Please try again.\"}"
     }
-   ]
+   ],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0070",
@@ -2790,7 +2930,9 @@
      "status": 403,
      "body": "{\"error\": \"Instance is not registered yet\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0071",
@@ -2826,7 +2968,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0072",
@@ -2862,7 +3006,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0073",
@@ -2904,7 +3050,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": "no-store"
   },
   {
    "ep": "EP-0074",
@@ -2948,7 +3096,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0075",
@@ -2989,7 +3139,9 @@
      "status": 200,
      "body": "{\"error\": \"Failed to disable email configuration\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0076",
@@ -3034,7 +3186,9 @@
      "status": 400,
      "body": "{\"error\": \"Receiver email is required\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0077",
@@ -3077,7 +3231,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": "private, max-age=12"
   },
   {
    "ep": "EP-0078",
@@ -3113,7 +3269,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0079",
@@ -3149,7 +3307,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "authentication",
+   "cache_control": null
   },
   {
    "ep": "EP-0080",
@@ -3194,7 +3354,9 @@
      "status": 400,
      "body": "{\"error\": \"Workspace Slug is required\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0081",
@@ -3230,7 +3392,9 @@
    "pagination": "cursor",
    "default_per_page": 10,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0082",
@@ -3296,7 +3460,9 @@
      "status": null,
      "body": "{\"slug\": [\"Slug is already in use\"]}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0083",
@@ -3336,7 +3502,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0084",
@@ -3394,7 +3562,9 @@
      "status": 400,
      "body": "{\"error\": \"The payload is not valid\"}"
     }
-   ]
+   ],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0085",
@@ -3432,7 +3602,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0086",
@@ -3472,7 +3644,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0087",
@@ -3518,7 +3692,9 @@
      "status": 204,
      "body": "{\"error\": \"Instance is not configured\"}"
     }
-   ]
+   ],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0088",
@@ -3558,7 +3734,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0089",
@@ -3594,7 +3772,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0090",
@@ -3632,7 +3812,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0091",
@@ -3673,7 +3855,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0092",
@@ -3714,7 +3898,9 @@
      "status": 400,
      "body": "{\"error\": \"The payload is not valid\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0093",
@@ -3750,7 +3936,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0094",
@@ -3786,7 +3974,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0095",
@@ -3831,7 +4021,9 @@
      "status": 400,
      "body": "{\"error\": \"Favorite already exists\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0096",
@@ -3867,7 +4059,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0097",
@@ -3903,7 +4097,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0098",
@@ -3939,7 +4135,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0099",
@@ -3980,7 +4178,9 @@
      "status": 404,
      "body": "{\"error\": \"The required object does not exist.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0100",
@@ -4043,7 +4243,9 @@
      "status": 400,
      "body": "{\"error\": \"You have already responded to the invitation request\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0101",
@@ -4079,7 +4281,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0102",
@@ -4140,7 +4344,9 @@
      "status": 400,
      "body": "{\"error\": \"You have already responded to the invitation request\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0103",
@@ -4176,7 +4382,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0104",
@@ -4212,7 +4420,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0105",
@@ -4248,7 +4458,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0106",
@@ -4284,7 +4496,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0107",
@@ -4325,7 +4539,9 @@
      "status": 400,
      "body": "{\"error\": \"Date is required\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0108",
@@ -4366,7 +4582,9 @@
      "status": 400,
      "body": "{\"error\": \"Group by and sub group by cannot have same parameters\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0109",
@@ -4402,7 +4620,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0110",
@@ -4438,7 +4658,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0111",
@@ -4474,7 +4696,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0112",
@@ -4510,7 +4734,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0113",
@@ -4546,7 +4772,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0114",
@@ -4582,7 +4810,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0115",
@@ -4622,7 +4852,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0116",
@@ -4658,7 +4890,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0117",
@@ -4694,7 +4928,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0118",
@@ -4740,7 +4976,9 @@
      "status": 400,
      "body": "{\"error\": \"The payload is not valid\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0119",
@@ -4781,7 +5019,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0120",
@@ -4817,7 +5057,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0121",
@@ -4853,7 +5095,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0122",
@@ -4898,7 +5142,9 @@
      "status": 400,
      "body": "{\"error\": \"Workspace Slug is required\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0123",
@@ -4973,7 +5219,9 @@
      "status": null,
      "body": "{\"slug\": [\"Slug can only contain letters, numbers, hyphens (-), and underscores (_)\"]}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0124",
@@ -5014,7 +5262,9 @@
      "status": 404,
      "body": "{\"detail\": …}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0125",
@@ -5050,7 +5300,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0126",
@@ -5086,7 +5338,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0127",
@@ -5122,7 +5376,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0128",
@@ -5181,7 +5437,9 @@
      "status": 400,
      "body": "{\"error\": \"Invalid email - {email} provided a valid email address is required to send the invite\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0129",
@@ -5217,7 +5475,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0130",
@@ -5262,7 +5522,9 @@
      "status": 400,
      "body": "{\"error\": \"You cannot invite a user with higher role\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0131",
@@ -5298,7 +5560,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0132",
@@ -5334,7 +5598,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0133",
@@ -5379,7 +5645,9 @@
      "status": 400,
      "body": "{\"error\": \"You are a part of some projects where you are the only admin, you should either leave the project or promote another user to admin.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0134",
@@ -5420,7 +5688,9 @@
      "status": 404,
      "body": "{\"error\": \"Workspace member not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0135",
@@ -5473,7 +5743,9 @@
      "status": 400,
      "body": "{\"error\": \"User is a part of some projects where they are the only admin, they should either leave that project or promote another user to admin.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0136",
@@ -5518,7 +5790,9 @@
      "status": 400,
      "body": "{\"error\": \"You cannot remove a user having role higher than you\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0137",
@@ -5554,7 +5828,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0138",
@@ -5590,7 +5866,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0139",
@@ -5626,7 +5904,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0140",
@@ -5662,7 +5942,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0141",
@@ -5698,7 +5980,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0142",
@@ -5734,7 +6018,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0143",
@@ -5770,7 +6056,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0144",
@@ -5807,7 +6095,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0145",
@@ -5848,7 +6138,9 @@
      "status": 400,
      "body": "{\"detail\": \"Preference not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0146",
@@ -5885,7 +6177,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0147",
@@ -5927,7 +6221,9 @@
      "status": 200,
      "body": "{\"message\": \"Successfully updated\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0148",
@@ -5963,7 +6259,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0149",
@@ -5999,7 +6297,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0150",
@@ -6035,7 +6335,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0151",
@@ -6071,7 +6373,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0152",
@@ -6112,7 +6416,9 @@
      "status": 400,
      "body": "{\"error\": \"The payload is not valid\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0153",
@@ -6148,7 +6454,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0154",
@@ -6184,7 +6492,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0155",
@@ -6220,7 +6530,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0156",
@@ -6263,7 +6575,9 @@
      "status": 400,
      "body": "{\"error\": \"The required key does not exist.\"}"
     }
-   ]
+   ],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0157",
@@ -6303,7 +6617,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0158",
@@ -6339,7 +6655,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0159",
@@ -6375,7 +6693,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0160",
@@ -6413,7 +6733,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0161",
@@ -6451,7 +6773,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0162",
@@ -6489,7 +6813,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0163",
@@ -6530,7 +6856,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0164",
@@ -6566,7 +6894,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0165",
@@ -6602,7 +6932,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0166",
@@ -6638,7 +6970,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0167",
@@ -6674,7 +7008,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0168",
@@ -6710,7 +7046,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0169",
@@ -6758,7 +7096,9 @@
      "status": 500,
      "body": "{\"error\": \"The payload is not valid\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0170",
@@ -6794,7 +7134,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0171",
@@ -6836,7 +7178,9 @@
      "status": 200,
      "body": "{\"error\": \"Estimate points are required\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0172",
@@ -6872,7 +7216,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0173",
@@ -6920,7 +7266,9 @@
      "status": 404,
      "body": "{\"error\": \"Estimate not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0174",
@@ -6966,7 +7314,9 @@
      "status": 400,
      "body": "{\"non_field_errors\": [\"Estimate points are required\"]}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0175",
@@ -7010,7 +7360,9 @@
      "status": 404,
      "body": "{\"error\": \"Estimate point not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0176",
@@ -7046,7 +7398,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0177",
@@ -7084,7 +7438,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0178",
@@ -7124,7 +7480,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0179",
@@ -7169,7 +7527,9 @@
      "status": 400,
      "body": "{\"error\": \"Label with the same name already exists in the project\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0180",
@@ -7209,7 +7569,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0181",
@@ -7252,7 +7614,9 @@
      "status": 400,
      "body": "{\"error\": \"Label with the same name already exists in the project\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0182",
@@ -7288,7 +7652,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0183",
@@ -7324,7 +7690,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0184",
@@ -7365,7 +7733,9 @@
      "status": 400,
      "body": "{\"error\": \"Name is required\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0185",
@@ -7410,7 +7780,9 @@
      "status": 400,
      "body": "{\"error\": \"Cannot delete an identifier of an existing project\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0186",
@@ -7448,7 +7820,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0187",
@@ -7509,7 +7883,9 @@
      "status": 400,
      "body": "{\"error\": \"The payload is not valid\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0188",
@@ -7548,7 +7924,9 @@
    "pagination": "cursor-when-requested",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0189",
@@ -7597,7 +7975,9 @@
      "status": 409,
      "body": "{\"error\": \"You are not a member of this project\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0190",
@@ -7644,7 +8024,9 @@
      "status": 200,
      "body": "{\"error\": \"Archived projects cannot be updated\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0191",
@@ -7680,7 +8062,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0192",
@@ -7716,7 +8100,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0193",
@@ -7752,7 +8138,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0194",
@@ -7797,7 +8185,9 @@
      "status": 403,
      "body": "{\"error\": \"Only workspace admins can join private project\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0195",
@@ -7837,7 +8227,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0196",
@@ -7884,7 +8276,9 @@
      "status": 200,
      "body": "{\"message\": \"Email sent successfully\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0197",
@@ -7924,7 +8318,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0198",
@@ -7964,7 +8360,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0199",
@@ -8000,7 +8398,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0200",
@@ -8053,7 +8453,9 @@
      "status": 400,
      "body": "{\"error\": \"You cannot add a user with role higher than the workspace role\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0201",
@@ -8094,7 +8496,9 @@
      "status": 204,
      "body": "{\"error\": \"You cannot leave the project as your the only admin of the project you will have to either delete the project or create an another admin\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0202",
@@ -8135,7 +8539,9 @@
      "status": 404,
      "body": "{\"error\": \"Project member not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0203",
@@ -8200,7 +8606,9 @@
      "status": null,
      "body": "{\"error\": \"You cannot update the status of a member with a role equal to or higher than your own\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0204",
@@ -8245,7 +8653,9 @@
      "status": 400,
      "body": "{\"error\": \"You cannot remove a user having role higher than you\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0205",
@@ -8282,7 +8692,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0206",
@@ -8318,7 +8730,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0207",
@@ -8354,7 +8768,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0208",
@@ -8390,7 +8806,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0209",
@@ -8426,7 +8844,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0210",
@@ -8462,7 +8882,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0211",
@@ -8502,7 +8924,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0212",
@@ -8538,7 +8962,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0213",
@@ -8574,7 +9000,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0214",
@@ -8610,7 +9038,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0215",
@@ -8651,7 +9081,9 @@
      "status": 404,
      "body": "{\"error\": \"Triage state not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0216",
@@ -8687,7 +9119,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0217",
@@ -8728,7 +9162,9 @@
      "status": 400,
      "body": "{\"non_field_errors\": [\"Cannot create triage state\"]}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0218",
@@ -8764,7 +9200,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0219",
@@ -8801,7 +9239,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0220",
@@ -8846,7 +9286,9 @@
      "status": 400,
      "body": "{\"error\": \"The state is not empty, only empty states can be deleted\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0221",
@@ -8882,7 +9324,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0222",
@@ -8926,7 +9370,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0223",
@@ -8968,7 +9414,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0224",
@@ -9005,7 +9453,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0225",
@@ -9042,7 +9492,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0226",
@@ -9088,7 +9540,9 @@
      "status": 404,
      "body": "{\"error\": \"The required object does not exist.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0227",
@@ -9134,7 +9588,9 @@
      "status": 204,
      "body": "{\"error\": \"Issue not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0228",
@@ -9175,7 +9631,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0229",
@@ -9223,7 +9681,9 @@
      "status": 400,
      "body": "{\"error\": \"Project is required to create an issue.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0230",
@@ -9263,7 +9723,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0231",
@@ -9304,7 +9766,9 @@
      "status": 404,
      "body": "{\"error\": \"Reaction already exists for the user\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0232",
@@ -9340,7 +9804,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0233",
@@ -9380,7 +9846,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0234",
@@ -9421,7 +9889,9 @@
      "status": 400,
      "body": "{\"error\": \"The payload is not valid\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0235",
@@ -9457,7 +9927,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0236",
@@ -9494,7 +9966,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0237",
@@ -9530,7 +10004,9 @@
    "pagination": "global",
    "default_per_page": 1000,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0238",
@@ -9566,7 +10042,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0239",
@@ -9602,7 +10080,9 @@
    "pagination": "global",
    "default_per_page": 1000,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0240",
@@ -9638,7 +10118,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0241",
@@ -9675,7 +10157,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0242",
@@ -9717,7 +10201,9 @@
      "status": 400,
      "body": "{\"error\": \"Invalid file type.\", \"status\": false}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0243",
@@ -9759,7 +10245,9 @@
      "status": 400,
      "body": "{\"error\": \"The asset is not uploaded.\", \"status\": false}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0244",
@@ -9796,7 +10284,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0245",
@@ -9833,7 +10323,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0246",
@@ -9869,7 +10361,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0247",
@@ -9905,7 +10399,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0248",
@@ -9946,7 +10442,9 @@
      "status": 204,
      "body": "{\"error\": \"Issue attachment not found.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0249",
@@ -9983,7 +10481,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0250",
@@ -10025,7 +10525,9 @@
      "status": 404,
      "body": "{\"error\": \"Issue not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0251",
@@ -10066,7 +10568,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0252",
@@ -10103,7 +10607,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0253",
@@ -10128,8 +10634,12 @@
    "original_view": "`IssueCommentViewSet.destroy` (V/issue/comment.py:168)",
    "original_status": 204,
    "target_status": 204,
-   "deviations": [],
-   "dt": [],
+   "deviations": [
+    "DEV-API-64"
+   ],
+   "dt": [
+    "DT-WH-07"
+   ],
    "increment": "I2",
    "ce_ids": [
     "CE-WI-037",
@@ -10140,7 +10650,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0254",
@@ -10177,7 +10689,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0255",
@@ -10224,7 +10738,9 @@
      "status": 400,
      "body": "{\"error_code\": 4091, \"error_message\": \"INVALID_ARCHIVE_STATE_GROUP\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0256",
@@ -10249,9 +10765,12 @@
    "original_view": "`BulkDeleteIssuesEndpoint.delete` (V/issue/base.py:777)",
    "original_status": 200,
    "target_status": 200,
-   "deviations": [],
+   "deviations": [
+    "DEV-API-64"
+   ],
    "dt": [
-    "DT-WI-05"
+    "DT-WI-05",
+    "DT-WH-07"
    ],
    "increment": "I2",
    "ce_ids": [
@@ -10271,7 +10790,9 @@
      "status": 400,
      "body": "{\"error\": \"Issue IDs are required\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0257",
@@ -10307,7 +10828,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0258",
@@ -10354,7 +10877,9 @@
      "status": 400,
      "body": "{\"message\": \"Start date cannot exceed target date\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0259",
@@ -10390,7 +10915,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0260",
@@ -10439,7 +10966,9 @@
      "status": 400,
      "body": "{\"detail\": \"Invalid group_by field: …\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0261",
@@ -10476,7 +11005,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0262",
@@ -10519,7 +11050,9 @@
      "status": 400,
      "body": "{\"error\": \"Issues are required\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0263",
@@ -10555,7 +11088,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0264",
@@ -10597,7 +11132,9 @@
      "status": 400,
      "body": "{\"error\": \"The required key does not exist.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0265",
@@ -10643,7 +11180,9 @@
      "status": 400,
      "body": "{\"error\": \"Sub Issue IDs are required\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0266",
@@ -10685,7 +11224,9 @@
      "status": 404,
      "body": "{\"error\": \"The required object does not exist.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0267",
@@ -10729,7 +11270,9 @@
      "status": 204,
      "body": "{\"error\": \"Issue not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0268",
@@ -10754,8 +11297,12 @@
    "original_view": "`IssueViewSet.destroy` (V/issue/base.py:719)",
    "original_status": 204,
    "target_status": 204,
-   "deviations": [],
-   "dt": [],
+   "deviations": [
+    "DEV-API-64"
+   ],
+   "dt": [
+    "DT-WH-07"
+   ],
    "increment": "I2",
    "ce_ids": [
     "CE-WI-047"
@@ -10765,7 +11312,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0269",
@@ -10803,7 +11352,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0270",
@@ -10844,7 +11395,9 @@
      "status": 400,
      "body": "{\"error\": \"Can only archive completed or cancelled state group issue\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0271",
@@ -10880,7 +11433,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0272",
@@ -10917,7 +11472,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0273",
@@ -10955,7 +11512,9 @@
    "pagination": "global",
    "default_per_page": 1000,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0274",
@@ -10996,7 +11555,9 @@
      "status": 400,
      "body": "{\"error\": \"Invalid issue identifier\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0275",
@@ -11032,7 +11593,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0276",
@@ -11077,7 +11640,9 @@
      "status": 400,
      "body": "{\"error\": \"URL already exists for this Issue\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0277",
@@ -11113,7 +11678,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0278",
@@ -11149,7 +11716,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0279",
@@ -11185,7 +11754,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0280",
@@ -11223,7 +11794,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0281",
@@ -11270,7 +11843,9 @@
      "status": 404,
      "body": "{\"error\": \"Issue not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0282",
@@ -11315,7 +11890,9 @@
      "status": null,
      "body": "{\"error\": \"Issue relation not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0283",
@@ -11353,7 +11930,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0284",
@@ -11398,7 +11977,9 @@
      "status": 400,
      "body": "{\"error\": \"The payload is not valid\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0285",
@@ -11434,7 +12015,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0286",
@@ -11470,7 +12053,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0287",
@@ -11511,7 +12096,9 @@
      "status": 400,
      "body": "{\"message\": \"User already subscribed to the issue.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0288",
@@ -11547,7 +12134,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0289",
@@ -11584,7 +12173,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0290",
@@ -11621,7 +12212,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0291",
@@ -11658,7 +12251,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0292",
@@ -11699,7 +12294,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0293",
@@ -11735,7 +12332,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0294",
@@ -11773,7 +12372,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0295",
@@ -11809,7 +12410,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0296",
@@ -11847,7 +12450,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0297",
@@ -11890,7 +12495,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0298",
@@ -11926,7 +12533,9 @@
    "pagination": "cursor-grouped",
    "default_per_page": 1000,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0299",
@@ -11962,7 +12571,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0300",
@@ -12001,7 +12612,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0301",
@@ -12037,7 +12650,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0302",
@@ -12083,7 +12698,9 @@
      "status": 400,
      "body": "{\"error\": \"Only the owner of the view can update the view\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0303",
@@ -12119,7 +12736,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0304",
@@ -12155,7 +12774,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0305",
@@ -12194,7 +12815,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0306",
@@ -12232,7 +12855,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0307",
@@ -12269,7 +12894,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0308",
@@ -12311,7 +12938,9 @@
      "status": 204,
      "body": "{\"error\": \"Only admin or owner can delete the view\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0309",
@@ -12352,7 +12981,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0310",
@@ -12393,7 +13024,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0311",
@@ -12431,7 +13064,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0312",
@@ -12467,7 +13102,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0313",
@@ -12503,7 +13140,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0314",
@@ -12541,7 +13180,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0315",
@@ -12586,7 +13227,9 @@
      "status": 400,
      "body": "{\"non_field_errors\": [\"Start date cannot exceed end date\"]}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0316",
@@ -12631,7 +13274,9 @@
      "status": 400,
      "body": "{\"error\": \"Start date and end date both are required\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0317",
@@ -12672,7 +13317,9 @@
      "status": 400,
      "body": "{\"error\": \"Cycle has no start or end date\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0318",
@@ -12713,7 +13360,9 @@
      "status": 400,
      "body": "{\"error\": \"Only completed cycles can be archived\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0319",
@@ -12749,7 +13398,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0320",
@@ -12790,7 +13441,9 @@
      "status": 404,
      "body": "{\"error\": \"Cycle not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0321",
@@ -12832,7 +13485,9 @@
      "status": 404,
      "body": "{\"error\": \"Cycle not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0322",
@@ -12879,7 +13534,9 @@
      "status": 400,
      "body": "{\"error\": \"The Cycle has already been completed so it cannot be edited\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0323",
@@ -12904,8 +13561,12 @@
    "original_view": "`CycleViewSet.destroy` (V/cycle/base.py:479)",
    "original_status": 204,
    "target_status": 204,
-   "deviations": [],
-   "dt": [],
+   "deviations": [
+    "DEV-API-64"
+   ],
+   "dt": [
+    "DT-WH-07"
+   ],
    "increment": "I3",
    "ce_ids": [
     "CE-CYC-013"
@@ -12915,7 +13576,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0324",
@@ -12951,7 +13614,9 @@
    "pagination": "cursor-grouped",
    "default_per_page": 1000,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0325",
@@ -12976,8 +13641,12 @@
    "original_view": "`CycleIssueViewSet.create` (V/cycle/issue.py:224)",
    "original_status": 201,
    "target_status": 201,
-   "deviations": [],
-   "dt": [],
+   "deviations": [
+    "DEV-API-64"
+   ],
+   "dt": [
+    "DT-WH-07"
+   ],
    "increment": "I3",
    "ce_ids": [
     "CE-CYC-010"
@@ -13000,7 +13669,9 @@
      "status": 400,
      "body": "{\"error\": \"The Cycle has already been completed so no new issues can be added\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0326",
@@ -13025,8 +13696,12 @@
    "original_view": "`CycleIssueViewSet.destroy` (V/cycle/issue.py:320)",
    "original_status": 204,
    "target_status": 204,
-   "deviations": [],
-   "dt": [],
+   "deviations": [
+    "DEV-API-64"
+   ],
+   "dt": [
+    "DT-WH-07"
+   ],
    "increment": "I3",
    "ce_ids": [
     "CE-CYC-010"
@@ -13036,7 +13711,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0327",
@@ -13089,7 +13766,9 @@
      "status": null,
      "body": "{\"error\": \"Source cycle not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0328",
@@ -13125,7 +13804,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0329",
@@ -13161,7 +13842,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0330",
@@ -13199,7 +13882,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0331",
@@ -13237,7 +13922,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0332",
@@ -13273,7 +13960,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0333",
@@ -13313,7 +14002,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0334",
@@ -13353,7 +14044,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0335",
@@ -13393,7 +14086,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0336",
@@ -13433,7 +14128,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0337",
@@ -13469,7 +14166,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0338",
@@ -13505,7 +14204,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0339",
@@ -13542,7 +14243,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0340",
@@ -13587,7 +14290,9 @@
      "status": 400,
      "body": "{\"non_field_errors\": [\"Start date cannot exceed target date\"]}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0341",
@@ -13628,7 +14333,9 @@
      "status": 400,
      "body": "{\"error\": \"Only completed or cancelled modules can be archived\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0342",
@@ -13664,7 +14371,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0343",
@@ -13706,7 +14415,9 @@
      "status": 404,
      "body": "{\"error\": \"Module not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0344",
@@ -13752,7 +14463,9 @@
      "status": 400,
      "body": "{\"error\": \"Archived module cannot be updated\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0345",
@@ -13777,8 +14490,12 @@
    "original_view": "`ModuleViewSet.destroy` (V/module/base.py:725)",
    "original_status": 204,
    "target_status": 204,
-   "deviations": [],
-   "dt": [],
+   "deviations": [
+    "DEV-API-64"
+   ],
+   "dt": [
+    "DT-WH-07"
+   ],
    "increment": "I3",
    "ce_ids": [
     "CE-MOD-010"
@@ -13788,7 +14505,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0346",
@@ -13824,7 +14543,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0347",
@@ -13865,7 +14586,9 @@
      "status": 400,
      "body": "{\"error\": \"URL already exists.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0348",
@@ -13910,7 +14633,9 @@
      "status": 400,
      "body": "{\"error\": \"Invalid URL format.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0349",
@@ -13955,7 +14680,9 @@
      "status": 400,
      "body": "{\"error\": \"Invalid URL format.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0350",
@@ -13978,8 +14705,8 @@
    "target_check": "PRJ(A,M)",
    "original_check": "PRJ(A,M)",
    "original_view": "`ModuleLinkViewSet.destroy` (V/module/base.py)",
-   "original_status": 200,
-   "target_status": 200,
+   "original_status": 204,
+   "target_status": 204,
    "deviations": [],
    "dt": [],
    "increment": "I3",
@@ -14000,7 +14727,9 @@
      "status": 400,
      "body": "{\"error\": \"Invalid URL format.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0351",
@@ -14025,8 +14754,12 @@
    "original_view": "`ModuleIssueViewSet.create_issue_modules` (V/module/issue.py:261)",
    "original_status": 201,
    "target_status": 201,
-   "deviations": [],
-   "dt": [],
+   "deviations": [
+    "DEV-API-64"
+   ],
+   "dt": [
+    "DT-WH-07"
+   ],
    "increment": "I3",
    "ce_ids": [
     "CE-MOD-008",
@@ -14042,7 +14775,9 @@
      "status": 201,
      "body": "{\"message\": \"success\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0352",
@@ -14078,7 +14813,9 @@
    "pagination": "cursor-grouped",
    "default_per_page": 1000,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0353",
@@ -14103,8 +14840,12 @@
    "original_view": "`ModuleIssueViewSet.create_module_issues` (V/module/issue.py:212)",
    "original_status": 201,
    "target_status": 201,
-   "deviations": [],
-   "dt": [],
+   "deviations": [
+    "DEV-API-64"
+   ],
+   "dt": [
+    "DT-WH-07"
+   ],
    "increment": "I3",
    "ce_ids": [
     "CE-MOD-008"
@@ -14123,7 +14864,9 @@
      "status": 400,
      "body": "{\"error\": \"Issues are required\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0354",
@@ -14148,8 +14891,12 @@
    "original_view": "`ModuleIssueViewSet.destroy` (V/module/issue.py:338)",
    "original_status": 204,
    "target_status": 204,
-   "deviations": [],
-   "dt": [],
+   "deviations": [
+    "DEV-API-64"
+   ],
+   "dt": [
+    "DT-WH-07"
+   ],
    "increment": "I3",
    "ce_ids": [
     "CE-MOD-008"
@@ -14159,7 +14906,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0355",
@@ -14195,7 +14944,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0356",
@@ -14231,7 +14982,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0357",
@@ -14267,7 +15020,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0358",
@@ -14303,7 +15058,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0359",
@@ -14339,7 +15096,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0360",
@@ -14379,7 +15138,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0361",
@@ -14419,7 +15180,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0362",
@@ -14459,7 +15222,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0363",
@@ -14506,7 +15271,9 @@
      "status": 400,
      "body": "{\"error\": \"Invalid URL format.\"}"
     }
-   ]
+   ],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0364",
@@ -14547,7 +15314,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0365",
@@ -14583,7 +15352,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0366",
@@ -14623,7 +15394,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0367",
@@ -14663,7 +15436,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0368",
@@ -14704,7 +15479,9 @@
      "status": 204,
      "body": "{\"error\": \"You cannot delete the default intake\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0369",
@@ -14740,7 +15517,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0370",
@@ -14780,7 +15559,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0371",
@@ -14820,7 +15601,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0372",
@@ -14861,7 +15644,9 @@
      "status": 204,
      "body": "{\"error\": \"You cannot delete the default intake\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0373",
@@ -14903,7 +15688,9 @@
      "status": 404,
      "body": "{\"error\": \"Intake not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0374",
@@ -14948,7 +15735,9 @@
      "status": null,
      "body": "{\"error\": \"Invalid priority\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0375",
@@ -14985,7 +15774,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0376",
@@ -15025,7 +15816,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0377",
@@ -15061,7 +15854,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0378",
@@ -15103,7 +15898,9 @@
      "status": 404,
      "body": "{\"error\": \"Intake not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0379",
@@ -15148,7 +15945,9 @@
      "status": null,
      "body": "{\"error\": \"Invalid priority\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0380",
@@ -15185,7 +15984,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0381",
@@ -15225,7 +16026,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0382",
@@ -15261,7 +16064,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0383",
@@ -15298,7 +16103,9 @@
    "pagination": "global",
    "default_per_page": 1000,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0384",
@@ -15335,7 +16142,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0385",
@@ -15375,7 +16184,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0386",
@@ -15415,7 +16226,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0387",
@@ -15460,7 +16273,9 @@
      "status": 400,
      "body": "{\"error\": \"Intake is not enabled for this Project Board\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0388",
@@ -15515,7 +16330,9 @@
      "status": 400,
      "body": "{\"error\": \"Invalid priority\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0389",
@@ -15560,7 +16377,9 @@
      "status": 400,
      "body": "{\"error\": \"Intake is not enabled for this Project Board\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0390",
@@ -15615,7 +16434,9 @@
      "status": 400,
      "body": "{\"error\": \"Invalid priority\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0391",
@@ -15655,7 +16476,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0392",
@@ -15696,7 +16519,9 @@
      "status": 400,
      "body": "{\"error\": \"You cannot edit intake issues\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0393",
@@ -15737,7 +16562,9 @@
      "status": 204,
      "body": "{\"error\": \"You cannot delete intake issue\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0394",
@@ -15773,7 +16600,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0395",
@@ -15810,7 +16639,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0396",
@@ -15850,7 +16681,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0397",
@@ -15891,7 +16724,9 @@
      "status": 404,
      "body": "{\"error\": \"Page not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0398",
@@ -15940,7 +16775,9 @@
      "status": 400,
      "body": "{\"error\": \"Access cannot be updated since this page is owned by someone else\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0399",
@@ -15985,7 +16822,9 @@
      "status": 403,
      "body": "{\"error\": \"Only admin or owner can delete the page\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0400",
@@ -16026,7 +16865,9 @@
      "status": 204,
      "body": "{\"error\": \"Access cannot be updated since this page is owned by someone else\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0401",
@@ -16064,7 +16905,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0402",
@@ -16102,7 +16945,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0403",
@@ -16140,7 +16985,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0404",
@@ -16193,7 +17040,9 @@
      "status": 400,
      "body": "{\"error_code\": 4702, \"error_message\": \"PAGE_ARCHIVED\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0405",
@@ -16236,7 +17085,9 @@
      "status": 403,
      "body": "{\"error\": \"Permission denied\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0406",
@@ -16272,7 +17123,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0407",
@@ -16308,7 +17161,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0408",
@@ -16346,7 +17201,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0409",
@@ -16384,7 +17241,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0410",
@@ -16427,7 +17286,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0411",
@@ -16465,7 +17326,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0412",
@@ -16503,7 +17366,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0413",
@@ -16539,7 +17404,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0414",
@@ -16575,7 +17442,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0415",
@@ -16613,7 +17482,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0416",
@@ -16658,7 +17529,9 @@
      "status": 400,
      "body": "{\"error\": \"Invalid entity type.\", \"status\": false}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0417",
@@ -16696,7 +17569,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0418",
@@ -16734,7 +17609,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0419",
@@ -16770,7 +17647,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0420",
@@ -16817,7 +17696,9 @@
      "status": 404,
      "body": "{\"error\": \"The requested asset could not be found.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0421",
@@ -16855,7 +17736,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0422",
@@ -16893,7 +17776,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0423",
@@ -16931,7 +17816,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0424",
@@ -16973,7 +17860,9 @@
      "status": 200,
      "body": "{\"error\": \"Invalid entity type.\", \"status\": false}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0425",
@@ -17010,7 +17899,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0426",
@@ -17047,7 +17938,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0427",
@@ -17092,7 +17985,9 @@
      "status": 400,
      "body": "{\"error\": \"Invalid entity type.\", \"status\": false}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0428",
@@ -17128,7 +18023,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0429",
@@ -17171,7 +18068,9 @@
      "status": 404,
      "body": "{\"error\": \"The requested asset could not be found.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0430",
@@ -17220,7 +18119,9 @@
      "status": 404,
      "body": "{\"error\": \"Asset not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "asset_duplicate",
+   "cache_control": null
   },
   {
    "ep": "EP-0431",
@@ -17256,7 +18157,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0432",
@@ -17299,7 +18202,9 @@
      "status": 404,
      "body": "{\"error\": \"The requested asset could not be found.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0433",
@@ -17337,7 +18242,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0434",
@@ -17375,7 +18282,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0435",
@@ -17412,7 +18321,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0436",
@@ -17449,7 +18360,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0437",
@@ -17486,7 +18399,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0438",
@@ -17524,7 +18439,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0439",
@@ -17562,7 +18479,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0440",
@@ -17600,7 +18519,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0441",
@@ -17638,7 +18559,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0442",
@@ -17676,7 +18599,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0443",
@@ -17714,7 +18639,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0444",
@@ -17752,7 +18679,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0445",
@@ -17790,7 +18719,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0446",
@@ -17826,7 +18757,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0447",
@@ -17864,7 +18797,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0448",
@@ -17900,7 +18835,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0449",
@@ -17943,7 +18880,9 @@
      "status": 200,
      "body": "{\"error\": \"Asset key does not exist\", \"status\": false}"
     }
-   ]
+   ],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0450",
@@ -17979,7 +18918,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0451",
@@ -18017,7 +18958,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0452",
@@ -18060,7 +19003,9 @@
      "status": 200,
      "body": "{\"error\": \"Asset key does not exist\", \"status\": false}"
     }
-   ]
+   ],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0453",
@@ -18096,7 +19041,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0454",
@@ -18134,7 +19081,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0455",
@@ -18172,7 +19121,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0456",
@@ -18208,7 +19159,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0457",
@@ -18246,7 +19199,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0458",
@@ -18282,7 +19237,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0459",
@@ -18343,7 +19300,9 @@
      "status": 400,
      "body": "{\"error\": \"Invalid file type. Only JPEG, PNG, WebP, JPG and GIF files are allowed.\", \"status\": false}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0460",
@@ -18383,7 +19342,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0461",
@@ -18432,7 +19393,9 @@
      "status": null,
      "body": "{\"error\": \"The requested asset could not be found.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0462",
@@ -18479,7 +19442,9 @@
      "status": null,
      "body": "{\"error\": \"The requested asset could not be found.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0463",
@@ -18519,7 +19484,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0464",
@@ -18559,7 +19526,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0465",
@@ -18595,7 +19564,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0466",
@@ -18633,7 +19604,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0467",
@@ -18671,7 +19644,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0468",
@@ -18707,7 +19682,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0469",
@@ -18743,7 +19720,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0470",
@@ -18779,7 +19758,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0471",
@@ -18815,7 +19796,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0472",
@@ -18853,7 +19836,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0473",
@@ -18889,7 +19874,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0474",
@@ -18931,7 +19918,9 @@
      "status": 400,
      "body": "{\"message\": \"Invalid type\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0475",
@@ -18973,7 +19962,9 @@
      "status": 400,
      "body": "{\"message\": \"Invalid type\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0476",
@@ -19016,7 +20007,9 @@
      "status": 400,
      "body": "{\"message\": \"Invalid tab\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0477",
@@ -19061,7 +20054,9 @@
      "status": null,
      "body": "{\"error\": \"Both segment and x axis cannot be same and segment should be valid\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0478",
@@ -19099,7 +20094,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0479",
@@ -19140,7 +20137,9 @@
      "status": 200,
      "body": "{\"message\": \"Once the export is ready it will be emailed to you at <email>\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0480",
@@ -19176,7 +20175,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0481",
@@ -19212,7 +20213,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0482",
@@ -19253,7 +20256,9 @@
      "status": 400,
      "body": "{\"message\": \"Invalid type\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0483",
@@ -19289,7 +20294,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0484",
@@ -19325,7 +20332,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0485",
@@ -19361,7 +20370,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0486",
@@ -19406,7 +20417,9 @@
      "status": 400,
      "body": "{\"error\": \"URL already exists for this workspace and owner\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0487",
@@ -19447,7 +20460,9 @@
      "status": 200,
      "body": "{\"error\": \"Quick link not found.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0488",
@@ -19488,7 +20503,9 @@
      "status": 200,
      "body": "{\"detail\": \"Quick link not found.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0489",
@@ -19524,7 +20541,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0490",
@@ -19562,7 +20581,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0491",
@@ -19599,7 +20620,9 @@
    "pagination": "cursor",
    "default_per_page": 20,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0492",
@@ -19640,7 +20663,9 @@
      "status": 400,
      "body": "{\"error\": \"html content is not valid\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0493",
@@ -19676,7 +20701,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0494",
@@ -19712,7 +20739,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0495",
@@ -19748,7 +20777,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0496",
@@ -19792,7 +20823,9 @@
      "status": 400,
      "body": "{\"error\": \"The required key does not exist.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0497",
@@ -19835,7 +20868,9 @@
      "status": 200,
      "body": "{\"message\": \"Successful\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0498",
@@ -19871,7 +20906,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0499",
@@ -19907,7 +20944,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0500",
@@ -19943,7 +20982,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0501",
@@ -19979,7 +21020,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0502",
@@ -20015,7 +21058,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0503",
@@ -20051,7 +21096,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0504",
@@ -20087,7 +21134,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0505",
@@ -20123,7 +21172,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0506",
@@ -20159,7 +21210,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0507",
@@ -20195,7 +21248,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0508",
@@ -20234,7 +21289,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0509",
@@ -20273,7 +21330,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0510",
@@ -20310,7 +21369,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0511",
@@ -20356,7 +21417,9 @@
      "status": 400,
      "body": "{\"error\": \"Intake is not valid\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0512",
@@ -20397,7 +21460,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0513",
@@ -20438,7 +21503,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0514",
@@ -20479,7 +21546,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0515",
@@ -20520,7 +21589,9 @@
      "status": 404,
      "body": "{\"error\": \"Invalid anchor\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0516",
@@ -20574,7 +21645,9 @@
      "status": 404,
      "body": "{\"error\": \"Project is not published\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0517",
@@ -20614,7 +21687,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0518",
@@ -20655,7 +21730,9 @@
      "status": 404,
      "body": "{\"error\": \"Invalid anchor\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0519",
@@ -20696,7 +21773,9 @@
      "status": 404,
      "body": "{\"error\": \"Invalid anchor\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0520",
@@ -20738,7 +21817,9 @@
      "status": 404,
      "body": "{\"error\": \"Project is not published\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0521",
@@ -20779,7 +21860,9 @@
      "status": 404,
      "body": "{\"error\": \"Invalid anchor\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0522",
@@ -20816,7 +21899,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0523",
@@ -20857,7 +21942,9 @@
      "status": 404,
      "body": "{\"error\": \"Invalid anchor\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0524",
@@ -20893,7 +21980,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0525",
@@ -20929,7 +22018,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0526",
@@ -20974,7 +22065,9 @@
      "status": 404,
      "body": "{\"error\": \"Issue not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0527",
@@ -21015,7 +22108,9 @@
      "status": 200,
      "body": "{\"detail\": \"No IssueComment matches the given query.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0528",
@@ -21051,7 +22146,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0529",
@@ -21087,7 +22184,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0530",
@@ -21123,7 +22222,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0531",
@@ -21168,7 +22269,9 @@
      "status": 404,
      "body": "{\"error\": \"Comment not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0532",
@@ -21204,7 +22307,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0533",
@@ -21242,7 +22347,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0534",
@@ -21291,7 +22398,9 @@
      "status": 400,
      "body": "{\"error\": \"The payload is not valid\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0535",
@@ -21327,7 +22436,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0536",
@@ -21365,7 +22476,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0537",
@@ -21412,7 +22525,9 @@
      "status": 404,
      "body": "{\"error\": \"Issue not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0538",
@@ -21450,7 +22565,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0539",
@@ -21488,7 +22605,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0540",
@@ -21524,7 +22643,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0541",
@@ -21562,7 +22683,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0542",
@@ -21598,7 +22721,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0543",
@@ -21634,7 +22759,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0544",
@@ -21670,7 +22797,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0545",
@@ -21711,7 +22840,9 @@
      "status": 400,
      "body": "{\"error\": \"Both start date and end date are either required or are to be null\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0546",
@@ -21752,7 +22883,9 @@
      "status": 204,
      "body": "{\"error\": \"Only completed cycles can be archived\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0547",
@@ -21788,7 +22921,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0548",
@@ -21835,7 +22970,9 @@
      "status": 400,
      "body": "{\"error\": \"The Cycle has already been completed so it cannot be edited\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0549",
@@ -21861,9 +22998,12 @@
    "original_status": 204,
    "target_status": 204,
    "deviations": [
-    "SEC-20"
+    "SEC-20",
+    "DEV-API-64"
    ],
-   "dt": [],
+   "dt": [
+    "DT-WH-07"
+   ],
    "increment": "I6",
    "ce_ids": [
     "CE-API-026"
@@ -21878,7 +23018,9 @@
      "status": 204,
      "body": "{\"error\": \"Only admin or creator can delete the cycle\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0550",
@@ -21916,7 +23058,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0551",
@@ -21941,8 +23085,12 @@
    "original_view": "`CycleIssueListCreateAPIEndpoint.post` (V1V/cycle.py:957)",
    "original_status": 200,
    "target_status": 200,
-   "deviations": [],
-   "dt": [],
+   "deviations": [
+    "DEV-API-64"
+   ],
+   "dt": [
+    "DT-WH-07"
+   ],
    "increment": "I6",
    "ce_ids": [
     "CE-API-027"
@@ -21961,7 +23109,9 @@
      "status": 400,
      "body": "{\"code\": \"CYCLE_COMPLETED\", \"message\": \"The Cycle has already been completed so no new issues can be added\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0552",
@@ -21999,7 +23149,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0553",
@@ -22024,8 +23176,12 @@
    "original_view": "`CycleIssueDetailAPIEndpoint.delete` (V1V/cycle.py:1140)",
    "original_status": 204,
    "target_status": 204,
-   "deviations": [],
-   "dt": [],
+   "deviations": [
+    "DEV-API-64"
+   ],
+   "dt": [
+    "DT-WH-07"
+   ],
    "increment": "I6",
    "ce_ids": [
     "CE-API-027"
@@ -22035,7 +23191,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0554",
@@ -22092,7 +23250,9 @@
      "status": 400,
      "body": "{\"error\": \"Source cycle not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0555",
@@ -22148,7 +23308,9 @@
      "status": 409,
      "body": "{\"message\": \"Asset with same external id and source already exists\", \"asset_id\", \"asset_url\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0556",
@@ -22203,7 +23365,9 @@
      "status": null,
      "body": "{\"error\": \"Asset not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0557",
@@ -22244,7 +23408,9 @@
      "status": 204,
      "body": "{\"error\": \"Asset not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0558",
@@ -22282,7 +23448,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0559",
@@ -22333,7 +23501,9 @@
      "status": 400,
      "body": "{\"error\": \"Invalid priority\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0560",
@@ -22373,7 +23543,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0561",
@@ -22418,7 +23590,9 @@
      "status": 400,
      "body": "{\"error\": \"You cannot edit intake work items\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0562",
@@ -22463,7 +23637,9 @@
      "status": 204,
      "body": "{\"error\": \"Only admin or creator can delete the work item\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0563",
@@ -22503,7 +23679,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0564",
@@ -22556,7 +23734,9 @@
      "status": null,
      "body": "{\"non_field_errors\": [\"Email already invited\"]}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0565",
@@ -22594,7 +23774,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0566",
@@ -22637,7 +23819,9 @@
      "status": 200,
      "body": "{\"error\": \"Email cannot be updated after invite is created.\", \"code\": \"EMAIL_CANNOT_BE_UPDATED\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0567",
@@ -22684,7 +23868,9 @@
      "status": 400,
      "body": "{\"error\": \"Invite already responded\", \"code\": \"INVITE_ALREADY_RESPONDED\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0568",
@@ -22720,7 +23906,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0569",
@@ -22761,7 +23949,9 @@
      "status": 409,
      "body": "{\"error\": \"Label with the same name already exists in the project\", \"id\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0570",
@@ -22797,7 +23987,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0571",
@@ -22838,7 +24030,9 @@
      "status": 400,
      "body": "{\"error\": \"The payload is not valid\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0572",
@@ -22874,7 +24068,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0573",
@@ -22919,7 +24115,9 @@
      "status": 404,
      "body": "{\"error\": \"Provided workspace does not exist\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0574",
@@ -22964,7 +24162,9 @@
      "status": 400,
      "body": "{\"error\": \"Provided workspace does not exist\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0575",
@@ -23007,7 +24207,9 @@
      "status": 400,
      "body": "{\"error\": \"Provided workspace does not exist\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0576",
@@ -23056,7 +24258,9 @@
      "status": 400,
      "body": "{\"error\": \"The payload is not valid\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0577",
@@ -23092,7 +24296,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0578",
@@ -23133,7 +24339,9 @@
      "status": 400,
      "body": "{\"member\": [\"Member not found in workspace\"]}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0579",
@@ -23169,7 +24377,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0580",
@@ -23212,7 +24422,9 @@
      "status": 404,
      "body": "{\"error\": \"Provided project does not exist\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0581",
@@ -23255,7 +24467,9 @@
      "status": 400,
      "body": "{\"error\": \"Provided workspace does not exist\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0582",
@@ -23304,7 +24518,9 @@
      "status": 400,
      "body": "{\"error\": \"The payload is not valid\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0583",
@@ -23340,7 +24556,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0584",
@@ -23381,7 +24599,9 @@
      "status": 400,
      "body": "{\"member\": [\"Member not found in workspace\"]}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0585",
@@ -23417,7 +24637,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0586",
@@ -23453,7 +24675,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0587",
@@ -23489,7 +24713,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0588",
@@ -23525,7 +24751,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0589",
@@ -23561,7 +24789,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0590",
@@ -23602,7 +24832,9 @@
      "status": 400,
      "body": "{\"id\", \"code\": \"MODULE_NAME_ALREADY_EXISTS\", \"error\": \"Module with this name already exists\", \"message\": \"Module with this name already exists\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0591",
@@ -23638,7 +24870,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0592",
@@ -23683,7 +24917,9 @@
      "status": 400,
      "body": "{\"error\": \"Module with this name already exists\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0593",
@@ -23709,9 +24945,12 @@
    "original_status": 204,
    "target_status": 204,
    "deviations": [
-    "SEC-20"
+    "SEC-20",
+    "DEV-API-64"
    ],
-   "dt": [],
+   "dt": [
+    "DT-WH-07"
+   ],
    "increment": "I6",
    "ce_ids": [
     "CE-API-030"
@@ -23726,7 +24965,9 @@
      "status": 204,
      "body": "{\"error\": \"Only admin or creator can delete the module\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0594",
@@ -23767,7 +25008,9 @@
      "status": 204,
      "body": "{\"error\": \"Only completed or cancelled modules can be archived\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0595",
@@ -23805,7 +25048,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0596",
@@ -23830,9 +25075,12 @@
    "original_view": "`ModuleIssueListCreateAPIEndpoint.post` (V1V/module.py:712)",
    "original_status": 200,
    "target_status": 200,
-   "deviations": [],
+   "deviations": [
+    "DEV-API-64"
+   ],
    "dt": [
-    "DT-MOD-01"
+    "DT-MOD-01",
+    "DT-WH-07"
    ],
    "increment": "I6",
    "ce_ids": [
@@ -23848,7 +25096,9 @@
      "status": 400,
      "body": "{\"error\": \"Issues are required\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0597",
@@ -23873,8 +25123,12 @@
    "original_view": "`ModuleIssueDetailAPIEndpoint.delete` (V1V/module.py:914)",
    "original_status": 204,
    "target_status": 204,
-   "deviations": [],
-   "dt": [],
+   "deviations": [
+    "DEV-API-64"
+   ],
+   "dt": [
+    "DT-WH-07"
+   ],
    "increment": "I6",
    "ce_ids": [
     "CE-API-031"
@@ -23884,7 +25138,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0598",
@@ -23925,7 +25181,9 @@
      "status": 404,
      "body": "{\"error\": \"Provided workspace does not exist\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0599",
@@ -23961,7 +25219,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0600",
@@ -24006,7 +25266,9 @@
      "status": 500,
      "body": "{\"error\": \"An unexpected error occurred\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0601",
@@ -24042,7 +25304,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0602",
@@ -24091,7 +25355,9 @@
      "status": 404,
      "body": "{\"error\": \"Project does not exist\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0603",
@@ -24129,7 +25395,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0604",
@@ -24167,7 +25435,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0605",
@@ -24205,7 +25475,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0606",
@@ -24248,7 +25520,9 @@
      "status": 404,
      "body": "{\"error\": \"Project not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0607",
@@ -24284,7 +25558,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0608",
@@ -24329,7 +25605,9 @@
      "status": 409,
      "body": "{\"error\": \"State with the same name already exists in the project\", \"id\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0609",
@@ -24365,7 +25643,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0610",
@@ -24406,7 +25686,9 @@
      "status": 200,
      "body": "{\"error\": \"State with the same external id and external source already exists\", \"id\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0611",
@@ -24451,7 +25733,9 @@
      "status": 400,
      "body": "{\"error\": \"The state is not empty, only empty states can be deleted\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0612",
@@ -24489,7 +25773,9 @@
    "pagination": "cursor",
    "default_per_page": 20,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0613",
@@ -24530,7 +25816,9 @@
      "status": 201,
      "body": "{\"error\": \"html content is not valid\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0614",
@@ -24571,7 +25859,9 @@
      "status": 200,
      "body": "{\"detail\": \"No Sticky matches the given query.\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0615",
@@ -24609,7 +25899,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0616",
@@ -24647,7 +25939,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0617",
@@ -24692,7 +25986,9 @@
      "status": 400,
      "body": "{\"error\": \"Invalid file type. Only JPEG and PNG files are allowed.\", \"status\": false}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0618",
@@ -24735,7 +26031,9 @@
      "status": 500,
      "body": "{\"error\": \"Something went wrong please try again later\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0619",
@@ -24771,7 +26069,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0620",
@@ -24807,7 +26107,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0621",
@@ -24845,7 +26147,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0622",
@@ -24883,7 +26187,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0623",
@@ -24919,7 +26225,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0624",
@@ -24960,7 +26268,9 @@
      "status": 404,
      "body": "{\"message\": \"Activity not found.\", \"code\": \"NOT_FOUND\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0625",
@@ -24996,7 +26306,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0626",
@@ -25037,7 +26349,9 @@
      "status": 404,
      "body": "{\"message\": \"Activity not found.\", \"code\": \"NOT_FOUND\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0627",
@@ -25075,7 +26389,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0628",
@@ -25130,7 +26446,9 @@
      "status": 409,
      "body": "{\"error\": \"Issue with the same external id and external source already exists\", \"id\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0629",
@@ -25177,7 +26495,9 @@
      "status": 403,
      "body": "{\"error\": \"You are not allowed to download this attachment\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0630",
@@ -25215,7 +26535,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0631",
@@ -25258,7 +26580,9 @@
      "status": 204,
      "body": "{\"error\": \"You are not allowed to delete this attachment\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0632",
@@ -25296,7 +26620,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0633",
@@ -25351,7 +26677,9 @@
      "status": 409,
      "body": "{\"error\": \"Issue with the same external id and external source already exists\", \"id\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0634",
@@ -25398,7 +26726,9 @@
      "status": 403,
      "body": "{\"error\": \"You are not allowed to download this attachment\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0635",
@@ -25436,7 +26766,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0636",
@@ -25479,7 +26811,9 @@
      "status": 204,
      "body": "{\"error\": \"You are not allowed to delete this attachment\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0637",
@@ -25515,7 +26849,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0638",
@@ -25556,7 +26892,9 @@
      "status": 409,
      "body": "{\"error\": \"Work item comment with the same external id and external source already exists\", \"id\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0639",
@@ -25592,7 +26930,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0640",
@@ -25630,7 +26970,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0641",
@@ -25656,9 +26998,12 @@
    "original_status": 204,
    "target_status": 204,
    "deviations": [
-    "SEC-09"
+    "SEC-09",
+    "DEV-API-64"
    ],
-   "dt": [],
+   "dt": [
+    "DT-WH-07"
+   ],
    "increment": "I6",
    "ce_ids": [
     "CE-API-021"
@@ -25668,7 +27013,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0642",
@@ -25704,7 +27051,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0643",
@@ -25745,7 +27094,9 @@
      "status": 409,
      "body": "{\"error\": \"Work item comment with the same external id and external source already exists\", \"id\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0644",
@@ -25781,7 +27132,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0645",
@@ -25819,7 +27172,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0646",
@@ -25845,9 +27200,12 @@
    "original_status": 204,
    "target_status": 204,
    "deviations": [
-    "SEC-09"
+    "SEC-09",
+    "DEV-API-64"
    ],
-   "dt": [],
+   "dt": [
+    "DT-WH-07"
+   ],
    "increment": "I6",
    "ce_ids": [
     "CE-API-021"
@@ -25857,7 +27215,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0647",
@@ -25898,7 +27258,9 @@
      "status": 404,
      "body": "{\"error\": \"Work item not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0648",
@@ -25934,7 +27296,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0649",
@@ -25975,7 +27339,9 @@
      "status": 400,
      "body": "{\"error\": \"Issue with the same external id and external source already exists\", \"id\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0650",
@@ -26011,7 +27377,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0651",
@@ -26047,7 +27415,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0652",
@@ -26073,9 +27443,12 @@
    "original_status": 204,
    "target_status": 204,
    "deviations": [
-    "SEC-14"
+    "SEC-14",
+    "DEV-API-64"
    ],
-   "dt": [],
+   "dt": [
+    "DT-WH-07"
+   ],
    "increment": "I6",
    "ce_ids": [
     "CE-API-017"
@@ -26090,7 +27463,9 @@
      "status": 204,
      "body": "{\"error\": \"Only admin or creator can delete the work item\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0653",
@@ -26126,7 +27501,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0654",
@@ -26167,7 +27544,9 @@
      "status": 400,
      "body": "{\"error\": \"Issue with the same external id and external source already exists\", \"id\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0655",
@@ -26203,7 +27582,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0656",
@@ -26239,7 +27620,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0657",
@@ -26265,9 +27648,12 @@
    "original_status": 204,
    "target_status": 204,
    "deviations": [
-    "SEC-14"
+    "SEC-14",
+    "DEV-API-64"
    ],
-   "dt": [],
+   "dt": [
+    "DT-WH-07"
+   ],
    "increment": "I6",
    "ce_ids": [
     "CE-API-017"
@@ -26282,7 +27668,9 @@
      "status": 204,
      "body": "{\"error\": \"Only admin or creator can delete the work item\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0658",
@@ -26323,7 +27711,9 @@
      "status": 404,
      "body": "{\"error\": \"Work item not found\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0659",
@@ -26359,7 +27749,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0660",
@@ -26408,7 +27800,9 @@
      "status": null,
      "body": "{\"error\": \"URL already exists for this Issue\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0661",
@@ -26444,7 +27838,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0662",
@@ -26480,7 +27876,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0663",
@@ -26516,7 +27914,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0664",
@@ -26552,7 +27952,9 @@
    "pagination": "cursor",
    "default_per_page": 1000,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0665",
@@ -26601,7 +28003,9 @@
      "status": null,
      "body": "{\"error\": \"URL already exists for this Issue\"}"
     }
-   ]
+   ],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0666",
@@ -26637,7 +28041,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0667",
@@ -26673,7 +28079,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0668",
@@ -26709,7 +28117,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0669",
@@ -26747,7 +28157,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0670",
@@ -26785,7 +28197,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0671",
@@ -26823,7 +28237,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0672",
@@ -26861,7 +28277,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": true,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "api_key",
+   "cache_control": null
   },
   {
    "ep": "EP-0673",
@@ -26897,7 +28315,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0674",
@@ -26933,7 +28353,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0675",
@@ -26969,7 +28391,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0676",
@@ -27005,7 +28429,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0677",
@@ -27041,7 +28467,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0678",
@@ -27077,7 +28505,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0679",
@@ -27115,7 +28545,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0680",
@@ -27151,7 +28583,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0681",
@@ -27187,7 +28621,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0682",
@@ -27223,7 +28659,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0683",
@@ -27261,7 +28699,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0684",
@@ -27297,7 +28737,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0685",
@@ -27333,7 +28775,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0686",
@@ -27371,7 +28815,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0687",
@@ -27407,7 +28853,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0688",
@@ -27443,7 +28891,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0689",
@@ -27479,7 +28929,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0690",
@@ -27515,7 +28967,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0691",
@@ -27551,7 +29005,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0692",
@@ -27589,7 +29045,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0693",
@@ -27625,7 +29083,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0694",
@@ -27653,15 +29113,15 @@
     "DT-V1-01"
    ],
    "increment": "I6",
-   "ce_ids": [
-    "CE-API-009"
-   ],
+   "ce_ids": [],
    "frontend_call_detected": false,
    "operation_id": null,
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0695",
@@ -27689,15 +29149,15 @@
     "DT-V1-01"
    ],
    "increment": "I6",
-   "ce_ids": [
-    "CE-API-009"
-   ],
+   "ce_ids": [],
    "frontend_call_detected": false,
    "operation_id": null,
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0696",
@@ -27725,15 +29185,15 @@
     "DT-V1-01"
    ],
    "increment": "I6",
-   "ce_ids": [
-    "CE-API-009"
-   ],
+   "ce_ids": [],
    "frontend_call_detected": false,
    "operation_id": null,
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0697",
@@ -27761,15 +29221,15 @@
     "DT-V1-01"
    ],
    "increment": "I6",
-   "ce_ids": [
-    "CE-API-009"
-   ],
+   "ce_ids": [],
    "frontend_call_detected": false,
    "operation_id": null,
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0698",
@@ -27797,15 +29257,15 @@
     "DT-V1-01"
    ],
    "increment": "I6",
-   "ce_ids": [
-    "CE-API-009"
-   ],
+   "ce_ids": [],
    "frontend_call_detected": false,
    "operation_id": null,
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0699",
@@ -27833,15 +29293,15 @@
     "DT-V1-01"
    ],
    "increment": "I6",
-   "ce_ids": [
-    "CE-API-009"
-   ],
+   "ce_ids": [],
    "frontend_call_detected": false,
    "operation_id": null,
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0700",
@@ -27869,15 +29329,15 @@
     "DT-V1-01"
    ],
    "increment": "I6",
-   "ce_ids": [
-    "CE-API-009"
-   ],
+   "ce_ids": [],
    "frontend_call_detected": false,
    "operation_id": null,
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0701",
@@ -27905,19 +29365,21 @@
     "DT-V1-01"
    ],
    "increment": "I6",
-   "ce_ids": [
-    "CE-API-009"
-   ],
+   "ce_ids": [],
    "frontend_call_detected": false,
    "operation_id": null,
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0702",
-   "original_ids": [],
+   "original_ids": [
+    "A05:V-DEAD-09"
+   ],
    "alias": false,
    "method": "PUT",
    "path": "/api/v1/workspaces/{slug}/projects/{project_id}/issues/{pk}/",
@@ -27949,7 +29411,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0703",
@@ -27985,7 +29449,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0704",
@@ -28021,11 +29487,15 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0705",
-   "original_ids": [],
+   "original_ids": [
+    "A05:V-DEAD-10"
+   ],
    "alias": false,
    "method": "GET",
    "path": "/api/v1/workspaces/{slug}/projects/{project_id}/modules/{module_id}/module-issues/{issue_id}/",
@@ -28059,7 +29529,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0706",
@@ -28095,7 +29567,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0707",
@@ -28131,7 +29605,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0708",
@@ -28167,11 +29643,15 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0709",
-   "original_ids": [],
+   "original_ids": [
+    "A05:V-DEAD-09"
+   ],
    "alias": false,
    "method": "PUT",
    "path": "/api/v1/workspaces/{slug}/projects/{project_id}/work-items/{pk}/",
@@ -28203,7 +29683,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0710",
@@ -28241,7 +29723,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0711",
@@ -28279,7 +29763,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0712",
@@ -28317,7 +29803,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0713",
@@ -28355,7 +29843,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0714",
@@ -28393,7 +29883,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0715",
@@ -28429,7 +29921,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0716",
@@ -28473,7 +29967,9 @@
      "status": 409,
      "body": "{\"error\": \"URL already exists for the workspace\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0717",
@@ -28510,7 +30006,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0718",
@@ -28554,7 +30052,9 @@
      "status": 400,
      "body": "{\"error\": \"The payload is not valid\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0719",
@@ -28590,7 +30090,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0720",
@@ -28626,7 +30128,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0721",
@@ -28663,7 +30167,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0722",
@@ -28699,7 +30205,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0723",
@@ -28735,7 +30243,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0724",
@@ -28777,7 +30287,9 @@
      "status": 400,
      "body": "{\"error\": \"per_page and cursor are required\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0725",
@@ -28823,7 +30335,9 @@
      "status": 400,
      "body": "{\"error\": \"Provider '<provider>' not found.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0726",
@@ -28861,7 +30375,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0727",
@@ -28912,7 +30428,9 @@
      "status": 500,
      "body": "{\"error\": \"An internal error has occurred.\"}"
     }
-   ]
+   ],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0728",
@@ -28950,7 +30468,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   },
   {
    "ep": "EP-0729",
@@ -28986,7 +30506,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "integration_webhook",
+   "cache_control": null
   },
   {
    "ep": "EP-0730",
@@ -29022,7 +30544,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0731",
@@ -29058,7 +30582,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": null,
+   "cache_control": null
   },
   {
    "ep": "EP-0732",
@@ -29094,7 +30620,9 @@
    "pagination": null,
    "default_per_page": null,
    "read_replica": false,
-   "documented_bodies": []
+   "documented_bodies": [],
+   "rate_limit": "anon",
+   "cache_control": null
   }
  ]
 }
