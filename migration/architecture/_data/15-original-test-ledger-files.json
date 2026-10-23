@@ -1,0 +1,2023 @@
+{
+ "source": "15-teststrategie-qualitaet-paritaet.md Anhang A",
+ "files": [
+  {
+   "nr": "A-001",
+   "file": "T/contract/api/test_api_permission_parity.py",
+   "cases": 10,
+   "ported": 10,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/ApiPermissionParityTests.cs",
+   "ce": [
+    "CE-API-001",
+    "CE-WS-008"
+   ],
+   "inc": "I6",
+   "note": "Rollen-Parität App↔v1; Fälle in permission-matrix.yaml spiegeln"
+  },
+  {
+   "nr": "A-002",
+   "file": "T/contract/api/test_authentication.py",
+   "cases": 2,
+   "ported": 0,
+   "adapted": 2,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/AuthenticationTests.cs",
+   "ce": [
+    "CE-API-001",
+    "CE-AUTH-027"
+   ],
+   "inc": "I6",
+   "note": "API-Key im Ziel gehasht gespeichert (D05) – Arrange über `ApiTokenBuilder`; deaktivierter Benutzer = `is_active=false`"
+  },
+  {
+   "nr": "A-003",
+   "file": "T/contract/api/test_cycle_issue_project_scope.py",
+   "cases": 1,
+   "ported": 1,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/CycleIssueProjectScopeTests.cs",
+   "ce": [
+    "CE-API-027"
+   ],
+   "inc": "I6",
+   "note": "IDOR (S-26)"
+  },
+  {
+   "nr": "A-004",
+   "file": "T/contract/api/test_cycles.py",
+   "cases": 14,
+   "ported": 14,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/CyclesTests.cs",
+   "ce": [
+    "CE-API-026",
+    "CE-API-028",
+    "CE-API-029"
+   ],
+   "inc": "I6",
+   "note": ""
+  },
+  {
+   "nr": "A-005",
+   "file": "T/contract/api/test_cycles_lite.py",
+   "cases": 1,
+   "ported": 1,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/CyclesLiteTests.cs",
+   "ce": [
+    "CE-API-026"
+   ],
+   "inc": "I6",
+   "note": ""
+  },
+  {
+   "nr": "A-006",
+   "file": "T/contract/api/test_generic_asset.py",
+   "cases": 5,
+   "ported": 5,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/GenericAssetTests.cs",
+   "ce": [
+    "CE-API-016"
+   ],
+   "inc": "I6",
+   "note": "Disposition-Allowlist; Presigned-Felder per N7"
+  },
+  {
+   "nr": "A-007",
+   "file": "T/contract/api/test_intake_issue_update.py",
+   "cases": 3,
+   "ported": 3,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/IntakeIssueUpdateTests.cs",
+   "ce": [
+    "CE-API-025"
+   ],
+   "inc": "I6",
+   "note": ""
+  },
+  {
+   "nr": "A-008",
+   "file": "T/contract/api/test_issue_assignee_label_validation.py",
+   "cases": 5,
+   "ported": 5,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/IssueAssigneeLabelValidationTests.cs",
+   "ce": [
+    "CE-API-017"
+   ],
+   "inc": "I6",
+   "note": "Fehlertexte wörtlich"
+  },
+  {
+   "nr": "A-009",
+   "file": "T/contract/api/test_issue_attachment_size.py",
+   "cases": 4,
+   "ported": 4,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/IssueAttachmentSizeTests.cs",
+   "ce": [
+    "CE-API-023",
+    "CE-OPS-009"
+   ],
+   "inc": "I6",
+   "note": "`FILE_SIZE_LIMIT` über `factory.WithConfiguration`"
+  },
+  {
+   "nr": "A-010",
+   "file": "T/contract/api/test_issue_notifications.py",
+   "cases": 3,
+   "ported": 3,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/IssueNotificationsTests.cs",
+   "ce": [
+    "CE-API-017",
+    "CE-NOTIF-001"
+   ],
+   "inc": "I6",
+   "note": "`mock_celery` → Outbox-Assertion"
+  },
+  {
+   "nr": "A-011",
+   "file": "T/contract/api/test_issue_read_only_fields.py",
+   "cases": 2,
+   "ported": 2,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/IssueReadOnlyFieldsTests.cs",
+   "ce": [
+    "CE-API-017"
+   ],
+   "inc": "I6",
+   "note": ""
+  },
+  {
+   "nr": "A-012",
+   "file": "T/contract/api/test_issues.py",
+   "cases": 6,
+   "ported": 6,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/IssuesTests.cs",
+   "ce": [
+    "CE-API-017",
+    "CE-API-018"
+   ],
+   "inc": "I6",
+   "note": ""
+  },
+  {
+   "nr": "A-013",
+   "file": "T/contract/api/test_labels.py",
+   "cases": 10,
+   "ported": 10,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/LabelsTests.cs",
+   "ce": [
+    "CE-API-010"
+   ],
+   "inc": "I6",
+   "note": "Beispiel §5.3"
+  },
+  {
+   "nr": "A-014",
+   "file": "T/contract/api/test_members_lite.py",
+   "cases": 5,
+   "ported": 5,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/MembersLiteTests.cs",
+   "ce": [
+    "CE-API-011",
+    "CE-API-012"
+   ],
+   "inc": "I6",
+   "note": ""
+  },
+  {
+   "nr": "A-015",
+   "file": "T/contract/api/test_modules_lite.py",
+   "cases": 1,
+   "ported": 1,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/ModulesLiteTests.cs",
+   "ce": [
+    "CE-API-030"
+   ],
+   "inc": "I6",
+   "note": ""
+  },
+  {
+   "nr": "A-016",
+   "file": "T/contract/api/test_non_object_json_body.py",
+   "cases": 3,
+   "ported": 3,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/NonObjectJsonBodyTests.cs",
+   "ce": [
+    "CE-API-006",
+    "CE-API-017"
+   ],
+   "inc": "I6",
+   "note": "Pflichtfall E4"
+  },
+  {
+   "nr": "A-017",
+   "file": "T/contract/api/test_project_members_roster_scope.py",
+   "cases": 2,
+   "ported": 2,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/ProjectMembersRosterScopeTests.cs",
+   "ce": [
+    "CE-API-012"
+   ],
+   "inc": "I6",
+   "note": "IDOR (S-26)"
+  },
+  {
+   "nr": "A-018",
+   "file": "T/contract/api/test_projects.py",
+   "cases": 11,
+   "ported": 11,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/ProjectsTests.cs",
+   "ce": [
+    "CE-API-006",
+    "CE-API-007",
+    "CE-API-008"
+   ],
+   "inc": "I6",
+   "note": ""
+  },
+  {
+   "nr": "A-019",
+   "file": "T/contract/api/test_projects_lite.py",
+   "cases": 5,
+   "ported": 5,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/ProjectsLiteTests.cs",
+   "ce": [
+    "CE-API-006"
+   ],
+   "inc": "I6",
+   "note": ""
+  },
+  {
+   "nr": "A-020",
+   "file": "T/contract/api/test_state_admin_scope.py",
+   "cases": 3,
+   "ported": 3,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/StateAdminScopeTests.cs",
+   "ce": [
+    "CE-API-009"
+   ],
+   "inc": "I6",
+   "note": ""
+  },
+  {
+   "nr": "A-021",
+   "file": "T/contract/api/test_work_item_link_relation_project_scope.py",
+   "cases": 2,
+   "ported": 2,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/WorkItemLinkRelationProjectScopeTests.cs",
+   "ce": [
+    "CE-API-020",
+    "CE-API-024"
+   ],
+   "inc": "I6",
+   "note": "IDOR (S-26)"
+  },
+  {
+   "nr": "A-022",
+   "file": "T/contract/app/test_api_token.py",
+   "cases": 20,
+   "ported": 20,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Identity.Tests/Acceptance/Original/ApiTokenTests.cs",
+   "ce": [
+    "CE-WH-012",
+    "CE-WH-013",
+    "CE-WH-014"
+   ],
+   "inc": "I6",
+   "note": "Bot-Token-Fall über `SeedUsers.Bot`"
+  },
+  {
+   "nr": "A-023",
+   "file": "T/contract/app/test_asset_role_scope_app.py",
+   "cases": 13,
+   "ported": 13,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Assets.Tests/Acceptance/Original/AssetRoleScopeAppTests.cs",
+   "ce": [
+    "CE-OPS-013",
+    "CE-WI-036"
+   ],
+   "inc": "I2",
+   "note": ""
+  },
+  {
+   "nr": "A-024",
+   "file": "T/contract/app/test_authentication.py",
+   "cases": 41,
+   "ported": 0,
+   "adapted": 4,
+   "obsolete": 37,
+   "target": "tests/modules/Plane.Identity.Tests/Acceptance/Original/AuthenticationTests.cs",
+   "ce": [
+    "CE-AUTH-004",
+    "CE-AUTH-005",
+    "CE-AUTH-006",
+    "CE-AUTH-007",
+    "CE-AUTH-026",
+    "CE-AUTH-027"
+   ],
+   "inc": "I0",
+   "note": "37 × `obsolete` (Magic-Link, Passwort-Sign-in/-up, Throttle der Login-Endpunkte; ADR-008) mit `replacement`: `KeycloakRealmConfigTests.BruteForceProtection_IsConfigured`, `OidcLoginFlowTests.NextPath_*`; 4 × `adapted` (`TestBotUserLoginBlocked`, `TestBotUserAdminSignInBlocked`) → `OidcProvisioningTests.BotUser_CannotLogin`"
+  },
+  {
+   "nr": "A-025",
+   "file": "T/contract/app/test_avatar_url_annotation.py",
+   "cases": 9,
+   "ported": 9,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/AvatarUrlAnnotationTests.cs",
+   "ce": [
+    "CE-WS-009",
+    "CE-PROF-001"
+   ],
+   "inc": "I1",
+   "note": "berührt Analytics-/Entity-Search-Endpunkte; Fälle je Endpunkt beim jeweiligen Modul ergänzen"
+  },
+  {
+   "nr": "A-026",
+   "file": "T/contract/app/test_creator_project_membership_app.py",
+   "cases": 5,
+   "ported": 5,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Projects.Tests/Acceptance/Original/CreatorProjectMembershipAppTests.cs",
+   "ce": [
+    "CE-PRJ-004",
+    "CE-PRJ-021"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-027",
+   "file": "T/contract/app/test_cycle_issue_app.py",
+   "cases": 2,
+   "ported": 2,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Cycles.Tests/Acceptance/Original/CycleIssueAppTests.cs",
+   "ce": [
+    "CE-CYC-010"
+   ],
+   "inc": "I3",
+   "note": ""
+  },
+  {
+   "nr": "A-028",
+   "file": "T/contract/app/test_deploy_board_identity_readonly_app.py",
+   "cases": 11,
+   "ported": 11,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicSpace.Tests/Acceptance/Original/DeployBoardIdentityReadonlyAppTests.cs",
+   "ce": [
+    "CE-SPACE-001",
+    "CE-SPACE-002"
+   ],
+   "inc": "I6",
+   "note": ""
+  },
+  {
+   "nr": "A-029",
+   "file": "T/contract/app/test_deploy_board_project_scope_app.py",
+   "cases": 6,
+   "ported": 6,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicSpace.Tests/Acceptance/Original/DeployBoardProjectScopeAppTests.cs",
+   "ce": [
+    "CE-SPACE-001"
+   ],
+   "inc": "I6",
+   "note": "IDOR (S-26)"
+  },
+  {
+   "nr": "A-030",
+   "file": "T/contract/app/test_draft_to_issue_owner_scope_app.py",
+   "cases": 2,
+   "ported": 2,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/DraftToIssueOwnerScopeAppTests.cs",
+   "ce": [
+    "CE-WI-049"
+   ],
+   "inc": "I2",
+   "note": ""
+  },
+  {
+   "nr": "A-031",
+   "file": "T/contract/app/test_export_order_by_allowlist_app.py",
+   "cases": 2,
+   "ported": 2,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Exports.Tests/Acceptance/Original/ExportOrderByAllowlistAppTests.cs",
+   "ce": [
+    "CE-EXP-001"
+   ],
+   "inc": "I6",
+   "note": "S-19"
+  },
+  {
+   "nr": "A-032",
+   "file": "T/contract/app/test_favorite_entity_scope_app.py",
+   "cases": 15,
+   "ported": 15,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/FavoriteEntityScopeAppTests.cs",
+   "ce": [
+    "CE-WS-023"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-033",
+   "file": "T/contract/app/test_intake_issue_read_only_fields_app.py",
+   "cases": 1,
+   "ported": 1,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Intake.Tests/Acceptance/Original/IntakeIssueReadOnlyFieldsAppTests.cs",
+   "ce": [
+    "CE-INT-010"
+   ],
+   "inc": "I3",
+   "note": ""
+  },
+  {
+   "nr": "A-034",
+   "file": "T/contract/app/test_issue_history_app.py",
+   "cases": 1,
+   "ported": 1,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueHistoryAppTests.cs",
+   "ce": [
+    "CE-WI-042"
+   ],
+   "inc": "I2",
+   "note": ""
+  },
+  {
+   "nr": "A-035",
+   "file": "T/contract/app/test_issue_history_scope_app.py",
+   "cases": 3,
+   "ported": 3,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueHistoryScopeAppTests.cs",
+   "ce": [
+    "CE-WI-041",
+    "CE-WI-042"
+   ],
+   "inc": "I2",
+   "note": ""
+  },
+  {
+   "nr": "A-036",
+   "file": "T/contract/app/test_issue_id_project_scope_app.py",
+   "cases": 3,
+   "ported": 3,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueIdProjectScopeAppTests.cs",
+   "ce": [
+    "CE-WI-011"
+   ],
+   "inc": "I2",
+   "note": ""
+  },
+  {
+   "nr": "A-037",
+   "file": "T/contract/app/test_issue_list_guest_scope_app.py",
+   "cases": 3,
+   "ported": 3,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueListGuestScopeAppTests.cs",
+   "ce": [
+    "CE-LV-005",
+    "CE-PRJ-022"
+   ],
+   "inc": "I2",
+   "note": "Visibility-Filter (Gast)"
+  },
+  {
+   "nr": "A-038",
+   "file": "T/contract/app/test_issue_read_only_fields_app.py",
+   "cases": 2,
+   "ported": 2,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueReadOnlyFieldsAppTests.cs",
+   "ce": [
+    "CE-WI-003"
+   ],
+   "inc": "I2",
+   "note": ""
+  },
+  {
+   "nr": "A-039",
+   "file": "T/contract/app/test_issue_subresource_scope_app.py",
+   "cases": 22,
+   "ported": 22,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueSubresourceScopeAppTests.cs",
+   "ce": [
+    "CE-WI-035",
+    "CE-WI-036",
+    "CE-WI-037",
+    "CE-WI-038",
+    "CE-WI-043"
+   ],
+   "inc": "I2",
+   "note": "IDOR (S-26)"
+  },
+  {
+   "nr": "A-040",
+   "file": "T/contract/app/test_module_issue_destroy_app.py",
+   "cases": 2,
+   "ported": 2,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.ProjectModules.Tests/Acceptance/Original/ModuleIssueDestroyAppTests.cs",
+   "ce": [
+    "CE-MOD-008"
+   ],
+   "inc": "I3",
+   "note": ""
+  },
+  {
+   "nr": "A-041",
+   "file": "T/contract/app/test_module_project_scope_app.py",
+   "cases": 4,
+   "ported": 4,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.ProjectModules.Tests/Acceptance/Original/ModuleProjectScopeAppTests.cs",
+   "ce": [
+    "CE-MOD-003"
+   ],
+   "inc": "I3",
+   "note": ""
+  },
+  {
+   "nr": "A-042",
+   "file": "T/contract/app/test_oauth_callback_state_app.py",
+   "cases": 5,
+   "ported": 0,
+   "adapted": 5,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Identity.Tests/Acceptance/Original/OauthCallbackStateAppTests.cs",
+   "ce": [
+    "CE-AUTH-024",
+    "CE-AUTH-029"
+   ],
+   "inc": "I0",
+   "note": "S-13: OIDC-State/Nonce/PKCE → `OidcCallbackStateTests`"
+  },
+  {
+   "nr": "A-043",
+   "file": "T/contract/app/test_page_guest_view_scope_app.py",
+   "cases": 3,
+   "ported": 3,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Pages.Tests/Acceptance/Original/PageGuestViewScopeAppTests.cs",
+   "ce": [
+    "CE-PAGE-004",
+    "CE-PAGE-006"
+   ],
+   "inc": "I4",
+   "note": ""
+  },
+  {
+   "nr": "A-044",
+   "file": "T/contract/app/test_page_order_by_allowlist_app.py",
+   "cases": 4,
+   "ported": 4,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Pages.Tests/Acceptance/Original/PageOrderByAllowlistAppTests.cs",
+   "ce": [
+    "CE-PAGE-002"
+   ],
+   "inc": "I4",
+   "note": "S-19"
+  },
+  {
+   "nr": "A-045",
+   "file": "T/contract/app/test_page_version_project_scope_app.py",
+   "cases": 5,
+   "ported": 5,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Pages.Tests/Acceptance/Original/PageVersionProjectScopeAppTests.cs",
+   "ce": [
+    "CE-PAGE-019"
+   ],
+   "inc": "I4",
+   "note": ""
+  },
+  {
+   "nr": "A-046",
+   "file": "T/contract/app/test_password_strength_input_bound_app.py",
+   "cases": 3,
+   "ported": 0,
+   "adapted": 0,
+   "obsolete": 3,
+   "target": "tests/modules/Plane.Identity.Tests/Acceptance/Original/PasswordStrengthInputBoundAppTests.cs",
+   "ce": [
+    "CE-AUTH-021"
+   ],
+   "inc": "I0",
+   "note": "`obsolete` (S-17); `replacement`: `KeycloakRealmConfigTests.PasswordPolicy_IsConfigured`"
+  },
+  {
+   "nr": "A-047",
+   "file": "T/contract/app/test_project_app.py",
+   "cases": 25,
+   "ported": 25,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Projects.Tests/Acceptance/Original/ProjectAppTests.cs",
+   "ce": [
+    "CE-PRJ-004",
+    "CE-PRJ-005",
+    "CE-PRJ-006",
+    "CE-PRJ-008",
+    "CE-PRJ-009",
+    "CE-PRJ-018"
+   ],
+   "inc": "I1",
+   "note": "Kernfälle `create` bereits in I0"
+  },
+  {
+   "nr": "A-048",
+   "file": "T/contract/app/test_project_join_cross_project_activation.py",
+   "cases": 3,
+   "ported": 3,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Projects.Tests/Acceptance/Original/ProjectJoinCrossProjectActivationTests.cs",
+   "ce": [
+    "CE-PRJ-007"
+   ],
+   "inc": "I1",
+   "note": "S-24"
+  },
+  {
+   "nr": "A-049",
+   "file": "T/contract/app/test_project_member_is_active_authz.py",
+   "cases": 9,
+   "ported": 9,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Projects.Tests/Acceptance/Original/ProjectMemberIsActiveAuthzTests.cs",
+   "ce": [
+    "CE-PRJ-021",
+    "CE-WS-008"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-050",
+   "file": "T/contract/app/test_project_self_join_role_app.py",
+   "cases": 3,
+   "ported": 3,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Projects.Tests/Acceptance/Original/ProjectSelfJoinRoleAppTests.cs",
+   "ce": [
+    "CE-PRJ-007"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-051",
+   "file": "T/contract/app/test_search_guest_scope_app.py",
+   "cases": 5,
+   "ported": 5,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Search.Tests/Acceptance/Original/SearchGuestScopeAppTests.cs",
+   "ce": [
+    "CE-SRCH-001",
+    "CE-SRCH-002"
+   ],
+   "inc": "I5",
+   "note": ""
+  },
+  {
+   "nr": "A-052",
+   "file": "T/contract/app/test_session_origin_check_app.py",
+   "cases": 2,
+   "ported": 2,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/SessionOriginCheckAppTests.cs",
+   "ce": [
+    "CE-AUTH-024"
+   ],
+   "inc": "I0",
+   "note": "S-11"
+  },
+  {
+   "nr": "A-053",
+   "file": "T/contract/app/test_space_asset_comment_scope_app.py",
+   "cases": 9,
+   "ported": 9,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicSpace.Tests/Acceptance/Original/SpaceAssetCommentScopeAppTests.cs",
+   "ce": [
+    "CE-SPACE-007",
+    "CE-SPACE-025"
+   ],
+   "inc": "I6",
+   "note": ""
+  },
+  {
+   "nr": "A-054",
+   "file": "T/contract/app/test_spaces_board_object_scope_app.py",
+   "cases": 27,
+   "ported": 27,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicSpace.Tests/Acceptance/Original/SpacesBoardObjectScopeAppTests.cs",
+   "ce": [
+    "CE-SPACE-003",
+    "CE-SPACE-004",
+    "CE-SPACE-025",
+    "CE-SPACE-026",
+    "CE-SPACE-027",
+    "CE-SPACE-028"
+   ],
+   "inc": "I6",
+   "note": "Schreibende Fälle mit Keycloak-Principal (ADR-008)"
+  },
+  {
+   "nr": "A-055",
+   "file": "T/contract/app/test_state_admin_scope_app.py",
+   "cases": 6,
+   "ported": 6,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Projects.Tests/Acceptance/Original/StateAdminScopeAppTests.cs",
+   "ce": [
+    "CE-PRJ-024",
+    "CE-PRJ-027"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-056",
+   "file": "T/contract/app/test_static_asset_disposition_app.py",
+   "cases": 3,
+   "ported": 0,
+   "adapted": 3,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Assets.Tests/Acceptance/Original/StaticAssetDispositionAppTests.cs",
+   "ce": [
+    "CE-OPS-012",
+    "CE-OPS-013"
+   ],
+   "inc": "I1",
+   "note": "Download-Redirect auf SeaweedFS mit `response-content-disposition` (ADR-026); Erwartung über N7"
+  },
+  {
+   "nr": "A-057",
+   "file": "T/contract/app/test_sub_issue_cross_project_scope_app.py",
+   "cases": 5,
+   "ported": 5,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/SubIssueCrossProjectScopeAppTests.cs",
+   "ce": [
+    "CE-WI-032"
+   ],
+   "inc": "I2",
+   "note": "A9-relevant: projektübergreifend im Schema zulässig, in CE abgewiesen"
+  },
+  {
+   "nr": "A-058",
+   "file": "T/contract/app/test_user_email_change_app.py",
+   "cases": 7,
+   "ported": 0,
+   "adapted": 0,
+   "obsolete": 7,
+   "target": "tests/modules/Plane.Identity.Tests/Acceptance/Original/UserEmailChangeAppTests.cs",
+   "ce": [
+    "CE-PROF-004"
+   ],
+   "inc": "I1",
+   "note": "`obsolete` (D05-ADR-08: E-Mail-Änderung in Keycloak); `replacement`: `ProfileEmailChangeLinkTests` (Link zur Keycloak-Kontokonsole) + `KeycloakRealmConfigTests.BruteForceProtection_IsConfigured`"
+  },
+  {
+   "nr": "A-059",
+   "file": "T/contract/app/test_user_owned_fk_scope_app.py",
+   "cases": 7,
+   "ported": 7,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Identity.Tests/Acceptance/Original/UserOwnedFkScopeAppTests.cs",
+   "ce": [
+    "CE-PROF-001",
+    "CE-PROF-003",
+    "CE-NOTIF-009"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-060",
+   "file": "T/contract/app/test_webhook_secret_key_scope_app.py",
+   "cases": 6,
+   "ported": 6,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Webhooks.Tests/Acceptance/Original/WebhookSecretKeyScopeAppTests.cs",
+   "ce": [
+    "CE-WH-004"
+   ],
+   "inc": "I6",
+   "note": ""
+  },
+  {
+   "nr": "A-061",
+   "file": "T/contract/app/test_workspace_analytics_project_scope_app.py",
+   "cases": 9,
+   "ported": 9,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Analytics.Tests/Acceptance/Original/WorkspaceAnalyticsProjectScopeAppTests.cs",
+   "ce": [
+    "CE-ANA-001",
+    "CE-ANA-002",
+    "CE-ANA-003"
+   ],
+   "inc": "I5",
+   "note": ""
+  },
+  {
+   "nr": "A-062",
+   "file": "T/contract/app/test_workspace_app.py",
+   "cases": 3,
+   "ported": 3,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/WorkspaceAppTests.cs",
+   "ce": [
+    "CE-WS-001"
+   ],
+   "inc": "I0",
+   "note": ""
+  },
+  {
+   "nr": "A-063",
+   "file": "T/contract/app/test_workspace_cycles_modules_project_scope_app.py",
+   "cases": 4,
+   "ported": 4,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Cycles.Tests/Acceptance/Original/WorkspaceCyclesModulesProjectScopeAppTests.cs",
+   "ce": [
+    "CE-CYC-004",
+    "CE-MOD-001"
+   ],
+   "inc": "I3",
+   "note": "Modul-Fälle in `Plane.ProjectModules.Tests` spiegeln"
+  },
+  {
+   "nr": "A-064",
+   "file": "T/contract/app/test_workspace_draft_project_membership_app.py",
+   "cases": 19,
+   "ported": 19,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/WorkspaceDraftProjectMembershipAppTests.cs",
+   "ce": [
+    "CE-WI-049"
+   ],
+   "inc": "I2",
+   "note": ""
+  },
+  {
+   "nr": "A-065",
+   "file": "T/contract/app/test_workspace_file_asset_project_scope_app.py",
+   "cases": 5,
+   "ported": 0,
+   "adapted": 5,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Assets.Tests/Acceptance/Original/WorkspaceFileAssetProjectScopeAppTests.cs",
+   "ce": [
+    "CE-OPS-012",
+    "CE-OPS-013"
+   ],
+   "inc": "I1",
+   "note": "Presigned-Upload über SeaweedFS (N7)"
+  },
+  {
+   "nr": "A-066",
+   "file": "T/contract/app/test_workspace_invitation_update_app.py",
+   "cases": 4,
+   "ported": 4,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/WorkspaceInvitationUpdateAppTests.cs",
+   "ce": [
+    "CE-WS-010",
+    "CE-WS-011"
+   ],
+   "inc": "I1",
+   "note": "S-24"
+  },
+  {
+   "nr": "A-067",
+   "file": "T/contract/app/test_workspace_member_mass_assignment_app.py",
+   "cases": 9,
+   "ported": 9,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/WorkspaceMemberMassAssignmentAppTests.cs",
+   "ce": [
+    "CE-WS-009"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-068",
+   "file": "T/contract/app/test_workspace_stats_grouping_project_scope_app.py",
+   "cases": 7,
+   "ported": 7,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Analytics.Tests/Acceptance/Original/WorkspaceStatsGroupingProjectScopeAppTests.cs",
+   "ce": [
+    "CE-ANA-001",
+    "CE-PRJ-003",
+    "CE-PROF-009"
+   ],
+   "inc": "I5",
+   "note": ""
+  },
+  {
+   "nr": "A-069",
+   "file": "T/contract/app/test_workspace_update_admin_scope_app.py",
+   "cases": 3,
+   "ported": 3,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/WorkspaceUpdateAdminScopeAppTests.cs",
+   "ce": [
+    "CE-WS-003"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-070",
+   "file": "T/contract/app/test_workspace_user_preference_app.py",
+   "cases": 2,
+   "ported": 2,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/WorkspaceUserPreferenceAppTests.cs",
+   "ce": [
+    "CE-WS-021",
+    "CE-WS-022"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-071",
+   "file": "T/contract/app/test_workspace_user_profile_scope_app.py",
+   "cases": 12,
+   "ported": 12,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/WorkspaceUserProfileScopeAppTests.cs",
+   "ce": [
+    "CE-PROF-008",
+    "CE-PROF-009",
+    "CE-PROF-010",
+    "CE-PROF-011"
+   ],
+   "inc": "I5",
+   "note": ""
+  },
+  {
+   "nr": "A-072",
+   "file": "T/smoke/test_auth_smoke.py",
+   "cases": 2,
+   "ported": 1,
+   "adapted": 1,
+   "obsolete": 0,
+   "target": "tests/Plane.AppHost.Tests/Acceptance/Original/AuthSmokeTests.cs",
+   "ce": [
+    "CE-OPS-008",
+    "CE-AUTH-001"
+   ],
+   "inc": "I0",
+   "note": "Health `ported`; „Login-Endpunkt erreichbar“ `adapted` → `/auth/oidc/login/` liefert 302 zu Keycloak"
+  },
+  {
+   "nr": "A-073",
+   "file": "T/unit/bg_tasks/test_cleanup_task.py",
+   "cases": 7,
+   "ported": 0,
+   "adapted": 7,
+   "obsolete": 0,
+   "target": "tests/Plane.Worker.Tests/Acceptance/Original/CleanupTaskTests.cs",
+   "ce": [
+    "CE-OPS-015"
+   ],
+   "inc": "I1",
+   "note": "Celery-Task → `IJob` + `FixedClock`"
+  },
+  {
+   "nr": "A-074",
+   "file": "T/unit/bg_tasks/test_copy_s3_objects.py",
+   "cases": 5,
+   "ported": 0,
+   "adapted": 5,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Assets.Tests/Acceptance/Original/CopyS3ObjectsTests.cs",
+   "ce": [
+    "CE-OPS-012",
+    "CE-PAGE-009"
+   ],
+   "inc": "I4",
+   "note": "boto3-Mock → SeaweedFS-Container"
+  },
+  {
+   "nr": "A-075",
+   "file": "T/unit/bg_tasks/test_export_task_guest_scope.py",
+   "cases": 1,
+   "ported": 0,
+   "adapted": 1,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Exports.Tests/Acceptance/Original/ExportTaskGuestScopeTests.cs",
+   "ce": [
+    "CE-EXP-001"
+   ],
+   "inc": "I6",
+   "note": ""
+  },
+  {
+   "nr": "A-076",
+   "file": "T/unit/bg_tasks/test_issue_activity_scope.py",
+   "cases": 11,
+   "ported": 0,
+   "adapted": 11,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueActivityScopeTests.cs",
+   "ce": [
+    "CE-WI-039"
+   ],
+   "inc": "I2",
+   "note": "Activity-Consumer statt Celery-Task"
+  },
+  {
+   "nr": "A-077",
+   "file": "T/unit/bg_tasks/test_ssrf_advisories.py",
+   "cases": 12,
+   "ported": 12,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/Plane.Platform.Tests/Acceptance/Original/SsrfAdvisoriesTests.cs",
+   "ce": [
+    "CE-OPS-018"
+   ],
+   "inc": "I2",
+   "note": "S-01/S-02"
+  },
+  {
+   "nr": "A-078",
+   "file": "T/unit/bg_tasks/test_unsnooze_expired_intake_issues.py",
+   "cases": 7,
+   "ported": 0,
+   "adapted": 7,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Intake.Tests/Acceptance/Original/UnsnoozeExpiredIntakeIssuesTests.cs",
+   "ce": [
+    "CE-INT-008"
+   ],
+   "inc": "I3",
+   "note": "Cron-Job"
+  },
+  {
+   "nr": "A-079",
+   "file": "T/unit/bg_tasks/test_url_security.py",
+   "cases": 24,
+   "ported": 24,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/Plane.Platform.Tests/Acceptance/Original/UrlSecurityTests.cs",
+   "ce": [
+    "CE-OPS-018"
+   ],
+   "inc": "I2",
+   "note": "S-01"
+  },
+  {
+   "nr": "A-080",
+   "file": "T/unit/bg_tasks/test_work_item_link_task.py",
+   "cases": 20,
+   "ported": 0,
+   "adapted": 20,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/WorkItemLinkTaskTests.cs",
+   "ce": [
+    "CE-WI-035",
+    "CE-OPS-018"
+   ],
+   "inc": "I2",
+   "note": "S-04; WireMock statt `requests`-Mock"
+  },
+  {
+   "nr": "A-081",
+   "file": "T/unit/middleware/test_api_authentication.py",
+   "cases": 2,
+   "ported": 0,
+   "adapted": 2,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/ApiAuthenticationTests.cs",
+   "ce": [
+    "CE-API-001"
+   ],
+   "inc": "I6",
+   "note": "DRF-Authentication-Klasse → `ApiKeyAuthenticationHandler`"
+  },
+  {
+   "nr": "A-082",
+   "file": "T/unit/middleware/test_db_routing.py",
+   "cases": 26,
+   "ported": 0,
+   "adapted": 15,
+   "obsolete": 11,
+   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/DbRoutingTests.cs",
+   "ce": [
+    "CE-OPS-010"
+   ],
+   "inc": "I7",
+   "note": "15 × `adapted` → `UseReadReplicaMetadata`-Routing; 11 × `obsolete` (Django-CBV/DRF-Attributerkennung, `TestAttributeDetection`, `TestRealViewIntegration`, `TestEdgeCases`) mit `replacement`: `ReadReplicaRoutingTests.EndpointMetadata_*`"
+  },
+  {
+   "nr": "A-083",
+   "file": "T/unit/middleware/test_logger.py",
+   "cases": 3,
+   "ported": 0,
+   "adapted": 3,
+   "obsolete": 0,
+   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/LoggerTests.cs",
+   "ce": [
+    "CE-OPS-019",
+    "CE-API-003"
+   ],
+   "inc": "I6",
+   "note": "Hashing/Redaction (01 §7.16)"
+  },
+  {
+   "nr": "A-084",
+   "file": "T/unit/models/test_issue_comment_modal.py",
+   "cases": 7,
+   "ported": 0,
+   "adapted": 7,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueCommentModalTests.cs",
+   "ce": [
+    "CE-WI-037"
+   ],
+   "inc": "I2",
+   "note": "Model-`save()`-Logik → Handler/Domain"
+  },
+  {
+   "nr": "A-085",
+   "file": "T/unit/models/test_workspace_model.py",
+   "cases": 2,
+   "ported": 0,
+   "adapted": 2,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/WorkspaceModelTests.cs",
+   "ce": [
+    "CE-WS-001"
+   ],
+   "inc": "I0",
+   "note": ""
+  },
+  {
+   "nr": "A-086",
+   "file": "T/unit/serializers/test_expand.py",
+   "cases": 10,
+   "ported": 10,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/ExpandTests.cs",
+   "ce": [
+    "CE-API-017",
+    "CE-WI-010"
+   ],
+   "inc": "I2",
+   "note": "`ExpandProjector` (D02)"
+  },
+  {
+   "nr": "A-087",
+   "file": "T/unit/serializers/test_issue_recent_visit.py",
+   "cases": 1,
+   "ported": 1,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Home.Tests/Acceptance/Original/IssueRecentVisitTests.cs",
+   "ce": [
+    "CE-HOME-005"
+   ],
+   "inc": "I5",
+   "note": ""
+  },
+  {
+   "nr": "A-088",
+   "file": "T/unit/serializers/test_issue_serializer_api.py",
+   "cases": 3,
+   "ported": 0,
+   "adapted": 3,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/IssueSerializerApiTests.cs",
+   "ce": [
+    "CE-API-017"
+   ],
+   "inc": "I6",
+   "note": "Serializer → Validator/Mapper"
+  },
+  {
+   "nr": "A-089",
+   "file": "T/unit/serializers/test_label.py",
+   "cases": 2,
+   "ported": 2,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Projects.Tests/Acceptance/Original/LabelTests.cs",
+   "ce": [
+    "CE-PRJ-029"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-090",
+   "file": "T/unit/serializers/test_workspace.py",
+   "cases": 8,
+   "ported": 8,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/WorkspaceTests.cs",
+   "ce": [
+    "CE-WS-001",
+    "CE-INST-027"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-091",
+   "file": "T/unit/settings/test_cookie_secure.py",
+   "cases": 11,
+   "ported": 0,
+   "adapted": 11,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Identity.Tests/Acceptance/Original/CookieSecureTests.cs",
+   "ce": [
+    "CE-AUTH-024"
+   ],
+   "inc": "I0",
+   "note": "D15-SEC-01; Options-Ableitung aus `WEB_URL`"
+  },
+  {
+   "nr": "A-092",
+   "file": "T/unit/settings/test_num_proxies.py",
+   "cases": 2,
+   "ported": 0,
+   "adapted": 2,
+   "obsolete": 0,
+   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/NumProxiesTests.cs",
+   "ce": [
+    "CE-OPS-005",
+    "CE-OPS-007"
+   ],
+   "inc": "I0",
+   "note": "`NUM_PROXIES` → ForwardedHeaders-Optionen"
+  },
+  {
+   "nr": "A-093",
+   "file": "T/unit/settings/test_retention.py",
+   "cases": 5,
+   "ported": 0,
+   "adapted": 5,
+   "obsolete": 0,
+   "target": "tests/Plane.Worker.Tests/Acceptance/Original/RetentionTests.cs",
+   "ce": [
+    "CE-OPS-015"
+   ],
+   "inc": "I1",
+   "note": "Options-Validierung"
+  },
+  {
+   "nr": "A-094",
+   "file": "T/unit/settings/test_storage.py",
+   "cases": 9,
+   "ported": 0,
+   "adapted": 9,
+   "obsolete": 0,
+   "target": "tests/Plane.Platform.Tests/Acceptance/Original/StorageTests.cs",
+   "ce": [
+    "CE-OPS-012"
+   ],
+   "inc": "I1",
+   "note": "Presign-Ablaufzeiten"
+  },
+  {
+   "nr": "A-095",
+   "file": "T/unit/settings/test_storage_credentials.py",
+   "cases": 2,
+   "ported": 0,
+   "adapted": 2,
+   "obsolete": 0,
+   "target": "tests/Plane.Platform.Tests/Acceptance/Original/StorageCredentialsTests.cs",
+   "ce": [
+    "CE-OPS-012"
+   ],
+   "inc": "I1",
+   "note": "Production-Guard (AK-14-33)"
+  },
+  {
+   "nr": "A-096",
+   "file": "T/unit/utils/test_csv_export_sanitization.py",
+   "cases": 3,
+   "ported": 3,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Exports.Tests/Acceptance/Original/CsvExportSanitizationTests.cs",
+   "ce": [
+    "CE-EXP-001"
+   ],
+   "inc": "I6",
+   "note": "S-20"
+  },
+  {
+   "nr": "A-097",
+   "file": "T/unit/utils/test_email.py",
+   "cases": 6,
+   "ported": 0,
+   "adapted": 6,
+   "obsolete": 0,
+   "target": "tests/Plane.Platform.Tests/Acceptance/Original/EmailTests.cs",
+   "ce": [
+    "CE-NOTIF-008",
+    "CE-INST-019"
+   ],
+   "inc": "I1",
+   "note": "`html2text` → Text-Teil der Fluid-Templates (G-MAIL)"
+  },
+  {
+   "nr": "A-098",
+   "file": "T/unit/utils/test_grouper.py",
+   "cases": 1,
+   "ported": 1,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/GrouperTests.cs",
+   "ce": [
+    "CE-LV-005"
+   ],
+   "inc": "I2",
+   "note": ""
+  },
+  {
+   "nr": "A-099",
+   "file": "T/unit/utils/test_issue_datetime_filters.py",
+   "cases": 7,
+   "ported": 0,
+   "adapted": 7,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueDatetimeFiltersTests.cs",
+   "ce": [
+    "CE-LV-010"
+   ],
+   "inc": "I2",
+   "note": "Filter-AST statt QuerySet-Kwargs"
+  },
+  {
+   "nr": "A-100",
+   "file": "T/unit/utils/test_issue_filters.py",
+   "cases": 5,
+   "ported": 0,
+   "adapted": 5,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueFiltersTests.cs",
+   "ce": [
+    "CE-WI-012"
+   ],
+   "inc": "I2",
+   "note": "Delta-Sync-Filter"
+  },
+  {
+   "nr": "A-101",
+   "file": "T/unit/utils/test_order_by_sanitize.py",
+   "cases": 7,
+   "ported": 7,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/OrderBySanitizeTests.cs",
+   "ce": [
+    "CE-LV-005",
+    "CE-LV-035"
+   ],
+   "inc": "I2",
+   "note": "S-19"
+  },
+  {
+   "nr": "A-102",
+   "file": "T/unit/utils/test_order_queryset.py",
+   "cases": 4,
+   "ported": 0,
+   "adapted": 4,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/OrderQuerysetTests.cs",
+   "ce": [
+    "CE-LV-005"
+   ],
+   "inc": "I2",
+   "note": "S-19; Allowlist der Query-Engine"
+  },
+  {
+   "nr": "A-103",
+   "file": "T/unit/utils/test_paginator.py",
+   "cases": 5,
+   "ported": 5,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/PaginatorTests.cs",
+   "ce": [
+    "CE-LV-005",
+    "CE-LV-044"
+   ],
+   "inc": "I0",
+   "note": "`CursorCodec`/`CursorPaginator`"
+  },
+  {
+   "nr": "A-104",
+   "file": "T/unit/utils/test_path_validator.py",
+   "cases": 5,
+   "ported": 5,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Identity.Tests/Acceptance/Original/PathValidatorTests.cs",
+   "ce": [
+    "CE-AUTH-029"
+   ],
+   "inc": "I0",
+   "note": "S-10"
+  },
+  {
+   "nr": "A-105",
+   "file": "T/unit/utils/test_redis.py",
+   "cases": 12,
+   "ported": 0,
+   "adapted": 12,
+   "obsolete": 0,
+   "target": "tests/Plane.Platform.Tests/Acceptance/Original/RedisTests.cs",
+   "ce": [
+    "CE-OPS-011"
+   ],
+   "inc": "I1",
+   "note": "Valkey-Verbindungsoptionen (TLS)"
+  },
+  {
+   "nr": "A-106",
+   "file": "T/unit/utils/test_url.py",
+   "cases": 28,
+   "ported": 28,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/UrlTests.cs",
+   "ce": [
+    "CE-WS-001",
+    "CE-PRJ-004",
+    "CE-UIX-013"
+   ],
+   "inc": "I0",
+   "note": "S-21"
+  },
+  {
+   "nr": "A-107",
+   "file": "T/unit/utils/test_uuid.py",
+   "cases": 4,
+   "ported": 0,
+   "adapted": 4,
+   "obsolete": 0,
+   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/UuidTests.cs",
+   "ce": [
+    "CE-WI-009"
+   ],
+   "inc": "I0",
+   "note": "Python-`uuid`-Helfer → `Guid`-Parsing in Route-Constraints"
+  },
+  {
+   "nr": "A-108",
+   "file": "T/unit/utils/test_xlsx_export_sanitization.py",
+   "cases": 10,
+   "ported": 10,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.Exports.Tests/Acceptance/Original/XlsxExportSanitizationTests.cs",
+   "ce": [
+    "CE-EXP-001"
+   ],
+   "inc": "I6",
+   "note": "S-20"
+  },
+  {
+   "nr": "A-109",
+   "file": "T/unit/utils/test_zxcvbn_imports.py",
+   "cases": 1,
+   "ported": 0,
+   "adapted": 0,
+   "obsolete": 1,
+   "target": "–",
+   "ce": [
+    "CE-AUTH-021"
+   ],
+   "inc": "–",
+   "note": "`obsolete`, `replacement: none` (Import-Regel für zxcvbn; Passwortprüfung liegt in Keycloak)"
+  },
+  {
+   "nr": "A-110",
+   "file": "T/unit/views/test_base_dispatch.py",
+   "cases": 1,
+   "ported": 0,
+   "adapted": 1,
+   "obsolete": 0,
+   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/BaseDispatchTests.cs",
+   "ce": [
+    "CE-OPS-019"
+   ],
+   "inc": "I0",
+   "note": "`PlaneExceptionHandler`"
+  },
+  {
+   "nr": "A-111",
+   "file": "T/unit/views/test_issue_link.py",
+   "cases": 4,
+   "ported": 4,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueLinkTests.cs",
+   "ce": [
+    "CE-WI-035"
+   ],
+   "inc": "I2",
+   "note": ""
+  },
+  {
+   "nr": "A-112",
+   "file": "T/unit/views/test_non_object_json_body.py",
+   "cases": 2,
+   "ported": 0,
+   "adapted": 2,
+   "obsolete": 0,
+   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/NonObjectJsonBodyTests.cs",
+   "ce": [
+    "CE-WS-003",
+    "CE-API-006"
+   ],
+   "inc": "I0",
+   "note": "`ValidationEndpointFilter` (Pflichtfall E4)"
+  },
+  {
+   "nr": "A-113",
+   "file": "T/unit/views/test_session_origin_check.py",
+   "cases": 5,
+   "ported": 0,
+   "adapted": 5,
+   "obsolete": 0,
+   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/SessionOriginCheckTests.cs",
+   "ce": [
+    "CE-AUTH-024"
+   ],
+   "inc": "I0",
+   "note": "S-11; `OriginCheckMiddleware`"
+  },
+  {
+   "nr": "A-114",
+   "file": "LIVE/tests/lib/pdf/pdf-rendering.test.ts",
+   "cases": 21,
+   "ported": 0,
+   "adapted": 21,
+   "obsolete": 0,
+   "target": "tests/Plane.Documents.Pdf.Tests/Acceptance/Original/PdfRenderingTests.cs",
+   "ce": [
+    "CE-PAGE-011"
+   ],
+   "inc": "I4",
+   "note": "React-PDF → .NET-Renderer; Erwartung über G-PDF"
+  },
+  {
+   "nr": "A-115",
+   "file": "LIVE/tests/services/pdf-export/effect-utils.test.ts",
+   "cases": 11,
+   "ported": 0,
+   "adapted": 11,
+   "obsolete": 0,
+   "target": "tests/Plane.Collaboration.Tests/Acceptance/Original/PdfExportEffectUtilsTests.cs",
+   "ce": [
+    "CE-PAGE-011"
+   ],
+   "inc": "I4",
+   "note": "Timeout/Retry/Recover-Semantik des Export-Dienstes"
+  },
+  {
+   "nr": "A-116",
+   "file": "PKG/services/src/helpers/url.test.ts",
+   "cases": 5,
+   "ported": 5,
+   "adapted": 0,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/services/src/helpers/url.spec.ts",
+   "ce": [
+    "CE-OPS-007"
+   ],
+   "inc": "I0",
+   "note": "Trailing-Slash-Normalisierung (01 §7.11)"
+  },
+  {
+   "nr": "A-117",
+   "file": "PKG/blocks/src/__tests__/dom-scrolling.test.tsx",
+   "cases": 1,
+   "ported": 0,
+   "adapted": 1,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/__tests__/dom-scrolling.spec.ts",
+   "ce": [
+    "CE-I18N-024"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-118",
+   "file": "PKG/blocks/src/breadcrumb/breadcrumb-navigation-select.test.tsx",
+   "cases": 20,
+   "ported": 0,
+   "adapted": 20,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/breadcrumb/breadcrumb-navigation-select.spec.ts",
+   "ce": [
+    "CE-UIX-001"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-119",
+   "file": "PKG/blocks/src/breadcrumb/breadcrumbs.test.tsx",
+   "cases": 20,
+   "ported": 0,
+   "adapted": 20,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/breadcrumb/breadcrumbs.spec.ts",
+   "ce": [
+    "CE-UIX-001"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-120",
+   "file": "PKG/blocks/src/common/color-swatch-picker/color-swatch-picker.test.tsx",
+   "cases": 7,
+   "ported": 0,
+   "adapted": 7,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/common/color-swatch-picker/color-swatch-picker.spec.ts",
+   "ce": [
+    "CE-I18N-025"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-121",
+   "file": "PKG/blocks/src/common/color-swatch-picker/hex.test.ts",
+   "cases": 4,
+   "ported": 0,
+   "adapted": 4,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/common/color-swatch-picker/hex.spec.ts",
+   "ce": [
+    "CE-I18N-025"
+   ],
+   "inc": "I1",
+   "note": "reine Funktion, nur Import-Pfade angepasst"
+  },
+  {
+   "nr": "A-122",
+   "file": "PKG/blocks/src/common/common-a11y.test.tsx",
+   "cases": 6,
+   "ported": 0,
+   "adapted": 6,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/common/common-a11y.spec.ts",
+   "ce": [
+    "CE-UIX-004",
+    "CE-UIX-005"
+   ],
+   "inc": "I0",
+   "note": "AX3"
+  },
+  {
+   "nr": "A-123",
+   "file": "PKG/blocks/src/common/sortable/sortable.test.tsx",
+   "cases": 5,
+   "ported": 0,
+   "adapted": 5,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/common/sortable/sortable.browser.spec.ts",
+   "ce": [
+    "CE-I18N-020",
+    "CE-PRJ-025"
+   ],
+   "inc": "I1",
+   "note": "Browser-Modus (DnD-Hitbox)"
+  },
+  {
+   "nr": "A-124",
+   "file": "PKG/blocks/src/context-menu/context-menu.test.tsx",
+   "cases": 19,
+   "ported": 0,
+   "adapted": 19,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/context-menu/context-menu.spec.ts",
+   "ce": [
+    "CE-LV-041",
+    "CE-I18N-020"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-125",
+   "file": "PKG/blocks/src/context-menu/helpers.test.ts",
+   "cases": 9,
+   "ported": 0,
+   "adapted": 9,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/context-menu/helpers.spec.ts",
+   "ce": [
+    "CE-LV-041"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-126",
+   "file": "PKG/blocks/src/dialog/confirm-dialog.test.tsx",
+   "cases": 17,
+   "ported": 0,
+   "adapted": 17,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/dialog/confirm-dialog.spec.ts",
+   "ce": [
+    "CE-UIX-003"
+   ],
+   "inc": "I1",
+   "note": "AX4"
+  },
+  {
+   "nr": "A-127",
+   "file": "PKG/blocks/src/emoji-icon-picker/emoji-picker.test.tsx",
+   "cases": 2,
+   "ported": 0,
+   "adapted": 2,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/emoji-icon-picker/emoji-picker.spec.ts",
+   "ce": [
+    "CE-I18N-016"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-128",
+   "file": "PKG/blocks/src/emoji-icon-picker/search-a11y.test.tsx",
+   "cases": 3,
+   "ported": 0,
+   "adapted": 3,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/emoji-icon-picker/search-a11y.spec.ts",
+   "ce": [
+    "CE-I18N-016"
+   ],
+   "inc": "I1",
+   "note": "AX3"
+  },
+  {
+   "nr": "A-129",
+   "file": "PKG/blocks/src/emoji-reaction/emoji-reaction-picker.test.tsx",
+   "cases": 2,
+   "ported": 0,
+   "adapted": 2,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/emoji-reaction/emoji-reaction-picker.spec.ts",
+   "ce": [
+    "CE-I18N-017"
+   ],
+   "inc": "I2",
+   "note": ""
+  },
+  {
+   "nr": "A-130",
+   "file": "PKG/blocks/src/property-select/date-select.test.tsx",
+   "cases": 20,
+   "ported": 0,
+   "adapted": 20,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/property-select/date-select.spec.ts",
+   "ce": [
+    "CE-WI-029"
+   ],
+   "inc": "I2",
+   "note": ""
+  },
+  {
+   "nr": "A-131",
+   "file": "PKG/blocks/src/property-select/member-select.test.tsx",
+   "cases": 4,
+   "ported": 0,
+   "adapted": 4,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/property-select/member-select.spec.ts",
+   "ce": [
+    "CE-WI-023"
+   ],
+   "inc": "I2",
+   "note": ""
+  },
+  {
+   "nr": "A-132",
+   "file": "PKG/blocks/src/property-select/outside-click.test.tsx",
+   "cases": 3,
+   "ported": 0,
+   "adapted": 3,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/property-select/outside-click.spec.ts",
+   "ce": [
+    "CE-UIX-004"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-133",
+   "file": "PKG/blocks/src/property-select/tab-index.test.tsx",
+   "cases": 2,
+   "ported": 0,
+   "adapted": 2,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/property-select/tab-index.spec.ts",
+   "ce": [
+    "CE-UIX-005"
+   ],
+   "inc": "I1",
+   "note": "AX3"
+  },
+  {
+   "nr": "A-134",
+   "file": "PKG/blocks/src/select/menu-search-input.test.tsx",
+   "cases": 2,
+   "ported": 0,
+   "adapted": 2,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/select/menu-search-input.spec.ts",
+   "ce": [
+    "CE-I18N-020"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-135",
+   "file": "PKG/blocks/src/select/nested-submenu/nested-submenu.dismissal.test.tsx",
+   "cases": 6,
+   "ported": 0,
+   "adapted": 6,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/select/nested-submenu/nested-submenu.dismissal.spec.ts",
+   "ce": [
+    "CE-UIX-004"
+   ],
+   "inc": "I1",
+   "note": ""
+  },
+  {
+   "nr": "A-136",
+   "file": "PKG/blocks/src/select/select.test.tsx",
+   "cases": 77,
+   "ported": 0,
+   "adapted": 77,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/select/select.spec.ts",
+   "ce": [
+    "CE-I18N-020",
+    "CE-UIX-004"
+   ],
+   "inc": "I1",
+   "note": "größte Einzeldatei; Combobox auf Angular Aria"
+  },
+  {
+   "nr": "A-137",
+   "file": "PKG/blocks/src/toast/toast-manager.test.ts",
+   "cases": 22,
+   "ported": 0,
+   "adapted": 22,
+   "obsolete": 0,
+   "target": "frontend/libs/shared/blocks/src/toast/toast-manager.spec.ts",
+   "ce": [
+    "CE-I18N-021"
+   ],
+   "inc": "I1",
+   "note": "Store-Logik, kaum DOM"
+  },
+  {
+   "nr": "A-138",
+   "file": "PKG/codemods/tests/function-declaration.spec.ts",
+   "cases": 23,
+   "ported": 0,
+   "adapted": 0,
+   "obsolete": 23,
+   "target": "–",
+   "ce": [],
+   "inc": "–",
+   "note": "`obsolete`, `replacement: none` (Codemod für React-Quelltext ohne Ziel-Gegenstück)"
+  },
+  {
+   "nr": "A-139",
+   "file": "PKG/codemods/tests/remove-directives.spec.ts",
+   "cases": 10,
+   "ported": 0,
+   "adapted": 0,
+   "obsolete": 10,
+   "target": "–",
+   "ce": [],
+   "inc": "–",
+   "note": "`obsolete`, `replacement: none` (dto.)"
+  }
+ ]
+}

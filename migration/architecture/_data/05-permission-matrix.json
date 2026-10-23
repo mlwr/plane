@@ -6669,7 +6669,7 @@
    "original_check": "Auth",
    "permission": "workspace.project.favorite",
    "target": "WS(A,M,G)+PRJ-MEMBER",
-   "deviation": null
+   "deviation": "SEC-12"
   },
   {
    "method": "DELETE",
@@ -6682,7 +6682,7 @@
    "original_check": "Auth",
    "permission": "workspace.project.favorite",
    "target": "WS(A,M,G)+OWN",
-   "deviation": null
+   "deviation": "SEC-12"
   },
   {
    "method": "GET",
@@ -11219,7 +11219,7 @@
    "original_check": "INST",
    "permission": null,
    "target": "entfällt",
-   "deviation": "ADR-008"
+   "deviation": "ADR-008 (Route bleibt als BFF-Alias N-05, .AllowAnonymous() + Antiforgery)"
   },
   {
    "method": "GET",

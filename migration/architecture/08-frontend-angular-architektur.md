@@ -81,7 +81,7 @@ Inkremente gemäß 01 §1.3. Ein Baustein wird **im genannten Inkrement vollstä
 | Custom Theme, High Contrast, Theme-Persistenz (§3.8) | ◐ (light/dark/system) | ● | | | | | | |
 | Settings-Rahmen, Settings-Registry `SETTINGS_PAGES` | | ● | | | | | | |
 | Sidebar-Registry `SIDEBAR_ITEMS`, Favoriten | ◐ (statische Items) | ● | | | | | | |
-| Issue-Store (IssueRootStore, 9 CE-Listen-Stores, Detail-Store), `work-items-core` (§3.4.6) | | | ● | | | | | |
+| Issue-Store (IssueRootStore, 8 CE-Listen-Store-Klassen in 12 Instanzen, Detail-Store), `work-items-core` (§3.4.6) | | | ● | | | | | |
 | DnD-Direktiven, `RenderIfVisible`, Sentinel-Pagination (§3.9) | | ◐ (Labels-DnD) | ● | | | | | |
 | List/Kanban/Spreadsheet/Calendar/Gantt (§3.9) | | | ● | | | | | |
 | Rich-Filter (`libs/shared/shared-state`), `FILTER_FIELDS`, `PROPERTY_RENDERERS`, `RELATION_TYPES` | | | ● | | | | | |
@@ -107,7 +107,7 @@ Inkremente gemäß 01 §1.3. Ein Baustein wird **im genannten Inkrement vollstä
 |---|---|---|---|---|---|
 | **D08-ADR-01** | Workspace-Werkzeug | Angular-CLI-Multi-Project-Workspace + pnpm + Sheriff (bestätigt ADR-039). Libraries ohne eigenen Build (TS-Path-Mapping), Apps `web`, `admin`, `space`; Builder `@angular/build:application` | Nx; separate Lib-Builds mit ng-packagr | 01 verbindlich; keine Lib-Builds = schnellere Agenten-Zyklen | I0 |
 | **D08-ADR-02** | Ablage der Stores und Services (Präzisierung 01 §6.2/§6.3) | Stores liegen gemäß 01 in `libs/web/<domäne>/state/`, Services in `libs/web/<domäne>/services/`. **Sheriff-Ebenen**: `layer:state` und `layer:services` bilden je einen Cluster, in dem jede Domäne jede andere über deren `state/public-api.ts` bzw. `services/public-api.ts` importieren darf (entspricht dem Objektgraphen des Original-`RootStore`); nur `layer:ui` folgt der Domänen-Matrix (§3.1.5) | alle Stores in einer Lib `libs/web/state` (bricht 01-Ablage); strenge Matrix auch für Stores (unmöglich: Issue-Root ↔ Cycle ↔ Module ↔ Project sind zyklisch verknüpft) | Store-Code wird 1:1 portiert, inklusive seiner Querbezüge; Zyklen sind nur zur Laufzeit (über `inject()`), nicht bei Modul-Auswertung vorhanden | I0 |
-| **D08-ADR-03** | Signal-Store-Form | Klassen-Stores als `@Injectable({providedIn:'root'})` (Singleton wie `store-context.tsx`); Unter-Stores (z. B. 13 Issue-Listen-Stores, Page-Instanzen, Estimate-Instanzen) als **plain classes**, die vom Eltern-Store mit `new` erzeugt werden (wie Original) | NgRx SignalStore (`signalStore()`), Store je Route | 1:1-Portierbarkeit (ADR-040); Unterinstanzen entstehen im Original ebenfalls per `new` | I0 |
+| **D08-ADR-03** | Signal-Store-Form | Klassen-Stores als `@Injectable({providedIn:'root'})` (Singleton wie `store-context.tsx`); Unter-Stores (z. B. die 12 Issue-Listen-Store-Instanzen aus 8 Klassen in `WEB/store/issue/root.store.ts`, Page-Instanzen, Estimate-Instanzen) als **plain classes**, die vom Eltern-Store mit `new` erzeugt werden (wie Original) | NgRx SignalStore (`signalStore()`), Store je Route | 1:1-Portierbarkeit (ADR-040); Unterinstanzen entstehen im Original ebenfalls per `new` | I0 |
 | **D08-ADR-04** | MobX-Primitive → Signal-Primitive | Feste Übersetzungstabelle (§3.4.2) mit Bausteinen aus `libs/shared/state-kit`: `signal` (observable.ref), `EntityMap<T>` (observable Record/Map normalisierter Objekte, ein Signal je Schlüssel), `DeepState<T>` (tief verschachtelte observables, s. ADR-05), `memoizedComputed` (`computedFn`), `reactionEffect` (`reaction`), `effect` (`autorun`), `untilSignal` (`when`), `persisted()` (localStorage-gebundene Signale) | manuelle Neuentwicklung je Store | Mechanisch anwendbar, review-bar gegen Original-Datei | I0 |
 | **D08-ADR-05** | Tiefe, pfadbasierte Mutationen (lodash `set`/`update`/`unset` auf observables) | **`DeepState<T>`**: hält ein mutables Plain-Objekt + Versions-Signal; Schreib-API `set(path, v)`, `update(path, fn)`, `unset(path)` (lodash-Semantik, ersetzt Blatt-Referenzen) inkrementiert die Version; Lese-API `get(path)` liest Version + Pfad; pro Pfad memoisierte `select(path)`-Signale mit `Object.is`-Gleichheit liefern nur bei geänderter Blatt-Referenz neue Werte | Immer/immutable Copy-on-Write (Rewrite der Store-Algorithmen, Kosten bei 10k Items); strukturiertes Klonen (zu teuer) | Original-Code (`set(this.groupedIssueIds, …)`, `update(this.issuesMap, …)`) bleibt fast wörtlich erhalten; feingranulare Updates je Gruppe bleiben erhalten | I0 (state-kit), I2 (Issue-Store) |
 | **D08-ADR-06** | Zugriff zwischen Stores (`this.rootStore.x.y`) | `this.rootStore.<pfad>` wird zu einem per `inject()` gehaltenen Feld (`private readonly cycle = inject(CycleStore)`); Zyklen über `injectLazy(() => X)` (state-kit, `Injector.get` beim ersten Zugriff). Es gibt einen dünnen `RootStore` in `libs/web/core/state/root.store.ts` nur für `resetOnSignOut()` und als Kompatibilitätsfassade (Getter auf die Stores, nur für portierten Code, der den Root als Ganzes übergibt) | ein God-Object-RootStore mit allen Stores als Felder (erzwingt `core` → alle Domänen) | Hält `core` frei von Domänen-Imports (Sheriff), Laufzeitgraph identisch | I0 |
@@ -117,7 +117,7 @@ Inkremente gemäß 01 §1.3. Ein Baustein wird **im genannten Inkrement vollstä
 | **D08-ADR-10** | Routen-Reihenfolge | Angular „first match“ wird durch eine **feste Deklarationsreihenfolge** an das Ranking von React Router angeglichen: (1) Redirect-Routen mit statischem Präfix, (2) statische Top-Level-Routen, (3) Pfade mit statischem Segment vor dynamischem auf gleicher Ebene, (4) `:workspaceSlug`-Baum, (5) `**`. Ein Routing-Contract-Test prüft jede URL der Tabellen §4.1–§4.3 | eigener `UrlMatcher` mit React-Ranking | Explizit, testbar, kein Eigenbau eines Rankings | I0 |
 | **D08-ADR-11** | Trailing Slash | `TrailingSlashPathLocationStrategy` aus `@angular/common` (stabil, in 22.x enthalten) schreibt jede Browser-URL mit `/`; die erste Navigation ersetzt eine URL ohne Slash per `replaceState` (Äquivalent zum 308 der `clientMiddleware`). Für Vergleiche wie `pathname === \`${base}/settings/\`` liefert `PathnameService.pathname()` den **Browser**-Pfad mit Slash (`Location.path()` normalisiert ohne Slash). `AppRouter.push/replace` hängen `/` an und verzögern um `setTimeout(0)` (E22, Parität) | eigener `UrlSerializer`; Server-Redirect im Gateway | Framework-Bordmittel; Original verhält sich ebenfalls rein clientseitig | I0 |
 | **D08-ADR-12** | Guards als In-Place-Zustände | Die Original-Wrapper werden als **Wrapper-Komponenten** mit Content-Projection portiert (`<pl-authentication-wrapper pageType="AUTHENTICATED"><router-outlet/></…>`), die Spinner, Fehler- und Leerzustände **ohne URL-Wechsel** rendern und Redirects per `AppRouter` auslösen. Funktionale Guards nur für (a) Redirect-Routen (`redirectTo`-Funktionen), (b) Legacy-Loader-Redirects (`canActivate` mit `UrlTree`), (c) Splat-Matcher | Redirect-Guards (`canActivate`) für die Auth-Matrix | Original zeigt erst Spinner und dann Redirect bzw. Zustandsseite in derselben URL; Guard-Variante würde die URL nicht stehen lassen | I0 |
-| **D08-ADR-13** | Formulare | **Angular Signal Forms** (stabil seit v22) für alle `react-hook-form`-Formulare; Validierungstexte, `dirty`-Logik und `reset`-Zeitpunkte 1:1; Adapter `plFormControl` für Propel-Felder. Entry-Point/Direktivname (`@angular/forms/signals`) in S0 bestätigen ⚠ | Reactive Forms (Fallback, falls S0 rot); Template-driven | 01 Glossar verbindlich; Signals passen zum Store-Modell | I0 (Gerüst), I1 |
+| **D08-ADR-13** | Formulare | **Angular Signal Forms** (stabil seit v22) für alle `react-hook-form`-Formulare; Validierungstexte, `dirty`-Logik und `reset`-Zeitpunkte 1:1; Adapter `[plFormField]` für Propel-Felder (implementiert `FormValueControl`). Laut angular.dev ist die Bindungsdirektive `FormField` (Template `[formField]`, Entry-Point `@angular/forms/signals`); in S0 gegen die installierte 22.x-Version bestätigen ⚠ | Reactive Forms (Fallback, falls S0 rot); Template-driven | 01 Glossar verbindlich; Signals passen zum Store-Modell | I0 (Gerüst), I1 |
 | **D08-ADR-14** | i18n | i18next + i18next-icu + i18next-resources-to-backend unverändert (ADR-046); Locales als statische Assets `/{base}/i18n/{lng}/{ns}.json`; `TranslationService` (Signal `currentLocale`), Pipe `t`, Funktion `t()`; Init per `provideAppInitializer` vor dem ersten Routing | Transloco, `@angular/localize` | Gleiche Fallback-Kette (`defaultNS` → `fallbackNS` → `fallbackLng`), ICU-Plurale | I0 |
 | **D08-ADR-15** | Theme | Inline-Script in `index.html` (Logik von next-themes 0.4.6, s. §5.1) + `ThemeService` (Signals `theme`, `resolvedTheme`, `systemTheme`); Attribut `data-theme`, Schlüssel `localStorage.theme`, `color-scheme` nur bei `light`/`dark` | CSS-only `prefers-color-scheme`; Angular-Material-Theming | Kein Theme-Flash, gleiche Selektoren `[data-theme*="dark"]` | I0 |
 | **D08-ADR-16** | Virtualisierung | Port von `RenderIfVisible` als Struktur-Direktive `*plRenderIfVisible` (IntersectionObserver, Offsets wie Original); `@tanstack/virtual-core` nur dort, wo das Original `@tanstack/react-virtual` nutzt (`PKG/blocks` `select`, `virtual-list`) | CDK Virtual Scroll | Variable Höhen, Sticky-Header, Swimlanes, DOM-Parität (A09 §5.2) | I2 |
@@ -164,7 +164,8 @@ frontend/
 │   │           └── routes/redirects/      # Redirect-Funktionen (redirects.ts) – Ersatz für routes/redirects/core/*.tsx
 │   ├── admin/                             # base href "/god-mode/", src/pages ← ADM/app/(all)/**
 │   ├── space/                             # base href "/spaces/",  src/pages ← SPC/app/**
-│   └── e2e/                               # Playwright: web/, admin/, space/, visual/, dom/, a11y/, routing/
+│   ├── gallery/                           # Komponenten-Galerie (D15 §3.2, base href /__gallery/, nur Test-Builds)
+│   └── e2e/                               # Playwright: web/, admin/, space/, visual/, a11y/, routing/ (+ drivers/dom-parity.ts, D15 §3.10.4)
 ├── libs/
 │   ├── shared/                            # scope:shared (01 §6.1, unverändert)
 │   │   ├── types/ constants/ utils/ i18n/ services/ shared-state/ cdk/ state-kit/ runtime-config/
@@ -174,11 +175,15 @@ frontend/
 │   ├── web/                               # scope:web; je Domäne: state/ services/ components/ (+ public-api.ts je Unterordner)
 │   │   ├── core/ extensions/ auth/ workspace/ project/ project-settings/ work-items/ views/ cycles/ modules/ intake/
 │   │   ├── pages/ analytics/ home/ stickies/ notifications/ power-k/ profile/ settings/ favorites/ archives/ project-publish/
-│   ├── admin/                             # scope:admin: core/ authentication/ instance/ workspace/ common/
-│   └── space/                             # scope:space: core/ issues/ views/ editor/ account/
+│   ├── admin/                             # scope:admin: core/ extensions/ authentication/ instance/ workspace/ common/
+│   └── space/                             # scope:space: core/ extensions/ issues/ views/ editor/ account/
 └── tools/
     ├── icons-codegen/  contract-check/  i18n-sync-check/  i18n-generate-types/
-    └── golden-ui/                         # Erzeugung der Referenz-Screenshots/DOM-Snapshots aus dem Original (Node, nur Dev)
+    ├── eslint-rules/                      # @plane/eslint-rules (§7.6)
+    ├── store-parity-check/  route-contract-check/   # §7.3, §7.2
+    ├── css-parity/                        # CSS-Diff Original- vs. Angular-Build (D15 §3.2)
+    └── original-gallery/                  # React-Galerie des Originals für Referenz-Screenshots (D15 §3.2, nur Paritäts-Setup)
+# Golden-Fixtures aus dem Original (z. B. Issue-Store) erzeugt das Repo-weite Werkzeug funk./tools/golden/generate.mjs (D15-ADR-08)
 ```
 
 **Begriffsabgleich mit dem Auftrag:** „ui/propel-Port“ = `libs/shared/propel`; „blocks“ = `libs/shared/blocks`; „editor“ = `libs/shared/editor`; „i18n“ = `libs/shared/i18n`; „types“, „constants“, „utils“ = gleichnamige `libs/shared/*`; „api-client“ = `libs/shared/services` (Paket-Services) + `libs/web/<domäne>/services` (App-Services); „state“ = `libs/shared/state-kit` (Primitive, QueryCache) + `libs/web/<domäne>/state` (Stores); „Feature-Libs je Domäne“ = `libs/web/<domäne>/components`.
@@ -208,7 +213,7 @@ frontend/
 | `shared/shared-state` | `@plane/shared-state` | `PKG/shared-state` (rich-filters, work-item-filters) | `scope:shared`, `type:data` | I2 |
 | `shared/state-kit` | `@plane/state-kit` | neu | `scope:shared`, `type:data` | I0 |
 | `shared/runtime-config` | `@plane/runtime-config` | neu | `scope:shared`, `type:data` | I0 |
-| `shared/cdk` | `@plane/cdk` | `PKG/hooks` + App-Hooks ohne Store-Bezug | `scope:shared`, `type:ui` | I0 |
+| `shared/cdk` | `@plane/cdk`, `@plane/cdk/extensions` | `PKG/hooks` + App-Hooks ohne Store-Bezug; Unterpfad `extensions/`: app-neutrale Registry-Mechanik (`RouteExtension<K>`, `mergeRoutes`, `injectRegistry`, §6.2), die web, admin und space gemeinsam nutzen | `scope:shared`, `type:ui` | I0 |
 | `shared/tailwind-config` | `@plane/tailwind-config` | `PKG/tailwind-config` (CSS 1:1) | `scope:shared`, `type:ui` | I0 |
 | `shared/propel` | `@plane/propel/{components,elements,icons,…}/*` | `@makeplane/propel@0.7.3` | `scope:shared`, `type:ui` | I0…I3 |
 | `shared/blocks` | `@plane/blocks/*` | `PKG/blocks` | `scope:shared`, `type:ui` | I0…I3 |
@@ -217,7 +222,8 @@ frontend/
 | `shared/work-items-core` | `@plane/work-items-core` | neu (reine Funktionen, A09 §5.1) | `scope:shared`, `type:utils` | I2 |
 | `web/core` | `@plane/web/core` | Wrapper, Layout-Basis, Router/Theme/Instance/User/Permission/CommandPalette-Stores, Interceptors, Modal-Hosts, Navigation, Sidebar, Breadcrumbs | `scope:web`, `domain:core` | I0 |
 | `web/extensions` | `@plane/web/extensions` | Registry-Tokens (§6) | `scope:web`, `domain:extensions` | I0 |
-| `web/<domäne>` (19 Domänen, Tabelle 01 §6.1) | `@plane/web/<domäne>`, `…/state`, `…/services` | `WEB/components/*`, `WEB/store/*`, `WEB/services/*` | `scope:web`, `domain:<d>`, `layer:ui\|state\|services` | I0…I6 |
+| `web/<domäne>` (20 Domänen, Tabelle 01 §6.1: auth, workspace, project, project-settings, work-items, views, cycles, modules, intake, pages, analytics, home, stickies, notifications, power-k, profile, settings, favorites, archives, project-publish) | `@plane/web/<domäne>`, `…/state`, `…/services` | `WEB/components/*`, `WEB/store/*`, `WEB/services/*` | `scope:web`, `domain:<d>`, `layer:ui\|state\|services` | I0…I6 |
+| `admin/extensions`, `space/extensions` | `@plane/admin/extensions`, `@plane/space/extensions` | Registry-Tokens der Admin-/Space-App (§6.1: `ADMIN_SETTINGS_PAGES`, `ADMIN_ROUTE_EXTENSIONS`, `ADMIN_HEADER_SEGMENT_LABELS`, `SPACE_ROUTE_EXTENSIONS`) – eigene Libs, weil `scope:admin`/`scope:space` keine `scope:web`-Lib importieren dürfen (01 §6.3) | `scope:admin`/`scope:space`, `domain:extensions` | I0 |
 | `admin/*`, `space/*` | `@plane/admin/*`, `@plane/space/*` | `ADM/*`, `SPC/*` | `scope:admin`/`scope:space` | I0/I6 |
 
 #### 3.1.4 Ablage-Regel je Original-Datei
@@ -251,6 +257,7 @@ Ergänzt 01 §6.3 um die Ebenen aus D08-ADR-02 und die Domänen-Matrix.
 | `layer:state` (web) | `scope:shared` (ohne `type:ui`), `layer:services` jeder Domäne, `layer:state` jeder Domäne, `domain:extensions` |
 | `domain:core`, `layer:ui` | `scope:shared`, `domain:extensions`, alle `layer:state`/`layer:services` |
 | `domain:<d>`, `layer:ui` | `scope:shared`, `domain:core`, `domain:extensions`, alle `layer:state`/`layer:services`, **`layer:ui` nur der in der Matrix genannten Domänen** |
+| `domain:extensions` (web/admin/space) | `scope:shared` (inkl. `@plane/cdk/extensions`), **keine** andere Lib des eigenen Scopes (Tokens bleiben zyklenfrei) |
 | `type:app` | eigene Scope-Libs, `scope:shared` |
 
 **Domänen-Matrix `layer:ui`** (Zeile darf Spalte importieren; zusätzlich immer `core`, `extensions`):
@@ -285,7 +292,7 @@ Original (A08 §2.4): `entry.client.tsx` (Polyfills, Stale-Asset-Listener, `awai
 | 1 | `provideAppInitializer(loadRuntimeConfig)` – lädt `runtime-config.json` (§3.11), bricht bei Fehler **nicht** ab (Defaults = same-origin) | `libs/shared/runtime-config` | `VITE_*` |
 | 2 | `provideAppInitializer(() => inject(TranslationService).init())` – entspricht `await initPromise`; Fehler → `catch(() => {})` | `libs/shared/i18n` | `initPromise` |
 | 3 | `provideRouter(routes, withComponentInputBinding(), withRouterConfig({ paramsInheritanceStrategy: 'always', onSameUrlNavigation: 'ignore' }), withInMemoryScrolling({ scrollPositionRestoration: 'disabled' }), withNavigationErrorHandler(staleChunkHandler))` + `{ provide: LocationStrategy, useClass: TrailingSlashPathLocationStrategy }` + `{ provide: TitleStrategy, useClass: PlaneTitleStrategy }` | `apps/web/src/app.config.ts` | `routes.ts`, `clientMiddleware` |
-| 4 | `provideHttpClient(withFetch(), withInterceptors([trailingSlashInterceptor, credentialsInterceptor, csrfInterceptor, unauthorizedInterceptor]))` | `libs/web/core/http` | Axios-Instanzen |
+| 4 | `provideHttpClient(withFetch(), withInterceptors([trailingSlashInterceptor, credentialsInterceptor, csrfInterceptor, unauthorizedInterceptor, abortInterceptor]))` – Kette und Reihenfolge verbindlich nach §3.5.2 (Admin: ohne `unauthorizedInterceptor`, zusätzlich `adminStepUpInterceptor`; Space: ohne beide) | `libs/web/core/http` | Axios-Instanzen |
 | 5 | `provideZonelessChangeDetection()` (Default v22, explizit zur Dokumentation), `provideBrowserGlobalErrorListeners()` | – | – |
 | 6 | `{ provide: ErrorHandler, useClass: PlaneErrorHandler }` (Stale-Chunk-Recovery + Fehlerseite) | `libs/web/core/errors` | `ErrorBoundary`, `entry.client`-Listener |
 | 7 | `provideAppInitializer(() => inject(ProgressBarService).attach())` (Router-Events → `@bprogress/core`, `minimum 0.1, speed 400, trickleSpeed 800, showSpinner false`) | `libs/web/core/lib/b-progress` | `AppProgressBar` |
@@ -310,7 +317,7 @@ Admin: gleiche Kette mit `ADMIN_SWR_CONFIG` (`refreshWhenHidden:false, revalidat
 4. **Parameter:** `paramsInheritanceStrategy: 'always'`, damit jede Page `workspaceSlug`, `projectId` … per `input()` erhält (`withComponentInputBinding`); der `RouterStore` liest die zusammengeführten Parameter (§3.3.3).
 5. **Lazy Loading:** jede Page/Layout per `loadComponent` (D08-ADR-25).
 6. **Keine Platzhalter-Routen:** Routen eines noch nicht gebauten Inkrements sind nicht registriert (01 §7.19). Die Spalte „Ink.“ in §4.1 legt fest, wann eine Route in `app.routes.ts` aufgenommen wird; bis dahin greift die 404-Seite.
-7. **Query-Parameter** bleiben bei Redirects erhalten, wo das Original sie überträgt (`profile/*`, `settings/account/*`: immer `?` + Query, E15 beibehalten; Legacy-Issue: keine Query).
+7. **Query-Parameter** bleiben bei Redirects erhalten, wo das Original sie überträgt (`profile/*`, `settings/account/*`: `?` + Query, E15; bei **leerer** Query entfällt das `?` technisch bedingt, weil Angulars `UrlSerializer` ein leeres `?` nicht serialisiert – rein kosmetisch, Kennung `FE-E15`; Legacy-Issue: keine Query).
 
 #### 3.3.2 Navigation, Links, Pfad
 
@@ -350,7 +357,7 @@ Admin: gleiche Kette mit `ADMIN_SWR_CONFIG` (`refreshWhenHidden:false, revalidat
 
 Alle Redirects aus A08 §2.2.8 werden als `redirectTo`-**Funktionen** (`RedirectFunction`, Zugriff auf `params`, `queryParams`) in `FE/apps/web/src/pages/routes/redirects/redirects.ts` implementiert. Splat-Pfade (`*` im Original) nutzen `splatMatcher(prefix)` (§5.4), das die Restsegmente als `posParams.splat` liefert. Ziel-URLs immer **mit** abschließendem `/` exakt wie Original. Die Legacy-Detail-URL `/:ws/projects/:pid/issues/:issueId` ist kein reiner Redirect (Daten-Abruf) → `legacyIssueRedirectGuard` (`canActivate`, ruft `GET …/issues/{id}/meta/`, liefert `UrlTree` auf `/${ws}/browse/${identifier}-${sequence_id}/`; Fehler → `true`, Page zeigt EmptyState). Gleiches Muster für Space `/:workspaceSlug/:projectId` (`spaceLegacyAnchorGuard`, Fehler → `UrlTree('/404')`).
 
-**ADR-008-Folgen für Auth-Routen (CE-AUTH-002…-021 entfallen):** `/sign-up`, `/accounts/forgot-password`, `/accounts/reset-password`, `/accounts/set-password` werden **Redirects auf `/`** (Legacy-Links aus E-Mails/Bookmarks bleiben benutzbar, CE-UIX-012); `/accounts/sign-up` und `/register` zeigen ebenfalls direkt auf `/` (Original: `/sign-up/`). Die Seite `/` ist der Einstieg „Mit Keycloak anmelden“ (CE-AUTH-001 angepasst): Button → Vollnavigation `${api_base_url}/auth/oidc/login/?app=web&next_path=<next_path>`; Fehlercodes aus Query `error_code` werden weiterhin als Banner gezeigt (CE-AUTH-014 angepasst). Ob `/` automatisch weiterleitet (Instanz-Option), entscheidet `05-auth-sicherheit-berechtigungen.md` – das Frontend unterstützt beide Varianten über `instance.config` (Feld wird in 05 benannt).
+**ADR-008-Folgen für Auth-Routen (CE-AUTH-002…-021 entfallen):** `/sign-up`, `/accounts/forgot-password`, `/accounts/reset-password`, `/accounts/set-password` werden **Redirects auf `/`** (Legacy-Links aus E-Mails/Bookmarks bleiben benutzbar, CE-UIX-012); `/accounts/sign-up` und `/register` zeigen ebenfalls direkt auf `/` (Original: `/sign-up/`). Die Seite `/` ist der Einstieg „Mit Keycloak anmelden“ (CE-AUTH-001 angepasst): Button → Vollnavigation `${api_base_url}/auth/oidc/login/?app=web&next_path=<next_path>`; Fehlercodes aus Query `error_code` werden weiterhin als Banner gezeigt (CE-AUTH-014 angepasst). Ob `/` automatisch weiterleitet, legt `05-auth-sicherheit-berechtigungen.md` §3.3.2 fest (`Plane:Auth:AutoRedirect`, Default `true`; ohne `error_code` → sofortige Vollnavigation, mit `error_code` → Banner + Button). Das Frontend liest den Schalter aus `GET /api/instances/` → `config.is_oidc_auto_redirect_enabled` (von 05 §4.4 bestätigt, O-D08-03 erledigt). `SignInPageComponent` (Page) komponiert die in 05 benannte `AuthLandingComponent` aus `libs/web/auth/components/auth-landing/` (Logik Auto-Redirect, Banner, `login_hint` für Einladungslinks). Weil `scope:admin`/`scope:space` keine `scope:web`-Lib importieren dürfen (01 §6.3), liegt der darstellende Teil (Original `AuthBase`-Rahmen, `AuthBanner`, Button) als `pl-auth-landing-base` in `libs/shared/blocks/auth` (Port von `PKG/blocks/src/auth`); je App gibt es eine gleichnamige, dünne `AuthLandingComponent` in den von 05 genannten Ordnern (`libs/web/auth`, `libs/admin/authentication`, `libs/space/account`) mit `app='web'|'admin'|'space'`. Verhalten je App gemäß 05 §3.3.2: **web** und **admin** leiten ohne `error_code` sofort weiter (Auto-Redirect), **space** zeigt auf `/spaces/` immer die Ansicht mit Button (kein Auto-Redirect; Boards bleiben anonym lesbar), „Sign in“ übergibt `next_path` inkl. Query (FE-AUTH-02).
 
 #### 3.3.6 Titel, Meta, Scroll
 
@@ -398,7 +405,7 @@ Alle Redirects aus A08 §2.2.8 werden als `redirectTo`-**Funktionen** (`Redirect
 ```mermaid
 flowchart LR
   subgraph core["libs/web/core/state"]
-    RS[RootStore<br/>resetOnSignOut, Fassade] --- RT[RouterStore] & TH[ThemeStore] & IN[InstanceStore] & US[UserStore → UserProfileStore, UserSettingsStore, UserPermissionStore] & CP[CommandPaletteStore] & PK[PowerKStore] & MS[MultipleSelectStore] & EA[EditorAssetStore] & MR[MemberRootStore]
+    RS[RootStore<br/>resetOnSignOut, Fassade] --- RT[RouterStore] & TH[ThemeStore] & IN[InstanceStore] & US[UserStore → ProfileStore, UserSettingsStore, UserPermissionStore] & CP[CommandPaletteStore] & PK[PowerKStore] & MS[MultipleSelectStore] & EA[EditorAssetStore] & MR[MemberRootStore]
   end
   subgraph dom["libs/web/<domäne>/state"]
     WS[WorkspaceRootStore → WebhookStore, ApiTokenStore, HomeStore → WorkspaceLinkStore]
@@ -406,7 +413,7 @@ flowchart LR
     WM[WorkspaceMemberStore → WorkspaceMemberFiltersStore]
     PM[ProjectMemberStore → ProjectMemberFiltersStore]
     CY[CycleStore] --- CF[CycleFilterStore]
-    MO[ModuleStore] --- MF[ModuleFilterStore]
+    MO[ModulesStore] --- MF[ModuleFilterStore]
     ST[StateStore] & LB[LabelStore] & ES[ProjectEstimateStore] & PV[ProjectViewStore] & GV[GlobalViewStore] & FV[FavoriteStore] & SK[StickyStore] & PP[ProjectPageStore] & IB[ProjectInboxStore] & NT[WorkspaceNotificationStore] & AN[AnalyticsStore] & TL[TimeLineStore]
     IR[IssueRootStore → IssueStore, 9 Listen-Stores + Filter, IssueDetail, KanBanView, CalendarView]
   end
@@ -420,7 +427,7 @@ Die Original-`RootStore`-Felder (`rootStore.cycle`, `rootStore.issue.issues` …
 
 #### 3.4.4 `MemberRootStore` und Unter-Stores
 
-`WEB/store/member/index.ts` (`MemberRootStore` mit `memberMap`, `getMemberIds`, `getUserDetails`, Kinder `workspace`, `project`) liegt in `libs/web/core/state/member/member-root.store.ts` (Store-Cluster, D08-ADR-02). Die Kinder `workspace` (`WorkspaceMemberStore`) und `project` (`ProjectMemberStore`) liegen in `libs/web/workspace/state/member/…` bzw. `libs/web/project/state/member/…` und werden per `injectLazy` als Getter `workspace`/`project` angeboten (Zugriffspfad `memberRoot.workspace.xxx` bleibt).
+`WEB/store/member/index.ts` (`MemberRootStore` mit `memberMap`, `getMemberIds`, `getUserDetails`, Kinder `workspace`, `project`) liegt in `libs/web/core/state/member/member-root.store.ts` (Store-Cluster, D08-ADR-02). Die Kinder `workspace` (`WorkspaceMemberStore`) und `project` (`BaseProjectMemberStore`, im Original als `ProjectMemberStore` re-exportiert – Alias, keine Unterklasse, §6.3) liegen in `libs/web/workspace/state/member/…` bzw. `libs/web/project/state/member/…` und werden per `injectLazy` als Getter `workspace`/`project` angeboten (Zugriffspfad `memberRoot.workspace.xxx` bleibt).
 
 #### 3.4.5 Unter-Instanzen
 
@@ -437,7 +444,7 @@ Die Original-`RootStore`-Felder (`rootStore.cycle`, `rootStore.issue.issues` …
 
 #### 3.4.6 Issue-Store (Gruppierung, Pagination, Optimistic Updates)
 
-Ziel: **1:1-Port** von `WEB/store/issue/**` (59 Dateien). Aufteilung:
+Ziel: **1:1-Port** von `WEB/store/issue/**` (44 Dateien, §4.5 Nr. 57–100). Aufteilung:
 
 | Teil | Original | Ziel | Portierung |
 |---|---|---|---|
@@ -477,6 +484,7 @@ Ziel: **1:1-Port** von `WEB/store/issue/**` (59 Dateien). Aufteilung:
 | 3 | `csrfInterceptor` | `libs/web/core/http/csrf.interceptor.ts` | nur für Requests mit Kontext `WITH_CSRF`: Header `X-CSRFTOKEN` aus `GET /auth/get-csrf-token/` (gecacht je Seitenaufruf) – Original nutzt CSRF nur für Formular-Flows; ADR-017 prüft Origin/Referer, daher kein globaler Header |
 | 4 | `unauthorizedInterceptor` | `libs/web/core/http/unauthorized.interceptor.ts` | **nur web** (Original: nur `WEB/services/api.service.ts`): HTTP 401 und `location.pathname !== "/"` → `window.location.replace("/?next_path=" + encodeURIComponent(pathname))`; `PKG/services`-Aufrufe ohne diesen Effekt (Kontext `SKIP_401_REDIRECT`), Admin/Space ohne |
 | 5 | `abortInterceptor` | `libs/shared/services/src/helpers/abort.interceptor.ts` | koppelt `AbortSignal` aus `config.signal` an die Subscription |
+| 6 | `adminStepUpInterceptor` | `libs/admin/core/http/admin-step-up.interceptor.ts` | **nur admin** (05 D05-ADR-11, §3.13.8): HTTP 401 mit `error_code` 5210 → `window.location.assign(api_base_url + '/auth/oidc/login/?app=admin&max_age=' + n + '&next_path=' + encodeURIComponent(location.pathname + location.search))` (Parameter `max_age` laut 05 N-01; `n` = `0`, d. h. frische Anmeldung, die jede Schwelle erfüllt, solange 05 keine Quelle für den konfigurierten Wert im Frontend festlegt – O-D08-14); tritt nur auf, wenn `Plane:Auth:AdminStepUpMaxAgeSeconds > 0` (Default `0` = aus, ADR-009/O-08) |
 
 #### 3.5.3 QueryCache (SWR-Ersatz)
 
@@ -585,7 +593,9 @@ Fallback (S0 rot): Reactive Forms (`FormGroup`, `ControlValueAccessor` auf dense
 | **neu (präzisiert 01 §7.12):** `website_url`, `support_email`, `external_links_enabled` | `VITE_WEBSITE_URL`, `VITE_SUPPORT_EMAIL`, hartcodierte Links (GitHub-Star, Forum, Status-Page, X) | Default `website_url: ""`, `support_email: ""`, `external_links_enabled: false` (Airgap, A08 O8) |
 
 - **Bereitstellung:** `RUNTIME_CONFIG`-Token (`libs/shared/runtime-config`), geladen vor allen anderen Initializern; `@plane/constants/endpoints.ts` wird so angepasst, dass die Konstanten **Getter** auf das Token-Objekt sind (`export const API_BASE_URL = runtimeConfig.api_base_url` würde zur Importzeit auswerten → stattdessen `getApiBaseUrl()`; die Abweichung ist auf `endpoints.ts` und dessen ≈ 30 Verwender begrenzt und wird mechanisch per Codemod angepasst).
-- Gateway liefert die Datei je App unter `/{base}runtime-config.json` mit `Cache-Control: no-store`.
+- Gateway liefert die Datei je App unter `/{base}runtime-config.json` mit `Cache-Control: no-cache` (D14 G-13, AK-14-07).
+- **Base-Path ohne Rebuild (D14 §4.7):** Alle Asset-URLs im Build sind relativ zu `<base href>` (kein `deployUrl`, keine absoluten `/`-Pfade in `index.html`/CSS außer Fonts über relative `url()`); das Gateway ersetzt bei abweichendem `*_base_path` nur das `<base href>` in `index.html`. `PathLocationStrategy` liest `<base href>` zur Laufzeit; `APP_BASE_HREF` wird **nicht** fest provided.
+- **Versionswechsel (D14 Rolling Update):** `AppVersionWatcher` (`libs/web/core/lib/app-version-watcher.ts`) lädt `runtime-config.json` bei `visibilitychange → visible` (Throttle 5 min) erneut; weicht `app_version` vom Startwert ab, wird bei der **nächsten Router-Navigation** ein Voll-Reload (`location.assign(targetUrl)`) statt der SPA-Navigation ausgeführt – kein Reload mitten in einer Eingabe. Zusätzlich greift die Stale-Chunk-Recovery (§3.14).
 
 ### 3.12 Realtime im Frontend
 
@@ -595,7 +605,7 @@ Fallback (S0 rot): Reactive Forms (`FormGroup`, `ControlValueAccessor` auf dense
 | Offline-Cache | `y-indexeddb` 9.0.12 | `PKG/editor` |
 | Stateless-Seitenereignisse | `RealtimePageEventsService` (Port `use-realtime-page-events.tsx`, `use-collaborative-page-actions.tsx`) | A08 §2.8.2 |
 | REST-Fallback | `PageFallbackService` (Port `use-page-fallback.ts`) + `AutoSaveService` | CE-RT-003 |
-| Live-Events (H6) | `LiveEventsService` (D08-ADR-22) + Multi-Provider `LIVE_EVENT_HANDLERS` | 01 §1.4 |
+| Live-Events (H6) | `LiveEventsService` (D08-ADR-22) + Multi-Provider `LIVE_EVENT_HANDLERS`; Transport **nur WebSockets** (`HubConnectionBuilder().withUrl(url, { transport: HttpTransportType.WebSockets, skipNegotiation: true, withCredentials: true }).withAutomaticReconnect([0, 2000, 10000, 30000])`), damit keine Sticky Sessions nötig sind (D14) | 01 §1.4, D14 |
 
 ### 3.13 Performance
 
@@ -756,7 +766,7 @@ Spalten: **#** = Nummer aus A08 §2.2 (R = neu/geändert) · **React-Route** (`W
 
 | # (A11) | React-Route (`ADM/app/routes.ts`) | Angular-Eintrag | Komponente (`FE/apps/admin/src/pages/(all)/…`) | Guard / Zustände | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|
-| R1 | index (L `(home)/layout.tsx`) | `''` (`HomeLayoutComponent`) › `''` (`pathMatch:'full'`) | `(home)/page.ts` → `AdminHomePageComponent`: Spinner → Instanzfehler → **Erst-Einrichtung ohne Admin-Konto** (`is_setup_done=false`, CE-INST-006 angepasst) → „Mit Keycloak anmelden“ (`/auth/oidc/login/?app=admin&next_path=/god-mode/general/`) bzw. Hinweis „keine Instanz-Admin-Rolle“ | eingeloggt **und** Admin-Rolle → `replace('/general/')` | I0 | CE-INST-006 (angepasst), CE-INST-007 (entfällt), CE-INST-009 |
+| R1 | index (L `(home)/layout.tsx`) | `''` (`HomeLayoutComponent`) › `''` (`pathMatch:'full'`) | `(home)/page.ts` → `AdminHomePageComponent`: Spinner → Instanzfehler → **Erst-Einrichtung ohne Admin-Konto** (`is_setup_done=false`, CE-INST-006 angepasst) → ohne Session und ohne `error_code` **Auto-Redirect** zu `/auth/oidc/login/?app=admin&next_path=/god-mode/general/` (05 CE-INST-007, `is_oidc_auto_redirect_enabled`), mit `error_code` (z. B. 5175, 5210) Banner + Button „Mit Keycloak anmelden“ (`AuthLandingComponent`, §3.3.5) bzw. Hinweis „keine Instanz-Admin-Rolle“ (`NO_ADMIN_ROLE`) | eingeloggt **und** Admin-Rolle → `replace('/general/')` | I0 | CE-INST-006 (angepasst), CE-INST-007 (entfällt), CE-INST-009 |
 | – | (L `(dashboard)/layout.tsx`) | `''` (`DashboardLayoutComponent`: Sidebar, Header mit Breadcrumb, `NewUserPopup`) | – | `isUserLoggedIn === false` → `replace('/')`; `undefined` → Spinner | I0 | CE-INST-010…-013 |
 | R2 | `general` | › `general` | `(dashboard)/general/page.ts` → `GeneralSettingsPageComponent` | – | I0 | CE-INST-017, CE-INST-015 |
 | R3 | `workspace` | › `workspace` (`pathMatch:'full'`) | `(dashboard)/workspace/page.ts` → `InstanceWorkspacesPageComponent` | Key `INSTANCE_WORKSPACES` | I6 | CE-INST-027, CE-INST-028 |
@@ -800,7 +810,7 @@ Admin-Abmeldung (CE-INST-008, angepasst): Formular-POST `/auth/sign-out/?app=adm
 
 ### 4.5 Store-Mapping `apps/web/store` (alle 100 Dateien)
 
-Regeln: Klassenname bleibt; `@Injectable({providedIn:'root'})` nur für Stores, die im Original direkt vom `CoreRootStore` per `new` erzeugt werden („Root“); alle anderen sind plain classes („Kind“, erzeugt vom genannten Eltern-Store). `Base*`-Klassen bleiben als Basisklassen erhalten (EE-Erweiterungsmuster des Originals) und werden mit dem CE-Namen als DI-Token registriert (`{provide: CommandPaletteStore, useClass: CommandPaletteStore}`, §6.3). Spalte „Hinweise“ nennt die Abbildung der MobX-Felder nach §3.4.2 und Abweichungen.
+Regeln: Klassenname bleibt; `@Injectable({providedIn:'root'})` nur für Stores, die im Original direkt vom `CoreRootStore` per `new` erzeugt werden („Root“); alle anderen sind plain classes („Kind“, erzeugt vom genannten Eltern-Store). `Base*`-Klassen bleiben als Basisklassen erhalten (EE-Erweiterungsmuster des Originals) ; die CE-Namen sind wie im Original Aliase (`export { BaseX as X }`), DI-Token ist die Basisklasse (§6.3). Spalte „Hinweise“ nennt die Abbildung der MobX-Felder nach §3.4.2 und Abweichungen.
 
 | # | Original (`WEB/store/…`) | Klasse(n) | Ziel (`FE/libs/web/…`) | Art | Hinweise | Ink. |
 |---|---|---|---|---|---|---|
@@ -819,9 +829,9 @@ Regeln: Klassenname bleibt; `@Injectable({providedIn:'root'})` nur für Stores, 
 | 13 | `user/account.store.ts` | `AccountStore` | – | – | **entfällt** (verknüpfte OAuth-Konten, CE-PROF-007, ADR-008) | – |
 | 14 | `member/index.ts` | `MemberRootStore` | `core/state/member/index.ts` | Root | `memberMap` `EntityMap<IUserLite>`; Kinder per `injectLazy` (§3.4.4) | I0 |
 | 15 | `member/utils.ts` | – (Funktionen) | `core/state/member/utils.ts` | – | Kopie | I0 |
-| 16 | `member/workspace/workspace-member.store.ts` | `WorkspaceMemberStore` | `workspace/state/member/workspace/workspace-member.store.ts` | Kind von `MemberRootStore` | `workspaceMemberMap` `DeepState`, `memoizedComputed` für `getWorkspaceMemberIds` u. a. | I0 (Liste) / I1 |
+| 16 | `member/workspace/workspace-member.store.ts` | `WorkspaceMemberStore` | `workspace/state/member/workspace/workspace-member.store.ts` | Kind von `MemberRootStore`, als DI-Token per `injectLazy` (§3.4.4) | `workspaceMemberMap` `DeepState`, `memoizedComputed` für `getWorkspaceMemberIds` u. a. | I0 (Liste) / I1 |
 | 17 | `member/workspace/workspace-member-filters.store.ts` | `WorkspaceMemberFiltersStore` | `workspace/state/member/workspace/workspace-member-filters.store.ts` | Kind | – | I1 |
-| 18 | `member/project/base-project-member.store.ts` | `BaseProjectMemberStore` | `project/state/member/project/base-project-member.store.ts` | Kind von `MemberRootStore` | `projectMemberMap`, `projectUserPropertiesMap` `DeepState` | I0 (Kern) / I1 |
+| 18 | `member/project/base-project-member.store.ts` | `BaseProjectMemberStore` (Alias `ProjectMemberStore`) | `project/state/member/project/base-project-member.store.ts` | Kind von `MemberRootStore`, als DI-Token per `injectLazy` (überschreibbar, §6.3) | `projectMemberMap`, `projectUserPropertiesMap` `DeepState` | I0 (Kern) / I1 |
 | 19 | `member/project/project-member-filters.store.ts` | `ProjectMemberFiltersStore` | `project/state/member/project/project-member-filters.store.ts` | Kind | – | I1 |
 | 20 | `workspace/index.ts` | `BaseWorkspaceRootStore` (`WorkspaceRootStore`) | `workspace/state/workspace/index.ts` | Root | `workspaces` `EntityMap<IWorkspace>`, `currentWorkspace` `computed`; `updateProjectNavigationPreferences` optimistisch + Revert | I0 |
 | 21 | `workspace/webhook.store.ts` | `WebhookStore` | `settings/state/workspace/webhook.store.ts` | Kind von `WorkspaceRootStore` (`webhook`, per `injectLazy`) | – | I6 |
@@ -1026,6 +1036,7 @@ Versionen des Originals aus `pnpm-workspace.yaml` (Catalog). „Nutzung“ = Pak
 | `class-variance-authority` (0.7.1) | B | gleich | übernommen |
 | `clsx` (^2.1.1) | W, S, B, U | gleich | übernommen |
 | `tailwind-merge` (3.4.0) | U | gleich | übernommen |
+| `recharts` (^2.15.4) | W, B | D3-Module (`d3-scale`, `d3-shape`, `d3-array`, `d3-hierarchy`, `d3-format`) + Angular-SVG-Komponenten in `libs/shared/blocks/charts/*` mit recharts-Markup (D08-ADR-18, ADR-044) | ersetzt |
 | `cmdk` (^1.1.1) | W | `pl-command` (D08-ADR-17) | ersetzt |
 | `comlink` (^4.4.1) | W | – (im Quelltext ungenutzt) | entfällt |
 | `date-fns` (^4.1.0) | W, S, B, U | gleich | übernommen |
@@ -1096,7 +1107,7 @@ Versionen des Originals aus `pnpm-workspace.yaml` (Catalog). „Nutzung“ = Pak
 | `oxlint` (1.51.0), `oxfmt` (0.35.0) | R | `eslint` 9 + `angular-eslint` 22 + `typescript-eslint` + Sheriff-Plugin, `prettier` 3 (ADR-039) | ersetzt |
 | `husky` (9.1.7), `lint-staged` (16.2.7) | R | gleich | übernommen |
 | `react-doctor` (^0.4.2) | R | – | entfällt |
-| Storybook-Pakete (nur Catalog, keine Deklaration in `apps/*`/`packages/*`) | – | – (Komponenten-Galerie für Visual Tests als eigene Angular-App `apps/e2e/gallery`, §7) | entfällt |
+| Storybook-Pakete (nur Catalog, keine Deklaration in `apps/*`/`packages/*`) | – | – (Komponenten-Galerie für Visual Tests als eigene Angular-App `apps/gallery`, D15 §3.2, §7.4) | entfällt |
 
 #### 4.8.4 Neue Frontend-Pakete (nicht im Original)
 
@@ -1131,7 +1142,7 @@ Versionen des Originals aus `pnpm-workspace.yaml` (Catalog). „Nutzung“ = Pak
 | E12 | „Go home“ auf `/invitations` → `/` | beibehalten | – |
 | E13 | ungültige Tabs/Views ohne 404 | `/settings/profile/:invalid` → **Redirect `general`** (Dauer-Spinner ist Fehler); übrige beibehalten | FE-E13 |
 | E14 | Theme-Store schreibt, liest nicht | beibehalten | – |
-| E15 | Redirect hängt `?` an | beibehalten | – |
+| E15 | Redirect hängt `?` an | beibehalten, soweit Angular es erlaubt: mit Query identisch; bei leerer Query entfällt das `?` (Angular-`UrlSerializer`), keine Nutzerwirkung | FE-E15 |
 | E16 | fehlendes Label für `/features/*` in Mobile-Nav | **korrigieren** (Label aus `PROJECT_SETTINGS`) | FE-E16 |
 | E17 | WS-Admin ohne Projektmitgliedschaft → „Join“ | beibehalten (gewollt) | – |
 | E18 | toter Code (`dashboard.store`, `issue_gantt_view.store`, `use-dashboard`, `dashboard.helper`) | nicht portieren | – |
@@ -1147,6 +1158,48 @@ Versionen des Originals aus `pnpm-workspace.yaml` (Catalog). „Nutzung“ = Pak
 | A2 | Admin `disableEmail` ohne Rethrow (Fehler-Toast nie sichtbar) | **korrigieren** | FE-A2 |
 
 Die Kennungen werden in `tests/contracts/deviations.yaml` (01 §7.20) unter `frontend:` geführt; Visual-/E2E-Tests der betroffenen Szenarien referenzieren die Kennung.
+
+### 4.10 Zuordnung der Querschnitts-CE-IDs zu Frontend-Bausteinen
+
+Die Routen-Tabellen §4.1–§4.3 ordnen die **Screen**-CE-IDs zu. Die folgende Tabelle schließt die CE-IDs, die keine eigene Route haben, aber einen Frontend-Baustein dieses Dokuments brauchen (Shell, Querschnitt, Designsystem-Infrastruktur). Fachliche In-Screen-Features der Domänen (CE-WI-*, CE-LV-* ohne Layout-Kern, CE-CYC-*, CE-MOD-*, CE-INT-*, CE-PAGE-*, CE-HOME-*, CE-NOTIF-*, CE-ANA-*, CE-SPACE-*) werden in der jeweiligen Domänen-Lib (§3.1.3, Ablage-Regel §3.1.4) nach dem referenzierten Original portiert; Spec-Besitz je CE-ID: D15 §3.9.2; Komponenten-Varianten: D09; Editor: D10.
+
+| CE-ID(s) | Feature | Frontend-Baustein (Ort) | Ink. |
+|---|---|---|---|
+| CE-UIX-001 | Seiten-Header und Breadcrumbs | `AppHeader`/`ContentWrapper` (HL:*, §4.4), `libs/shared/blocks/breadcrumb`, `libs/web/core/breadcrumbs` | I0 |
+| CE-UIX-002 | Leerzustände und Skeletons | `libs/web/core/empty-state` (`DetailedEmptyState`), `libs/shared/blocks/{empty-state,skeleton}` | I0 |
+| CE-UIX-003 | Globale Modal-Hosts | `libs/web/core/modals` (`GlobalModals` in LWS, §4.4; Flags `CommandPaletteStore`) | I0 |
+| CE-UIX-004 | Dialog- und Dropdown-Verhalten | `@plane/cdk` (`DialogDismissal`, `[plOutsideClick]`), CDK Overlay (§3.9 Overlays) | I0 |
+| CE-UIX-005, -008 | Tab-Reihenfolge, ungespeicherte Änderungen | §3.6, `ReloadConfirmationService` + `canDeactivate` (§3.9) | I1 |
+| CE-UIX-006 | Browser-Storage | §3.15 | I1 |
+| CE-UIX-007 | Zwischenablage, CSV | `@plane/utils` 1:1, `export-to-csv` (§3.9) | I1 |
+| CE-UIX-009 | Image-Picker, Uploads mit Fortschritt | `FileUploadService` (§3.5.1), `[plDropzone]`, Unsplash nur bei konfiguriertem Key (CE-AI-002) | I1 |
+| CE-UIX-010, -011, -012 | 404, Stale-Chunk, Legacy-Redirects | §3.14, §3.3.5, §4.1 Block A/C | I0 |
+| CE-UIX-013 | Link-Icons, URL-Erkennung | `@plane/utils` (`get-icon-for-link.ts`) 1:1 | I2 |
+| CE-I18N-001…-004 | Sprache, Datumsdarstellung, Zeitzonen | §3.7, `TimezoneService` (§4.7) | I0/I1 |
+| CE-I18N-005…-008 | Themes, No-Flash, Custom, High Contrast | §3.8, §5.1 | I0/I1 |
+| CE-I18N-009…-011, -023, -024 | Farb-Token, Editor-Palette, Typografie, Animationen, Maßsystem | `libs/shared/tailwind-config`, `libs/shared/propel/styles`, `libs/shared/editor/styles` (CSS 1:1, D09) | I0 |
+| CE-I18N-012 | Gebündelte Schriften (Airgap) | `@fontsource*` über `styles.css`, Preload §5.1 | I0 |
+| CE-I18N-013…-015, -018 | Icon-System, Status-/Datei-Icons, Empty-State-Illustrationen, theme-abhängige Assets | `tools/icons-codegen`, `libs/shared/blocks/{icons,empty-state}`, `theme-assets.ts` (§3.8) | I0…I2 |
+| CE-I18N-016, -017 | Logo-Picker (Emoji, Lucide, Material), Emoji-Reaktionen | §3.9, D08-ADR-20 | I1/I2 |
+| CE-I18N-019…-021, -025 | Propel-Komponenten, Blocks-Composites, Toasts, Avatare/Farbwähler | `libs/shared/{propel,blocks}` (D09), Toast-Viewport §3.2 Nr. 8 | I0…I3 |
+| CE-I18N-022 | Charts | §3.9 Charts, D08-ADR-18 | I3 |
+| CE-I18N-026 | Lade-Indikatoren, Navigations-Progressbar | `LogoSpinner`, `ProgressBarService` (§3.2 Nr. 7) | I0 |
+| CE-WS-005, -016, -018…-022 | Workspace-Switcher, User-Menü, resizable Sidebar, Sidebar-Kopf, Menüeinträge, „More“, Customize navigation | `libs/web/core/sidebar` + `SIDEBAR_ITEMS` (§6.1), `NavigationPreferencesService` (§4.7), `ThemeStore`-Flags | I0 (Shell) / I1 |
+| CE-WS-014, -015 | Hilfe-Menü/Version, „What's new“ | `app_version` (§3.11); Changelog-Modal lädt `config.instance_changelog_url` als `<iframe>` nur wenn gesetzt (Default leer → Original-Fallback-Ansicht), externe Links der Fallback-/Footer-Ansicht nur bei `external_links_enabled` | I1 |
+| CE-WS-017 | Star-us-on-GitHub-Link | nur bei `external_links_enabled` (Default `false`, ADR-004) | I1 |
+| CE-WS-023 | Favoriten mit Ordnern | `FavoriteStore` (§4.5 Nr. 51), `FAVORITE_ENTITY_RENDERERS` | I1 |
+| CE-PRJ-005, -011…-013, -016 | Identifier-Prüfung, Projektliste/Kontextmenü/erweiterte Projekt-Sidebar, Projekt-Präferenzen | `libs/web/project` (Komponenten), `ProjectStore`, `ProjectFilterStore`, `NavigationPreferencesService` | I0/I1 |
+| CE-LV-003, -004, -006, -014, -038, -042, -043, -045 | Layout-Kontextmenü, Layout-Kontexte, Rich-Filter-Ausdrücke, Anzeige-Einstellungen, Inline-Properties, Empty-States, Skeletons, Layout-Fehlergrenze | `ISSUES_STORE_TYPE` (§3.4.6), `@plane/shared-state` (§4.6), `PROPERTY_RENDERERS`-Leser (§6.1), `pl-layout-error-boundary` (§3.14) | I2 |
+| CE-PROF-001, -004, -005 | Profilmodell, E-Mail ändern, Konto deaktivieren | `ProfileStore`/`UserStore` (§4.5 Nr. 9–10); E-Mail-Änderung und Kontosperre nach ADR-008 gemäß 05 (Keycloak-Verweis, Plane-seitige Deaktivierung) | I1 |
+| CE-AUTH-022…-025 | Abmelden, Session-Ablauf, Session-Status | `UserStore.signOut` (Formular-POST, D08-ADR-07), `unauthorizedInterceptor` (§3.5.2), `AuthenticationWrapper` (§3.3.4) | I0 |
+| CE-INST-003, -005 | Instanz-Info, Instanz-Zustände in der Web-App | `InstanceStore`, `InstanceWrapper` (Maintenance, Not ready, §3.3.4) | I0 |
+| CE-SRCH-001…-003 | Globale Suche, Entity-Suche (Mentions/Picker), Work-Item-Picker | `WorkspaceService.searchWorkspace/searchEntity`, `ProjectService.projectIssuesSearch` (1:1, §3.5.1); UI in `libs/web/power-k` (I5) bzw. Dropdowns/Editor-Mentions (I2) | I2/I5 |
+| CE-WH-013, -014 | API-Token anlegen/löschen | `ApiTokenStore` (§4.5 Nr. 22), Profil-Tab `api-tokens` (§4.1 Nr. 57) | I6 |
+| CE-AI-001, -002 | KI-Assistent im Modal, Unsplash | `EDITOR_FLAGS` (`ai` deaktiviert wie Original), Unsplash-Tab nur bei konfiguriertem Key; Fachdesign 11 | I6 |
+| CE-SPACE-001 | Projekt veröffentlichen (Publish-Modal in web) | `libs/web/project-publish` + `ProjectPublishStore` (§4.5 Nr. 28) | I6 |
+| CE-SPACE-002…-005, -007, -013 | Board-Einstellungen, öffentliche Liste/Detail, Stammdaten, Kommentarbilder, Rechtshinweis | `libs/space/*` (§4.3, §4.6) | I6 |
+
+**Bewusst nicht frontend-relevant** (nur API/Backend oder entfallen, keine Frontend-Arbeit in diesem Dokument): CE-WS-002, -006, -007; CE-PRJ-010, -033; CE-HOME-007; CE-ANA-009; CE-NOTIF-001, -002, -003, -008; CE-AUTH-026, -027; CE-INST-001, -002, -004; CE-SPACE-006; CE-WH-001, -007 (Formular-Teile in CE-WH-002…-006 erfasst); alle CE-API-* und CE-OPS-* außer CE-OPS-007 (Runtime-Config, AK-D08-30) und CE-OPS-013 (Upload-UI, D15 `ui-crosscutting.spec.ts`).
 
 ---
 ## 5. Code-Skelette
@@ -1166,7 +1219,7 @@ Die Skelette legen Namen, Signaturen und Semantik fest; Implementierungsdetails 
   <meta name="theme-color" content="#fff" />
   <!-- PWA-/OG-/Twitter-Meta wie WEB/app/root.tsx (og:url entfällt, ADR-004) -->
   <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png" />
-  <link rel="manifest" href="/site.webmanifest.json" />
+  <link rel="manifest" href="site.webmanifest.json" /><!-- relativ zu <base href> (§3.11, Base-Path ohne Rebuild) -->
   <link rel="preload" href="media/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
   <script>
     (function () {
@@ -1320,7 +1373,7 @@ export function splatMatcher(prefix: string): UrlMatcher {
 export const redirectToProfileSettings: RedirectFunction = ({ params, queryParams }) => {
   const splat = params['splat'] || 'general';
   const query = new URLSearchParams(queryParams as Record<string, string>).toString();
-  return `/settings/profile/${splat}?${query}`; // „?“ immer (E15)
+  return `/settings/profile/${splat}?${query}`; // E15: bei leerer Query verwirft der UrlSerializer das „?“ (FE-E15)
 };
 
 export const redirectToProjectSettings: RedirectFunction = ({ params }) =>
@@ -1329,10 +1382,13 @@ export const redirectToProjectSettings: RedirectFunction = ({ params }) =>
     : `/${params['workspaceSlug']}/settings/projects/${params['projectId']}/`;
 
 export const legacyIssueRedirectGuard: CanActivateFn = async (route) => {
+  // inject() nur synchron im Injection-Context – vor dem ersten await auflösen (sonst NG0203)
+  const issueService = inject(IssueService);
+  const router = inject(Router);
   const { workspaceSlug, projectId, issueId } = route.params;
   try {
-    const meta = await inject(IssueService).getIssueMetaFromURL(workspaceSlug, projectId, issueId);
-    return inject(Router).parseUrl(`/${workspaceSlug}/browse/${meta.project_identifier}-${meta.sequence_id}/`);
+    const meta = await issueService.getIssueMetaFromURL(workspaceSlug, projectId, issueId);
+    return router.parseUrl(`/${workspaceSlug}/browse/${meta.project_identifier}-${meta.sequence_id}/`);
   } catch {
     return true; // Page zeigt EmptyState → /${ws}/workspace-views/all-issues/
   }
@@ -1624,7 +1680,7 @@ export class TranslatePipe implements PipeTransform {
 ---
 ## 6. Erweiterungspunkte für Bezahl-Pakete
 
-**Grundsatz (01 P7, §1.4, §6.4):** Hier werden ausschließlich **Andockstellen** festgelegt – Token, Schnittstelle, CE-Default, Test. Kein Fachdesign der Pakete. Alle Tokens liegen in `FE/libs/web/extensions/src/` (Tag `domain:extensions`, importiert nur `scope:shared`), die CE-Defaults stellt `provideWebExtensions()` bereit. Ein Paket dockt an, indem es in seiner eigenen Lib (`FE/libs/web/<paket>/`) einen `provide<Paket>Extensions()`-Provider liefert, der in `app.config.ts` **hinter** `provideWebExtensions()` registriert wird – CE-Code wird dafür nicht geändert.
+**Grundsatz (01 P7, §1.4, §6.4):** Hier werden ausschließlich **Andockstellen** festgelegt – Token, Schnittstelle, CE-Default, Test. Kein Fachdesign der Pakete. Alle Tokens liegen in `FE/libs/web/extensions/src/` (Tag `domain:extensions`, importiert nur `scope:shared`), die CE-Defaults stellt `provideWebExtensions()` bereit. Ein Paket dockt an, indem es in seiner eigenen Lib (`FE/libs/web/<paket>/`) einen `provide<Paket>Extensions()`-Provider liefert, der in `app.config.ts` **hinter** `provideWebExtensions()` registriert wird – CE-Code wird dafür nicht geändert. Admin und Space haben eigene Token-Libs `FE/libs/admin/extensions` bzw. `FE/libs/space/extensions` (Sheriff: `scope:admin`/`scope:space` dürfen `libs/web/*` nicht importieren) mit `provideAdminExtensions()`/`provideSpaceExtensions()`; die app-neutrale Mechanik (`RouteExtension<K>`, `mergeRoutes`, `injectRegistry`) liegt in `@plane/cdk/extensions`. **Einzige Ausnahme vom Änderungsverbot** sind die Original-`extended.ts`-Dateien, die D16-ADR-15 abschließend auflistet (Typ-Unions und Konstanten-Maps, z. B. `PKG/types/src/rich-filters/**/extended.ts`, `WEB/store/pages/extended-base-page.ts`, `ADM/components/common/header/extended.ts`): Sie werden 1:1 mit gleichem Pfad portiert und dürfen von Paketen **nur additiv** ergänzt werden (`tools/ci/extended-files-check`).
 
 ### 6.1 Übersicht Registry → 🧱-Paket → Ort im CE-Code
 
@@ -1634,7 +1690,10 @@ export class TranslatePipe implements PipeTransform {
 | `SIDEBAR_ITEMS` | Multi `SidebarItemDefinition` | Einträge aus `WORKSPACE_SIDEBAR_STATIC_NAVIGATION_ITEMS`, `WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS`, Projekt-Navigation (Einträge aus `WEB/components/navigation/use-navigation-items.ts`: Work items, Cycles, Modules, Views, Pages, Intake) | `ProjectAppSidebar`, `ExtendedSidebar`, `TabNavigationRoot`, Customize-Navigation | B1, D1 (A4) | I0 (statisch) / I1 |
 | `APP_RAIL_ENABLED` | Token `boolean` | `false` (wie `AppRailVisibilityProvider`) | `WorkspaceLayoutComponent` | D1 (Wiki-App), G1 (nicht gewählt) | I0 |
 | `SETTINGS_PAGES` | Multi `SettingsPageDefinition` | Einträge aus `WORKSPACE_SETTINGS` (ohne `billing-and-plans`), `PROJECT_SETTINGS`, `PROFILE_SETTINGS` | Settings-Sidebars, `WORKSPACE_SETTINGS_ACCESS`-Prüfung in LWSET, Mobile-Nav, Power-K „open settings“ | E5, F1, F2, H1, A1 | I1 |
-| `ADMIN_SETTINGS_PAGES` | Multi | Admin-Sidebar-Einträge (A11 §2.4) | Admin-Sidebar, Breadcrumbs | E3 (Group-Sync-Status), E5 | I0 |
+| `ADMIN_SETTINGS_PAGES` (`libs/admin/extensions`) | Multi `SettingsPageDefinition` (`scope: 'admin'`) | Admin-Sidebar-Einträge (A11 §2.4: General, Workspaces, Email, Authentication, AI, Image) | Admin-Sidebar, Breadcrumbs | E3 (Group-Sync-Status), E5 (E7) | I0 |
+| `ADMIN_ROUTE_EXTENSIONS` (`libs/admin/extensions`) | Multi `RouteExtension<'ADM_HOME' \| 'ADM_DASHBOARD'>` | keine | Admin-`ROUTES`-Factory (§6.2) | E3 (`FE/libs/admin/group-sync`, D16), E5 | I0 |
+| `ADMIN_HEADER_SEGMENT_LABELS` (`libs/admin/extensions`) | Token `Record<string,string>` | Inhalt von `ADM/components/common/header/extended.ts` (CE: leer) | Admin-Header-Breadcrumb | E7 (D16 S41) | I0 |
+| `SPACE_ROUTE_EXTENSIONS` (`libs/space/extensions`) | Multi `RouteExtension<'SPC_ROOT' \| 'SPC_ANCHOR'>` | keine | Space-`ROUTES`-Factory (§6.2) | B5 (Publish Views, D16) | I6 |
 | `PROPERTY_RENDERERS` | Multi `PropertyRendererDefinition` | keine (Standard-Properties bleiben eingebaut) | List-/Kanban-Properties (`IssueProperties`), Spreadsheet-Zellen, Peek-/Detail-Sidebar, Issue-Modal, Rich-Filter-Wertauswahl | A1, A2 | I2 |
 | `SPREADSHEET_COLUMNS` | Multi `SpreadsheetColumnDefinition` | keine (Spalten aus `SPREADSHEET_PROPERTY_LIST` eingebaut) | `SpreadsheetHeader`, `SpreadsheetIssueRow`, Display-Properties-Menü | A1 | I2 |
 | `GROUP_BY_OPTIONS` | Multi `GroupByOptionDefinition` (`key`, `serverKey`, `issueField`, `columns(ctx)`, `dragAllowed`) | keine (CE-Optionen aus `ISSUE_GROUP_BY_KEY`/`EIssueGroupByToServerOptions`) | `getGroupByColumns`, Display-Dropdown, `ISSUE_GROUP_BY_KEY`-Lookup (Fallback auf Registry) | A1, B1 (`team_project`) | I2 |
@@ -1649,12 +1708,14 @@ export class TranslatePipe implements PipeTransform {
 | `ACTIVITY_RENDERERS` | Multi `ActivityRendererDefinition` (`field`/`verb` → Komponente) | CE-Abbildung aller `field`-Werte (A09 §2.15) | Activity-Feed | F2 (Branch/Commit/PR), A1, C1 | I2 |
 | `WORKFLOW_GUARD` | Token (`workflowDisabledSource`, `isWorkflowDropDisabled`, `getIsWorkflowWorkItemCreationDisabled`, `handleWorkFlowState`, `allowedStateIds(ctx)`) | Stub aus `WEB/components/workflow/use-workflow-drag-n-drop.ts` (alles erlaubt) | `list-group`, `kanban/default`, `kanban-group`, `swimlanes`, `StateSelect` | C1 (nicht gewählt) | I2 |
 | `BULK_OPERATIONS_ENABLED` | Token `boolean` | `false` | Multiple-Select-Leiste | (A-Paket Bulk Ops) | I2 |
-| `PERMISSION_EVALUATOR` | Token `PermissionEvaluator` (kein Multi) | `RoleBasedPermissionEvaluator` (Logik `BaseUserPermissionStore.allowPermissions`/`getProjectRole`/`hasPageAccess`) | `PermissionService.allowPermissions(...)` (einzige Prüf-API in Komponenten) | E5, B1 | I0 |
+| `PERMISSION_EVALUATOR` | Token `PermissionEvaluatorFn` (kein Multi, Name wie 05 §3.13.8) | `roleBasedEvaluator` (Logik `BaseUserPermissionStore.allowPermissions`/`getProjectRole`/`hasPageAccess`, Zahlenvergleich wie Original) | `PermissionService.allowPermissions(...)` (einzige Prüf-API in Komponenten) | E5, B1 | I0 |
 | `SCOPE_LEVELS` | Token `readonly ScopeLevel[]` | `['workspace','project']` | `PermissionService`, `RouterStore`-Scope-Ableitung | B1 (`teamspace`), A2 | I0 |
+| `ROLE_OPTIONS` | Token `RoleOptionDefinition[]` | Admin 20 / Member 15 / Guest 5 aus `ROLE`/`ROLE_DETAILS` (`PKG/constants/src/workspace.ts`) | Rollen-Dropdowns in Mitglieder-/Einladungs-Formularen (Workspace, Projekt) | E5 | I1 |
+| `MEMBER_ROW_DECORATORS` | Multi `MemberRowDecoratorDefinition` (`key`, `component`, `visible(member)`) | keine | Mitgliederzeilen Workspace-/Projekt-Settings | E3 | I1 |
 | `LIVE_EVENT_HANDLERS` | Multi `LiveEventHandler` (`eventType`, `handle(evt)`) | CE ab I5: Notification-Zähler | `LiveEventsService` | H6, F2 | I0 / I5 |
 | `POWER_K_COMMANDS` | Multi `TPowerKCommandConfig[]` | CE-Befehle aus `power-k/config/**` | `PowerKCommandRegistry` | alle | I5 |
 | `SEARCH_RESULT_RENDERERS` | Multi (`entityType` → Komponente) | CE-Typen der globalen Suche | Power-K-Suchseite | B6, G1 | I5 |
-| `EDITOR_EXTENSIONS`, `EDITOR_BLOCKS`, `EDITOR_MENTION_TYPES`, `EDITOR_FLAGS`, `PAGE_PANE_EXTENSIONS` | Multi/Token | `{}` bzw. `["user_mention"]`, Flags `disabled:["ai"]` | Editor-Komponenten, Pages-Navigationspane | D1, D2, H1 (D9) | I2 / I4 |
+| `EDITOR_EXTENSIONS`, `EDITOR_BLOCKS`, `EDITOR_MENTION_TYPES`, `EDITOR_FLAGS`, `PAGE_PANE_EXTENSIONS` | Multi/Token | `{}` bzw. `["user_mention"]`, Flags je Variante `disabled:["ai","collaboration-cursor"]`, `flagged:[]` (wie `WEB/hooks/use-editor-flagging.ts`; `collaboration-cursor` wird in CE aktiviert, sobald S1-Awareness grün ist, §4.7) | Editor-Komponenten, Pages-Navigationspane | D1, D2, H1 (D9) | I2 / I4 |
 | `PAGE_FLAGS` | Token `{ isMovePageEnabled, isPageSharingEnabled }` | `false`, `false` | Page-Aktionen, Page-Header | D2, (D8) | I4 |
 | `PAGE_STORES` | Multi (`EPageStoreType` → Store-Token) | `PROJECT → ProjectPageStore` | `usePageStore`-Ersatz `injectPageStore(type)` | D1 (Workspace-/Wiki-Pages), B1 (Teamspace-Pages) | I4 |
 | `PAGE_TREE` | Token `PageHierarchyClient` (`getChildren`, `getAncestors`) | flach (`parent_id` immer `null`) | Page-Liste, Breadcrumb | D2 | I4 |
@@ -1666,16 +1727,20 @@ export class TranslatePipe implements PipeTransform {
 
 ```ts
 // libs/web/extensions/src/routes.ts
-export type RouteKey = 'L0' | 'LALL' | 'LWS' | 'LPRJ' | 'LPD' | 'LSET' | 'LWSET' | 'LPSET' | 'LPSETD' | 'LPROF'
-  | 'ADM_DASHBOARD' | 'SPC_ROOT';
-export interface RouteExtension {
-  parentKey: RouteKey;                       // Layout-Route, unter der eingehängt wird (data.routeKey)
+// libs/shared/cdk/src/extensions/route-extension.ts  (@plane/cdk/extensions, app-neutral)
+export interface RouteExtension<K extends string = string> {
+  parentKey: K;                              // Layout-Route, unter der eingehängt wird (data.routeKey)
   routes: Routes;
   /** 'before-dynamic' (Default): vor dem ersten Kind mit ':param'/'**' einfügen; 'end': ans Ende */
   position?: 'before-dynamic' | 'end';
   /** gleicher routeKey eines Kindes ⇒ Kinder werden rekursiv gemergt, Erweiterung gewinnt (wie helper.ts) */
 }
-export const ROUTE_EXTENSIONS = new InjectionToken<RouteExtension[][]>('ROUTE_EXTENSIONS');
+export function mergeRoutes<K extends string>(core: Routes, ext: RouteExtension<K>[]): Routes;   // Port WEB/app/routes/helper.ts über data.routeKey
+
+// libs/web/extensions/src/routes.ts
+export type WebRouteKey = 'L0' | 'LALL' | 'LWS' | 'LPRJ' | 'LPD' | 'LSET' | 'LWSET' | 'LPSET' | 'LPSETD' | 'LPROF';
+export const ROUTE_EXTENSIONS = new InjectionToken<RouteExtension<WebRouteKey>[][]>('ROUTE_EXTENSIONS');
+// libs/admin/extensions: ADMIN_ROUTE_EXTENSIONS (Schlüssel 'ADM_HOME' | 'ADM_DASHBOARD'); libs/space/extensions: SPACE_ROUTE_EXTENSIONS ('SPC_ROOT' | 'SPC_ANCHOR')
 
 // apps/web/src/app.config.ts – statt provideRouter(routes):
 provideRouter([] /* Root leer */, withComponentInputBinding() /* … */),
@@ -1688,21 +1753,22 @@ provideRouter([] /* Root leer */, withComponentInputBinding() /* … */),
 
 ### 6.3 Store-Erweiterung per DI (Muster `Base*`-Klassen des Originals)
 
-Das Original hält für EE-fähige Stores Basisklassen (`BaseCommandPaletteStore`, `BasePowerKStore`, `BaseAnalyticsStore`, `BaseUserPermissionStore`, `BaseWorkspaceRootStore`, `BaseProjectMemberStore`, `BaseTimeLineStore`, `ExtendedBasePage`). Ziel: Diese Klassen bleiben; die CE registriert sie unter dem CE-Token (`provideWebStoreOverrides()`):
+Das Original hält für EE-fähige Stores Basisklassen (`BaseCommandPaletteStore`, `BasePowerKStore`, `BaseAnalyticsStore`, `BaseUserPermissionStore`, `BaseWorkspaceRootStore`, `BaseProjectMemberStore`, `BaseTimeLineStore`, `ExtendedBasePage`). Die CE-Namen sind dort **Aliase derselben Klasse**, keine Unterklassen (`export { BaseCommandPaletteStore as CommandPaletteStore }` in `WEB/store/base-command-palette.store.ts`; ebenso `WorkspaceRootStore`, `ProjectMemberStore`, `UserPermissionStore`; `CoreRootStore` importiert `BaseAnalyticsStore as AnalyticsStore`, `BasePowerKStore as PowerKStore`). Ziel: Die Re-Exporte bleiben wörtlich erhalten; **DI-Token ist die Basisklasse** (`@Injectable({ providedIn: 'root' })` an `Base*`), Konsumenten injizieren über den Alias (identische Referenz). `BaseTimeLineStore` ist echte Basisklasse von `IssuesTimeLineStore`/`ModulesTimeLineStore` (plain classes, kein Token). `provideWebStoreOverrides()` ist in der CE leer und dokumentiert die überschreibbaren Tokens:
 
 ```ts
+// libs/web/extensions/src/store-overrides.ts
+/** Überschreibbare Store-Tokens (CE: Default = providedIn:'root' der Basisklasse). */
+export type OverridableStoreToken =
+  | typeof BaseCommandPaletteStore | typeof BasePowerKStore | typeof BaseAnalyticsStore
+  | typeof BaseUserPermissionStore | typeof BaseWorkspaceRootStore | typeof BaseProjectMemberStore;
 export function provideWebStoreOverrides(): Provider[] {
-  return [
-    { provide: CommandPaletteStore, useClass: CommandPaletteStore },   // CommandPaletteStore extends BaseCommandPaletteStore
-    { provide: PowerKStore, useClass: BasePowerKStore },
-    { provide: AnalyticsStore, useClass: BaseAnalyticsStore },
-    { provide: WorkspaceRootStore, useClass: BaseWorkspaceRootStore },
-    { provide: TimeLineStore, useClass: TimeLineStore },
-  ];
+  return []; // CE: keine Overrides
 }
+// Paket (Beispiel B1, erst in W5): { provide: BaseWorkspaceRootStore, useClass: TeamspaceAwareWorkspaceRootStore }
+// BaseProjectMemberStore ist Kind von MemberRootStore (per injectLazy, §3.4.4) und wird deshalb ebenfalls als Token aufgelöst, nicht mit new erzeugt.
 ```
 
-Ein Paket ersetzt einen Store, indem es eine Unterklasse mit **zusätzlichen** Feldern/Methoden registriert (`{ provide: WorkspaceRootStore, useClass: TeamspaceAwareWorkspaceRootStore }`). Bestehende Methoden dürfen nur erweitert, nicht in ihrer Semantik geändert werden (Store-Unit-Tests der CE laufen gegen die Unterklasse weiter).
+Ein Paket ersetzt einen Store, indem es eine Unterklasse mit **zusätzlichen** Feldern/Methoden registriert. Bestehende Methoden dürfen nur erweitert, nicht in ihrer Semantik geändert werden (Store-Unit-Tests der CE laufen gegen die Unterklasse weiter). `BaseUserPermissionStore` wird für E5 **nicht** ersetzt – E5 tauscht nur `PERMISSION_EVALUATOR` (05 D05-ADR-21).
 
 ### 6.4 Paketbezogene Andockstellen im Frontend (vollständig für die 17 🧱-Pakete)
 
@@ -1760,10 +1826,416 @@ export interface ExtensionContext { workspaceSlug?: string; projectId?: string; 
 export const SIDEBAR_ITEMS = new InjectionToken<SidebarItemDefinition[][]>('SIDEBAR_ITEMS');
 export const SETTINGS_PAGES = new InjectionToken<SettingsPageDefinition[][]>('SETTINGS_PAGES');
 export const PROPERTY_RENDERERS = new InjectionToken<PropertyRendererDefinition[][]>('PROPERTY_RENDERERS');
-export const PERMISSION_EVALUATOR = new InjectionToken<PermissionEvaluator>('PERMISSION_EVALUATOR');
+export type PermissionEvaluatorFn = (ctx: PermissionCheck) => boolean;   // PermissionCheck: { allowed: EUserPermissions[]; level: EUserPermissionsLevel; workspaceRole?: EUserPermissions; projectRole?: EUserPermissions; workspaceSlug?: string; projectId?: string }
+export const PERMISSION_EVALUATOR = new InjectionToken<PermissionEvaluatorFn>('PERMISSION_EVALUATOR');
+export const ROLE_OPTIONS = new InjectionToken<RoleOptionDefinition[]>('ROLE_OPTIONS');           // { value: number; i18nLabel: string; scope: 'workspace' | 'project' }
+export const MEMBER_ROW_DECORATORS = new InjectionToken<MemberRowDecoratorDefinition[][]>('MEMBER_ROW_DECORATORS');
 // … alle weiteren Tokens aus §6.1 analog; je Token ein Lese-Helfer injectRegistry(TOKEN) → flach + sortiert
 ```
 
 **Tests der Andockstellen (Pflicht, 01 P7):** je Token ein Test „CE-Default liefert Original-Verhalten“ (z. B. Sidebar mit CE-Registry = DOM-Snapshot des Originals) und ein Test „Fake-Erweiterung erscheint an der richtigen Stelle“ (z. B. Fake-Route unter `LPRJ` vor `:param`-Kindern, Fake-Settings-Seite mit Rechteprüfung, Fake-Property-Renderer in Spreadsheet-Spalte).
 
 ---
+## 7. Akzeptanzkriterien & Tests
+
+Die Teststrategie insgesamt (Ebenen L0–L8, Gates G0–G6, Dual-Target-E2E, Visual-Referenzen, Ledger) legt `15-teststrategie-qualitaet-paritaet.md` fest. Dieser Abschnitt nennt die **frontend-spezifischen** Akzeptanzkriterien dieses Dokuments, die Prüfwerkzeuge, die nur das Frontend braucht (Routing-Contract, Store-Parität), und die Zuordnung der Bausteine aus §3 zu Testebenen und Inkrementen. Namens- und Tag-Konventionen (`describe('CE-… …')`, Playwright-Tags `@CE-…`, `@I<n>`, `@web|@admin|@space`) gelten wie D15 §3.2. Jede CE-ID gehört genau einer Spec aus D15 §3.9.2; die hier genannten Abschnitte werden **in** diesen Specs ergänzt. Specs unter `FE/apps/e2e/routing/` (`route-contract`, `trailing-slash`, `request-sequence`, `runtime-config`) sind technische Querschnitts-Specs ohne eigenen CE-ID-Besitz (Tag `@tech`, CE-Bezug nur als `@also:CE-…`).
+
+### 7.1 Akzeptanzkriterien (messbar)
+
+| Nr. | Kriterium | Messung (Test / Werkzeug) | Ink. |
+|---|---|---|---|
+| AK-D08-01 | `pnpm install --frozen-lockfile` und `pnpm ng build web`, `admin`, `space` laufen ohne Fehler und ohne Compiler-Warnungen; das Lockfile enthält **keine** Laufzeitabhängigkeit auf `react`, `react-dom`, `mobx`, `mobx-react`, `mobx-utils`, `swr`, `axios`, `next-themes`, `react-router`, `zone.js`, `recharts`, `cmdk`, `frimousse`, `react-day-picker` (Ausnahme: `mobx` als `devDependency` ausschließlich im Testprojekt `state-kit`, AK-D08-11) | `tools/ci/frontend-forbidden-deps.mjs` (liest `pnpm-lock.yaml`, Allow-List je Importer) | I0 |
+| AK-D08-02 | Sheriff-Regeln §3.1.5 inkl. Domänen-Matrix und Ebenen `layer:state`/`layer:services`: 0 Verstöße; eine Negativ-Fixture mit verbotenem Import (`libs/web/cycles/components` → `libs/web/pages/components`) wird erkannt | `pnpm lint` (`@softarc/eslint-plugin-sheriff`), `tools/sheriff-fixtures/forbidden-import.ts` in CI mit erwartetem Fehler | I0 |
+| AK-D08-03 | Airgap: `dist/{web,admin,space}/browser/**` enthält keine ladbaren Fremd-URLs (`<script src>`, `<link href>`, `url()`, `fetch`-Literale, `import()` auf `http(s)://`); Marketing-/Hilfe-Links existieren nur als `href` und nur bei `external_links_enabled`; jede E2E-Ausführung gegen `funk.` hat 0 Requests außerhalb der Base-URL | `tools/ci/airgap-scan.mjs` über die Dist-Ordner; Netzwerkwächter der E2E (D15 §3.9.1) | I0 (Scan), I7 (Airgap-Umgebung) |
+| AK-D08-04 | Bundle-Budgets §3.1.2 (in I0 gegen Original-Build gemessen, ± 10 % festgeschrieben) werden eingehalten; Überschreitung bricht den Build | `angular.json` `budgets` (`type: initial`, `anyComponentStyle`, `bundle` je Lazy-Gruppe) | I0 (Messung), I2 (Gate) |
+| AK-D08-05 | **Routing-Contract:** jede Zeile der Tabellen §4.1–§4.3, deren Spalte „Ink.“ ≤ aktuelles Inkrement ist, hat ≥ 1 Fall im Katalog §7.2; jeder Fall liefert die erwartete Komponente, Layout-Kette, Parameter, Titel bzw. das Redirect-Ziel **inkl.** Query und abschließendem `/`; die Reihenfolge-Fälle aus §4.1 (Block H) sind enthalten | `route-contract.spec.ts` (L2, je App) + `apps/e2e/routing/route-contract.spec.ts` (L7, Dual-Target) | I0 ff. |
+| AK-D08-06 | Trailing Slash: Direktaufruf ohne `/` ergibt die URL mit `/` per `replaceState` (kein zusätzlicher History-Eintrag, `history.length` unverändert); Query und Hash bleiben erhalten; `AppRouter.push/replace` verzögern um einen Makrotask (E22); `a[plLink]` navigiert sofort | `routing/trailing-slash.spec.ts` (L7), `app-router.spec.ts` (L2, Fake-Timer) | I0 |
+| AK-D08-07 | In-Place-Guard-States: für jeden Wrapper aus §3.3.4 und jeden seiner Zustände (Loading-Spinner, „Workspace not found“, „Not Authorized!“, Maintenance, Instance not ready, `ProjectAccessRestriction` in drei Varianten, Disabled-Feature-EmptyState, `NotAuthorizedView` in LWSET) bleibt die URL unverändert; DOM-Region `main` = Original; Kind-Pages werden vor Zustand `content` nicht instanziiert | `libs/web/core/wrappers/*.spec.ts` (L2, Konstruktor-Spy der Kind-Page), `visual/web/guard-states.visual.ts` (L8) | I0 / I1 |
+| AK-D08-08 | Redirect-Routen: alle Redirects aus §4.1 Block A, §3.3.5 (Legacy-Issue `legacyIssueRedirectGuard`, ADR-008-Auth-Routen), §4.2 (`authentication/:provider`), §4.3 (`spaceLegacyAnchorGuard`) liefern das Ziel exakt; der Legacy-Guard sendet genau einen `GET …/issues/{id}/meta/` | `pages/routes/redirects/redirects.spec.ts`, `legacy-issue-redirect.guard.spec.ts` (L2) | I0 … I6 |
+| AK-D08-09 | Seitentitel: `document.title` nach Abschluss des Ladens ist je Katalogfall identisch zum Original (Layout-`title` §3.3.6 und Laufzeit-Titel über `PageTitleService`) | Feld `title` im Routing-Katalog, Dual-Target-Lauf | I0 ff. |
+| AK-D08-10 | **Store-Struktur:** für jede der 121 Store-Dateien (§4.5: 100, §4.6: 5 admin + 16 space) sind Klassenname, öffentliche Felder, Computeds, parametrisierte Computeds und Methoden namensgleich zum Original; Abweichungen nur mit Eintrag in `store-parity.allow.yaml`, der auf eine Zeile in §4.5/§4.6 verweist | `tools/store-parity-check` (§7.3), Gate G1 | I0 ff. (je Store ab „Ink.“) |
+| AK-D08-11 | `@plane/state-kit`: `EntityMap`, `DeepState` (lodash-Semantik von `set`/`update`/`unset` für ≥ 40 Pfadfälle inkl. Array-Indizes und fehlender Zwischenknoten), `memoizedComputed` (LRU 1 000; 10 000 Keys → ≤ 1 000 Einträge), `reactionEffect` (`delay`, `fireImmediately`, `equals`), `untilSignal`, `persisted` verhalten sich wie die MobX-Referenz | `libs/shared/state-kit/**/*.spec.ts` inkl. `mobx-equivalence.spec.ts` (gleiche Szenarien gegen MobX 6 und state-kit, Ergebnisse verglichen) | I0 |
+| AK-D08-12 | Issue-Store-Algorithmen: für die Golden-Fixtures (aus dem Original erzeugt: alle 11 `group_by`-Werte, 25 Sub-Gruppen-Kombinationen, 14 `order_by`-Werte ±, erste und Folgeseiten, `issueUpdate` mit Gruppenwechsel) sind `groupedIssueIds`, `groupedIssueCount` und `issuePaginationData` nach jeder Aktion identisch zum Original-MobX-Store | `libs/shared/work-items-core/**/*.spec.ts`, `libs/web/work-items/state/issue/**/*.spec.ts`; Fixtures `__golden__/issue-store/*.json` aus `tools/golden/generate.mjs issue-store` (D15-ADR-08; importiert die Original-Stores per Node, nur Dev) | I2 |
+| AK-D08-13 | Optimistic-Update-Vertrag §3.4.6 (Snapshot → lokale Änderung → ggf. Ende bei `shouldSync=false` → Parent-Stats → Request → Refetch; Fehler ⇒ vollständiger Rollback + Rethrow) gilt für `issueUpdate`, `removeIssue`, `issueQuickAdd`, `updateProjectNavigationPreferences`, `updateUserTheme`, `updateUserProfile`, Favoriten-Reorder | `optimistic-contract.spec.ts` je Store (`HttpTestingController` mit 200 und 500) | I1 / I2 |
+| AK-D08-14 | Render-Granularität: Änderung eines Issues rendert in List, Kanban, Spreadsheet, Calendar und Gantt **höchstens eine** Zeile/Karte neu; Änderung einer Gruppenzugehörigkeit rendert nur Quell- und Zielgruppe neu | `render-granularity.spec.ts` (Render-Zähler über `afterRenderEffect` in Testkomponenten) | I2 |
+| AK-D08-15 | QueryCache: je Merkmal der Tabelle §3.5.3 ein Test mit Fake-Timern (Dedupe 2 000 ms, Fokus-Throttle 5 000 ms, Reconnect, `revalidateIfStale`, `revalidateOnMount`, `refreshInterval`/`refreshWhenHidden`, Retry-Backoff, globales `mutate`, `null`-Key); beim Direktaufruf von 10 Leitseiten (Home, Projektliste, Work-Items-Liste, Kanban, Cycle-Detail, Module-Liste, Pages-Liste, Projekt-Settings, Profil-Settings, God-Mode General) sind **Menge und Reihenfolge** der API-Requests identisch zum Original (Abweichungen nur in `deviations.yaml`) | `query-cache.spec.ts` (L2); `apps/e2e/routing/request-sequence.spec.ts` (L7, Dual-Target, Request-Log normalisiert auf Methode + Pfadschablone) | I0 (L2), Leitseite je Inkrement |
+| AK-D08-16 | HTTP-Verträge: jede Service-Methode der 46 Web-Services (A08 §2.7.2), der Admin-/Space-Services und von `PKG/services` sendet dieselbe Methode, denselben Pfad (mit `/`), dieselben Query-Parameter und denselben Body wie das Original; Fehler werden als `{ response: { status, data, headers } }` geworfen | `*.service.spec.ts` (`HttpTestingController`); Erwartungswerte aus `tools/contract-check` (extrahiert Methode/Pfad je Service-Methode per ts-morph aus dem Original) | I0 ff. |
+| AK-D08-17 | Interceptor-Kette §3.5.2: Reihenfolge fest; 401-Redirect nur in web und nicht auf `/`; Upload-Requests ohne Credentials; `AbortSignal` bricht laufende Requests ab (kein veralteter Response überschreibt Store-Daten); Admin-Step-up nur bei 401 + 5210; die 5 Fälle aus `PKG/services/src/helpers/url.test.ts` bestehen unverändert | `libs/web/core/http/*.spec.ts`, `libs/shared/services/src/helpers/url.interceptor.spec.ts`, `libs/admin/core/http/admin-step-up.interceptor.spec.ts` | I0 |
+| AK-D08-18 | Formulare: Validierungsmeldungen wörtlich (inkl. i18n-Keys), `dirtyFields` → `getChangedIssuefields` liefert dieselben Payloads wie das Original, Reset-Zeitpunkte gleich (Projektwechsel im Issue-Modal); Tab-Reihenfolge der Formulare gleich Original (CE-UIX-005) | Komponenten-Tests je Formular (L2); `web/uix/ui-crosscutting.spec.ts` (Abschnitt Tab-Reihenfolge) (L7) | I0 / I1 |
+| AK-D08-19 | i18n: Schlüsselmenge je Locale identisch zum Original (G-I18N); Sprachwechsel aktualisiert alle sichtbaren Texte ohne Neuladen; ICU-Plural-Ausgaben für `en`, `de`, `ru`, `pl`, `ja`, `ua` (Sonderregel en-US) identisch zur Original-i18next-Ausgabe für 50 Schlüssel × 5 Zahlenwerte; fehlender Schlüssel → Fallback `en` | `tools/i18n-sync-check --ci`, `translation.service.spec.ts` (Golden aus Original), `web/i18n/language-timezone.spec.ts` | I0 / I1 (CE-I18N-001, CE-I18N-002) |
+| AK-D08-20 | Kein Theme-Flash: für `light`, `dark`, `light-contrast`, `dark-contrast`, `custom`, `system` (hell/dunkel emuliert) und einen ungültigen Wert trägt `<html>` beim ersten Paint bereits das korrekte `data-theme` (und `color-scheme` nur bei `light`/`dark`); der CSP-Hash in `theme-script.sha256` entspricht dem ausgelieferten Script | `web/i18n/themes.spec.ts` (Abschnitt No-Flash) (Prüfung per `MutationObserver` im Init-Script + `PerformanceObserver('paint')`), `tools/ci/csp-hash-check.mjs` | I0 (CE-I18N-005) |
+| AK-D08-21 | Theme-Persistenz, Custom Theme und High Contrast: Server-Sync einmal je Sitzung, Wechsel lädt neu (Parität), Visual-Diff ≤ 0,5 % für 5 Leitseiten je Theme | `theme.service.spec.ts`, `visual/web/themes.visual.ts` | I1 (CE-I18N-006, -007, -008) |
+| AK-D08-22 | DnD (S4): Kanban 1 000 Karten in 8 Spalten ≥ 55 fps beim Drag; Sort-Order-Ergebnisse (oben/unten/zwischen, 65535/Mittelwert), Gantt-Verschiebung (±1000) und Sidebar-Reorder (±10000) identisch zum Original; State- und Label-DnD (CE-PRJ-025, CE-PRJ-030) | `libs/shared/dnd/**/*.spec.ts`, `work-items-core` Sort-Order-Tests, `web/layouts/kanban.spec.ts`, Perf-Trace LT-15 (D15 §3.12) | I1 / I2 |
+| AK-D08-23 | Virtualisierung: List-Layout mit 10 000 Items – erste Gruppenzeilen < 1,5 s nach API-Antwort, Scrollen ≥ 55 fps (Median), JS-Heap < 300 MB (LT-14); kein Layout-Sprung beim Ersetzen von Platzhaltern (CLS beim Scrollen < 0,05) | Perf-Trace-Helfer (D15 §3.16 I2) | I2 (CE-LV-044) |
+| AK-D08-24 | Layouts: List, Kanban (Swimlanes, Löschzone), Spreadsheet (Sortierung über Spaltenkopf, Tastaturnavigation, Mehrfachauswahl, Sprung zu Sub-Items), Calendar (Drag auf Tag), Gantt (Verschieben, Dauer, Datum setzen, Sidebar-Reorder) – Dual-Target-E2E grün, Visual-Diff ≤ 0,5 % | `web/layouts/*.spec.ts`, `visual/web/layouts/*.visual.ts` | I2 (CE-LV-020 … CE-LV-037) |
+| AK-D08-25 | Command-Palette: DOM-Attribute (`cmdk-root`, `cmdk-input`, `cmdk-list`, `cmdk-group`, `cmdk-group-heading`, `cmdk-item`, `data-selected`, `aria-selected`, `data-disabled`) identisch zum Original; das Ranking des `command-score`-Ports liefert für 50 Suchbegriffe × Befehlsliste die gleiche Reihenfolge wie cmdk 1.1.1 | `command-score.spec.ts` (Golden aus cmdk), Galerie-DOM-Snapshot `pl-command` | I5 (CE-SRCH-004 … CE-SRCH-008) |
+| AK-D08-26 | Shortcuts: jede Sequenz und jeder Modifier aus §3.10 löst denselben Befehl aus wie im Original; in Eingabefeldern (`isTypingInInput`) keine Auslösung; Badges mit Mac-/Nicht-Mac-Glyphen | `shortcut-handler.spec.ts` (Port, unveränderte Erwartungen), `web/search/power-k.spec.ts` (Abschnitt Shortcuts) | I5 (CE-SRCH-009) |
+| AK-D08-27 | Emoji-/Icon-/Logo-Picker: DOM-Snapshot = Original-Galerie; Suche liefert für 30 Begriffe dieselben Treffer in derselben Reihenfolge wie frimousse 0.3; 0 Requests an CDNs | `emoji-icon-picker.spec.ts` (inkl. Port der Original-Tests §7.5), Galerie | I2 (CE-I18N-016, CE-I18N-017, CE-WI-038) |
+| AK-D08-28 | Date-Picker: Klassenvertrag Propel-`calendar` (D08-ADR-21), Wochenstart aus Profil, Format `MMM dd, yyyy`; die 20 Fälle aus `date-select.test.tsx` bestehen | `date-select.spec.ts` | I2 |
+| AK-D08-29 | Charts (S6): Visual-Diff ≤ 0,5 % hell/dunkel, SVG-Struktur gleich (Pfaddaten auf 1 Dezimalstelle), Tooltip-/Legenden-Hover wie Original | `visual/gallery/charts.visual.ts`, `visual/web/analytics.visual.ts` | I3 (CE-I18N-022), I5 (CE-ANA-001, -002, -008) |
+| AK-D08-30 | Runtime-Config: Änderung von `*_base_url`/`*_base_path`, `website_url`, `support_email`, `external_links_enabled` wirkt nach Gateway-Neustart **ohne Rebuild**; mit `admin_base_path=/admin/` ist der God Mode vollständig bedienbar (Assets, Routing, Login-Rücksprung) | `Plane.AppHost.Tests` (Profil `test` mit Variante) + `apps/e2e/routing/runtime-config.spec.ts` | I0 (CE-OPS-007) |
+| AK-D08-31 | Versions- und Chunk-Wechsel: geänderte `app_version` → nächste Router-Navigation erfolgt als Vollnavigation; fehlender Lazy-Chunk (404) → genau ein Reload je 30 s, danach Fehlerseite | `app-version-watcher.spec.ts`, `web/uix/ui-crosscutting.spec.ts` (Abschnitt Stale-Chunk, Chunk-404 per `page.route` simuliert) | I0 (CE-UIX-011) |
+| AK-D08-32 | Fehlerseiten: 404 (web, admin, space), globale Fehlerseite (DEV/PROD), Layout-Fehlergrenze – Texte und Visual-Diff ≤ 0,5 % | `visual/{web,admin,space}/error-pages.visual.ts` | I0 (CE-UIX-010, CE-INST-016), I6 (CE-SPACE-031) |
+| AK-D08-33 | Browser-Storage: nach dem Referenz-Szenario (Login, Sidebar zuklappen, Filter setzen, Layout wechseln, Theme wechseln, Sprache wechseln) sind Schlüsselmenge und Werteformate in `localStorage` identisch zum Original | `web/uix/ui-crosscutting.spec.ts` (Abschnitt LocalStorage, Dual-Target, Dump-Diff) | I1 / I2 (CE-UIX-006) |
+| AK-D08-34 | Realtime Pages: der unveränderte `@hocuspocus/provider` 2.15.2 verbindet sich mit `Plane.Realtime`; zwei Browser-Kontexte konvergieren; bei Verbindungsverlust greift der REST-Fallback (`PageFallbackService`) | `web/realtime/collaboration.spec.ts` (D15 §3.9.2) | I4 (CE-RT-001 … CE-RT-009) |
+| AK-D08-35 | Live-Events: Notification-Zähler aktualisiert sich ohne Reload < 2 s nach dem Ereignis; nach Neustart des Hubs verbindet der Client automatisch neu; Transport ausschließlich WebSockets | `web/notifications/inbox.spec.ts` (Abschnitt Live-Zähler), `live-events.service.spec.ts` | I5 |
+| AK-D08-36 | Erweiterungspunkte: je Token aus §6.1 ein Test „CE-Default = Original-Verhalten“ und ein Test „Fake-Erweiterung erscheint an der richtigen Stelle“; CE-Code (`apps/*`, `libs/web/*` außer Paket-Libs) importiert keine Paket-Lib | `libs/web/extensions/**/*.spec.ts`, Test-Provider `provideFakeExtensions()` (`libs/web/extensions/testing/`), Sheriff | I0 ff. (je Token ab „ab“) |
+| AK-D08-37 | Keine Plan-/Upsell-Bezeichner (01 §7.18, ADR-001): Templates, Stores und Konstanten enthalten keine Upgrade-/Billing-Elemente; `WORKSPACE_SETTINGS` ohne `billing-and-plans` | L0-Scan `tools/ci/no-plan-identifiers.mjs` (gemeinsam mit Backend, D15 L0) | I0 |
+| AK-D08-38 | Library-Mapping: jede Zeile §4.8 hat einen Status (`übernommen`/`ersetzt`/`entfällt`); Lizenz-Gate grün (Laufzeit: MIT, Apache-2.0, BSD, ISC; Dev zusätzlich MPL-2.0); `NOTICE` listet alle Laufzeitpakete | Lizenz-Gate (D15 L0), `tools/ci/notice-check.mjs` | I0 |
+| AK-D08-39 | Abdeckung: ≥ 80 % Zeilen je Frontend-Lib, Diff-Coverage ≥ 90 % je PR | `@vitest/coverage-v8` (D15-ADR-19) | I0 ff. |
+| AK-D08-40 | Accessibility: axe-Ergebnis von `funk.` ⊆ Ergebnis des Originals je Prüfpunkt; Fokus-Management der Overlays (öffnen → hinein, schließen → zurück zum Auslöser) | `a11y/*.spec.ts` (D15 AX1), Vitest-Browser-Tests (D15 AX4) | I0 ff. |
+| AK-D08-41 | Visual/DOM: Schwellwerte D15 §3.10.3 für alle Seiten und Galerie-Einträge des Inkrements; Host-Elemente mit `display` ≠ `contents` sind ein Gate-Fehler | `visual/**`, `drivers/dom-parity.ts` | je Inkrement; I7 alle Screens |
+| AK-D08-42 | Performance: LCP und TBT der Workspace-Home ≤ Original + 10 % (Referenzmessung I0) | Lighthouse lokal im Paritäts-Setup, Skript `tools/ci/lighthouse-compare.mjs` | I5 (Messung), I7 (Gate) |
+| AK-D08-43 | Abweichungen: jede Kennung aus §4.9 und §7.7 steht in `tests/contracts/deviations.yaml` (Bereich `frontend:`) und wird von ≥ 1 Test referenziert (`// @deviation FE-E1`) | `tools/ci/deviations-ref-check.mjs` | I0 ff. |
+| AK-D08-44 | Space: CSR ohne Node zur Laufzeit; `/spaces/issues/:anchor/` setzt Titel/Description per Resolver; Links ohne Trailing-Slash-Logik (A11 §2.15); Kommentieren/Reagieren/Voten nur nach Keycloak-Login, Lesen anonym | `space/*.spec.ts` | I6 (CE-SPACE-014 … CE-SPACE-032) |
+| AK-D08-45 | Admin-Step-up: Default aus (keine Re-Authentisierung); mit `Plane:Auth:AdminStepUpMaxAgeSeconds=60` führt eine Admin-Aktion nach > 60 s Sitzungsalter zum Keycloak-Login und danach zurück auf dieselbe Admin-Seite | `admin/step-up.spec.ts` (`@funk-only`) | I6 |
+
+### 7.2 Routing-Contract-Test (Katalog und Läufer)
+
+**Zweck:** sichert D08-ADR-10 (Reihenfolge), D08-ADR-11 (Trailing Slash), D08-ADR-12 (In-Place-Zustände), §3.3.5 (Redirects) und §6.2 (`ROUTE_EXTENSIONS`) gegen Regressionen ab. Der Katalog ist die maschinenlesbare Form der Tabellen §4.1–§4.3.
+
+**Ablage:**
+
+| Datei (`FE/apps/e2e/routing/`) | Inhalt |
+|---|---|
+| `route-table.web.json`, `route-table.admin.json`, `route-table.space.json` | einmalig in I0 aus §4.1–§4.3 übertragen: je Zeile `{ row, angularPath, component, ink, ceIds }`; Änderungen nur zusammen mit diesem Dokument |
+| `route-contract.web.yaml`, `route-contract.admin.yaml`, `route-contract.space.yaml` | Testfälle (Schema unten) |
+| `route-contract.schema.json` | JSON-Schema des Katalogs |
+| `route-contract.spec.ts` | L7-Läufer (Dual-Target) |
+| `FE/apps/{web,admin,space}/src/app.routes.contract.spec.ts` | L2-Läufer (Vitest, ohne Backend) |
+| `FE/tools/route-contract-check/` | Vollständigkeitsprüfung: jede Zeile aus `route-table.*.json` mit `ink ≤ CURRENT_INCREMENT` hat ≥ 1 Fall; jede Angular-Route in `coreRoutes` (rekursiv ausgewertet) erscheint in `route-table.*.json` (keine undokumentierten Routen, 01 §7.19) |
+
+**Fallschema (Beispiel):**
+
+```yaml
+# FE/apps/e2e/routing/route-contract.web.yaml
+- id: web-062-accounts-sign-up
+  row: 62
+  url: /accounts/sign-up            # ohne Slash: prüft zugleich D08-ADR-11
+  actor: anonymous
+  expect:
+    kind: redirect
+    finalUrl: /
+- id: web-067-profile-splat
+  row: 67
+  url: /profile/notifications?foo=1
+  actor: member
+  expect:
+    kind: redirect
+    finalUrl: /settings/profile/notifications/?foo=1  # E15: "?" + Query (leere Query: ohne "?", FE-E15)
+- id: web-057-invalid-profile-tab
+  row: 57
+  url: /settings/profile/activity/
+  actor: member
+  expect:
+    kind: redirect
+    finalUrl: /settings/profile/general/              # FE-E13
+- id: web-order-onboarding-not-slug
+  row: 7
+  url: /onboarding/
+  actor: member-not-onboarded
+  expect:
+    kind: page
+    component: OnboardingPageComponent
+    layouts: [AppShellLayoutComponent, AllLayoutComponent, OnboardingLayoutComponent]
+    title: Onboarding
+- id: web-024-not-project-member
+  row: 24
+  url: /acme/projects/{project.secret}/issues/
+  actor: workspace-member
+  expect:
+    kind: in-place-state
+    finalUrl: /acme/projects/{project.secret}/issues/
+    state: project-access-restricted          # Zustandsschlüssel des Wrappers (§3.3.4)
+    region: main                               # DOM-Region für L7-Vergleich
+```
+
+Platzhalter in `{…}` werden aus dem Parity-Seed (`tests/seed/parity-seed.yaml`, D15 §3.14.1) aufgelöst; `actor` verweist auf Seed-Benutzer mit `storageState` (D15 §3.9.1).
+
+**L2-Läufer (Vitest):** lädt den Katalog, baut den Router mit den echten `coreRoutes` und `mergeRoutes` (§6.2), ersetzt die Wrapper-Komponenten durch Test-Doubles, die den im Fall genannten Zustand sofort liefern, und prüft `router.url`, aktivierte Komponentenkette (`ActivatedRoute.snapshot`-Pfad), zusammengeführte Parameter und `Title`. Ein zweiter Durchlauf registriert `provideFakeExtensions()` (je eine Fake-Route unter `LWS`, `LPRJ`, `LWSET`, `LPROF`, `L0` mit `position: 'before-dynamic'` und `'end'`) und verlangt, dass **alle** CE-Fälle unverändert bestehen und die Fake-Routen erreichbar sind.
+
+```ts
+// FE/apps/web/src/app.routes.contract.spec.ts (Ausschnitt)
+describe('CE-UIX-012 route contract web', () => {
+  for (const c of loadRouteContract('web')) {
+    it(`${c.id}`, async () => {
+      TestBed.configureTestingModule({
+        providers: [
+          provideRouter([]),
+          { provide: ROUTES, multi: true, useFactory: () => mergeRoutes(coreRoutes, []) },
+          { provide: LocationStrategy, useClass: TrailingSlashPathLocationStrategy },
+          provideWrapperDoubles(c.expect.state ?? 'content'),   // libs/web/core/wrappers/testing
+          provideSeedParams(c),                                  // löst {…}-Platzhalter auf
+        ],
+      });
+      const harness = await RouterTestingHarness.create();
+      await harness.navigateByUrl(c.url);
+      await flushAppRouterTimers();                              // E22: setTimeout(0)
+      expectRouteOutcome(TestBed.inject(Router), TestBed.inject(Location), c.expect);
+    });
+  }
+});
+```
+
+**L7-Läufer (Playwright, Dual-Target):** ruft jeden Fall per `page.goto` gegen Original und `funk.` auf, wartet auf den App-Idle-Indikator (D15 §3.10.1) und vergleicht `page.url()`, `document.title` und – bei `in-place-state` – den DOM-Paritäts-Snapshot der Region. Fälle mit `@funk-only` (Keycloak-Einstieg) laufen nur gegen `funk.`.
+
+### 7.3 Store-Paritätsprüfung (`FE/tools/store-parity-check`)
+
+| Schritt | Verhalten |
+|---|---|
+| Eingabe | Original-Repo am gepinnten Commit (`ORIGINAL_SHA` aus `tools/parity/original.env`, D15 §3.2), Dateiliste aus §4.5/§4.6 als `store-map.json` (`{ original, target, classes[] }`, 121 Einträge) |
+| Extraktion Original (ts-morph) | je Klasse: Schlüssel und Annotationsart aus `makeObservable(this, {...})` (`observable`, `observable.ref`, `observable.shallow`, `computed`, `action`, `action.bound`), öffentliche Methoden, Getter, Felder mit `computedFn(...)`-Initialisierer; geerbte Mitglieder über die `extends`-Kette |
+| Extraktion Ziel | je Klasse: `readonly`-Felder mit `signal`/`entityMap`/`deepState`/`persisted`-Initialisierer, `computed`-Felder, `memoizedComputed`-Felder, Methoden, Getter |
+| Regeln | `observable*` → Signal-Feld gleichen Namens; `computed` → `computed`-Feld **oder** Getter gleichen Namens; `computedFn` → `memoizedComputed`-Feld; `action*` → Methode gleichen Namens mit gleicher Parameteranzahl; Klassenname gleich; Interface (`I…Store`) implementiert |
+| Ausnahmen | `FE/tools/store-parity-check/store-parity.allow.yaml` (`{ class, member, reason, ref: "§4.5 #<nr>" }`), z. B. `ADM InstanceStore.config` (wird Signal), entfallene Dateien (E18) |
+| Ausgabe | `store-parity-report.json` + Markdown-Zusammenfassung im CI-Log; Exit-Code ≠ 0 bei fehlenden oder zusätzlichen öffentlichen Mitgliedern |
+| Gate | G1 für alle geänderten Stores, G5 (Inkrement-Abnahme) für alle Stores mit `Ink.` ≤ Inkrement |
+
+### 7.4 Testgegenstände je Baustein (Zuordnung zu den Ebenen aus D15)
+
+| Baustein (Abschnitt) | L0 Statik | L2 Vitest (Dateien) | L7 E2E (`FE/apps/e2e/…`) | L8 Visual/DOM/a11y | ab |
+|---|---|---|---|---|---|
+| Workspace, Sheriff, Budgets (§3.1) | Sheriff, Forbidden-Deps, Airgap-Scan | – | – | – | I0 |
+| Bootstrap/Provider-Kette (§3.2) | – | `app.config.spec.ts` (Reihenfolge der Initializer: Runtime-Config vor i18n vor Router) | `web/uix/ui-crosscutting.spec.ts` (Abschnitt Bootstrap: Spinner-Platzhalter, keine Konsolenfehler) | Shell-Visual | I0 |
+| Routing (§3.3, §4.1–§4.4) | `route-contract-check` | `app.routes.contract.spec.ts`, `app-router.spec.ts`, `pathname.service.spec.ts`, `splat-matcher.spec.ts`, `redirects.spec.ts` | `routing/route-contract.spec.ts`, `routing/trailing-slash.spec.ts` | `visual/web/guard-states.visual.ts` | I0 |
+| Wrapper (§3.3.4) | – | `authentication-wrapper.component.spec.ts`, `instance-wrapper…`, `store-wrapper…`, `workspace-auth-wrapper…`, `project-auth-wrapper…` | `web/auth/keycloak-login.spec.ts`, `web/workspace/workspace-shell.spec.ts` | Zustände | I0 / I1 |
+| State-Kit (§3.4.2) | `no-external-store-mutation` | `entity-map.spec.ts`, `deep-state.spec.ts`, `memoized-computed.spec.ts`, `reaction-effect.spec.ts`, `persisted.spec.ts`, `mobx-equivalence.spec.ts` | – | – | I0 |
+| Stores (§4.5/§4.6) | `store-parity-check` | `<store>.spec.ts` je Store (Actions, Computeds, Optimismus) | Domänen-Specs D15 §3.9.2 | – | je Store |
+| Issue-Store (§3.4.6) | – | `base-issues-utils.spec.ts`, `base-issues.store.spec.ts`, `issue-filter-helper.store.spec.ts`, `render-granularity.spec.ts`, `optimistic-contract.spec.ts` | `web/layouts/*.spec.ts`, `web/work-items/*.spec.ts` | Layout-Visuals | I2 |
+| Datenzugriff (§3.5) | Regel `no-http-in-components` | `api.service.spec.ts`, `*.interceptor.spec.ts`, `query-cache.spec.ts`, `file-upload.service.spec.ts`, `*.service.spec.ts` | `routing/request-sequence.spec.ts` | – | I0 |
+| Formulare (§3.6) | – | `form.helper.spec.ts`, `pl-form-field.directive.spec.ts`, Formular-Komponententests | `web/uix/ui-crosscutting.spec.ts` (Abschnitt Tab-Reihenfolge), Domänen-Specs | – | I0 / I1 |
+| i18n (§3.7) | `i18n-sync-check` | `translation.service.spec.ts`, `t.pipe.spec.ts` | `web/i18n/language-timezone.spec.ts` | – | I0 / I1 |
+| Theming (§3.8) | `csp-hash-check` | `theme.service.spec.ts`, `theme-script.spec.ts` (Script-Logik in jsdom mit allen Eingaben) | `web/i18n/themes.spec.ts` (Abschnitt No-Flash), `web/i18n/themes.spec.ts` | `visual/web/themes.visual.ts` | I0 / I1 |
+| DnD (§3.9) | – | `draggable.directive.spec.ts`, `drop-target.directive.spec.ts`, Sort-Order-Tests | `web/layouts/kanban.spec.ts`, `web/layouts/gantt.spec.ts`, `web/projects/states.spec.ts`, `web/projects/labels.spec.ts` | Drop-Indikator | I1 / I2 |
+| Virtualisierung (§3.9) | Regel `no-track-index` | `render-if-visible.directive.spec.ts`, `intersection.directive.spec.ts` | Perf-Traces LT-14/LT-15 | – | I2 |
+| Command-Palette, Shortcuts (§3.9, §3.10) | – | `command-score.spec.ts`, `pl-command.component.spec.ts`, `shortcut-handler.spec.ts`, `registry.spec.ts`, `context-detector.spec.ts` | `web/search/power-k.spec.ts` | Galerie `pl-command` | I5 |
+| Picker, Charts (§3.9) | – | `emoji-icon-picker.spec.ts`, `date-select.spec.ts`, `charts/*.spec.ts` (Skalen/Pfade) | Domänen-Specs | Galerie, Charts | I2 / I3 |
+| Runtime-Config (§3.11) | – | `runtime-config.spec.ts`, `endpoints.spec.ts` (Getter-Auswertung nach Init), `app-version-watcher.spec.ts` | `routing/runtime-config.spec.ts` | – | I0 |
+| Realtime (§3.12) | – | `live-events.service.spec.ts`, `realtime-page-events.service.spec.ts`, `page-fallback.service.spec.ts` | `web/realtime/collaboration.spec.ts`, `web/notifications/inbox.spec.ts` (Abschnitt Live-Zähler) | Editor-Visual | I4 / I5 |
+| Fehlerbehandlung (§3.14) | – | `plane-error-handler.spec.ts`, `stale-asset-error.spec.ts` | `web/uix/ui-crosscutting.spec.ts` (Abschnitt Stale-Chunk) | Fehlerseiten | I0 |
+| Browser-Storage (§3.15) | Regel `no-direct-storage` | `persisted.spec.ts`, `local-storage.service.spec.ts` | `web/uix/ui-crosscutting.spec.ts` (Abschnitt LocalStorage) | – | I1 |
+| Erweiterungspunkte (§6) | Sheriff (`domain:extensions`) | `*.registry.spec.ts` je Token, `merge-routes.spec.ts` (Port `helper.ts`) | Routing-Contract mit Fakes | Sidebar/Settings mit CE-Registry | I0 ff. |
+
+### 7.5 Port der Original-Frontend-Tests (Spezifikation)
+
+Die Original-Tests werden als Vitest-Specs mit Titelpräfix `orig:` portiert (Ledger-Konvention D15 §3.5); Erwartungswerte bleiben unverändert, nur Render-API (`@testing-library/react` → `@testing-library/angular`) und Selektoren auf identisches DOM werden angepasst. Komponenten-Port selbst: `09-ui-paritaet-designsystem.md`.
+
+| Original (`PKG/…`) | Fälle | Ziel-Spec (`FE/libs/shared/…`) | ab |
+|---|---|---|---|
+| `blocks/src/__tests__/dom-scrolling.test.tsx` | 1 | `blocks/src/__tests__/dom-scrolling.spec.ts` | I0 |
+| `blocks/src/breadcrumb/breadcrumb-navigation-select.test.tsx` | 20 | `blocks/src/breadcrumb/breadcrumb-navigation-select.spec.ts` | I0 |
+| `blocks/src/breadcrumb/breadcrumbs.test.tsx` | 20 | `blocks/src/breadcrumb/breadcrumbs.spec.ts` | I0 |
+| `blocks/src/common/color-swatch-picker/color-swatch-picker.test.tsx` | 7 | `blocks/src/common/color-swatch-picker/color-swatch-picker.spec.ts` | I1 |
+| `blocks/src/common/color-swatch-picker/hex.test.ts` | 4 | `blocks/src/common/color-swatch-picker/hex.spec.ts` | I1 |
+| `blocks/src/common/common-a11y.test.tsx` | 6 | `blocks/src/common/common-a11y.spec.ts` | I0 |
+| `blocks/src/common/sortable/sortable.test.tsx` | 5 | `blocks/src/common/sortable/sortable.spec.ts` | I1 |
+| `blocks/src/context-menu/context-menu.test.tsx` | 19 | `blocks/src/context-menu/context-menu.spec.ts` | I1 |
+| `blocks/src/context-menu/helpers.test.ts` | 9 | `blocks/src/context-menu/helpers.spec.ts` | I1 |
+| `blocks/src/dialog/confirm-dialog.test.tsx` | 17 | `blocks/src/dialog/confirm-dialog.spec.ts` | I1 |
+| `blocks/src/emoji-icon-picker/emoji-picker.test.tsx` | 2 | `blocks/src/emoji-icon-picker/emoji-picker.spec.ts` | I1 |
+| `blocks/src/emoji-icon-picker/search-a11y.test.tsx` | 3 | `blocks/src/emoji-icon-picker/search-a11y.spec.ts` | I1 |
+| `blocks/src/emoji-reaction/emoji-reaction-picker.test.tsx` | 2 | `blocks/src/emoji-reaction/emoji-reaction-picker.spec.ts` | I2 |
+| `blocks/src/property-select/date-select.test.tsx` | 20 | `blocks/src/property-select/date-select.spec.ts` | I2 |
+| `blocks/src/property-select/member-select.test.tsx` | 4 | `blocks/src/property-select/member-select.spec.ts` | I1 |
+| `blocks/src/property-select/outside-click.test.tsx` | 3 | `blocks/src/property-select/outside-click.spec.ts` | I1 |
+| `blocks/src/property-select/tab-index.test.tsx` | 2 | `blocks/src/property-select/tab-index.spec.ts` | I1 |
+| `blocks/src/select/menu-search-input.test.tsx` | 2 | `blocks/src/select/menu-search-input.spec.ts` | I0 |
+| `blocks/src/select/nested-submenu/nested-submenu.dismissal.test.tsx` | 6 | `blocks/src/select/nested-submenu/nested-submenu.dismissal.spec.ts` | I1 |
+| `blocks/src/select/select.test.tsx` | 77 | `blocks/src/select/select.spec.ts` | I0 |
+| `blocks/src/toast/toast-manager.test.ts` | 22 | `blocks/src/toast/toast-manager.spec.ts` | I0 |
+| `services/src/helpers/url.test.ts` | 5 | `services/src/helpers/url.spec.ts` | I0 |
+
+Die Fallzahlen sind per `it(`/`test(`-Zählung ermittelt; maßgeblich ist die Ledger-Extraktion (`extract_vitest.mjs`, D15 §3.5.1). `apps/live/tests/**` (PDF) gehört zu D07, `packages/codemods/tests/**` entfällt (Codemods nicht portiert, §4.8.3).
+
+### 7.6 Statische Regeln des Frontends (L0, `FE/tools/eslint-rules/`, Paketname `@plane/eslint-rules`)
+
+| Regel | Inhalt | Begründung | ab |
+|---|---|---|---|
+| `no-external-store-mutation` | kein `.set(`/`.update(`/`.patch(`/`.delete(` auf Signalen, `EntityMap`, `DeepState` eines Stores außerhalb der Store-Klasse (und ihrer Unterklassen) | §3.4.1 Nr. 2 | I0 |
+| `no-direct-entity-map-access` | kein Zugriff auf `stateMap`, `labelMap`, `issuesMap`, `projectMap` außerhalb `libs/web/*/state/**`; Komponenten nutzen Getter (`getStateById`, `getProjectStates`, `getLabelById` …) | A17-Andockstelle (§6.4) | I1 |
+| `no-role-literal-compare` | keine Vergleiche mit `EUserPermissions.*`, `EUserWorkspaceRoles.*` oder Zahlen 20/15/5 außerhalb `libs/web/core/permissions/**` und `ROLE_OPTIONS`-Provider | E5-Andockstelle; Spiegel von `PLANE0001` (05 §3.13) | I0 |
+| `no-relation-literal-union` | keine String-Vergleiche mit Relationstypen (`'blocked_by'`, `'relates_to'` …) außerhalb der `RELATION_TYPES`-Registry | A9-Andockstelle | I2 |
+| `no-track-index` | `@for` über Entitätslisten mit `track $index` verboten | §3.13 | I0 |
+| `no-http-in-components` | Import von `HttpClient`/`httpResource` nur in `**/services/**`, `libs/shared/services/**`, `libs/shared/runtime-config/**`; `resource()` nur mit Kommentar-Begründung (§3.5.4) | §3.5.1, §3.5.4 | I0 |
+| `no-direct-storage` | `localStorage`/`sessionStorage` nur in `state-kit` (`persisted`), `@plane/cdk` (`LocalStorageService`), `lib/local-storage.ts`, Theme-Inline-Script und Stale-Chunk-Recovery | §3.15 | I0 |
+| `no-test-ids` | keine neuen `data-testid`-Attribute in Templates | D15 §3.9.1 (DOM-Parität) | I0 |
+| `no-component-styles` | keine `styles`/`styleUrl(s)` in `@Component`, `encapsulation: ViewEncapsulation.None` Pflicht in `libs/shared/{propel,blocks}` | D09-ADR-03 | I0 |
+| `no-zone-apis` | kein Import von `NgZone`, `zone.js`, `ApplicationRef.tick` | D08-ADR-23 | I0 |
+| `no-external-urls` | keine `http(s)://`-Literale in Code und Templates außer Allow-List (`external-links.allow.json`, nur `href`) | ADR-004 | I0 |
+| `no-plan-identifiers` | Bezeichner/i18n-Keys mit `upgrade`, `billing`, `plan`, `subscription`, `is_paid`, `trial` in neuen Dateien verboten (Allow-List für kopierte Locales) | ADR-001, 01 §7.18 | I0 |
+| Sheriff (`@softarc/eslint-plugin-sheriff`) | Tags und Matrix §3.1.5 | D08-ADR-02 | I0 |
+| `@angular-eslint` (Recommended + Template-Accessibility) | Standard | – | I0 |
+
+### 7.7 Abweichungskatalog `frontend:` (Einträge für `tests/contracts/deviations.yaml`)
+
+| Kennung | Kurzbeschreibung | Grundlage |
+|---|---|---|
+| `FE-E1` | Disabled-Feature-Buttons verlinken direkt auf `features/<feature>/`; Redirect `features` → `features/cycles/` | §4.9 |
+| `FE-E4` | `login`, `register`, `signin` in `RESTRICTED_URLS` | §4.9 |
+| `FE-E5` | Projekt-Archiv-Routen mit `ProjectBootstrapComponent` | §4.9 |
+| `FE-E7` | Project-View-Filter leert den richtigen Store | §4.9 |
+| `FE-E8` | Draft-Filter unter eigenem Key statt `PROFILE` | §4.9 |
+| `FE-E9` | `BasePage.update` sendet den Nachher-Zustand | §4.9 |
+| `FE-E13` | ungültiger Profil-Tab → Redirect `general` | §4.9 |
+| `FE-E15` | Profil-/Account-Redirect ohne Query endet ohne `?` (Angular-`UrlSerializer`) | §4.9, §3.3.1 |
+| `FE-E16` | Label für `/features/*` in der Mobile-Navigation | §4.9 |
+| `FE-E20` | `handleIssuesLocalFilters.get` ohne wirkungslose Bedingung | §4.9 |
+| `FE-A1` | Admin `updateInstanceInfo` speichert Antwort korrekt | §4.9 |
+| `FE-A2` | Admin `disableEmail` wirft Fehler weiter (Toast sichtbar) | §4.9 |
+| `FE-AUTH-01` | Auth-Seiten `sign-up`, `accounts/*`, `sign-in`, `signin`, `login`, `register` sind Redirects auf `/`; `/` ist Keycloak-Einstieg (Auto-Redirect gemäß 05) | ADR-008, §3.3.5 |
+| `FE-AUTH-02` | Space-„Sign in“ übergibt `next_path` **inkl.** Query (Peek/Board-Parameter bleiben erhalten) | 05 §3.3.2 (Korrektur A11 3.27) |
+| `FE-AUTH-03` | Admin-Home: Zustand „keine Instanz-Admin-Rolle“ (`NO_ADMIN_ROLE`) statt Admin-Login-Formular | ADR-008, §4.6 |
+| `FE-RC-01` | Konfiguration über `runtime-config.json` statt `VITE_*`; Marketing-/Community-Links nur bei `external_links_enabled` (Default `false`) | ADR-004, §3.11 |
+| `FE-ED-01` | Editor-Flag `collaboration-cursor` in CE aktiv (sofern O-D08-07 so entschieden) | ADR-001, §4.7 |
+| `FE-INT-01` | Integrations-Seite (GitHub/Slack) entfällt; Forgejo-Einstellungen erst mit W1 | ADR-007, §4.1 |
+
+### 7.8 Definition of Done für Frontend-Arbeitspakete (Ergänzung zu D15 §3.15.3)
+
+Ein Arbeitspaket mit Frontend-Anteil (Schnitttyp „V“ oder „F“ aus D15) ist fertig, wenn zusätzlich zu D15 gilt:
+
+1. Jede neue/geänderte Route steht in `route-table.<app>.json` **und** hat ≥ 1 Fall in `route-contract.<app>.yaml`; `route-contract-check` grün (AK-D08-05).
+2. Jeder portierte Store besteht `store-parity-check` ohne neue Allow-Einträge, oder der Allow-Eintrag verweist auf eine Zeile in §4.5/§4.6 (AK-D08-10).
+3. Jede portierte Service-Methode hat einen `HttpTestingController`-Test mit Original-Pfad (AK-D08-16).
+4. Jede Komponente mit Original-Gegenstück hat einen DOM-Paritäts-Snapshot (Galerie oder Seitenregion) und – bei sichtbaren Zuständen – einen Visual-Prüfpunkt (D15 §3.10.2).
+5. Alle Texte kommen aus `@plane/i18n` (keine Literale in Templates außer Original-Literalen, die auch im Original nicht übersetzt sind; Liste in `i18n-literals.allow.json`).
+6. Neue `localStorage`-Schlüssel existieren nur, wenn das Original sie hat (Dump-Diff AK-D08-33).
+7. Berührte Registries (§6.1) haben ihre zwei Pflichttests (AK-D08-36).
+8. Keine Regel aus §7.6 ist per `eslint-disable` abgeschaltet, außer mit Kommentar `// D08-exception: <Grund> <Kennung>` und Eintrag in `deviations.yaml`.
+9. Abweichungen vom Original sind als `FE-*`-Kennung in `deviations.yaml` erfasst und im Test referenziert (AK-D08-43).
+
+### 7.9 Frontend-Testinfrastruktur je Inkrement
+
+| Inkrement | Muss fertig sein (Frontend) |
+|---|---|
+| I0 | Vitest-Projekte (`shared-node`, `shared-dom`, `web`, `admin`, `space`, `browser`), `setup.dom.ts`, `determinism.ts`, Routing-Katalog + beide Läufer + `route-contract-check`, `store-parity-check`, `tools/contract-check`, `tools/ci/verbatim-copy-check.mjs` (R-D08-01), `@plane/eslint-rules` (alle Regeln §7.6 mit `ab I0`), Forbidden-Deps-, Airgap-, CSP-Hash-, NOTICE-Prüfung, Galerie-Gerüst `apps/gallery` + `tools/original-gallery` (Referenz-Screenshots aus dem Original, D15), Unterbefehl `issue-store` in `tools/golden/generate.mjs`, `provideFakeExtensions()`, Wrapper-Doubles (`libs/web/core/wrappers/testing`) |
+| I1 | `local-storage-parity`-Treiber, Formular-Testhelfer (`fillPlForm`), Theme-Visuals, Regeln `no-direct-entity-map-access` |
+| I2 | Golden-Fixtures `issue-store`, Render-Zähler-Helfer, DnD-Helfer (Pointer-Sequenzen für pragmatic-dnd in Playwright), Perf-Trace-Helfer, Regel `no-relation-literal-union` |
+| I3 | Chart-Galerie-Einträge mit festen Datensätzen |
+| I4 | Zwei-Kontext-Helfer für Kollaboration, Offline-Simulation (`context.setOffline`) |
+| I5 | SignalR-Testendpunkt im Profil `test` (Ereignis auslösen), cmdk-Golden-Ranking |
+| I6 | Space-Anonym-Kontexte, Admin-Step-up-Variante im Profil `test` |
+| I7 | Lighthouse-Vergleich, Firefox/WebKit-Visual-Gates (D09-ADR-17), Airgap-Umgebung |
+
+---
+## 8. Risiken & offene Punkte
+
+### 8.1 Risiken
+
+| Nr. | Risiko | Wahrscheinlichkeit / Auswirkung | Gegenmaßnahme |
+|---|---|---|---|
+| R-D08-01 | **Umfang des 1:1-Ports** (121 Store-Dateien, 46 Web-Services, ≈ 70 Routen, mehrere tausend Komponenten-Dateien) führt bei KI-Agenten zu schleichenden Abweichungen (umbenannte Methoden, „verbesserte“ Algorithmen, zusammengelegte Komponenten) | hoch / hoch | mechanische Prüfwerkzeuge statt Review: `store-parity-check` (§7.3), Routing-Contract (§7.2), `tools/contract-check` (AK-D08-16), DOM-Paritäts-Snapshots; Regel „Kopie ohne Änderung“ für reine TS-Dateien (§3.4.6) mit Diff-Prüfung gegen Original (`tools/ci/verbatim-copy-check.mjs`: Dateien mit Marker `// @verbatim <original-pfad>` dürfen sich nur in Importzeilen unterscheiden) |
+| R-D08-02 | `DeepState` (Versions-Signal) rendert zu grob oder verfehlt Änderungen bei Mutation von Blättern außerhalb der Schreib-API | mittel / hoch | Schreiben nur über `set/update/unset` (Regel `no-external-store-mutation`), `select(path)`-Memoisierung mit `Object.is`, Render-Granularitäts-Test AK-D08-14, LT-14; Fallback: `DeepState` je Gruppe in `EntityMap` aufteilen (Store-API bleibt) |
+| R-D08-03 | Zoneless: Drittbibliotheken (pragmatic-dnd, floating-ui, Tiptap/ProseMirror, `@hocuspocus/provider`, SignalR) melden Änderungen über Callbacks, die keine Signale schreiben → fehlendes Rendering | mittel / mittel | Callback-Werte ausschließlich in Signale schreiben (Direktiven-Muster §5.12), Komponenten-Felder ohne Signal sind in OnPush-Komponenten per Lint-Regel `prefer-signals` (angular-eslint) markiert; Browser-Tests (Vitest-Browser-Modus) für DnD und Overlays |
+| R-D08-04 | Impure Pipe `t` in großen Listen (Spreadsheet 100 Zeilen × 20 Spalten) kostet Renderzeit | mittel / mittel | Pipe cached je `(key, JSON(params), locale)`; Messung in LT-14; Fallback: pure Pipe mit Locale-Argument (`{{ key \| t: params : locale() }}`) per Codemod |
+| R-D08-05 | DOM-Parität durch Angular-Host-Elemente gefährdet (zusätzliche Elemente, CSS-Selektoren wie `>`/`:first-child` greifen nicht) | hoch / mittel | D09-ADR-03 (Attribut-Selektoren, `display: contents`), DOM-Paritäts-Treiber packt `contents`-Hosts aus, Gate „Host-Element sichtbar“ (AK-D08-41); CSS-Paritäts-Diff (`tools/css-parity`) |
+| R-D08-06 | Nachbauten von cmdk, frimousse, react-day-picker, recharts und react-dropzone weichen in Randfällen ab (Ranking, Tastatur, Fehlercodes) | mittel / mittel | Golden-Tests gegen die Original-Bibliotheken (Ranking AK-D08-25, Emoji-Suche AK-D08-27, `date-select` 20 Fälle, Dropzone-Fehlercodes), Galerie-DOM-Snapshots |
+| R-D08-07 | `QueryCache` weicht in Zeitverhalten von SWR 2.4.2 ab (Fokus-Revalidierung, Dedupe) → andere Request-Folgen, Flackern | mittel / mittel | Request-Sequenz-Vergleich mit dem Original (AK-D08-15); Fake-Timer-Tests je Merkmal; Implementierung folgt SWR-Quelltext 2.4.2 (MIT) Funktion für Funktion |
+| R-D08-08 | Kopierte Original-Quellen (`types`, `constants`, `utils`, Store-Code) kompilieren unter TypeScript 6.0/Angular-22-Strict nicht ohne Änderungen (O-10) | mittel / niedrig | S0: mechanische Korrekturliste; `verbatim-copy-check` erlaubt nur gelistete Abweichungen |
+| R-D08-09 | `TrailingSlashPathLocationStrategy` ist jung (seit Januar 2026 in `@angular/common`, Doku angular.dev) – Fehler in Randfällen (Hash, leere Query) | niedrig / mittel | Trailing-Slash-Tests AK-D08-06; Fallback: eigene Unterklasse von `PathLocationStrategy` mit überschriebenem `prepareExternalUrl` (≈ 15 Zeilen, gleiche Semantik) |
+| R-D08-10 | Signal Forms sind erst seit v22 stabil; Ökosystem-Erfahrung gering (Adapter `[plFormField]`, Fehlerdarstellung) | mittel / mittel | S0 bestätigt Entry-Point `@angular/forms/signals` und `FormValueControl` (angular.dev: stabil seit 22.0); Fallback Reactive Forms (§3.6) ohne DOM-Änderung |
+| R-D08-11 | Reihenfolge-Fehler beim Einhängen von Erweiterungsrouten (`mergeRoutes`) brechen CE-URLs erst, wenn ein Paket andockt | niedrig / hoch | Routing-Contract läuft immer zusätzlich mit `provideFakeExtensions()` (§7.2) |
+| R-D08-12 | Bundle-Größe wächst durch 1:1-Ports (lodash, date-fns, Locales, Emoji-Daten) über das Original hinaus | mittel / niedrig | `lodash-es` mit Einzelimporten, Emoji-Daten und Locales als Assets statt Bundle, Budgets AK-D08-04, `source-map-explorer` im CI-Artefakt |
+| R-D08-13 | S1-Fallback (y-websocket statt Hocuspocus) erzwingt Provider-Wechsel im Frontend | niedrig / mittel | Provider gekapselt in `libs/shared/editor/collaboration` (einziger Import von `@hocuspocus/provider`), Schnittstelle `CollaborationProviderFactory`; Wechsel betrifft eine Datei |
+| R-D08-14 | Visual-Referenzen instabil (Font-Rendering, Emoji, Animationen, Skeleton-Zufallsbreiten) | mittel / mittel | gepinntes Playwright-Container-Image, Mulberry32-Determinismus, Animations-Freeze (D15 §3.10.1), `visual:drift`-Nachtlauf |
+| R-D08-15 | Space als CSR verliert gegenüber dem Original-SSR die vorgerenderten Inhalte für Crawler | niedrig / niedrig | OG-/Twitter-Meta liefert das Gateway (D08-ADR-26, 01 ADR-033); Inhalt selbst war im Original ebenfalls clientseitig geladen |
+| R-D08-16 | `@atlaskit/pragmatic-drag-and-drop` (Apache-2.0) und `@tanstack/*` (MIT) bleiben im Projekt; ein künftiger Lizenz- oder Wartungswechsel trifft zentrale Interaktionen | niedrig / mittel | Direktiven in `libs/shared/dnd` kapseln die Bibliothek (kein direkter Import in Feature-Libs, Sheriff); Versionen gepinnt; Lizenz-Gate meldet Änderungen |
+
+### 8.2 Offene Punkte
+
+| Nr. | Offener Punkt | Empfehlung | Entscheidung bis |
+|---|---|---|---|
+| O-D08-01 | Signal Forms: Name der Template-Direktive und Kompatibilität mit `FormValueControl` an Propel-Komponenten (D08-ADR-13 ⚠) | angular.dev (stabile API) nennt `FormField` mit Template-Bindung `[formField]` (in frühen v21-Ständen `[field]`/`[control]`) und `FormValueControl` „stable since 22.0“; S0 baut ein Formular (Create-Workspace) mit `[plFormField]` gegen die installierte 22.x-Version und bestätigt Namen/Verhalten; bei Rot Fallback Reactive Forms | Ende S0 |
+| O-D08-02 | Version von `emojibase-data` (D08-ADR-20 ⚠): frimousse 0.3.0 deklariert keine Abhängigkeit, lädt die Daten zur Laufzeit vom CDN | `emojibase-data` **15.3.2** pinnen (im Original-Lockfile bereits über `@tiptap/extension-emoji` vorhanden → Editor und Picker nutzen dieselben Daten); in S0 per frimousse-Quelltext prüfen, welche Version/Locale-Datei der Picker abruft, und bei Abweichung diese pinnen | Ende S0 |
+| O-D08-03 | ~~Feldname des Auto-Redirect-Schalters in `GET /api/instances/` (§3.3.5)~~ **erledigt** | 05 §4.4 führt `config.is_oidc_auto_redirect_enabled` (aus `Plane:Auth:AutoRedirect`, Default `true`) | – |
+| O-D08-04 | 05 §3.13.8 benennt Frontend-„Guards“ `authGuard`, `workspaceAccessGuard`, `projectAccessGuard`; dieses Dokument legt Wrapper-Komponenten mit In-Place-Zuständen fest (D08-ADR-12) | 05 an D08-ADR-12 angleichen (Wrapper-Komponenten `AuthenticationWrapperComponent`, `WorkspaceAuthWrapperComponent`, `ProjectAuthWrapperComponent`); funktionale Guards nur für Redirect-/Legacy-Fälle (§3.3.5) | Start I0 |
+| O-D08-05 | Bundle-Budget-Zahlen (§3.1.2) sind Schätzwerte | in S0 gegen den Original-Build (`build/client` von web/admin/space) messen und ± 10 % festschreiben | Ende S0 |
+| O-D08-06 | `jsdom`-Major für den Angular-Vitest-Runner (§4.8.3 ⚠) | die vom `@angular/build:unit-test` 22.x getestete Major pinnen; abweichende Original-Version 23.2.0 nicht erzwingen | Ende S0 |
+| O-D08-07 | Editor-Flag `collaboration-cursor`: im Original-CE abgeschaltet (`use-editor-flagging.ts`), nach ADR-001 („alles aktiv“) einschaltbar | aktivieren, sobald S1 Awareness grün ist; sichtbare Abweichung als `FE-ED-01` dokumentieren und vom Auftraggeber abnehmen lassen | Ende I4 |
+| O-D08-08 | Datumsdarstellung bleibt englisch (Original, §3.7) – CE-I18N-003 erwartet „Datums- und Zeitdarstellung“ ohne Lokalisierung? | wie Original (englisch, `en-US`); Lokalisierung wäre neue Funktion und gehört nicht in die CE-Parität | Ende I1 (Abnahme Fachseite) |
+| O-D08-09 | Nachladeverhalten bei `app_version`-Wechsel (§3.11): Vollnavigation bei nächster Router-Navigation vs. Hinweis-Toast | Vollnavigation ohne Toast (kein Original-Vorbild für einen Toast, keine neuen Texte); D14 bestätigt Rolling-Update-Verhalten | Start I0 |
+| O-D08-10 | Galerie (`apps/gallery`) nur in Test-Builds – wird sie im Release-Image ausgeliefert? | nein; eigenes Build-Target `gallery`, nur im CI-Profil `test` vom Gateway unter `/__gallery/` ausgeliefert (D15 §3.2) | Start I0 |
+| O-D08-11 | Firefox/WebKit: D09-ADR-17 gated Visuals erst ab I7, D15 nennt Galerie-Projekte für alle drei Browser | Galerie in allen drei Browsern ab I0 **ausführen**, aber nur Chromium gaten; Firefox/WebKit-Gate ab I7 | Start I0 |
+| O-D08-12 | Ablage der Lint-Regeln (`@plane/eslint-rules`) und Abgrenzung zu den gemeinsamen L0-Prüfungen (Plan-Bezeichner, externe URLs) aus D15 | Frontend-Regeln in `FE/tools/eslint-rules/`, Repo-weite Scans in `tools/ci/` (D15 §3.2); Regeln `no-plan-identifiers`/`no-external-urls` sind ESLint-Varianten derselben Allow-Lists | Start I0 |
+| O-D08-13 | Space-Login für Kommentare/Reaktionen/Votes: Rücksprung auf Board inkl. Peek-Query (FE-AUTH-02) erfordert, dass `next_path`-Validierung im Backend Query erlaubt | 05 bestätigt Query-Erhalt in `next_path`-Validierung (Same-Origin-Pfad + Query, kein Schema/Host) | Ende S7 |
+| O-D08-14 | Wert `n` für `max_age` beim Admin-Step-up (§3.5.2): 05 D05-ADR-11 nennt `max_age=<n>`, legt aber keine Quelle im Frontend fest (der 401-Körper enthält nur `error_code`/`error_message`) | `max_age=0` senden (OIDC: frische Authentisierung, erfüllt jede Schwelle, kein neues Konfigurationsfeld); alternativ liefert 05 den Wert als `config.admin_step_up_max_age_seconds` in `GET /api/instances/` | Start I6 |
+| O-D08-15 | Admin-App in I0: D08 §1.3/§4.2 baut Einstieg, Dashboard-Layout und `general` (CE-INST-010…-013, -015, -017) in I0, D15 ordnet `admin/admin-shell.spec.ts` (CE-INST-008…-016) und `admin/admin-settings.spec.ts` (CE-INST-017) erst I6 zu | I0 liefert nur den Einstieg (Login/Auto-Redirect, `NO_ADMIN_ROLE`, Erst-Einrichtung) und eine lauffähige `general`-Seite als Walking-Skeleton-Schnitt; die Abnahme-Specs bleiben I6 (D15). D15 ergänzt einen I0-Abschnitt `@I0` in `admin/instance-setup.spec.ts` für Einstieg + `general` | Start I0 |
+
+---
+
+## 9. Abhängigkeiten zu anderen Dokumenten (02–16)
+
+| Dokument | Beziehung | Was 08 liefert | Was 08 erwartet |
+|---|---|---|---|
+| `00-grundsatzentscheidungen.md` | bindend | – | ADR-001 (keine Plan-Stufen, Upsell entfällt), ADR-002 (kein Node zur Laufzeit → Space CSR, Hocuspocus-Server in .NET), ADR-003 (API-JSON-Verträge am Original), ADR-004 (Airgap → gebündelte Fonts/Emoji, keine CDN-Requests), ADR-005 (UI 1:1), ADR-007 (Forgejo einzige Code-Hosting-Integration → Integrations-Seite entfällt), ADR-008 (Keycloak-only → Auth-Routen §3.3.5), ADR-009 (`funk.`, Step-up Default aus) |
+| `01-zielarchitektur-und-tech-stack.md` | bindend | Präzisierungen (markiert in §2: D08-ADR-02, §3.1.1, §3.11 neue Runtime-Config-Felder), Routen-/Store-/Library-Mapping (Anhang A) | Frontend-Workspace §6, Registries §6.4, Store-Skelett §6.5, ADR-039 … ADR-047, Querschnitt §7 (§7.12 Runtime-Config, §7.17 DOM-Parität, §7.19 keine Platzhalter-Routen, §7.20 Abweichungen), Spikes S0, S1, S4, S5, S6, S10, S11 (§9) |
+| `02-backend-solution-und-konventionen.md` | Vertragspartner | Erwartung: Trailing-Slash-normalisierte Requests (`trailingSlashInterceptor`), Auswertung von `error`/`detail`/`error_code` wie Original | JSON-/Fehler-/Pagination-Formen (02 §7 AK-02 … AK-11), Toleranz für Pfade mit und ohne `/`, Rich-Filter-Ausdruck `TWorkItemFilterExpression` als Wire-Form (B6) |
+| `03-datenmodell-efcore.md` | indirekt | – | Feldnamen der DTOs unverändert gegenüber `PKG/types` (z. B. `type_id`, `is_bot`, `parent_id` an Pages), damit `libs/shared/types` Kopie bleibt |
+| `04-api-design-und-endpunktkatalog.md` | nutzt | Liste der vom Frontend tatsächlich aufgerufenen Endpunkte (Ergebnis von `tools/contract-check`, AK-D08-16) als Abgleich für tote Routen | vollständiger Endpunktkatalog mit Original-Pfaden; Korrektur `RESTRICTED_URLS` (FE-E4) auch serverseitig; Endpunkt `GET …/issues/{id}/meta/` für den Legacy-Redirect |
+| `05-auth-sicherheit-berechtigungen.md` | Vertragspartner | Frontend-Seite des Logins (`SignInPageComponent` + `AuthLandingComponent`, Banner, `next_path`), Sign-out-Formular-POST, 401-Interceptor, Admin-Step-up-Interceptor, `PermissionService`-Fassade + `PERMISSION_EVALUATOR`-Token (Name wie 05 §3.13.8) | Instanzfeld für Auto-Redirect (O-D08-03), Fehlercodes für Banner (§4.3 in 05), `GET /api/instances/admins/me/` mit 403 bei fehlender Rolle, Angleichung „Guards“ → Wrapper (O-D08-04), Query-Erhalt in `next_path` (O-D08-13), Keycloak-Login-Theme (D09-ADR-14) |
+| `06-hintergrundjobs-events-benachrichtigungen.md` | nutzt | Konsum der Live-Events über `LIVE_EVENT_HANDLERS` (ab I5 Notification-Zähler) | Ereignisnamen und Nutzlast der an den Hub gepushten Notification-Ereignisse; Activity-`field`/`verb`-Katalog für `ACTIVITY_RENDERERS` |
+| `07-realtime-kollaboration-dokumente.md` | Vertragspartner | unveränderter `@hocuspocus/provider` 2.15.2, URL-/Query-Schema `…/collaboration?documentType=…`, Token-JSON `{id}`, Stateless-Ereignisse (`RealtimePageEventsService`), SignalR-Client nur WebSockets mit `skipNegotiation` | Hocuspocus-Protokoll-Server (S1), Hub `/live/events/` mit Gruppen `ws:`, `project:`, `user:`; Fallback-Entscheidung y-websocket (R-D08-13) |
+| `09-ui-paritaet-designsystem.md` | Vertragspartner | Ablage der Libs `propel`/`blocks`/`tailwind-config`, Bootstrap/Theme-Service-Einbindung, Overlay-Container, Interaktionsbausteine (§3.9) als Konsumenten der Primitive | Komponenten-Port Propel/Blocks inkl. Variantentabellen, D09-ADR-03 (Attribut-Selektoren, keine Komponenten-Styles), Icons-Codegen, Galerie-Referenzen, Visual-/DOM-Verfahren; Port der Original-Tests §7.5 als Teil der Komponenten-Abnahme |
+| `10-editor-angular.md` | nutzt | Andockstellen `EDITOR_EXTENSIONS`, `EDITOR_BLOCKS`, `EDITOR_MENTION_TYPES`, `EDITOR_FLAGS` (CE-Default §6.1), `PAGE_PANE_EXTENSIONS`; Einbindung Lite-Editor (I2) und Rich/Document-Editor (I4) | Editor-Lib `libs/shared/editor` mit Schema-Freeze, NodeViews (S5), Kapselung des Collaboration-Providers |
+| `11-suche-und-ai-basis.md` | nutzt | Power-K-Frontend (`libs/web/power-k`, `POWER_K_COMMANDS`, `SEARCH_RESULT_RENDERERS`), `DUPLICATE_DETECTION`-Token (CE `[]`) | Such-Endpunkte und Ergebnisformate der globalen Suche/Power-K; AI-Endpunkte des Editors (CE-AI, I6) |
+| `12-…`, `13-…` | – (in 01 Anhang A nicht vergeben) | – | – |
+| `14-infrastruktur-deployment-betrieb.md` | Vertragspartner | Dev-Server-Skripte (`ng serve <app> --port ${PORT}`), Base-Pfade und Output-Ordner (§3.1.2), Runtime-Config-Felder (§3.11), Cache-Erwartungen, `<base href>`-Ersatzfähigkeit (keine absoluten Asset-URLs), Reload bei `app_version`-Wechsel, `theme-script.sha256` für die CSP; **kein** `sw.js` (E19) – die Header-Regel für `sw.js` in D14 AK-14-07 ist damit gegenstandslos | Gateway liefert `runtime-config.json` (`no-cache`) und SPA-Fallback je App, ersetzt `<base href>` bei geänderten Pfaden, setzt CSP mit Script-Hash, liefert OG-Meta für Space (I6), übernimmt Dist-Ordner in `wwwroot` (D14-ADR-07) |
+| `15-teststrategie-qualitaet-paritaet.md` | nutzt/liefert | Akzeptanzkriterien §7.1, Routing-Katalog §7.2, Store-Paritätsprüfung §7.3, Lint-Regeln §7.6, `FE-*`-Abweichungen §7.7, DoD-Ergänzung §7.8 | Testebenen, Vitest-Konfiguration (§3.8), Dual-Target-E2E (§3.9), Visual-Schwellen und DOM-Paritäts-Treiber (§3.10), Parity-Seed, Ledger, Gates G0–G6 |
+| `16-erweiterungspunkte-bezahl-features.md` | liefert | Frontend-Andockstellen §6 (Tokens in `libs/web/extensions`, `libs/admin/extensions`, `libs/space/extensions`, CE-Defaults, Pflichttests, Paketzuordnung §6.4); Port der in D16-ADR-15 gelisteten `extended.ts`-Dateien 1:1 mit gleichem Pfad | Paket-Skizzen je Welle W1 … W9 auf Basis dieser Tokens; keine Rückwirkung auf CE-Komponenten (neue Andockstellen nur per Änderung dieses Dokuments) |
+| `migration/plan/01-roadmap-ce.md`, `migration/plan/_data/wp-ce.json` | nutzt | Inkrement-Zuordnung §1.3, Spalte „Ink.“ in §4.1–§4.6, Testinfrastruktur §7.9 | Arbeitspakete je vertikalem Schnitt (I0: Shell + Login, Workspace anlegen, Projekt anlegen) mit Referenz auf die Routen-/Store-Zeilen dieses Dokuments |
+| `migration/analysis/08`, `09`, `10a`, `10b`, `11`, `12`, `13a`, `13b` | Quelle | – | IST-Fakten (Routen A08 §2.2, Wrapper A08 §2.3, Stores, Edge-Cases A08 §3.10/A11 §3.31, Locales A13b) – bei Widerspruch zwischen Analyse und Original-Code gilt der Original-Code am gepinnten Commit |
+
+---
+
+## Review-Protokoll
+
+**Review vom 23.10.2026 (adversarial, gegen 00, 01, 05, 15, 16, A08 und Original-Code v1.4.2).**
+
+### Prüfmethode
+
+- Routen: `WEB/app/routes/core.ts`, `routes.ts`, `helper.ts`, `redirects/core/*`, `ADM/app/routes.ts`, `SPC/app/routes.ts` gegen §4.1–§4.3 abgeglichen (alle 69 Nummern aus A08 §2.2 vorhanden; Layout-Verschachtelung der Projekt-Archive als Geschwister von LPD bestätigt; 11 Projekt-Settings- und 6 Workspace-Settings-Routen vollständig).
+- Stores: Dateiliste `WEB/store` (100) maschinell gegen §4.5 gediffed – deckungsgleich; Klassennamen per `grep "export class"` geprüft; `ADM/store` (5) und `SPC/store` (16) gegen §4.6.
+- Libraries: alle 177 Abhängigkeiten aus Root-, `apps/*`- und `packages/*`-`package.json` maschinell gegen §4.8 geprüft.
+- CE-Katalog (`features/_data/ce-features.json`, 507 IDs) gegen alle im Dokument genannten IDs (inkl. Bereichsangaben) abgeglichen.
+- Original-Tests (`PKG/**/*.test.ts(x)`): 21 Blocks-Dateien + `services/url.test.ts` = 22, Locales 22 Sprachen × 28 Namespaces bestätigt.
+- Versions-/API-Behauptungen per Websuche (2 Suchen): `TrailingSlashPathLocationStrategy` ist stabile öffentliche API in `@angular/common` (überschreibt `prepareExternalUrl`, `Location.path()` liefert weiter ohne Slash – deckt sich mit D08-ADR-11/§5.5); Signal Forms: `FormValueControl` „stable since 22.0“, Bindungsdirektive heißt `FormField`/`[formField]` (angular.dev).
+
+### Korrekturen im Dokument
+
+| # | Stelle | Befund | Korrektur |
+|---|---|---|---|
+| 1 | §1.3, D08-ADR-03 | „9 CE-Listen-Stores“ bzw. „13 Issue-Listen-Stores“ widersprachen sich und dem Original (`issue/root.store.ts`: 12 Instanzen aus 8 Klassen) | auf „8 Klassen / 12 Instanzen“ vereinheitlicht |
+| 2 | §3.4.6 | „59 Dateien“ in `WEB/store/issue/**` | 44 (§4.5 Nr. 57–100) |
+| 3 | §3.1.3 | „19 Domänen“ | 20, namentlich aufgezählt |
+| 4 | §3.2 Nr. 4 | Interceptor-Kette mit 4 Einträgen widersprach §3.5.2 (6) und §5.2 (5) | auf §3.5.2 verwiesen, `abortInterceptor` ergänzt, Admin/Space-Varianten genannt |
+| 5 | D08-ADR-13, O-D08-01 | Adaptername `plFormControl` vs. `[plFormField]`; Direktivname `[field]` veraltet | `[plFormField]`/`FormValueControl`, Bindung `FormField`/`[formField]` laut angular.dev |
+| 6 | §3.3.5 | `AuthLandingComponent` aus `libs/web/auth` sollte von Admin/Space genutzt werden – verletzt Sheriff (`scope:admin`/`scope:space` ≠ `scope:web`); Space-Verhalten widersprach 05 §3.3.2 (kein Auto-Redirect auf `/spaces/`) | Darstellung in `libs/shared/blocks/auth`, je App eine dünne `AuthLandingComponent` in den von 05 genannten Ordnern; web/admin Auto-Redirect, space Button; O-D08-03 als erledigt markiert (05 §4.4) |
+| 7 | §3.5.2 Nr. 6 | Step-up-URL `step_up=1` widersprach 05 D05-ADR-11/N-01 (`max_age`) | `max_age=<n>` mit `n=0` bis zur Klärung (neu O-D08-14), `next_path` inkl. Query |
+| 8 | §3.4.3, §3.4.4 | Store-Namen `UserProfileStore`, `ModuleStore`, `ProjectMemberStore` (als Klasse) | `ProfileStore`, `ModulesStore`, `BaseProjectMemberStore` (Alias `ProjectMemberStore`) |
+| 9 | §6.3, §4.5 Regeln | `CommandPaletteStore extends BaseCommandPaletteStore` und `{provide: X, useClass: X}` falsch: im Original sind die CE-Namen **Aliase** (`export { BaseX as X }`) | Muster neu: DI-Token = Basisklasse, Alias bleibt, CE-Overrides leer, Override-Beispiel; Tabellenzeilen 16/18 als DI-Token |
+| 10 | §5.4 | `legacyIssueRedirectGuard` rief `inject(Router)` nach `await` auf → Laufzeitfehler NG0203 | Injektionen vor dem `await` |
+| 11 | §5.1 | `<link rel="manifest" href="/site.webmanifest.json">` absolut – widerspricht §3.11 (Base-Path ohne Rebuild) | relativ |
+| 12 | §3.3.1, §4.9 E15, §5.4, §7.2, §7.7 | „`?` immer“ bei Profil-Redirects ist mit Angular nicht erreichbar (UrlSerializer verwirft leeres `?`) | als kosmetische Abweichung `FE-E15` dokumentiert |
+| 13 | §7.2 | Beispielfall `/profile/activity` erwartete `/settings/profile/activity/` – `activity` ist kein gültiger Tab, nach FE-E13 wäre `general` korrekt | Beispiel auf `notifications` umgestellt, eigener Fall für FE-E13 ergänzt |
+| 14 | §4.8.1 | `recharts` (W, B) fehlte im Library-Mapping (einzige fehlende Laufzeitabhängigkeit) | Zeile ergänzt |
+| 15 | §6, §6.1, §6.2, §3.1.1/§3.1.3/§3.1.5 | `ADMIN_SETTINGS_PAGES` und Admin-/Space-Routenschlüssel lagen in `libs/web/extensions` – für Admin/Space nicht importierbar (01 §6.3); D16 dockt E3 in `FE/libs/admin/group-sync` an | `libs/admin/extensions`, `libs/space/extensions` (+ Tokens `ADMIN_ROUTE_EXTENSIONS`, `ADMIN_HEADER_SEGMENT_LABELS`, `SPACE_ROUTE_EXTENSIONS`), Mechanik generisch in `@plane/cdk/extensions`, Sheriff-Regel für `domain:extensions` |
+| 16 | §6 Einleitung | „CE-Code wird nicht geändert“ widersprach D16-ADR-15 (Original-`extended.ts`-Dateien sind additiv änderbar) | Ausnahme mit Verweis aufgenommen |
+| 17 | §3.1.1, §7.3, AK-D08-12, §7.9 | Werkzeugpfade `FE/tools/golden-ui`, `tools/ci/parity/pin.env` existieren in D15 nicht | `tools/golden/generate.mjs issue-store` (D15-ADR-08), `tools/parity/original.env` (`ORIGINAL_SHA`), `FE/tools/{original-gallery,css-parity,eslint-rules,store-parity-check,route-contract-check}` im Baum |
+| 18 | §4.2 R1 | Admin-Home zeigte immer Button; 05 verlangt Auto-Redirect ohne `error_code` | angeglichen |
+| 19 | neu §4.10 | Querschnitts-CE-IDs ohne eigene Route (CE-UIX-001…-013, CE-I18N-*, Shell-IDs CE-WS-005/-014…-023, CE-PRJ-011…-013, CE-AUTH-022…-025 u. a.) waren nicht zugeordnet | Zuordnungstabelle + Liste der bewusst nicht frontend-relevanten IDs |
+| 20 | §8.2 | – | neu O-D08-14 (Step-up `n`), O-D08-15 (Admin-Umfang I0 vs. D15) |
+
+### Bewertung
+
+- **Vollständigkeit:** Routen (web 69 + R1/R2, admin 13, space 4), Stores (121), Hooks, Libraries (177 Pakete) und Original-Tests (22) vollständig; CE-IDs jetzt über §4.1–§4.3 + §4.10 zugeordnet oder bewusst ausgeschlossen.
+- **Konsistenz mit 00/01:** ADR-001/-004/-007/-008/-009 eingehalten; Libraries, Lib-Namen und Sheriff-Tags wie 01 §6/§8.2 (Ergänzung `libs/admin/extensions`, `libs/space/extensions` als Präzisierung von 01 §6.4 markiert).
+- **Strategie:** Bezahl-Pakete nur als Andockstellen (§6), kein Fachdesign; alle 17 🧱-Pakete in §6.4 abgedeckt.
+- **Machbarkeit:** Kernentscheidungen (Signal-Stores mit `DeepState`, `QueryCache`, Wrapper-Komponenten, `TrailingSlashPathLocationStrategy`, `ROUTES`-Multi-Provider für Erweiterungen) technisch tragfähig; Restrisiken in §8.1 benannt.
+
+### Verbleibende Punkte (nicht im Dokument lösbar)
+
+- 05 §3.13.8 benennt weiterhin funktionale Guards (`authGuard`, `workspaceAccessGuard`, `projectAccessGuard`) statt Wrapper-Komponenten (O-D08-04).
+- 05 legt die Quelle des Step-up-Werts `n` im Frontend nicht fest (O-D08-14).
+- D15 ordnet die Admin-Shell/General-Specs I6 zu, D08 baut den Admin-Einstieg in I0 (O-D08-15).
+- 01 §6.4 kennt nur `libs/web/extensions`; die Admin-/Space-Token-Libs müssen in 01 nachgetragen werden.
+- Bundle-Budgets, `emojibase-data`-Version und `jsdom`-Major bleiben S0-Messpunkte (O-D08-02, -05, -06).
+

@@ -130,8 +130,8 @@ t("ProjectViewSet","destroy","DELETE","WSA|PA")
 t("CycleFavoriteViewSet","list","GET","PRJ(A,M,G)+OWN")
 t("IssueViewFavoriteViewSet","list","GET","PRJ(A,M,G)+OWN")
 t("ProjectFavoritesViewSet","list","GET",DROP,"SEC-11")
-t("ProjectFavoritesViewSet","create","POST","WS(A,M,G)+PRJ-MEMBER")
-t("ProjectFavoritesViewSet","destroy","DELETE","WS(A,M,G)+OWN")
+t("ProjectFavoritesViewSet","create","POST","WS(A,M,G)+PRJ-MEMBER","SEC-12")
+t("ProjectFavoritesViewSet","destroy","DELETE","WS(A,M,G)+OWN","SEC-12")
 t("IntakeViewSet","create","POST","PRJ(A)+O","SEC-03")
 t("IntakeViewSet","partial_update","PATCH","PRJ(A)+O","SEC-03")
 t("IntakeViewSet","retrieve","GET","PRJ(A,M)+O","SEC-03")
@@ -207,8 +207,9 @@ t("ProjectMemberPreferenceEndpoint","patch","PATCH","PRJ(A,M,G)+O+SELF","SEC-17"
 t("InstanceAdminEndpoint","post","POST",DROP,"ADR-008")
 t("InstanceAdminEndpoint","delete","DELETE",DROP,"ADR-008")
 for a in ["post"]:
-    for c in ["InstanceAdminSignOutEndpoint","InstanceAdminSignInEndpoint","InstanceAdminSignUpEndpoint"]:
+    for c in ["InstanceAdminSignInEndpoint","InstanceAdminSignUpEndpoint"]:
         t(c,a,"POST",DROP,"ADR-008")
+t("InstanceAdminSignOutEndpoint","post","POST",DROP,"ADR-008 (Route bleibt als BFF-Alias N-05, .AllowAnonymous() + Antiforgery)")
 t("SignUpScreenVisitedEndpoint","post","POST",DROP,"ADR-008")
 t("AccountEndpoint","get","GET",DROP,"ADR-008"); t("AccountEndpoint","delete","DELETE",DROP,"ADR-008")
 t("UserEndpoint","generate_email_verification_code","POST",DROP,"ADR-008")

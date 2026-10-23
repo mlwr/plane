@@ -12,3 +12,10 @@ python3 -I ../../../migration/_werkzeuge/permission-matrix/gen_md.py /tmp/pm/fin
 ```
 
 Die Overrides (Sicherheitskorrekturen `SEC-xx`, Harmonisierungen `HARM-xx`, Wegfall `ADR-008`) stehen in `stage3.py` (Dict `T`) und sind in D05 §3.18 begründet.
+
+Anhang A/B von D05 direkt aus der (ggf. manuell gepflegten) Datendatei erzeugen:
+
+```bash
+python3 -I migration/_werkzeuge/permission-matrix/gen_appendix.py migration/architecture/_data/05-permission-matrix.json /tmp/pm/appendix.md
+# danach in 05-auth-sicherheit-berechtigungen.md den Block ab "## Anhang A" durch /tmp/pm/appendix.md ersetzen
+```
