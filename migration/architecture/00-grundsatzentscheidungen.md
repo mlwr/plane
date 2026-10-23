@@ -1,4 +1,4 @@
-# Grundsatzentscheidungen (ADR-000 … ADR-006)
+# Grundsatzentscheidungen (ADR-000 … ADR-007)
 
 Dieses Dokument enthält die mit dem Auftraggeber abgestimmten Grundsatzentscheidungen. Sie sind **bindend** für alle weiteren Architektur-Dokumente und für jeden Implementierungs-Agenten. Weicht ein Dokument davon ab, gilt dieses Dokument.
 
@@ -11,10 +11,22 @@ Dieses Dokument enthält die mit dem Auftraggeber abgestimmten Grundsatzentschei
 | ADR-004 | **Betriebsmodell: Self-hosted inkl. Airgapped.** Keine zwingenden externen Laufzeitabhängigkeiten (keine CDNs, keine Telemetrie nach außen, keine Pflicht-SaaS). Externe Dienste (OAuth-Provider, LLM-Provider, Unsplash, Integrationen wie GitHub/Slack) sind optional und abschaltbar; für AI muss ein lokal betreibbarer Provider (z. B. OpenAI-kompatibler Endpunkt wie Ollama/vLLM) unterstützt werden. Cloud-only-Funktionen (Stripe-Billing, Storage-Quoten pro Plan, Multi-Region) entfallen. | akzeptiert | Auftraggeber |
 | ADR-005 | **UI 1:1 wie das Original.** Pixel- und verhaltensgleiche Nachbildung der Plane-Oberflächen (Web, God-Mode/Admin, Space/Public). Gemessen über visuelle Regressionstests gegen Referenz-Screenshots des Originals. Abweichungen nur durch ADR-001 (Upsell-Elemente entfallen). | akzeptiert | Auftrag |
 | ADR-006 | **Das Original-Repo bleibt neben dem Plan liegen** und ist die maßgebliche Referenz für Verhalten, Texte (i18n), Styles und Edge-Cases. Implementierungs-Agenten lesen immer zuerst das zugehörige Analyse-Dokument in `migration/analysis/` bzw. `migration/features/` und dann den referenzierten Originalcode. | akzeptiert | Auftrag |
+| ADR-007 | **Forgejo ist die einzige Code-Hosting-Integration – und zwar eine starke.** Die GitHub-, GitLab- und Bitbucket-Integrationen des Originals werden **nicht** portiert. Stattdessen gibt es eine tiefe, bidirektionale Forgejo-Integration (Umfang siehe unten). Forgejo darf als Dienst in den Stack aufgenommen werden (Aspire-Ressource für Entwicklung, Tests und optional den Produktivbetrieb). | akzeptiert | Auftraggeber |
 
 ## Konsequenzen
 
 - **ADR-001:** Das Entitlement-/Lizenz-Subsystem des Originals (Monitor/Prime, `Instance.edition`, Plan-Matrix, Upgrade-Komponenten in `apps/web/components/license`, `apps/web/components/workspace/billing`, `packages/constants/src/subscription.ts`, `payment.ts`) wird **nicht** portiert. Limits der Pläne (z. B. „5.000 Automationen“, „Page-Versionen 2 Tage“) entfallen bzw. werden zu frei konfigurierbaren Instanz-Einstellungen mit großzügigen Defaults.
 - **ADR-002:** Kein Node.js zur Laufzeit. Der PDF-Export des Live-Servers (heute `@react-pdf/renderer`) wird ebenfalls in .NET umgesetzt.
 - **ADR-003:** Es entfällt die Pflicht zur Tabellen-/Spaltenkompatibilität. Trotzdem werden die **JSON-API-Verträge fachlich am Original orientiert** (Ressourcen, Feldnamen in `snake_case`, Enum-Werte, Fehlercodes), weil das Angular-Frontend die Store-/Service-Logik des Originals 1:1 portiert. Das senkt Übersetzungsfehler und erlaubt Contract-Tests gegen das Original.
+- **ADR-007 – Umfang der Forgejo-Integration** (Mindestumfang; orientiert am Funktionsumfang der GitHub-/GitLab-Integrationen der Commercial Edition, siehe `migration/features/28-paid-integrationen-importer-ai.md`, darüber hinaus erweiterbar):
+  - **Verbindung:** eine oder mehrere Forgejo-Instanzen pro Workspace (selbst gehostet, auch im Airgapped-Netz), OAuth2-Anwendung auf Forgejo-Seite, Organisationen/Repositories auswählen; zusätzlich persönliche Konto-Verknüpfung je Nutzer, damit Aktionen dem richtigen Nutzer zugeordnet werden.
+  - **Repository ↔ Projekt-Mapping** mit konfigurierbarer Zuordnung von States, Labels, Prioritäten und Nutzern.
+  - **Issue-Sync** bidirektional oder einseitig wählbar: Titel, Beschreibung, State, Labels, Assignees, Kommentare, Sub-Issues/Abhängigkeiten soweit Forgejo sie abbildet; Konfliktregeln und Wiederaufnahme nach Ausfällen.
+  - **Pull-Request-Automation:** Referenzen auf Work Items in Branch-Namen, PR-Titeln, -Beschreibungen und Commits (z. B. `PROJ-123`, „Fixes PROJ-123“) verknüpfen PRs/Commits automatisch; PR-Zustände (Draft, Open, Review requested, Merged, Closed) lösen konfigurierbare State-Wechsel aus.
+  - **Sichtbarkeit in Plane:** verknüpfte Branches, Commits, PRs und deren Status (inkl. Forgejo-Actions-Checks) im Work Item und in dessen Activity; Link-Previews für Forgejo-URLs.
+  - **Aus Plane heraus:** Branch-Namen aus einem Work Item erzeugen bzw. kopieren, PR zu einem Work Item öffnen.
+  - **Webhooks** von Forgejo mit Signaturprüfung (HMAC-SHA256), idempotente Verarbeitung über das Event-/Outbox-System.
+  - **Importer:** Forgejo-Issues, Labels und Milestones eines Repositories einmalig in ein Plane-Projekt übernehmen.
+  - **Login:** Anmeldung mit Forgejo-Konto über den vorhandenen Gitea-kompatiblen OAuth-Provider der CE bzw. über OIDC.
+  - **Technik:** Forgejo-REST-API (Gitea-kompatibel, `/api/v1`), eigener typisierter .NET-Client; Integrationstests gegen einen echten Forgejo-Container in Aspire. Forgejo ist ab v9 unter GPL-3.0-or-later lizenziert und läuft als eigenständiger Dienst (kein Code-Linking), kann eine eigene Datenbank auf dem gemeinsamen PostgreSQL-Server nutzen.
 - **ADR-004:** Alle Assets (Fonts, Icons, Emoji-Daten, Editor-Plugins) werden gebündelt ausgeliefert. Container-Images müssen ohne Internetzugang startbar sein.

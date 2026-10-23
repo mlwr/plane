@@ -116,11 +116,10 @@ GROUPS = [
     ]),
     ("F", "Integrationen & Importer", [
         ("F1", "Integrations-Framework (Connections, Webhook-Empfang, Sync-Engine)", "L", True, "H1",
-         "Voraussetzung für F2–F7.", ["EE-P09-001"]),
-        ("F2", "GitHub (Org/Konto, PR-Automation, Issue Sync, GitHub Enterprise)", "L", False, "F1", "",
-         ["EE-P09-002", "EE-P09-003", "EE-P09-004", "EE-P09-005"]),
-        ("F3", "GitLab (gitlab.com und Self-managed)", "L", False, "F1", "", ["EE-P09-006", "EE-P09-007"]),
-        ("F4", "Bitbucket (Cloud und Data Center)", "M", False, "F1", "", ["EE-P09-008"]),
+         "Voraussetzung für F2, F5–F7.", ["EE-P09-001"]),
+        ("F2", "Forgejo-Integration (ADR-007): Instanz-/Org-Verbindung, persönliche Konten, Repo↔Projekt-Mapping, bidirektionaler Issue-Sync, PR-/Commit-Automation, Status in Work Items, Branch aus Work Item, Webhooks, Importer, Forgejo-Login", "XL", True, "F1",
+         "Einzige Code-Hosting-Integration (ersetzt GitHub/GitLab/Bitbucket). Funktionsumfang orientiert an den GitHub/GitLab-Features der Commercial Edition; Forgejo als Aspire-Ressource im Stack. Kein EE-Gegenstück, daher ohne EE-IDs.",
+         []),
         ("F5", "Slack (Verbindung, Benachrichtigungen, Slash-Command, Thread-Sync, Unfurl)", "L", False, "F1", "Nur mit Internetzugang.",
          ["EE-P09-009", "EE-P09-010", "EE-P09-011"]),
         ("F6", "Sentry", "M", False, "F1", "", ["EE-P09-012"]),
@@ -156,12 +155,16 @@ GROUPS = [
     ]),
 ]
 
-# Entfällt nach ADR-001 (keine Plan-Stufen/Billing) bzw. ADR-004 (kein Hersteller-Betrieb)
+# Entfällt nach ADR-001 (keine Plan-Stufen/Billing), ADR-004 (kein Hersteller-Betrieb) bzw. ADR-007 (nur Forgejo)
 DROPPED = {
     "EE-P08-014": "ADR-001", "EE-P08-018": "ADR-001", "EE-P08-019": "ADR-001", "EE-P08-020": "ADR-001",
     "EE-P08-021": "ADR-001", "EE-P08-022": "ADR-001", "EE-P08-023": "ADR-001/004", "EE-P08-024": "ADR-001",
     "EE-P06-016": "ADR-001", "EE-P09-043": "ADR-001", "EE-P09-055": "ADR-004 (Cloud-only)",
     "EE-P03-010": "ADR-004 (Hersteller-Betrieb)", "EE-P03-009": "ADR-004 (Vertriebskanäle)",
+    "EE-P09-002": "ADR-007 (ersetzt durch Forgejo, Paket F2)", "EE-P09-003": "ADR-007 (ersetzt durch Forgejo, Paket F2)",
+    "EE-P09-004": "ADR-007 (ersetzt durch Forgejo, Paket F2)", "EE-P09-005": "ADR-007 (ersetzt durch Forgejo, Paket F2)",
+    "EE-P09-006": "ADR-007 (ersetzt durch Forgejo, Paket F2)", "EE-P09-007": "ADR-007 (ersetzt durch Forgejo, Paket F2)",
+    "EE-P09-008": "ADR-007 (ersetzt durch Forgejo, Paket F2)",
 }
 
 
@@ -187,7 +190,7 @@ def main():
     w("")
     w("Diese Liste dient der Entscheidung, **welche Bezahl-Features nach der Community Edition umgesetzt werden** und in welcher Reihenfolge. "
       f"Sie fasst alle {len(feats)} Features aus [29-paid-feature-matrix.md](29-paid-feature-matrix.md) zu {n_pkg} Paketen zusammen. "
-      f"{len(DROPPED)} reine Lizenz-, Billing- und Hersteller-Betriebsfunktionen entfallen nach ADR-001/ADR-004 (siehe Abschnitt „Entfällt“).")
+      f"{len(DROPPED)} Features entfallen nach ADR-001/ADR-004 (Lizenz, Billing, Hersteller-Betrieb) bzw. ADR-007 (GitHub/GitLab/Bitbucket, ersetzt durch Forgejo) (siehe Abschnitt „Entfällt“).")
     w("")
     w("## So wird die Liste benutzt")
     w("")
@@ -219,7 +222,7 @@ def main():
         w("| ✓ | Prio | Paket | Aufwand | 🧱 | Plan im Original | Setzt voraus |")
         w("|---|---|---|---|---|---|---|")
         for pid, name, eff, struct, deps, hint, ids in pkgs:
-            plans = sorted({feats[i]["min_plan"] for i in ids}, key=lambda p: order.get(p, 9))
+            plans = sorted({feats[i]["min_plan"] for i in ids}, key=lambda p: order.get(p, 9)) or ["neu (ADR-007)"]
             w(f"| [ ] | | **{pid}** {name} | {eff} ({EFFORT[eff]}) | {'🧱' if struct else ''} | {', '.join(plans)} | {deps} |")
         w("")
         for pid, name, eff, struct, deps, hint, ids in pkgs:
@@ -235,9 +238,9 @@ def main():
             w("</details>")
             w("")
 
-    w("## Entfällt (ADR-001 / ADR-004)")
+    w("## Entfällt (ADR-001 / ADR-004 / ADR-007)")
     w("")
-    w("Diese Einträge sind reine Lizenz-, Billing-, Kontingent- oder Hersteller-Betriebsmechanik und werden nicht umgesetzt.")
+    w("Diese Einträge sind Lizenz-, Billing-, Kontingent- oder Hersteller-Betriebsmechanik bzw. Code-Hosting-Integrationen, die durch Forgejo (Paket F2) ersetzt werden.")
     w("")
     w("| ID | Feature | Grund |")
     w("|---|---|---|")

@@ -1,6 +1,6 @@
 # Auswahlliste der Bezahl-Features
 
-Diese Liste dient der Entscheidung, **welche Bezahl-Features nach der Community Edition umgesetzt werden** und in welcher Reihenfolge. Sie fasst alle 246 Features aus [29-paid-feature-matrix.md](29-paid-feature-matrix.md) zu 73 Paketen zusammen. 13 reine Lizenz-, Billing- und Hersteller-Betriebsfunktionen entfallen nach ADR-001/ADR-004 (siehe Abschnitt „Entfällt“).
+Diese Liste dient der Entscheidung, **welche Bezahl-Features nach der Community Edition umgesetzt werden** und in welcher Reihenfolge. Sie fasst alle 246 Features aus [29-paid-feature-matrix.md](29-paid-feature-matrix.md) zu 71 Paketen zusammen. 20 Features entfallen nach ADR-001/ADR-004 (Lizenz, Billing, Hersteller-Betrieb) bzw. ADR-007 (GitHub/GitLab/Bitbucket, ersetzt durch Forgejo) (siehe Abschnitt „Entfällt“).
 
 ## So wird die Liste benutzt
 
@@ -22,7 +22,7 @@ Diese Liste dient der Entscheidung, **welche Bezahl-Features nach der Community 
 | C Workflows, Automationen, Templates | 6 | 2 | 0 | 2 | 3 | 1 |
 | D Wissen: Pages & Wiki | 12 | 2 | 1 | 6 | 3 | 2 |
 | E Sicherheit & Administration | 8 | 3 | 0 | 5 | 2 | 1 |
-| F Integrationen & Importer | 11 | 1 | 0 | 3 | 8 | 0 |
+| F Integrationen & Importer | 9 | 2 | 0 | 2 | 6 | 1 |
 | G Plane AI | 3 | 1 | 0 | 0 | 2 | 1 |
 | H Plattform, API & Betrieb | 8 | 2 | 0 | 3 | 4 | 1 |
 
@@ -557,9 +557,7 @@ _Hinweis:_ Berechtigungskatalog statt fester Rollenwerte bereits in der CE.
 | ✓ | Prio | Paket | Aufwand | 🧱 | Plan im Original | Setzt voraus |
 |---|---|---|---|---|---|---|
 | [ ] | | **F1** Integrations-Framework (Connections, Webhook-Empfang, Sync-Engine) | L (15–40 PT) | 🧱 | Pro | H1 |
-| [ ] | | **F2** GitHub (Org/Konto, PR-Automation, Issue Sync, GitHub Enterprise) | L (15–40 PT) |  | Pro | F1 |
-| [ ] | | **F3** GitLab (gitlab.com und Self-managed) | L (15–40 PT) |  | Pro | F1 |
-| [ ] | | **F4** Bitbucket (Cloud und Data Center) | M (5–15 PT) |  | Pro | F1 |
+| [ ] | | **F2** Forgejo-Integration (ADR-007): Instanz-/Org-Verbindung, persönliche Konten, Repo↔Projekt-Mapping, bidirektionaler Issue-Sync, PR-/Commit-Automation, Status in Work Items, Branch aus Work Item, Webhooks, Importer, Forgejo-Login | XL (40–100 PT) | 🧱 | neu (ADR-007) | F1 |
 | [ ] | | **F5** Slack (Verbindung, Benachrichtigungen, Slash-Command, Thread-Sync, Unfurl) | L (15–40 PT) |  | Pro | F1 |
 | [ ] | | **F6** Sentry | M (5–15 PT) |  | Pro | F1 |
 | [ ] | | **F7** Weitere SaaS-Connectoren (HubSpot, Cursor-Agent, Zapier, Zendesk, Freshdesk) | L (15–40 PT) |  | Pro, unklar | F1 |
@@ -570,31 +568,16 @@ _Hinweis:_ Berechtigungskatalog statt fester Rollenwerte bereits in der CE.
 
 <details><summary><b>F1</b> – 1 Features</summary>
 
-_Hinweis:_ Voraussetzung für F2–F7.
+_Hinweis:_ Voraussetzung für F2, F5–F7.
 
 - [ ] `EE-P09-001` Integrations-Framework „Silo“, Integrations-Übersicht, Workspace-/persönliche Connections [Matrix coming soon, ausgeliefert] — Plan: Pro · CE: Stub/UI-Hülle im CE · Konfidenz: mittel · Detail: migration/features/28-paid-integrationen-importer-ai.md#P09-F01; migration/features/22-paid-architektur-selfhosting-dienste.md#P03-F14
 
 </details>
 
-<details><summary><b>F2</b> – 4 Features</summary>
+<details><summary><b>F2</b> – 0 Features</summary>
 
-- [ ] `EE-P09-002` GitHub: Organisation verbinden, persönliches Konto, Repository-Mapping [Matrix coming soon, ausgeliefert] — Plan: Pro · CE: Stub/UI-Hülle im CE · Konfidenz: hoch · Detail: migration/features/28-paid-integrationen-importer-ai.md#P09-F02; migration/features/20-paid-spuren-im-repo.md#PF-84; migration/features/22-paid-architektur-selfhosting-dienste.md#P03-F15
-- [ ] `EE-P09-003` GitHub: Pull-Request-Automation (PR-State-Mapping) — Plan: Pro · CE: Stub/UI-Hülle im CE · Konfidenz: mittel · Detail: migration/features/28-paid-integrationen-importer-ai.md#P09-F03
-- [ ] `EE-P09-004` GitHub: Project Issue Sync (bi-/unidirektional inkl. Kommentare, Sub-Issues) — Plan: Pro · CE: Stub/UI-Hülle im CE · Konfidenz: mittel · Detail: migration/features/28-paid-integrationen-importer-ai.md#P09-F04
-- [ ] `EE-P09-005` GitHub Enterprise (Server und Enterprise Cloud ghe.com) — Plan: Pro · CE: Stub/UI-Hülle im CE · Konfidenz: hoch · Detail: migration/features/28-paid-integrationen-importer-ai.md#P09-F05; migration/features/20-paid-spuren-im-repo.md#PF-84; migration/features/22-paid-architektur-selfhosting-dienste.md#P03-F15
+_Hinweis:_ Einzige Code-Hosting-Integration (ersetzt GitHub/GitLab/Bitbucket). Funktionsumfang orientiert an den GitHub/GitLab-Features der Commercial Edition; Forgejo als Aspire-Ressource im Stack. Kein EE-Gegenstück, daher ohne EE-IDs.
 
-</details>
-
-<details><summary><b>F3</b> – 2 Features</summary>
-
-- [ ] `EE-P09-006` GitLab (gitlab.com): MR-State-Mapping, Issue Sync — Plan: Pro · CE: Stub/UI-Hülle im CE · Konfidenz: hoch · Detail: migration/features/28-paid-integrationen-importer-ai.md#P09-F06; migration/features/20-paid-spuren-im-repo.md#PF-85; migration/features/22-paid-architektur-selfhosting-dienste.md#P03-F16
-- [ ] `EE-P09-007` GitLab Self-managed („Gitlab Enterprise“) — Plan: Pro · CE: Stub/UI-Hülle im CE · Konfidenz: hoch · Detail: migration/features/28-paid-integrationen-importer-ai.md#P09-F07; migration/features/20-paid-spuren-im-repo.md#PF-85; migration/features/22-paid-architektur-selfhosting-dienste.md#P03-F16
-
-</details>
-
-<details><summary><b>F4</b> – 1 Features</summary>
-
-- [ ] `EE-P09-008` Bitbucket Cloud und Bitbucket Data Center — Plan: Pro · CE: Stub/UI-Hülle im CE · Konfidenz: mittel · Detail: migration/features/28-paid-integrationen-importer-ai.md#P09-F08; migration/features/20-paid-spuren-im-repo.md#PF-88; migration/features/22-paid-architektur-selfhosting-dienste.md#P03-F17
 
 </details>
 
@@ -783,9 +766,9 @@ _Hinweis:_ Eigene Produkte, nicht Teil von Web/Angular.
 
 </details>
 
-## Entfällt (ADR-001 / ADR-004)
+## Entfällt (ADR-001 / ADR-004 / ADR-007)
 
-Diese Einträge sind reine Lizenz-, Billing-, Kontingent- oder Hersteller-Betriebsmechanik und werden nicht umgesetzt.
+Diese Einträge sind Lizenz-, Billing-, Kontingent- oder Hersteller-Betriebsmechanik bzw. Code-Hosting-Integrationen, die durch Forgejo (Paket F2) ersetzt werden.
 
 | ID | Feature | Grund |
 |---|---|---|
@@ -800,14 +783,21 @@ Diese Einträge sind reine Lizenz-, Billing-, Kontingent- oder Hersteller-Betrie
 | `EE-P08-022` | Member-Limits und Seat-Berechnung (Aufhebung der Mitgliedergrenze) [entfällt als Plan-/Billing-Mechanik] | ADR-001 |
 | `EE-P08-023` | Storage-Limits (Workspace-Speicher, Max file size) [entfällt als Plan-/Billing-Mechanik] | ADR-001/004 |
 | `EE-P08-024` | Support-Kanäle, SLA und „Chat with us“ [entfällt als Plan-/Billing-Mechanik] | ADR-001 |
+| `EE-P09-002` | GitHub: Organisation verbinden, persönliches Konto, Repository-Mapping [Matrix coming soon, ausgeliefert] | ADR-007 (ersetzt durch Forgejo, Paket F2) |
+| `EE-P09-003` | GitHub: Pull-Request-Automation (PR-State-Mapping) | ADR-007 (ersetzt durch Forgejo, Paket F2) |
+| `EE-P09-004` | GitHub: Project Issue Sync (bi-/unidirektional inkl. Kommentare, Sub-Issues) | ADR-007 (ersetzt durch Forgejo, Paket F2) |
+| `EE-P09-005` | GitHub Enterprise (Server und Enterprise Cloud ghe.com) | ADR-007 (ersetzt durch Forgejo, Paket F2) |
+| `EE-P09-006` | GitLab (gitlab.com): MR-State-Mapping, Issue Sync | ADR-007 (ersetzt durch Forgejo, Paket F2) |
+| `EE-P09-007` | GitLab Self-managed („Gitlab Enterprise“) | ADR-007 (ersetzt durch Forgejo, Paket F2) |
+| `EE-P09-008` | Bitbucket Cloud und Bitbucket Data Center | ADR-007 (ersetzt durch Forgejo, Paket F2) |
 | `EE-P09-043` | AI-Usage, Credits, Token-Budget [entfällt als Plan-/Billing-Mechanik] | ADR-001 |
 | `EE-P09-055` | Flatfile-Importer (CSV über Flatfile, Beta) [entfällt als Plan-/Billing-Mechanik] | ADR-004 (Cloud-only) |
 
 ## Prüfsumme
 
 - Features in der Matrix: 246
-- Zugeordnet zu Paketen: 233
-- Entfällt: 13
-- Pakete: 73, davon strukturrelevant: 17
+- Zugeordnet zu Paketen: 226
+- Entfällt: 20
+- Pakete: 71, davon strukturrelevant: 18
 
 _Erzeugt mit `migration/_werkzeuge/paid-auswahl/build.py`; das Skript prüft, dass jede EE-ID genau einmal vorkommt._
