@@ -1911,7 +1911,8 @@ internal sealed class SessionRevalidator(IOptionsMonitor<PlaneAuthOptions> auth,
         {
             // Verfügbarkeit vor Sofortsperre: Session bleibt, nächster Versuch frühestens nach 30 s (Log Warning plane.authentication);
             // Back-Channel-Logout wirkt unabhängig davon. Höchstdauer ohne erfolgreiche Revalidierung: Plane:Auth:RevalidateGraceSeconds (Default 900) → danach 401.
-            if (clock.UtcNow - last > TimeSpan.FromSeconds(auth.CurrentValue.RevalidateGraceSeconds)) { ctx.RejectPrincipal(); return; }
+            var lastOk = DateTimeOffset.Parse(ctx.Properties.Items["plane.revalidated_ok_at"] ?? ctx.Properties.Items["plane.revalidated_at"]!, CultureInfo.InvariantCulture);
+            if (clock.UtcNow - lastOk > TimeSpan.FromSeconds(auth.CurrentValue.RevalidateGraceSeconds)) { ctx.RejectPrincipal(); return; }
             ctx.Properties.Items["plane.revalidated_at"] = clock.UtcNow.AddSeconds(30 - auth.CurrentValue.RevalidateIntervalSeconds).ToString("O");
             ctx.ShouldRenew = true;
             return;
@@ -1924,7 +1925,7 @@ internal sealed class SessionRevalidator(IOptionsMonitor<PlaneAuthOptions> auth,
         }
         ctx.Properties.StoreTokens(refreshed.Value.AsAuthenticationTokens());
         ctx.ReplacePrincipal(PlanePrincipalFactory.RefreshRolesAndGroups(ctx.Principal!, refreshed.Value.IdTokenClaims));
-        ctx.Properties.Items["plane.revalidated_at"] = clock.UtcNow.ToString("O");
+        ctx.Properties.Items["plane.revalidated_at"] = ctx.Properties.Items["plane.revalidated_ok_at"] = clock.UtcNow.ToString("O");
         ctx.ShouldRenew = true;                                          // → RenewAsync
     }
 }
@@ -2247,6 +2248,7 @@ export const PERMISSION_EVALUATOR = new InjectionToken<PermissionEvaluatorFn>('P
 @Injectable({ providedIn: 'root' })
 export class PermissionService {
   private readonly evaluate = inject(PERMISSION_EVALUATOR);
+  private readonly router = inject(RouterStore);           // Port von WEB/store/router.store.ts (workspaceSlug/projectId als Signals)
   allowPermissions(allowPermissions: EUserPermissions[], level: EUserPermissionsLevel, workspaceSlug?: string,
                    projectId?: string, onPermissionAllowed?: () => boolean): boolean {
     const ws = workspaceSlug ?? this.router.workspaceSlug(); const pid = projectId ?? this.router.projectId();
@@ -2271,7 +2273,7 @@ var oidcBack  = builder.AddParameter("oidc-backend-secret", secret: true);
 var devUserPw = builder.AddParameter("plane-dev-user-password", secret: true);
 
 var keycloak = builder.AddKeycloak("keycloak", port: 8180, adminPassword: kcAdminPassword)
-    .WithRealmImport("../../../deploy/keycloak/realms")
+    .WithRealmImport(isTest ? "../../../deploy/keycloak/realms/plane-realm.test.json" : "../../../deploy/keycloak/realms/plane-realm.json")  // eine Datei je Profil (14 D14-ADR-03)
     .WithBindMount("../../../deploy/keycloak/themes", "/opt/keycloak/themes", isReadOnly: true)
     .WithEnvironment("PLANE_PUBLIC_URL", gateway.GetEndpoint("http"))
     .WithEnvironment("PLANE_BACKCHANNEL_BASE_URL", gateway.GetEndpoint("http"))       // Sicht aus dem Container ⚠ R-03
@@ -2282,10 +2284,11 @@ var keycloak = builder.AddKeycloak("keycloak", port: 8180, adminPassword: kcAdmi
     .WithEnvironment("PLANE_DEV_USER_PASSWORD", devUserPw);
 
 api.WithReference(keycloak).WaitFor(keycloak)
-   .WithEnvironment("Plane__Auth__Oidc__ClientSecrets__Web", oidcWeb)
-   .WithEnvironment("Plane__Auth__Oidc__ClientSecrets__Admin", oidcAdmin)
-   .WithEnvironment("Plane__Auth__Oidc__ClientSecrets__Space", oidcSpace)
-   .WithEnvironment("Plane__Auth__Oidc__ClientSecrets__Backend", oidcBack);
+   .WithEnvironment("Plane__Auth__Oidc__Authority", ReferenceExpression.Create($"{keycloak.GetEndpoint("http")}/realms/plane"))
+   .WithEnvironment("Plane__Auth__Clients__Web__ClientSecret", oidcWeb)
+   .WithEnvironment("Plane__Auth__Clients__Admin__ClientSecret", oidcAdmin)
+   .WithEnvironment("Plane__Auth__Clients__Space__ClientSecret", oidcSpace)
+   .WithEnvironment("Plane__Auth__Backend__ClientSecret", oidcBack);   // Optionsnamen §3.4.3 (verbindlich)
 ```
 
 ---

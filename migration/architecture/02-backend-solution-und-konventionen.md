@@ -143,7 +143,7 @@ Alle Projekte nutzen `Directory.Build.props` (Nullable, `TreatWarningsAsErrors`,
 | `src/building-blocks/Plane.BuildingBlocks.Web/Plane.BuildingBlocks.Web.csproj` | `Microsoft.NET.Sdk` + `FrameworkReference Microsoft.AspNetCore.App` | `Plane.BuildingBlocks`, `Plane.Authorization.Contracts` | `Surfaces/` (`ApiSurface`, `PlaneEndpointRouteBuilder`, `SurfaceConventions`), `Routing/` (`TrailingSlashMiddleware`, `PlaneRouteConstraints`), `Json/` (`PlaneJsonOptions`, Converter), `Errors/` (`PlaneErrors`, `PlaneErrorCodes`, `DrfMessages`, `PlaneExceptionHandler`, `ResultExtensions`, `StatusCodeBodiesMiddleware`), `Validation/` (`ValidationEndpointFilter<T>`, `DrfValidationErrorMapper`), `Scoping/` (`ScopeBindingFilter`, `WorkspaceScopeBinder`), `Permissions/` (`PermissionEndpointFilter`, `RequirePermissionExtensions`, `AllowAnonymousSurfaceExtensions`), `Pagination/` (`CursorPaginator`, `GlobalPaginator`, `PaginationQuery`), `Security/` (`OriginCheckMiddleware`, `RequestBodyLimitMiddleware`, `ApiKeyAuthenticationHandler`), `RateLimiting/` (`PlaneRateLimitPolicies`, `SlidingWindowByKeyPolicy`), `Logging/` (`RequestLoggingMiddleware`, `PlaneLogCategories`), `ReadReplica/` (`UseReadReplicaMetadata`), `OpenApi/` (`PlaneOpenApiTransformers`) | I0 |
 | `src/building-blocks/Plane.BuildingBlocks.Persistence/Plane.BuildingBlocks.Persistence.csproj` | `Microsoft.NET.Sdk` | `Plane.BuildingBlocks` + EF Core/Npgsql | `Entities/` (`Entity`, `AuditableEntity`, `WorkspaceEntity`, `ProjectEntity`, Marker-Interfaces, `OwnedByAttribute`), `Configuration/` (`PlaneEntityConfiguration<T>`, `PlaneModelConventions`), `Interceptors/` (`AuditInterceptor`, `SoftDeleteInterceptor`, `OwnershipGuardInterceptor`, `DomainEventDispatchInterceptor`, `OutboxInterceptor`), `SoftDelete/` (`SoftDeleteCascadeRegistry`, `CascadeMode`, `SoftDeleteCascadeJob`), `Filters/` (`QueryFilterNames`), `Sequences/` (`ISequenceAllocator`, `SequenceAllocator`), `Errors/` (`PostgresErrorClassifier` für `23505` Unique, `23503` FK) | I0 |
 | `src/building-blocks/Plane.BuildingBlocks.Messaging/…` | `Microsoft.NET.Sdk` | `Plane.BuildingBlocks`, `Plane.BuildingBlocks.Persistence` | Outbox/Inbox/Job-Queue/Scheduler (Detail: 06) | I0 |
-| `src/building-blocks/Plane.BuildingBlocks.Testing/…` | `Microsoft.NET.Sdk` | alle BuildingBlocks, `Plane.Data`, Test-Pakete | `PlaneAppFactory`, `PostgresFixture`, `ScenarioBuilder` (Workspace/Projekt/Mitglieder/Rollen), `GoldenFile`, `PermissionMatrixRunner`, `FakeClock`, `TestPrincipal` | I0 |
+| `src/building-blocks/Plane.BuildingBlocks.Testing/…` | `Microsoft.NET.Sdk` | alle BuildingBlocks, `Plane.Data`, Test-Pakete | Namen verbindlich nach 15 §9.2: `Hosting/PlaneApiFactory` (`CreateClientAs(SeedUser)`, `Query<PlaneDbContext>(…)`), `PostgresContainerFixture` + `TemplateDatabase` + `PlaneRespawner`, `ModuleIntegrationTest`, `Builders/*` mit Fassade `ScenarioBuilder` (`Factory.Scenario()`, legt Daten über Commands an), `GoldenSettings` (Verify), `ContractScenarioRunner`, `Security/PermissionMatrixTest`, `FixedClock`, `TestPrincipalHeader`/`SeedUser` | I0 |
 | `src/data/Plane.Data/Plane.Data.csproj` | `Microsoft.NET.Sdk` | `Plane.BuildingBlocks.Persistence` | `PlaneDbContext`, `PlaneReadDbContext`, `Entities/<Modul>/`, `Configurations/<Modul>/`, `Querying/` (`IWorkItemFilterTranslator`, `WorkItemQueryableExtensions`), `Migrations/`, `Seeds/` | I0 |
 | `src/modules/<M>/Plane.<M>.Contracts` | `Microsoft.NET.Sdk` | **nur** `Plane.BuildingBlocks` (R2) | `Dtos/`, `Requests/`, `Events/`, `Permissions/`, `Services/`, `Extensions/` | je Modul |
 | `src/modules/<M>/Plane.<M>` | `Microsoft.NET.Sdk` + `FrameworkReference Microsoft.AspNetCore.App` | `Plane.<M>.Contracts`, andere `*.Contracts`, `Plane.Data`, `Plane.BuildingBlocks.*`, `platform/*`, `documents/*` | Schablone §3.1.2 | je Modul |
@@ -181,9 +181,9 @@ src/data/Plane.Data/
 
 tests/modules/Plane.<Name>.Tests/
 ├── Unit/<Ding>RulesTests.cs, <Verb><Ding>RequestValidatorTests.cs, <Ding>MapperTests.cs
-├── Integration/<UseCase>Tests.cs             # Handler + echte DB (Testcontainers), OwnershipGuard aktiv
-├── Permissions/<Ding>PermissionMatrixTests.cs           # Rolle × Endpunkt aus 05-Matrix
-└── Contract/<endpunkt>.<fall>.golden.json + <Ding>ContractTests.cs
+├── Integration/<UseCase>Tests.cs             # : ModuleIntegrationTest(PostgresContainerFixture), OwnershipGuard aktiv
+├── Permissions/<Ding>PermissionMatrixTests.cs           # : PermissionMatrixTest – exakte Original-Körper (Vollständigkeit prüft zentral Plane.Security.Tests, 15 §9.2)
+└── Contract/<Name>ContractTests.cs             # spielt tests/contracts/scenarios/<modul>/*.yaml über ContractScenarioRunner ab (15 §3.3.3); Goldens unter tests/contracts/golden/<modul>/<szenario>/
 ```
 
 **Namensregeln (Ergänzung zu 01 §7.1):**
@@ -223,7 +223,7 @@ Reihenfolge in `ModuleCatalog.All` (verbindlich, weil Permission-Katalog und Act
 
 | Typ (`Plane.BuildingBlocks.Persistence/Entities`) | Spalten | Original | Verhalten |
 |---|---|---|---|
-| `abstract class Entity` | `id uuid PK` | `BaseModel.id` (`uuid4`) | Id wird **im Konstruktor/Fabrikmethode** über `IIdGenerator` (UUIDv7) gesetzt; nie `Guid.NewGuid()` (R8); `IHasDomainEvents`-Implementierung (`Raise`, `DequeueEvents`) |
+| `abstract class Entity` | `id uuid PK` | `BaseModel.id` (`uuid4`) | Id wird **im Konstruktor/Fabrikmethode** über `IIdGenerator` (UUIDv7) gesetzt; nie `Guid.NewGuid()` (R8); `IHasDomainEvents`-Implementierung (`Raise`, `DequeueDomainEvents`, `DequeueIntegrationEvents`) |
 | `abstract class AuditableEntity : Entity, IAuditable, ISoftDeletable` | `created_at timestamptz NOT NULL`, `updated_at timestamptz NOT NULL`, `created_by_id uuid NULL FK users ON DELETE SET NULL`, `updated_by_id uuid NULL FK …`, `deleted_at timestamptz NULL` | `AuditModel` = `TimeAuditModel` + `UserAuditModel` + `SoftDeleteModel` | `AuditInterceptor`: Added → `created_at = updated_at = clock.UtcNow`, `created_by_id = actor`, `updated_by_id = null`; Modified → `updated_at = now`, `updated_by_id = actor` (nur wenn `actor` gesetzt; System-/Bot-Aktor ist ein echter User mit `is_bot`). Fachcode setzt diese Felder nie (Analyzer-Regel `PL0002`), Ausnahme: `ICreatedByOverride` für v1-Import (CE-API-017 „Override von created_at/created_by“) |
 | `abstract class WorkspaceEntity : AuditableEntity, IWorkspaceScoped` | `workspace_id uuid NOT NULL FK workspaces ON DELETE CASCADE`, `project_id uuid NULL FK projects ON DELETE CASCADE` | `WorkspaceBaseModel` (`API/db/models/workspace.py`) | Bei gesetztem `project_id` erzwingt `ScopeConsistencyInterceptor` `workspace_id = project.workspace_id` (Original `save()`) |
 | `abstract class ProjectEntity : AuditableEntity, IProjectScoped, IWorkspaceScoped` | `project_id uuid NOT NULL FK`, `workspace_id uuid NOT NULL FK` | `ProjectBaseModel` (`API/db/models/project.py`) | wie oben, `project_id` Pflicht |
@@ -2266,27 +2266,28 @@ public sealed class CreateLabelRequestValidatorTests
           .ShouldBe("Ensure this field has no more than 255 characters.");
 }
 
-// Integration/CreateLabelTests.cs
-[Collection(PostgresCollection.Name)]
-public sealed class CreateLabelTests(PlaneAppFactory app)
+// Integration/CreateLabelTests.cs – Testhost/Fixture-Namen nach 15 §9.2
+public sealed class CreateLabelTests(PostgresContainerFixture pg) : ModuleIntegrationTest(pg)
 {
     [Fact]
     public async Task Creates_label_with_max_plus_10000_and_null_updated_by()
     {
-        var s = await app.Scenario().Workspace("ws").Project("P").Member("admin", ws: SystemRoleLevel.Admin, project: SystemRoleLevel.Admin).BuildAsync();
-        await app.Client(s.User("admin")).PostJsonAsync($"/api/workspaces/ws/projects/{s.ProjectId}/issue-labels/", new { name = "Bug", color = "#ff0000" });
-        var resp = await app.Client(s.User("admin")).PostJsonAsync($"/api/workspaces/ws/projects/{s.ProjectId}/issue-labels", new { name = "Feature" }); // ohne Slash
+        var s = await Factory.Scenario().Workspace("ws").Project("P").Member("admin", ws: SystemRoleLevel.Admin, project: SystemRoleLevel.Admin).BuildAsync();
+        using var client = Factory.CreateClientAs(s.User("admin"));
+        await client.PostAsJsonAsync($"/api/workspaces/ws/projects/{s.ProjectId}/issue-labels/", new { name = "Bug", color = "#ff0000" });
+        var resp = await client.PostAsJsonAsync($"/api/workspaces/ws/projects/{s.ProjectId}/issue-labels", new { name = "Feature" }); // ohne Slash
         resp.StatusCode.ShouldBe(HttpStatusCode.Created);
-        var json = await resp.ReadJsonAsync();
+        var json = await resp.ReadJsonObjectAsync();
         json["sort_order"]!.GetValue<double>().ShouldBe(75535);
-        (await app.Db(db => db.Labels.IgnoreQueryFilters().SingleAsync(l => l.Name == "Feature"))).UpdatedById.ShouldBeNull();
+        Factory.Query(db => db.Labels.IgnoreQueryFilters([QueryFilterNames.SoftDelete]).Single(l => l.Name == "Feature")).UpdatedById.ShouldBeNull();
     }
 
     [Fact]
     public async Task Duplicate_name_case_insensitive_yields_field_error()
     {
-        var s = await app.Scenario().Workspace("ws").Project("P").Member("admin", ws: SystemRoleLevel.Admin, project: SystemRoleLevel.Admin).Label("Bug").BuildAsync();
-        var resp = await app.Client(s.User("admin")).PostJsonAsync($"/api/workspaces/ws/projects/{s.ProjectId}/issue-labels/", new { name = "bug" });
+        var s = await Factory.Scenario().Workspace("ws").Project("P").Member("admin", ws: SystemRoleLevel.Admin, project: SystemRoleLevel.Admin).Label("Bug").BuildAsync();
+        using var client = Factory.CreateClientAs(s.User("admin"));
+        var resp = await client.PostAsJsonAsync($"/api/workspaces/ws/projects/{s.ProjectId}/issue-labels/", new { name = "bug" });
         resp.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
         (await resp.Content.ReadAsStringAsync()).ShouldBe("""{"name":["LABEL_NAME_ALREADY_EXISTS"]}""");
     }
@@ -2294,17 +2295,17 @@ public sealed class CreateLabelTests(PlaneAppFactory app)
     [Fact]
     public async Task Delete_soft_deletes_children_and_work_item_links()
     {
-        var s = await app.Scenario().Workspace("ws").Project("P").Member("admin", ws: SystemRoleLevel.Admin, project: SystemRoleLevel.Admin)
-                         .Label("Parent").Label("Child", parent: "Parent").WorkItem("W1", labels: ["Child"]).BuildAsync();
-        (await app.Client(s.User("admin")).DeleteAsync($"/api/workspaces/ws/projects/{s.ProjectId}/issue-labels/{s.LabelId("Parent")}/"))
-            .StatusCode.ShouldBe(HttpStatusCode.NoContent);
-        (await app.Db(db => db.Labels.IgnoreQueryFilters([QueryFilterNames.SoftDelete]).SingleAsync(l => l.Name == "Child"))).DeletedAt.ShouldNotBeNull();
-        (await app.Db(db => db.WorkItemLabels.IgnoreQueryFilters([QueryFilterNames.SoftDelete]).SingleAsync())).DeletedAt.ShouldNotBeNull();
+        var s = await Factory.Scenario().Workspace("ws").Project("P").Member("admin", ws: SystemRoleLevel.Admin, project: SystemRoleLevel.Admin)
+                             .Label("Parent").Label("Child", parent: "Parent").WorkItem("W1", labels: ["Child"]).BuildAsync();
+        using var client = Factory.CreateClientAs(s.User("admin"));
+        (await client.DeleteAsync($"/api/workspaces/ws/projects/{s.ProjectId}/issue-labels/{s.LabelId("Parent")}/")).StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        Factory.Query(db => db.Labels.IgnoreQueryFilters([QueryFilterNames.SoftDelete]).Single(l => l.Name == "Child")).DeletedAt.ShouldNotBeNull();
+        Factory.Query(db => db.WorkItemLabels.IgnoreQueryFilters([QueryFilterNames.SoftDelete]).Single()).DeletedAt.ShouldNotBeNull();
     }
 }
 
 // Permissions/LabelPermissionMatrixTests.cs – erwartete Antworten = Original (aufgezeichnet)
-public sealed class LabelPermissionMatrixTests(PlaneAppFactory app) : PermissionMatrixTest(app)
+public sealed class LabelPermissionMatrixTests(PostgresContainerFixture pg) : PermissionMatrixTest(pg)
 {
     public static TheoryData<string, SystemRoleLevel?, SystemRoleLevel?, int, string?> CreateCases => new()
     {   // Fall, WS-Rolle, Projektrolle, Status, Körper
@@ -2328,13 +2329,13 @@ public sealed class LabelPermissionMatrixTests(PlaneAppFactory app) : Permission
     // anonym → 401 {"detail":"Authentication credentials were not provided."}
 }
 
-// Contract/LabelContractTests.cs – Golden-Files aus dem Parity-Harness (tests/contracts/projects/labels/*.golden.json)
-public sealed class LabelContractTests(PlaneAppFactory app) : ContractTest(app, "projects/labels")
+// Contract/ProjectsContractTests.cs – Szenario tests/contracts/scenarios/projects/labels-crud.yaml (15 §3.3.3); Schrittnamen = Golden-IDs
+public sealed class ProjectsContractTests(PostgresContainerFixture pg) : ModuleIntegrationTest(pg)
 {
-    [Theory]
-    [InlineData("L1.list.admin"), InlineData("L2.create.ok"), InlineData("L2.create.duplicate-iexact"), InlineData("L3.get.not-found"),
-     InlineData("L5.patch.duplicate-case-sensitive"), InlineData("L5.patch.ok"), InlineData("L6.delete.ok"), InlineData("L7.bulk.ok")]
-    public Task Matches_original(string golden) => ReplayAndDiffAsync(golden);   // ignoriert id/created_at/updated_at per deviations.yaml-Regeln
+    public static TheoryData<string> LabelSteps => ["L1.list.admin", "L1.list.non-member-403", "L2.create.ok", "L2.create.duplicate-iexact", "L3.get.not-found",
+                                                    "L5.patch.duplicate-case-sensitive", "L5.patch.ok", "L6.delete.ok", "L7.bulk.ok"];
+    [Theory, MemberData(nameof(LabelSteps))]
+    public Task Labels_match_original(string step) => ContractScenarioRunner.RunStepAsync(Factory, "projects.labels-crud", step);   // Ausnahmen per tests/contracts/deviations.yaml
 }
 ```
 
@@ -2408,7 +2409,7 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 |---|---|
 | `tests/Plane.BuildingBlocks.Tests` | Converter (AK-09), `Optional<T>` (AK-10), `CursorPaginator`/`GlobalPaginator` (AK-11), `PlaneErrors` (AK-04), `RateExpression`, `TrailingSlashMiddleware`, `SoftDeleteInterceptor` + Registry, `AuditInterceptor`, `OwnershipGuardInterceptor` |
 | `tests/modules/Plane.Authorization.Tests` (Modul-Testprojekt, Pfad nach 01 §5.1) | AK-06, AK-07, `SystemRolePermissionsSnapshotTests` |
-| `tests/modules/Plane.WorkItems.Tests` | AK-12 … AK-14, `LegacyFilterParserTests` (alle Parameter aus §3.11.3 inkl. Datumsgrammatik mit `FakeClock`), `GroupedPageStrategyEquivalenceTests` |
+| `tests/modules/Plane.WorkItems.Tests` | AK-12 … AK-14, `LegacyFilterParserTests` (alle Parameter aus §3.11.3 inkl. Datumsgrammatik mit `FixedClock`), `GroupedPageStrategyEquivalenceTests` |
 | `tests/modules/Plane.Projects.Tests` | AK-20 |
 | `tests/Plane.AppHost.Tests` | AK-02, AK-03, AK-16, AK-19, AK-23, AK-24, AK-26 (gegen laufenden Api-Host) |
 | `tests/Plane.BuildingBlocks.Tests` (Ergänzung) | AK-25 (`TransactionBehavior`, Domain-Event-Schleife, Execution-Strategy) |
