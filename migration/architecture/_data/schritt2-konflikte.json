@@ -1,0 +1,216 @@
+[
+ {
+  "doc": "architecture/15-teststrategie-qualitaet-paritaet.md",
+  "conflicts": [
+   "D14 §3.3.3/D14-ADR-03 describes plane-realm.test.json as a hand-maintained file with seed users. D05 §9 point 2 describes it as an override-only file with the same clients. D15 now makes it a GENERATED file (plane-realm.json + test-overrides.json + parity-users.json), and the AppHost resource keycloak-test-users no longer exists. D05 and D14 must adopt this.",
+   "01 §8.2 lists @playwright/test as '1.5x'. It must be 1.64.x, the same version as Microsoft.Playwright 1.64.x in 01 §8.1, because both share the browser image mcr.microsoft.com/playwright:v1.64.1-noble.",
+   "01 §8.1 lacks FsCheck (BSD-3), coverlet.MTP (MIT) and ReportGenerator. Microsoft.Testing.Extensions.CodeCoverage is proprietary-licensed and must not be used.",
+   "01 §9 S11 still starts the original via docker-compose-local.yml; per D14 §3.20 and D15 it is tools/parity/ (port 13000, original.env).",
+   "D08 §3 workspace tree lists vitest.workspace.ts, which was removed in Vitest 4. It must become vitest.config.ts with test.projects plus @vitest/browser-playwright.",
+   "D09-ADR-16 places the reference gallery at funk./tools/reference-gallery and the stories at tools/gallery-stories. D15 binds them to frontend/tools/original-gallery and frontend/tools/gallery-stories. D09 must adjust its paths; the DOM normalisation N1–N9 of D09 §3.14.6 now applies to D15 as well.",
+   "D09 uses seed anchor T0=2026-01-15; D15 binds T0=2026-02-01T10:00:00Z (O-D15-11), and D09 must adopt it.",
+   "D05 cites D15 test IDs; D15's SEC-01…11 have been renamed to D15-SEC-01…11 as D05 §9 requires. D05 should check that its references (e.g. D15-SEC-09) still resolve.",
+   "Documents 03, 04, 06, 07, 10 and 11 that D15 depends on (endpoints.json, FloatField list, event catalogue, Task→Job table) do not exist yet; interim sources are in D15 §9.1."
+  ],
+  "remaining": [
+   "The endpoint target list (D04 _data/endpoints.json) and D03's reference-table/FloatField list do not exist yet; the interim sources from §9.1 apply until then.",
+   "Still to confirm in S0: runnerConfig of the Angular 22 unit-test builder for a shared vitest.config.ts, the MTP option --max-parallel-test-modules, and the ITraitAttribute signature in xunit.v3 4.x (all marked ⚠).",
+   "Annex B and Annex A were checked only for completeness and status sums, not row by row for the correctness of required levels and target classes.",
+   "The Keycloak test-realm generator (ParityHarness keycloak-test-realm) is new and does not yet have its own self-test case in the §7.2 table (only KeycloakRealmConfigTests.TestRealm_IsUpToDate)."
+  ],
+  "open": [
+   "O-D15-02: Choose the coverage package (Microsoft.Testing.Extensions.CodeCoverage or coverlet.MTP) by the end of S0.",
+   "O-D15-04: Decide where visual references are stored in airgapped CI (Git LFS or OCI artifacts) by the end of I0.",
+   "O-D15-05: Should Firefox/WebKit become a hard gate from I7? Needs confirmation by the client.",
+   "O-D15-06: How should the original's a11y violations be handled? The client decides at each increment acceptance.",
+   "O-D15-07: Should mutation testing become a gate after I2, at a mutation score of at least 60% for Domain/?",
+   "O-D15-08: The original gallery needs a source build with the original's Node/pnpm (dev only); decide by the end of S10.",
+   "O-D15-09: Set retention periods for traces, videos and diff images.",
+   "O-D15-10: Does the additive rule hold for A1 (mandatory properties) and E5 (default permissions)? Check before planning W2/W4.",
+   "O-D15-12: Do parity runs after W1 need a separate CE view? Recommendation: no, as long as §6.3 holds.",
+   "Follow-up changes in the other documents (§9.3) are still to be made: D01 §5.1 test projects; D02 naming; D03 FloatField list; D04 endpoints.json; D05 partial import and plane-test-app; D06 machine-readable event catalog; D08 gallery location; D09 seed, T0 and paths; D14 keycloak-test-users, mount, --from-source, LT-21; D16 inventory sync."
+  ]
+ },
+ {
+  "doc": "architecture/14-infrastruktur-deployment-betrieb.md",
+  "conflicts": [
+   "D05 §3.15/§3.16 vs. original D14: realm placeholders, client IDs (`forgejo` vs. `plane-forgejo`, missing `plane-backend`), post-logout URL, webOrigins, scopes, test-user IDs, theme layout (`themes/plane`, `plane-space`, `tools/keycloak-theme`) and realm mechanism (keycloak-config-cli vs. `plane-cli idp sync`). D14 was aligned to D05. Still open: image name `funk/keycloak` (D05) vs. `plane-keycloak` (D14); recommend `plane-keycloak` and updating D05 (O-14-15).",
+   "D02 §4.9/§3.15 vs. D14: `SECRET_KEY` is 'entfällt' in D02 but an alias to `Plane:Security:SigningKey` in D14. D02's `ApiLogHmacKey` derived from a Data-Protection purpose is not stable over time because keys rotate every 90 days; recommend deriving it from the SigningKey (O-14-12). D02 should also add `PlaneUrlsOptions.Idp`, `PlaneDatabaseOptions.MaxPoolSize`, `PlaneSecurityOptions.SigningKey` and the infra option classes.",
+   "D02 §3.17 vs. D14 §3.6: `/health/ready` response format (ProblemDetails vs. JSON per check); the management port 8081 is missing from D02.",
+   "D08 §3.1.2 vs. 01 §3.3/D14: Angular dev-server ports 3000/3001/3002 (D08) vs. 4200/4201/4202. The gateway occupies 3000, so D08 must change (O-14-13).",
+   "D08 §3.1.2 says 'Gateway setzt CSP' (justification for `subresourceIntegrity: false`), but D14 §3.7.3 sets no CSP by default, matching the original.",
+   "D09 says the gallery base href is `/gallery/`, but D08 and D15 say `/__gallery/`; D14 follows D08/D15 (G-17).",
+   "D15 §3.14.2: `plane-realm.test.json` contains only parity-seed users, but D14 and D05 tests need the seven D05 test users in the `test` profile too (O-14-14).",
+   "01 §3.3/§3.4: Keycloak data volume in dev, Valkey volume `plane-valkey`, Forgejo DB user `postgres`, a single `oidc-client-secret`, `deploy/keycloak/realms/plane-realm.json` as a combined dev/prod file, and `--import-realm` from the directory all contradict the refinements in D14/D05. 01 §5.1 also lacks `src/hosts/Plane.Hosting` and `src/hosts/Plane.AllInOne` and still uses the repo name `plane-net/` (O-14-07).",
+   "01 ADR-052 describes AIO as a Compose profile; D14 uses a separate generated `docker-compose.aio.yaml`, since Compose profiles cannot switch core services off."
+  ],
+  "remaining": [
+   "⚠ items still to be checked against the pinned versions in S0/S7: Aspire Preview APIs (`AddKeycloak`, `WithDashboard(false)` on the Compose environment, `WithContainerRuntimeArgs` for tmpfs, generated-parameter API); Keycloak 26 theme-cache option names; Forgejo image internals (`environment-to-ini`, `su-exec`, app.ini path, `oauth2_client.USERNAME=preferred_username`); the keycloak-config-cli tag for the chosen Keycloak major; Cosign flag names; SeaweedFS health path.",
+   "In the prodlike profile, `PLANE_BACKCHANNEL_BASE_URL` for `keycloak-config` is hard-coded to `http://api:8080`. There `api` runs as a host process, so the AppHost implementation must use an endpoint reference to `api` (noted as a comment in the skeleton).",
+   "Health response format (ProblemDetails in D02 vs. JSON per check in D14) still needs to be unified before I0."
+  ],
+  "open": []
+ },
+ {
+  "doc": "architecture/08-frontend-angular-architektur.md",
+  "conflicts": [
+   "05 §3.13.8 (line ~675) names functional guards (`authGuard`, `workspaceAccessGuard`, `projectAccessGuard`). D08-ADR-12 specifies wrapper components with in-place states (O-D08-04); 05 must be aligned.",
+   "05 D05-ADR-11 and N-01 require `max_age=<n>` for admin step-up but give the frontend no source for `n`. The 401 body only contains `error_code`/`error_message` (O-D08-14).",
+   "05 line 167 places `AuthLandingComponent` in three scope folders but does not define a shared display base. D08 now places it in `libs/shared/blocks/auth`; 05 should take this over.",
+   "01 §6.4 lists only `libs/web/extensions`. Admin/space registries (`ADMIN_SETTINGS_PAGES` for E3/E5/E7, `SPACE_ROUTE_EXTENSIONS` for B5) need `libs/admin/extensions` and `libs/space/extensions`, and `@plane/cdk/extensions` for the shared mechanics; these must be added to 01 §6.1/§6.4.",
+   "D16 X12 names only `FE/libs/web/extensions/src/` as the location of the frontend registries. Since D16 itself docks E3 (`FE/libs/admin/group-sync`) and E7 (`ADMIN_SETTINGS_PAGES`) onto the admin app, D16 must add the admin and space token libs.",
+   "D15 assigns `admin/admin-shell.spec.ts` (CE-INST-008…-016) and `admin/admin-settings.spec.ts` (CE-INST-017) to I6, while D08 §1.3/§4.2 builds the admin entry, dashboard layout and `general` in I0 (O-D08-15).",
+   "D14 AK-14-07 contains a header rule for `sw.js`. D08 (E19) does not ship `sw.js`, so that rule has nothing to apply to (already noted in §9)."
+  ],
+  "remaining": [
+   "The bundle-budget figures (§3.1.2), the `emojibase-data` version and the `jsdom` major can only be settled by measuring in S0 (O-D08-02, -05, -06).",
+   "The Signal Forms directive name (`[formField]`) must be confirmed against the installed Angular 22.x in S0. The docs differ between versions (`[field]` in the next/v21 docs).",
+   "The 46-web-services figure from A08 §2.7.2 is unchecked; `apps/web/services` holds 53 `.ts` files, including index and helper files.",
+   "AK-D08-12 counts (11 `group_by` values, 25 sub-group combinations, 14 `order_by` values) were not checked against `ISSUE_GROUP_BY_KEY`/order options.",
+   "The `n` value for `max_age` on admin step-up is open (O-D08-14). The interim value is `max_age=0`."
+  ],
+  "open": [
+   "O-D08-01: name of the Signal Forms template directive and its fit with Propel components; to be confirmed in S0 (fallback: Reactive Forms).",
+   "O-D08-02: emojibase-data version actually used by frimousse 0.3 (recommendation: 15.3.2; check in S0).",
+   "O-D08-03: field name of the auto-redirect switch in GET /api/instances/ (proposal: config.is_oidc_auto_redirect_enabled; 05 to confirm).",
+   "O-D08-04: 05 section 3.13.8 should rename authGuard, workspaceAccessGuard and projectAccessGuard to the wrapper components of D08-ADR-12.",
+   "O-D08-05/06: measure bundle budgets against the original build and pin the jsdom major version (S0).",
+   "O-D08-07: enable collaboration-cursor in CE once S1 awareness passes (client acceptance of the visible deviation FE-ED-01).",
+   "O-D08-08: dates stay in English as in the original (business acceptance in I1).",
+   "O-D08-09..13: reload behaviour on app_version change, gallery only in test builds, Firefox/WebKit gating only from I7, where the lint rules live, query preserved in next_path validation (05)."
+  ]
+ },
+ {
+  "doc": "architecture/09-ui-paritaet-designsystem.md",
+  "conflicts": [
+   "01 ADR-041/§8.2 names Angular CDK as 'Overlay-Basis'; D09 forbids CDK Overlay (O-D09-01, H-12).",
+   "01 §6.1 has no libs/shared/{icons-lucide,theme} and no FE/tools/{propel-port,reference-gallery,gallery-stories,visual}; tools/icons-codegen ('→ Angular-Komponenten') contradicts D09-ADR-07. 01 §8.2 lacks lucide@1.34.0 (Propel-internal) and @tailwindcss/oxide (O-D09-02, O-D09-15).",
+   "08 §3.8/§3.9 still places ThemeService in libs/web/core/theme and uses CDK Overlay with its own container; D08-ADR-20 stores emoji data at /assets/emoji/ without a version and assumes a fixed frimousse data version, but frimousse loads @latest (O-D09-03, H-01, H-02, H-04).",
+   "08 §6 has no token for the A1 type icon on the work item identifier; D09 proposes WORK_ITEM_IDENTIFIER_DECORATORS (O-D09-15 c).",
+   "08 AK-D08-20 expects 'correct data-theme' for invalid stored values; next-themes 0.4.6 sets the value unchanged, and the target must match that.",
+   "08 (provideFakeExtensions in libs/web/extensions/testing) vs 15 EP-T08 (provideTestExtensions in frontend/libs/shared/testing/extensions): two test providers for the same registries (H-17).",
+   "14 §3.20 points to tools/ci/parity/start-original.sh + docker-compose-local.yml and cites 15; 15 (D15-ADR-20, §3.2, §9.2) defines tools/parity/start-original.sh + compose.original.yml, proxy :13000, --from-source. The two documents reference each other in a circle (O-D09-14).",
+   "14 §3.3.4 puts parity seed users into deploy/keycloak/realms/plane-realm.test.json; 15 §3.14.2 uses a partial import of parity-users.partial.json via the keycloak-test-users resource.",
+   "15 §3.10 still deviates: __reference__/ + .dom.json/.axe.json, visual/deviations.yaml + masks.ts, viewports 640..1920, tools/original-gallery and /__gallery/, and Z2 (SVG only to depth 1) also for gallery contracts (O-D09-04, O-D09-13, H-06, H-08, H-13, H-14).",
+   "05 §3.16.3 states dark mode 'über prefers-color-scheme'; because Propel's dark variant uses [data-theme*=dark], plane-login.js must set data-theme synchronously in <head> (D09 §3.13). 05 should state this explicitly."
+  ],
+  "remaining": [
+   "S10 must decide the host form per variant for the Blocks Select family and other composites (O-D09-16), and confirm that Angular Aria popup directives work without CDK Overlay in our own portal (R-D09-01).",
+   "Tailwind 4.1.17 features (source(none), @source not, file as @source or @source inline) are still unconfirmed and must be checked in S10.",
+   "Pin the emojibase-data version at the first capture-reference run (O-D09-09); pin the Playwright image digest and the Noto Color Emoji version (O-D09-08).",
+   "Exact Base UI 1.6.0 DOM details (portal wrapper, focus guards, positioning via left/top or transform) only come from the S10 DOM contracts.",
+   "The Forgejo logo license (O-D09-10) and legal confirmation of AGPL-3.0-only vendoring (O-D09-06) are still open.",
+   "Wait anchors for all catalog states must be taken from the original DOM during the first reference capture (no data-testid)."
+  ],
+  "open": [
+   "O-D09-01: Clarify 01 ADR-041 ('Angular CDK … Overlay-Basis') – D09 rules out CDK overlay and CDK positioning",
+   "O-D09-02: Adjust the 01 §6.1 tree comment 'tools/icons-codegen → Angular-Komponenten' to D09-ADR-07 (constants + svg[plIcon])",
+   "O-D09-03: Align 08 §3.8/§3.9/D08-ADR-20 (ThemeService location, CDK overlay, emoji path) with D09",
+   "O-D09-04: Align 15 §3.10 (paths __reference__/.dom.json, deviations.yaml/masks.ts, 0.5 % threshold, class order, viewports, original-gallery, /__gallery/) with D09",
+   "O-D09-05: Align 14 §3.3.4 (themes plane-base/plane-admin, theme-src, plane.css) with 05 §3.16",
+   "O-D09-06: Legal confirmation for verbatim adoption of AGPL-3.0-only code (Propel, CSS) in funk.",
+   "O-D09-07: Customer confirmation of '1:1 nachbauen' for original defects (dead classes, E-03, E-08, E-13, no HC/custom in admin/space)",
+   "O-D09-08/09: Pin Playwright image/emoji font version; determine the exact emojibase-data version used by frimousse 0.3.0",
+   "O-D09-10: License of the Forgejo logo before W1",
+   "O-D09-11…13: localStorage theme behaviour across apps, Firefox/WebKit only informative until I7, location of self-baselines"
+  ]
+ },
+ {
+  "doc": "architecture/05-auth-sicherheit-berechtigungen.md",
+  "conflicts": [
+   "01 §3.4 (AppHost skeleton) sets a single 'Plane__Auth__Oidc__ClientSecret'. Binding names per D05 §3.4.3: Plane__Auth__Clients__{Web,Admin,Space}__ClientSecret and Plane__Auth__Backend__ClientSecret.",
+   "02 §3.6.1/§3.6.3 apply the WorkspaceAdminOverride rule only to some templates. D05-ADR-18/HARM-00 requires it as the default of PermissionDescriptor.Project(...). The PermissionRule list in 02 also needs Own, Self, GuestVisibility, PageAccess, Board, WorkspaceAdminOrProjectAdmin and ProjectMemberOfBody.",
+   "02 (E5 row) uses 'Plane:Auth:BearerEnabled'. Binding name: 'Plane:Auth:Bearer:Enabled' (D05 §3.4.3, matches 16).",
+   "02 §3.4.1 step 1 uses KnownNetworks. In .NET 10 this must be KnownIPNetworks (ASPDEPR005).",
+   "02 ApiActivityLogMiddleware: token_identifier = token_hash replaces the HMAC with Plane:Security:ApiLogHmacKey (already noted in D05 §9).",
+   "14 §3.2.1 (parameter table, 'Client `forgejo`'), §3.3.2 and the 15 §3.14.2 table row for plane-realm.json name the Forgejo client 'forgejo'. Binding: 'plane-forgejo', per 01 §4.1 and 16.",
+   "14 §3.6 (ResilienceSetup) names the SSRF clients 'link-crawler' and 'avatar-download'. D05 §3.17.2 names them 'link-preview' and 'avatar-import'.",
+   "14 §3.2.2 marks the OIDC option names as 'endgültige Feldnamen legt D05 fest'. D05 now fixes them as Plane:Auth:Clients:*, Plane:Auth:Backend:* and Plane:Auth:Oidc:MetadataAddress, which matches 14 except that Authority/MetadataAddress sit under Oidc.",
+   "14 §3.7.3 'CSP nicht gesetzt' contradicts D05-ADR-23 (CSP report-only from I0, enforced from I7). 14 O-14-05 is decided by D05-ADR-12.",
+   "15 §6 (H1 row) uses 'Plane__Auth__BearerEnabled'. Binding: 'Plane__Auth__Bearer__Enabled'.",
+   "16 line 1103 defines RoleDefinition(Id, Namespace, Slug, Name, Level, IsSystem, Grants). This differs from 02 §3.6.1 RoleDefinition(Id, Name, ScopeLevel Scope, int LegacyValue, IsSystem, PermissionKeys), which D05 now uses."
+  ],
+  "remaining": [
+   "Spike S7 must verify that the realm attribute CreateDefaultClientScopes works in the pinned Keycloak 26.x. Fallback: copy the default scopes from a 'kc.sh export' of a fresh realm.",
+   "Spike S7 must verify that the internal Oidc:MetadataAddress plus KC_HOSTNAME_BACKCHANNEL_DYNAMIC keep the public issuer (prod path /idp/).",
+   "Spike S0 must check the exact Testcontainers.Keycloak 4.x builder API for realm import.",
+   "Still open: deep-link paths of the keycloak.v3 account console (O-D05-01), approval of HARM-00/-03/-04/-06 (O-D05-02), and the default for MaskInstanceSecrets (O-D05-03).",
+   "The permission matrix still lists DRF APIView methods on list routes that are practically unreachable (for example PATCH/DELETE /webhooks/ without pk) as WS(A). This is not a security problem, but the parity harness should mark them as 'entfällt' or as an artifact (R-10).",
+   "The AuthCallbackRateLimiter keeps a counter separate from N-01 (the original shared one DRF scope). The deviation is documented and has no security impact."
+  ],
+  "open": [
+   "O-D05-01: Exact deep-link paths of the keycloak.v3 account console (security, personal info, referrer) – to verify in spike S7.",
+   "O-D05-02: Client approval of the harmonizations that widen rights (HARM-00, -03, -04, -06).",
+   "O-D05-03: Default for MaskInstanceSecrets (parity false vs. masked).",
+   "O-D05-04: Passwordless login as a replacement for magic codes (only passkeys as an option; no email OTP in the CE).",
+   "O-D05-05: No auto-redirect for the Space start page (recommendation).",
+   "O-D05-06: Rate limit on the OIDC callback if endpoint metadata does not take effect (S7).",
+   "O-D05-07: Required name alignment in 14 (client 'forgejo' not 'plane-forgejo'; themes plane/plane-space; CSP; O-14-05 decided by D05-ADR-12), in 15 (test IDs SEC-xx collide with D05 → D15-SEC-xx; test realm file; S-14 note) and in 09 (W-025 security tab). Also required: change ApiActivityLog/ApiLogHmacKey in 02 to token_hash and add endpoint-level rules / .WithDenyStyle to the PermissionDescriptor."
+  ]
+ },
+ {
+  "doc": "architecture/02-backend-solution-und-konventionen.md",
+  "conflicts": [
+   "05 §3.13.4/§5.8/Anhang B: '∧'-Zeilen (z. B. LabelViewSet.create WS(A,M) ∧ PRJ⁺(A), partial_update/destroy PRJ⁺(A) ∧ PRJ⁺(A)) werden auf einen Key mit einem DenyStyle abgebildet – Original-Körper je Stufe gehen verloren (Widerspruch zu D05-ADR-20). 02 führt PermissionRule.Prerequisite ein; 05 Evaluator und Generator sollten Schritt P übernehmen.",
+   "05 Anhang A: Vorbedingungs-Keys (workspace.project_base.read/create, project.project_base.write, project.project_entity.*, project.project_member.*, workspace.workspace_entity.*) fehlen bzw. sind nicht als intern/reserviert geführt; 05-Architekturtest 'keine toten Keys' würde sie bemängeln.",
+   "05 Anhang B listet PUT {P}/issue-labels/{pk}/ mit project.label.update; 02/A04 §5.1 registrieren die tote Route nicht – Zeile in 05 als 'entfällt' markieren.",
+   "05 §3.13.4/D05-ADR-18: WS-Admin-Override hängt an ws.level==20 ohne Grant-Key – Grenze für E5-Custom-Roles; ggf. Key workspace.admin_override reservieren.",
+   "05 §4.4 vs. 02 §4.9 und 14 §3.9.1: SKIP_ENV_VAR (05: entfällt; 02/14: Plane:Instance:ConfigurationSource), FILE_SIZE_LIMIT (05: Plane:Storage:FileSizeLimit; 02/14: Plane:Uploads:MaxFileSizeBytes), WEBHOOK_* (05: Plane:Webhooks:Ssrf:*; 02: Plane:Webhooks:AllowedNetworks/AllowedHosts/DisallowedDomains). 14 erklärt 02 für maßgeblich → 05 nachziehen.",
+   "14 §3.9.1: PlaneSecurityOptions.ApiLogHmacKey 'abgeleitet aus SigningKey' – entfällt nach 05 (token_identifier = token_hash); Zweck von SigningKey in 14 klären.",
+   "05 §3.18 nutzt tests/parity/exceptions.yaml als Ausnahmeliste; 02, 14 und 15 nutzen tests/contracts/deviations.yaml (15 ist für Test-Orte maßgeblich).",
+   "01 §5.3/§5.5: Skelett mit ProjectScope-Parameter, IModule.Permissions als IEnumerable<Permission> und Konstanten LabelsRead/LabelsWrite – muss auf IRequestScope, IEnumerable<PermissionDescriptor> und generierte ProjectLabel*-Konstanten umgestellt werden (O-D02-02).",
+   "01 §5.2 R9 (alle Typen internal außer <M>Module) kollidiert mit dem Mediator-Source-Generator im Host – InternalsVisibleTo als Ausnahme aufnehmen oder Fallback 'Handler public' (O-D02-09).",
+   "01 ADR-037 ('Read-Replica als zweiter DbContext-Pool', Aspire.Npgsql.EntityFrameworkCore.PostgreSQL) legt DbContext-Pooling nahe; 02 D02-ADR-26 verbietet Pooling wegen Tenant-Filter – 01 umformulieren.",
+   "16 D16-ADR-09: OAuth-Callbacks unter /api/integrations/forgejo/oauth/… benötigen Session-Auth, die Oberfläche Integrations war rein signaturbasiert – 02 ergänzt .WithSessionAuthentication(); 16 §3.4 sollte darauf verweisen.",
+   "15 §9.2 erklärte die Test-Bezeichner in 02 für überholt (PlaneAppFactory, PostgresFixture, FakeClock, ContractTest) – in 02 jetzt angeglichen; 15 §9.3-Rückmeldung an 02 ist damit erledigt."
+  ],
+  "remaining": [
+   "Spike S0 muss nachweisen, dass Mediator 3.0 internal Handler aus Modul-Assemblies via InternalsVisibleTo im Host registriert (sonst Fallback O-D02-09, Änderung an 01 R9)",
+   "Entscheidung in S0: Execution-Strategy-Kapselung vs. DisableRetry für die Aspire-Npgsql-EF-Integration",
+   "Zeitzonen-Ausgabe der Datum-Zeit-Felder (O-D02-01, Befund B-02) bleibt bis Ende S11 offen",
+   "DEV-JSON-002 (JSON-Parse-/Content-Type-Fehler vor 403) muss im Paritäts-Harness bestätigt werden; ggf. PlaneBody<T> nachrüsten",
+   "X-RateLimit-Remaining im verteilten Profil (RedisRateLimiting) nur näherungsweise; Contract-Test prüft Existenz/Monotonie",
+   "Inhalt des Permission-Generators (05 §5.8) muss Prerequisite-Regel für alle '∧'-Zeilen erzeugen – Abhängigkeit von 05-Nacharbeit",
+   "Felder von PlaneGatewayOptions/PlaneTlsOptions nur referenziert (14 §3.9.1), nicht dupliziert",
+   "Rich-Filter-Codes (20) und DrfMessages-Vollständigkeit bleiben per Contract-Test zu verifizieren (R-D02-07)"
+  ],
+  "open": []
+ },
+ {
+  "doc": "architecture/16-erweiterungspunkte-bezahl-features.md",
+  "conflicts": [
+   "D02 (02-backend-solution-und-konventionen.md) D02-ADR-17 / §6 F1: says the rate-limit policy `integration_webhook` comes 'ab W1'. The CE webhook route uses `RequireRateLimiting` from I0, so the policy must be registered from I0 (D16 O-16-10).",
+   "D02 §3.2.2 No. 5 (OutboxInterceptor): `outbox_messages` has only type, payload, traceparent and occurred_at. It has no columns for EventContext (actor_id, actor_kind, origin, workspace_id, project_id, correlation_id, causation_depth), which C3/E6/F2 require (D16 §5.11, O-16-12).",
+   "D02 §6 E5: says the WS admin override in the CE depends on `Level = 20`. D05 §3.13.4 makes it grant-based via `workspace.admin_override` and analyzer PLANE0001 (an internal D02/D05 contradiction, noticed in passing).",
+   "D05 (05-auth-sicherheit-berechtigungen.md) §6.1 `ReservedPermissionKeys`: has only 10 prefixes plus `project.work_item.read_all`. D16 §3.2.1 reserves 95 prefixes plus 1 key; D05 must take over the complete list (O-16-11).",
+   "D05 §5.x PermissionService skeleton: `PermissionEvaluatorFn` with field `roles`. D08 §6.5 `PermissionCheck` uses `allowed` plus workspaceSlug/projectId. D16 follows D08.",
+   "D14 (14-infrastruktur-deployment-betrieb.md) §3.3.2 (line 313) and §3.2.1: the Keycloak client is still named `forgejo`. 01 §4.1, D05 and D16 use `plane-forgejo` (already reported by D05, still open).",
+   "D14 §3.4.3 forgejo-init step 8: `redirect_uris` contains only `/api/integrations/forgejo/oauth/callback/`. Per D16-ADR-09 it must also include `/api/integrations/forgejo/oauth/user-callback/`.",
+   "D15 (15-teststrategie-qualitaet-paritaet.md) EP-T08: frontend fakes are `provideTestExtensions({...})` in `frontend/libs/shared/testing/extensions/`. D08 AK-D08-36 (and D16) use `provideFakeExtensions()` in `libs/web/extensions/testing/` (O-16-13).",
+   "D15 §6.2 C1 `StateChangeOriginTests`: lists Auto-Archive as a path through the state changer. In the original, `archive_old_issues` makes no state change, so that test cannot pass.",
+   "D15 §6.2 H1: option `Plane__Auth__BearerEnabled`. D05/D02/D16 use `Plane:Auth:Bearer:Enabled` (`Plane__Auth__Bearer__Enabled`; already reported by D05).",
+   "D15 §6.2 F1: the status for an invalid signature is 'set in W1'. D16 §3.4.3/AK-16-07 sets it at I0: 401 `{\"error\": \"Invalid signature\"}`, 200 `duplicate`, 202 `accepted`.",
+   "D08 (08-frontend-angular-architektur.md) §6.1 `DUPLICATE_DETECTION`: abbreviated signature `(title, projectId)`. The original hook takes workspaceSlug, workspaceId, projectId and formData{name, description_html, issueId}; D16 §5.16 ports it faithfully.",
+   "01 (01-zielarchitektur-und-tech-stack.md) §1.4 H6: names the hub location `Plane.Realtime` (host) while the 'Ort' column says `Plane.RealtimeEvents`. §5.1 places the hub module in `Plane.RealtimeEvents` (internal inconsistency in 01). 01 §1.4 B1 says 'ab I1', while D16/D02/D15 build parts (ScopeRef, RouterStore) from I0."
+  ],
+  "remaining": [
+   "Forgejo-specific facts have only indirect evidence: the `X-Forgejo-Signature` header, hook type `forgejo`, the `status` event and `actions/tasks` support in Forgejo 15. codeberg.org and forgejo.org were blocked by the proxy. Spike S-F2-1 against the pinned Forgejo 15 container remains a W1 start condition (O-16-01, O-16-02).",
+   "Parlot's licence was not verified (S-B6-1, licence gate).",
+   "The ArchUnitNET skeleton in §5.0 assumes the overload `ResideInAssembly(Assembly, params Assembly[])`. The exact API of the pinned ArchUnitNET version still needs checking at I0.",
+   "The minimal start increments per wave (§6.1) are the reviewer's derivation. Starting before I7 needs client approval.",
+   "§4.6 (carrier CE-IDs) still has to be entered into `migration/plan/_data/wp-ce.json`, which does not exist yet.",
+   "D03, D04, D06, D07, D10 and D11 do not exist yet. Hand-overs to them are listed only in §9."
+  ],
+  "open": [
+   "O-16-01: Does Forgejo 15 use the header name X-Forgejo-Signature and hook type 'forgejo'? (Spike S-F2-1 before W1)",
+   "O-16-02: Forgejo OAuth2 granular scopes for app tokens",
+   "O-16-03: Importing Forgejo milestones: map to Plane modules (W1) or to A5 milestones after W2",
+   "O-16-04: states.project_id NOT NULL vs. workspace states for A17 (loosen via expand migration or a separate table)",
+   "O-16-05: Is teamspace_id on work_item_comments (required by 01) actually needed by B1?",
+   "O-16-06: Align the PERMISSION_EVALUATOR type name between D05 and D08",
+   "O-16-07: ExternalLinkDto (01) has no title/state fields; for now they go in Metadata under fixed keys",
+   "O-16-08: Event names in the minimum set must be adopted by D06",
+   "O-16-09: 00 ADR-004 still mentions GitHub/Slack integrations"
+  ]
+ }
+]
