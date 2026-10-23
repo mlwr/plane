@@ -527,3 +527,134 @@ Insert-Buttons (`button.table-column-insert-button`, `button.table-row-insert-bu
 ### 3.16 Titel-Editor und Navigation (CE-PAGE-013, CE-PAGE-038)
 
 `PlEdTitleEditor` (intern in `PlEdPageRenderer`) erzeugt über `TitleEditorInstance` (Port `use-title-editor.ts`) einen zweiten Tiptap-Editor auf demselben `Y.Doc` mit `TitleExtensions` (Document `content: "heading"`, Heading Level 1, Text), `Collaboration.configure({ field: "title" })`, `titleEditorNavigation`, `Placeholder` „Untitled“ (auch read-only sichtbar). DOM: `div.relative.w-full.py-3` → `PlEdEditorContainer` (`page-title-editor bg-transparent py-3 border-none`) mit Content-Klasse `no-scrollbar placeholder-placeholder w-full resize-none rounded-none border-none bg-transparent p-0 text-[2rem] leading-[2.375rem] font-bold tracking-[-2%] outline-none`. Navigation (Kern `hooks/editor-navigation.ts`, Priorität 10): Titel ArrowDown/ArrowRight/Enter → Haupt-Editor (Enter fügt Paragraph an Pos 0 ein); Haupt-Editor ArrowUp/ArrowLeft/Backspace an Pos 1 → Titel (Backspace löscht leeren ersten Paragraph).
+
+### 3.17 Lite-Editor für Kommentare und Stickies (CE-PAGE-022, CE-WI-037, CE-HOME-010, CE-SPACE-025)
+
+- **Variante:** `PlEdLiteTextEditor` = Core-Extensions + `EnterKeyExtension(onEnterKeyPress)` (sofern `"enter-key"` nicht deaktiviert); kein Bubble-, Slash- oder Side-Menü. Enter ruft `editorEnterKeyPress` nur, wenn `utility.activeDropbarExtensions` leer ist (Mention-/Emoji-Dropdown offen → Enter wählt aus); Shift-Enter = `first([newlineInCode, splitListItem("listItem"), splitListItem("taskItem"), createParagraphNear, liftEmptyBlock, splitBlock])`.
+- **Toolbars** liegen in den Hüllen (nicht im Editor): `FE/libs/web/core/editor/lite-text/{toolbar,lite-toolbar}.component.ts` (Port `WEB/components/editor/lite-text/toolbar.tsx`, `lite-toolbar.tsx`; Varianten `full`/`lite`/`none`, `showToolbarInitially`, `isSubmitting`, `parentClassName`), Sticky-Toolbar `FE/libs/web/core/editor/sticky-editor/toolbar.component.ts`, Space-Toolbar `FE/libs/space/editor/toolbar.component.ts`. Sie nutzen `TOOLBAR_ITEMS.lite` bzw. `.sticky` (Kern) und `ref().executeMenuItemCommand()`/`isMenuItemActive()`; Aktivzustände per `ref().onStateChange()`.
+- **Platzhalter:** Kommentare `t("issue.comments.placeholder")` mit `showPlaceholderOnEmpty = true` (Hülle).
+
+### 3.18 Read-only-Rendering (CE-PAGE-021…023, CE-SPACE-024)
+
+Es gibt wie im Original **keine** eigenen Read-only-Komponenten: Read-only = `[editable]="false"` an derselben Variante. Wirkung (A12 §1.3, alle im Kern bzw. CSS): `UniqueID.updateDocument=false`, `TrackFileDeletionPlugin` inaktiv, `CustomImage.selectable/draggable=false`, Bubble-/Block-/Side-Menü inaktiv (`view.editable`), Tabellen-Insert-Buttons entfernt, Platzhalter leer (Titel: „Untitled“ bleibt), Checkboxen `pointer-events:none`. Wechsel `editable` → Editor-Neuaufbau (D10-ADR-09). Anzeigeorte: Kommentar-Karte (`comments/card/display`), Beschreibungs-/Page-Versionen (Document-Editor), Space-Peek (Rich), archivierte/gesperrte Pages (Collaborative mit `editable=false`).
+
+### 3.19 Markdown, Clipboard, Paste (CE-PAGE-037)
+
+| Funktion | Ort | Umsetzung |
+|---|---|---|
+| Markdown-Paste | `tiptap-markdown` 0.8.10 (`html:true`, `transformCopiedText:false`, `transformPastedText:true`, `breaks:true`) | 1:1 |
+| Copy (`text/plain` = Markdown, `text/html` & `text/plane-editor-html` = HTML) | `ED/core/src/plugins/markdown-clipboard.ts` | 1:1 |
+| Paste aus Plane (`text/plane-editor-html`) → `processAssetDuplication` → `view.pasteHTML` | `ED/core/src/props.ts`, `helpers/paste-asset.ts`, `helpers/asset-duplication.ts` | 1:1 |
+| „Copy as Markdown“, Markdown-Export | `ref().copyMarkdownToClipboard()`, `ref().getMarkDown()` → `convertHTMLToMarkdown` (`FE/libs/shared/utils/src/editor/markdown-parser/*`, D10-ADR-20) | 1:1 |
+| VS-Code-Paste → Code-Block mit Sprache; Paste in Inline-Code → Text mit `code`-Mark | `extensions/code/code-block.ts` (Plugin `codeBlockVSCodeHandlerCustom`) | 1:1 |
+| URL-Paste über Selektion → Link | `extensions/custom-link/helpers/pasteHandler.ts` | 1:1 |
+| Datei-Paste/-Drop → Bild-Upload | `plugins/drop.ts` | 1:1 (Attachment-Zweig leer, E23; Paket D9 über Block-Registry) |
+
+### 3.20 Editor-CSS 1:1 (CE-I18N-010, CE-PAGE-040)
+
+#### 3.20.1 Dateien
+
+| Original | Ziel | Zeilen | Kategorie | Hinweis |
+|---|---|---|---|---|
+| `ED0/styles/index.css` | `ED/styles/index.css` | 6 | 1:1 | Importreihenfolge `variables` → `editor` → `table` → `github-dark` → `drag-drop` → `title-editor` |
+| `ED0/styles/variables.css` | `ED/styles/variables.css` | 305 | 1:1 | Editor-Farben (8 Schlüssel, Light/Dark), Schrift-/Zeilenabstands-Skalen, Inhaltsbreiten 720/1152 px, Container-Queries (E18 ungültige Query bleibt) |
+| `ED0/styles/editor.css` | `ED/styles/editor.css` | 508 | 1:1 | `@apply`, `--alpha()` (Tailwind 4.1-Syntax, Compiler D09-ADR-01) |
+| `ED0/styles/table.css` | `ED/styles/table.css` | 211 | 1:1 | |
+| `ED0/styles/drag-drop.css` | `ED/styles/drag-drop.css` | 117 | 1:1 | Selektoren `.node-imageComponent`, `.node-image` (DOM-Vertrag §3.5.1) |
+| `ED0/styles/title-editor.css` | `ED/styles/title-editor.css` | 49 | 1:1 | |
+| `ED0/styles/github-dark.css` | `ED/styles/github-dark.css` | 85 | 1:1 | highlight.js-Theme |
+| – (Laufzeit-Injektion `@tiptap/core`) | `ED/styles/tiptap-core.css` | – | generiert | D10-ADR-13, Abweichung `FE-ED-07` (`kind: extra-css`) |
+
+#### 3.20.2 Einbindung
+
+Nach D09 §3.2.2: Web `styles.css` importiert `FE/libs/shared/editor/styles/index.css` an der Stelle von `@import "@plane/editor/styles"` (Zeile 2 von `WEB/styles/globals.css`), Space analog (`SPC/styles/globals.css`); Admin importiert keine Editor-Styles. `tiptap-core.css` wird **unmittelbar vor** `ED/styles/index.css` importiert (gleiche Kaskadenposition wie das zur Laufzeit in `<head>` vor den App-Styles eingefügte Tiptap-`<style>`; ⚠ in S5 per `getComputedStyle`-Vergleich auf `.ProseMirror`, `.ProseMirror-gapcursor`, `img.ProseMirror-separator` bestätigen).
+
+#### 3.20.3 Regeln
+
+1. Vendored CSS ist unveränderlich (D09-ADR-01); G-CSS prüft Selektor-/Deklarationsmenge des Builds.
+2. Keine Komponenten-Styles in Editor-Komponenten (D09-ADR-03); dynamische Werte (Callout-Hintergrund, Bildbreite, Seitenverhältnis, Floating-Positionen, Upload-Prozent) nur per CSSOM (`[style.x]`-Bindung bzw. `element.style`).
+3. Klassen in Templates werden aus dem Original übernommen, inklusive `cn(...)`-Bedingungen (`@plane/utils` `cn` = `clsx` + `tailwind-merge` wie Original).
+
+#### 3.20.4 CSP-Verträglichkeit (Rückmeldung an D05, ABG-016)
+
+ProseMirror serialisiert Node-Attribute mit `style` (Textausrichtung `style="text-align: …"`, Tabellenzellen `style="background-color: …; color: …"`, `customColor` mit Nicht-Listenwerten) über `setAttribute("style", …)`; das unterliegt `style-src-attr`. Ohne `'unsafe-inline'` für **Style-Attribute** würden diese Formatierungen im Enforce-Modus (ab I7) verworfen. Festlegung: Die Gateway-CSP setzt `style-src-attr 'unsafe-inline'` (nur Attribute; `style-src-elem` bleibt ohne `unsafe-inline`, Tiptap-CSS ist statisch, D10-ADR-13). Prüfung: AK-D10-22 (CSP-Report im Editor-E2E leer).
+
+### 3.21 Web- und Space-Hüllen (D10-ADR-17)
+
+| Original | Ziel | Klasse / Funktion | Inkr. |
+|---|---|---|---|
+| `WEB/components/editor/rich-text/editor.tsx` | `FE/libs/web/core/editor/rich-text/editor.component.ts` | `PlWebRichTextEditor` (`pl-web-rich-text-editor`): verdrahtet `EditorConfigService`, `EditorMentionService`, `EDITOR_FLAGS.richText`, Mention-Render | I2 |
+| `WEB/components/editor/rich-text/description-input/{root,loader,index}.tsx` | `FE/libs/web/core/editor/rich-text/description-input/{root,loader}.component.ts` | `PlWebDescriptionInput` (Debounce 1 500 ms, `isMigrationUpdate` → `skip_activity: "true"` beim Speichern), `PlWebDescriptionInputLoader` | I2 |
+| `WEB/components/editor/lite-text/{editor,toolbar,lite-toolbar,index}.tsx` | `FE/libs/web/core/editor/lite-text/*.component.ts` | `PlWebLiteTextEditor`, `PlWebIssueCommentToolbar`, `PlWebLiteToolbar` | I2 |
+| `WEB/components/editor/document/editor.tsx` | `FE/libs/web/core/editor/document/editor.component.ts` | `PlWebDocumentEditor` (Versionen) | I2 |
+| `WEB/components/editor/embeds/mentions/{root,user,index}.tsx` | `FE/libs/web/core/editor/embeds/mentions/*.component.ts` | `PlWebEditorMentionsRoot` (`[plWebEditorMentionsRoot]`), `PlWebEditorUserMention` | I2 |
+| `WEB/components/editor/sticky-editor/{editor,toolbar,color-palette,index}.tsx` | `FE/libs/web/core/editor/sticky-editor/*.component.ts` | `PlWebStickyEditor`, `PlWebStickyEditorToolbar`, `PlWebStickyColorPalette` | I5 |
+| `WEB/components/editor/pdf/{document,index}.tsx` | – | entfällt (D10-ADR-21) | – |
+| `WEB/hooks/editor/use-editor-config.ts` | `FE/libs/web/core/editor/services/editor-config.service.ts` | `EditorConfigService.getEditorFileHandlers()` | I2 |
+| `WEB/hooks/editor/use-editor-mention.tsx` | `FE/libs/web/core/editor/services/editor-mention.service.ts` | `EditorMentionService.getMentionHandler({ projectId?, issueId? })` | I2 |
+| `WEB/hooks/editor/use-extended-editor-config.ts` | über `EDITOR_EXTENSIONS` (`fileHandlers`-Beiträge, S15) | – | I2 |
+| `WEB/hooks/use-editor-flagging.ts` | `EDITOR_FLAGS` (CE-Default §6.1) | `injectEditorFlags(ctx)` | I2 |
+| `WEB/hooks/use-additional-editor-mention.tsx` | `EDITOR_MENTION_TYPES` + `EditorMentionSectionProvider` | – | I2 |
+| `WEB/hooks/use-parse-editor-content.ts` | `FE/libs/web/core/editor/helpers/parse-editor-content.ts` | `parseEditorContent()` (D08 §4.7; entfernt u. a. `background-color: null; color: null;` aus Export-HTML, E17) | I4 |
+| `WEB/hooks/pages/use-extended-editor-extensions.ts`, `use-pages-pane-extensions.ts` | `EDITOR_EXTENSIONS` (Pages-Kontext, S16), `PAGE_PANE_EXTENSIONS` | – | I4 |
+| `WEB/components/pages/editor/**` (`page-root`, `editor-body`, `header/*`, `summary/*`, `toolbar/*`, `ai/*`) | `FE/libs/web/pages/components/pages/editor/**` | Page-Hüllen (D08); `ai/*` entfällt (G3) | I4 |
+| `SPC/components/editor/{rich-text-editor,lite-text-editor,toolbar}.tsx`, `embeds/mentions/*` | `FE/libs/space/editor/*.component.ts` | `PlSpcRichTextEditor`, `PlSpcLiteTextEditor`, `PlSpcEditorToolbar`, `PlSpcEditorMentionsRoot`, `PlSpcEditorUserMention` | I6 |
+
+Selektor-Präfixe der Hüllen: `pl-web-…` (Web), `pl-spc-…` (Space); Klassenpräfix `PlWeb`, `PlSpc` (vermeidet Kollision mit `PlEd…` der Editor-Lib). Die Hüllen setzen `display: contents` + `data-pl-host`, weil die Original-Hüllen kein eigenes Element erzeugen.
+
+### 3.22 Quirk-/Bug-Politik (D10-ADR-16, A12 §3.25)
+
+| Edge-Case | Entscheidung | Abweichungs-ID | Begründung / Zuständigkeit |
+|---|---|---|---|
+| E1 Slash „Default background“ entfernt Textfarbe | **korrigieren** (`unsetBackgroundColor`) | FE-ED-02 | funktionaler Fehler |
+| E2 `convert-document`-Variante vertauscht | Server | – | D07 |
+| E3 Rechte nur beim ersten Laden, kein `readonly`-Scope | Server; Client reagiert auf Scope `readonly` mit `editable=false` (Hülle) | – | D07, D05 |
+| E4 `page_locked`/`page_archived` nie erzeugt | Server | – | D07 |
+| E5 Server-JSON-Events vom Client nicht ausgewertet | **korrigieren** in `RealtimePageEventsService` | FE-ED-03 | D08 (Kanal aus D10) |
+| E6 PDF Callout-Emoji als Dezimalstring | Server | – | D07 |
+| E7 Titel-Broadcast an Eltern-Page nie aktiv | Server | – | D07 (D2-Andockstelle) |
+| E8 `/convert-document` öffentlich | Server | – | D07 |
+| E9 Toolbar-Shortcut-Labels Bulleted/Numbered vertauscht | **korrigieren** (Labels Bulleted Cmd+Shift+8, Numbered Cmd+Shift+7) | FE-ED-04 | falsche Information; sichtbarer Tooltip-Text ändert sich (Visual-Maske im Tooltip-Zustand) |
+| E10 Slash-Menü globaler Keydown | beibehalten, in S5 prüfen; bei Doppelschritt korrigieren | FE-ED-05 (bedingt) | nur falls funktional fehlerhaft |
+| E11 Sender führt eigene Stateless-Aktion doppelt aus | **korrigieren** in `CollaborativePageActionsService` | FE-ED-08 | D08 |
+| E12 Heading-Zähler h3–h6 gemeinsam | **korrigieren** (Zähler je Level) | FE-ED-06 | `scrollSummary` springt sonst falsch |
+| E13 `HeadingListExtension` emittiert `update` bei jeder Transaktion | beibehalten | – | kein sichtbarer Fehler; LT-16 misst Kosten |
+| E14 Live ohne Redis | Server | – | D07 |
+| E15 `colwidth` bei `colspan > 1` auf ersten Wert reduziert | beibehalten | – | Schema-/Parse-Parität (G-DOC) |
+| E16 `customColor` parst jedes `<span>` | beibehalten | – | Schema-Parität |
+| E17 `tableCell` rendert `background-color: null; color: null;` | beibehalten | – | HTML-Parität; Export bereinigt (`parseEditorContent`) |
+| E18 ungültige Container-Query | beibehalten | – | CSS unveränderlich |
+| E19 Tabellen-Farbe speichert CSS-Variable, Header nicht einfärbbar | beibehalten | – | Datenformat |
+| E20 Server-Schema ohne `UniqueID` | Server-Entscheidung | – | D07 (Empfehlung D10: wie Original, Parität G-DOC) |
+| E21 Callout-Default-URL auf CDN | beibehalten als Attributwert, nie geladen | – | D10-ADR-12 |
+| E22 `nodeHighlight`-Plugin nicht registriert | beibehalten | – | fehlendes Feature, keine Fehlfunktion; Aktivierung wäre sichtbare Neuerung |
+| E23 Attachments bei Drop/Paste verworfen | beibehalten | – | Attachments = Paket D9 (EE-P07-021) |
+| E24 `flaggedExtensions` im Drop-Pfad ignoriert | beibehalten | – | ohne Wirkung (immer `[]`) |
+| E25 `isValidHttpUrl` akzeptiert beliebige Schemata | beibehalten | – | gefährliche Schemata bleiben blockiert (`isDangerousHref`), Sanitizer filtert serverseitig (D05) |
+| E26 Cookie im Query | Server | – | D07/D05 |
+| E27 PDF-Mentions-Endpunkt fehlt | Server | – | D07 |
+| E28 `UniqueID`-Korrekturen in der Undo-History | beibehalten | – | Verhaltensparität mit Kollaboration |
+| E29 `toggleCodeBlock` mehrzeilig über Markdown-Fences | beibehalten | – | Verhaltensparität |
+| E30 ungenutzte Typen/Fehlerzustände | beibehalten (Typen 1:1) | – | – |
+| E31 deaktivierte Shortcuts (`Mod-Alt-c`, Backspace-`clearNodes`, `Mod-Shift-b`) | beibehalten | – | Aktivierung wäre neues Verhalten |
+
+Jede korrigierte Abweichung erhält einen Eintrag in `FE/apps/e2e/visual/ui-deviations.yaml` mit `id`, `kind` (`behavior` bzw. `extra-css`), `original`, `target`, `reason`, `tests` (Spec-Fall, der das korrigierte Verhalten prüft) und `approved_by`.
+
+### 3.23 Zoneless, Performance, Lazy Loading
+
+| Maßnahme | Ziel |
+|---|---|
+| Editor-Code nur in Lazy-Chunks: Work-Item-Detail/Peek/Modal (Rich + Lite), Kommentare (Lite), Pages (Collab), Space-Peek | Initial-Bundle-Budget D08 §3.1.2 unberührt; Chunk `editor-core` geteilt |
+| `lowlight` mit `common` + `ts` wie Original (keine dynamischen Sprachen) | gleiches Highlighting, keine Netzladevorgänge |
+| Keine Signale je ProseMirror-Transaktion außer `editorState()`-Selektoren; `editorChange` nur bei `update` (wie Original) | Tippen ohne Angular-CD-Kosten |
+| NodeView-Komponenten `OnPush`, Inputs als Signale; `afterRenderEffect` statt `setTimeout`-Ketten für DOM-Messungen | stabile Selektion |
+| LT-16: 5 000 Blöcke, Eingabe-Latenz p95 < 50 ms (Chromium) | AK-D10-11 |
+| Speicher: 30 × Editor öffnen/schließen (Peek) ohne wachsende `Editor`-/`ComponentRef`-Anzahl (Heap-Snapshot) | AK-D10-21 |
+
+### 3.24 Sicherheit
+
+1. **Link-Protokolle:** `isDangerousHref` (Parse verwirft, Render schreibt `href=""`; GHSA-v2vv-7wq3-8w2j) und Klick-Blockade `file:`/`about:` 1:1 im Kern (`extensions/custom-link/**`); Regressionstests aus dem Original-Verhalten.
+2. **Kein `innerHTML`** in Editor-Komponenten außer dort, wo das Original HTML injiziert (`view.pasteHTML`, `setContent`); Trusted-Types-Richtlinie `plane-editor` für ProseMirror-`DOMParser` falls CSP `require-trusted-types-for` aktiviert wird (heute nicht, D05).
+3. **Sanitizer-Vertrag (D05 §3.17.3):** Der Editor erzeugt ausschließlich die Tags/Attribute aus §4.1 (Spalte „renderHTML“). Erweiterungen erfordern die Schritte 4–5 aus §3.2.5.
+4. **localStorage:** Callout-Logo wird beim Lesen über `sanitizeHTML` gefiltert (1:1).
+5. **Mention-Suche** nur über die berechtigten Endpunkte (`searchEntity`, Berechtigungsprüfung serverseitig nach D05); keine clientseitige Rechteentscheidung.

@@ -364,7 +364,7 @@ Entität `Profile` · `[OwnedBy("Identity")]` · Basis eigene Form (Spalten voll
 | `theme` | `jsonb` | nein | `'{}'::jsonb` | Theme: `JsonObject` | Lesemodell `ProfileTheme` |
 | `is_app_rail_docked` | `boolean` | nein | true | IsAppRailDocked: `bool` | 1:1 |
 | `is_tour_completed` | `boolean` | nein | false | IsTourCompleted: `bool` | 1:1 |
-| `onboarding_step` | `jsonb` | nein | `JsonDefaults.User.DefaultOnboarding` (DB-Default = gleiches Literal) | OnboardingStep: `JsonObject` | Lesemodell `OnboardingSteps` |
+| `onboarding_step` | `jsonb` | nein | `JsonDefaults.Onboarding` (DB-Default = gleiches Literal) | OnboardingStep: `JsonObject` | Lesemodell `OnboardingSteps` |
 | `use_case` | `text` | ja | – | UseCase: `string?` | 1:1 |
 | `role` | `varchar(300)` | ja | – | Role: `string?` | 1:1 |
 | `is_onboarded` | `boolean` | nein | false | IsOnboarded: `bool` | 1:1 |
@@ -376,7 +376,7 @@ Entität `Profile` · `[OwnedBy("Identity")]` · Basis eigene Form (Spalten voll
 | `notification_view_mode` | `varchar(255)` | nein | `'full'` | NotificationViewMode: `string` | Choices: NotificationViewMode.choices |
 | `is_smooth_cursor_enabled` | `boolean` | nein | false | IsSmoothCursorEnabled: `bool` | 1:1 |
 | `is_mobile_onboarded` | `boolean` | nein | false | IsMobileOnboarded: `bool` | 1:1 |
-| `mobile_onboarding_step` | `jsonb` | nein | `JsonDefaults.User.MobileDefaultOnboarding` (DB-Default = gleiches Literal) | MobileOnboardingStep: `JsonObject` | Lesemodell `MobileOnboardingSteps` |
+| `mobile_onboarding_step` | `jsonb` | nein | `JsonDefaults.MobileOnboarding` (DB-Default = gleiches Literal) | MobileOnboardingStep: `JsonObject` | Lesemodell `MobileOnboardingSteps` |
 | `mobile_timezone_auto_set` | `boolean` | nein | false | MobileTimezoneAutoSet: `bool` | 1:1 |
 | `language` | `varchar(255)` | nein | `'en'` | Language: `string` | 1:1 |
 | `start_of_the_week` | `smallint` | nein | `0` | StartOfTheWeek: `short` | 0=Sunday … 6=Saturday |
@@ -385,7 +385,7 @@ Entität `Profile` · `[OwnedBy("Identity")]` · Basis eigene Form (Spalten voll
 | `is_navigation_tour_completed` | `boolean` | nein | false | IsNavigationTourCompleted: `bool` | 1:1 |
 | `has_marketing_email_consent` | `boolean` | nein | false | HasMarketingEmailConsent: `bool` | 1:1 |
 | `is_subscribed_to_changelog` | `boolean` | nein | false | IsSubscribedToChangelog: `bool` | 1:1 |
-| `product_tour` | `jsonb` | nein | `JsonDefaults.User.DefaultProductTour` (DB-Default = gleiches Literal) | ProductTour: `JsonObject` | Lesemodell `ProductTour` |
+| `product_tour` | `jsonb` | nein | `JsonDefaults.ProductTour` (DB-Default = gleiches Literal) | ProductTour: `JsonObject` | Lesemodell `ProductTour` |
 
 **Indizes/Unique:** `ux_profiles_user_id` UNIQUE (`user_id`).
 
@@ -534,9 +534,9 @@ Entität `WorkspaceMember` · `[OwnedBy("Workspaces")]` · Basis `AuditableEntit
 | `member_id` | `uuid` | nein | – | MemberId: `Guid` | FK `users` ON DELETE CASCADE |
 | `role` | `smallint` | nein | 5 | Role: `short` | denormalisierte Kopie von `roles.level` (D05 §3.13.3); nur `IWorkspaceMembershipService` schreibt |
 | `company_role` | `text` | ja | – | CompanyRole: `string?` | 1:1 |
-| `view_props` | `jsonb` | nein | `JsonDefaults.Workspace.DefaultProps` (DB-Default = gleiches Literal) | ViewProps: `JsonObject` | Lesemodell `WorkspaceViewProps` |
-| `default_props` | `jsonb` | nein | `JsonDefaults.Workspace.DefaultProps` (DB-Default = gleiches Literal) | DefaultProps: `JsonObject` | Lesemodell `WorkspaceViewProps` |
-| `issue_props` | `jsonb` | nein | `JsonDefaults.Workspace.IssueProps` (DB-Default = gleiches Literal) | IssueProps: `JsonObject` | Lesemodell `WorkspaceIssueProps` |
+| `view_props` | `jsonb` | nein | `JsonDefaults.WorkspaceViewProps` (DB-Default = gleiches Literal) | ViewProps: `JsonObject` | Lesemodell `WorkspaceViewProps` |
+| `default_props` | `jsonb` | nein | `JsonDefaults.WorkspaceViewProps` (DB-Default = gleiches Literal) | DefaultProps: `JsonObject` | Lesemodell `WorkspaceViewProps` |
+| `issue_props` | `jsonb` | nein | `JsonDefaults.WorkspaceIssueProps` (DB-Default = gleiches Literal) | IssueProps: `JsonObject` | Lesemodell `WorkspaceIssueProps` |
 | `is_active` | `boolean` | nein | true | IsActive: `bool` | 1:1 |
 | `getting_started_checklist` | `jsonb` | nein | `'{}'::jsonb` | GettingStartedChecklist: `JsonObject` | frei, CE ungenutzt |
 | `tips` | `jsonb` | nein | `'{}'::jsonb` | Tips: `JsonObject` | frei |
@@ -587,9 +587,9 @@ Entität `WorkspaceUserProperties` · `[OwnedBy("Workspaces")]` · Basis `Audita
 |---|---|---|---|---|---|
 | `workspace_id` | `uuid` | nein | – | WorkspaceId: `Guid` | FK `workspaces` ON DELETE CASCADE |
 | `user_id` | `uuid` | nein | – | UserId: `Guid` | FK `users` ON DELETE CASCADE |
-| `filters` | `jsonb` | nein | `JsonDefaults.Workspace.DefaultFilters` (DB-Default = gleiches Literal) | Filters: `JsonObject` | Lesemodell `LegacyIssueFilters` |
-| `display_filters` | `jsonb` | nein | `JsonDefaults.Workspace.DefaultDisplayFilters` (DB-Default = gleiches Literal) | DisplayFilters: `JsonObject` | Original-Default **verschachtelt** `{"display_filters": {…}}`, 02a §3.22 #1 – Vertrag, nicht korrigieren |
-| `display_properties` | `jsonb` | nein | `JsonDefaults.Workspace.DefaultDisplayProperties` (DB-Default = gleiches Literal) | DisplayProperties: `JsonObject` | verschachtelt wie oben |
+| `filters` | `jsonb` | nein | `JsonDefaults.LegacyFilters` (DB-Default = gleiches Literal) | Filters: `JsonObject` | Lesemodell `LegacyIssueFilters` |
+| `display_filters` | `jsonb` | nein | `JsonDefaults.WorkspaceNestedDisplayFilters` (DB-Default = gleiches Literal) | DisplayFilters: `JsonObject` | Original-Default **verschachtelt** `{"display_filters": {…}}`, 02a §3.22 #1 – Vertrag, nicht korrigieren |
+| `display_properties` | `jsonb` | nein | `JsonDefaults.WorkspaceNestedDisplayProperties` (DB-Default = gleiches Literal) | DisplayProperties: `JsonObject` | verschachtelt wie oben |
 | `rich_filters` | `jsonb` | nein | `'{}'::jsonb` | RichFilters: `JsonObject` | Lesemodell `RichFilterNode` |
 | `navigation_project_limit` | `integer` | nein | 10 | NavigationProjectLimit: `int` | 1:1 |
 | `navigation_control_preference` | `varchar(25)` | nein | `'ACCORDION'` | NavigationControlPreference: `string` | `ACCORDION` \\| `TABBED` |
@@ -701,9 +701,9 @@ Entität `ProjectMember` · `[OwnedBy("Projects")]` · Basis `ProjectEntity` (Au
 | `member_id` | `uuid` | nein | – | MemberId: `Guid` | FK `users` ON DELETE CASCADE; Original nullable, fachlich nie NULL (02a §3.22 #6) |
 | `comment` | `text` | ja | – | Comment: `string?` | 1:1 |
 | `role` | `smallint` | nein | 5 | Role: `short` | denormalisiert = `roles.level` |
-| `view_props` | `jsonb` | nein | `JsonDefaults.Project.DefaultProps` (DB-Default = gleiches Literal) | ViewProps: `JsonObject` | Lesemodell `ProjectViewProps` |
-| `default_props` | `jsonb` | nein | `JsonDefaults.Project.DefaultProps` (DB-Default = gleiches Literal) | DefaultProps: `JsonObject` | Lesemodell `ProjectViewProps` |
-| `preferences` | `jsonb` | nein | `JsonDefaults.Project.DefaultPreferences` (DB-Default = gleiches Literal) | Preferences: `JsonObject` | Lesemodell `ProjectMemberPreferences` |
+| `view_props` | `jsonb` | nein | `JsonDefaults.ProjectViewProps` (DB-Default = gleiches Literal) | ViewProps: `JsonObject` | Lesemodell `ProjectViewProps` |
+| `default_props` | `jsonb` | nein | `JsonDefaults.ProjectViewProps` (DB-Default = gleiches Literal) | DefaultProps: `JsonObject` | Lesemodell `ProjectViewProps` |
+| `preferences` | `jsonb` | nein | `JsonDefaults.ProjectPreferences` (DB-Default = gleiches Literal) | Preferences: `JsonObject` | Lesemodell `ProjectMemberPreferences` |
 | `sort_order` | `double precision` | nein | 65535 | SortOrder: `double` | Doppelhaltung zu `project_user_properties.sort_order` bleibt (Vertrag) |
 | `is_active` | `boolean` | nein | true | IsActive: `bool` | 1:1 |
 | `role_id` | `uuid` | nein | – | `RoleId: Guid` | FK `roles` ON DELETE RESTRICT (E5) |
@@ -737,11 +737,11 @@ Entität `ProjectUserProperty` · `[OwnedBy("Projects")]` · Basis `ProjectEntit
 | Spalte | PostgreSQL | Null | Default | C#-Property: Typ | Herkunft / Regel |
 |---|---|---|---|---|---|
 | `user_id` | `uuid` | nein | – | UserId: `Guid` | FK `users` ON DELETE CASCADE |
-| `filters` | `jsonb` | nein | `JsonDefaults.Project.DefaultFilters` (DB-Default = gleiches Literal) | Filters: `JsonObject` | Lesemodell `LegacyIssueFilters` |
-| `display_filters` | `jsonb` | nein | `JsonDefaults.Project.DefaultDisplayFilters` (DB-Default = gleiches Literal) | DisplayFilters: `JsonObject` | Lesemodell `DisplayFilters` |
-| `display_properties` | `jsonb` | nein | `JsonDefaults.Project.DefaultDisplayProperties` (DB-Default = gleiches Literal) | DisplayProperties: `JsonObject` | Lesemodell `DisplayProperties` |
+| `filters` | `jsonb` | nein | `JsonDefaults.LegacyFilters` (DB-Default = gleiches Literal) | Filters: `JsonObject` | Lesemodell `LegacyIssueFilters` |
+| `display_filters` | `jsonb` | nein | `JsonDefaults.DisplayFilters` (DB-Default = gleiches Literal) | DisplayFilters: `JsonObject` | Lesemodell `DisplayFilters` |
+| `display_properties` | `jsonb` | nein | `JsonDefaults.DisplayProperties` (DB-Default = gleiches Literal) | DisplayProperties: `JsonObject` | Lesemodell `DisplayProperties` |
 | `rich_filters` | `jsonb` | nein | `'{}'::jsonb` | RichFilters: `JsonObject` | Lesemodell `RichFilterNode` |
-| `preferences` | `jsonb` | nein | `JsonDefaults.Project.DefaultPreferences` (DB-Default = gleiches Literal) | Preferences: `JsonObject` | Lesemodell `ProjectMemberPreferences` |
+| `preferences` | `jsonb` | nein | `JsonDefaults.ProjectPreferences` (DB-Default = gleiches Literal) | Preferences: `JsonObject` | Lesemodell `ProjectMemberPreferences` |
 | `sort_order` | `double precision` | nein | 65535 | SortOrder: `double` | Projektreihenfolge in der Sidebar (`min − 10000`) |
 
 **Indizes/Unique:** `project_user_property_unique_user_project_when_deleted_at_null` UNIQUE (`user_id`, `project_id`) WHERE `deleted_at IS NULL`.
@@ -1224,9 +1224,9 @@ Entität `CycleUserProperties` · `[OwnedBy("Cycles")]` · Basis `ProjectEntity`
 |---|---|---|---|---|---|
 | `cycle_id` | `uuid` | nein | – | CycleId: `Guid` | FK `cycles` ON DELETE CASCADE |
 | `user_id` | `uuid` | nein | – | UserId: `Guid` | FK `users` ON DELETE CASCADE |
-| `filters` | `jsonb` | nein | `JsonDefaults.Cycle.DefaultFilters` (DB-Default = gleiches Literal) | Filters: `JsonObject` | Lesemodell `LegacyIssueFilters` |
-| `display_filters` | `jsonb` | nein | `JsonDefaults.Cycle.DefaultDisplayFilters` (DB-Default = gleiches Literal) | DisplayFilters: `JsonObject` | Lesemodell `DisplayFilters` |
-| `display_properties` | `jsonb` | nein | `JsonDefaults.Cycle.DefaultDisplayProperties` (DB-Default = gleiches Literal) | DisplayProperties: `JsonObject` | Lesemodell `DisplayProperties` |
+| `filters` | `jsonb` | nein | `JsonDefaults.LegacyFilters` (DB-Default = gleiches Literal) | Filters: `JsonObject` | Lesemodell `LegacyIssueFilters` |
+| `display_filters` | `jsonb` | nein | `JsonDefaults.DisplayFilters` (DB-Default = gleiches Literal) | DisplayFilters: `JsonObject` | Lesemodell `DisplayFilters` |
+| `display_properties` | `jsonb` | nein | `JsonDefaults.DisplayProperties` (DB-Default = gleiches Literal) | DisplayProperties: `JsonObject` | Lesemodell `DisplayProperties` |
 | `rich_filters` | `jsonb` | nein | `'{}'::jsonb` | RichFilters: `JsonObject` | Lesemodell `RichFilterNode` |
 
 **Indizes/Unique:** `cycle_user_properties_unique_cycle_user_when_deleted_at_null` UNIQUE (`cycle_id`, `user_id`) WHERE `deleted_at IS NULL`.
@@ -1301,9 +1301,9 @@ Entität `ModuleUserProperties` · `[OwnedBy("ProjectModules")]` · Basis `Proje
 |---|---|---|---|---|---|
 | `module_id` | `uuid` | nein | – | ModuleId: `Guid` | FK `modules` ON DELETE CASCADE |
 | `user_id` | `uuid` | nein | – | UserId: `Guid` | FK `users` ON DELETE CASCADE |
-| `filters` | `jsonb` | nein | `JsonDefaults.Module.DefaultFilters` (DB-Default = gleiches Literal) | Filters: `JsonObject` | Lesemodell `LegacyIssueFilters` |
-| `display_filters` | `jsonb` | nein | `JsonDefaults.Module.DefaultDisplayFilters` (DB-Default = gleiches Literal) | DisplayFilters: `JsonObject` | Lesemodell `DisplayFilters` |
-| `display_properties` | `jsonb` | nein | `JsonDefaults.Module.DefaultDisplayProperties` (DB-Default = gleiches Literal) | DisplayProperties: `JsonObject` | Lesemodell `DisplayProperties` |
+| `filters` | `jsonb` | nein | `JsonDefaults.LegacyFilters` (DB-Default = gleiches Literal) | Filters: `JsonObject` | Lesemodell `LegacyIssueFilters` |
+| `display_filters` | `jsonb` | nein | `JsonDefaults.DisplayFilters` (DB-Default = gleiches Literal) | DisplayFilters: `JsonObject` | Lesemodell `DisplayFilters` |
+| `display_properties` | `jsonb` | nein | `JsonDefaults.DisplayProperties` (DB-Default = gleiches Literal) | DisplayProperties: `JsonObject` | Lesemodell `DisplayProperties` |
 | `rich_filters` | `jsonb` | nein | `'{}'::jsonb` | RichFilters: `JsonObject` | Lesemodell `RichFilterNode` |
 
 **Indizes/Unique:** `module_user_properties_unique_module_user_when_deleted_at_null` UNIQUE (`module_id`, `user_id`) WHERE `deleted_at IS NULL`.
@@ -1320,8 +1320,8 @@ Entität `View` · `[OwnedBy("Views")]` · Basis `WorkspaceEntity` (Audit-Basis 
 | `description` | `text` | nein | – | Description: `string` | 1:1 |
 | `query` | `jsonb` | nein | – | Query: `JsonObject` | Legacy-Lookup-Cache, aus `filters` abgeleitet; nur Vertrag |
 | `filters` | `jsonb` | nein | `'{}'::jsonb` | Filters: `JsonObject` | Lesemodell `LegacyIssueFilters` |
-| `display_filters` | `jsonb` | nein | `JsonDefaults.View.DefaultDisplayFilters` (DB-Default = gleiches Literal) | DisplayFilters: `JsonObject` | Lesemodell `DisplayFilters` |
-| `display_properties` | `jsonb` | nein | `JsonDefaults.View.DefaultDisplayProperties` (DB-Default = gleiches Literal) | DisplayProperties: `JsonObject` | Lesemodell `DisplayProperties` |
+| `display_filters` | `jsonb` | nein | `JsonDefaults.DisplayFilters` (DB-Default = gleiches Literal) | DisplayFilters: `JsonObject` | Lesemodell `DisplayFilters` |
+| `display_properties` | `jsonb` | nein | `JsonDefaults.DisplayProperties` (DB-Default = gleiches Literal) | DisplayProperties: `JsonObject` | Lesemodell `DisplayProperties` |
 | `rich_filters` | `jsonb` | nein | `'{}'::jsonb` | RichFilters: `JsonObject` | Lesemodell `RichFilterNode` |
 | `access` | `smallint` | nein | 1 | Access: `short` | 0 = Private, 1 = Public (**umgekehrt** zu `pages.access`, Q8) |
 | `sort_order` | `double precision` | nein | 65535 | SortOrder: `double` | Anlage `max + 10000` je Projekt bzw. Workspace |
@@ -1395,7 +1395,7 @@ Entität `Page` · `[OwnedBy("Pages")]` · Basis eigene Form (Spalten vollständ
 | `parent_id` | `uuid` | ja | – | ParentId: `Guid?` | FK `pages` ON DELETE CASCADE; D2-Andockstelle (V/P), CE immer `NULL` |
 | `archived_at` | `date` | ja | – | ArchivedAt: `DateOnly?` | `date` wie Original |
 | `is_locked` | `boolean` | nein | false | IsLocked: `bool` | 1:1 |
-| `view_props` | `jsonb` | nein | `JsonDefaults.Page.ViewProps` (DB-Default = gleiches Literal) | ViewProps: `JsonObject` | Lesemodell `PageViewProps` |
+| `view_props` | `jsonb` | nein | `JsonDefaults.PageViewProps` (DB-Default = gleiches Literal) | ViewProps: `JsonObject` | Lesemodell `PageViewProps` |
 | `logo_props` | `jsonb` | nein | `'{}'::jsonb` | LogoProps: `JsonObject` | Lesemodell `LogoProps` |
 | `is_global` | `boolean` | nein | false | IsGlobal: `bool` | V (D1) |
 | `moved_to_page` | `uuid` | ja | – | MovedToPage: `Guid?` | V (D2), ohne FK |
@@ -1944,4 +1944,97 @@ Spalten und Schlüssel **verbindlich nach D16 §3.4.2**; hier die Typen:
 | `indexed_at` | `timestamptz` | nein | – | IndexedAt: `DateTimeOffset` | Pipeline |
 
 **Indizes:** PK (`entity_type`, `entity_id`); `ix_search_documents_vector` GIN (`search_vector`); `ix_search_documents_title_trgm` GIN (`title gin_trgm_ops`); `ix_search_documents_workspace_type` (`workspace_id`, `entity_type`). Kein Soft-Delete: gelöschte Entitäten entfernt `IIndexingPipeline.RemoveAsync`. **Keine** `embedding`-Spalte in der CE (D16 §3.3.7); G1 ergänzt eine eigene Tabelle (§6).
+
+### 3.5 Löschen: Soft-Delete-Filter, Join-Regeln, Kaskaden-Registry, Hard-Delete
+
+#### 3.5.1 Filter
+
+| Filter | Gilt für | Ausdruck | Abschalten |
+|---|---|---|---|
+| `soft_delete` | alle `ISoftDeletable` (Basen A/W/P sowie X-Tabellen mit `deleted_at`) | `e => e.DeletedAt == null` | `IgnoreQueryFilters([QueryFilterNames.SoftDelete])` (= Original `all_objects`); nur in den Fällen §3.5.2, im Hard-Delete-Job, in Restore-Pfaden und in Admin-Abfragen (`plane-cli`) |
+| `workspace_tenant` | alle `IWorkspaceScoped` | `e => !_tenant.IsBound \|\| e.WorkspaceId == _tenant.WorkspaceId` (D02 §3.5.4) | nie im Fachcode; `IgnoreQueryFilters()` ohne Argument ist außerhalb von `Plane.Data`, Migrator und Tests verboten (Banned-API, D02 §5.1.3) |
+
+Tabellen **ohne** Soft-Delete (harte Löschung ist fachlich gewollt oder Zeilen sind unveränderlich): `users`, `profiles`, `user_identities`, `user_sessions`, `role_permissions`, `data_protection_keys`, `work_item_sequences`, `work_item_relation_types`, `*_feature_settings`, `outbox_messages`, `inbox_messages`, `jobs`, `recurring_jobs`, `search_documents`.
+
+#### 3.5.2 Join-Ausnahmen (Original liest gelöschte Zeilen mit) – abschließende Liste
+
+| Nr. | Stelle (Original) | Original-Verhalten | Umsetzung im Ziel | Status |
+|---|---|---|---|---|
+| J1 | Sortierung `labels__name`, `assignees__first_name`, `issue_module__module__name` (`API/utils/order_queryset.py`) | `MIN(...)` über M2M **ohne** `deleted_at`-Filter der Join-Tabelle | SQL-Baustein der Query-Engine ohne Filter auf `work_item_labels`/`work_item_assignees`/`module_work_items` (D02 §3.11.5) | 1:1 |
+| J2 | `count_filter` der gruppierten Pagination | `LEFT JOIN intake_issues` ohne `deleted_at`-Filter | `GroupedPageSqlBuilder` joint `intake_work_items` ohne Filter (D02 §3.11.4) | 1:1 |
+| J3 | Vorwärts-FK `issue.state`, `issue.estimate_point`, `issue.parent` (Django-Base-Manager) | lädt auch soft-gelöschte Ziele | Projektionen lesen `state_id`/`estimate_point_id`/`parent_id` als Wert; Anzeige-Felder (`state__group`, `state__name`) per Join **mit** `IgnoreQueryFilters([SoftDelete])` auf `states` in der Work-Item-Projektion (`WorkItemProjections.ListItem`), weil ein gelöschter State nur bei leerem State möglich ist und Drafts dann `NULL` haben | 1:1 |
+| J4 | Activity-Liste mit Kommentar-Bezug | `issue_comment` zeigt ggf. auf gelöschten Kommentar | Activity-Projektion liest `comment_id` als Wert ohne Join; Kommentarliste filtert gelöschte | 1:1 |
+| J5 | Mitgliedschaftsprüfung `workspace__slug=` (Join `workspace_members → workspaces` ohne Filter auf `workspaces`) | Mitglied eines gelöschten Workspace bleibt bis zum Ende der asynchronen Kaskade berechtigt | `ScopeBindingFilter` filtert `workspaces.deleted_at IS NULL` (D02 §3.5.2) → sofort „kein Workspace“ | korrigiert (DEV-DM-11) |
+| J6 | Favoriten/Recents/Deploy-Boards auf gelöschte Entitäten (polymorph, kein FK) | Einträge bleiben, Listen-Views filtern über Existenz-Subqueries | gleiche Existenz-Prädikate in den Listen-Queries (`EntityExistsPredicates`) | 1:1 |
+| J7 | Work-Item-Detail eines Work Items mit soft-gelöschtem Parent | `parent` wird über Vorwärts-FK geladen | durch Inline-Kaskade nicht erreichbar (Kind wird mitgelöscht) | – |
+
+Jede neue Abfrage mit `IgnoreQueryFilters([SoftDelete])` braucht einen Eintrag in dieser Tabelle (Architekturtest `SoftDeleteBypassIsDocumented` zählt die Aufrufstellen gegen `tests/Plane.ArchitectureTests/soft-delete-bypass.yaml`).
+
+#### 3.5.3 Soft-Delete-Semantik
+
+1. `db.Remove(entity)` auf eine `ISoftDeletable`-Entität → `SoftDeleteInterceptor` setzt `deleted_at = updated_at = now`, `updated_by_id = Akteur` (wie `SoftDeleteModel.delete` → `save()`), Status `Modified`.
+2. Die Registry (§3.5.4) wird für die Entität ausgewertet: **Inline**-Einträge als set-basiertes `ExecuteUpdateAsync` (`deleted_at`, `updated_at`; `updated_by_id` bleibt – Korrektur A02a-#10) rekursiv; **SetNull**-Einträge als `ExecuteUpdateAsync(x => x.<Fk>, null)` auf **alle** referenzierenden Zeilen (Korrektur Q2: Original nullte nur Zeilen, die der Default-Manager sah); **Deferred**-Einträge als `SoftDeleteCascadeJob` (Outbox im selben Commit).
+3. `QuerySet.delete()`-Stellen des Originals (Massen-Soft-Delete ohne Kaskade, A02a §3.2 c) werden als `ExecuteUpdateAsync(deleted_at = now)` **ohne** Registry umgesetzt; die Stellen stehen im jeweiligen Command mit Kommentar `// Original: QuerySet.delete() – keine Kaskade`.
+4. Wiederherstellen (`SoftDeleteRestoreService`, D02 §4.1) setzt `deleted_at = NULL` für die Wurzel und die per Inline-Kaskade **im selben Zeitstempel** gelöschten Kinder; SetNull-Wirkungen werden **nicht** zurückgenommen (wie Original, A02a-#11). Original-`restore_related_objects` ist ein leerer Stub – die CE nutzt Restore nur bei Archiv-Funktionen, die nicht über Soft-Delete laufen (Archiv = `archived_at`).
+5. Unique-Indizes sind partiell (`WHERE deleted_at IS NULL`) → Neuanlage nach Löschung möglich; **voll** eindeutig bleiben bewusst: `users.email`, `users.username`, `deploy_boards.anchor`, `api_tokens.token_hash`, `exports.token`, `instance_configurations.key`, `work_items (project_id, sequence_id)`.
+
+#### 3.5.4 Kaskaden-Registry (vollständig, Registrierung je Eigentümer-Modul in `IModule.AddServices`)
+
+Abgeleitet aus allen FKs mit Original-`CASCADE`/`SET NULL` (DB-Lösch-Verhalten §3.4) auf soft-löschbare Ziele; Ziele ohne Soft-Delete (`users`, `instances`) erzeugen keine Einträge. Maschinenlesbar in `_data/03-datenmodell.json` (`soft_delete_cascades[]`). Ein Architekturtest prüft, dass jede FK mit `OnDelete(Cascade|SetNull)` auf eine `ISoftDeletable`-Entität genau einen Registry-Eintrag oder einen `NoSoftCascade`-Vermerk hat (D02 §3.2.2).
+
+| Gelöschte Wurzel (Soft-Delete) | Modus | betroffene Tabelle.Spalte (Aktion) |
+|---|---|---|
+| `file_assets` | Inline | `users.avatar_asset_id` → sofort `NULL`; `users.cover_image_asset_id` → sofort `NULL`; `workspaces.logo_asset_id` → sofort `NULL`; `projects.cover_image_asset_id` → sofort `NULL` |
+| `workspaces` | **Deferred** (`SoftDeleteCascadeJob`, Queue `default`) | alle Zeilen mit `workspace_id` in: `analytic_views`, `api_tokens`, `cycle_user_properties`, `cycle_work_items`, `cycles`, `deploy_boards`, `draft_work_item_assignees`, `draft_work_item_cycles`, `draft_work_item_labels`, `draft_work_item_modules`, `draft_work_items`, `estimate_points`, `estimates`, `exports`, `external_links`, `file_assets`, `intake_work_items`, `intakes`, `integration_connections`, `labels`, `module_links`, `module_members`, `module_user_properties`, `module_work_items`, `modules`, `notifications`, `page_labels`, `page_logs`, `page_versions`, `pages`, `project_member_invites`, `project_members`, `project_pages`, `project_public_members`, `project_user_properties`, `projects`, `roles`, `states`, `stickies`, `user_favorites`, `user_notification_preferences`, `user_recent_visits`, `views`, `webhook_logs`, `webhooks`, `work_item_activities`, `work_item_assignees`, `work_item_comment_reactions`, `work_item_comments`, `work_item_description_versions`, `work_item_labels`, `work_item_links`, `work_item_mentions`, `work_item_reactions`, `work_item_relations`, `work_item_subscribers`, `work_item_types`, `work_item_versions`, `work_item_votes`, `work_items`, `workspace_home_preferences`, `workspace_member_invites`, `workspace_members`, `workspace_themes`, `workspace_user_links`, `workspace_user_preferences`, `workspace_user_properties`; **nur Hard-Delete** (keine Soft-Spalte): `search_documents`, `workspace_feature_settings` |
+| `user_favorites` | Inline | `user_favorites.parent_id` → soft-löschen (rekursiv) |
+| `projects` | **Deferred** (`SoftDeleteCascadeJob`, Queue `default`) | alle Zeilen mit `project_id` in: `cycle_user_properties`, `cycle_work_items`, `cycles`, `deploy_boards`, `draft_work_item_assignees`, `draft_work_item_cycles`, `draft_work_item_labels`, `draft_work_item_modules`, `draft_work_items`, `estimate_points`, `estimates`, `external_links`, `file_assets`, `intake_work_items`, `intakes`, `labels`, `module_links`, `module_members`, `module_user_properties`, `module_work_items`, `modules`, `notifications`, `project_identifiers`, `project_member_invites`, `project_members`, `project_pages`, `project_public_members`, `project_user_properties`, `states`, `user_favorites`, `user_notification_preferences`, `user_recent_visits`, `views`, `work_item_activities`, `work_item_assignees`, `work_item_comment_reactions`, `work_item_comments`, `work_item_description_versions`, `work_item_labels`, `work_item_links`, `work_item_mentions`, `work_item_reactions`, `work_item_relations`, `work_item_subscribers`, `work_item_types`, `work_item_versions`, `work_item_votes`, `work_items`, `workspace_user_links`; **nur Hard-Delete** (keine Soft-Spalte): `project_feature_settings`, `work_item_sequences` |
+| `estimates` | Inline | `projects.estimate_id` → sofort `NULL`; `estimate_points.estimate_id` → soft-löschen (rekursiv) |
+| `states` | Inline | `projects.default_state_id` → sofort `NULL`; `work_items.state_id` → soft-löschen; praktisch nie erreicht, weil nur leere States löschbar sind (Guard); `draft_work_items.state_id` → sofort `NULL` |
+| `labels` | Inline | `labels.parent_id` → soft-löschen (rekursiv); `work_item_labels.label_id` → soft-löschen (rekursiv); `draft_work_item_labels.label_id` → soft-löschen (rekursiv); `page_labels.label_id` → soft-löschen (rekursiv) |
+| `work_items` | Inline | `work_items.parent_id` → soft-löschen (rekursiv); `work_item_assignees.work_item_id` → soft-löschen (rekursiv); `work_item_labels.work_item_id` → soft-löschen (rekursiv); `work_item_relations.work_item_id` → soft-löschen (rekursiv); `work_item_relations.related_work_item_id` → soft-löschen (rekursiv); `work_item_mentions.work_item_id` → soft-löschen (rekursiv); `work_item_subscribers.work_item_id` → soft-löschen (rekursiv); `work_item_links.work_item_id` → soft-löschen (rekursiv); `work_item_comments.work_item_id` → soft-löschen (rekursiv); `work_item_reactions.work_item_id` → soft-löschen (rekursiv); `work_item_votes.work_item_id` → soft-löschen (rekursiv); `work_item_activities.work_item_id` → NoSoftCascade (Verlauf bleibt, Hard-Delete kaskadiert); `work_item_description_versions.work_item_id` → soft-löschen (rekursiv); `work_item_versions.work_item_id` → soft-löschen (rekursiv); `draft_work_items.parent_id` → sofort `NULL`; `cycle_work_items.work_item_id` → soft-löschen (rekursiv); `module_work_items.work_item_id` → soft-löschen (rekursiv); `intake_work_items.work_item_id` → soft-löschen (rekursiv); `intake_work_items.duplicate_to_id` → sofort `NULL`; `file_assets.work_item_id` → soft-löschen (rekursiv); `external_links.work_item_id` → soft-löschen (rekursiv) |
+| `estimate_points` | Inline | `work_items.estimate_point_id` → sofort `NULL`; `draft_work_items.estimate_point_id` → sofort `NULL` |
+| `work_item_types` | Inline | `work_items.type_id` → sofort `NULL`; `draft_work_items.type_id` → sofort `NULL` |
+| `work_item_comments` | Inline | `work_item_comments.parent_id` → soft-löschen (rekursiv); `work_item_comment_reactions.comment_id` → soft-löschen (rekursiv); `work_item_activities.comment_id` → sofort `NULL`; `file_assets.comment_id` → soft-löschen (rekursiv); `external_links.comment_id` → soft-löschen (rekursiv) |
+| `work_item_activities` | Inline | `work_item_versions.activity_id` → sofort `NULL` |
+| `draft_work_items` | Inline | `draft_work_item_assignees.draft_work_item_id` → soft-löschen (rekursiv); `draft_work_item_labels.draft_work_item_id` → soft-löschen (rekursiv); `draft_work_item_modules.draft_work_item_id` → soft-löschen (rekursiv); `draft_work_item_cycles.draft_work_item_id` → soft-löschen (rekursiv); `file_assets.draft_work_item_id` → soft-löschen (rekursiv) |
+| `modules` | Inline | `draft_work_item_modules.module_id` → soft-löschen (rekursiv); `module_members.module_id` → soft-löschen (rekursiv); `module_work_items.module_id` → soft-löschen (rekursiv); `module_links.module_id` → soft-löschen (rekursiv); `module_user_properties.module_id` → soft-löschen (rekursiv) |
+| `cycles` | Inline | `draft_work_item_cycles.cycle_id` → soft-löschen (rekursiv); `cycle_work_items.cycle_id` → soft-löschen (rekursiv); `cycle_user_properties.cycle_id` → soft-löschen (rekursiv) |
+| `intakes` | Inline | `intake_work_items.intake_id` → soft-löschen (rekursiv); `deploy_boards.intake_id` → sofort `NULL` |
+| `pages` | Inline | `pages.parent_id` → Deferred (D2-Vorbereitung; CE: `parent_id` immer NULL); `project_pages.page_id` → soft-löschen (rekursiv); `page_labels.page_id` → soft-löschen (rekursiv); `page_logs.page_id` → soft-löschen (rekursiv); `page_versions.page_id` → soft-löschen (rekursiv); `file_assets.page_id` → soft-löschen (rekursiv) |
+| `integration_connections` | Inline | `external_links.connection_id` → soft-löschen (rekursiv) |
+
+Registrierungsbeispiel (Eigentümer `WorkItems`):
+
+```csharp
+// src/modules/WorkItems/Plane.WorkItems/WorkItemsModule.cs (Ausschnitt)
+cascade.Cascade<WorkItem, WorkItem>(c => c.ParentId, CascadeMode.Inline);                 // Sub-Work-Items (Original CASCADE parent)
+cascade.Cascade<WorkItem, WorkItemAssignee>(c => c.WorkItemId, CascadeMode.Inline);
+cascade.Cascade<WorkItem, WorkItemLabel>(c => c.WorkItemId, CascadeMode.Inline);
+cascade.Cascade<WorkItem, WorkItemRelation>(c => c.WorkItemId, CascadeMode.Inline);
+cascade.Cascade<WorkItem, WorkItemRelation>(c => c.RelatedWorkItemId, CascadeMode.Inline);
+cascade.Cascade<WorkItem, WorkItemComment>(c => c.WorkItemId, CascadeMode.Inline);         // → rekursiv Reaktionen, Antworten, file_assets(comment)
+cascade.Cascade<WorkItem, CycleWorkItem>(c => c.WorkItemId, CascadeMode.Inline);           // fremder Eigentümer (Cycles) – deklarierte Kaskade
+cascade.Cascade<WorkItem, ModuleWorkItem>(c => c.WorkItemId, CascadeMode.Inline);
+cascade.Cascade<WorkItem, IntakeWorkItem>(c => c.WorkItemId, CascadeMode.Inline);
+cascade.SetNull<WorkItem, IntakeWorkItem>(c => c.DuplicateToId);
+cascade.SetNull<WorkItem, DraftWorkItem>(c => c.ParentId);                                 // DEV-DM-07 (Original CASCADE)
+cascade.NoSoftCascade<WorkItem, WorkItemActivity>(c => c.WorkItemId, reason: "Verlauf bleibt (Original DO_NOTHING); Hard-Delete kaskadiert per FK");
+```
+
+#### 3.5.5 Hard-Delete und Aufbewahrung
+
+| Job (Name in `IRecurringJobRegistry`) | Cron (UTC) | Wirkung | Konfiguration (Default) | Original |
+|---|---|---|---|---|
+| `retention.hard_delete` (`HardDeleteJob`) | `0 0 * * *` | je Wurzeltabelle in FK-sicherer Reihenfolge `DELETE … WHERE deleted_at < now() - interval` in Batches à 1000; DB-Kaskaden (`ON DELETE CASCADE/SET NULL`) erledigen Kinder; anschließend `FileAssetPurgeConsumer` entfernt Objekte gelöschter `file_assets` aus dem Speicher | `Plane:Retention:HardDeleteDays` (60, Alias `HARD_DELETE_AFTER_DAYS`) | `deletion_task.hard_delete`; Abbruch-Bug Q3 behoben, Objektlöschung neu |
+| `retention.api_activity_logs` | `30 2 * * *` | `DELETE api_activity_logs WHERE created_at <= now() - 14 d` | `Plane:Retention:ApiActivityLogDays` (14) | `cleanup_task.delete_api_logs` |
+| `retention.webhook_logs` | `30 3 * * *` | dto. `webhook_logs` | `Plane:Retention:WebhookLogDays` (14) | `cleanup_task.delete_webhook_logs` |
+| `retention.email_notification_logs` | `45 2 * * *` | `sent_at <= now() - 7 d` | `Plane:Retention:EmailLogDays` (7, Alias `EMAIL_LOG_RETENTION_DAYS`) | `cleanup_task` |
+| `retention.page_versions` | `0 3 * * *` | je Page alles außer den 20 neuesten (`created_at`) hart löschen | `Plane:Retention:PageVersions` (20) | `cleanup_task.delete_page_versions` |
+| `retention.work_item_description_versions` | `15 3 * * *` | je Work Item alles außer den 20 neuesten | `Plane:Retention:WorkItemDescriptionVersions` (20) | `cleanup_task.delete_issue_description_versions` |
+| `retention.unuploaded_assets` | `0 2 * * *` | `file_assets` mit `is_uploaded = false` und älter als n Tage **soft** löschen | `Plane:Retention:UnuploadedAssetDays` (7, Alias `UNUPLOADED_ASSET_DELETE_DAYS`) | `file_asset_task.delete_unuploaded_file_asset` |
+| `retention.export_links` | `30 1 * * *` | `exports.url IS NOT NULL AND created_at <= now() - 8 d` → Objekt löschen, `url = NULL` (einmal statt doppelt eingeplant, A02a-#13) | `Plane:Retention:ExportLinkDays` (8) | `exporter_expired_task.delete_old_s3_link` |
+| `retention.messaging` | `0 4 * * *` | `outbox_messages` dispatched > 7 d, `inbox_messages` > 14 d, `jobs` erfolgreich > 7 d löschen | `Plane:Messaging:*RetentionDays` | – (neu) |
+| `retention.user_sessions` | `*/30 * * * *` | `user_sessions WHERE expires_at < now()` | – | Django-`clearsessions` (implizit) |
+
+Die Job-Klassen, Queues und Fehlerbehandlung definiert `06-hintergrundjobs-events-benachrichtigungen.md`; Namen und Spalten hier sind verbindlich für die Indizes in §3.4.
 
