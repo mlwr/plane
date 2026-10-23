@@ -1,7 +1,7 @@
 [
   {
     "id": "ABG-101",
-    "decision": "Tabellenname **`recurring_job_states`** (Spalten exakt wie 06 §3.2: `name` PK, `source`, `cron_utc`, `job_type`, `queue`, `payload`, `enabled`, `last_fired_at`, `next_fire_at`, `updated_at`). `outbox_messages` hat **genau** die Spalten aus ABG-053 + `id`, `event_type`, `payload`, `occurred_at`, `traceparent`, `dispatched_at` – **ohne** `attempts`/`last_error` (der Dispatcher in 06 §3.3 liest/schreibt sie nicht; Fehler je Consumer stehen in `jobs.attempts`/`last_error`). `jobs` wie 06 §3.2 (Status 0/1/4, Erfolg = Zeile gelöscht, `ux_jobs_dedupe` nur für Status 0/1, `job_type` = stabiler `[JobType]`-Name). Die Code-Definitionen schreibt **nur der Leader** nach jedem Lock-Erwerb (06 §3.5 Nr. 1). Weckruf: `pg_notify` **in** der Transaktion, Zustellung beim Commit (06 §3.2 Regel 4; 03 ist bereits angeglichen, K06.4 erledigt).",
+    "decision": "Tabellenname **`recurring_job_states`** (Spalten exakt wie 06 §3.2: `name` PK, `source`, `cron_utc`, `job_type`, `queue`, `payload`, `enabled`, `last_fired_at`, `next_fire_at`, `updated_at`). `outbox_messages` hat **genau** die Spalten aus ABG-053 + `id`, `event_type`, `payload`, `occurred_at`, `traceparent`, `dispatched_at` – **ohne** `attempts`/`last_error` (der Dispatcher in 06 §3.3 liest/schreibt sie nicht; Fehler je Consumer stehen in `jobs.attempts`/`last_error`). `jobs` wie 06 §3.2 (Status 0/1/4, Erfolg = Zeile gelöscht, `ux_jobs_dedupe` nur für Status 0/1, `job_type` = stabiler `[JobType]`-Name). Die Code-Definitionen schreibt **nur der Leader** nach jedem Lock-Erwerb (06 §3.6 Nr. 1). Weckruf: `pg_notify` **in** der Transaktion, Zustellung beim Commit (06 §3.2 Regel 4; 03 ist bereits angeglichen, K06.4 erledigt).",
     "targets": [
       {
         "doc": "06-hintergrundjobs-events-benachrichtigungen.md",
@@ -9,7 +9,7 @@
       },
       {
         "doc": "03-datenmodell-efcore.md",
-        "change": "§3.4.18.6 Z. 2006: „schreibt jede Worker-Instanz beim Start“ → „schreibt nur der Scheduler-Leader nach jedem Lock-Erwerb (06 §3.5 Nr. 1)“; §9-Zeile 06 und RV-01 auf ABG-101 verweisen."
+        "change": "§3.4.18.6 Z. 2006: „schreibt jede Worker-Instanz beim Start“ → „schreibt nur der Scheduler-Leader nach jedem Lock-Erwerb (06 §3.6 Nr. 1)“; §9-Zeile 06 und RV-01 auf ABG-101 verweisen."
       }
     ]
   },
