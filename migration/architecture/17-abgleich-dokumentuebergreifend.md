@@ -455,3 +455,19 @@ Netzwerkfreigaben (dotnet, quay.io, codeberg.org, data.forgejo.org, NuGet-Suche)
 ### Sprachumfang (ADR-009D, Nachtrag)
 
 Wo Architektur- oder Plandokumente noch „22 Locales/Sprachen“ des Originals nennen (z. B. Ordnerlisten in 08 §3.7, Inventare in 09, Keycloak-Theme-Locales in 05), gilt **nur `de` (Standard) und `en`**. Die Original-Locales dienen lediglich als Quelle für diese beiden Sprachen.
+
+### Entscheidungen des Auftraggebers zu den Planungsfragen (23.10.2026)
+
+Alle Empfehlungen aus `plan/04` angenommen:
+
+| Punkt | Entscheidung |
+|---|---|
+| OE-01 / OP-PLAN-05 | E-Mails in der Sprache des Empfängers (`de`/`en`), Standard `de`. |
+| OE-02 / OP-PLAN-06 | Deutsche Datumsformate in der Locale `de`; `en` bleibt 1:1 wie das Original. |
+| OE-03 / OP-PLAN-07 | Paritäts-Gates in `en`; zusätzlicher Visual-Referenzsatz für `de`. |
+| OE-07 | Gruppensummen-Quirk DEV-GRP-001 wird korrigiert (Z-12). |
+| OE-08 | Tooltip-Kürzel im Editor (FE-ED-04) werden korrigiert. |
+| OE-04 | Aufbewahrung `work_item_versions`: 20. |
+| OE-05 | Demo-Seed-Bilder (Unsplash, Plane-Medien) werden durch eigene lizenzfreie Bilder ersetzt. |
+| OE-18 / OP-PLAN-08 | Start von W1 (Forgejo) wird bei M5 entschieden (nach M7 oder verzahnt ab M6). |
+| OE-24 | OP-PLAN-05 bis -08 bestätigt. |
