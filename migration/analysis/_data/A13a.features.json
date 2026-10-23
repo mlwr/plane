@@ -1,0 +1,247 @@
+[
+ {
+  "name": "Theme-System mit data-theme-Umschaltung (Light, Dark, Light-High-Contrast, Dark-High-Contrast, Custom, System)",
+  "area": "Theming",
+  "description": "next-themes 0.4.6 setzt vor dem ersten Paint <html data-theme> aus localStorage['theme'] (Default system, per prefers-color-scheme aufgelöst, OS-Wechsel live); Web kennt themes light/dark/light-contrast/dark-contrast/custom, Admin und Space nur light/dark (+system). Propel-Custom-Variants light/dark/dark-high-contrast/light-high-contrast schalten die Token-Blöcke nur am Root-Element.",
+  "code_refs": [
+   "apps/web/app/root.tsx",
+   "apps/admin/providers/core.tsx",
+   "apps/space/app/providers.tsx",
+   "packages/constants/src/themes.ts",
+   "@makeplane/propel@0.7.3/dist/styles/variables.css"
+  ]
+ },
+ {
+  "name": "Theme-Auswahl im Profil und per Power-K inkl. Server-Persistenz",
+  "area": "Theming",
+  "description": "THEME_OPTIONS (System preference, Light, Dark, Light high contrast, Dark high contrast, Custom theme) mit Zwei-Farben-Icon; Wechsel setzt next-themes sofort, speichert Profile.theme (JSONField, IUserTheme {theme, primary, background, darkPalette}) mit Promise-Toast und lädt danach die Seite neu; StoreWrapper übernimmt das Profil-Theme einmal je Sitzung.",
+  "code_refs": [
+   "apps/web/components/appearance/theme-switcher.tsx",
+   "apps/web/components/core/theme/theme-switch.tsx",
+   "apps/web/components/power-k/config/preferences-commands.ts",
+   "apps/web/components/power-k/ui/pages/preferences/themes-menu.tsx",
+   "apps/web/lib/wrappers/store-wrapper.tsx",
+   "apps/web/store/user/profile.store.ts",
+   "apps/api/plane/db/models/user.py",
+   "packages/types/src/users.ts"
+  ]
+ },
+ {
+  "name": "Custom-Theme-Generator (Brand- und Neutralfarbe → 14-stufige OKLCH-Paletten)",
+  "area": "Theming",
+  "description": "Formular mit Light/Dark-Modus, Neutral- und Brand-Farbe (Hex-Validierung), Import/Download der Konfiguration als JSON {version, themeName, primary, background, darkPalette}; applyCustomTheme berechnet per chroma-js 14 Stufen (Anker 50/500/1000), invertiert im Dark-Modus, schreibt --neutral-*, --brand-*, --alpha-white/black-*, --txt-on-color/--txt-icon-on-color (WCAG-Luminanz) und Editor-Hintergründe als Inline-Styles; Reload nach 1 500 ms.",
+  "code_refs": [
+   "apps/web/components/core/theme/custom-theme-selector.tsx",
+   "packages/utils/src/theme/palette-generator.ts",
+   "packages/utils/src/theme/theme-application.ts",
+   "packages/utils/src/theme/theme-inversion.ts",
+   "packages/utils/src/theme/constants.ts"
+  ]
+ },
+ {
+  "name": "High-Contrast-Themes (Light und Dark)",
+  "area": "Theming",
+  "description": "light-contrast und dark-contrast ergänzen die Light- bzw. Dark-Basis um je 33 Token-Overrides (18 Rahmen-Tokens deutlich dunkler/heller, 15 Label-/Text-Tokens).",
+  "code_refs": [
+   "@makeplane/propel@0.7.3/dist/styles/variables.css",
+   "packages/constants/src/themes.ts"
+  ]
+ },
+ {
+  "name": "Semantisches Farb-Token-System (Paletten, semantische Tokens, Utilities)",
+  "area": "Designsystem/Tokens",
+  "description": "Drei Ebenen: Rohpaletten (--neutral-*, --brand-*, --blue/green/amber/red-*, Alpha-Paletten, 8 Extended Colors × 12 Stufen, Priority- und State-Farben), semantische Laufzeit-Tokens (--bg-*, --border-*, --txt-*, --label-*, --illustration-*) und per @theme inline erzeugte Utilities (bg-layer-1, text-secondary, border-subtle …); Flächenhierarchie Canvas → Surface → Layer laut Design-Leitfaden; alle Tailwind-Default-Farben entfernt.",
+  "code_refs": [
+   "@makeplane/propel@0.7.3/dist/styles/variables.css",
+   "packages/tailwind-config/index.css",
+   "packages/tailwind-config/AGENTS.md"
+  ]
+ },
+ {
+  "name": "Typografie (Inter Variable, IBM Plex Mono, Größen, Gewichte, Presets)",
+  "area": "Designsystem/Typografie",
+  "description": "Schriftfamilien font-heading/font-body (Inter Variable) und font-code (IBM Plex Mono); 19 Pixelgrößen text-8 … text-40, 6 Gewichte (350, 450, 500, 600, 700, 800), 4 Laufweiten und 57 zusammengesetzte Presets text-h1-* … text-caption-3xs-*.",
+  "code_refs": [
+   "@makeplane/propel@0.7.3/dist/styles/variables.css",
+   "packages/tailwind-config/index.css"
+  ]
+ },
+ {
+  "name": "Gebündelte Schriften (Airgap-tauglich) inkl. Material Symbols Rounded",
+  "area": "Designsystem/Schriften",
+  "description": "@fontsource-variable/inter (mit Preload der latin-woff2), @fontsource/ibm-plex-mono und @fontsource/material-symbols-rounded werden in Web, Admin und Space importiert; Ladeerkennung per use-font-face-observer zeigt bis dahin Skelette für Material-Icons.",
+  "code_refs": [
+   "apps/web/app/root.tsx",
+   "apps/admin/app/root.tsx",
+   "apps/space/app/root.tsx",
+   "packages/blocks/src/emoji-icon-picker/logo.tsx",
+   "pnpm-workspace.yaml"
+  ]
+ },
+ {
+  "name": "Icon-System Propel (919 Icons in 18 Kategorien)",
+  "area": "Designsystem/Icons",
+  "description": "Einheitliche 16×16-SVG-Icons mit width/height 1em und fill=currentColor (Outline/Filled-Paare) in den Kategorien actions, arrows, charts, cycle-states, formatting-and-editors, initiative-states, layouts, milestone-states, miscellaneous, module-states, other-products, placeholder, project-features, properties, sub-brands, work-item-states, workspace-features; Größe über --node-size/size-*.",
+  "code_refs": [
+   "@makeplane/propel@0.7.3/dist/icons/index.js",
+   "@makeplane/propel@0.7.3/dist/state-icons/index.js"
+  ]
+ },
+ {
+  "name": "Status-, Zyklus-, Modul- und Prioritäts-Icons",
+  "area": "Designsystem/Icons",
+  "description": "StateGroupIcon (backlog/unstarted/started/completed/cancelled, Größen xs 10 … xl 18 px, Fortschrittsbogen über percentage), IntakeStateGroupIcon (triage), CycleGroupIcon (current/upcoming/completed/draft mit festen Farben), ModuleStatusIcon (6 Status), PriorityIcon (urgent/high/medium/low/none in text-priority-*), Marken- und Sonder-Icons.",
+  "code_refs": [
+   "packages/blocks/src/icons/state/state-group-icon.tsx",
+   "packages/blocks/src/icons/cycle",
+   "packages/blocks/src/icons/module",
+   "packages/blocks/src/icons/priority-icon.tsx",
+   "@makeplane/propel@0.7.3/dist/state-icons/index.js"
+  ]
+ },
+ {
+  "name": "Datei-Typ-Icons für Anhänge und Locked-Pill",
+  "area": "Designsystem/Icons",
+  "description": "getFileIcon ordnet pdf, csv, xlsx, css, doc, fig, html, png, jpg, js, txt, svg, mp3/wav, mp4/wmv/mkv, zip, rar je ein PNG-Icon zu (sonst Default-Icon); LockedComponent zeigt die Pill 'Locked' mit Schloss-Icon.",
+  "code_refs": [
+   "apps/web/components/icons/attachment/attachment-icon.tsx",
+   "apps/web/components/icons/locked-component.tsx"
+  ]
+ },
+ {
+  "name": "Logo-Picker für Projekte, Pages und Views (Emoji, Lucide-Icons, Material-Icons)",
+  "area": "Designsystem/Komponenten",
+  "description": "EmojiPicker-Popover mit Tabs Emoji und Icon (157 Lucide-Icons bzw. 200 Material-Symbols-Ligaturen, Farbwahl, Suche); gespeichert wird logo_props {in_use emoji|icon, emoji {value,url}, icon {name,color,background_color}} – die Icon-Namen sind persistierter Datenvertrag.",
+  "code_refs": [
+   "packages/blocks/src/emoji-icon-picker",
+   "packages/blocks/src/emoji-icon-picker/lucide-icons.tsx",
+   "packages/blocks/src/emoji-icon-picker/material-icons.tsx",
+   "packages/blocks/src/emoji-icon-picker/logo.tsx"
+  ]
+ },
+ {
+  "name": "Emoji-Reaktions-Komponenten",
+  "area": "Designsystem/Komponenten",
+  "description": "Reaktions-Chips mit Zähler (Hervorhebung bei eigener Reaktion), Gruppe mit Add-Button, Tooltip '<emoji>: A, B and N more' (max. 5 Namen), animierter Zähler (slide-in/out-Animationen) und Emoji-Picker.",
+  "code_refs": [
+   "packages/blocks/src/emoji-reaction/emoji-reaction.tsx",
+   "packages/blocks/src/emoji-reaction/animated-counter.tsx"
+  ]
+ },
+ {
+  "name": "Empty-State-Illustrationen und theme-abhängige Raster-Assets",
+  "area": "Designsystem/Illustrationen",
+  "description": "59 Inline-SVG-Illustrationen (32 horizontal/compact, 25 vertical/detailed, 2 beide) lazy geladen und über --illustration-*-Tokens theme-fähig; EmptyState compact/detailed mit Titel, Text und Aktionen; zusätzlich Light/Dark-Rasterbildpaare, die per resolvedTheme umgeschaltet werden (46 Dateien, uneinheitliche Vergleichsrichtung).",
+  "code_refs": [
+   "packages/blocks/src/empty-state/assets/asset-registry.tsx",
+   "packages/blocks/src/empty-state",
+   "apps/web/components/common/logo-spinner.tsx"
+  ]
+ },
+ {
+  "name": "Propel-Komponentenbibliothek (68 Komponenten) mit Varianten",
+  "area": "Designsystem/Komponenten",
+  "description": "Alle 68 fertigen Komponenten auf Base UI 1.6.0 (components/): accordion, alert-dialog, anchor-button, autocomplete-field, autocomplete, avatar-group, avatar, badge, banner, breadcrumb, button-group, button, calendar, checkbox-field, checkbox-group-field, checkbox-group, checkbox, circular-progress, collapsible, combobox-field, combobox, context-menu, csp-provider, dialog, direction-provider, drawer, expandable-search, field, fieldset, form, icon-button, icon-split-button, icon, input-field, input, linear-progress, list, logo-spinner, menu, navigation-menu, number-field, otp-field, pagination, pill, popover, preview-card, radio-group-field, radio, scroll-area, select-field, select, separator, shortcut, skeleton, slider, split-button, suggestion-menu, switch-field, switch, table, tabs, text-area-field, text-area, toast, toggle, toolbar, tooltip, workspace-avatar; darunter liegen 57 gestylte Elemente (elements/): accordion, alert-dialog, anchor-button, autocomplete, avatar-group, avatar, badge, banner, breadcrumb, button-group, button, calendar, checkbox-group, checkbox, circular-progress, collapsible, combobox, context-menu, dialog, drawer, expandable-search, field, fieldset, form, icon-button, input-field, input, linear-progress, list, logo-spinner, menu, navigation-menu, number-field, otp-field, pagination, pill, popover, preview-card, radio, scroll-area, select, separator, skeleton, slider, split-button, suggestion-menu, swatch, switch, table, tabs, text-area-field, text-area, toast, toggle, toolbar, tooltip, workspace-avatar. Button und IconButton haben die Varianten primary, secondary, tertiary, ghost, danger und danger-outline in den Größen xs, sm, md, lg; Zustände werden über data-*-Attribute von Base UI gestylt, Klassen über cva ohne tailwind-merge (Achsen je Element in 13a §2.23).",
+  "code_refs": [
+   "@makeplane/propel@0.7.3/dist/components",
+   "@makeplane/propel@0.7.3/dist/elements",
+   "@makeplane/propel@0.7.3/dist/internal"
+  ]
+ },
+ {
+  "name": "Blocks-Composites (Select-Engine, Property-Selects, Breadcrumbs, Kontextmenü, Confirm-Dialog, Layout, Pill, Portal)",
+  "area": "Designsystem/Komponenten",
+  "description": "Plane-spezifische Bausteine auf Propel in den Subpath-Modulen auth, breadcrumb, card, charts/{area-chart,bar-chart,line-chart,pie-chart,radar-chart,tree-map}, common, context-menu, dialog, emoji-icon-picker, emoji-icon-picker/data, emoji-reaction, empty-state, icons, layout, pill-button, portal, property-select, select, skeleton, spinner, toast, types, utils, virtual-list; darunter die virtualisierte Select-Engine mit den Trigger-Varianten pill, icon, select, select-ghost, table-cell, breadcrumb und search-input, die Property-Selects State, Priority, Member, Label, Cycle, Module, Estimate, Project, Date, DateRange und Intake-State, ConfirmDialog (danger/primary/warning), Header/Row/ContentWrapper/ControlLink, PillButton, ModalPortal, Card und VirtualList.",
+  "code_refs": [
+   "packages/blocks/package.json",
+   "packages/blocks/src/select",
+   "packages/blocks/src/property-select",
+   "packages/blocks/src/breadcrumb",
+   "packages/blocks/src/context-menu",
+   "packages/blocks/src/dialog",
+   "packages/blocks/src/layout",
+   "packages/blocks/src/pill-button",
+   "packages/blocks/src/portal",
+   "packages/blocks/src/card",
+   "packages/blocks/src/virtual-list"
+  ]
+ },
+ {
+  "name": "Toast-Benachrichtigungen",
+  "area": "Designsystem/Komponenten",
+  "description": "Fassade setToast/updateToast/setPromiseToast/dismissToast über den Propel-Toast mit Status-Glyphen (success, error, warning, info, loading), Aktionen, Stapelung und Close-Button; meistgenutzter Blocks-Baustein (211 Importe).",
+  "code_refs": [
+   "packages/blocks/src/toast",
+   "@makeplane/propel@0.7.3/dist/components/toast"
+  ]
+ },
+ {
+  "name": "Diagramm-Bausteine (Bar, Area, Line, Pie, Radar, TreeMap) und Farbpaletten",
+  "area": "Designsystem/Charts",
+  "description": "recharts-2.15.4-Wrapper mit einheitlichem Grid, Ticks, Legende (Hover dimmt andere Serien) und Tooltip-Karte; Bar-Formen bar/lollipop/lollipop-dotted; Paletten Modern/Horizon/Earthen.",
+  "code_refs": [
+   "packages/blocks/src/charts",
+   "packages/constants/src/chart.ts"
+  ]
+ },
+ {
+  "name": "Animationen und Bewegungen",
+  "area": "Designsystem/Animationen",
+  "description": "Propel-Utilities animate-slide-up, animate-slide-in-from-bottom, animate-slide-in-from-top, animate-slide-out, animate-slide-out-down, animate-fade-out, animate-fade-in, animate-spinner-reveal, animate-spinner-conceal, animate-tour-carousel-slide-in-right, animate-tour-carousel-slide-in-left, animate-tour-carousel-slide-out-right, animate-tour-carousel-slide-out-left, animate-tour-carousel-fade-in, animate-tour-popover-enter, animate-tour-popover-exit, animate-progress-indeterminate und animate-notification-bell-ring; dazu die Tailwind-Defaults animate-spin, animate-pulse, animate-ping, animate-bounce sowie die Web-eigenen Klassen .animate-text-slide-in, .animate-text-fade-out, .animate-lock-icon, .animate-unlock-icon (Page-Sperre) und die Web-Überschreibung .animate-fade-out (500 ms, 100 ms Verzögerung).",
+  "code_refs": [
+   "@makeplane/propel@0.7.3/dist/styles/animations.css",
+   "apps/web/styles/globals.css"
+  ]
+ },
+ {
+  "name": "Maßsystem, Elevation, Scrollbars und globale Basisregeln",
+  "area": "Designsystem/Tokens",
+  "description": "Control-Leiter (Höhe 20–40 px, Padding, Gap, Glyphe, Radius je Stufe xs–2xl), Header-Höhe 52 px, Seiten-Padding 1.35rem, 7 Shadows (raised-100/200/300, overlay-100/200, direction-left/right), eigene Border-Breiten; Scrollbars standardmäßig ausgeblendet, sichtbar nur mit vertical-/horizontal-scrollbar bzw. scrollbar-xs/sm/md/lg; globale Font-Rendering-, Placeholder- und Cursor-Regeln.",
+  "code_refs": [
+   "@makeplane/propel@0.7.3/dist/styles/variables.css",
+   "packages/tailwind-config/index.css"
+  ]
+ },
+ {
+  "name": "Avatare, Workspace-Avatare und Farbwähler",
+  "area": "Designsystem/Komponenten",
+  "description": "Avatar mit Bild oder Initialen (erstes Graphem von erstem/letztem Wort, 6 Farbvarianten, Größen 2xs–3xl), AvatarGroup mit '+N', Workspace-Avatar; ColorPicker (nativer Farbdialog hinter conical-gradient-Button) und ColorSwatchPicker mit 10 Default-Farben; Drag-Handle, Drop-Indikator und Favoriten-Stern.",
+  "code_refs": [
+   "@makeplane/propel@0.7.3/dist/internal/avatar-shared.js",
+   "@makeplane/propel@0.7.3/dist/components/avatar",
+   "packages/blocks/src/common/color-picker/color-picker.tsx",
+   "packages/blocks/src/common"
+  ]
+ },
+ {
+  "name": "Lade-Indikatoren (Logo-Spinner, Spinner, Skeleton, Navigations-Progressbar)",
+  "area": "Designsystem/Komponenten",
+  "description": "Animiertes Plane-Logo (Light/Dark-GIF bzw. Standbild bei reduzierter Bewegung) als Splash, Kreis- und Balken-Spinner, Skeleton/Loader mit animate-pulse sowie bprogress-Leiste (2,5 px, Akzentfarbe mit Verlauf und Glow) bei Routenwechsel.",
+  "code_refs": [
+   "apps/web/components/common/logo-spinner.tsx",
+   "@makeplane/propel@0.7.3/dist/components/logo-spinner",
+   "packages/blocks/src/spinner",
+   "packages/blocks/src/skeleton",
+   "apps/web/lib/b-progress/AppProgressBar.tsx",
+   "apps/web/styles/globals.css"
+  ]
+ },
+ {
+  "name": "Editor-Farb- und Layout-Variablen",
+  "area": "Designsystem/Editor",
+  "description": "8 Text- und 8 Hintergrundfarben für Editor-Inhalte (Hintergründe je Light/Dark), Inhaltsbreiten 720/1152 px, Schriftgrößen-Skalen large/small/mobile, Schriftstile sans-serif/serif/monospace und Zeilenabstände regular/small/mobile.",
+  "code_refs": [
+   "packages/editor/src/styles/variables.css",
+   "apps/web/styles/globals.css",
+   "apps/space/styles/globals.css"
+  ]
+ },
+ {
+  "name": "Power-K-Palettenoptik (cmdk-Styles)",
+  "area": "Designsystem/Komponenten",
+  "description": "Gruppen-, Überschriften- und Item-Styles der Kommandopalette ([cmdk-group], [cmdk-group-heading], [cmdk-item] mit Fokus-, Auswahl- und Disabled-Zustand).",
+  "code_refs": [
+   "apps/web/styles/power-k.css"
+  ]
+ }
+]
