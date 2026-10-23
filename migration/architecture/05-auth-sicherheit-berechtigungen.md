@@ -2,7 +2,7 @@
 
 > **Status:** verbindliches Fachdokument der Zielarchitektur (Rang: `00-grundsatzentscheidungen.md` > `01-zielarchitektur-und-tech-stack.md` > **dieses Dokument** > eigene Präferenzen). Detailliert ADR-008 (Keycloak-only), ADR-017 (OIDC-BFF), ADR-018 (Keycloak als Autorisierungsserver), ADR-019 (Permission-Katalog), ADR-030 (HTML-Sanitizing) und ADR-034 (Rate Limiting) aus `01`.
 > **Stand:** 23.10.2026. **Sprache:** Fließtext Deutsch, Bezeichner Englisch.
-> **Repository:** Alle Zielpfade sind relativ zur Wurzel des neuen Repositories **`funk.`** (ADR-009). Der Verzeichnisbaum in `01` §5.1 ist dort noch mit dem Arbeitstitel `plane-net/` überschrieben; die Struktur unterhalb der Wurzel gilt unverändert (`src/…`, `frontend/…`, `deploy/…`, `tests/…`, `tools/…`).
+> **Repository:** Alle Zielpfade sind relativ zur Wurzel des neuen Repositories **`funk.`** (ADR-009). Der Verzeichnisbaum in `01` §5.1 ist auf `funk./` angeglichen (früherer Arbeitstitel `plane-net/`, ABG-018 g); die Struktur unterhalb der Wurzel gilt unverändert (`src/…`, `frontend/…`, `deploy/…`, `tests/…`, `tools/…`).
 > **Kürzel für das Original:** `API/` = `apps/api/plane/`, `AUTH/` = `apps/api/plane/authentication/`, `PERM/` = `apps/api/plane/app/permissions/`, `UT/` = `apps/api/plane/utils/`, `LIC/` = `apps/api/plane/license/`, `V/` = `apps/api/plane/app/views/`, `V1V/` = `apps/api/plane/api/views/`, `SPV/` = `apps/api/plane/space/views/`, `LICV/` = `apps/api/plane/license/api/views/`, `WEB/` = `apps/web/`, `SPC/` = `apps/space/`, `ADM/` = `apps/admin/`, `PKG/` = `packages/`. Analyse-Dokumente: `A03` = `migration/analysis/03-api-intern-workspace-projekt-user.md`, `A04` = `…/04-api-intern-arbeitsobjekte.md`, `A05` = `…/05-api-public-v1-space-instanz.md`, `A06` = `…/06-auth-sicherheit-querschnitt.md`, `A07` = `…/07-hintergrundjobs-mail-storage-webhooks.md`, `A08` = `…/08-frontend-web-architektur.md`, `A11` = `…/11-frontend-admin-space.md`, `A12` = `…/12-editor-echtzeit-live.md`. Paid-Dokumente: `F27` = `migration/features/27-paid-sicherheit-admin-lizenz.md`, `F30` = `migration/features/30-paid-auswahlliste.md`.
 > **Maschinenlesbare Begleitdaten:** `migration/architecture/_data/05-permission-matrix.json` (Permission-Katalog + Endpunkt-Matrix, 672 Endpunkt-Methoden). Erzeugt aus dem Original-Code mit `migration/_werkzeuge/permission-matrix/` (AST-Extraktion von URL-Konfigurationen, Views, `permission_classes`, `get_permissions` und `@allow_permission`).
 
@@ -38,6 +38,7 @@
 - [Anhang A – Permission-Katalog (vollständig, 258 Keys)](#anhang-a--permission-katalog-vollständig-258-keys)
 - [Anhang B – Endpunkt-×-Rollen-Matrix (vollständig, 672 Endpunkt-Methoden)](#anhang-b--endpunkt--rollen-matrix-vollständig-672-endpunkt-methoden)
 - [Review-Protokoll](#review-protokoll)
+- [Abgleich-Protokoll (Dokument 17)](#abgleich-protokoll-dokument-17)
 
 ---
 
@@ -102,7 +103,7 @@ Jede Entscheidung konkretisiert eine ADR aus `00`/`01`; Abweichungen von `01` gi
 | **D05-ADR-08** | **Keycloak ist führend für E-Mail und Anmeldedaten.** `users.email` und `users.is_email_verified` werden bei **jedem** Login aus den Claims übernommen. Plane bietet keine eigene E-Mail-Änderung mehr (CE-PROF-004 **angepasst**: „Change email“ öffnet die Keycloak-Kontokonsole); Passwort, 2FA, Passkeys und Geräte verwaltet die Kontokonsole (Profil → Security). Namen und Avatar übernimmt Plane nur bei der Anlage, außer `Plane:Auth:SyncProfileOnLogin=true` (Nachfolger von `ENABLE_<PROVIDER>_SYNC`, CE-AUTH-012). | E-Mail-Änderung in Plane mit Rückschreiben nach Keycloak (Admin-API-Credentials in Plane) | Eine Quelle der Wahrheit; kein Admin-Token für Keycloak in Plane | I0/I1 |
 | **D05-ADR-09** | **Instanz-Admin = Keycloak-Realm-Rolle.** Konfigurierbar `Plane:Auth:InstanceAdminRole` (Default `plane-instance-admin`, Claim `roles`) und optional `Plane:Auth:InstanceAdminGroup` (Claim `groups`, z. B. `/plane-instance-admins`). `PlanePrincipal.IsInstanceAdmin` entsteht ausschließlich aus dem Session-Ticket. Tabelle `instance_admins` ist nur **Spiegel** (bei jedem Login gepflegt) für `GET /api/instances/admins/` und die Workspace-Liste; `POST`/`DELETE /api/instances/admins/` entfallen (CE-INST-004 angepasst, O-11). | eigene Admin-Pflege in Plane (Doppelpflege, widerspricht ADR-008) | Rechteentzug in Keycloak wirkt ohne Plane-Aktion | I0 |
 | **D05-ADR-10** | **Erst-Einrichtung ohne Admin-Konto.** `Plane.Migrator` legt die Instanz (`is_setup_done=false`) und die Default-Konfiguration an (Korrektur B-31). Der erste Keycloak-Benutzer mit Admin-Rolle sieht im God Mode das reduzierte Setup-Formular (Vorname, Nachname, E-Mail read-only, Firmenname, Telemetrie-Checkbox ohne Wirkung) und schließt es mit `POST /api/instances/admins/setup/` (JSON) atomar ab (Row-Lock, S-16). Den ersten Admin-Benutzer legt der Realm-Import (Dev/Test) bzw. `deploy/keycloak/config/10-plane-bootstrap-admin.json` (Prod, Variablen `PLANE_BOOTSTRAP_ADMIN_EMAIL`, `PLANE_BOOTSTRAP_ADMIN_PASSWORD`, Required Action `UPDATE_PASSWORD`) an. | Admin-Anlage per Plane-Formular mit Passwort (widerspricht ADR-008) | ADR-008, B-31 | I0 |
-| **D05-ADR-11** | **Step-up für God Mode optional, Default aus** (ADR-009, O-08). `Plane:Auth:AdminStepUpMaxAgeSeconds` = 0 (aus). Bei > 0 verlangt `AdminStepUpFilter` auf allen `/api/instances/`-Endpunkten außer `GET /api/instances/` und `…/admins/session/` einen `auth_time`-Claim jünger als der Wert; sonst 401 `{"error_code": 5210, "error_message": "ADMIN_REAUTHENTICATION_REQUIRED"}` → Admin-App leitet zu `/auth/oidc/login/?app=admin&max_age=<n>&next_path=…`. | Pflicht-Step-up (widerspricht ADR-009) | – | I0 (Schalter), I6 (UI) |
+| **D05-ADR-11** | **Step-up für God Mode optional, Default aus** (ADR-009, O-08). `Plane:Auth:AdminStepUpMaxAgeSeconds` = 0 (aus). Bei > 0 verlangt `AdminStepUpFilter` auf allen `/api/instances/`-Endpunkten außer `GET /api/instances/` und `…/admins/session/` einen `auth_time`-Claim jünger als der Wert; sonst 401 `{"error_code": 5210, "error_message": "ADMIN_REAUTHENTICATION_REQUIRED"}` → Admin-App leitet zu `/auth/oidc/login/?app=admin&max_age=0&next_path=…` (immer `max_age=0`, kein Konfigurationsfeld im Frontend; die Schwelle prüft nur der Server – ABG-021). | Pflicht-Step-up (widerspricht ADR-009) | – | I0 (Schalter), I6 (UI) |
 | **D05-ADR-12** | **Signup-Gate bleibt als JIT-Regel.** `ENABLE_SIGNUP` (Instanz-Konfiguration, eindeutiger Default `"1"`, Korrektur E-03) entscheidet, ob ein **neuer** Plane-Benutzer ohne offene Workspace-/Projekt-Einladung angelegt wird; sonst 5015 `SIGNUP_DISABLED`. Instanz-Admins sind ausgenommen. Optional `Plane:Auth:RequiredRole` (Default leer): ohne diese Realm-Rolle kein Zugang (5015). Der God-Mode-Schalter „Allow anyone to sign up even without an invite“ bleibt auf der neuen Seite `/god-mode/authentication/` (Rest von CE-INST-020). | Signup-Steuerung ausschließlich in Keycloak (verliert die Plane-spezifische „nur mit Einladung“-Regel, wenn Keycloak mit Forgejo geteilt wird) | Keycloak-Benutzer ≠ Plane-Benutzer; Betreiber kann Plane auf Eingeladene begrenzen | I1 |
 | **D05-ADR-13** | **Realm als Code, zwei Anwendungswege.** Dev: `deploy/keycloak/realms/plane-realm.json`, Test: generierte `plane-realm.test.json` (`15` §3.14.2), je Profil genau eine Datei per Aspire `WithRealmImport` (`--import-realm`; bestehende Realms werden übersprungen). Prod/Upgrade: `deploy/keycloak/config/*.json` per **keycloak-config-cli** (adorsys, Apache-2.0) als idempotenter Init-Container `keycloak-config` (Aspire-Ressource im Profil `prodlike`, Compose-Service). Platzhalter `${VAR}` werden aus Umgebungsvariablen ersetzt (Keycloak-Import) bzw. per `import.var-substitution.enabled=true` (config-cli). Secrets nie im Repo. | nur `--import-realm` (keine Aktualisierung bestehender Realms); Terraform-Provider (zusätzliche Toolchain); Keycloak-Admin-API-Code in Plane | Reproduzierbar, upgrade-fähig, airgapped (Image gespiegelt) | I0 (Dev), I7 (Prod) |
 | **D05-ADR-14** | **Eigenes FreeMarker-Login-Theme `plane`** (`parent=base`, volle Kontrolle über DOM) und Kind-Theme `plane-space`. Zwei-Schritt-Ablauf wie Original (E-Mail → Passwort) über einen eigenen Browser-Flow `plane-browser` mit **Username Form** + **Password Form**. CSS wird zur Build-Zeit mit Tailwind 4.1 aus den Template-Klassen erzeugt (`tools/keycloak-theme/`), Texte aus `packages/i18n` (alle Plane-Sprachen) generiert, Schrift Inter gebündelt. Fallback (S7): Keycloakify (MIT, Node nur im Build). | `keycloak.v2`-Theme anpassen (PatternFly-DOM, keine Pixelparität); Login-UI in Angular mit Keycloak-Direct-Grant (Passwort durch Plane, verletzt ADR-008) | ADR-005-Parität, Airgap | I0 (E-Mail/Passwort), I1 (alle Seiten) |
@@ -165,7 +166,7 @@ flowchart LR
 | `src/hosts/Plane.Gateway/Security/` | `SecurityHeadersMiddleware`, `CspPolicyProvider`, Static-Rate-Limit | `apps/*/caddy/Caddyfile`, `SPC/app/root.tsx` Header |
 | `src/hosts/Plane.Realtime/Security/` | `WebSocketOriginValidator`, `SessionTicketReader` | `apps/live/src/lib/auth.ts` |
 | `deploy/keycloak/` | Realm-Dateien, Theme, config-cli-Konfiguration (§3.15/§3.16) | – |
-| `frontend/libs/web/core/permissions/`, `frontend/libs/web/auth/`, `frontend/libs/admin/authentication/`, `frontend/libs/space/account/` | `PermissionService`, `AuthLandingComponent`, `AuthGuard`, `unauthorizedInterceptor`, `SignOutFormComponent`, Fehler-Banner-Mapping | `WEB/store/user/base-permissions.store.ts`, `WEB/components/auth-screens/*`, `WEB/components/account/auth-forms/*`, `WEB/helpers/authentication.helper.tsx`, `ADM/app/(all)/(home)/*`, `SPC/components/account/auth-forms/*` |
+| `frontend/libs/web/core/permissions/`, `frontend/libs/web/core/wrappers/`, `frontend/libs/web/auth/`, `frontend/libs/admin/authentication/`, `frontend/libs/space/account/`, `frontend/libs/shared/blocks/auth/` (`pl-auth-landing-base`: Original-`AuthBase`-Rahmen, `AuthBanner`, Button; Port `PKG/blocks/src/auth`, ABG-022) | `PermissionService`, `AuthLandingComponent` (je App dünne Hülle mit `app = 'web'│'admin'│'space'` über `pl-auth-landing-base`, ABG-022), Wrapper-Komponenten `AuthenticationWrapperComponent`/`WorkspaceAuthWrapperComponent`/`ProjectAuthWrapperComponent` (08 D08-ADR-12, ABG-020), `unauthorizedInterceptor`, `SignOutFormComponent`, Fehler-Banner-Mapping | `WEB/store/user/base-permissions.store.ts`, `WEB/components/auth-screens/*`, `WEB/components/account/auth-forms/*`, `WEB/helpers/authentication.helper.tsx`, `ADM/app/(all)/(home)/*`, `SPC/components/account/auth-forms/*` |
 
 ### 3.2 Endpunkte unter `/auth/` und Auth-Endpunkte der Instanz-API
 
@@ -173,7 +174,7 @@ Alle Routen akzeptieren Pfade mit und ohne abschließenden Slash (`01` §7.11). 
 
 | # | Methode | Pfad | Zweck | Auth | Rate | Erfolg | Fehler | Ersetzt (Original) |
 |---|---|---|---|---|---|---|---|---|
-| N-01 | GET | `/auth/oidc/login/` | Login starten. Query: `app` = `web`\|`admin`\|`space` (Default `web`), `next_path` (validiert §3.3.4), optional `prompt` (`login`\|`none`), `login_hint` (E-Mail, max. 254 Zeichen), `max_age` (Ganzzahl, nur `app=admin`), `ui_locales` (aus `localStorage.userLanguage`) | anonym oder angemeldet | `authentication` | 302 → Keycloak `authorization_endpoint` (mit `code_challenge`, `state`, `nonce`) | 302 `{BASE(app)}/?error_code=5900&error_message=RATE_LIMIT_EXCEEDED[&next_path=…]`; IdP nicht erreichbar → `…error_code=5201&error_message=IDENTITY_PROVIDER_UNAVAILABLE` | `/auth/sign-in/`, `/auth/sign-up/`, `/auth/magic-*`, `/auth/{google,github,gitlab,gitea}/`, Space-Pendants, `/api/instances/admins/sign-in/`, `/api/instances/admins/sign-up/` |
+| N-01 | GET | `/auth/oidc/login/` | Login starten. Query: `app` = `web`\|`admin`\|`space` (Default `web`), `next_path` (validiert §3.3.4), optional `prompt` (`login`\|`none`), `login_hint` (E-Mail, max. 254 Zeichen), `max_age` (Ganzzahl ≥ 0, nur `app=admin`; `0` wird an Keycloak durchgereicht, ABG-021), `ui_locales` (aus `localStorage.userLanguage`) | anonym oder angemeldet | `authentication` | 302 → Keycloak `authorization_endpoint` (mit `code_challenge`, `state`, `nonce`) | 302 `{BASE(app)}/?error_code=5900&error_message=RATE_LIMIT_EXCEEDED[&next_path=…]`; IdP nicht erreichbar → `…error_code=5201&error_message=IDENTITY_PROVIDER_UNAVAILABLE` | `/auth/sign-in/`, `/auth/sign-up/`, `/auth/magic-*`, `/auth/{google,github,gitlab,gitea}/`, Space-Pendants, `/api/instances/admins/sign-in/`, `/api/instances/admins/sign-up/` |
 | N-02 | GET | `/auth/oidc/callback/` | Code einlösen (PKCE-Verifier), ID-Token validieren, JIT (§3.7), Session anlegen | anonym | `authentication` | 302 → Ziel (§3.3.5) | 302 `{BASE(app)}/?[next_path=…&]error_code=<code>&error_message=<KEY>` (Codes §4.3) | `/auth/*/callback/` |
 | N-03 | POST | `/auth/sign-out/` | Abmelden (Web) | Session optional | – | 302 → Keycloak `end_session_endpoint` | ohne Session: 302 `{APP}/` | `/auth/sign-out/` |
 | N-04 | POST | `/auth/spaces/sign-out/` | Abmelden (Space), Formularfeld `next_path` | Session optional | – | wie N-03, Ziel `{SPACE}{next_path}` | wie N-03, Ziel `{SPACE}` | `/auth/spaces/sign-out/` |
@@ -344,7 +345,7 @@ Konfiguration (Optionsklasse `PlaneAuthOptions`, Abschnitt `Plane:Auth`, ENV-Ali
 | `Bearer:Enabled`, `Bearer:Audience` | – | `false`, `plane-api` (H1) |
 | `Oidc:AccountConsoleUrl`, `Oidc:AccountConsolePaths:{Security,PersonalInfo}`, `Oidc:DisplayName` | – | `{Authority}/account/`, `account-security/signing-in` / `personal-info` (⚠ S7, O-D05-01), `Keycloak` |
 
-Diese Optionsnamen sind **verbindlich** (D05 ist fachlicher Eigentümer von `PlaneAuthOptions`; `14` §3.2.2 hat die Feldnamen ausdrücklich an D05 delegiert). Abweichende Schreibweisen in anderen Dokumenten (`Plane:Auth:BearerEnabled` in `02`/`15`, `Plane__Auth__Oidc__ClientSecret` im AppHost-Skelett von `01` §3.4) sind an diese Namen anzugleichen (§9).
+Diese Optionsnamen sind **verbindlich** (D05 ist fachlicher Eigentümer von `PlaneAuthOptions`; `14` §3.2.2 hat die Feldnamen ausdrücklich an D05 delegiert). Früher abweichende Schreibweisen in anderen Dokumenten (`Plane:Auth:BearerEnabled` in `02`/`15`, `Plane__Auth__Oidc__ClientSecret` im AppHost-Skelett von `01` §3.4) sind angeglichen (ABG-035, ABG-018 d).
 
 #### 3.4.4 Lebenszyklus
 
@@ -607,12 +608,15 @@ Ziel-Prüfung in Anhang B: `LEVEL(Rollen)` + Regeln, z. B. `PRJ(A)+C:Issue` = �
 | `project` | `member` | Member | 15 |
 | `project` | `guest` | Guest | 5 |
 
-`workspace_members.role_id` / `project_members.role_id` referenzieren `roles`; die API liefert weiterhin `role: 20|15|5` (= `RoleDefinition.LegacyValue` = `roles.level`), Requests mit `role` werden auf die System-Rolle gleichen Levels abgebildet. Zusätzlich legt die CE die (leere) Tabelle `role_permissions(role_id, permission_key)` an (`02` §3.6.1, `16` E5); System-Rollen haben **keine** Zeilen darin, ihre Grants entstehen aus dem Code. Die integer-Spalte `role` in den Mitgliedschaftstabellen bleibt als **denormalisierte** Kopie von `roles.level` (PostgreSQL-Generated-Columns können keine andere Tabelle referenzieren); sie wird ausschließlich von `IWorkspaceMembershipService`/`IProjectMembershipService` im selben `SaveChanges` wie `role_id` gesetzt, ein Integritätstest (`MembershipRoleConsistencyTests`) prüft `role = roles.level` für alle Zeilen. `SystemRoleProvider` (CE-Implementierung von `IRoleDefinitionProvider`) liefert je System-Rolle die Grant-Menge = alle Keys aus Anhang A, deren Spalte für die Rolle „✓“ zeigt. Diese Menge wird **beim Build** aus `PermissionKeys.g.cs` (Generator-Ausgabe der Matrix-Datei) erzeugt; ein Test vergleicht sie mit `05-permission-matrix.json`.
+`workspace_members.role_id` / `project_members.role_id` referenzieren `roles`; die API liefert weiterhin `role: 20|15|5` (= `RoleDefinition.Level` = `roles.level`, ABG-038), Requests mit `role` werden auf die System-Rolle gleichen Levels abgebildet. Zusätzlich legt die CE die (leere) Tabelle `role_permissions(role_id, permission_key)` an (`02` §3.6.1, `16` E5); System-Rollen haben **keine** Zeilen darin, ihre Grants entstehen aus dem Code. Die integer-Spalte `role` in den Mitgliedschaftstabellen bleibt als **denormalisierte** Kopie von `roles.level` (PostgreSQL-Generated-Columns können keine andere Tabelle referenzieren); sie wird ausschließlich von `IWorkspaceMembershipService`/`IProjectMembershipService` im selben `SaveChanges` wie `role_id` gesetzt, ein Integritätstest (`MembershipRoleConsistencyTests`) prüft `role = roles.level` für alle Zeilen. `SystemRoleProvider` (CE-Implementierung von `IRoleDefinitionProvider`) liefert je System-Rolle die Grant-Menge = alle Keys aus Anhang A, deren Spalte für die Rolle „✓“ zeigt. Diese Menge wird **beim Build** aus `PermissionKeys.g.cs` (Generator-Ausgabe der Matrix-Datei) erzeugt; ein Test vergleicht sie mit `05-permission-matrix.json`.
 
 #### 3.13.4 Evaluator-Algorithmus (`PermissionEvaluator.HasAsync`)
 
 ```text
 eingabe: principal, permission(key, level), scope(workspaceId, projectId?), rules, routeValues
+P. Vorbedingungen (ABG-041, Mechanik 02 §3.6.2): für jede Regel Prerequisite(p) des Endpunkts in Deklarationsreihenfolge
+     Prüfung von p nach den Schritten 1–10 == false → DENY im DenyStyle von p        (Original: Permission-Klasse vor Decorator)
+   danach Hauptprüfung (Schritte 1–10) für den Haupt-Deskriptor; Ablehnung dort mit .WithDenyStyle(...) ?? descriptor.Deny
 1. permission.level == ANON            → true
 2. principal anonym                    → DENY_401
 3. permission.level == AUTH            → regeln(SELF/OWN) prüfen → true/false
@@ -624,21 +628,21 @@ eingabe: principal, permission(key, level), scope(workspaceId, projectId?), rule
      level == PRJ und prj(principal) == null → DENY      (Original: sofort 403)
      created_by(Model, routeValues.pk) == principal → ALLOW
 7. level == WS:
-     wsRole.PermissionKeys ∋ key → ALLOW
+     wsRole.Grants ∋ key → ALLOW
 8. level == PRJ:
      prj := projectMembership(principal, project)
      prj == null:
-        Regel WSA|PA und wsRole.PermissionKeys ∋ "workspace.admin_override" → ALLOW
+        Regel WSA|PA und wsRole.Grants ∋ "workspace.admin_override" → ALLOW
         → DENY
-     prjRole := roles.Get(prj.RoleId); prjRole.PermissionKeys ∋ key → ALLOW
-     wsRole.PermissionKeys ∋ "workspace.admin_override" ∧ SystemRoles.ProjectAdmin.PermissionKeys ∋ key → ALLOW   (D05-ADR-18, Regel WorkspaceAdminOverride aus 02 §3.6.2 – hier auf ALLE PRJ-Deskriptoren angewendet)
+     prjRole := roles.Get(prj.RoleId); prjRole.Grants ∋ key → ALLOW
+     wsRole.Grants ∋ "workspace.admin_override" ∧ SystemRoles.ProjectAdmin.Grants ∋ key → ALLOW   (D05-ADR-18, HARM-00: fester Evaluator-Schritt für ALLE ScopeLevel.Project-Deskriptoren, kein PermissionRule – ABG-036)
 9. Regel PAGE/BOARD/SELF/OWN als zusätzliche Objektprüfung (alle müssen erfüllt sein)
 10. sonst DENY → 403 im DenyStyle des Keys bzw. Endpunkts
 ```
 
-**Interner Key `workspace.admin_override`** (aus `02` §3.6.4, Grant nur `workspace.admin`): steuert den Override; er ist **kein** Endpunkt-Key (nicht unter den 258 aus Anhang A) und steht deshalb in `InternalPermissionKeys` (Ausnahme in Architekturtest 2). Damit prüft auch der Evaluator keine Rollenzahl (Architekturtest 4, `PLANE0001`), und E5 kann den Override Custom Roles geben.
+**Interner Key `workspace.admin_override`** (05 §3.13.4, ABG-037; Grant in der CE nur für die System-Rolle `workspace.admin`): steuert den Override – der Evaluator prüft `wsRole.Grants ∋ "workspace.admin_override"`, nie eine Rollenzahl; er ist **kein** Endpunkt-Key (nicht unter den 258 aus Anhang A) und steht deshalb in `InternalPermissionKeys` (Ausnahme in Architekturtest 2). Damit prüft auch der Evaluator keine Rollenzahl (Architekturtest 4, `PLANE0001`), und E5 kann den Override Custom Roles geben.
 
-**Namensabgleich mit `02` §3.6 (verbindlich, `02` ist Eigentümer der Mechanik):** Die Notation dieses Dokuments ist nur Kurzschrift; im Code gelten die Typen aus `02`: `+C:<Model>` = `PermissionRule.CreatorBypass(typeof(<Entity>), "pk", RequireMembership: true)`, Eigentümer-Bypass der Pages = `PermissionRule.OwnerBypass(typeof(Page), "page_id")`, `INST` = `PermissionRule.InstanceAdminOnly`, `AUTH` = `PermissionRule.AnyAuthenticated`, PRJ-Override = `PermissionRule.WorkspaceAdminOverride` (von `PermissionDescriptor.Project(...)` **standardmäßig** gesetzt, HARM-00); `OWN`, `SELF`, `VIS`, `PAGE`, `BOARD`, `WSA|PA`, `PRJ-MEMBER` ergänzen die Regelliste von `02` als `PermissionRule.Own`, `.Self`, `.GuestVisibility`, `.PageAccess`, `.Board`, `.WorkspaceAdminOrProjectAdmin`, `.ProjectMemberOfBody` (Nachtrag in `02`, §9). `RoleDefinition` hat die Form aus `02`: `RoleDefinition(Guid Id, string Name, ScopeLevel Scope, int LegacyValue, bool IsSystem, IReadOnlySet<string> PermissionKeys)`.
+**Namensabgleich mit `02` §5.1.7 (verbindlich, `02` ist Eigentümer der Mechanik; ABG-036):** Die Notation dieses Dokuments ist nur Kurzschrift; im Code gelten die kanonischen Typen aus `02` §5.1.7: `PRJ`/`WS`/`INST`/`AUTH` = `PermissionDescriptor.Project(...)`/`.Workspace(...)`/`.Instance(...)`/`.Authenticated(...)`; `+C:<Model>` = `PermissionRule.Creator<<Entity>>(routeParam: "pk", requireMembership: true)` (Signatur `Creator<TEntity>(string routeParam = "pk", bool requireMembership = true)`); `OWN`, `SELF`, `VIS`, `PAGE`, `BOARD`, `WSA|PA`, `PRJ-MEMBER` = `PermissionRule.Own`, `.Self`, `.GuestVisibility`, `.PageAccess` (umfasst den Eigentümer-Bypass der Pages, §3.13.5 Schritt 3), `.Board`, `.WorkspaceAdminOrProjectAdmin`, `.ProjectMemberOfBody`; „∧“-Vorbedingung = `PermissionRule.Prerequisite(PermissionDescriptor)` (Schritt P, ABG-041). PRJ-Override = Evaluator-Schritt 8 für alle `ScopeLevel.Project`-Deskriptoren (HARM-00) – **kein** `PermissionRule`. Die Namen `CreatorBypass`, `OwnerBypass`, `InstanceAdminOnly`, `AnyAuthenticated`, `WorkspaceAdminOverride`, `ActiveWorkspaceMember` entfallen. `RoleDefinition` (ABG-038): `public sealed record RoleDefinition(Guid Id, string Namespace, string Slug, string Name, int Level, bool IsSystem, IReadOnlySet<string> Grants);` – `Namespace` ∈ {`workspace`, `project`}, `Level` = API-Wert `role` (20/15/5 für System-Rollen), `Name` = Anzeigename (System-Rollen: englischer Original-Text „Admin“/„Member“/„Guest“).
 
 Der Evaluator läuft als `PermissionEndpointFilter` **vor** Model-Binding des Bodys (Original: DRF-Permission vor Serializer). `VIS`/`OWN` auf Listen wirken als Query-Filter im Handler (`IVisibilityFilter<T>`), nicht im Filter.
 
@@ -670,13 +674,13 @@ Der Evaluator läuft als `PermissionEndpointFilter` **vor** Model-Binding des Bo
 
 ```csharp
 g.MapPatch("{pk:guid}", UpdateWorkItem)
- .RequirePermission(WorkItemsPermissions.ProjectWorkItemUpdate, PermissionRule.CreatorBypass(typeof(WorkItem), "pk", RequireMembership: true))   // PRJ(A,M)+C:Issue
+ .RequirePermission(WorkItemsPermissions.ProjectWorkItemUpdate, PermissionRule.Creator<WorkItem>("pk", requireMembership: true))   // PRJ(A,M)+C:Issue (ABG-036)
  .WithDenyStyle(DenyStyle.Error);                                                                       // {"error": "You don't have the required permissions."} (nur nötig, wenn vom Descriptor-Default abweichend)
 ```
 
 Architekturtests (`tests/Plane.ArchitectureTests/AuthorizationRules.cs`):
 1. Jede registrierte Route (alle `EndpointDataSource`s von Api/Realtime) trägt **genau eine** `PermissionMetadata` oder `AllowAnonymousAttribute`.
-2. Jeder `PermissionKeys`-Eintrag wird von mindestens einem Endpunkt referenziert (keine toten Keys) oder ist in `ReservedPermissionKeys` (Paket-Vorhalt, §6.1) bzw. `InternalPermissionKeys` (`workspace.admin_override`, §3.13.4) gelistet.
+2. Jeder `PermissionKeys`-Eintrag wird von mindestens einem Endpunkt referenziert – „referenziert“ = als Haupt-Key **oder** als `Prerequisite` (ABG-042; Vorbedingungs-Keys aus Anhang A „Vorbedingungs-Keys“ sind weder reserviert noch intern) – (keine toten Keys) oder ist in `ReservedPermissionKeys` (Paket-Vorhalt aus `docs/extensions/reservations.yaml`, §6.1, ABG-054) bzw. `InternalPermissionKeys` (`workspace.admin_override`, §3.13.4) gelistet.
 3. Für jede Zeile aus `05-permission-matrix.json` mit `permission != null` existiert eine Route mit gleicher Methode, gleichem Pfad (Trailing-Slash-normalisiert) und gleichem Key; Zeilen mit `target = "entfällt"` haben **keine** Route – einzige Ausnahme sind die Einträge aus `BffAliasRoutes` (`POST /api/instances/admins/sign-out/`, N-05), die als anonyme Auth-Oberflächen-Route existieren müssen.
 4. Rollenwerte (`20`, `15`, `5`) kommen außerhalb von `SystemRoles`/`SystemRoleProvider` nicht vor (Analyzer-Regel `PLANE0001`).
 
@@ -685,10 +689,10 @@ Architekturtests (`tests/Plane.ArchitectureTests/AuthorizationRules.cs`):
 | Element | Festlegung |
 |---|---|
 | `PermissionService` | Port von `BasePermissionStore` (`WEB/store/user/base-permissions.store.ts`): Signals `workspaceUserInfo`, `workspaceProjectsPermissions`; Methoden `getWorkspaceRoleByWorkspaceSlug`, `getProjectRoleByWorkspaceSlugAndProjectId` (WS-Admin → ADMIN, wie Original), `allowPermissions(...)`, `hasPageAccess(...)`, `fetchUserWorkspaceInfo`, `fetchUserProjectInfo`, `fetchUserProjectPermissions`, `joinProject`, `leaveProject` – gleiche Namen/Signaturen |
-| `PERMISSION_EVALUATOR` | `InjectionToken<PermissionEvaluatorFn>`; CE-Default `roleBasedEvaluator` (Zahlenvergleich wie Original); E5 ersetzt nur diesen Provider |
+| `PERMISSION_EVALUATOR` | `InjectionToken<PermissionEvaluatorFn>('PERMISSION_EVALUATOR', { factory: () => roleBasedEvaluator })`, `PermissionEvaluatorFn = (ctx: PermissionCheck) => boolean` mit `PermissionCheck { allowed, level, workspaceRole?, projectRole?, workspaceSlug?, projectId?, teamspaceId? }` (ABG-055); CE-Default `roleBasedEvaluator` (Zahlenvergleich wie Original); E5 ersetzt nur diesen Provider |
 | Konstanten | `EUserPermissions`, `EUserPermissionsLevel`, `USER_ALLOWED_PERMISSIONS` aus `PKG/constants/src/user.ts` 1:1 in `libs/shared/constants` |
-| Guards | `authGuard` (Session vorhanden, sonst Auto-Redirect N-01), `workspaceAccessGuard`, `projectAccessGuard` (Port `AuthenticationWrapper`, `WorkspaceAccessWrapper`, `ProjectAccessWrapper` aus `A08`) |
-| Interceptor | `unauthorizedInterceptor`: 401 außer auf `/` → `location.replace("/?next_path=" + encodeURIComponent(location.pathname))`; Admin-App: 401 mit `error_code=5210` → Step-up-Redirect |
+| Wrapper-Komponenten | `AuthenticationWrapperComponent` (`pl-authentication-wrapper`, `input pageType`; Session vorhanden, sonst Auto-Redirect N-01), `WorkspaceAuthWrapperComponent`, `ProjectAuthWrapperComponent` in `frontend/libs/web/core/wrappers/` mit In-Place-Zuständen (08 D08-ADR-12; Port `AuthenticationWrapper`, `WorkspaceAccessWrapper`, `ProjectAccessWrapper` aus `A08`). Funktionale Guards nur für Redirect-Routen, Legacy-Loader-Redirects (`canActivate` mit `UrlTree`) und Splat-Matcher (ABG-020) |
+| Interceptor | `unauthorizedInterceptor`: 401 außer auf `/` → `location.replace("/?next_path=" + encodeURIComponent(location.pathname))`; Admin-App: 401 mit `error_code=5210` → Step-up-Redirect `/auth/oidc/login/?app=admin&max_age=0&next_path=…` (ABG-021) |
 | Keine Rechte-Ableitung aus Keys | Das Frontend kennt in der CE keine Permission-Keys (nur Rollen), damit die 146 `allowPermissions`-Aufrufe des Originals 1:1 portiert werden (`A08`). Ein optionaler Endpunkt `GET /api/workspaces/{slug}/permissions/me/` ist E5-Andockstelle (§6) |
 
 ### 3.14 Gast-Sichtbarkeit (`guest_view_all_features`)
@@ -725,9 +729,9 @@ Zusätzlich gilt für alle Mitgliedschaftsprüfungen `deleted_at IS NULL` und `D
 | `realms/plane-realm.json` | vollständiger Realm für **Dev** inkl. Testbenutzer (§3.15.7), von Hand gepflegt | Aspire `WithRealmImport("../../../deploy/keycloak/realms/plane-realm.json")` (`--import-realm`; **Datei**, nicht Verzeichnis, weil im Verzeichnis zwei Dateien desselben Realms `plane` liegen) |
 | `realms/plane-realm.test.json` | **generiert** (`15` §3.14.2, Werkzeug `keycloak-test-realm`): `plane-realm.json` ⊕ `tests/seed/keycloak/test-overrides.json` (Access-Token 60 s, Back-Channel-URL `http://gateway/auth/oidc/backchannel-logout/`, Test-Schwellwerte Brute-Force) ⊕ `tests/seed/keycloak/parity-users.json` (Parity-Seed-Benutzer, Gruppen `team-a`/`team-b`, Test-Client `plane-test-app` für H1-Erweiterungstests) | Profil `test` (`WithRealmImport("…/plane-realm.test.json")`) und Testcontainers (`Testcontainers.Keycloak` mit `WithResourceMapping(<datei>, "/opt/keycloak/data/import/")` + `--import-realm` ⚠ S0: genaue Builder-API der gepinnten 4.x-Version prüfen); `KeycloakRealmConfigTests.TestRealm_IsUpToDate` (`--check`) |
 | `config/00-plane-realm.json` | Realm **ohne** Benutzer für Prod/`prodlike` (keycloak-config-cli-Format = Realm-Representation) | Init-Container `keycloak-config` (`adorsys/keycloak-config-cli`, Version an Keycloak-Major gekoppelt ⚠ S0) mit `KEYCLOAK_URL`, `KEYCLOAK_USER`, `KEYCLOAK_PASSWORD`, `IMPORT_FILES_LOCATIONS=/config/*.json`, `IMPORT_VARSUBSTITUTION_ENABLED=true`, `IMPORT_MANAGED_CLIENT=no-delete` |
-| `config/10-plane-bootstrap-admin.json` | erster Instanz-Admin (Benutzer + Rolle, Required Action `UPDATE_PASSWORD`) | nur wenn `PLANE_BOOTSTRAP_ADMIN_EMAIL` gesetzt (Compose-Profil `bootstrap`) |
+| `config/10-plane-bootstrap-admin.json` | erster Instanz-Admin (Benutzer + Rolle, Required Action `UPDATE_PASSWORD`) | nur wenn `PLANE_BOOTSTRAP_ADMIN_EMAIL` gesetzt (`plane-cli init --bootstrap-admin` kopiert die Datei nach `./keycloak/config/`; kein Compose-Profil, `14` §5.9) |
 | `config/20-forgejo-client.json` | Client `plane-forgejo` (F2) | wenn Forgejo gebündelt (`Plane:Forgejo:Bundled`) |
-| `themes/plane/`, `themes/plane-space/` | Login-Theme (§3.16) | Bind-Mount `/opt/keycloak/themes/` (Dev) bzw. eigenes Image `funk/keycloak` = `quay.io/keycloak/keycloak:<pin>` + Themes + `kc.sh build` (Prod, airgapped) |
+| `themes/plane/`, `themes/plane-space/` | Login-Theme (§3.16) | Bind-Mount `/opt/keycloak/themes/` (Dev) bzw. eigenes Image `${PLANE_REGISTRY}/plane-keycloak:${PLANE_VERSION}` = `quay.io/keycloak/keycloak:26.x` (Pin) + Themes + `kc.sh build` (Prod, airgapped; ABG-002, Packaging `14` D14-ADR-04) |
 | `tools/keycloak-theme/` (Repo-Wurzel) | Build des Themes: Tailwind-CSS, Messages, Passwort-Stärke-Skript, Visual-Tests | CI, Node nur Build-Zeit |
 
 Platzhalter (Keycloak ersetzt `${VAR}` beim Import aus Umgebungsvariablen; config-cli ebenso mit `IMPORT_VARSUBSTITUTION_ENABLED`): `PLANE_PUBLIC_URL` (z. B. `http://localhost:3000`), `PLANE_BACKCHANNEL_BASE_URL`, `PLANE_WEB_CLIENT_SECRET`, `PLANE_ADMIN_CLIENT_SECRET`, `PLANE_SPACE_CLIENT_SECRET`, `PLANE_BACKEND_CLIENT_SECRET`, `FORGEJO_PUBLIC_URL`, `FORGEJO_CLIENT_SECRET`, `PLANE_DEV_USER_PASSWORD` (nur Dev/Test), `PLANE_BOOTSTRAP_ADMIN_EMAIL`, `PLANE_BOOTSTRAP_ADMIN_PASSWORD`, `PLANE_SMTP_*` (Keycloak-Mailversand für Verify/Reset). Aspire setzt sie aus Parametern (`01` §3.4 erweitert: je Client ein Secret-Parameter `oidc-web-secret`, `oidc-admin-secret`, `oidc-space-secret`, `oidc-backend-secret`). Hinweis: `01` §3.4 nennt `${env.…}` – maßgeblich ist die Keycloak-Syntax `${VAR}` (Keycloak-Doku „Importing and Exporting Realms“).
@@ -924,8 +928,8 @@ deploy/keycloak/themes/
 | Schritt (`tools/keycloak-theme/`) | Werkzeug | Ergebnis |
 |---|---|---|
 | `gen-messages.mjs` | Node (Build-Zeit) | liest `packages/i18n/src/locales/<locale>/*.json` (die oben genannten Schlüssel) + Original-Literale → `messages_<locale>.properties` (UTF-8, Keycloak ≥ 22 liest UTF-8) |
-| `build-css.mjs` | `@tailwindcss/cli` 4.1.17 mit `libs/shared/tailwind-config` + Propel-Styles, `@source "../../deploy/keycloak/themes/**/*.ftl"` | `plane-login.css` (nur genutzte Klassen, Dark-Mode über `prefers-color-scheme` wie `next-themes` „system“) |
-| `build-js.mjs` | esbuild | `plane-login.js` (Passwort-Stärke, Clear-Button, Auge-Toggle; kein Framework) |
+| `build-css.mjs` | `@tailwindcss/cli` 4.1.17 mit `libs/shared/tailwind-config` + Propel-Styles, `@source "../../deploy/keycloak/themes/**/*.ftl"` | `plane-login.css` (nur genutzte Klassen, Dark-Mode über `data-theme`, gesetzt von `plane-login.js` synchron im `<head>` aus `prefers-color-scheme` (09 §3.13); Propel-Dark-Variante `[data-theme*="dark"]`, **keine** `@media (prefers-color-scheme)`-Regeln; Abweichung `UI-DEV-010`, ABG-034) |
+| `build-js.mjs` | esbuild | `plane-login.js` (Theme-Auflösung: setzt synchron im `<head>` `data-theme` = `light`│`dark` an `<html>` nach 09 §5.8 mit Eingabe `system` = `matchMedia('(prefers-color-scheme: dark)')` und folgt `matchMedia`-Wechseln – kein Inline-Script, Keycloak-CSP unberührt (ABG-034); Passwort-Stärke, Clear-Button, Auge-Toggle; kein Framework) |
 | `visual.spec.ts` | Playwright gegen Keycloak-Container + Referenz-Screenshots des Originals (S11-Katalog) | Visual-Diff ≤ 1 % (S7-Kriterium) für: E-Mail-Schritt, Passwort-Schritt, Fehlerbanner, Space-Variante, Admin-Variante, je hell/dunkel |
 | Airgap-Check | CI | Theme lädt keine externen Ressourcen (Netzwerk-Log leer außer Keycloak-Host) |
 
@@ -972,10 +976,12 @@ Alle Mechanismen dieses Abschnitts sind **querschnittlich** und liegen in `src/p
 | `avatar-import` | Avatar aus Claim `picture` (CE-AUTH-012) | 10 s | 5 | `FILE_SIZE_LIMIT` | MIME ∈ {`image/jpeg`, `image/png`, `image/gif`, `image/webp`} | S-05 |
 | `unsplash` | `api.unsplash.com` (CE-INST-026) | 10 s (Korrektur Q-27) | 5 | 2 MiB | – | `V/external/base.py` |
 | `llm` | OpenAI-kompatibler Endpunkt (CE-AI) | 120 s | 0 | 8 MiB | `Plane:Ai:AllowedInternalHosts` (z. B. `ollama.internal`) erlaubt bewusst interne Ziele | `V/external/base.py` (ohne SSRF-Schutz) |
+| `integrations` | ausgehende Aufrufe des Integrations-Frameworks an Betreiber-/Nutzer-URLs (F1, W1; §6.1) | Festlegung W1 (`16` §3.4) | 0 | Festlegung W1 | Ziel aus der Workspace-Verbindung | – (neu) |
+| `forgejo` | Forgejo-REST-API (`/api/v1`) je Workspace-Verbindung, auch gebündeltes Forgejo (F2, W1; §6.1, `16` §3.4) | Festlegung W1 (`16` §3.4) | 0 | Festlegung W1 | `Plane:Forgejo:AllowedHosts` (gebündeltes Forgejo vorbelegt; Airgap: nur interne Hosts) | – (neu, ABG-040) |
 
 **Webhook-URL-Prüfung beim Speichern** (`WebhookUrlValidator` in `Plane.Webhooks`, nutzt `UrlSafety` + `IpBlocklist`, S-03 1:1): Schema ∈ {http, https} und Host ∉ {`localhost`, `127.0.0.1`} → sonst Feldfehler wie Modell-Validator; Auflösung + Blockprüfung → 400 `{"url": "Invalid or disallowed webhook URL."}`; Host in `WEBHOOK_ALLOWED_HOSTS` → fertig; Host gleich oder Subdomain von `WEBHOOK_DISALLOWED_DOMAINS` ∪ {Hosts aus `Plane:Urls:*`} → 400 `{"url": "URL domain or its subdomain is not allowed."}` (Loop-Guard; Korrektur: Hosts aus der Konfiguration statt aus dem `Host`-Header, **SEC-31**). Die Prüfung läuft **zusätzlich** bei jeder Zustellung (DNS-Rebinding). Signatur `X-Plane-Signature = HexLower(HMACSHA256(secret_key, body))` über exakt die gesendeten Bytes (Golden-Test gegen Original, `15` D15-SEC-09).
 
-**Interne Ziele** (Keycloak `keycloak`, Objektspeicher `objectstore`, gebündeltes Forgejo `forgejo-internal`) nutzen eigene benannte Clients **ohne** `SsrfSafeHttpHandler`; deren Basisadressen stammen ausschließlich aus Konfiguration/Aspire-Service-Discovery, nie aus Nutzereingaben.
+**Interne Ziele** (Keycloak `keycloak`, Objektspeicher `objectstore`) nutzen eigene benannte Clients **ohne** `SsrfSafeHttpHandler` (mit Standard-Resilience, `14` §3.6); auch das gebündelte Forgejo läuft über den SSRF-Client `forgejo` (Allowlist, ABG-040), weil `base_url` je Verbindung nutzerkonfiguriert ist; deren Basisadressen stammen ausschließlich aus Konfiguration/Aspire-Service-Discovery, nie aus Nutzereingaben.
 
 #### 3.17.3 HTML-Sanitizing und Binärprüfung (ADR-030)
 
@@ -1042,7 +1048,7 @@ Mechanik, Algorithmus (`SlidingWindowRateLimiter`, verteilt über `RedisRateLimi
 
 **Fehlerform:** Bei N-01/N-02 (Browser-Navigation) **kein** JSON, sondern 302 `{BASE(app)}/?[next_path=…&]error_code=5900&error_message=RATE_LIMIT_EXCEEDED` (Parität `throttle_auth_redirect`); dafür setzt `AuthRateLimitRejection` den `OnRejected`-Callback der Policy `authentication` für die Oberfläche `Auth`. Sonst 429 `{"error_code": 5900, "error_message": "RATE_LIMIT_EXCEEDED"}` + `Retry-After`.
 
-**Client-IP (Korrektur E-19, SEC-32):** `ForwardedHeadersOptions` mit `ForwardedHeaders = XForwardedFor | XForwardedProto | XForwardedHost`, `ForwardLimit = NUM_PROXIES` (Default 1 = nur `Plane.Gateway`), `KnownProxies`/`KnownIPNetworks` (nicht das in .NET 10 obsolete `KnownNetworks`, `ASPDEPR005`) aus `Plane:ForwardedHeaders:KnownNetworks` (Default: Aspire-/Compose-Netz des Gateways; ungültige Einträge → Startfehler). `Plane.Gateway` überschreibt eingehende `X-Forwarded-For`-Header von nicht vertrauten Quellen (YARP-Transform `X-Forwarded` mit `Action=Set`, wenn der direkte Peer nicht in `Plane:Gateway:TrustedProxies` liegt). Die IP für Rate Limits, `last_login_ip`, `device_info.ip_address` und Logs ist **immer** `HttpContext.Connection.RemoteIpAddress` nach dieser Middleware.
+**Client-IP (Korrektur E-19, SEC-32):** `ForwardedHeadersOptions` mit `ForwardedHeaders = XForwardedFor | XForwardedProto | XForwardedHost`, `ForwardLimit = NUM_PROXIES` (Default 1 = nur `Plane.Gateway`), `KnownProxies`/`KnownIPNetworks` (nicht das in .NET 10 obsolete `KnownNetworks`, `ASPDEPR005`) aus `Plane:ForwardedHeaders:KnownNetworks` (Default: Aspire-/Compose-Netz des Gateways; ungültige Einträge → Startfehler). `Plane.Gateway` überschreibt eingehende `X-Forwarded-For`-Header von nicht vertrauten Quellen (YARP-Transform `X-Forwarded` mit `Action=Set`, wenn der direkte Peer nicht in der Gateway-Konfiguration `Plane:ForwardedHeaders:KnownNetworks` liegt; Default leer, `14` D14-ADR-22). Die IP für Rate Limits, `last_login_ip`, `device_info.ip_address` und Logs ist **immer** `HttpContext.Connection.RemoteIpAddress` nach dieser Middleware.
 
 #### 3.17.7 Security-Header und Content-Security-Policy (D05-ADR-23)
 
@@ -1113,7 +1119,7 @@ report-uri /csp-report
 
 ### 3.18 Korrektur der dokumentierten Sicherheitslücken des Originals
 
-Grundsatz (OP-01 aus `A06`, ADR-005): Sicherheitslücken werden **korrigiert**, der Erfolgsfall für berechtigte Benutzer bleibt unverändert; jede Korrektur hat eine ID, einen Contract-Test, der das **neue** Verhalten festschreibt, und einen Eintrag in der Ausnahmeliste des Paritäts-Harness (`tests/parity/exceptions.yaml`, Schlüssel = ID). Die IDs `SEC-01…SEC-21` und `HARM-01…HARM-06` sind in `05-permission-matrix.json` (Feld `deviation`) und in Anhang B (Spalte „Abw.“) je Endpunkt vermerkt; `SEC-30 ff.` liegen außerhalb der Matrix.
+Grundsatz (OP-01 aus `A06`, ADR-005): Sicherheitslücken werden **korrigiert**, der Erfolgsfall für berechtigte Benutzer bleibt unverändert; jede Korrektur hat eine ID, einen Contract-Test, der das **neue** Verhalten festschreibt, und einen Eintrag in der Abweichungsliste `tests/contracts/deviations.yaml` (Schlüssel = ID; einzige Ablage für Contract-/API-Abweichungen inkl. `SEC-*`/`HARM-*`, ABG-045). Die IDs `SEC-01…SEC-21` und `HARM-01…HARM-06` sind in `05-permission-matrix.json` (Feld `deviation`) und in Anhang B (Spalte „Abw.“) je Endpunkt vermerkt; `SEC-30 ff.` liegen außerhalb der Matrix.
 
 #### 3.18.1 Berechtigungs-Korrekturen und Harmonisierungen (Matrix)
 
@@ -1489,11 +1495,11 @@ Ergebnis: **14 Schlüssel** in der CE (ohne AI-Erweiterungen aus `11`). Unbekann
 | `CSRF_TRUSTED_ORIGINS` (abgeleitet) | `Plane:Security:TrustedOrigins` | bleibt (zusätzliche Allowlist §3.5) |
 | `WEB_URL`, `APP_BASE_URL`, `ADMIN_BASE_URL`, `ADMIN_BASE_PATH`, `SPACE_BASE_URL`, `SPACE_BASE_PATH`, `LIVE_BASE_URL`, `LIVE_BASE_PATH` | `Plane:Urls:*` | bleibt |
 | `NUM_PROXIES` | `Plane:ForwardedHeaders:ForwardLimit` + `…:KnownNetworks` | bleibt (erweitert) |
-| `WEBHOOK_ALLOWED_IPS`, `WEBHOOK_ALLOWED_HOSTS`, `WEBHOOK_DISALLOWED_DOMAINS` | `Plane:Webhooks:Ssrf:*` | bleibt |
-| `FILE_SIZE_LIMIT` | `Plane:Storage:FileSizeLimit` | bleibt |
+| `WEBHOOK_ALLOWED_IPS`, `WEBHOOK_ALLOWED_HOSTS`, `WEBHOOK_DISALLOWED_DOMAINS` | `Plane:Webhooks:AllowedNetworks`, `Plane:Webhooks:AllowedHosts`, `Plane:Webhooks:DisallowedDomains` (02-Schlüssel, ABG-044) | bleibt |
+| `FILE_SIZE_LIMIT` | `Plane:Uploads:MaxFileSizeBytes` (`PlaneUploadsOptions`, ABG-044) | bleibt |
 | `ALLOWED_HOSTS` | `AllowedHosts` (Kestrel) | bleibt (Default aus `Plane:Urls`, SEC-31) |
-| `SECRET_KEY` | – (Data Protection) | entfällt (Warnung) |
-| `SKIP_ENV_VAR` | – (Instanz-Konfiguration immer aus DB, ENV nur beim Seed) | entfällt |
+| `SECRET_KEY` | – (Data Protection; kein Alias, wird nicht gelesen) | entfällt: ist er gesetzt, Startwarnung `"SECRET_KEY is ignored; ASP.NET Core Data Protection is used."`, bei bekannten Platzhalterwerten zusätzlich Level Critical (ABG-012) |
+| `SKIP_ENV_VAR` | `Plane:Instance:ConfigurationSource` (`1` → `Database`, `0` → `Environment`; 02-Schlüssel, ABG-044) | bleibt (Alias) |
 | `ENABLE_*_SYNC`, `IS_*_ENABLED`, `*_CLIENT_ID`, `*_CLIENT_SECRET`, `GITHUB_ORGANIZATION_ID`, `GITLAB_HOST`, `GITEA_HOST` | – | entfällt (Startwarnung „ignored, use Keycloak identity brokering“) |
 | neu | `Plane:Auth:Oidc:*`, `Plane:Auth:Clients:{Web,Admin,Space}:*`, `Plane:Auth:Backend:*`, `Plane:Auth:{InstanceAdminRole,InstanceAdminGroup,RequiredRole,SyncProfileOnLogin,AutoRedirect,RevalidateIntervalSeconds,AdminStepUpMaxAgeSeconds}`, `Plane:Auth:Bearer:{Enabled,Audience}`, `Plane:Auth:IdpUserSync:Enabled`, `Plane:DataProtection:*`, `Plane:Gateway:Csp:Mode`, `Plane:Gateway:SpaceFrameAncestors`, `Plane:Security:MaskInstanceSecrets` | neu |
 
@@ -1531,7 +1537,7 @@ Zielpfade relativ zu `funk.`; `ID/` = `src/modules/Identity/Plane.Identity/`, `I
 | `license/api/views/admin.py` | Admin-Sign-up/-in/-out, `InstanceAdminEndpoint`, `InstanceAdminUserMeEndpoint`, `InstanceAdminUserSessionEndpoint`, `SignUpScreenVisitedEndpoint` | `INS/Endpoints/InstanceAdminEndpoints.cs` (N-10, N-11, N-12), `INS/Endpoints/InstanceSetupEndpoint.cs` (N-13) | angepasst |
 | `license/api/permissions/instance.py` | `InstanceAdminPermission` | `AZ/Instance/InstanceAdminRequirementHandler.cs` | angepasst (Rolle aus Keycloak) |
 | `license/utils/encryption.py` | Fernet mit `SECRET_KEY` | `SEC/DataProtection/DataProtectionSetup.cs`, `INS/Configuration/InstanceSecretProtector.cs` | ersetzt |
-| `license/utils/instance_value.py` | `get_configuration_value`, `get_email_configuration` | `INS/Configuration/InstanceConfiguration.cs` (`IInstanceConfiguration`) | angepasst (ohne `SKIP_ENV_VAR`) |
+| `license/utils/instance_value.py` | `get_configuration_value`, `get_email_configuration` | `INS/Configuration/InstanceConfiguration.cs` (`IInstanceConfiguration`) | angepasst (`SKIP_ENV_VAR` → `Plane:Instance:ConfigurationSource`, ABG-044) |
 | `utils/instance_config_variables/core.py` | Seed der 36 Schlüssel | `src/hosts/Plane.Migrator/Seeds/InstanceConfigurationSeed.cs` (14 Schlüssel) | angepasst |
 | `app/permissions/base.py`, `utils/permissions/base.py` | `ROLE`, `allow_permission` | `AZ/PermissionEvaluator.cs`, `AZ/Rules/CreatorRule.cs`, `src/modules/Authorization/Plane.Authorization.Contracts/SystemRoles.cs` | ersetzt |
 | `app/permissions/workspace.py`, `utils/permissions/workspace.py` | `WorkSpaceBasePermission`, `WorkspaceOwnerPermission`, `WorkSpaceAdminPermission`, `WorkspaceEntityPermission`, `WorkspaceViewerPermission`, `WorkspaceUserPermission`, `WorkspaceMemberPermission` | Keys `workspace.*` + `WorkspaceRoleCheck` (Anhang A/B) | ersetzt |
@@ -1543,7 +1549,7 @@ Zielpfade relativ zu `funk.`; `ID/` = `src/modules/Identity/Plane.Identity/`, `I
 | `utils/path_validator.py` | `validate_next_path`, `get_safe_redirect_url`, `sanitize_filename`, `get_allowed_hosts` | `ID/Authentication/NextPathValidator.cs`, `AuthRedirectBuilder.cs`, `SEC/Uploads/FileNameSanitizer.cs` | unverändert (E-27 korrigiert) |
 | `utils/csv_utils.py` | Formel-Präfix | `SEC/Export/CsvInjectionGuard.cs` | unverändert |
 | `utils/url.py` | `contains_url` | `SEC/Text/UrlDetector.cs` | unverändert |
-| `settings/common.py` (Sicherheits-Settings `A06` §2.7) | Cookies, CORS, CSRF, MIME-Listen, `FILE_SIZE_LIMIT` | `PlaneAuthOptions`, `PlaneCorsOptions`, `PlaneSecurityOptions`, `UploadPolicy`, `PlaneStorageOptions` | angepasst |
+| `settings/common.py` (Sicherheits-Settings `A06` §2.7) | Cookies, CORS, CSRF, MIME-Listen, `FILE_SIZE_LIMIT` | `PlaneAuthOptions`, `PlaneCorsOptions`, `PlaneSecurityOptions`, `UploadPolicy`, `PlaneUploadsOptions` (`FILE_SIZE_LIMIT` → `Plane:Uploads:MaxFileSizeBytes`, ABG-044) | angepasst |
 | `db/models/session.py` | `Session` | `ID/Domain/UserSession.cs` (`user_sessions`) | ersetzt |
 | `db/models/user.py` (`User`, `Profile`, `Account`) | Auth-Felder | `ID/Domain/User.cs` (ohne Passwort/Token), `Profile.cs`, `UserIdentity.cs` (neu); `Account` entfällt | angepasst |
 | `db/models/api.py` (`APIToken`, `APIActivityLog`) | Klartext-Token | `ID/Domain/ApiToken.cs` (`token_hash`, `token_prefix`), `ID/Domain/ApiActivityLog.cs` | angepasst |
@@ -1552,7 +1558,7 @@ Zielpfade relativ zu `funk.`; `ID/` = `src/modules/Identity/Plane.Identity/`, `I
 
 ### 4.6 Management-Commands → `plane-cli`
 
-`plane-cli` = `tools/Plane.Cli/` (`System.CommandLine`, nutzt `PlaneDbContext` und die Contracts-Services; Container-Befehl `docker compose exec api plane-cli …`, Detail `14`).
+`plane-cli` = `src/tools/Plane.Cli/` (01 §5.1) (`System.CommandLine`, nutzt `PlaneDbContext` und die Contracts-Services; Container-Befehl `docker compose exec api plane-cli …`, Detail `14`).
 
 | Original-Command | Wirkung im Original | `plane-cli` | Status |
 |---|---|---|---|
@@ -1574,8 +1580,8 @@ Zielpfade relativ zu `funk.`; `ID/` = `src/modules/Identity/Plane.Identity/`, `I
 
 | Original | Ziel (`frontend/…`) | Status |
 |---|---|---|
-| `WEB/app/(all)/(home)/page.tsx` + `WEB/components/account/auth-forms/auth-root.tsx`, `form-root.tsx` | `libs/web/auth/landing/auth-landing.component.ts` (Auto-Redirect oder Banner + Button „Sign in“, Markup von `AuthBase`) | angepasst |
-| `WEB/components/auth-screens/auth-base.tsx`, `header.tsx`, `footer.tsx` | `libs/web/auth/layout/{auth-base,auth-header,auth-footer}.component.ts` (für Fehler-/Landing-Zustand) **und** `deploy/keycloak/themes/plane/login/template.ftl` (Login) | angepasst |
+| `WEB/app/(all)/(home)/page.tsx` + `WEB/components/account/auth-forms/auth-root.tsx`, `form-root.tsx` | `libs/web/auth/components/auth-landing/auth-landing.component.ts` (`AuthLandingComponent`, `app='web'`: Auto-Redirect oder Banner + Button „Sign in“; Darstellung über `pl-auth-landing-base`, ABG-022) | angepasst |
+| `WEB/components/auth-screens/auth-base.tsx`, `header.tsx`, `footer.tsx` | `frontend/libs/shared/blocks/auth/` (`pl-auth-landing-base` = Original-`AuthBase`-Rahmen inkl. Header/Footer, `AuthBanner`, Button; Port `PKG/blocks/src/auth`; für Fehler-/Landing-Zustand aller drei Apps, ABG-022) **und** `deploy/keycloak/themes/plane/login/template.ftl` (Login) | angepasst |
 | `WEB/components/account/auth-forms/auth-header.tsx` | `libs/web/auth/layout/auth-form-header.component.ts`; Texte im Theme | angepasst |
 | `WEB/components/account/auth-forms/email.tsx`, `password.tsx`, `forgot-password.tsx`, `reset-password.tsx`, `set-password.tsx`, `forgot-password-popover.tsx` | Keycloak-Templates (§3.16.2) | Ort neu |
 | `WEB/components/account/auth-forms/unique-code.tsx` | – | entfällt |
@@ -1583,22 +1589,22 @@ Zielpfade relativ zu `funk.`; `ID/` = `src/modules/Identity/Plane.Identity/`, `I
 | `WEB/components/account/deactivate-account-modal.tsx` | `libs/web/profile/deactivate-account/deactivate-account-modal.component.ts` (nach 204 → `SignOutFormComponent.submit()`) | angepasst |
 | `WEB/helpers/authentication.helper.tsx` | `libs/shared/constants/src/auth/auth-error-messages.ts` + `libs/web/auth/auth-error.util.ts` (`authErrorHandler`) | angepasst (+ Codes §4.3) |
 | `WEB/services/auth.service.ts` | `libs/shared/services/auth/auth.service.ts` (nur `requestCSRFToken`, `signOut`-Formular-URL) | angepasst |
-| `WEB/lib/wrappers/authentication-wrapper.tsx` | `libs/web/core/guards/auth.guard.ts` (`authGuard`) | angepasst |
+| `WEB/lib/wrappers/authentication-wrapper.tsx` | `libs/web/core/wrappers/authentication-wrapper.component.ts` (`AuthenticationWrapperComponent`, `pl-authentication-wrapper`, 08 D08-ADR-12, ABG-020) | angepasst |
 | `WEB/components/auth-screens/workspace/not-a-member.tsx`, `project/project-access-restriction.tsx`, `not-authorized-view.tsx` | `libs/web/core/permissions/views/{not-a-member,project-access-restriction,not-authorized}.component.ts` | unverändert |
 | `WEB/store/user/base-permissions.store.ts` (+ `permissions.store.ts`) | `libs/web/core/permissions/permission.service.ts` | unverändert (§3.13.8) |
 | Profil-Tab `security` (`WEB/components/settings/profile/content/pages/security.tsx`, Route `WEB/app/(all)/settings/profile/[profileTabId]`) | `libs/web/profile/security/profile-security.component.ts`: Überschrift/Layout des Original-Tabs, Inhalt eine Karte mit Text „Password, two-factor authentication, passkeys and signed-in devices are managed in your identity provider account.“ und Button „Manage account security“ → `oidc_account_console_url` + `account-security/signing-in` (neues Fenster); `api-tokens`, `general`, `preferences`, `notifications` unverändert | angepasst |
 | Profil „Change email“ (`WEB/components/settings/profile/content/pages/general/form.tsx`, `WEB/components/core/modals/change-email-modal.tsx`) | Modal entfällt; Button öffnet `oidc_account_console_url` + `personal-info` (⚠ Pfade der Kontokonsole `keycloak.v3` in S7 prüfen) | angepasst |
 | `WEB/app/(all)/sign-up`, `accounts/{forgot-password,reset-password,set-password}` | Redirect-Funktionen auf `/` (`08` §3.3.5) | entfällt |
-| `ADM/app/(all)/(home)/page.tsx`, `sign-in-form.tsx`, `auth-header.tsx`, `auth-helpers.tsx`, `auth-banner.tsx` | `libs/admin/authentication/admin-landing.component.ts` (Auto-Redirect, Banner 5150–5190, 5175, 5210), Login im Theme (Admin-Variante) | angepasst |
+| `ADM/app/(all)/(home)/page.tsx`, `sign-in-form.tsx`, `auth-header.tsx`, `auth-helpers.tsx`, `auth-banner.tsx` | `libs/admin/authentication/auth-landing.component.ts` (`AuthLandingComponent`, `app='admin'`: Auto-Redirect, Banner 5150–5190, 5175, 5210 über `pl-auth-landing-base`, ABG-022), Login im Theme (Admin-Variante) | angepasst |
 | `ADM/components/instance/setup-form.tsx`, `form-header.tsx` | `libs/admin/instance/setup-form/setup-form.component.ts` (ohne Passwort, §3.9) | angepasst |
 | `ADM/components/instance/failure.tsx` | `libs/admin/instance/instance-failure.component.ts` | unverändert |
 | `ADM/app/(all)/(dashboard)/authentication/page.tsx` + `components/authentication/*` | `libs/admin/authentication/keycloak-settings.page.ts` (Karte „Keycloak“, Signup-Schalter, Kopierfelder) | angepasst |
 | `ADM/app/(all)/(dashboard)/authentication/{google,github,gitlab,gitea}/*` | Redirect auf `/god-mode/authentication/` | entfällt |
 | `ADM/components/common/confirm-discard-modal.tsx` | – | entfällt (CE-INST-014) |
 | Admin-Sidebar-Dropdown „Sign out“ | `libs/admin/layout/sidebar-dropdown.component.ts` + `SignOutFormComponent` (`action=/api/instances/admins/sign-out/`) | unverändert |
-| `SPC/components/views/auth.tsx` (`AuthView`), `SPC/components/account/auth-forms/auth-root.tsx` | `libs/space/account/auth-view.component.ts` (Button „Sign in“ → N-01 `app=space`, Banner) | angepasst |
+| `SPC/components/views/auth.tsx` (`AuthView`), `SPC/components/account/auth-forms/auth-root.tsx` | `libs/space/account/auth-landing.component.ts` (`AuthLandingComponent`, `app='space'`: Button „Sign in“ → N-01 `app=space`, Banner über `pl-auth-landing-base`, ABG-022) | angepasst |
 | `SPC/components/account/auth-forms/{email,password,unique-code}.tsx`, `auth-header.tsx` | Theme `plane-space` | Ort neu / entfällt (`unique-code`) |
-| `SPC/components/account/auth-forms/auth-banner.tsx`, `SPC/helpers/authentication.helper.tsx` | `libs/space/account/auth-banner.component.ts` + gemeinsame Fehlertexte | angepasst |
+| `SPC/components/account/auth-forms/auth-banner.tsx`, `SPC/helpers/authentication.helper.tsx` | `AuthBanner` als Teil von `pl-auth-landing-base` (`frontend/libs/shared/blocks/auth/`, ABG-022) + gemeinsame Fehlertexte | angepasst |
 | `SPC/components/account/user-logged-in.tsx` | `libs/space/account/user-logged-in.component.ts` | unverändert |
 | `SPC/components/account/terms-and-conditions.tsx` | Theme `plane-space` | Ort neu |
 | `SPC/hooks/oauth/core.tsx` | – | entfällt |
@@ -1824,7 +1830,7 @@ internal sealed class OidcBffEndpoints : IEndpointModule
             props.Items[OidcOptionsSetup.NextPathItem] = next;
             if (q.Prompt is "login" or "none") props.Items["plane.prompt"] = q.Prompt;
             if (LoginHint.IsValid(q.LoginHint)) props.Items["plane.login_hint"] = q.LoginHint;
-            if (app == PlaneApp.Admin && q.MaxAge is > 0) props.Items["plane.max_age"] = q.MaxAge.Value.ToString(CultureInfo.InvariantCulture);
+            if (app == PlaneApp.Admin && q.MaxAge is >= 0) props.Items["plane.max_age"] = q.MaxAge.Value.ToString(CultureInfo.InvariantCulture);
             if (UiLocales.TryMapToKeycloak(q.UiLocales, out var kcLocale)) props.Items["plane.ui_locales"] = kcLocale;   // ua → uk usw.
             return Results.Challenge(props, [AuthenticationRegistration.OidcSchemeFor(app)]);
         })
@@ -2103,9 +2109,10 @@ namespace Plane.Authorization.Contracts;
 
 public abstract record PermissionRule
 {
-    // Regeln aus 02 §3.6.1 (Eigentümer der Mechanik): CreatorBypass, OwnerBypass, InstanceAdminOnly, AnyAuthenticated, WorkspaceAdminOverride, ActiveWorkspaceMember …
-    public static PermissionRule CreatorBypass(Type entity, string routeParam = "pk", bool RequireMembership = true) => new CreatorBypassRule(entity, routeParam, RequireMembership);
-    // Ergänzungen dieses Dokuments (Nachtrag in 02):
+    // Kanonische Regelliste aus 02 §5.1.7 (Eigentümer der Mechanik; ABG-036). Der WS-Admin-Override (HARM-00) ist KEINE Regel,
+    // sondern fester Evaluator-Schritt 8 (§3.13.4) für alle ScopeLevel.Project-Deskriptoren.
+    public static PermissionRule Creator<TEntity>(string routeParam = "pk", bool requireMembership = true) where TEntity : class
+        => new CreatorRuleSpec(typeof(TEntity), routeParam, requireMembership);
     public static readonly PermissionRule Own = new OwnRuleSpec();
     public static readonly PermissionRule Self = new SelfRuleSpec();
     public static readonly PermissionRule GuestVisibility = new VisibilityRuleSpec();
@@ -2113,25 +2120,32 @@ public abstract record PermissionRule
     public static readonly PermissionRule Board = new BoardRuleSpec();
     public static readonly PermissionRule WorkspaceAdminOrProjectAdmin = new WsaOrPaRuleSpec();
     public static readonly PermissionRule ProjectMemberOfBody = new ProjectMembershipRuleSpec();
+    /// „∧“-Zeilen aus Anhang B: vorgeschaltete Prüfung mit eigenem DenyStyle (Schritt P, ABG-041).
+    public static PermissionRule Prerequisite(PermissionDescriptor descriptor) => new PrerequisiteRuleSpec(descriptor);
 }
+public sealed record CreatorRuleSpec(Type Entity, string RouteParam, bool RequireMembership) : PermissionRule;
+public sealed record PrerequisiteRuleSpec(PermissionDescriptor Descriptor) : PermissionRule;
+// OwnRuleSpec, SelfRuleSpec, VisibilityRuleSpec, PageRuleSpec (inkl. Eigentümer-Bypass), BoardRuleSpec, WsaOrPaRuleSpec, ProjectMembershipRuleSpec: leere sealed records
 
 public interface IRoleDefinitionProvider                        // 01 §5.5; CE: SystemRoleProvider, E5: CustomRoleProvider
 {
     ValueTask<RoleDefinition?> GetAsync(Guid roleId, CancellationToken ct);
 }
 
-public sealed record RoleDefinition(Guid Id, string Name, ScopeLevel Scope, int LegacyValue, bool IsSystem, IReadOnlySet<string> PermissionKeys);   // Form 1:1 aus 02 §3.6.1
+public sealed record RoleDefinition(Guid Id, string Namespace, string Slug, string Name, int Level, bool IsSystem, IReadOnlySet<string> Grants);   // Form 1:1 aus 02 §3.6.1 (ABG-038)
 ```
 
 ```csharp
 // Endpunkt (Muster, Notation Anhang B → Code)
 g.MapDelete("{pk:guid}", DeleteWorkItem)
- .RequirePermission(WorkItemsPermissions.ProjectWorkItemDelete, PermissionRule.CreatorBypass(typeof(WorkItem)));   // PRJ(A)+C:Issue
+ .RequirePermission(WorkItemsPermissions.ProjectWorkItemDelete, PermissionRule.Creator<WorkItem>());   // PRJ(A)+C:Issue
 g.MapGet("", ListWorkItems)
  .RequirePermission(WorkItemsPermissions.ProjectWorkItemRead, PermissionRule.GuestVisibility);          // PRJ(A,M,G)+VIS → Handler nutzt IVisibilityFilter<WorkItem>
+labels.MapPost("", CreateLabel)                                                                         // „∧“-Zeile, generiert (ABG-041)
+ .RequirePermission(ProjectsPermissions.ProjectLabelCreate, PermissionRule.Prerequisite(StandardPermissions.WorkspaceProjectBaseCreate));   // WS(A,M) ∧ PRJ⁺(A) → PRJ(A) + Prerequisite
 ```
 
-Generator `tools/Plane.PermissionGen/` (Konsolen-Tool, läuft in CI und als MSBuild-Target `GeneratePermissionKeys` vor `Plane.*.Contracts`): liest `05-permission-matrix.json` (Kopie unter `funk./docs/security/05-permission-matrix.json`, Prüfsumme gegen die Plan-Datei im CI), erzeugt je Modul `<M>Permissions.g.cs`, `SystemRoleGrants.g.cs` (Grant-Mengen je System-Rolle) und `tests/security/permission-matrix.yaml` (Eingabe für `PermissionMatrixTests`, `15` §3.13.1). Abweichungen zwischen generiertem Code und Datei brechen den Build.
+Generator `tools/Plane.PermissionGen/` (Konsolen-Tool, läuft in CI und als MSBuild-Target `GeneratePermissionKeys` vor `Plane.*.Contracts`): liest `05-permission-matrix.json` (Kopie unter `funk./docs/security/05-permission-matrix.json`, Prüfsumme gegen die Plan-Datei im CI), erzeugt je Modul `<M>Permissions.g.cs`, `StandardPermissions` (Vorbedingungs-Deskriptoren, Anhang A „Vorbedingungs-Keys“, ABG-042), `SystemRoleGrants.g.cs` (Grant-Mengen je System-Rolle) und `tests/security/permission-matrix.yaml` (Eingabe für `PermissionMatrixTests`, `15` §3.13.1). Für jede „∧“-Zeile (Feld `original_check` mit `∧`) gibt der Generator am Endpunkt zusätzlich die Regel `PermissionRule.Prerequisite(StandardPermissions.<Vorbedingung>)` aus; die Vorbedingung ist die Klassenstufe (Original-Permission-Klasse × Methodengruppe, `02` §3.6.3) und steht im Matrix-Feld `prerequisite` (Key aus Anhang A „Vorbedingungs-Keys“; ABG-041). Abweichungen zwischen generiertem Code und Datei brechen den Build.
 
 ### 5.9 SSRF-sicherer Handler (`SEC/Ssrf/SsrfSafeHttpHandler.cs`)
 
@@ -2182,10 +2196,13 @@ public sealed class SsrfPolicy
 ### 5.10 Angular: Landing, Interceptor, Sign-out, Rechte-Fassade
 
 ```typescript
-// frontend/libs/web/auth/landing/auth-landing.component.ts
+// frontend/libs/web/auth/components/auth-landing/auth-landing.component.ts
+// App-spezifische Hülle (ABG-022): Verhalten (Auto-Redirect, N-01-Aufruf mit app='web'). Die Darstellung (Original-AuthBase-Rahmen,
+// AuthBanner, Button) liefert `pl-auth-landing-base` aus frontend/libs/shared/blocks/auth (Port PKG/blocks/src/auth).
+// Admin (libs/admin/authentication/) und Space (libs/space/account/) haben je eine gleichnamige Hülle mit app='admin' bzw. 'space'.
 @Component({
   selector: 'pl-auth-landing',
-  templateUrl: './auth-landing.component.html',          // Markup = AuthBase + Banner (WEB/components/auth-screens/auth-base.tsx)
+  templateUrl: './auth-landing.component.html',          // Markup = <pl-auth-landing-base> (AuthBase + AuthBanner + Button, WEB/components/auth-screens/auth-base.tsx)
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AuthLandingComponent {
@@ -2251,8 +2268,16 @@ export class SignOutFormComponent {
 
 ```typescript
 // frontend/libs/web/core/permissions/permission.service.ts (Auszug; Signatur 1:1 BasePermissionStore.allowPermissions)
-export type PermissionEvaluatorFn = (ctx: { roles: EUserPermissions[]; level: EUserPermissionsLevel;
-  workspaceRole?: EUserPermissions; projectRole?: EUserPermissions }) => boolean;
+export interface PermissionCheck {                    // ABG-055 (08 §6.5)
+  allowed: EUserPermissions[];
+  level: EUserPermissionsLevel;
+  workspaceRole?: EUserPermissions;
+  projectRole?: EUserPermissions;
+  workspaceSlug?: string;
+  projectId?: string;
+  teamspaceId?: string;                              // B1-Andockstelle, in der CE nie gesetzt
+}
+export type PermissionEvaluatorFn = (ctx: PermissionCheck) => boolean;
 export const PERMISSION_EVALUATOR = new InjectionToken<PermissionEvaluatorFn>('PERMISSION_EVALUATOR', {
   factory: () => roleBasedEvaluator,                 // CE; E5 ersetzt nur diesen Provider
 });
@@ -2264,7 +2289,7 @@ export class PermissionService {
   allowPermissions(allowPermissions: EUserPermissions[], level: EUserPermissionsLevel, workspaceSlug?: string,
                    projectId?: string, onPermissionAllowed?: () => boolean): boolean {
     const ws = workspaceSlug ?? this.router.workspaceSlug(); const pid = projectId ?? this.router.projectId();
-    const allowed = this.evaluate({ roles: allowPermissions, level,
+    const allowed = this.evaluate({ allowed: allowPermissions, level, workspaceSlug: ws, projectId: pid,
       workspaceRole: ws ? this.getWorkspaceRoleByWorkspaceSlug(ws) : undefined,
       projectRole: ws && pid ? this.getProjectRoleByWorkspaceSlugAndProjectId(ws, pid) : undefined });
     return allowed && (onPermissionAllowed ? onPermissionAllowed() : true);
@@ -2331,7 +2356,7 @@ Kein Fachdesign. Dieser Abschnitt listet nur die **Stellen in D05-Bausteinen**, 
 | **H1** OAuth-App-Plattform (W1) | §6.4 | Bearer-Schema, `PrincipalKind.App`/`Bot`, Spalte `api_scope` je Key, Audience `plane-api` | I0 |
 | **H6** Realtime-Event-Server (W1) | Autorisierung von Hub-Gruppen | SignalR-Hub `/live/events/` nutzt Session-Schema + `IPermissionEvaluator` für Gruppenbeitritt (§3.11); Policy `perm:<key>` je Key registriert (D05-ADR-17); Revoke-Nachricht schließt Hub-Verbindungen | I0 |
 
-**`ReservedPermissionKeys`** (`src/modules/Authorization/Plane.Authorization.Contracts/ReservedPermissionKeys.cs`, CE-Pflicht ab I0): Präfixe `project.work_item_type.`, `project.work_item_property.`, `workspace.work_item_type.`, `workspace.state.`, `workspace.label.`, `teamspace.`, `workspace.page.`, `workspace.integration.`, `workspace.forgejo_connection.`, `project.forgejo_mapping.` und Einzel-Key `project.work_item.read_all`. Keys mit diesen Präfixen dürfen im Katalog ohne Endpunkt existieren (Architekturtest 2) und dürfen von CE-Endpunkten **nicht** verwendet werden (Architekturtest `ReservedKeysUnusedInCe`), damit ein Paket sie später ohne Kollision belegt.
+**`ReservedPermissionKeys`** (`src/modules/Authorization/Plane.Authorization.Contracts/ReservedPermissionKeys.cs`, CE-Pflicht ab I0) wird **generiert** aus der einzigen Quelle `docs/extensions/reservations.yaml` (Inhalt = `16` §3.2.1: 95 Präfixe + 1 Einzel-Key; ABG-054). Die bisher hier genannten Präfixe `project.work_item_type.`, `project.work_item_property.`, `workspace.work_item_type.`, `workspace.state.`, `workspace.label.`, `teamspace.`, `workspace.page.`, `workspace.integration.`, `workspace.forgejo_connection.`, `project.forgejo_mapping.` und der Einzel-Key `project.work_item.read_all` sind darin als Teilmenge enthalten; Architekturtest 2, `ReservedKeysUnusedInCe` und `ReservationCollisionTests` lesen dieselbe Liste. Keys mit den reservierten Präfixen dürfen im Katalog ohne Endpunkt existieren (Architekturtest 2) und dürfen von CE-Endpunkten **nicht** verwendet werden (Architekturtest `ReservedKeysUnusedInCe`), damit ein Paket sie später ohne Kollision belegt.
 
 ### 6.2 E3 – IdP Group Sync (Gruppen-/Rollen-Claims)
 
@@ -2403,7 +2428,7 @@ Teststrategie, Werkzeuge, Pyramide und Gates stehen in `15` (D15-ADR-04, -05, -1
 | AK-08 | Erst-Einrichtung: frische DB + Bootstrap-Admin → God Mode zeigt Setup-Formular ohne Passwort; 10 parallele `POST /api/instances/admins/setup/` → genau 1 × 200, 9 × 400 mit 5150 | `InstanceBootstrapConcurrencyTests`, `admin/setup.spec.ts` | I0 |
 | AK-09 | Origin-Check: unsichere Methode mit Cookie und fremdem `Origin` → 403 `{"detail": "CSRF Failed: origin not allowed"}`; `Origin: null` → 403; fehlender `Origin` + `Sec-Fetch-Site: cross-site` → 403; fehlender `Origin` ohne `Sec-Fetch-Site` → erlaubt (Parität) | Port `test_session_origin_check.py`, `test_session_origin_check_app.py` | I0 |
 | AK-10 | `next_path`: alle Vektoren aus `test_path_validator.py` liefern identische Ergebnisse; kein Redirect verlässt die Hosts aus `Plane:Urls` (Fuzz 10 000 Eingaben) | `NextPathValidatorTests`, `NextPathFuzzTests` | I0 |
-| AK-11 | Permission-Matrix: für **jede** der 643 abgesicherten Endpunkt-Methoden liefern die Akteur-Klassen aus `15` §3.13.1 den in Anhang B festgelegten Status und Fehlerkörper (`DenyStyle`); 29 entfallene Methoden liefern 404/405 (Ausnahme N-05) | `PermissionMatrixTests` (generiert aus `05-permission-matrix.json`) | I0 (Gerüst + I0-Keys), je Inkrement die Keys des Inkrements, I6 vollständig |
+| AK-11 | Permission-Matrix: für **jede** der 642 abgesicherten Endpunkt-Methoden liefern die Akteur-Klassen aus `15` §3.13.1 den in Anhang B festgelegten Status und Fehlerkörper (`DenyStyle`, bei „∧“-Zeilen je fehlgeschlagener Stufe, ABG-041); 30 entfallene Methoden liefern 404/405 (Ausnahme N-05; inkl. PUT `{P}/issue-labels/{pk}/` → 405, ABG-043) | `PermissionMatrixTests` (generiert aus `05-permission-matrix.json`) | I0 (Gerüst + I0-Keys), je Inkrement die Keys des Inkrements, I6 vollständig |
 | AK-12 | Architekturtests 1–4 (§3.13.7) grün; `HtmlFieldsAreSanitized`, `WorkItemQueriesApplyVisibility` grün | `AuthorizationRules`, `SecurityConventions` | I0 / I2 |
 | AK-13 | Gast-Sichtbarkeit: je `IVisibilityFilter<T>` drei Fälle (Gast eigen / Gast mit `guest_view_all_features` / Member) grün; portierte Contract-Tests `test_issue_list_guest_scope_app.py`, `test_search_guest_scope_app.py`, `test_page_guest_view_scope_app.py`, `test_export_task_guest_scope.py` grün | `GuestVisibilityTests` | I2 (Work Items), I4 (Pages), I5 (Suche), I6 (Export) |
 | AK-14 | API-Keys: Klartext nur in der Create-Antwort; DB enthält nur Hash; ohne Header 401, ungültig 403 mit Original-Körpern; 61. Request/min → 429 mit `X-RateLimit-*` wie Original | `ApiKeyAuthenticationTests`, Port `test_api_authentication.py`, `test_api_token.py` | I6 |
@@ -2533,6 +2558,7 @@ Teststrategie, Werkzeuge, Pyramide und Gates stehen in `15` (D15-ADR-04, -05, -1
 | O-D05-05 | Ist das Auto-Redirect auch für Space-Boards gewünscht (anonymes Lesen bleibt)? | nein: Space-Startseite zeigt Button, Boards bleiben anonym | Start I6 |
 | O-D05-06 | Rate-Limit am OIDC-Callback (R-07) | **entschieden:** `AuthCallbackRateLimiter` in `OnMessageReceived` | erledigt |
 | O-D05-07 | Namensabgleich mit `14`/`15` | **im Review entschieden:** Client `plane-forgejo` (folgt `01` §4.1 und `16`, Rang `01` > D05); Themes `plane`/`plane-space` (deckt sich mit D14-ADR-04); Test-Realm = generierte `plane-realm.test.json` nach `15` §3.14.2; Rest-Anpassungen in `14`/`15` siehe §9 | erledigt |
+| O-D05-08 | Vorbedingungs-Keys (ABG-041/-042): (a) für die beiden Zeilen `WS(A) ∧ WS(A)` (PATCH/DELETE `{W}/`, Klasse `WorkSpaceBasePermission` PUT/PATCH/DELETE) nennt ABG-042 keinen Vorbedingungs-Key; (b) V1, V6–V9 aus Anhang A.1 haben in der CE keine `Prerequisite`-Referenz und wären nach Architekturtest 2 tote Keys | (a) Key `workspace.workspace_base.write` (WS(A), Detail) ergänzen **oder** bei identischen Stufen keine Vorbedingung erzeugen (wirksam ist ohnehin der Detail-Körper der Klassenstufe); (b) Generator erzeugt nur referenzierte Vorbedingungs-Keys **oder** Architekturtest 2 nimmt `StandardPermissions` aus – Rückmeldung an Dokument 17 | Start I0 |
 
 ---
 
@@ -2542,19 +2568,19 @@ Dokumente `12` und `13` sind in `01` Anhang A nicht vergeben. „Liefert“ = di
 
 | Dokument | D05 liefert | D05 benötigt | Abgleich (verbindliche Auflösung) |
 |---|---|---|---|
-| `02-backend-solution-und-konventionen.md` | Permission-Keys + Regeln je Endpunkt (Anhang A/B), Auth-Schemata, BFF-Endpunkte, SSRF-/Sanitizer-/Upload-Bausteine, Entscheidungen O-D02-03 (§4.4: 14 Schlüssel, feste `config`-Werte) und O-D02-08 (E-Mail-Endpunkte entfallen, Policy `email_verification` entfällt) | Endpunkt-Mechanik (`PermissionDescriptor`, `DenyStyle`, `PermissionEndpointFilter`, `OriginCheckMiddleware`, `PlaneRateLimitPolicies`, Oberflächen, Fehlerformen, Pipeline-Reihenfolge §3.4) | Namen aus `02` übernommen (§3.1, §3.5, §3.13, §3.17.6). **Anpassung in `02`:** `ApiActivityLogMiddleware` nutzt `token_identifier = token_hash` (§3.12.2) statt HMAC mit `Plane:Security:ApiLogHmacKey` – der Schlüssel entfällt; `PermissionDescriptor` ergänzt optionale endpunktbezogene Regeln (`.RequirePermission(descriptor, rules…)`) und `.WithDenyStyle(...)`; **weitere Nachträge in `02` (Review):** (a) Regelliste `PermissionRule` um `Own`, `Self`, `GuestVisibility`, `PageAccess`, `Board`, `WorkspaceAdminOrProjectAdmin`, `ProjectMemberOfBody` ergänzen (§3.13.4); (b) `WorkspaceAdminOverride` wird von `PermissionDescriptor.Project(...)` standardmäßig gesetzt (HARM-00), nicht nur bei den Vorlagen der Klassen `ProjectBase`/`ProjectAdmin`/`allow_permission`; (c) Option heißt `Plane:Auth:Bearer:Enabled` (nicht `Plane:Auth:BearerEnabled`); (d) `UseForwardedHeaders` nutzt `KnownIPNetworks` (.NET 10, `ASPDEPR005`) |
+| `02-backend-solution-und-konventionen.md` | Permission-Keys + Regeln je Endpunkt (Anhang A/B), Auth-Schemata, BFF-Endpunkte, SSRF-/Sanitizer-/Upload-Bausteine, Entscheidungen O-D02-03 (§4.4: 14 Schlüssel, feste `config`-Werte) und O-D02-08 (E-Mail-Endpunkte entfallen, Policy `email_verification` entfällt) | Endpunkt-Mechanik (`PermissionDescriptor`, `DenyStyle`, `PermissionEndpointFilter`, `OriginCheckMiddleware`, `PlaneRateLimitPolicies`, Oberflächen, Fehlerformen, Pipeline-Reihenfolge §3.4) | Namen aus `02` übernommen (§3.1, §3.5, §3.13, §3.17.6). **Anpassung in `02`:** `ApiActivityLogMiddleware` nutzt `token_identifier = token_hash` (§3.12.2) statt HMAC mit `Plane:Security:ApiLogHmacKey` – der Schlüssel entfällt; `PermissionDescriptor` ergänzt optionale endpunktbezogene Regeln (`.RequirePermission(descriptor, rules…)`) und `.WithDenyStyle(...)`; **weitere Nachträge in `02` (Review):** (a) Regelliste `PermissionRule` um `Own`, `Self`, `GuestVisibility`, `PageAccess`, `Board`, `WorkspaceAdminOrProjectAdmin`, `ProjectMemberOfBody` ergänzen (§3.13.4); (b) der WS-Admin-Override (HARM-00) ist **kein** `PermissionRule`, sondern Evaluator-Schritt 8 für alle `ScopeLevel.Project`-Deskriptoren; `Creator<TEntity>` erhält `bool requireMembership = true`; `RoleDefinition(Guid Id, string Namespace, string Slug, string Name, int Level, bool IsSystem, IReadOnlySet<string> Grants)` (ABG-036, ABG-038); (c) Option heißt `Plane:Auth:Bearer:Enabled` (nicht `Plane:Auth:BearerEnabled`); (d) `UseForwardedHeaders` nutzt `KnownIPNetworks` (.NET 10, `ASPDEPR005`) |
 | `03-datenmodell-efcore.md` | Tabellen `user_sessions`, `user_identities`, `roles`, `instance_admins` (Spiegel), `api_tokens` (Hash), `data_protection_keys`; Wegfall `accounts`, Passwortfelder (§3.4.1, §3.7.1, §4.8) | Konventionen (UUIDv7, snake_case, benannte Query-Filter, `[OwnedBy]`) | – |
 | `04-api-design-und-endpunktkatalog.md` | Berechtigung je Endpunkt (Anhang B), entfallene Auth-Routen (§4.2), Bug-/Sicherheitsentscheidungen SEC-/HARM-xx (§3.18) | Request/Response-Formen, Paritäts-Ausnahmen | Bug-/Sicherheits-Entscheidungstabelle in `04` verweist für alle Rechte-Abweichungen auf §3.18 (keine Doppelpflege) |
 | `06-hintergrundjobs-events-benachrichtigungen.md` | Jobs `ExpiredSessionCleanupJob` (`17 * * * *`), `IdpUserStateSyncJob` (`*/15 * * * *`), `DownloadAvatarJob`; SSRF-Client `webhooks` + Signatur; Mail `user_activation_email`/`user_deactivation_email`; Integration-Events `plane.identity.*.v1` | Job-/Cron-Mechanik, Outbox, Mail-Templates | Webhook-Zustellung nutzt ausschließlich `AddSsrfSafeHttpClient("webhooks")` |
 | `07-realtime-kollaboration-dokumente.md` | Upgrade-Authentisierung, Origin-Pflicht, Close-Codes 4401/4403, Dokumentrecht je Verbindung (§3.11, SEC-39…42), Binärprüfung | Hocuspocus-Protokoll, `IPageDocumentStore` | `/live/convert-document/` wird nicht über das Gateway geroutet (SEC-39) |
-| `08-frontend-angular-architektur.md` | `PermissionService`/`PERMISSION_EVALUATOR`, Guards, `unauthorizedInterceptor`, `SignOutFormComponent`, `AuthLandingComponent`, Instanz-Feld `is_oidc_auto_redirect_enabled` (Antwort auf `08` §3.3.5), Banner-Codes (§4.3), Profil-Security-Tab (§4.7) | Routen-/Store-Mapping, Runtime-Config, CSP-Hash des Theme-Skripts | Profil-Tab `security` bleibt als Tab mit Keycloak-Verweis (wie `08` Route 57) |
+| `08-frontend-angular-architektur.md` | `PermissionService`/`PERMISSION_EVALUATOR` (`PermissionCheck`, ABG-055), Wrapper-Komponenten (D08-ADR-12, ABG-020), `unauthorizedInterceptor`, `SignOutFormComponent`, `AuthLandingComponent` (+ `pl-auth-landing-base`, ABG-022), Instanz-Feld `is_oidc_auto_redirect_enabled` (Antwort auf `08` §3.3.5), Banner-Codes (§4.3), Profil-Security-Tab (§4.7) | Routen-/Store-Mapping, Runtime-Config, CSP-Hash des Theme-Skripts | Profil-Tab `security` bleibt als Tab mit Keycloak-Verweis (wie `08` Route 57) |
 | `09-ui-paritaet-designsystem.md` | Theme-Seiten-Mapping (§3.16.2), UI-Abweichungen DEV-UI-01…07 (§8.2) | Propel-/Tailwind-Klassen, Visual-Verfahren | **Anpassung in `09`:** Zeile W-025 (`/settings/profile/security`) nicht „Tab entfällt“, sondern „Inhalt ersetzt durch Keycloak-Verweis (DEV-UI-04)“ |
 | `10-editor-angular.md` | Sanitizer-Allowlist als Vertrag für Editor-HTML (§3.17.3) | Extension-Liste für den Golden-Korpus | Neue Editor-Attribute erfordern Erweiterung der Allowlist **und** des Golden-Korpus |
 | `11-suche-und-ai-basis.md` | `SearchVisibilityFilter`, Client `llm` mit `Plane:Ai:AllowedInternalHosts` | AI-Konfigurationsschlüssel (z. B. Basis-URL) | weitere AI-Schlüssel ergänzen §4.4 nicht, sondern `11` |
-| `14-infrastruktur-deployment-betrieb.md` | Realm-Inhalt (§3.15), Theme-Inhalt (§3.16), Header-Werte und CSP (§3.17.7), Forwarded-Headers-Regeln, Secrets/Key-Ring (§3.17.5), CLI (§4.6), Optionsnamen `PlaneAuthOptions` (§3.4.3) | Container, Packaging, Pfad `/idp/`, ENV-Mapping, TLS, Backup, interne `MetadataAddress` | **Anpassungen in `14`:** (1) Forgejo-Client heißt `plane-forgejo` (folgt `01` §4.1/`16`; in `14` §3.2.1 Parameter-Tabelle und §3.3.2 noch `forgejo`); (2) Themes `plane`/`plane-space` – bereits konsistent (D14-ADR-04); (3) §3.7.3 „CSP nicht gesetzt“ ersetzen durch D05-ADR-23 (Report-Only ab I0, Enforce ab I7) und Header-Matrix §3.17.7 inkl. `X-Frame-Options`-Ausnahme für `/spaces/issues/*`; (4) O-14-05 ist durch D05-ADR-12 entschieden (`ENABLE_SIGNUP` bleibt, Default `"1"`); (5) ENV-Namen der Clients: `Plane__Auth__Clients__{Web,Admin,Space}__ClientSecret`, `Plane__Auth__Backend__ClientSecret`, `Plane__Auth__Oidc__MetadataAddress` (deckt sich mit `14` §3.2.2, ⚠ dort bitte als final markieren); (6) SSRF-Client-Namen: `link-preview` und `avatar-import` (nicht `link-crawler`/`avatar-download`, `14` §3.6) |
+| `14-infrastruktur-deployment-betrieb.md` | Realm-Inhalt (§3.15), Theme-Inhalt (§3.16), Header-Werte und CSP (§3.17.7), Forwarded-Headers-Regeln, Secrets/Key-Ring (§3.17.5), CLI (§4.6), Optionsnamen `PlaneAuthOptions` (§3.4.3) | Container, Packaging, Pfad `/idp/`, ENV-Mapping, TLS, Backup, interne `MetadataAddress` | **Anpassungen in `14`:** (1) Forgejo-Client heißt `plane-forgejo` (folgt `01` §4.1/`16`; in `14` §3.2.1 Parameter-Tabelle und §3.3.2 noch `forgejo`); (2) Themes `plane`/`plane-space` – bereits konsistent (D14-ADR-04); (3) §3.7.3 „CSP nicht gesetzt“ ersetzen durch D05-ADR-23 (Report-Only ab I0, Enforce ab I7) und Header-Matrix §3.17.7 inkl. `X-Frame-Options`-Ausnahme für `/spaces/issues/*`; (4) O-14-05 ist durch D05-ADR-12 entschieden (`ENABLE_SIGNUP` bleibt, Default `"1"`); (5) ENV-Namen der Clients: `Plane__Auth__Clients__{Web,Admin,Space}__ClientSecret`, `Plane__Auth__Backend__ClientSecret`, `Plane__Auth__Oidc__MetadataAddress` (deckt sich mit `14` §3.2.2, ⚠ dort bitte als final markieren); (6) SSRF-Client-Namen: `link-preview` und `avatar-import` (nicht `link-crawler`/`avatar-download`, `14` §3.6). **Stand:** (1), (3)–(6) sind in `14` über Dokument 17 umgesetzt (ABG-003, ABG-016, ABG-017, ABG-035, ABG-040); Keycloak-Image einheitlich `${PLANE_REGISTRY}/plane-keycloak:${PLANE_VERSION}` (ABG-002) |
 | `15-teststrategie-qualitaet-paritaet.md` | Akzeptanzkriterien AK-01…25, Matrix-Datei, Pen-Test-Checkliste, Port-Liste (§7) | Testwerkzeuge, `TestAuth`-Schema, `KeycloakHeadlessLogin`, Akteur-Klassen, Seeds, generierter Test-Realm | **Bestätigt (Review):** Test-Realm-Verfahren `15` §3.14.2 (generierte `plane-realm.test.json` aus `plane-realm.json` ⊕ Overrides ⊕ Parity-Benutzer, Test-Client `plane-test-app` nur dort) ist verbindlich und in §3.15.1 übernommen; Akteur-Klassen `15` §3.13.1 sind Grundlage von AK-11. **Anpassungen in `15`:** (1) Test-IDs `D15-SEC-xx` (bereits umgesetzt); (2) Option `Plane__Auth__Bearer__Enabled` statt `Plane__Auth__BearerEnabled` (`15` §6, H1-Zeile); (3) Client `plane-forgejo` statt `forgejo` in `15` §3.14.2 Tabellenzeile `plane-realm.json`; (4) S-14 „E-Mail-Änderungscodes bleiben in Plane, falls …“ entfällt (CE-PROF-004 angepasst, O-D15-03 damit entschieden) |
 | `16-erweiterungspunkte-bezahl-features.md` | Andockstellen §6 (insbesondere E3, E5, H1/H4, F1, F2, H6) | Paket-Skizzen kurz vor der Umsetzung | `16` übernimmt §6.1–§6.4 als Referenz, Fachdesign erst vor W1/W4 |
-| `00`/`01` | Konkretisierung von ADR-008, ADR-017…019, ADR-030, ADR-034, ADR-036; Auflösung O-06, O-08, O-11 | Grundsatzentscheidungen | `01` §5.1 „`plane-net/`“ ist der alte Arbeitstitel des Repos `funk.` (ADR-009); AppHost-Skelett `01` §3.4 setzt `Plane__Auth__Oidc__ClientSecret` (ein Secret) – gültig sind die Namen aus §3.4.3/§5.11 (drei Client-Secrets + Backend); Client-Name `plane-forgejo` aus `01` §4.1 übernommen |
+| `00`/`01` | Konkretisierung von ADR-008, ADR-017…019, ADR-030, ADR-034, ADR-036; Auflösung O-06, O-08, O-11 | Grundsatzentscheidungen | `01` §5.1 ist auf `funk./` angeglichen (früherer Arbeitstitel `plane-net/`, ADR-009, ABG-018 g); AppHost-Skelett `01` §3.4 nutzt die Namen aus §3.4.3/§5.11 (drei Client-Secrets + Backend, ABG-018 d/ABG-035; früher `Plane__Auth__Oidc__ClientSecret`); Client-Name `plane-forgejo` aus `01` §4.1 übernommen |
 
 ---
 
@@ -2614,7 +2640,7 @@ Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `cata
 | 48 | `project.label.create` | `ProjectsPermissions.ProjectLabelCreate` | Projekt | ✓ | – | – | – | 4 | `projects.labels:write` |
 | 49 | `project.label.delete` | `ProjectsPermissions.ProjectLabelDelete` | Projekt | ✓ | – | – | – | 2 | `projects.labels:write` |
 | 50 | `project.label.read` | `ProjectsPermissions.ProjectLabelRead` | Projekt | ✓ | ✓ | ✓ | – | 4 | `projects.labels:read` |
-| 51 | `project.label.update` | `ProjectsPermissions.ProjectLabelUpdate` | Projekt | ✓ | – | – | – | 3 | `projects.labels:write` |
+| 51 | `project.label.update` | `ProjectsPermissions.ProjectLabelUpdate` | Projekt | ✓ | – | – | – | 2 (PUT `{P}/issue-labels/{pk}/` entfällt, ABG-043) | `projects.labels:write` |
 | 52 | `project.member.create` | `ProjectsPermissions.ProjectMemberCreate` | Projekt | ✓ | – | – | – | 5 | `projects.members:write` |
 | 53 | `project.member.delete` | `ProjectsPermissions.ProjectMemberDelete` | Projekt | ✓ | – | – | – | 3 | `projects.members:write` |
 | 54 | `project.member.leave` | `ProjectsPermissions.ProjectMemberLeave` | Projekt | ✓ | ✓ | ✓ | – | 1 | `projects.members:write` |
@@ -2823,6 +2849,24 @@ Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `cata
 | 257 | `workspace.webhook.read` | `WebhooksPermissions.WorkspaceWebhookRead` | Workspace | ✓ | – | – | – | 3 | `workspaces.webhooks:read` |
 | 258 | `workspace.webhook.update` | `WebhooksPermissions.WorkspaceWebhookUpdate` | Workspace | ✓ | – | – | – | 2 | `workspaces.webhooks:write` |
 
+### A.1 Vorbedingungs-Keys (ABG-042)
+
+Zusätzlich zu den 258 Endpunkt-Keys führt der Katalog die **Vorbedingungs-Keys** für „∧“-Zeilen aus Anhang B (Schritt P in §3.13.4, `PermissionRule.Prerequisite`, ABG-041). Sie werden **nur** als `Prerequisite` referenziert, nie als Haupt-Key; sie sind weder reserviert (`ReservedPermissionKeys`) noch intern (`InternalPermissionKeys`) – Architekturtest 2 zählt `Prerequisite`-Referenzen als Verwendung (§3.13.7). Konstanten in `StandardPermissions` (`Plane.Authorization.Contracts`, generiert durch `tools/Plane.PermissionGen`, §5.8; Auszug `02` §5.1.7). Grants nach der Methodenmatrix der Original-Klassen (`A06` §2.10, `02` §3.6.3); DenyStyle immer `Detail` (Permission-Klasse). Kein API-Scope (H1 prüft den Scope des Haupt-Keys).
+
+| # | Permission-Key | C#-Konstante | Ebene | Admin (20) | Member (15) | Guest (5) | Original-Klasse × Methoden | Referenziert als `Prerequisite` von (Anhang B) |
+|---|---|---|---|---|---|---|---|---|
+| V1 | `workspace.project_base.read` | `StandardPermissions.WorkspaceProjectBaseRead` | Workspace | ✓ | ✓ | ✓ | `ProjectBasePermission` GET | – (in der CE keine „∧“-Zeile, O-D05-08) |
+| V2 | `workspace.project_base.create` | `StandardPermissions.WorkspaceProjectBaseCreate` | Workspace | ✓ | ✓ | – | `ProjectBasePermission` POST | POST `{P}/issue-labels/` |
+| V3 | `project.project_base.write` | `StandardPermissions.ProjectProjectBaseWrite` | Projekt | ✓ | – | – | `ProjectBasePermission` PUT/PATCH/DELETE (WS-Admin-Override HARM-00) | PATCH, DELETE `{P}/issue-labels/{pk}/` |
+| V4 | `project.project_entity.read` | `StandardPermissions.ProjectEntityRead` | Projekt | ✓ | ✓ | ✓ | `ProjectEntityPermission` GET | GET `{P}/issues/{issue_id}/history/` |
+| V5 | `project.project_entity.write` | `StandardPermissions.ProjectEntityWrite` | Projekt | ✓ | ✓ | – | `ProjectEntityPermission` POST/PUT/PATCH/DELETE | POST `{P}/bulk-archive-issues/` |
+| V6 | `project.project_member.read` | `StandardPermissions.ProjectMemberRead` | Projekt | ✓ | ✓ | ✓ | `ProjectMemberPermission` GET | – (O-D05-08) |
+| V7 | `project.project_member.write` | `StandardPermissions.ProjectMemberWrite` | Projekt | ✓ | ✓ | – | `ProjectMemberPermission` POST/PUT/PATCH/DELETE | – (O-D05-08) |
+| V8 | `workspace.workspace_entity.read` | `StandardPermissions.WorkspaceEntityRead` | Workspace | ✓ | ✓ | ✓ | `WorkspaceEntityPermission` GET | – (O-D05-08) |
+| V9 | `workspace.workspace_entity.write` | `StandardPermissions.WorkspaceEntityWrite` | Workspace | ✓ | ✓ | – | `WorkspaceEntityPermission` POST/PUT/PATCH/DELETE | – (O-D05-08) |
+
+Die Matrix-Datei `_data/05-permission-matrix.json` erhält dafür einen eigenen Katalogteil und je „∧“-Zeile das Feld `prerequisite` (ABG-041/-042; Nachtrag der Datei ausstehend, siehe Abgleich-Protokoll).
+
 ## Anhang B – Endpunkt-×-Rollen-Matrix (vollständig, 672 Endpunkt-Methoden)
 
 Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `endpoints`), gruppiert nach Eigentümer-Modul (`01` §5.4). Pfad-Kürzel: `{W}` = `/api/workspaces/{slug}`, `{P}` = `{W}/projects/{project_id}`, `{V1W}` = `/api/v1/workspaces/{slug}`, `{V1P}` = `{V1W}/projects/{project_id}`, `{SP}` = `/api/public/anchor/{anchor}`. Datei-Kürzel: `V/` = `app/views/`, `V1V/` = `api/views/`, `SPV/` = `space/views/`, `LICV/` = `license/api/views/` (relativ zu `apps/api/plane/`).
@@ -2923,9 +2967,9 @@ Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `endp
 | GET | `{P}/user-favorite-views/` | `IssueViewFavoriteViewSet.list` (V/view/base.py) | `Auth` | `project.view.read_favorites` | `PRJ(A,M,G)+OWN` |  |
 | POST | `{P}/user-favorite-views/` | `IssueViewFavoriteViewSet.create` (V/view/base.py:421) | `PRJ⁺(A,M)` | `project.view.favorite` | `PRJ(A,M)` |  |
 | DELETE | `{P}/user-favorite-views/{view_id}/` | `IssueViewFavoriteViewSet.destroy` (V/view/base.py:435) | `PRJ⁺(A,M)` | `project.view.favorite` | `PRJ(A,M)` |  |
-| DELETE | `{W}/` | `WorkSpaceViewSet.destroy` (V/workspace/base.py:169) | `WS(A) ∧ WS(A)` | `workspace.settings.delete` | `WS(A)` |  |
+| DELETE | `{W}/` | `WorkSpaceViewSet.destroy` (V/workspace/base.py:169) | `WS(A) ∧ WS(A)` | `workspace.settings.delete` | `WS(A)` + Prerequisite(— ⚠ Vorbedingungs-Key für `WorkSpaceBasePermission` PUT/PATCH/DELETE fehlt in ABG-042; beide Stufen identisch WS(A), wirksam DenyStyle.Detail der Klassenstufe – O-D05-08) |  |
 | GET | `{W}/` | `WorkSpaceViewSet.retrieve` (V/workspace/base.py) | `Auth` | `workspace.settings.read` | `WS(A,M,G)` |  |
-| PATCH | `{W}/` | `WorkSpaceViewSet.partial_update` (V/workspace/base.py:158) | `WS(A) ∧ WS(A)` | `workspace.settings.update` | `WS(A)` |  |
+| PATCH | `{W}/` | `WorkSpaceViewSet.partial_update` (V/workspace/base.py:158) | `WS(A) ∧ WS(A)` | `workspace.settings.update` | `WS(A)` + Prerequisite(— ⚠ wie DELETE `{W}/`, O-D05-08) |  |
 | PUT | `{W}/` | `WorkSpaceViewSet.update` (V/workspace/base.py) | `WS(A)` | — | **entfällt** | SEC-01 |
 | GET | `{W}/cycles/` | `WorkspaceCyclesEndpoint.get` (V/workspace/cycle.py:22) | `WS(A,M,G)` | `workspace.project_metadata.read` | `WS(A,M,G)` |  |
 | GET | `{W}/estimates/` | `WorkspaceEstimatesEndpoint.get` (V/workspace/estimate.py:22) | `WS(A,M,G)` | `workspace.project_metadata.read` | `WS(A,M,G)` |  |
@@ -3044,11 +3088,11 @@ Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `endp
 | DELETE | `{P}/invitations/{pk}/` | `ProjectInvitationsViewset.destroy` (V/project/invite.py) | `Auth` | `project.invitation.delete` | `PRJ(A)` | SEC-05 |
 | GET | `{P}/invitations/{pk}/` | `ProjectInvitationsViewset.retrieve` (V/project/invite.py) | `Auth` | `project.invitation.read` | `PRJ(A)` | SEC-05 |
 | GET | `{P}/issue-labels/` | `LabelViewSet.list` (V/issue/label.py) | `WS(A,M,G)` | `project.label.read` | `PRJ(A,M,G)` | SEC-21 |
-| POST | `{P}/issue-labels/` | `LabelViewSet.create` (V/issue/label.py:44) | `WS(A,M) ∧ PRJ⁺(A)` | `project.label.create` | `PRJ(A)` |  |
-| DELETE | `{P}/issue-labels/{pk}/` | `LabelViewSet.destroy` (V/issue/label.py:86) | `PRJ⁺(A) ∧ PRJ⁺(A)` | `project.label.delete` | `PRJ(A)` |  |
+| POST | `{P}/issue-labels/` | `LabelViewSet.create` (V/issue/label.py:44) | `WS(A,M) ∧ PRJ⁺(A)` | `project.label.create` | `PRJ(A)` + Prerequisite(`workspace.project_base.create`) |  |
+| DELETE | `{P}/issue-labels/{pk}/` | `LabelViewSet.destroy` (V/issue/label.py:86) | `PRJ⁺(A) ∧ PRJ⁺(A)` | `project.label.delete` | `PRJ(A)` + Prerequisite(`project.project_base.write`) |  |
 | GET | `{P}/issue-labels/{pk}/` | `LabelViewSet.retrieve` (V/issue/label.py) | `WS(A,M,G)` | `project.label.read` | `PRJ(A,M,G)` | SEC-21 |
-| PATCH | `{P}/issue-labels/{pk}/` | `LabelViewSet.partial_update` (V/issue/label.py:59) | `PRJ⁺(A) ∧ PRJ⁺(A)` | `project.label.update` | `PRJ(A)` |  |
-| PUT | `{P}/issue-labels/{pk}/` | `LabelViewSet.update` (V/issue/label.py) | `PRJ⁺(A)` | `project.label.update` | `PRJ(A)` |  |
+| PATCH | `{P}/issue-labels/{pk}/` | `LabelViewSet.partial_update` (V/issue/label.py:59) | `PRJ⁺(A) ∧ PRJ⁺(A)` | `project.label.update` | `PRJ(A)` + Prerequisite(`project.project_base.write`) |  |
+| PUT | `{P}/issue-labels/{pk}/` | `LabelViewSet.update` (V/issue/label.py) | `PRJ⁺(A)` | entfällt (405, ABG-043) | **entfällt (405, ABG-043)** – nicht portiert, Antwort 405 `{"detail": "Method \"PUT\" not allowed."}`; Abweichung `DEV-API-…` in `tests/contracts/deviations.yaml` | ABG-043 |
 | GET | `{P}/members/` | `ProjectMemberViewSet.list` (V/project/member.py:157) | `PRJ⁺(A,M,G)` | `project.member.read` | `PRJ(A,M,G)` |  |
 | POST | `{P}/members/` | `ProjectMemberViewSet.create` (V/project/member.py:47) | `PRJ⁺(A)` | `project.member.create` | `PRJ(A)` |  |
 | POST | `{P}/members/leave/` | `ProjectMemberViewSet.leave` (V/project/member.py:325) | `PRJ⁺(A,M,G)` | `project.member.leave` | `PRJ(A,M,G)` |  |
@@ -3143,7 +3187,7 @@ Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `endp
 | PATCH | `/api/assets/v2/workspaces/{slug}/projects/{project_id}/issues/{issue_id}/attachments/{pk}/` | `IssueAttachmentV2Endpoint.patch` (V/issue/attachment.py:211) | `PRJ⁺(A,M,G)` | `project.work_item_attachment.update` | `PRJ(A,M,G)` |  |
 | POST | `/api/assets/v2/workspaces/{slug}/projects/{project_id}/issues/{issue_id}/attachments/{pk}/` | `IssueAttachmentV2Endpoint.post` (V/issue/attachment.py:102) | `PRJ⁺(A,M,G)` | `project.work_item_attachment.create` | `PRJ(A,M,G)` |  |
 | GET | `{P}/archived-issues/` | `IssueArchiveViewSet.list` (V/issue/archive.py:107) | `PRJ⁺(A,M)` | `project.work_item.read_archived` | `PRJ(A,M)+VIS` |  |
-| POST | `{P}/bulk-archive-issues/` | `BulkArchiveIssuesEndpoint.post` (V/issue/archive.py:309) | `PRJ(A,M) ∧ PRJ⁺(A,M)` | `project.work_item.archive` | `PRJ(A,M)` |  |
+| POST | `{P}/bulk-archive-issues/` | `BulkArchiveIssuesEndpoint.post` (V/issue/archive.py:309) | `PRJ(A,M) ∧ PRJ⁺(A,M)` | `project.work_item.archive` | `PRJ(A,M)` + Prerequisite(`project.project_entity.write`) |  |
 | DELETE | `{P}/bulk-delete-issues/` | `BulkDeleteIssuesEndpoint.delete` (V/issue/base.py:777) | `PRJ⁺(A)` | `project.work_item.delete` | `PRJ(A)` |  |
 | GET | `{P}/comments/{comment_id}/reactions/` | `CommentReactionViewSet.list` (V/issue/comment.py) | `Auth` | `project.reaction.read` | `PRJ(A,M,G)+VIS` | SEC-04 |
 | POST | `{P}/comments/{comment_id}/reactions/` | `CommentReactionViewSet.create` (V/issue/comment.py:209) | `PRJ⁺(A,M,G)` | `project.reaction.create` | `PRJ(A,M,G)` |  |
@@ -3160,7 +3204,7 @@ Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `endp
 | GET | `{P}/issues/{issue_id}/comments/{pk}/` | `IssueCommentViewSet.retrieve` (V/issue/comment.py) | `Auth` | `project.work_item_comment.read` | `PRJ(A,M,G)+VIS` | SEC-04 |
 | PATCH | `{P}/issues/{issue_id}/comments/{pk}/` | `IssueCommentViewSet.partial_update` (V/issue/comment.py:130) | `PRJ⁺(A) ∨ Creator(IssueComment)` | `project.work_item_comment.update` | `PRJ(A)+C:IssueComment` |  |
 | PUT | `{P}/issues/{issue_id}/comments/{pk}/` | `IssueCommentViewSet.update` (V/issue/comment.py) | `Auth` | — | **entfällt** | SEC-01 |
-| GET | `{P}/issues/{issue_id}/history/` | `IssueActivityEndpoint.get` (V/issue/activity.py:31) | `PRJ(A,M,G) ∧ PRJ⁺(A,M,G)` | `project.work_item_activity.read` | `PRJ(A,M,G)+VIS` |  |
+| GET | `{P}/issues/{issue_id}/history/` | `IssueActivityEndpoint.get` (V/issue/activity.py:31) | `PRJ(A,M,G) ∧ PRJ⁺(A,M,G)` | `project.work_item_activity.read` | `PRJ(A,M,G)+VIS` + Prerequisite(`project.project_entity.read`) |  |
 | DELETE | `{P}/issues/{issue_id}/issue-attachments/` | `IssueAttachmentEndpoint.delete` (V/issue/attachment.py:65) | `PRJ⁺(A) ∨ Creator(FileAsset)` | `project.work_item_attachment.delete` | `PRJ(A)+C:FileAsset` |  |
 | GET | `{P}/issues/{issue_id}/issue-attachments/` | `IssueAttachmentEndpoint.get` (V/issue/attachment.py:91) | `PRJ⁺(A,M,G)` | `project.work_item_attachment.read` | `PRJ(A,M,G)` |  |
 | POST | `{P}/issues/{issue_id}/issue-attachments/` | `IssueAttachmentEndpoint.post` (V/issue/attachment.py:38) | `PRJ⁺(A,M,G)` | `project.work_item_attachment.create` | `PRJ(A,M,G)` |  |
@@ -3641,3 +3685,31 @@ Endpunkt-Inventar `/auth/` (#1–#37, AD-1…AD-7) gegen `A06` §2.1/§2.2; Fehl
 - In S7 zu verifizieren: Wirksamkeit von `CreateDefaultClientScopes` in der gepinnten Keycloak-26-Version; `KC_HOSTNAME_BACKCHANNEL_DYNAMIC` mit interner `MetadataAddress` (Issuer bleibt öffentlich); Deep-Links der Kontokonsole (O-D05-01).
 - In S0 zu verifizieren: Builder-API `Testcontainers.Keycloak` 4.x für Realm-Import.
 - Konflikte mit `01`, `02`, `14`, `15` siehe §9 (Abgleich-Spalte); die dort genannten Anpassungen liegen außerhalb dieses Dokuments.
+
+---
+
+## Abgleich-Protokoll (Dokument 17)
+
+Umsetzung der verbindlichen Abgleich-Entscheidungen aus `17-abgleich-dokumentuebergreifend.md` §3/§5 bzw. `_data/17-abgleich.json` (Stand 23.10.2026). Die Fundstellen wurden per Volltextsuche ermittelt, einschließlich Tabellen, Anhängen und Code-Skeletten.
+
+| ABG-ID | Thema | Umgesetzt in diesem Dokument |
+|---|---|---|
+| ABG-002 | Keycloak-Image | §3.15.1 Zeile `themes/…`: `funk/keycloak` → `${PLANE_REGISTRY}/plane-keycloak:${PLANE_VERSION}`; §9 Zeile 14 |
+| ABG-020 | Wrapper-Komponenten statt Guards | §3.1 (Z. „Frontend“: `AuthGuard` gestrichen, Wrapper ergänzt), §3.13.8 Zeile „Wrapper-Komponenten“ (08 D08-ADR-12), §4.7 (`libs/web/core/wrappers/authentication-wrapper.component.ts`), §9 Zeile 08 |
+| ABG-021 | Step-up `max_age=0` | D05-ADR-11 (`…&max_age=0&…`), N-01 (`max_age` Ganzzahl ≥ 0, nur `app=admin`), §3.13.8 Interceptor-Zeile, Skelett §5.3 (`q.MaxAge is >= 0`) |
+| ABG-022 | `pl-auth-landing-base` | §3.1 Ablage `frontend/libs/shared/blocks/auth/`, §4.7 (Web/Admin/Space-Hüllen `AuthLandingComponent`, `AuthBase`/`AuthBanner` in `pl-auth-landing-base`), Skelett §5.10 als app-spezifische Hülle (`libs/web/auth/components/auth-landing/`) |
+| ABG-034 | Dark-Mode des Login-Themes | §3.16.3 `build-css.mjs` (`data-theme`, `[data-theme*="dark"]`, keine `@media (prefers-color-scheme)`, `UI-DEV-010`) und `build-js.mjs` (Theme-Auflösung) |
+| ABG-036 | Kanonische Permission-Typen aus 02 §5.1.7 | §3.13.4 Namensabgleich (Liste der Entscheidung, entfallene Namen), Schritt 8 (Override = Evaluator-Schritt, Verweis „Regel WorkspaceAdminOverride aus 02 §3.6.2“ gestrichen), §3.13.7 Beispiel (`Creator<WorkItem>(…, requireMembership: true)`), Skelett §5.8 (`Creator<TEntity>(routeParam, requireMembership)`, `Prerequisite`, Spec-Records), §9 Zeile 02 |
+| ABG-037 | Grant-basierter Override | §3.13.4 Herkunftsangabe „(05 §3.13.4, ABG-037)“, Evaluator prüft `wsRole.Grants ∋ "workspace.admin_override"` |
+| ABG-038 | `RoleDefinition`-Signatur | §3.13.3 (`RoleDefinition.Level`), §3.13.4 Namensabgleich, Skelett §5.8 (Signatur mit `Namespace`, `Slug`, `Name`, `Level`, `Grants`; Kommentar „Form 1:1 aus 02 §3.6.1“ beibehalten), Evaluator-Pseudocode `PermissionKeys` → `Grants` |
+| ABG-041 | Vorbedingungen („∧“-Zeilen) | §3.13.4 Schritt P (vor Schritt 1), §5.8 Generator (Ausgabe der `Prerequisite`-Regel, Beispiel Labels), Anhang B: Spalte „Ziel-Prüfung“ der sieben „∧“-Zeilen um `+ Prerequisite(<Key>)` ergänzt, AK-11 |
+| ABG-042 | Vorbedingungs-Keys im Katalog | Anhang A.1 „Vorbedingungs-Keys“ (9 Keys mit Grants), Architekturtest 2 („referenziert = als Haupt-Key oder als `Prerequisite`“), §5.8 (`StandardPermissions`) |
+| ABG-043 | `PUT …/issue-labels/{pk}/` nicht portiert | Anhang B (Key/Ziel `entfällt (405, ABG-043)`), Anhang A Nr. 51 (Endpunktzahl 3 → 2), AK-11 (642 abgesicherte / 30 entfallene Methoden) |
+| ABG-044 | 02-Konfigurationsschlüssel | §4.4 (`Plane:Webhooks:AllowedNetworks`/`AllowedHosts`/`DisallowedDomains`, `Plane:Uploads:MaxFileSizeBytes`, `SKIP_ENV_VAR` → `Plane:Instance:ConfigurationSource`), §4.5 (`PlaneUploadsOptions`, `instance_value.py`-Zeile) |
+| ABG-045 | Abweichungsliste | §3.18: `tests/parity/exceptions.yaml` → `tests/contracts/deviations.yaml` |
+| ABG-054 | Reservierungen | §6.1 `ReservedPermissionKeys` generiert aus `docs/extensions/reservations.yaml` (16 §3.2.1; bisherige 10 Präfixe + `project.work_item.read_all` als Teilmenge), Architekturtest 2 |
+| ABG-055 | `PermissionCheck` | Skelett §5.10 (`PermissionCheck` mit `allowed`, `workspaceSlug`, `projectId`, `teamspaceId`; Aufruf im `PermissionService`), §3.13.8 Zeile `PERMISSION_EVALUATOR`, §9 Zeile 08 |
+
+**Folgeanpassung (Verweisziel):** §4.4 Zeile `SECRET_KEY` nennt Warntext und Critical-Level aus ABG-012 (Entscheidung verweist auf 05 §4.4).
+
+**Nicht in diesem Dokument umgesetzt (außerhalb des Auftrags):** Die Erweiterung von `_data/05-permission-matrix.json` (Feld `prerequisite`, Katalogteil Vorbedingungs-Keys, Zeile `PUT {P}/issue-labels/{pk}/` als `entfällt`) aus ABG-041/-042/-043 steht noch aus; Anhang A/B sind bis dahin gegenüber der Datei vorausgezogen. Offene Lücken der Vorbedingungs-Keys siehe O-D05-08.

@@ -2,7 +2,7 @@
 
 > **Status:** verbindlich für das Thema Frontend (Fachdokument zu `01-zielarchitektur-und-tech-stack.md`, Anhang A: „Routen-Mapping, Store-Mapping, Library-Mapping, Registries“).
 > **Rangfolge:** `00-grundsatzentscheidungen.md` (ADR-000 … ADR-009) > `01-zielarchitektur-und-tech-stack.md` (ADR-010 … ADR-052) > **dieses Dokument (D08-ADR-01 ff.)** > eigene Präferenzen. Bei Widerspruch gilt 01 bis zur ADR-Änderung; Ergänzungen dieses Dokuments, die 01 präzisieren, sind in Abschnitt 2 als solche markiert.
-> **Stand:** 23.10.2026. **Zielrepository:** `funk.` (ADR-009). Alle Zielpfade sind relativ zu dessen Wurzel; der Angular-Workspace liegt unter `frontend/` (01 §6.1). *Hinweis:* 01 §5.1 nennt noch den Arbeitstitel `plane-net/`; maßgeblich ist ADR-009 (`funk.`), die Verzeichnisstruktur unterhalb der Wurzel bleibt unverändert.
+> **Stand:** 23.10.2026. **Zielrepository:** `funk.` (ADR-009). Alle Zielpfade sind relativ zu dessen Wurzel; der Angular-Workspace liegt unter `frontend/` (01 §6.1). *Hinweis:* 01 §5.1 ist auf `funk./` angeglichen (früherer Arbeitstitel `plane-net/`, ABG-018 g); die Verzeichnisstruktur unterhalb der Wurzel bleibt unverändert.
 > **Sprache:** Fließtext Deutsch, Bezeichner Englisch.
 > **Kürzel für Original-Pfade** (wie 01): `WEB/` = `apps/web/`, `ADM/` = `apps/admin/`, `SPC/` = `apps/space/`, `PKG/` = `packages/`. Analyse-Dokumente: `A08` = `migration/analysis/08-frontend-web-architektur.md`, `A09` = `…/09-frontend-arbeitsobjekte-layouts.md`, `A10a`/`A10b` = Screens, `A11` = Admin/Space, `A12` = Editor/Live, `A13a` = Designsystem, `A13b` = Shared Packages/i18n. Ziel-Kürzel: `FE/` = `funk./frontend/`.
 
@@ -124,7 +124,7 @@ Inkremente gemäß 01 §1.3. Ein Baustein wird **im genannten Inkrement vollstä
 | **D08-ADR-17** | Command-Palette | Eigene Komponente `pl-command` (Root/Input/List/Group/Item/Empty) mit **cmdk-DOM-Attributen** (`cmdk-root`, `cmdk-input`, `cmdk-list`, `cmdk-group`, `cmdk-group-heading`, `cmdk-item`, `data-selected`, `aria-selected`, `data-disabled`) und cmdk-Filterlogik (`command-score`-Port); `power-k.css` unverändert; Power-K-Kern (`registry.ts`, `shortcut-handler.ts`, `context-detector.ts`) als TS 1:1 | Angular CDK Listbox pur; Fremd-Lib | Parität von Markup, Sortierung und Tastatur | I5 |
 | **D08-ADR-18** | Charts | D3-Module + Angular-SVG-Komponenten, die recharts-2.15.4-Markup nachbilden (bestätigt ADR-044) | ECharts | Pixelparität | I3 |
 | **D08-ADR-19** | DnD | `@atlaskit/pragmatic-drag-and-drop` 1.7.4 unverändert; Direktiven `plDraggable`, `plDropTarget`, `plMonitor`, `plAutoScroll` registrieren in `afterNextRender`, Cleanup in `DestroyRef` (bestätigt ADR-043) | CDK DragDrop | Gleiches Hitbox-/Instruction-Modell | I1 (Labels), I2 |
-| **D08-ADR-20** | Emoji-Picker | Port der Blocks-Komponente `emoji-icon-picker` (Original: `frimousse` 0.3) als Angular-Komponente mit **identischem DOM** auf Basis gebündelter `emojibase-data` (Version wie von frimousse 0.3 genutzt ⚠), Daten aus `/{base}/assets/emoji/` statt jsDelivr; `emoji-picker-react` entfällt (im Quelltext ungenutzt) | Fremd-Picker | Airgap (ADR-004), DOM-Parität | I2 |
+| **D08-ADR-20** | Emoji-Picker | Port der Blocks-Komponente `emoji-icon-picker` (Original: `frimousse` 0.3) als Angular-Komponente mit **identischem DOM** auf Basis gebündelter `emojibase-data` (gepinnt nach ABG-029: genau eine Version für Editor und Picker, Kandidat 15.3.2, endgültig beim ersten `capture-reference`-Lauf, Z-04), Daten aus `assets/emojibase/<version>/<locale>/` statt jsDelivr; `emoji-picker-react` entfällt (im Quelltext ungenutzt) | Fremd-Picker | Airgap (ADR-004), DOM-Parität | I2 |
 | **D08-ADR-21** | Date-Picker | Eigene Komponente `pl-calendar` mit **Klassenvertrag** von Propel `calendar` (react-day-picker 10.0.1, `PROPEL/elements/calendar/variants.js`); Wochenstart Default Montag (Propel) bzw. Profil (`start_of_the_week`) wo das Original es übergibt; `date-fns` 4.1 | Angular-Material-Datepicker | DOM-Parität | I2 |
 | **D08-ADR-22** | Realtime-Events (H6) | `LiveEventsService` (`@microsoft/signalr` 10.x) in `libs/web/core/live-events`, verbindet nach Login lazy mit `/live/events/`, verteilt Events an Multi-Provider `LIVE_EVENT_HANDLERS`; CE nutzt ihn ab I5 für den Notification-Zähler | Polling | 01 ADR-023 / §1.4 H6 | I0 (Gerüst), I5 |
 | **D08-ADR-23** | Change Detection | Zoneless (Default v22), OnPush (Default v22); keine `zone.js`-Abhängigkeit. Drittbibliotheken mit DOM-Events (pragmatic-dnd, tippy, floating-ui) brauchen kein `runOutsideAngular`, Signalschreibungen lösen Rendering aus | Zone-basiert | Performance, v22-Defaults | I0 |
@@ -144,7 +144,7 @@ Inkremente gemäß 01 §1.3. Ein Baustein wird **im genannten Inkrement vollstä
 ```text
 frontend/
 ├── package.json  pnpm-workspace.yaml  angular.json  tsconfig.base.json  sheriff.config.ts
-├── eslint.config.js  .prettierrc  vitest.workspace.ts  playwright.config.ts
+├── eslint.config.js  .prettierrc  vitest.config.ts  playwright.config.ts   # vitest.config.ts: test.projects shared-node, shared-dom, web, admin, space, browser (ABG-007)
 ├── apps/
 │   ├── web/                               # base href "/"
 │   │   ├── public/                        # ← WEB/public (favicon/*, icons/*, site.webmanifest.json, manifest.json); sw.js/workbox entfallen (E19)
@@ -164,25 +164,31 @@ frontend/
 │   │           └── routes/redirects/      # Redirect-Funktionen (redirects.ts) – Ersatz für routes/redirects/core/*.tsx
 │   ├── admin/                             # base href "/god-mode/", src/pages ← ADM/app/(all)/**
 │   ├── space/                             # base href "/spaces/",  src/pages ← SPC/app/**
-│   ├── gallery/                           # Komponenten-Galerie (D15 §3.2, base href /__gallery/, nur Test-Builds)
+│   ├── gallery/                           # Komponenten-Galerie (D15 §3.2, <base href="/__gallery/">, nur Test-Builds, Gateway nur Profil test, Route G-17; ABG-008)
 │   └── e2e/                               # Playwright: web/, admin/, space/, visual/, a11y/, routing/ (+ drivers/dom-parity.ts, D15 §3.10.4)
 ├── libs/
 │   ├── shared/                            # scope:shared (01 §6.1, unverändert)
 │   │   ├── types/ constants/ utils/ i18n/ services/ shared-state/ cdk/ state-kit/ runtime-config/
+│   │   ├── theme/                         # src/{theme.service,inline-script,theme-asset-helpers}.ts – eine Implementierung für web/admin/space (ABG-028)
 │   │   ├── tailwind-config/ propel/ blocks/ editor/ dnd/
 │   │   └── work-items-core/               # NEU (A09 §5.1): reine TS-Logik aus WEB/components/issues/issue-layouts/utils.tsx,
 │   │                                      #   WEB/components/gantt-chart/sidebar/utils.ts, WEB/store/issue/helpers/base-issues-utils.ts
 │   ├── web/                               # scope:web; je Domäne: state/ services/ components/ (+ public-api.ts je Unterordner)
 │   │   ├── core/ extensions/ auth/ workspace/ project/ project-settings/ work-items/ views/ cycles/ modules/ intake/
 │   │   ├── pages/ analytics/ home/ stickies/ notifications/ power-k/ profile/ settings/ favorites/ archives/ project-publish/
+│   │   └── extensions/testing/            # provideFakeExtensions(config?: FakeExtensionConfig) (ABG-032)
 │   ├── admin/                             # scope:admin: core/ extensions/ authentication/ instance/ workspace/ common/
+│   │   └── extensions/testing/            # provideFakeAdminExtensions(config?) (ABG-032)
 │   └── space/                             # scope:space: core/ extensions/ issues/ views/ editor/ account/
+│       └── extensions/testing/            # provideFakeSpaceExtensions(config?) (ABG-032)
 └── tools/
-    ├── icons-codegen/  contract-check/  i18n-sync-check/  i18n-generate-types/
+    ├── propel-port/                       # port-icons.mjs (Icons → PlIconDef + svg[plSvgIcon]), vendor-css, port-variants, port-illustrations (09 D09-ADR-07; ersetzt icons-codegen/, ABG-027)
+    ├── contract-check/  i18n-sync-check/  i18n-generate-types/
     ├── eslint-rules/                      # @plane/eslint-rules (§7.6)
     ├── store-parity-check/  route-contract-check/   # §7.3, §7.2
-    ├── css-parity/                        # CSS-Diff Original- vs. Angular-Build (D15 §3.2)
-    └── original-gallery/                  # React-Galerie des Originals für Referenz-Screenshots (D15 §3.2, nur Paritäts-Setup)
+    ├── visual/                            # css-diff.ts, reference-css/, capture-reference.ts, report/ (09 §3.1, 01 §6.1)
+    ├── reference-gallery/                 # Original-/Referenz-Galerie (React 19 + @makeplane/propel@0.7.3 + Original-packages/blocks), Vite-base '/__gallery/', nur Dev/Paritäts-CI (ABG-008)
+    └── gallery-stories/                   # gemeinsame Story-Definitionen *.stories.json für gallery und reference-gallery (ABG-008)
 # Golden-Fixtures aus dem Original (z. B. Issue-Store) erzeugt das Repo-weite Werkzeug funk./tools/golden/generate.mjs (D15-ADR-08)
 ```
 
@@ -190,15 +196,16 @@ frontend/
 
 #### 3.1.2 Apps, Base-Paths, Builds
 
-| App | `angular.json`-Projekt | Base-Href (`baseHref`) | Dev-Port (Aspire `PORT`) | Gateway-Pfad (01 ADR-033) | Output | Themes |
+| App | `angular.json`-Projekt | Base-Href (`baseHref`) | Dev-Port (Aspire `PORT`, nur `127.0.0.1`, nur Profil `dev`) | Gateway-Pfad (01 ADR-033) | Output | Themes |
 |---|---|---|---|---|---|---|
-| web | `web` | `/` | 3000 | `/` (SPA-Fallback auf `index.html` außer `/api/`, `/auth/`, `/live/`, `/god-mode/`, `/spaces/`, Bucket) | `dist/web/browser` | light, dark, light-contrast, dark-contrast, custom, system |
-| admin | `admin` | `/god-mode/` | 3001 | `/god-mode/` (301 `/god-mode` → `/god-mode/`) | `dist/admin/browser` | light, dark, system |
-| space | `space` | `/spaces/` | 3002 | `/spaces/` (301 `/spaces` → `/spaces/`) | `dist/space/browser` | light, dark, system |
+| web | `web` | `/` | 4200 | `/` (SPA-Fallback auf `index.html` außer `/api/`, `/auth/`, `/live/`, `/god-mode/`, `/spaces/`, Bucket) | `dist/web/browser` | light, dark, light-contrast, dark-contrast, custom, system |
+| admin | `admin` | `/god-mode/` | 4201 (`--serve-path /god-mode/`) | `/god-mode/` (301 `/god-mode` → `/god-mode/`) | `dist/admin/browser` | light, dark, system |
+| space | `space` | `/spaces/` | 4202 (`--serve-path /spaces/`) | `/spaces/` (301 `/spaces` → `/spaces/`) | `dist/space/browser` | light, dark, system |
 
-- Build-Optionen je App: `outputHashing: all`, `optimization: true`, `sourceMap: hidden` (Prod), `subresourceIntegrity: false` (Gateway setzt CSP), `inlineStyleLanguage: css`, PostCSS mit `@tailwindcss/postcss` 4.1.17. **Keine** Build-Zeit-Umgebungsvariablen (§3.11).
-- Assets: `@fontsource*`-Dateien werden über `styles.css`-Imports gebündelt (gleiche Woff2-Dateien wie Original); `public/` 1:1; Emoji-Daten (`emojibase-data`) und Locale-JSON als statische Assets (`/{base}/assets/emoji/…`, `/{base}/i18n/{lng}/{ns}.json`).
-- Dev: `ng serve web --port ${PORT}` hinter dem Gateway (same-origin, Cookie-Session). Proxy-Config wird **nicht** genutzt (Gateway übernimmt).
+- **Aufruf immer über das Gateway `http://localhost:3000`** (ABG-015): Port 3000 gehört ausschließlich dem Gateway; die Dev-Server 4200/4201/4202 sind nur dessen Upstreams und werden nicht direkt im Browser geöffnet.
+- Build-Optionen je App: `outputHashing: all`, `optimization: true`, `sourceMap: hidden` (Prod), `subresourceIntegrity: false` (Gateway setzt CSP nach 05 D05-ADR-23; Inline-Script per Hash – ABG-016: ab I0 `Content-Security-Policy-Report-Only`, ab I7 erzwungen, `Plane:Gateway:Csp:Mode`; Assets same-origin), `inlineStyleLanguage: css`, PostCSS mit `@tailwindcss/postcss` 4.1.17. **Keine** Build-Zeit-Umgebungsvariablen (§3.11).
+- Assets: `@fontsource*`-Dateien werden über `styles.css`-Imports gebündelt (gleiche Woff2-Dateien wie Original); `public/` 1:1; Emoji-Daten (`emojibase-data`, genau eine gepinnte Version nach ABG-029) und Locale-JSON als statische Assets (`apps/{web,space}/src/assets/emojibase/<version>/<locale>/{data,messages}.json`, ausgeliefert unter `assets/emojibase/<version>/<locale>/`; `/{base}/i18n/{lng}/{ns}.json`).
+- Dev: `ng serve web --port ${PORT}` (4200), `ng serve admin --port ${PORT} --serve-path /god-mode/` (4201), `ng serve space --port ${PORT} --serve-path /spaces/` (4202), jeweils `--host 127.0.0.1`, nur Profil `dev`, hinter dem Gateway (same-origin, Cookie-Session; ABG-015). Proxy-Config wird **nicht** genutzt (Gateway übernimmt).
 - Bundle-Budgets (`angular.json`, verbindlich ab I2, Fehler bei Überschreitung): web `initial` ≤ 650 kB (gzip ≤ 210 kB), jede Lazy-Chunk-Gruppe ≤ 400 kB; admin/space `initial` ≤ 450 kB. Werte werden in I0 gegen das Original-Bundle (`build/client`) gemessen und dann ± 10 % festgeschrieben (⚠ Messung S0).
 
 #### 3.1.3 Library-Inventar mit Tags
@@ -484,7 +491,7 @@ Ziel: **1:1-Port** von `WEB/store/issue/**` (44 Dateien, §4.5 Nr. 57–100). Au
 | 3 | `csrfInterceptor` | `libs/web/core/http/csrf.interceptor.ts` | nur für Requests mit Kontext `WITH_CSRF`: Header `X-CSRFTOKEN` aus `GET /auth/get-csrf-token/` (gecacht je Seitenaufruf) – Original nutzt CSRF nur für Formular-Flows; ADR-017 prüft Origin/Referer, daher kein globaler Header |
 | 4 | `unauthorizedInterceptor` | `libs/web/core/http/unauthorized.interceptor.ts` | **nur web** (Original: nur `WEB/services/api.service.ts`): HTTP 401 und `location.pathname !== "/"` → `window.location.replace("/?next_path=" + encodeURIComponent(pathname))`; `PKG/services`-Aufrufe ohne diesen Effekt (Kontext `SKIP_401_REDIRECT`), Admin/Space ohne |
 | 5 | `abortInterceptor` | `libs/shared/services/src/helpers/abort.interceptor.ts` | koppelt `AbortSignal` aus `config.signal` an die Subscription |
-| 6 | `adminStepUpInterceptor` | `libs/admin/core/http/admin-step-up.interceptor.ts` | **nur admin** (05 D05-ADR-11, §3.13.8): HTTP 401 mit `error_code` 5210 → `window.location.assign(api_base_url + '/auth/oidc/login/?app=admin&max_age=' + n + '&next_path=' + encodeURIComponent(location.pathname + location.search))` (Parameter `max_age` laut 05 N-01; `n` = `0`, d. h. frische Anmeldung, die jede Schwelle erfüllt, solange 05 keine Quelle für den konfigurierten Wert im Frontend festlegt – O-D08-14); tritt nur auf, wenn `Plane:Auth:AdminStepUpMaxAgeSeconds > 0` (Default `0` = aus, ADR-009/O-08) |
+| 6 | `adminStepUpInterceptor` | `libs/admin/core/http/admin-step-up.interceptor.ts` | **nur admin** (05 D05-ADR-11, §3.13.8): HTTP 401 mit `error_code` 5210 → `window.location.assign(api_base_url + '/auth/oidc/login/?app=admin&max_age=0&next_path=' + encodeURIComponent(location.pathname + location.search))` (Parameter `max_age` laut 05 N-01, Ganzzahl ≥ 0, nur `app=admin`; **`max_age=0` verbindlich** (ABG-021): frische Anmeldung, die jede Schwelle erfüllt; kein Konfigurationsfeld im Frontend, die Schwelle prüft nur der Server – `AdminStepUpFilter`); tritt nur auf, wenn `Plane:Auth:AdminStepUpMaxAgeSeconds > 0` (Default `0` = aus, ADR-009/O-08) |
 
 #### 3.5.3 QueryCache (SWR-Ersatz)
 
@@ -536,16 +543,16 @@ Fallback (S0 rot): Reactive Forms (`FormGroup`, `ControlValueAccessor` auf dense
 
 | Anforderung | Umsetzung |
 |---|---|
-| Kein Theme-Flash | Inline-Script in `index.html` (§5.1): liest `localStorage.theme` (fehlt → `system`), ungültiger Wert (nicht in Theme-Liste der App) → `system`, löst `system` per `matchMedia('(prefers-color-scheme: dark)')` auf, setzt `document.documentElement.dataset.theme` und `style.colorScheme` **nur** für `light`/`dark` (next-themes `enableColorScheme`) |
-| `ThemeService` (`libs/web/core/theme/theme.service.ts`, Admin/Space eigene Instanz mit eingeschränkter Liste) | Signale `theme`, `resolvedTheme`, `systemTheme`; `setTheme(value)` schreibt Attribut + `localStorage`; Listener `matchMedia` (System-Wechsel) und `storage` (Tab-übergreifend) |
+| Kein Theme-Flash | Inline-Script in `index.html` (§5.1): liest `localStorage.theme` (fehlt/leer → `system`), ungültiger Wert (nicht in Theme-Liste der App) wird **unverändert** als `data-theme` gesetzt, ohne `color-scheme` (identisch zu next-themes 0.4.6, Original-Defekt nachgebaut nach ADR-005, ABG-031), löst `system` per `matchMedia('(prefers-color-scheme: dark)')` auf, setzt `document.documentElement.dataset.theme` und `style.colorScheme` **nur** für `light`/`dark` (next-themes `enableColorScheme`) |
+| `ThemeService` (`libs/shared/theme/src/theme.service.ts`; gleicher Dienst für web/admin/space, Theme-Liste per Token – ABG-028; Inline-Script-Quelle `libs/shared/theme/src/inline-script.ts`; der web-spezifische Profil-Sync bleibt in `libs/web/core`) | Signale `theme`, `resolvedTheme`, `systemTheme`; `setTheme(value)` schreibt Attribut + `localStorage`; Listener `matchMedia` (System-Wechsel) und `storage` (Tab-übergreifend) |
 | Server-Sync | `StoreWrapperComponent`: einmal je User-Sitzung `setTheme(profile.theme.theme \|\| 'system')`; danach führt `localStorage` |
 | Custom Theme | `applyCustomTheme(primary, background, 'dark'\|'light')`/`clearCustomTheme()` aus `@plane/utils` (unverändert, Inline-Styles am `<html>`), Effekt bei Änderung von `profile.theme` |
 | Wechsel durch Nutzer | `ThemeSwitcherComponent`: `setTheme` → ggf. `applyCustomTheme` → `updateUserTheme` mit Promise-Toast → `window.location.reload()` (Parität, A13a §3.2) |
 | High Contrast | rein CSS (Selektoren `[data-theme="light-contrast"]`, `[data-theme="dark-contrast"]` aus Propel-Styles) |
-| Theme-abhängige Raster-Assets | Hilfsfunktionen `isLightStrict`, `isDarkStrict`, `resolveGeneralTheme` (`libs/web/core/theme/theme-assets.ts`), je Fundstelle dasselbe Muster wie Original |
+| Theme-abhängige Raster-Assets | Hilfsfunktionen `isLightStrict`, `isDarkStrict`, `resolveGeneralTheme` (`libs/shared/theme/src/theme-asset-helpers.ts`, ABG-028), je Fundstelle dasselbe Muster wie Original |
 | Admin/Space | Themes `light`, `dark`, `system`; gleicher Storage-Schlüssel `theme` (gleiche Origin teilt den Wert wie im Original) |
 | Sign-out | `localStorage.theme = "system"` (RootStore.resetOnSignOut) |
-| CSP | Inline-Script per Hash in der CSP des Gateways (`script-src 'self' 'sha256-…'`); Hash wird im Build berechnet und als `theme-script.sha256` neben `index.html` abgelegt (Gateway liest ihn) |
+| CSP | Inline-Script per Hash in der CSP des Gateways (`script-src 'self' 'sha256-…'`; Gateway setzt die CSP zentral nach 05 D05-ADR-23: ab I0 `Content-Security-Policy-Report-Only`, ab I7 erzwungen, `Plane:Gateway:Csp:Mode` = `ReportOnly`│`Enforce`│`Off`, Verstöße an `POST /csp-report` – ABG-016); Hash wird im Build berechnet und als `theme-script.sha256` neben `index.html` abgelegt (Gateway liest ihn) |
 
 ### 3.9 Interaktions- und Layout-Bausteine
 
@@ -566,7 +573,7 @@ Fallback (S0 rot): Reactive Forms (`FormGroup`, `ControlValueAccessor` auf dense
 | **Insight-Tabelle** | `@tanstack/react-table` 8.21.3 (`WEB/components/analytics/insight-table/*`) | `@tanstack/angular-table` 8.21.x | – | I5 |
 | **Masonry (Stickies)** | `react-masonry-component` 6.3 (`WEB/components/stickies/layout/stickies-list.tsx`) | `masonry-layout` 4.2.2 (MIT, die von react-masonry-component gekapselte Bibliothek) in Direktive `[plMasonry]` mit gleichen Optionen | `layout()` nach Inhaltsänderung (ResizeObserver) | I5 |
 | **Dropzone** | `react-dropzone` 14.2 (Attachments, Workspace-Logo-Upload) | Direktive `[plDropzone]` (`accept`, `maxSize`, `multiple`, `noClick`, `onDrop(accepted, rejected)`), MIME-Prüfung wie `attr-accept` | Fehlercodes `file-too-large`, `file-invalid-type` wie react-dropzone (Toasts lesen sie) | I2 (I1 Logo) |
-| **Overlays/Portale** | Base-UI-Portale, `#full-screen-portal`, `#context-menu-portal`, `#editor-portal`, `spreadsheet-menu-portal` | CDK Overlay mit eigenem Container an `document.body`; Marker-Attribut `data-base-ui-portal` am Overlay-Container (Outside-Click-Logik des Peeks, A09 §5.2) | Positionierung `@floating-ui/dom` 1.7 | I0 |
+| **Overlays/Portale** | Base-UI-Portale, `#full-screen-portal`, `#context-menu-portal`, `#editor-portal`, `spreadsheet-menu-portal` | Portal-Schicht `PRP/headless/portal.ts` (`libs/shared/propel/headless/portal.ts`, 09 H-01; Portale an `document.body` wie Base UI); Marker-Attribut `data-base-ui-portal` am Portal-Container aus dem Base-UI-DOM-Vertrag (Outside-Click-Logik des Peeks, A09 §5.2, S10); Angular CDK nur für a11y, `@angular/cdk/overlay` verboten (Lint-Regel `no-cdk-overlay`, ABG-026) | Positionierung `@floating-ui/dom` 1.7 | I0 |
 | **Toasts** | `PKG/blocks/src/toast` (`setToast`, `setPromiseToast`) | `libs/shared/blocks/toast` (`ToastService` + Funktionen `setToast`/`setPromiseToast` als dünne Fassade) | Texte/Typen 1:1 | I0 |
 | **Zwischenablage/CSV** | `copyUrlToClipboard`, `export-to-csv` | `@plane/utils` 1:1, `export-to-csv` 1.4 | – | I1/I5 |
 | **Ungespeicherte Änderungen** | `use-reload-confirmation` | `ReloadConfirmationService` (`beforeunload` + Anker-Klick-Abfang, Text 1:1) + `canDeactivate`-Guard für Router-Navigationen | Parität CE-UIX-008 | I1 |
@@ -1022,8 +1029,8 @@ Versionen des Originals aus `pnpm-workspace.yaml` (Catalog). „Nutzung“ = Pak
 | `axios` (1.20.0) | W, S, SV, L | `HttpClient` (`withFetch`) + `APIService` (D08-ADR-09) | ersetzt |
 | `next-themes` (0.4.6) | W, A, S | `ThemeService` + Inline-Script (D08-ADR-15) | ersetzt |
 | `react-hook-form` (^7.84.0) | W, A, S | Angular Signal Forms (`@angular/forms` 22.x) (D08-ADR-13) | ersetzt |
-| `@base-ui/react` (1.6.0) | W, B | `@angular/aria` 22.x + `@angular/cdk` 22.x + `@floating-ui/dom` (ADR-041) | ersetzt |
-| `@makeplane/propel` (0.7.3) | W, A, S, B, E, U, TC | `libs/shared/propel` (Port; `styles/` 1:1; Icons per `tools/icons-codegen`) | portiert |
+| `@base-ui/react` (1.6.0) | W, B | `@angular/aria` 22.x + `@angular/cdk` 22.x (nur a11y) + eigene Portal-Schicht `libs/shared/propel/headless/portal.ts` + `@floating-ui/dom` (ADR-041, ABG-026) | ersetzt |
+| `@makeplane/propel` (0.7.3) | W, A, S, B, E, U, TC | `libs/shared/propel` (Port; `styles/` 1:1; Icons per `tools/propel-port/port-icons.mjs`, ABG-027) | portiert |
 | Propel-interne Abhängigkeiten `react-day-picker` 10.0.1, `lucide-react` 1.34.0 (Kopie in Propel) | über Propel | `pl-calendar` (D08-ADR-21); Lucide-Icons der Propel-Kopie per Codegen | ersetzt |
 | `lucide-react` (0.469.0) | W, A, S, B, E, U | `lucide` 0.469.x (statische SVG-Daten, ISC) → Codegen zu Angular-Icon-Komponenten mit identischem SVG | ersetzt |
 | `@floating-ui/dom` (^1.7.1) | E | `@floating-ui/dom` 1.7.x | übernommen |
@@ -1041,7 +1048,7 @@ Versionen des Originals aus `pnpm-workspace.yaml` (Catalog). „Nutzung“ = Pak
 | `comlink` (^4.4.1) | W | – (im Quelltext ungenutzt) | entfällt |
 | `date-fns` (^4.1.0) | W, S, B, U | gleich | übernommen |
 | `emoji-picker-react` (^4.5.16) | W | – (im Quelltext ungenutzt) | entfällt |
-| `frimousse` (^0.3.0) | B | eigener Emoji-Picker + `emojibase-data` (MIT, Version ⚠ wie frimousse 0.3) (D08-ADR-20) | ersetzt |
+| `frimousse` (^0.3.0) | B | eigener Emoji-Picker + `emojibase-data` (MIT, gepinnt nach ABG-029) (D08-ADR-20) | ersetzt |
 | `export-to-csv` (^1.4.0) | W | gleich | übernommen |
 | `lodash-es` (4.18.1) | W, A, S, B, E, SS, U | gleich (`@types/lodash-es` dev) | übernommen |
 | `react-dropzone` (^14.2.3) | W, S | Direktive `[plDropzone]` (§3.9) | ersetzt |
@@ -1116,12 +1123,13 @@ Versionen des Originals aus `pnpm-workspace.yaml` (Catalog). „Nutzung“ = Pak
 | `@angular/{core,common,router,forms,platform-browser,compiler,animations}`, `@angular/cdk`, `@angular/aria`, `@angular/build`, `@angular/cli` | 22.x | MIT | Framework |
 | `@microsoft/signalr` | 10.0.x | MIT | Live-Events (H6) |
 | `masonry-layout` | 4.2.2 | MIT | Stickies-Masonry |
-| `emojibase-data` | ⚠ (Version wie frimousse 0.3) | MIT | Emoji-Daten offline |
+| `emojibase-data` | genau eine Version, gepinnt nach ABG-029 (Kandidat 15.3.2, endgültig beim ersten `capture-reference`-Lauf, Z-04) | MIT | Emoji-Daten offline (Editor und Picker) |
 | `lucide` | 0.469.x | ISC | Icon-Quelldaten (Codegen) |
 | `d3-scale`, `d3-shape`, `d3-array`, `d3-hierarchy`, `d3-format` | 4.x/3.x | ISC | Charts |
 | `@tanstack/angular-table`, `@tanstack/virtual-core` | 8.21.x / 3.13.x | MIT | Tabellen, Virtualisierung |
 | `@softarc/sheriff-core`, `@softarc/eslint-plugin-sheriff` | 0.20.x | MIT | Modulgrenzen (Dev) |
-| `@playwright/test`, `@axe-core/playwright` | 1.5x / 4.x | Apache-2.0 / MPL-2.0 (Dev) | E2E, Visual, a11y |
+| `@playwright/test`, `@axe-core/playwright` | 1.64.x / 4.x | Apache-2.0 / MPL-2.0 (Dev) | E2E, Visual, a11y (gleiche Minor wie `Microsoft.Playwright` 1.64.x; Browser-Container `mcr.microsoft.com/playwright:v1.64.1-noble`, per Digest gepinnt – ABG-004) |
+| `@vitest/browser-playwright` | 4.1.x | MIT (Dev) | Vitest-Browser-Modus (`provider: playwright()`, Projekt `browser` in `vitest.config.ts`, ABG-007) |
 | `ts-morph` (optional) | 2x | MIT | Codemods (Dev) |
 
 ### 4.9 Edge-Cases des Originals – Entscheidung (A08 §3.10, A11 §3.31 Auszug)
@@ -1168,7 +1176,7 @@ Die Routen-Tabellen §4.1–§4.3 ordnen die **Screen**-CE-IDs zu. Die folgende 
 | CE-UIX-001 | Seiten-Header und Breadcrumbs | `AppHeader`/`ContentWrapper` (HL:*, §4.4), `libs/shared/blocks/breadcrumb`, `libs/web/core/breadcrumbs` | I0 |
 | CE-UIX-002 | Leerzustände und Skeletons | `libs/web/core/empty-state` (`DetailedEmptyState`), `libs/shared/blocks/{empty-state,skeleton}` | I0 |
 | CE-UIX-003 | Globale Modal-Hosts | `libs/web/core/modals` (`GlobalModals` in LWS, §4.4; Flags `CommandPaletteStore`) | I0 |
-| CE-UIX-004 | Dialog- und Dropdown-Verhalten | `@plane/cdk` (`DialogDismissal`, `[plOutsideClick]`), CDK Overlay (§3.9 Overlays) | I0 |
+| CE-UIX-004 | Dialog- und Dropdown-Verhalten | `@plane/cdk` (`DialogDismissal`, `[plOutsideClick]`), Portal-Schicht (§3.9) | I0 |
 | CE-UIX-005, -008 | Tab-Reihenfolge, ungespeicherte Änderungen | §3.6, `ReloadConfirmationService` + `canDeactivate` (§3.9) | I1 |
 | CE-UIX-006 | Browser-Storage | §3.15 | I1 |
 | CE-UIX-007 | Zwischenablage, CSV | `@plane/utils` 1:1, `export-to-csv` (§3.9) | I1 |
@@ -1179,7 +1187,7 @@ Die Routen-Tabellen §4.1–§4.3 ordnen die **Screen**-CE-IDs zu. Die folgende 
 | CE-I18N-005…-008 | Themes, No-Flash, Custom, High Contrast | §3.8, §5.1 | I0/I1 |
 | CE-I18N-009…-011, -023, -024 | Farb-Token, Editor-Palette, Typografie, Animationen, Maßsystem | `libs/shared/tailwind-config`, `libs/shared/propel/styles`, `libs/shared/editor/styles` (CSS 1:1, D09) | I0 |
 | CE-I18N-012 | Gebündelte Schriften (Airgap) | `@fontsource*` über `styles.css`, Preload §5.1 | I0 |
-| CE-I18N-013…-015, -018 | Icon-System, Status-/Datei-Icons, Empty-State-Illustrationen, theme-abhängige Assets | `tools/icons-codegen`, `libs/shared/blocks/{icons,empty-state}`, `theme-assets.ts` (§3.8) | I0…I2 |
+| CE-I18N-013…-015, -018 | Icon-System, Status-/Datei-Icons, Empty-State-Illustrationen, theme-abhängige Assets | `tools/propel-port/port-icons.mjs` (+ `port-illustrations.mjs`), `libs/shared/blocks/{icons,empty-state}`, `theme-assets.ts` (§3.8) | I0…I2 |
 | CE-I18N-016, -017 | Logo-Picker (Emoji, Lucide, Material), Emoji-Reaktionen | §3.9, D08-ADR-20 | I1/I2 |
 | CE-I18N-019…-021, -025 | Propel-Komponenten, Blocks-Composites, Toasts, Avatare/Farbwähler | `libs/shared/{propel,blocks}` (D09), Toast-Viewport §3.2 Nr. 8 | I0…I3 |
 | CE-I18N-022 | Charts | §3.9 Charts, D08-ADR-18 | I3 |
@@ -1223,11 +1231,12 @@ Die Skelette legen Namen, Signaturen und Semantik fest; Implementierungsdetails 
   <link rel="preload" href="media/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
   <script>
     (function () {
-      var THEMES = ["light", "dark", "light-contrast", "dark-contrast", "custom"]; // admin/space: ["light","dark"]
+      // Quelle: libs/shared/theme/src/inline-script.ts (ABG-028); Theme-Liste der App wird hier NICHT geprüft:
+      // ein ungültiger gespeicherter Wert bleibt unverändert als data-theme stehen, ohne color-scheme (next-themes 0.4.6, ABG-031)
       var d = document.documentElement;
       var stored = null;
       try { stored = localStorage.getItem("theme"); } catch (e) {}
-      var theme = stored && (stored === "system" || THEMES.indexOf(stored) !== -1) ? stored : "system";
+      var theme = stored || "system";
       var resolved = theme === "system"
         ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
         : theme;
@@ -1694,6 +1703,7 @@ export class TranslatePipe implements PipeTransform {
 | `ADMIN_ROUTE_EXTENSIONS` (`libs/admin/extensions`) | Multi `RouteExtension<'ADM_HOME' \| 'ADM_DASHBOARD'>` | keine | Admin-`ROUTES`-Factory (§6.2) | E3 (`FE/libs/admin/group-sync`, D16), E5 | I0 |
 | `ADMIN_HEADER_SEGMENT_LABELS` (`libs/admin/extensions`) | Token `Record<string,string>` | Inhalt von `ADM/components/common/header/extended.ts` (CE: leer) | Admin-Header-Breadcrumb | E7 (D16 S41) | I0 |
 | `SPACE_ROUTE_EXTENSIONS` (`libs/space/extensions`) | Multi `RouteExtension<'SPC_ROOT' \| 'SPC_ANCHOR'>` | keine | Space-`ROUTES`-Factory (§6.2) | B5 (Publish Views, D16) | I6 |
+| `WORK_ITEM_IDENTIFIER_DECORATORS` | Multi `WorkItemIdentifierDecoratorDefinition` (`key`, `component`, `visible(workItem)`); Rendering per `NgComponentOutlet` ohne Wrapper (ABG-030) | `[]` (kein DOM-Element) | Identifier-Bereich der Work-Item-Zeilen/-Karten: Registry-Ausgang im Original-`div.flex.shrink-0.items-center.space-x-2` vor `IdentifierText` | A1 | I2 |
 | `PROPERTY_RENDERERS` | Multi `PropertyRendererDefinition` | keine (Standard-Properties bleiben eingebaut) | List-/Kanban-Properties (`IssueProperties`), Spreadsheet-Zellen, Peek-/Detail-Sidebar, Issue-Modal, Rich-Filter-Wertauswahl | A1, A2 | I2 |
 | `SPREADSHEET_COLUMNS` | Multi `SpreadsheetColumnDefinition` | keine (Spalten aus `SPREADSHEET_PROPERTY_LIST` eingebaut) | `SpreadsheetHeader`, `SpreadsheetIssueRow`, Display-Properties-Menü | A1 | I2 |
 | `GROUP_BY_OPTIONS` | Multi `GroupByOptionDefinition` (`key`, `serverKey`, `issueField`, `columns(ctx)`, `dragAllowed`) | keine (CE-Optionen aus `ISSUE_GROUP_BY_KEY`/`EIssueGroupByToServerOptions`) | `getGroupByColumns`, Display-Dropdown, `ISSUE_GROUP_BY_KEY`-Lookup (Fallback auf Registry) | A1, B1 (`team_project`) | I2 |
@@ -1708,10 +1718,10 @@ export class TranslatePipe implements PipeTransform {
 | `ACTIVITY_RENDERERS` | Multi `ActivityRendererDefinition` (`field`/`verb` → Komponente) | CE-Abbildung aller `field`-Werte (A09 §2.15) | Activity-Feed | F2 (Branch/Commit/PR), A1, C1 | I2 |
 | `WORKFLOW_GUARD` | Token (`workflowDisabledSource`, `isWorkflowDropDisabled`, `getIsWorkflowWorkItemCreationDisabled`, `handleWorkFlowState`, `allowedStateIds(ctx)`) | Stub aus `WEB/components/workflow/use-workflow-drag-n-drop.ts` (alles erlaubt) | `list-group`, `kanban/default`, `kanban-group`, `swimlanes`, `StateSelect` | C1 (nicht gewählt) | I2 |
 | `BULK_OPERATIONS_ENABLED` | Token `boolean` | `false` | Multiple-Select-Leiste | (A-Paket Bulk Ops) | I2 |
-| `PERMISSION_EVALUATOR` | Token `PermissionEvaluatorFn` (kein Multi, Name wie 05 §3.13.8) | `roleBasedEvaluator` (Logik `BaseUserPermissionStore.allowPermissions`/`getProjectRole`/`hasPageAccess`, Zahlenvergleich wie Original) | `PermissionService.allowPermissions(...)` (einzige Prüf-API in Komponenten) | E5, B1 | I0 |
+| `PERMISSION_EVALUATOR` | Token `PermissionEvaluatorFn` (kein Multi, Name wie 05 §3.13.8; deklariert in `frontend/libs/web/core/permissions/` mit `factory: () => roleBasedEvaluator`, Kontexttyp `PermissionCheck` inkl. `teamspaceId?` – ABG-055) | `roleBasedEvaluator` (Logik `BaseUserPermissionStore.allowPermissions`/`getProjectRole`/`hasPageAccess`, Zahlenvergleich wie Original) | `PermissionService.allowPermissions(...)` (einzige Prüf-API in Komponenten) | E5, B1 | I0 |
 | `SCOPE_LEVELS` | Token `readonly ScopeLevel[]` | `['workspace','project']` | `PermissionService`, `RouterStore`-Scope-Ableitung | B1 (`teamspace`), A2 | I0 |
 | `ROLE_OPTIONS` | Token `RoleOptionDefinition[]` | Admin 20 / Member 15 / Guest 5 aus `ROLE`/`ROLE_DETAILS` (`PKG/constants/src/workspace.ts`) | Rollen-Dropdowns in Mitglieder-/Einladungs-Formularen (Workspace, Projekt) | E5 | I1 |
-| `MEMBER_ROW_DECORATORS` | Multi `MemberRowDecoratorDefinition` (`key`, `component`, `visible(member)`) | keine | Mitgliederzeilen Workspace-/Projekt-Settings | E3 | I1 |
+| `MEMBER_ROW_DECORATORS` | Multi `MemberRowDecoratorDefinition` (`key`, `component`, `visible(member)`); Rendering per `NgComponentOutlet` ohne Wrapper (ABG-030) | `[]` (kein DOM-Element) | Mitgliederzeilen Workspace-/Projekt-Settings, hinter der Rollen-Spalte | E3 | I1 |
 | `LIVE_EVENT_HANDLERS` | Multi `LiveEventHandler` (`eventType`, `handle(evt)`) | CE ab I5: Notification-Zähler | `LiveEventsService` | H6, F2 | I0 / I5 |
 | `POWER_K_COMMANDS` | Multi `TPowerKCommandConfig[]` | CE-Befehle aus `power-k/config/**` | `PowerKCommandRegistry` | alle | I5 |
 | `SEARCH_RESULT_RENDERERS` | Multi (`entityType` → Komponente) | CE-Typen der globalen Suche | Power-K-Suchseite | B6, G1 | I5 |
@@ -1720,7 +1730,7 @@ export class TranslatePipe implements PipeTransform {
 | `PAGE_STORES` | Multi (`EPageStoreType` → Store-Token) | `PROJECT → ProjectPageStore` | `usePageStore`-Ersatz `injectPageStore(type)` | D1 (Workspace-/Wiki-Pages), B1 (Teamspace-Pages) | I4 |
 | `PAGE_TREE` | Token `PageHierarchyClient` (`getChildren`, `getAncestors`) | flach (`parent_id` immer `null`) | Page-Liste, Breadcrumb | D2 | I4 |
 | `FAVORITE_ENTITY_RENDERERS` | Multi (`entity_type` → Icon/Titel/Link) | CE-Typen (`project`, `cycle`, `module`, `view`, `page`, `folder`) | Favoriten-Sidebar | D1, B1 | I1 |
-| `DUPLICATE_DETECTION` | Token Funktion `(title, projectId) => Signal<TDeDupeIssue[]>` | liefert `[]` | Issue-Modal | G1 (nicht gewählt) | I2 |
+| `DUPLICATE_DETECTION` | Token `DuplicateDetectionFn` = `(input: { workspaceSlug?: string; workspaceId?: string; projectId?: string; formData: { name?: string; description_html?: string; issueId?: string } }) => Signal<TDeDupeIssue[]>` (ABG-057) | liefert `signal([])` | Issue-Modal | G1 (nicht gewählt) | I2 |
 | `INTEGRATION_LINK_PREVIEWS` | Multi (`urlPattern` → Vorschau-Komponente) | keine | Link-Widget, Editor-Link-Hover | F1, F2 | I2 |
 
 ### 6.2 `ROUTE_EXTENSIONS` – Mechanik (Ersatz `routes/extended.ts` + `mergeRoutes`)
@@ -1774,7 +1784,7 @@ Ein Paket ersetzt einen Store, indem es eine Unterklasse mit **zusätzlichen** F
 
 | Paket | Andockstelle im Angular-Fundament (CE-Pflicht) | ab |
 |---|---|---|
-| **A1** Work-Item-Types & Custom Properties | `PROPERTY_RENDERERS`, `SPREADSHEET_COLUMNS`, `GROUP_BY_OPTIONS`, `FILTER_FIELDS`, `ISSUE_MODAL_CONTEXT`, `WORK_ITEM_PROPERTIES_LOADER`, `ACTIVITY_RENDERERS`, `SETTINGS_PAGES` (Projekt); Typ-Feld `type_id` ist in `TIssue` (`PKG/types/src/issues/issue.ts`) bereits vorhanden und wird in allen Formularen/Payloads durchgereicht (nie entfernt); `IssueTypeSwitcher` zeigt in CE nur den Identifier | I2 |
+| **A1** Work-Item-Types & Custom Properties | `PROPERTY_RENDERERS`, `SPREADSHEET_COLUMNS`, `GROUP_BY_OPTIONS`, `FILTER_FIELDS`, `ISSUE_MODAL_CONTEXT`, `WORK_ITEM_PROPERTIES_LOADER`, `ACTIVITY_RENDERERS`, `SETTINGS_PAGES` (Projekt), `WORK_ITEM_IDENTIFIER_DECORATORS` (Identifier, ABG-030); Typ-Feld `type_id` ist in `TIssue` (`PKG/types/src/issues/issue.ts`) bereits vorhanden und wird in allen Formularen/Payloads durchgereicht (nie entfernt); `IssueTypeSwitcher` zeigt in CE nur den Identifier | I2 |
 | **A2** Workspace-Types, Hierarchie, Roll-ups | wie A1; `PropertyRendererDefinition.scope?: ScopeLevel` (Feld vorhanden, CE ignoriert); `SCOPE_LEVELS` | I2 |
 | **A9** Relationen & Abhängigkeiten | `RELATION_TYPES` (Relationstypen nie als Literal-Union im UI-Code vergleichen, nur über Registry), `TIMELINE_FLAGS`, Gantt-Dependency-Layer als leerer `<ng-container>`-Slot `ganttDependencyLayer` im Chart-Template | I2 |
 | **A17** Governance States/Labels | Komponenten lesen States/Labels **nur** über `StateStore`-/`LabelStore`-Getter (`getStateById`, `getProjectStates`, `getProjectStateIds`, `getProjectLabels`, `getLabelById`, `workspaceStates`, `workspaceLabels`) – Lint-Regel verbietet Zugriff auf `stateMap`/`labelMap` außerhalb der Stores; Settings-Seiten über `SETTINGS_PAGES` (Workspace-Kategorie) | I1 |
@@ -1784,7 +1794,7 @@ Ein Paket ersetzt einen Store, indem es eine Unterklasse mit **zusätzlichen** F
 | **C3** Automation-Engine (nicht gewählt) | Frontend: nur `SETTINGS_PAGES` und `ACTIVITY_RENDERERS` (Automation-Aktor in Activity); keine weitere Andockstelle nötig (Event-Katalog serverseitig) | I1 / I2 |
 | **D1** Wiki & Collections | `ROUTE_EXTENSIONS` (`LWS`), `APP_RAIL_ENABLED`, `SIDEBAR_ITEMS`, `PAGE_STORES` (Workspace-Pages), `WorkspacePathsService.isWikiPath`, Editor-Tokens; Page-Komponenten erhalten den Store über `injectPageStore(type)` statt fest `ProjectPageStore` | I4 |
 | **D2** Nested Pages | `PAGE_TREE`, `PAGE_FLAGS.isMovePageEnabled`, `ExtendedBasePage.asJSONExtended`, Realtime-Event `affectedPages` wird im `RealtimePageEventsService` durchgereicht (CE ignoriert) | I4 |
-| **E3** IdP Group Sync | Frontend: `ADMIN_SETTINGS_PAGES`; Mitglieder-Listen zeigen Rollen aus API unverändert (Badge „synced“ dockt über `MEMBER_ROW_DECORATORS` an – Multi-Token, CE leer) | I1 |
+| **E3** IdP Group Sync | Frontend: `ADMIN_SETTINGS_PAGES`; Mitglieder-Listen zeigen Rollen aus API unverändert (Badge „synced“ dockt über `MEMBER_ROW_DECORATORS` an – Multi-Token hinter der Rollen-Spalte, CE-Default `[]`, ABG-030) | I1 |
 | **E5** Rollenmodell | `PERMISSION_EVALUATOR`, `PermissionService` als **einzige** Rechteprüfung (Lint-Regel: keine Vergleiche mit `EUserPermissions`/Rollenzahlen außerhalb `libs/web/core/permissions`), Rollen-Dropdowns lesen Rollenliste aus `ROLE_OPTIONS`-Token (CE: Admin/Member/Guest aus `ROLE`-Konstanten), `SETTINGS_PAGES` | I0 |
 | **F1** Integrations-Framework | `SETTINGS_PAGES` (Workspace „Integrations“), `WORK_ITEM_DETAIL_WIDGETS`, `INTEGRATION_LINK_PREVIEWS`, `ACTIVITY_RENDERERS`, `ROUTE_EXTENSIONS` (OAuth-Callback-Seiten unter `LWSET`) | I2 |
 | **F2** Forgejo | wie F1 + `WORK_ITEM_ACTIONS`, `LIVE_EVENT_HANDLERS` (PR-/Check-Status), Profil-Tab „Verbundene Konten“ über `SETTINGS_PAGES` (Scope `profile`) | I2 |
@@ -1826,11 +1836,36 @@ export interface ExtensionContext { workspaceSlug?: string; projectId?: string; 
 export const SIDEBAR_ITEMS = new InjectionToken<SidebarItemDefinition[][]>('SIDEBAR_ITEMS');
 export const SETTINGS_PAGES = new InjectionToken<SettingsPageDefinition[][]>('SETTINGS_PAGES');
 export const PROPERTY_RENDERERS = new InjectionToken<PropertyRendererDefinition[][]>('PROPERTY_RENDERERS');
-export type PermissionEvaluatorFn = (ctx: PermissionCheck) => boolean;   // PermissionCheck: { allowed: EUserPermissions[]; level: EUserPermissionsLevel; workspaceRole?: EUserPermissions; projectRole?: EUserPermissions; workspaceSlug?: string; projectId?: string }
-export const PERMISSION_EVALUATOR = new InjectionToken<PermissionEvaluatorFn>('PERMISSION_EVALUATOR');
 export const ROLE_OPTIONS = new InjectionToken<RoleOptionDefinition[]>('ROLE_OPTIONS');           // { value: number; i18nLabel: string; scope: 'workspace' | 'project' }
-export const MEMBER_ROW_DECORATORS = new InjectionToken<MemberRowDecoratorDefinition[][]>('MEMBER_ROW_DECORATORS');
+
+// Decorator-Slots (ABG-030): Rendering per NgComponentOutlet ohne Wrapper; CE-Default [] → kein DOM-Element
+export interface MemberRowDecoratorDefinition { key: string; component: Type<unknown>; visible?: (member: IWorkspaceMember | IProjectMember) => boolean; }
+export interface WorkItemIdentifierDecoratorDefinition { key: string; component: Type<unknown>; visible?: (workItem: TIssue) => boolean; }
+export const MEMBER_ROW_DECORATORS = new InjectionToken<MemberRowDecoratorDefinition[][]>('MEMBER_ROW_DECORATORS');                    // E3, ab I1, hinter der Rollen-Spalte
+export const WORK_ITEM_IDENTIFIER_DECORATORS = new InjectionToken<WorkItemIdentifierDecoratorDefinition[][]>('WORK_ITEM_IDENTIFIER_DECORATORS'); // A1, ab I2, vor IdentifierText
+
+// Duplikaterkennung (ABG-057); CE-Default: () => signal([])
+export type DuplicateDetectionFn = (input: {
+  workspaceSlug?: string; workspaceId?: string; projectId?: string;
+  formData: { name?: string; description_html?: string; issueId?: string };
+}) => Signal<TDeDupeIssue[]>;
+export const DUPLICATE_DETECTION = new InjectionToken<DuplicateDetectionFn>('DUPLICATE_DETECTION');
 // … alle weiteren Tokens aus §6.1 analog; je Token ein Lese-Helfer injectRegistry(TOKEN) → flach + sortiert
+```
+
+```ts
+// libs/web/core/permissions/ (ABG-055) – Rechteprüfung, von E5/B1 austauschbar
+export interface PermissionCheck {
+  allowed: EUserPermissions[];
+  level: EUserPermissionsLevel;
+  workspaceRole?: EUserPermissions;
+  projectRole?: EUserPermissions;
+  workspaceSlug?: string;
+  projectId?: string;
+  teamspaceId?: string;
+}
+export type PermissionEvaluatorFn = (ctx: PermissionCheck) => boolean;
+export const PERMISSION_EVALUATOR = new InjectionToken<PermissionEvaluatorFn>('PERMISSION_EVALUATOR', { factory: () => roleBasedEvaluator });
 ```
 
 **Tests der Andockstellen (Pflicht, 01 P7):** je Token ein Test „CE-Default liefert Original-Verhalten“ (z. B. Sidebar mit CE-Registry = DOM-Snapshot des Originals) und ein Test „Fake-Erweiterung erscheint an der richtigen Stelle“ (z. B. Fake-Route unter `LPRJ` vor `:param`-Kindern, Fake-Settings-Seite mit Rechteprüfung, Fake-Property-Renderer in Spreadsheet-Spalte).
@@ -1863,14 +1898,14 @@ Die Teststrategie insgesamt (Ebenen L0–L8, Gates G0–G6, Dual-Target-E2E, Vis
 | AK-D08-17 | Interceptor-Kette §3.5.2: Reihenfolge fest; 401-Redirect nur in web und nicht auf `/`; Upload-Requests ohne Credentials; `AbortSignal` bricht laufende Requests ab (kein veralteter Response überschreibt Store-Daten); Admin-Step-up nur bei 401 + 5210; die 5 Fälle aus `PKG/services/src/helpers/url.test.ts` bestehen unverändert | `libs/web/core/http/*.spec.ts`, `libs/shared/services/src/helpers/url.interceptor.spec.ts`, `libs/admin/core/http/admin-step-up.interceptor.spec.ts` | I0 |
 | AK-D08-18 | Formulare: Validierungsmeldungen wörtlich (inkl. i18n-Keys), `dirtyFields` → `getChangedIssuefields` liefert dieselben Payloads wie das Original, Reset-Zeitpunkte gleich (Projektwechsel im Issue-Modal); Tab-Reihenfolge der Formulare gleich Original (CE-UIX-005) | Komponenten-Tests je Formular (L2); `web/uix/ui-crosscutting.spec.ts` (Abschnitt Tab-Reihenfolge) (L7) | I0 / I1 |
 | AK-D08-19 | i18n: Schlüsselmenge je Locale identisch zum Original (G-I18N); Sprachwechsel aktualisiert alle sichtbaren Texte ohne Neuladen; ICU-Plural-Ausgaben für `en`, `de`, `ru`, `pl`, `ja`, `ua` (Sonderregel en-US) identisch zur Original-i18next-Ausgabe für 50 Schlüssel × 5 Zahlenwerte; fehlender Schlüssel → Fallback `en` | `tools/i18n-sync-check --ci`, `translation.service.spec.ts` (Golden aus Original), `web/i18n/language-timezone.spec.ts` | I0 / I1 (CE-I18N-001, CE-I18N-002) |
-| AK-D08-20 | Kein Theme-Flash: für `light`, `dark`, `light-contrast`, `dark-contrast`, `custom`, `system` (hell/dunkel emuliert) und einen ungültigen Wert trägt `<html>` beim ersten Paint bereits das korrekte `data-theme` (und `color-scheme` nur bei `light`/`dark`); der CSP-Hash in `theme-script.sha256` entspricht dem ausgelieferten Script | `web/i18n/themes.spec.ts` (Abschnitt No-Flash) (Prüfung per `MutationObserver` im Init-Script + `PerformanceObserver('paint')`), `tools/ci/csp-hash-check.mjs` | I0 (CE-I18N-005) |
+| AK-D08-20 | Kein Theme-Flash: für `light`, `dark`, `light-contrast`, `dark-contrast`, `custom`, `system` (hell/dunkel emuliert) trägt `<html>` beim ersten Paint bereits das korrekte `data-theme` (und `color-scheme` nur bei `light`/`dark`); bei ungültigem Wert trägt `<html>` `data-theme` = gespeicherter Wert unverändert, ohne `color-scheme` (wie next-themes 0.4.6, ABG-031); der CSP-Hash in `theme-script.sha256` entspricht dem ausgelieferten Script | `web/i18n/themes.spec.ts` (Abschnitt No-Flash) (Prüfung per `MutationObserver` im Init-Script + `PerformanceObserver('paint')`), `tools/ci/csp-hash-check.mjs` | I0 (CE-I18N-005) |
 | AK-D08-21 | Theme-Persistenz, Custom Theme und High Contrast: Server-Sync einmal je Sitzung, Wechsel lädt neu (Parität), Visual-Diff ≤ 0,5 % für 5 Leitseiten je Theme | `theme.service.spec.ts`, `visual/web/themes.visual.ts` | I1 (CE-I18N-006, -007, -008) |
 | AK-D08-22 | DnD (S4): Kanban 1 000 Karten in 8 Spalten ≥ 55 fps beim Drag; Sort-Order-Ergebnisse (oben/unten/zwischen, 65535/Mittelwert), Gantt-Verschiebung (±1000) und Sidebar-Reorder (±10000) identisch zum Original; State- und Label-DnD (CE-PRJ-025, CE-PRJ-030) | `libs/shared/dnd/**/*.spec.ts`, `work-items-core` Sort-Order-Tests, `web/layouts/kanban.spec.ts`, Perf-Trace LT-15 (D15 §3.12) | I1 / I2 |
 | AK-D08-23 | Virtualisierung: List-Layout mit 10 000 Items – erste Gruppenzeilen < 1,5 s nach API-Antwort, Scrollen ≥ 55 fps (Median), JS-Heap < 300 MB (LT-14); kein Layout-Sprung beim Ersetzen von Platzhaltern (CLS beim Scrollen < 0,05) | Perf-Trace-Helfer (D15 §3.16 I2) | I2 (CE-LV-044) |
 | AK-D08-24 | Layouts: List, Kanban (Swimlanes, Löschzone), Spreadsheet (Sortierung über Spaltenkopf, Tastaturnavigation, Mehrfachauswahl, Sprung zu Sub-Items), Calendar (Drag auf Tag), Gantt (Verschieben, Dauer, Datum setzen, Sidebar-Reorder) – Dual-Target-E2E grün, Visual-Diff ≤ 0,5 % | `web/layouts/*.spec.ts`, `visual/web/layouts/*.visual.ts` | I2 (CE-LV-020 … CE-LV-037) |
 | AK-D08-25 | Command-Palette: DOM-Attribute (`cmdk-root`, `cmdk-input`, `cmdk-list`, `cmdk-group`, `cmdk-group-heading`, `cmdk-item`, `data-selected`, `aria-selected`, `data-disabled`) identisch zum Original; das Ranking des `command-score`-Ports liefert für 50 Suchbegriffe × Befehlsliste die gleiche Reihenfolge wie cmdk 1.1.1 | `command-score.spec.ts` (Golden aus cmdk), Galerie-DOM-Snapshot `pl-command` | I5 (CE-SRCH-004 … CE-SRCH-008) |
 | AK-D08-26 | Shortcuts: jede Sequenz und jeder Modifier aus §3.10 löst denselben Befehl aus wie im Original; in Eingabefeldern (`isTypingInInput`) keine Auslösung; Badges mit Mac-/Nicht-Mac-Glyphen | `shortcut-handler.spec.ts` (Port, unveränderte Erwartungen), `web/search/power-k.spec.ts` (Abschnitt Shortcuts) | I5 (CE-SRCH-009) |
-| AK-D08-27 | Emoji-/Icon-/Logo-Picker: DOM-Snapshot = Original-Galerie; Suche liefert für 30 Begriffe dieselben Treffer in derselben Reihenfolge wie frimousse 0.3; 0 Requests an CDNs | `emoji-icon-picker.spec.ts` (inkl. Port der Original-Tests §7.5), Galerie | I2 (CE-I18N-016, CE-I18N-017, CE-WI-038) |
+| AK-D08-27 | Emoji-/Icon-/Logo-Picker: DOM-Snapshot = Referenz-Galerie (`tools/reference-gallery`, ABG-008); Suche liefert für 30 Begriffe dieselben Treffer in derselben Reihenfolge wie frimousse 0.3; 0 Requests an CDNs | `emoji-icon-picker.spec.ts` (inkl. Port der Original-Tests §7.5), Galerie | I2 (CE-I18N-016, CE-I18N-017, CE-WI-038) |
 | AK-D08-28 | Date-Picker: Klassenvertrag Propel-`calendar` (D08-ADR-21), Wochenstart aus Profil, Format `MMM dd, yyyy`; die 20 Fälle aus `date-select.test.tsx` bestehen | `date-select.spec.ts` | I2 |
 | AK-D08-29 | Charts (S6): Visual-Diff ≤ 0,5 % hell/dunkel, SVG-Struktur gleich (Pfaddaten auf 1 Dezimalstelle), Tooltip-/Legenden-Hover wie Original | `visual/gallery/charts.visual.ts`, `visual/web/analytics.visual.ts` | I3 (CE-I18N-022), I5 (CE-ANA-001, -002, -008) |
 | AK-D08-30 | Runtime-Config: Änderung von `*_base_url`/`*_base_path`, `website_url`, `support_email`, `external_links_enabled` wirkt nach Gateway-Neustart **ohne Rebuild**; mit `admin_base_path=/admin/` ist der God Mode vollständig bedienbar (Assets, Routing, Login-Rücksprung) | `Plane.AppHost.Tests` (Profil `test` mit Variante) + `apps/e2e/routing/runtime-config.spec.ts` | I0 (CE-OPS-007) |
@@ -1879,7 +1914,7 @@ Die Teststrategie insgesamt (Ebenen L0–L8, Gates G0–G6, Dual-Target-E2E, Vis
 | AK-D08-33 | Browser-Storage: nach dem Referenz-Szenario (Login, Sidebar zuklappen, Filter setzen, Layout wechseln, Theme wechseln, Sprache wechseln) sind Schlüsselmenge und Werteformate in `localStorage` identisch zum Original | `web/uix/ui-crosscutting.spec.ts` (Abschnitt LocalStorage, Dual-Target, Dump-Diff) | I1 / I2 (CE-UIX-006) |
 | AK-D08-34 | Realtime Pages: der unveränderte `@hocuspocus/provider` 2.15.2 verbindet sich mit `Plane.Realtime`; zwei Browser-Kontexte konvergieren; bei Verbindungsverlust greift der REST-Fallback (`PageFallbackService`) | `web/realtime/collaboration.spec.ts` (D15 §3.9.2) | I4 (CE-RT-001 … CE-RT-009) |
 | AK-D08-35 | Live-Events: Notification-Zähler aktualisiert sich ohne Reload < 2 s nach dem Ereignis; nach Neustart des Hubs verbindet der Client automatisch neu; Transport ausschließlich WebSockets | `web/notifications/inbox.spec.ts` (Abschnitt Live-Zähler), `live-events.service.spec.ts` | I5 |
-| AK-D08-36 | Erweiterungspunkte: je Token aus §6.1 ein Test „CE-Default = Original-Verhalten“ und ein Test „Fake-Erweiterung erscheint an der richtigen Stelle“; CE-Code (`apps/*`, `libs/web/*` außer Paket-Libs) importiert keine Paket-Lib | `libs/web/extensions/**/*.spec.ts`, Test-Provider `provideFakeExtensions()` (`libs/web/extensions/testing/`), Sheriff | I0 ff. (je Token ab „ab“) |
+| AK-D08-36 | Erweiterungspunkte: je Token aus §6.1 ein Test „CE-Default = Original-Verhalten“ und ein Test „Fake-Erweiterung erscheint an der richtigen Stelle“; CE-Code (`apps/*`, `libs/web/*` außer Paket-Libs) importiert keine Paket-Lib | `libs/web/extensions/**/*.spec.ts`, Test-Provider (ABG-032, ein Provider je Registry-Satz): `provideFakeExtensions(config?: FakeExtensionConfig)` (`libs/web/extensions/testing/`), `provideFakeAdminExtensions(config?)` (`libs/admin/extensions/testing/`), `provideFakeSpaceExtensions(config?)` (`libs/space/extensions/testing/`); `config` erlaubt gezielte Einträge (z. B. `{ propertyRenderers: [TEST_PROPERTY_RENDERER] }`) und `{ mode: 'empty' }` (Neutralitätstest), ohne `config` je Token ein Standard-Fake; Sheriff | I0 ff. (je Token ab „ab“) |
 | AK-D08-37 | Keine Plan-/Upsell-Bezeichner (01 §7.18, ADR-001): Templates, Stores und Konstanten enthalten keine Upgrade-/Billing-Elemente; `WORKSPACE_SETTINGS` ohne `billing-and-plans` | L0-Scan `tools/ci/no-plan-identifiers.mjs` (gemeinsam mit Backend, D15 L0) | I0 |
 | AK-D08-38 | Library-Mapping: jede Zeile §4.8 hat einen Status (`übernommen`/`ersetzt`/`entfällt`); Lizenz-Gate grün (Laufzeit: MIT, Apache-2.0, BSD, ISC; Dev zusätzlich MPL-2.0); `NOTICE` listet alle Laufzeitpakete | Lizenz-Gate (D15 L0), `tools/ci/notice-check.mjs` | I0 |
 | AK-D08-39 | Abdeckung: ≥ 80 % Zeilen je Frontend-Lib, Diff-Coverage ≥ 90 % je PR | `@vitest/coverage-v8` (D15-ADR-19) | I0 ff. |
@@ -2061,6 +2096,7 @@ Die Fallzahlen sind per `it(`/`test(`-Zählung ermittelt; maßgeblich ist die Le
 | `no-test-ids` | keine neuen `data-testid`-Attribute in Templates | D15 §3.9.1 (DOM-Parität) | I0 |
 | `no-component-styles` | keine `styles`/`styleUrl(s)` in `@Component`, `encapsulation: ViewEncapsulation.None` Pflicht in `libs/shared/{propel,blocks}` | D09-ADR-03 | I0 |
 | `no-zone-apis` | kein Import von `NgZone`, `zone.js`, `ApplicationRef.tick` | D08-ADR-23 | I0 |
+| `no-cdk-overlay` | Import von `@angular/cdk/overlay` verboten; Angular CDK nur für a11y (FocusTrap, LiveAnnouncer, InteractivityChecker); Overlays über die Portal-Schicht `libs/shared/propel/headless/portal.ts` + `@floating-ui/dom` | ABG-026, 09 D09-ADR-10/-11, H-01 | I0 |
 | `no-external-urls` | keine `http(s)://`-Literale in Code und Templates außer Allow-List (`external-links.allow.json`, nur `href`) | ADR-004 | I0 |
 | `no-plan-identifiers` | Bezeichner/i18n-Keys mit `upgrade`, `billing`, `plan`, `subscription`, `is_paid`, `trial` in neuen Dateien verboten (Allow-List für kopierte Locales) | ADR-001, 01 §7.18 | I0 |
 | Sheriff (`@softarc/eslint-plugin-sheriff`) | Tags und Matrix §3.1.5 | D08-ADR-02 | I0 |
@@ -2107,7 +2143,7 @@ Ein Arbeitspaket mit Frontend-Anteil (Schnitttyp „V“ oder „F“ aus D15) i
 
 | Inkrement | Muss fertig sein (Frontend) |
 |---|---|
-| I0 | Vitest-Projekte (`shared-node`, `shared-dom`, `web`, `admin`, `space`, `browser`), `setup.dom.ts`, `determinism.ts`, Routing-Katalog + beide Läufer + `route-contract-check`, `store-parity-check`, `tools/contract-check`, `tools/ci/verbatim-copy-check.mjs` (R-D08-01), `@plane/eslint-rules` (alle Regeln §7.6 mit `ab I0`), Forbidden-Deps-, Airgap-, CSP-Hash-, NOTICE-Prüfung, Galerie-Gerüst `apps/gallery` + `tools/original-gallery` (Referenz-Screenshots aus dem Original, D15), Unterbefehl `issue-store` in `tools/golden/generate.mjs`, `provideFakeExtensions()`, Wrapper-Doubles (`libs/web/core/wrappers/testing`) |
+| I0 | Vitest-Projekte (`shared-node`, `shared-dom`, `web`, `admin`, `space`, `browser`), `setup.dom.ts`, `determinism.ts`, Routing-Katalog + beide Läufer + `route-contract-check`, `store-parity-check`, `tools/contract-check`, `tools/ci/verbatim-copy-check.mjs` (R-D08-01), `@plane/eslint-rules` (alle Regeln §7.6 mit `ab I0`), Forbidden-Deps-, Airgap-, CSP-Hash-, NOTICE-Prüfung, Galerie-Gerüst `apps/gallery` (`/__gallery/`) + `tools/reference-gallery` (Referenz-Screenshots aus dem Original, Vite-`base: '/__gallery/'`, gemeinsame Stories `tools/gallery-stories/*.stories.json`, ABG-008), Unterbefehl `issue-store` in `tools/golden/generate.mjs`, `provideFakeExtensions()` (+ `provideFakeAdminExtensions()`, `provideFakeSpaceExtensions()`, ABG-032), Wrapper-Doubles (`libs/web/core/wrappers/testing`) |
 | I1 | `local-storage-parity`-Treiber, Formular-Testhelfer (`fillPlForm`), Theme-Visuals, Regeln `no-direct-entity-map-access` |
 | I2 | Golden-Fixtures `issue-store`, Render-Zähler-Helfer, DnD-Helfer (Pointer-Sequenzen für pragmatic-dnd in Playwright), Perf-Trace-Helfer, Regel `no-relation-literal-union` |
 | I3 | Chart-Galerie-Einträge mit festen Datensätzen |
@@ -2127,7 +2163,7 @@ Ein Arbeitspaket mit Frontend-Anteil (Schnitttyp „V“ oder „F“ aus D15) i
 | R-D08-02 | `DeepState` (Versions-Signal) rendert zu grob oder verfehlt Änderungen bei Mutation von Blättern außerhalb der Schreib-API | mittel / hoch | Schreiben nur über `set/update/unset` (Regel `no-external-store-mutation`), `select(path)`-Memoisierung mit `Object.is`, Render-Granularitäts-Test AK-D08-14, LT-14; Fallback: `DeepState` je Gruppe in `EntityMap` aufteilen (Store-API bleibt) |
 | R-D08-03 | Zoneless: Drittbibliotheken (pragmatic-dnd, floating-ui, Tiptap/ProseMirror, `@hocuspocus/provider`, SignalR) melden Änderungen über Callbacks, die keine Signale schreiben → fehlendes Rendering | mittel / mittel | Callback-Werte ausschließlich in Signale schreiben (Direktiven-Muster §5.12), Komponenten-Felder ohne Signal sind in OnPush-Komponenten per Lint-Regel `prefer-signals` (angular-eslint) markiert; Browser-Tests (Vitest-Browser-Modus) für DnD und Overlays |
 | R-D08-04 | Impure Pipe `t` in großen Listen (Spreadsheet 100 Zeilen × 20 Spalten) kostet Renderzeit | mittel / mittel | Pipe cached je `(key, JSON(params), locale)`; Messung in LT-14; Fallback: pure Pipe mit Locale-Argument (`{{ key \| t: params : locale() }}`) per Codemod |
-| R-D08-05 | DOM-Parität durch Angular-Host-Elemente gefährdet (zusätzliche Elemente, CSS-Selektoren wie `>`/`:first-child` greifen nicht) | hoch / mittel | D09-ADR-03 (Attribut-Selektoren, `display: contents`), DOM-Paritäts-Treiber packt `contents`-Hosts aus, Gate „Host-Element sichtbar“ (AK-D08-41); CSS-Paritäts-Diff (`tools/css-parity`) |
+| R-D08-05 | DOM-Parität durch Angular-Host-Elemente gefährdet (zusätzliche Elemente, CSS-Selektoren wie `>`/`:first-child` greifen nicht) | hoch / mittel | D09-ADR-03 (Attribut-Selektoren, `display: contents`), DOM-Paritäts-Treiber packt `contents`-Hosts aus, Gate „Host-Element sichtbar“ (AK-D08-41); CSS-Paritäts-Diff (`tools/visual/css-diff.ts`, 09 §3.2.5) |
 | R-D08-06 | Nachbauten von cmdk, frimousse, react-day-picker, recharts und react-dropzone weichen in Randfällen ab (Ranking, Tastatur, Fehlercodes) | mittel / mittel | Golden-Tests gegen die Original-Bibliotheken (Ranking AK-D08-25, Emoji-Suche AK-D08-27, `date-select` 20 Fälle, Dropzone-Fehlercodes), Galerie-DOM-Snapshots |
 | R-D08-07 | `QueryCache` weicht in Zeitverhalten von SWR 2.4.2 ab (Fokus-Revalidierung, Dedupe) → andere Request-Folgen, Flackern | mittel / mittel | Request-Sequenz-Vergleich mit dem Original (AK-D08-15); Fake-Timer-Tests je Merkmal; Implementierung folgt SWR-Quelltext 2.4.2 (MIT) Funktion für Funktion |
 | R-D08-08 | Kopierte Original-Quellen (`types`, `constants`, `utils`, Store-Code) kompilieren unter TypeScript 6.0/Angular-22-Strict nicht ohne Änderungen (O-10) | mittel / niedrig | S0: mechanische Korrekturliste; `verbatim-copy-check` erlaubt nur gelistete Abweichungen |
@@ -2145,20 +2181,20 @@ Ein Arbeitspaket mit Frontend-Anteil (Schnitttyp „V“ oder „F“ aus D15) i
 | Nr. | Offener Punkt | Empfehlung | Entscheidung bis |
 |---|---|---|---|
 | O-D08-01 | Signal Forms: Name der Template-Direktive und Kompatibilität mit `FormValueControl` an Propel-Komponenten (D08-ADR-13 ⚠) | angular.dev (stabile API) nennt `FormField` mit Template-Bindung `[formField]` (in frühen v21-Ständen `[field]`/`[control]`) und `FormValueControl` „stable since 22.0“; S0 baut ein Formular (Create-Workspace) mit `[plFormField]` gegen die installierte 22.x-Version und bestätigt Namen/Verhalten; bei Rot Fallback Reactive Forms | Ende S0 |
-| O-D08-02 | Version von `emojibase-data` (D08-ADR-20 ⚠): frimousse 0.3.0 deklariert keine Abhängigkeit, lädt die Daten zur Laufzeit vom CDN | `emojibase-data` **15.3.2** pinnen (im Original-Lockfile bereits über `@tiptap/extension-emoji` vorhanden → Editor und Picker nutzen dieselben Daten); in S0 per frimousse-Quelltext prüfen, welche Version/Locale-Datei der Picker abruft, und bei Abweichung diese pinnen | Ende S0 |
+| O-D08-02 | **entschieden (ABG-029, Restpunkt Z-04 in 17):** Version von `emojibase-data` (D08-ADR-20): frimousse 0.3.0 deklariert keine Abhängigkeit, lädt die Daten zur Laufzeit vom CDN | `emojibase-data` **15.3.2** pinnen (im Original-Lockfile bereits über `@tiptap/extension-emoji` vorhanden → Editor und Picker nutzen dieselben Daten); in S0 per frimousse-Quelltext prüfen, welche Version/Locale-Datei der Picker abruft, und bei Abweichung diese pinnen. Verbindlich nach ABG-029: genau eine gepinnte Version für Editor und Picker unter `assets/emojibase/<version>/<locale>/`, Kandidat 15.3.2, endgültige Festlegung beim ersten `capture-reference`-Lauf (17 Z-04); die Referenzaufnahme liefert dieselbe Version per `page.route` aus | Ende S0 / erster `capture-reference`-Lauf (Z-04) |
 | O-D08-03 | ~~Feldname des Auto-Redirect-Schalters in `GET /api/instances/` (§3.3.5)~~ **erledigt** | 05 §4.4 führt `config.is_oidc_auto_redirect_enabled` (aus `Plane:Auth:AutoRedirect`, Default `true`) | – |
-| O-D08-04 | 05 §3.13.8 benennt Frontend-„Guards“ `authGuard`, `workspaceAccessGuard`, `projectAccessGuard`; dieses Dokument legt Wrapper-Komponenten mit In-Place-Zuständen fest (D08-ADR-12) | 05 an D08-ADR-12 angleichen (Wrapper-Komponenten `AuthenticationWrapperComponent`, `WorkspaceAuthWrapperComponent`, `ProjectAuthWrapperComponent`); funktionale Guards nur für Redirect-/Legacy-Fälle (§3.3.5) | Start I0 |
+| O-D08-04 | **erledigt (ABG-020):** 05 §3.13.8 benannte Frontend-„Guards“ `authGuard`, `workspaceAccessGuard`, `projectAccessGuard`; dieses Dokument legt Wrapper-Komponenten mit In-Place-Zuständen fest (D08-ADR-12) | 05 an D08-ADR-12 angleichen (Wrapper-Komponenten `AuthenticationWrapperComponent`, `WorkspaceAuthWrapperComponent`, `ProjectAuthWrapperComponent`); funktionale Guards nur für Redirect-/Legacy-Fälle (§3.3.5). Verbindlich nach ABG-020: Wrapper-Komponenten in `frontend/libs/web/core/wrappers/` (`pl-authentication-wrapper`, `input pageType`); funktionale Guards nur für Redirect-Routen, Legacy-Loader-Redirects (`canActivate` mit `UrlTree`) und Splat-Matcher; 05 wird angeglichen | erledigt |
 | O-D08-05 | Bundle-Budget-Zahlen (§3.1.2) sind Schätzwerte | in S0 gegen den Original-Build (`build/client` von web/admin/space) messen und ± 10 % festschreiben | Ende S0 |
 | O-D08-06 | `jsdom`-Major für den Angular-Vitest-Runner (§4.8.3 ⚠) | die vom `@angular/build:unit-test` 22.x getestete Major pinnen; abweichende Original-Version 23.2.0 nicht erzwingen | Ende S0 |
 | O-D08-07 | Editor-Flag `collaboration-cursor`: im Original-CE abgeschaltet (`use-editor-flagging.ts`), nach ADR-001 („alles aktiv“) einschaltbar | aktivieren, sobald S1 Awareness grün ist; sichtbare Abweichung als `FE-ED-01` dokumentieren und vom Auftraggeber abnehmen lassen | Ende I4 |
 | O-D08-08 | Datumsdarstellung bleibt englisch (Original, §3.7) – CE-I18N-003 erwartet „Datums- und Zeitdarstellung“ ohne Lokalisierung? | wie Original (englisch, `en-US`); Lokalisierung wäre neue Funktion und gehört nicht in die CE-Parität | Ende I1 (Abnahme Fachseite) |
 | O-D08-09 | Nachladeverhalten bei `app_version`-Wechsel (§3.11): Vollnavigation bei nächster Router-Navigation vs. Hinweis-Toast | Vollnavigation ohne Toast (kein Original-Vorbild für einen Toast, keine neuen Texte); D14 bestätigt Rolling-Update-Verhalten | Start I0 |
-| O-D08-10 | Galerie (`apps/gallery`) nur in Test-Builds – wird sie im Release-Image ausgeliefert? | nein; eigenes Build-Target `gallery`, nur im CI-Profil `test` vom Gateway unter `/__gallery/` ausgeliefert (D15 §3.2) | Start I0 |
+| O-D08-10 | Galerie (`apps/gallery`) nur in Test-Builds – wird sie im Release-Image ausgeliefert? | nein; eigenes Build-Target `gallery`, nur im CI-Profil `test` vom Gateway unter `/__gallery/` ausgeliefert (D15 §3.2, Route G-17, `<base href="/__gallery/">`; bestätigt durch ABG-008) | Start I0 |
 | O-D08-11 | Firefox/WebKit: D09-ADR-17 gated Visuals erst ab I7, D15 nennt Galerie-Projekte für alle drei Browser | Galerie in allen drei Browsern ab I0 **ausführen**, aber nur Chromium gaten; Firefox/WebKit-Gate ab I7 | Start I0 |
 | O-D08-12 | Ablage der Lint-Regeln (`@plane/eslint-rules`) und Abgrenzung zu den gemeinsamen L0-Prüfungen (Plan-Bezeichner, externe URLs) aus D15 | Frontend-Regeln in `FE/tools/eslint-rules/`, Repo-weite Scans in `tools/ci/` (D15 §3.2); Regeln `no-plan-identifiers`/`no-external-urls` sind ESLint-Varianten derselben Allow-Lists | Start I0 |
 | O-D08-13 | Space-Login für Kommentare/Reaktionen/Votes: Rücksprung auf Board inkl. Peek-Query (FE-AUTH-02) erfordert, dass `next_path`-Validierung im Backend Query erlaubt | 05 bestätigt Query-Erhalt in `next_path`-Validierung (Same-Origin-Pfad + Query, kein Schema/Host) | Ende S7 |
-| O-D08-14 | Wert `n` für `max_age` beim Admin-Step-up (§3.5.2): 05 D05-ADR-11 nennt `max_age=<n>`, legt aber keine Quelle im Frontend fest (der 401-Körper enthält nur `error_code`/`error_message`) | `max_age=0` senden (OIDC: frische Authentisierung, erfüllt jede Schwelle, kein neues Konfigurationsfeld); alternativ liefert 05 den Wert als `config.admin_step_up_max_age_seconds` in `GET /api/instances/` | Start I6 |
-| O-D08-15 | Admin-App in I0: D08 §1.3/§4.2 baut Einstieg, Dashboard-Layout und `general` (CE-INST-010…-013, -015, -017) in I0, D15 ordnet `admin/admin-shell.spec.ts` (CE-INST-008…-016) und `admin/admin-settings.spec.ts` (CE-INST-017) erst I6 zu | I0 liefert nur den Einstieg (Login/Auto-Redirect, `NO_ADMIN_ROLE`, Erst-Einrichtung) und eine lauffähige `general`-Seite als Walking-Skeleton-Schnitt; die Abnahme-Specs bleiben I6 (D15). D15 ergänzt einen I0-Abschnitt `@I0` in `admin/instance-setup.spec.ts` für Einstieg + `general` | Start I0 |
+| O-D08-14 | **entschieden (ABG-021):** Wert `n` für `max_age` beim Admin-Step-up (§3.5.2): 05 D05-ADR-11 nennt `max_age=<n>`, legt aber keine Quelle im Frontend fest (der 401-Körper enthält nur `error_code`/`error_message`) | `max_age=0` senden (OIDC: frische Authentisierung, erfüllt jede Schwelle, kein neues Konfigurationsfeld); Verbindlich nach ABG-021: immer `max_age=0`, kein neues Konfigurationsfeld; N-01 akzeptiert `max_age` ≥ 0 und reicht `0` an Keycloak durch; die Alternative `config.admin_step_up_max_age_seconds` entfällt | entschieden |
+| O-D08-15 | **entschieden (ABG-024):** Admin-App in I0: D08 §1.3/§4.2 baut Einstieg, Dashboard-Layout und `general` (CE-INST-010…-013, -015, -017) in I0, D15 ordnet `admin/admin-shell.spec.ts` (CE-INST-008…-016) und `admin/admin-settings.spec.ts` (CE-INST-017) erst I6 zu | I0 liefert nur den Einstieg (Login/Auto-Redirect, `NO_ADMIN_ROLE`, Erst-Einrichtung) und eine lauffähige `general`-Seite als Walking-Skeleton-Schnitt; die Abnahme-Specs bleiben I6 (D15). D15 ergänzt einen I0-Abschnitt `@I0` in `frontend/apps/e2e/admin/instance-setup.spec.ts` für Einstieg + `general`; `admin/admin-shell.spec.ts` (CE-INST-008…-016) und `admin/admin-settings.spec.ts` (CE-INST-017…) bleiben Abnahme in I6 (ABG-024) | entschieden |
 
 ---
 
@@ -2178,7 +2214,7 @@ Ein Arbeitspaket mit Frontend-Anteil (Schnitttyp „V“ oder „F“ aus D15) i
 | `10-editor-angular.md` | nutzt | Andockstellen `EDITOR_EXTENSIONS`, `EDITOR_BLOCKS`, `EDITOR_MENTION_TYPES`, `EDITOR_FLAGS` (CE-Default §6.1), `PAGE_PANE_EXTENSIONS`; Einbindung Lite-Editor (I2) und Rich/Document-Editor (I4) | Editor-Lib `libs/shared/editor` mit Schema-Freeze, NodeViews (S5), Kapselung des Collaboration-Providers |
 | `11-suche-und-ai-basis.md` | nutzt | Power-K-Frontend (`libs/web/power-k`, `POWER_K_COMMANDS`, `SEARCH_RESULT_RENDERERS`), `DUPLICATE_DETECTION`-Token (CE `[]`) | Such-Endpunkte und Ergebnisformate der globalen Suche/Power-K; AI-Endpunkte des Editors (CE-AI, I6) |
 | `12-…`, `13-…` | – (in 01 Anhang A nicht vergeben) | – | – |
-| `14-infrastruktur-deployment-betrieb.md` | Vertragspartner | Dev-Server-Skripte (`ng serve <app> --port ${PORT}`), Base-Pfade und Output-Ordner (§3.1.2), Runtime-Config-Felder (§3.11), Cache-Erwartungen, `<base href>`-Ersatzfähigkeit (keine absoluten Asset-URLs), Reload bei `app_version`-Wechsel, `theme-script.sha256` für die CSP; **kein** `sw.js` (E19) – die Header-Regel für `sw.js` in D14 AK-14-07 ist damit gegenstandslos | Gateway liefert `runtime-config.json` (`no-cache`) und SPA-Fallback je App, ersetzt `<base href>` bei geänderten Pfaden, setzt CSP mit Script-Hash, liefert OG-Meta für Space (I6), übernimmt Dist-Ordner in `wwwroot` (D14-ADR-07) |
+| `14-infrastruktur-deployment-betrieb.md` | Vertragspartner | Dev-Server-Skripte (`ng serve <app> --port ${PORT}`, Ports 4200/4201/4202, Gateway :3000 – ABG-015), Base-Pfade und Output-Ordner (§3.1.2), Runtime-Config-Felder (§3.11), Cache-Erwartungen, `<base href>`-Ersatzfähigkeit (keine absoluten Asset-URLs), Reload bei `app_version`-Wechsel, `theme-script.sha256` für die CSP; **kein** `sw.js` (E19) – die Header-Regel für `sw.js` in D14 AK-14-07 ist damit gegenstandslos | Gateway liefert `runtime-config.json` (`no-cache`) und SPA-Fallback je App, ersetzt `<base href>` bei geänderten Pfaden, setzt CSP mit Script-Hash, liefert OG-Meta für Space (I6), übernimmt Dist-Ordner in `wwwroot` (D14-ADR-07) |
 | `15-teststrategie-qualitaet-paritaet.md` | nutzt/liefert | Akzeptanzkriterien §7.1, Routing-Katalog §7.2, Store-Paritätsprüfung §7.3, Lint-Regeln §7.6, `FE-*`-Abweichungen §7.7, DoD-Ergänzung §7.8 | Testebenen, Vitest-Konfiguration (§3.8), Dual-Target-E2E (§3.9), Visual-Schwellen und DOM-Paritäts-Treiber (§3.10), Parity-Seed, Ledger, Gates G0–G6 |
 | `16-erweiterungspunkte-bezahl-features.md` | liefert | Frontend-Andockstellen §6 (Tokens in `libs/web/extensions`, `libs/admin/extensions`, `libs/space/extensions`, CE-Defaults, Pflichttests, Paketzuordnung §6.4); Port der in D16-ADR-15 gelisteten `extended.ts`-Dateien 1:1 mit gleichem Pfad | Paket-Skizzen je Welle W1 … W9 auf Basis dieser Tokens; keine Rückwirkung auf CE-Komponenten (neue Andockstellen nur per Änderung dieses Dokuments) |
 | `migration/plan/01-roadmap-ce.md`, `migration/plan/_data/wp-ce.json` | nutzt | Inkrement-Zuordnung §1.3, Spalte „Ink.“ in §4.1–§4.6, Testinfrastruktur §7.9 | Arbeitspakete je vertikalem Schnitt (I0: Shell + Login, Workspace anlegen, Projekt anlegen) mit Referenz auf die Routen-/Store-Zeilen dieses Dokuments |
@@ -2219,7 +2255,7 @@ Ein Arbeitspaket mit Frontend-Anteil (Schnitttyp „V“ oder „F“ aus D15) i
 | 14 | §4.8.1 | `recharts` (W, B) fehlte im Library-Mapping (einzige fehlende Laufzeitabhängigkeit) | Zeile ergänzt |
 | 15 | §6, §6.1, §6.2, §3.1.1/§3.1.3/§3.1.5 | `ADMIN_SETTINGS_PAGES` und Admin-/Space-Routenschlüssel lagen in `libs/web/extensions` – für Admin/Space nicht importierbar (01 §6.3); D16 dockt E3 in `FE/libs/admin/group-sync` an | `libs/admin/extensions`, `libs/space/extensions` (+ Tokens `ADMIN_ROUTE_EXTENSIONS`, `ADMIN_HEADER_SEGMENT_LABELS`, `SPACE_ROUTE_EXTENSIONS`), Mechanik generisch in `@plane/cdk/extensions`, Sheriff-Regel für `domain:extensions` |
 | 16 | §6 Einleitung | „CE-Code wird nicht geändert“ widersprach D16-ADR-15 (Original-`extended.ts`-Dateien sind additiv änderbar) | Ausnahme mit Verweis aufgenommen |
-| 17 | §3.1.1, §7.3, AK-D08-12, §7.9 | Werkzeugpfade `FE/tools/golden-ui`, `tools/ci/parity/pin.env` existieren in D15 nicht | `tools/golden/generate.mjs issue-store` (D15-ADR-08), `tools/parity/original.env` (`ORIGINAL_SHA`), `FE/tools/{original-gallery,css-parity,eslint-rules,store-parity-check,route-contract-check}` im Baum |
+| 17 | §3.1.1, §7.3, AK-D08-12, §7.9 | Werkzeugpfade `FE/tools/golden-ui`, `tools/ci/parity/pin.env` existieren in D15 nicht | `tools/golden/generate.mjs issue-store` (D15-ADR-08), `tools/parity/original.env` (`ORIGINAL_SHA`), `FE/tools/{reference-gallery,css-parity,eslint-rules,store-parity-check,route-contract-check}` im Baum (Name `original-gallery` → `reference-gallery` nach ABG-008) |
 | 18 | §4.2 R1 | Admin-Home zeigte immer Button; 05 verlangt Auto-Redirect ohne `error_code` | angeglichen |
 | 19 | neu §4.10 | Querschnitts-CE-IDs ohne eigene Route (CE-UIX-001…-013, CE-I18N-*, Shell-IDs CE-WS-005/-014…-023, CE-PRJ-011…-013, CE-AUTH-022…-025 u. a.) waren nicht zugeordnet | Zuordnungstabelle + Liste der bewusst nicht frontend-relevanten IDs |
 | 20 | §8.2 | – | neu O-D08-14 (Step-up `n`), O-D08-15 (Admin-Umfang I0 vs. D15) |
@@ -2233,9 +2269,32 @@ Ein Arbeitspaket mit Frontend-Anteil (Schnitttyp „V“ oder „F“ aus D15) i
 
 ### Verbleibende Punkte (nicht im Dokument lösbar)
 
-- 05 §3.13.8 benennt weiterhin funktionale Guards (`authGuard`, `workspaceAccessGuard`, `projectAccessGuard`) statt Wrapper-Komponenten (O-D08-04).
-- 05 legt die Quelle des Step-up-Werts `n` im Frontend nicht fest (O-D08-14).
-- D15 ordnet die Admin-Shell/General-Specs I6 zu, D08 baut den Admin-Einstieg in I0 (O-D08-15).
+- ~~05 §3.13.8 benennt weiterhin funktionale Guards statt Wrapper-Komponenten (O-D08-04)~~ – entschieden durch ABG-020 (Wrapper-Komponenten), Angleichung in 05.
+- ~~05 legt die Quelle des Step-up-Werts `n` im Frontend nicht fest (O-D08-14)~~ – entschieden durch ABG-021 (`n = 0` verbindlich).
+- ~~D15 ordnet die Admin-Shell/General-Specs I6 zu, D08 baut den Admin-Einstieg in I0 (O-D08-15)~~ – entschieden durch ABG-024 (`@I0`-Abschnitt in `admin/instance-setup.spec.ts`, Abnahme-Specs I6).
 - 01 §6.4 kennt nur `libs/web/extensions`; die Admin-/Space-Token-Libs müssen in 01 nachgetragen werden.
-- Bundle-Budgets, `emojibase-data`-Version und `jsdom`-Major bleiben S0-Messpunkte (O-D08-02, -05, -06).
+- Bundle-Budgets und `jsdom`-Major bleiben S0-Messpunkte (O-D08-05, -06); die `emojibase-data`-Version ist nach ABG-029 geregelt, endgültig beim ersten `capture-reference`-Lauf (17 Z-04, O-D08-02).
 
+
+## Abgleich-Protokoll (Dokument 17)
+
+Umgesetzt sind die verbindlichen Entscheidungen aus `17-abgleich-dokumentuebergreifend.md` / `_data/17-abgleich.json`, deren `targets` dieses Dokument nennen (Stand 23.10.2026):
+
+| ABG-ID | Umgesetzt in | Änderung |
+|---|---|---|
+| ABG-004 | §4.8.4 | `@playwright/test` 1.5x → **1.64.x** (gleiche Minor wie `Microsoft.Playwright`, Image `mcr.microsoft.com/playwright:v1.64.1-noble`) |
+| ABG-007 | §3.1.1-Baum, §4.8.4 | `vitest.workspace.ts` → `vitest.config.ts` (`test.projects`); `@vitest/browser-playwright` 4.1.x (MIT, Dev) ergänzt |
+| ABG-008 | §3.1.1-Baum, §7.1 AK-D08-27, §7.9 I0, §8.2 O-D08-10, Review Nr. 17 | `tools/original-gallery` → `tools/reference-gallery` (Vite-`base: '/__gallery/'`), `tools/gallery-stories/*.stories.json` ergänzt, Angular-Galerie `<base href="/__gallery/">` nur Profil `test` |
+| ABG-015 | §3.1.2, §9 (D14-Zeile) | Dev-Ports 3000/3001/3002 → 4200/4201/4202 (`--serve-path`, `127.0.0.1`, nur `dev`); Hinweis „Aufruf immer über Gateway `http://localhost:3000`“ |
+| ABG-016 | §3.1.2, §3.8 (CSP-Zeile) | „Gateway setzt CSP nach 05 D05-ADR-23; Inline-Script per Hash“, Report-Only ab I0 / Enforce ab I7, `Plane:Gateway:Csp:Mode`; `subresourceIntegrity: false` bleibt |
+| ABG-020 | §8.2 O-D08-04, Verbleibende Punkte | O-D08-04 als erledigt markiert (Wrapper-Komponenten in `libs/web/core/wrappers/`) |
+| ABG-021 | §3.5.2 Nr. 6, §8.2 O-D08-14, Verbleibende Punkte | Interimshinweis entfernt, `max_age=0` verbindlich; O-D08-14 entschieden |
+| ABG-024 | §8.2 O-D08-15, Verbleibende Punkte | O-D08-15 entschieden (`@I0`-Abschnitt in `frontend/apps/e2e/admin/instance-setup.spec.ts`) |
+| ABG-026 | §3.9 Overlays, §4.8.1 (`@base-ui/react`), §4.10 CE-UIX-004, §7.6 | CDK Overlay → Portal-Schicht `PRP/headless/portal.ts` (09 H-01); Lint-Regel `no-cdk-overlay` ergänzt |
+| ABG-028 | §3.1.1-Baum, §3.8, §5.1 | `ThemeService`/Inline-Script/Asset-Helfer in `libs/shared/theme/src/`; „Admin/Space eigene Instanz“ → „gleicher Dienst, Theme-Liste per Token“ |
+| ABG-029 | D08-ADR-20, §3.1.2, §4.8.1, §4.8.4, §8.2 O-D08-02, Verbleibende Punkte | Pfad `assets/emojibase/<version>/<locale>/`; „Version wie frimousse 0.3 ⚠“ → „gepinnt nach ABG-029“; O-D08-02 verweist auf ABG-029/Z-04 |
+| ABG-030 | §6.1, §6.4 (A1, E3), §6.5 | `WORK_ITEM_IDENTIFIER_DECORATORS` (A1, I2) neu, `MEMBER_ROW_DECORATORS` (E3, I1) präzisiert; CE-Default `[]`, `NgComponentOutlet` ohne Wrapper |
+| ABG-031 | §3.8, §5.1, §7.1 AK-D08-20 | ungültiger `localStorage.theme`-Wert bleibt unverändert als `data-theme`, ohne `color-scheme` (wie next-themes 0.4.6) |
+| ABG-032 | §3.1.1-Baum, §7.1 AK-D08-36, §7.9 I0 | `provideFakeExtensions(config?: FakeExtensionConfig)` + `provideFakeAdminExtensions`/`provideFakeSpaceExtensions`; `libs/admin/extensions/testing`, `libs/space/extensions/testing` im Baum |
+| ABG-055 | §6.1, §6.5 | `PermissionCheck` mit `teamspaceId?`; `PERMISSION_EVALUATOR` mit `factory: () => roleBasedEvaluator` in `libs/web/core/permissions/` |
+| ABG-057 | §6.1, §6.5 | `DUPLICATE_DETECTION`-Signatur → `DuplicateDetectionFn` (CE-Default `signal([])`) |

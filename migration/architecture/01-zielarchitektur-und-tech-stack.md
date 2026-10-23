@@ -39,7 +39,7 @@ Die Zielplattform ist ein **modularer Monolith in .NET 10** mit fünf schlanken 
 |---|---|---|
 | `Plane.Api` | ASP.NET Core Minimal APIs für alle HTTP-Verträge (`/api/`, `/api/v1/`, `/api/public/`, `/api/instances/`, `/auth/`); OIDC-BFF gegen Keycloak; Session-Cookie | `api` (Django/DRF) |
 | `Plane.Worker` | Outbox-Dispatcher, Job-Queue-Runner, Cron-Scheduler (Leader per PostgreSQL-Advisory-Lock), E-Mail, Webhooks, Exporte, Cleanup | `worker`, `beat-worker`, `plane-mq` |
-| `Plane.Realtime` | `/live/`: Hocuspocus-kompatibler Yjs-Server auf **YDotNet**, SignalR-Hub für Live-Events (H6), `convert-document`, `pdf-export`, `health` | `live` (Node/Hocuspocus) |
+| `Plane.Realtime` | `/live/`: Hocuspocus-kompatibler Yjs-Server auf **YDotNet**, SignalR-Hub für Live-Events (H6, Modul `Plane.RealtimeEvents`), `convert-document`, `pdf-export`, `health` | `live` (Node/Hocuspocus) |
 | `Plane.Gateway` | YARP-Reverse-Proxy mit identischen Pfadregeln, Auslieferung der drei Angular-Builds, OG-Meta-Templating für Space, Body-Limit, Security-Header | `proxy` (Caddy), `web`/`admin`/`space`-Container |
 | `Plane.Migrator` | EF-Core-Migrationen, Seeds, Instanz-Initialisierung, Bucket-Anlage (Aspire: `WaitForCompletion`) | `migrator` |
 | Angular `web`, `admin`, `space` | 1:1-Port der React-SPAs (CSR, zoneless, Signals), statisch ausgeliefert | `apps/web`, `apps/admin`, `apps/space` |
@@ -89,7 +89,7 @@ Diese Andockstellen werden **in der CE gebaut** (Contract + CE-Default-Implement
 | **A2** Workspace-Types, Hierarchie, Roll-ups | Typ-/Property-Scope als `ScopeRef` (Workspace\|Teamspace\|Project), keine Projekt-Pflicht in `work_item_types` | `Plane.BuildingBlocks` (`ScopeRef`), `Plane.Data` | I2 |
 | **A9** Relationen & Abhängigkeiten | Relationstyp-**Katalog** `work_item_relation_types` (Seed: `blocked_by`/`blocking`, `relates_to`, `duplicate`, `start_before`/`start_after`, `finish_before`/`finish_after`, `implemented_by`/`implements` – Werte aus `API/db/models/issue.py` `IssueRelationChoices`) statt Enum; Relationen projektübergreifend im Schema zulässig | `Plane.WorkItems` | I2 |
 | **A17** Workspace-Governance States/Labels | States und Labels mit `ScopeRef`; Auflösung über `IStateCatalog`/`ILabelCatalog` (Signaturen §5.5; CE: nur Projekt-Scope); alle Module (WorkItems, Intake, Cycles, Forgejo-Mapping) lesen States/Labels **nur** über diese Interfaces | `Plane.Projects.Contracts` | I1 |
-| **B1** Teamspaces | Sichtbarkeitsebene `ScopeLevel.Teamspace` in `ScopeRef`, `IScopeResolver` (Signatur §5.5), Permission-Scopes inkl. Teamspace, nullable `teamspace_id` an Views/Pages/Kommentaren im Schema vorgesehen, Router-Store-Feld `teamspaceId` (existiert im Original) | `Plane.BuildingBlocks`, `Plane.Authorization`, `Plane.Teamspaces.Contracts` (Platzhalter) | I1 |
+| **B1** Teamspaces | Sichtbarkeitsebene `ScopeLevel.Teamspace` in `ScopeRef`, `IScopeResolver` (Signatur §5.5), Permission-Scopes inkl. Teamspace, nullable `teamspace_id` an Views/Pages/Kommentaren im Schema vorgesehen, Router-Store-Feld `teamspaceId` (existiert im Original) | `Plane.BuildingBlocks`, `Plane.Authorization`, `Plane.Teamspaces.Contracts` (Platzhalter) | I0 (`ScopeRef`, `IScopeResolver`, `RouterStore.teamspaceId`), I1 (Schema-Vorhalte `teamspace_id`) (ABG-058) |
 | **B6** Erweiterte Filter/PQL | Filter-AST (`FilterExpression`: And/Or/Not/Condition mit Operator-Katalog) ist **die** Abfragesprache der CE (CE-LV-006); PQL wird später nur ein weiterer Parser auf denselben AST; `ISearchProvider` | `Plane.WorkItems` (Query-Engine), `Plane.Platform.Search` | I2 |
 | **C1** Workflows (nicht gewählt) | Zentrale **State-Change-Pipeline** `IWorkItemStateChanger` mit `IStateTransitionGuard`/`IStateTransitionHook`; jeder State-Wechsel (UI, API, Intake, Cycle-Transfer, Auto-Close, Forgejo) läuft hindurch | `Plane.WorkItems` | I2 |
 | **C3** Automation-Engine (nicht gewählt) | Versionierter **Event-Katalog** (`plane.<aggregate>.<event>.v1`) + transaktionale Outbox + `IEventConsumer`-Registrierung + `IRecurringJobRegistry` | `Plane.BuildingBlocks.Messaging`, `*.Contracts/Events` | I0 |
@@ -101,7 +101,7 @@ Diese Andockstellen werden **in der CE gebaut** (Contract + CE-Default-Implement
 | **F2** Forgejo | Forgejo-Container + Keycloak-Client in AppHost (Dev/Test), Client-Platzhalter `Plane.Forgejo.Client` (in der CE nur Interface `IForgejoClient` + DTOs, Regel R10), Activity-Typen für Branch/Commit/PR im Activity-Katalog reserviert | `Plane.Forgejo` (Platzhalter), AppHost | I0 |
 | **G1** AI-Basis (nicht gewählt) | Indexierungs-Pipeline als `IEventConsumer` (`search_documents` mit `tsvector`), `vector`-Extension per Migration aktiviert, `IEmbeddingGenerator<string, Embedding<float>>` (Microsoft.Extensions.AI) mit Null-Provider registriert | `Plane.Platform.Search`, `Plane.Platform.Ai` | I5 |
 | **H1** OAuth-App-Plattform | Authentifizierungs-Schemata als Policy-Scheme (`Cookie` \| `ApiKey` \| `Bearer`), Bearer = Keycloak-JWT (Audience `plane-api`) vorkonfiguriert und per Option deaktiviert; `PlanePrincipal` kennt `Kind = User\|ApiKey\|App\|Bot`; `users.is_bot` (Original-Feld) | `Plane.Identity`, `Plane.BuildingBlocks` (`PlanePrincipal`), `Plane.BuildingBlocks.Web` (Schemata) | I0 |
-| **H6** Realtime-Event-Server | SignalR-Hub `/live/events/` in `Plane.Realtime`, Gruppen `ws:{id}`, `project:{id}`, `user:{id}`; Outbox-Consumer `RealtimeFanOutConsumer` hinter `IRealtimePublisher` (Signatur §5.5); Frontend `LiveEventsService` | `Plane.RealtimeEvents`, `libs/web/core/live-events` | I0 (Hub), I5 (erste Nutzung) |
+| **H6** Realtime-Event-Server | SignalR-Hub `/live/events/` im Modul `Plane.RealtimeEvents` (+ `Plane.RealtimeEvents.Contracts`), gehostet im Host `Plane.Realtime` (ABG-058), Gruppen `ws:{id}`, `project:{id}`, `user:{id}`; Outbox-Consumer `RealtimeFanOutConsumer` hinter `IRealtimePublisher` (Signatur §5.5); Frontend `LiveEventsService` | `Plane.RealtimeEvents`, `libs/web/core/live-events` | I0 (Hub), I5 (erste Nutzung) |
 
 ---
 
@@ -138,13 +138,13 @@ Spalte „Paket + Version“: Paket-ID wie in `Directory.Packages.props` bzw. np
 | ADR-032 | Bildverarbeitung | **SkiaSharp** (EXIF-Rotation, Flatten auf Weiß, Resize „fit inside“ 1200 px, JPEG 85 – Parameter aus `A12` §2.29) | ImageSharp (Six-Labors-Split-License mit Umsatzschwelle); Magick.NET (Apache-2.0, großes Native-Paket); NetVips (libvips LGPL) | Permissiv, plattformübergreifende Native-Assets, ausreichend für PDF-Pipeline und Metadaten | MIT | `SkiaSharp` 3.119.x, `SkiaSharp.NativeAssets.Linux.NoDependencies` 3.119.x (SkiaSharp 4.15x ist inzwischen stabil, MIT; Wechsel nach S3-Ergebnis zulässig) | I4 |
 | ADR-033 | Reverse Proxy | **`Plane.Gateway` mit YARP**: Pfadregeln identisch `A01` §2.8.1 (inkl. 301 `/spaces`→`/spaces/`, `/god-mode`→`/god-mode/`), WebSocket-Proxy für `/live/`, Bucket-Route mit Original-Host-Header (SigV4), Body-Limit `FILE_SIZE_LIMIT` → 413-JSON, Security-Header, Static-Hosting der Angular-Builds mit SPA-Fallback, Runtime-Config-Auslieferung, OG-Meta-Templating für `/spaces/issues/{anchor}`; TLS per Betreiber-Zertifikat (Kestrel), ACME optional über vorgeschalteten Caddy/Ingress | Caddy beibehalten; nginx; Aspire `AddYarp` (ohne eigene Logik) | Ein .NET-Dienst ersetzt drei Frontend-Container + Proxy; OG-Meta ohne Node-SSR | MIT | `Yarp.ReverseProxy` 2.3.x (2.3.0 aktuell stabil) | I0 |
 | ADR-034 | Rate Limiting | **`Microsoft.AspNetCore.RateLimiting`** mit Policies 1:1 zu `A01` §2.15/`A06` §2.9 (Schlüssel, Raten, `n/period`-Format der ENV-Werte), verteilt über Valkey wenn konfiguriert; 429-Körper `{"error_code": 5900, "error_message": "RATE_LIMIT_EXCEEDED"}`, Header `X-RateLimit-Remaining`/`X-RateLimit-Reset` für `/api/v1/` und `Retry-After` | Nur Gateway-Limit; AspNetCoreRateLimit (gepflegt, aber veraltet) | Framework-Standard, korrekte Client-IP über `ForwardedHeadersOptions` | MIT | Framework; `RedisRateLimiting.AspNetCore` 1.2.x (verteilt, optional) | I1 |
-| ADR-035 | Observability | **OpenTelemetry** (Logs, Traces, Metriken) über `Plane.ServiceDefaults`, Export nur an konfigurierten OTLP-Endpunkt (Default: keiner; Dev: Aspire-Dashboard; Prod optional Aspire-Dashboard-Container), JSON-Console-Logs mit Kategorien analog Original (`plane.api.request`, `plane.worker`, `plane.exception`), Health `/health/live`, `/health/ready` + Original-Health `GET /` und `/live/health/` | Serilog; Scout APM (Original); externe SaaS | Keine Telemetrie nach außen (ADR-004), Standard-Tooling | Apache-2.0 | `OpenTelemetry.Extensions.Hosting` 1.20.x, `OpenTelemetry.Exporter.OpenTelemetryProtocol` 1.20.x, Instrumentation-Pakete AspNetCore/Http/Npgsql | I0 |
+| ADR-035 | Observability | **OpenTelemetry** (Logs, Traces, Metriken) über `Plane.ServiceDefaults`, Export nur an konfigurierten OTLP-Endpunkt (Default: keiner; Dev: Aspire-Dashboard; Prod optional Aspire-Dashboard-Container), JSON-Console-Logs mit Kategorien analog Original (`plane.api.request`, `plane.worker`, `plane.exception`), Health `/health/live`, `/health/ready`, `/health/startup` **nur auf dem Management-Port 8081** (Endpoint `management`, JSON `{"status":…,"checks":{…}}`, kein ProblemDetails; 02 §3.17, ABG-014) + Original-Health `GET /` und `/live/health/` auf dem App-Port | Serilog; Scout APM (Original); externe SaaS | Keine Telemetrie nach außen (ADR-004), Standard-Tooling | Apache-2.0 | `OpenTelemetry.Extensions.Hosting` 1.20.x, `OpenTelemetry.Exporter.OpenTelemetryProtocol` 1.20.x, Instrumentation-Pakete AspNetCore/Http/Npgsql | I0 |
 | ADR-036 | Konfiguration | **Options-Pattern** mit `ValidateOnStart`, ENV-Aliasse für alle Original-Variablen (`A01` §5.6), Instanz-Konfiguration (36 Keys) in DB, geheime Werte mit **ASP.NET Core Data Protection** verschlüsselt (Key-Ring in PostgreSQL, von allen Hosts geteilt); Frontend erhält **Runtime-Config** statt `VITE_*` | `SECRET_KEY`-basierte Eigenverschlüsselung (Fernet-Nachbau) | Betreiber-Schnittstelle (ENV-Namen) bleibt vertraut; Key-Rotation eingebaut | MIT | `Microsoft.AspNetCore.DataProtection.EntityFrameworkCore` 10.0.x | I0 |
-| ADR-037 | Datenzugriff | **EF Core 10 + Npgsql 10**, **ein** `PlaneDbContext` (Modell aus Modul-Konfigurationen), `snake_case`-Namenskonvention, UUIDv7-Schlüssel (`Guid.CreateVersion7()`), **benannte Query-Filter** (`soft_delete`, `workspace_tenant`) – EF-10-Feature, Schreib-Eigentum je Modul per `[OwnedBy]`-Attribut + SaveChanges-Guard, keine generischen Repositories, Read-Replica als zweiter `DbContext`-Pool (`ENABLE_READ_REPLICA`) | Dapper als Primärzugriff; je Modul eigener DbContext; Marten | Ein Modell erlaubt die vielen modulübergreifenden Joins der Work-Item-Listen (Parität/Performance), Eigentumsregel hält Modulgrenzen | MIT / PostgreSQL License / Apache-2.0 | `Microsoft.EntityFrameworkCore` 10.0.x, `Npgsql.EntityFrameworkCore.PostgreSQL` 10.0.x, `EFCore.NamingConventions` 10.0.x (10.0.1 verifiziert), `Aspire.Npgsql.EntityFrameworkCore.PostgreSQL` 13.x | I0 |
+| ADR-037 | Datenzugriff | **EF Core 10 + Npgsql 10**, **ein** `PlaneDbContext` (Modell aus Modul-Konfigurationen), `snake_case`-Namenskonvention, UUIDv7-Schlüssel (`Guid.CreateVersion7()`), **benannte Query-Filter** (`soft_delete`, `workspace_tenant`) – EF-10-Feature, Schreib-Eigentum je Modul per `[OwnedBy]`-Attribut + SaveChanges-Guard, keine generischen Repositories, Read-Replica als zweiter `DbContext`-Typ (`PlaneReadDbContext`, eigene Verbindungszeichenfolge/eigener Npgsql-Verbindungspool, **kein** DbContext-Pooling – Registrierung per `AddDbContext` + `EnrichNpgsqlDbContext`, `AddNpgsqlDbContext<T>()` verboten; 02 D02-ADR-26, ABG-048; Schalter `Plane:Database:ReadReplicaEnabled`, Alias `ENABLE_READ_REPLICA`) | Dapper als Primärzugriff; je Modul eigener DbContext; Marten | Ein Modell erlaubt die vielen modulübergreifenden Joins der Work-Item-Listen (Parität/Performance), Eigentumsregel hält Modulgrenzen | MIT / PostgreSQL License / Apache-2.0 | `Microsoft.EntityFrameworkCore` 10.0.x, `Npgsql.EntityFrameworkCore.PostgreSQL` 10.0.x, `EFCore.NamingConventions` 10.0.x (10.0.1 verifiziert), `Aspire.Npgsql.EntityFrameworkCore.PostgreSQL` 13.x | I0 |
 | ADR-038 | Multi-Tenancy | **Shared Schema, Tenant = Workspace**: jede workspace-gebundene Tabelle trägt `workspace_id`; `IWorkspaceContext` wird pro Request aus `{slug}` (bzw. Projekt/Anchor/API-Key) aufgelöst; benannter Query-Filter `workspace_tenant` als Sicherheitsnetz; Instanz-Ebene ohne Tenant | Schema pro Workspace; Datenbank pro Workspace | Wie Original (Slug-basiert), einfache Migrationen, Querschnitts-Analytics möglich | – | – | I0 |
 | ADR-039 | Frontend-Workspace | **Angular CLI Multi-Project-Workspace** + **pnpm-Workspaces** (Catalog wie Original) + **Sheriff** für Modulgrenzen (Tags/Dependency-Rules) + ESLint/angular-eslint + Prettier; Libraries werden aus dem Quelltext kompiliert (TS-Path-Mappings), keine separaten Lib-Builds | Nx (MIT; zusätzliche Toolchain-Kopplung an Angular-Major); reines Angular CLI ohne Grenzen | Kanonische Toolchain (Angular 22 Default: esbuild, Vitest), Grenzen trotzdem maschinell erzwungen; weniger Werkzeug-Brüche für Agenten | MIT | `@angular/cli` 22.x, `typescript` **6.0.x** (Pflicht: `@angular/build` 22 verlangt `>=6.0 <6.1`; Original nutzt 5.8.3 → übernommene `packages/*`-Quellen müssen unter TS 6.0 kompilieren, Prüfung in S0), `@softarc/sheriff-core` + `@softarc/eslint-plugin-sheriff` 0.20.x, `eslint` 9.x, `angular-eslint` 22.x, `prettier` 3.x | I0 |
 | ADR-040 | State-Management | **Klassenbasierte Signal-Stores** (`@Injectable` Services mit `signal`/`computed`), **strukturgleich** zu jedem MobX-Store (`A08` §2.5.1: gleicher Klassenname, gleiche Felder/Actions/Computeds), Primitive in `libs/shared/state-kit` (`EntityMap` mit feingranularen Signals pro Schlüssel, `LoaderState`, `persisted()` für LocalStorage); Daten-Fetching über `QueryCache` (SWR-Ersatz: Schlüssel, Dedupe, Revalidate-on-Focus) | NgRx SignalStore (funktionaler Stil, weicht von MobX-Klassen ab); NgRx Store/Effects; Akita | 1:1-Portierbarkeit „Datei für Datei“, minimaler Lernaufwand für Agenten; feingranulare Updates für 10k+ Work Items | MIT | `@angular/core` 22.x (Signals, `resource`/`httpResource`) | I0 |
-| ADR-041 | Designsystem-Port | **Tailwind CSS 4.1 + `packages/tailwind-config` + Propel-Styles unverändert**; Port aller Propel-Komponenten/-Elemente und `@plane/blocks` als Angular-Komponenten mit **identischer DOM-Struktur, Klassen, `data-*`- und ARIA-Attributen**; Headless-Verhalten über **Angular Aria** + **Angular CDK** (a11y, Overlay-Basis) und **`@floating-ui/dom`** (gleiche Positionierungslogik wie Base UI); Attribut-Selektoren bzw. `:host{display:contents}` gegen störende Host-Elemente; Icons per Codegen aus `@makeplane/propel@0.7.3`-Icons | Angular Material; PrimeNG; Spartan/Headless-Ports | Pixelgleichheit (ADR-005) nur mit identischem Markup erreichbar; Spike S10 belegt Machbarkeit | MIT | `tailwindcss` 4.1.17, `@tailwindcss/postcss` 4.1.17, `@angular/aria` 22.x, `@angular/cdk` 22.x, `@floating-ui/dom` 1.7.x, `class-variance-authority` 0.7.1, `tailwind-merge` 3.x, `clsx` 2.1.x | I0 |
+| ADR-041 | Designsystem-Port | **Tailwind CSS 4.1 + `packages/tailwind-config` + Propel-Styles unverändert**; Port aller Propel-Komponenten/-Elemente und `@plane/blocks` als Angular-Komponenten mit **identischer DOM-Struktur, Klassen, `data-*`- und ARIA-Attributen**; Headless-Verhalten über **Angular Aria** + **Angular CDK** (nur a11y: FocusTrap, LiveAnnouncer, InteractivityChecker); Overlays über eigene Portal-Schicht (`libs/shared/propel/headless/portal.ts`, Portale an `document.body` wie Base UI) + **`@floating-ui/dom`** (gleiche Positionierungslogik wie Base UI; 09 D09-ADR-10/-11, ABG-026); `@angular/cdk/overlay` verboten (Lint-Regel `no-cdk-overlay`); Attribut-Selektoren bzw. `:host{display:contents}` gegen störende Host-Elemente; Icons per Codegen aus `@makeplane/propel@0.7.3`-Icons | Angular Material; PrimeNG; Spartan/Headless-Ports | Pixelgleichheit (ADR-005) nur mit identischem Markup erreichbar; Spike S10 belegt Machbarkeit | MIT | `tailwindcss` 4.1.17, `@tailwindcss/postcss` 4.1.17, `@angular/aria` 22.x, `@angular/cdk` 22.x, `@floating-ui/dom` 1.7.x, `class-variance-authority` 0.7.1, `tailwind-merge` 3.x, `clsx` 2.1.x | I0 |
 | ADR-042 | Editor | **Tiptap 2.27 (wie Original, Schema-Freeze)**: framework-agnostischer Kern aus `packages/editor` (Extensions, Plugins, Helpers, CSS) wird **als Quelltext übernommen**; React-Teile (NodeViews, Menüs, Hooks) werden in Angular neu gebaut; Angular-Bindung als **vendored, an ngx-tiptap 13 angelehnte Bibliothek** `libs/shared/editor/angular-binding` (`EditorDirective`, `AngularNodeViewRenderer`, `AngularRenderer`); Kollaboration mit `@hocuspocus/provider` 2.15.2, `y-prosemirror`, `y-indexeddb` unverändert; ProseMirror-Pins aus `pnpm-workspace.yaml` (Overrides) übernommen | Tiptap 3 (Schema-/API-Bruch); ngx-tiptap 14 (Tiptap 3); anderer Editor | Identisches Schema = identisches JSON/HTML/Yjs, Golden-Tests übertragbar; Vendoring entkoppelt von Angular-Major-Sprüngen der Fremdbibliothek; npm-Metadaten bestätigen: ngx-tiptap 13.0.0 (07/2025, Peer `@tiptap/core ^2.7.0`, `@angular/core >=20`) ist die **letzte** Tiptap-2-Linie, 14.x/15.x verlangen Tiptap 3 | MIT | `@tiptap/*` 2.27.x/2.22.x (Catalog), `prosemirror-view` 1.42.6, `prosemirror-model` 1.25.12, `yjs` 13.6.x, `y-prosemirror` 1.3.7, `y-protocols` 1.0.6, `y-indexeddb` 9.0.12, `@hocuspocus/provider` 2.15.2 | I2 (Lite), I4 (Rich/Document) |
 | ADR-043 | Drag & Drop | **`@atlaskit/pragmatic-drag-and-drop`** (framework-agnostisch) unverändert wie im Original inkl. `auto-scroll` und `hitbox`; Angular-Direktiven `plDraggable`/`plDropTarget` als dünne Hülle | Angular CDK DragDrop (anderes Verhalten/DOM) | Gleiches Verhalten, gleiche Drop-Indikatoren, Code-Logik aus `WEB/components/issues/issue-layouts/*` portierbar; Spike S4 | Apache-2.0 | `@atlaskit/pragmatic-drag-and-drop` 1.7.4, `…-auto-scroll` 1.4.0, `…-hitbox` 1.1.0 | I2 |
 | ADR-044 | Charts | **Eigene Angular-SVG-Chart-Komponenten auf D3-Modulen** (`d3-scale`, `d3-shape`, `d3-array`, `d3-hierarchy`), die das SVG-Markup und die Klassen von `recharts` 2.15.4 für die sechs Blocks-Charts (`bar`, `area`, `line`, `pie`, `radar`, `tree-map`) sowie Burndown/Analytics-Diagramme nachbilden | ECharts/ngx-echarts (Canvas-Optik weicht ab); Chart.js; recharts via React-Island | Pixelgleichheit (ADR-005) bei geringer Nutzungsbreite (`A13a` §2.30: wenige Verwendungen); Spike S6 | ISC | `d3-scale` 4.x, `d3-shape` 3.x, `d3-array` 3.x, `d3-hierarchy` 3.x | I3 |
@@ -155,7 +155,7 @@ Spalte „Paket + Version“: Paket-ID wie in `Directory.Packages.props` bzw. np
 | ADR-049 | Integrations-Framework & Forgejo-Client (F1/F2) | Integrationen sind **Module im Monolithen** (keine eigenen Dienste wie „silo“): `Plane.Integrations` (Connections, Webhook-Empfang, Sync-Engine auf Outbox/Job-Queue), `Plane.Forgejo` mit **eigenem typisierten Client** (`/api/v1`, Gitea-kompatibel, `HttpClient` + `Microsoft.Extensions.Http.Resilience`), HMAC-SHA256-Signaturprüfung; in der CE nur Contracts + Container | Separater Integrationsdienst; Gitea-SDK-Fremdpakete | Minimaler Betrieb, gleiche Transaktions-/Outbox-Garantien | MIT | `Microsoft.Extensions.Http.Resilience` 10.x | I0 (Contracts), W1 |
 | ADR-050 | Architektur-Durchsetzung | **ArchUnitNET**-Tests (Abhängigkeitsregeln §5.2), `[OwnedBy]`-SaveChanges-Guard in allen Integrationstests, Sheriff-Regeln im Frontend, Analyzer `Meziantou.Analyzer`, `TreatWarningsAsErrors`, Central Package Management | Nur Konvention/Review | Parallel arbeitende Agenten erhalten sofortiges, maschinelles Feedback | Apache-2.0 / MIT | `TngTech.ArchUnitNET.xUnitV3` 0.13.x, `Meziantou.Analyzer` 3.x; zusätzlich **Lizenz-Gate** in CI (`tools/ci/license-gate`: SPDX-Ausdruck jedes NuGet-/npm-Pakets gegen Allowlist MIT, Apache-2.0, BSD-2/3-Clause, ISC, MS-PL, PostgreSQL, OFL-1.1, MPL-2.0 (nur Dev); jede Abweichung oder Lizenzänderung bricht den Build) | I0 |
 | ADR-051 | API-Dokumentation | **`Microsoft.AspNetCore.OpenApi`** (.NET 10) für `/api/v1/` (Public API) und interne Contract-Checks; UI **Scalar** offline gebündelt unter `/api/schema/…` (Pfade wie drf-spectacular), per `Plane__OpenApi__Enabled` (Default aus, wie `ENABLE_DRF_SPECTACULAR`) | Swashbuckle; NSwag | Framework-Standard, kein CDN | MIT | `Microsoft.AspNetCore.OpenApi` 10.0.x, `Scalar.AspNetCore` 2.18.x | I6 (I0 intern) |
-| ADR-052 | Deployment-Artefakte | Aspire-Publisher **Docker Compose** (Standard Self-hosted) und **Kubernetes/Helm** (eigenes Chart `deploy/helm/plane`), ein Image je Host (`plane-api`, `plane-worker`, `plane-realtime`, `plane-gateway` inkl. Angular-Builds, `plane-migrator`), Basis `mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled` (Realtime/Pdf: `noble` wegen nativer Libs ⚠), Multi-Arch amd64/arm64, Airgap-Bundle (Image-Tarballs + Compose + Checksums) | AIO-Container mit supervisord als Standard | Wenige, schlanke Images; AIO nur optional (CE-OPS-004) als Compose-Profil | – | Aspire `Aspire.Hosting.Docker` 13.x (stabil), `Aspire.Hosting.Kubernetes` 13.x (**nur Preview**, Stand 13.6.3-preview; Helm-Chart deshalb in I7 handgepflegt mit Aspire-Output als Vorlage); Docker Swarm (CE-OPS-003) über `docker stack deploy` mit der publizierten Compose-Datei (Swarm-kompatible Keys, Prüfung in I7) | I0 (Compose), I7 (Helm, Swarm, Airgap) |
+| ADR-052 | Deployment-Artefakte | Aspire-Publisher **Docker Compose** (Standard Self-hosted) und **Kubernetes/Helm** (eigenes Chart `deploy/helm/plane`), ein Image je Host (`plane-api`, `plane-worker`, `plane-realtime`, `plane-gateway` inkl. Angular-Builds, `plane-migrator`), Basis `mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled` (Realtime/Pdf: `noble` wegen nativer Libs ⚠), Multi-Arch amd64/arm64, Airgap-Bundle (Image-Tarballs + Compose + Checksums) | AIO-Container mit supervisord als Standard | Wenige, schlanke Images; AIO nur optional (CE-OPS-004) als eigene, aus `--Plane:Publish:Variant=aio` generierte Compose-Datei `deploy/compose/docker-compose.aio.yaml` (14 D14-ADR-13, ABG-019; kein Compose-Profil in der Standarddatei) | – | Aspire `Aspire.Hosting.Docker` 13.x (stabil), `Aspire.Hosting.Kubernetes` 13.x (**nur Preview**, Stand 13.6.3-preview; Helm-Chart deshalb in I7 handgepflegt mit Aspire-Output als Vorlage); Docker Swarm (CE-OPS-003) über `docker stack deploy` mit der publizierten Compose-Datei (Swarm-kompatible Keys, Prüfung in I7) | I0 (Compose), I7 (Helm, Swarm, Airgap) |
 
 ### 2.2 Abwägung je Entscheidung
 
@@ -216,6 +216,7 @@ Das portierte Ergebnis ist ein **abgeleitetes Werk der AGPL-3.0-CE** und wird un
 | MediatR ≥ 13, AutoMapper ≥ 15 | kommerzielle Lizenz (Lucky Penny) | `Mediator` (ADR-012), Mapperly (ADR-014) |
 | MassTransit v9 | kommerziell | eigene Outbox/Queue (ADR-020) |
 | FluentAssertions ≥ 8 | kommerziell (Xceed) | Shouldly |
+| `Microsoft.Testing.Extensions.CodeCoverage` | proprietäre Lizenz (Microsoft-Software-Lizenz, nicht OSI) – **verboten** (ABG-005) | `coverlet.MTP` 10.x (MIT, Cobertura) + `ReportGenerator` (Apache-2.0) |
 | Duende IdentityServer / Duende BFF | kommerziell | Keycloak + ASP.NET-OIDC-Handler (ADR-017/018) |
 | QuestPDF | Community-Lizenz mit Umsatzschwelle | PDFsharp/MigraDoc (ADR-029) |
 | PDFsharp/MigraDoc ≥ 6.5.0 (und 7.0.0-preview-2) | Lizenzwechsel MIT → AGPL-3.0-only am 14.10.2026 (NuGet-Lizenzausdruck), kommerzielle Lizenz separat | Pin auf MIT-Stand `[6.2.4]` (ADR-029); Upgrade nur per ADR-Änderung (O-09) |
@@ -321,20 +322,21 @@ flowchart TB
 
 | Ressource (Name) | Typ / Image | Profil | Abhängigkeiten | Volumes / Ports | Zweck |
 |---|---|---|---|---|---|
-| `postgres` | `AddPostgres` mit Image `pgvector/pgvector:pg17` ⚠ | alle | – | Volume `plane-pgdata`; Arg `max_connections=400` | gemeinsamer Server |
+| `postgres` | `AddPostgres` mit Image `pgvector/pgvector:pg17` ⚠ | alle | – | Volume `plane-pgdata`; Arg `max_connections=400`; Bind-Mount `deploy/postgres/init` (Init-Skript `10-roles-and-databases.sh`: Rollen/DBs `plane`, `keycloak`, `forgejo`; 14 §3.2.1) | gemeinsamer Server |
 | `plane` | `postgres.AddDatabase` | alle | `postgres` | – | Plane-Daten, Outbox, Queue, Sessions, Key-Ring |
-| `keycloakdb` | `postgres.AddDatabase` | `prodlike` | `postgres` | – | Keycloak-DB (Dev nutzt `start-dev`-Datei-DB + Realm-Import) |
-| `forgejodb` | `postgres.AddDatabase` | `dev`, `test`, optional Prod | `postgres` | – | Forgejo-DB auf gemeinsamem Server (ADR-007) |
-| `valkey` | `AddValkey` | alle (Prod optional) | – | Volume `plane-valkey` | Backplane, L2-Cache, Rate-Limit |
+| `keycloakdb` | `postgres.AddDatabase` | `prodlike` | `postgres` | – | Keycloak-DB (nur `prodlike`; `dev`/`test` nutzen die `start-dev`-Datei-DB **ohne** Datenvolume, Realm-Import bei jedem Start – ABG-018 a) |
+| `forgejodb` | `postgres.AddDatabase` | `dev`, `test`, optional Prod | `postgres` | – | Forgejo-DB auf gemeinsamem Server (ADR-007); Eigentümer-Rolle `forgejo` mit Parameter `forgejo-db-password` (angelegt durch `deploy/postgres/init/10-roles-and-databases.sh`), **nicht** Superuser `postgres` (ABG-018 c) |
+| `valkey` | `AddValkey` + `WithArgs("--save", "", "--appendonly", "no")` | alle (Prod optional) | – | **kein** Volume (flüchtig, ABG-018 b) | Backplane, L2-Cache, Rate-Limit |
 | `objectstore` | `AddContainer` `chrislusf/seaweedfs` ⚠ (S8 entscheidet) | `dev`, `test`, `prodlike` (Stellvertreter; echte Installationen nutzen Betreiber-S3 über Compose-Parameter) | – | Volume `plane-objects`; Endpoint `s3` (8333) | S3-kompatibler Speicher |
 | `mailpit` | `AddContainer` `axllent/mailpit` ⚠ | `dev`, `test`, `prodlike` (Stellvertreter für Betreiber-SMTP) | – | `smtp` 1025, `ui` 8025 | SMTP-Senke, E-Mail-Assertions in Tests |
-| `keycloak` | `AddKeycloak` (Aspire.Hosting.Keycloak, **Preview** ⚠) bzw. Fallback `AddContainer("quay.io/keycloak/keycloak")` | alle | (`keycloakdb` in `prodlike`) | fester Port 8180; Bind-Mounts `deploy/keycloak/realms`, `deploy/keycloak/themes/plane` | einziger IdP (ADR-008), Realm-Import |
-| `forgejo` | `AddContainer` `codeberg.org/forgejo/forgejo` (aktuelle LTS ⚠) | `dev`, `test`; in `prodlike` per `Plane:Forgejo:Bundled=true` zuschaltbar (ADR-007: optional im Produktivbetrieb) | `forgejodb`, `keycloak` | Volume `plane-forgejo`; fester Port 3300 | Integrationstests F2, SSO-Smoke-Test |
+| `keycloak` | `AddKeycloak` (Aspire.Hosting.Keycloak, **Preview** ⚠) bzw. Fallback `AddContainer("quay.io/keycloak/keycloak")` | alle | (`keycloakdb` in `prodlike`) | fester Port 8180; `dev`/`test` **ohne** Datenvolume; `WithRealmImport` mit genau **einer Datei** je Profil (`dev`: `deploy/keycloak/realms/plane-realm.json`, `test`: generierte `deploy/keycloak/realms/plane-realm.test.json`), kein Verzeichnis-Import; Theme-Bind-Mount `deploy/keycloak/themes` → `/opt/keycloak/themes` (enthält `plane`, `plane-space`) | einziger IdP (ADR-008); Realm-Import nur `dev`/`test` (ABG-018 a, e, f) |
+| `keycloak-config` | `AddContainer` `adorsys/keycloak-config-cli` (Einmal-Job, Tag an Keycloak-Major gekoppelt ⚠) | `prodlike`, Publish | `keycloak` | Bind-Mount `deploy/keycloak/config` → `/config` (ro) | Realm-Anlage und -Abgleich aus `deploy/keycloak/config/*.json` (Prod/Publish/`prodlike`, keine Testbenutzer; 14 D14-ADR-03, ABG-018 e) |
+| `forgejo` | `AddContainer` `codeberg.org/forgejo/forgejo` (aktuelle LTS ⚠) | `dev`, `test`; in `prodlike` per `Plane:Forgejo:Bundled=true` zuschaltbar (ADR-007: optional im Produktivbetrieb) | `forgejodb`, `keycloak` | Volume `plane-forgejo`; fester Port 3300; DB-Benutzer `forgejo` (`forgejo-db-password`) | Integrationstests F2, SSO-Smoke-Test |
 | `forgejo-init` | `AddProject<Plane_Tools_ForgejoInit>` | `dev`, `test` | `forgejo` | – | legt Admin, OAuth2-App, Test-Org/-Repos an (idempotent) |
 | `migrator` | `AddProject<Plane_Migrator>` | alle | `plane`, `objectstore` | – | Migrationen, Seeds, Bucket, Instanz-Init |
-| `api` | `AddProject<Plane_Api>` | alle | `migrator` (`WaitForCompletion`), `keycloak`, `valkey`, `objectstore`, `mailpit` | – | HTTP-API |
-| `worker` | `AddProject<Plane_Worker>` | alle | `migrator` (`WaitForCompletion`) | – | Hintergrundverarbeitung |
-| `realtime` | `AddProject<Plane_Realtime>` | alle | `migrator` (`WaitForCompletion`), `valkey` | – | `/live/` |
+| `api` | `AddProject<Plane_Api>` | alle | `migrator` (`WaitForCompletion`), `keycloak` (`prodlike`: zusätzlich `WaitForCompletion(keycloak-config)`), `valkey`, `objectstore`, `mailpit` | Endpoint `management` (`Plane__Management__Port`, Container 8081, in `dev`/`test` dynamisch) | HTTP-API; Health `/health/ready` auf `management` (ABG-014) |
+| `worker` | `AddProject<Plane_Worker>` | alle | `migrator` (`WaitForCompletion`) | Endpoint `management` | Hintergrundverarbeitung |
+| `realtime` | `AddProject<Plane_Realtime>` | alle | `migrator` (`WaitForCompletion`), `valkey` | Endpoint `management` | `/live/`; Health `/health/ready` auf `management` (ABG-014; `/live/health/` bleibt App-Port-Endpunkt wie Original) |
 | `web`, `admin`, `space` | `AddJavaScriptApp` (Aspire.Hosting.JavaScript, pnpm) – Angular-Dev-Server | nur `dev` | – | 4200/4201/4202 | Live-Reload; in Prod statisch im Gateway |
 | `gateway` | `AddProject<Plane_Gateway>` | alle | `api`, `realtime`, `objectstore`, (`web`/`admin`/`space` in Dev) | fester Port **3000** (externer Einstieg) | Same-Origin für alle Apps |
 
@@ -357,20 +359,28 @@ var isDevOrTest = profile is "dev" or "test";
 // ---- Parameter / Secrets (in Dev aus user-secrets, in CI aus ENV) ----
 var pgPassword        = builder.AddParameter("postgres-password", secret: true);
 var kcAdminPassword   = builder.AddParameter("keycloak-admin-password", secret: true);
-var oidcClientSecret  = builder.AddParameter("oidc-client-secret", secret: true);
+var forgejoDbPassword = builder.AddParameter("forgejo-db-password", secret: true);      // Rolle `forgejo` (ABG-018 c)
+// vier OIDC-Client-Secrets (ABG-018 d, ABG-035) – je Client eines, kein gemeinsames Secret
+var oidcWebSecret     = builder.AddParameter("oidc-web-secret", secret: true);
+var oidcAdminSecret   = builder.AddParameter("oidc-admin-secret", secret: true);
+var oidcSpaceSecret   = builder.AddParameter("oidc-space-secret", secret: true);
+var oidcBackendSecret = builder.AddParameter("oidc-backend-secret", secret: true);
 var s3AccessKey       = builder.AddParameter("s3-access-key", secret: true);
 var s3SecretKey       = builder.AddParameter("s3-secret-key", secret: true);
+var signingKey        = builder.AddParameter("signing-key", secret: true);         // Plane:Security:SigningKey (ABG-012)
 
 // ---- PostgreSQL mit pgvector ----
 var postgres = builder.AddPostgres("postgres", password: pgPassword)
     .WithImage("pgvector/pgvector").WithImageTag("pg17")
     .WithDataVolume("plane-pgdata")
+    .WithBindMount("../../../deploy/postgres/init", "/docker-entrypoint-initdb.d", isReadOnly: true)
+    .WithEnvironment("FORGEJO_DB_PASSWORD", forgejoDbPassword)        // 10-roles-and-databases.sh legt Rolle/DB `forgejo` an
     .WithArgs("-c", "max_connections=400");
 var planeDb   = postgres.AddDatabase("plane");
 var forgejoDb = postgres.AddDatabase("forgejodb", databaseName: "forgejo");
 
-// ---- Valkey (Backplane, L2-Cache, Rate-Limit) ----
-var valkey = builder.AddValkey("valkey").WithDataVolume("plane-valkey");
+// ---- Valkey (Backplane, L2-Cache, Rate-Limit) – flüchtig, ohne Volume (ABG-018 b) ----
+var valkey = builder.AddValkey("valkey").WithArgs("--save", "", "--appendonly", "no");
 
 // ---- Objektspeicher (Dev/Test; Prod: Betreiber-S3 per Connection-Parametern) ----
 var objectStore = builder.AddContainer("objectstore", "chrislusf/seaweedfs", "PINNED_TAG")
@@ -385,23 +395,51 @@ var mailpit = builder.AddContainer("mailpit", "axllent/mailpit", "PINNED_TAG")
     .WithEndpoint(targetPort: 1025, name: "smtp", scheme: "tcp");
 
 // ---- Keycloak (ADR-008) ----
+// dev/test: KEIN Datenvolume (Dev-Datei-DB, frischer Realm-Import bei jedem Start; ABG-018 a)
 var keycloak = builder.AddKeycloak("keycloak", port: 8180, adminPassword: kcAdminPassword)
-    .WithDataVolume("plane-keycloak")
-    .WithRealmImport("../../../deploy/keycloak/realms")              // plane-realm.json
-    .WithBindMount("../../../deploy/keycloak/themes/plane", "/opt/keycloak/themes/plane", isReadOnly: true)
+    .WithBindMount("../../../deploy/keycloak/themes", "/opt/keycloak/themes", isReadOnly: true)   // plane, plane-space (ABG-018 f)
     .WithEnvironment("KC_HOSTNAME", "http://localhost:8180")
     .WithEnvironment("KC_HOSTNAME_BACKCHANNEL_DYNAMIC", "true")
-    .WithEnvironment("PLANE_OIDC_CLIENT_SECRET", oidcClientSecret);  // im Realm-JSON per ${env.…} referenziert
+    // Realm-Platzhalter (Namen aus 05 §3.15.1), im Realm-JSON als ${NAME} referenziert
+    .WithEnvironment("PLANE_WEB_CLIENT_SECRET", oidcWebSecret)
+    .WithEnvironment("PLANE_ADMIN_CLIENT_SECRET", oidcAdminSecret)
+    .WithEnvironment("PLANE_SPACE_CLIENT_SECRET", oidcSpaceSecret)
+    .WithEnvironment("PLANE_BACKEND_CLIENT_SECRET", oidcBackendSecret);
 
-if (profile == "prodlike")
+IResourceBuilder<ContainerResource>? keycloakConfig = null;
+if (isDevOrTest)
 {
-    // prodlike: Keycloak auf PostgreSQL statt Dev-Datei-DB (Keycloak-Standard-ENV KC_DB_*)
+    // genau EINE Datei je Profil, kein Verzeichnis (ABG-018 e); plane-realm.test.json ist generiert (ABG-001)
+    keycloak.WithRealmImport(profile == "test"
+        ? "../../../deploy/keycloak/realms/plane-realm.test.json"
+        : "../../../deploy/keycloak/realms/plane-realm.json");
+}
+else // prodlike
+{
+    // prodlike: Keycloak auf PostgreSQL statt Dev-Datei-DB (Keycloak-Standard-ENV KC_DB_*);
+    // Details (eigene DB-Rolle, Image plane-keycloak, Pfad /idp, start --optimized): 14 §3.2/§3.3
     var keycloakDb = postgres.AddDatabase("keycloakdb", databaseName: "keycloak");
+    var kcDbPassword = builder.AddParameter("keycloak-db-password", secret: true);   // Rolle `keycloak` aus 10-roles-and-databases.sh (14 §3.2.1)
+    postgres.WithEnvironment("KEYCLOAK_DB_PASSWORD", kcDbPassword);
     keycloak.WithEnvironment("KC_DB", "postgres")
         .WithEnvironment("KC_DB_URL", ReferenceExpression.Create($"jdbc:postgresql://{postgres.Resource.PrimaryEndpoint.Property(EndpointProperty.HostAndPort)}/keycloak"))
-        .WithEnvironment("KC_DB_USERNAME", "postgres")
-        .WithEnvironment("KC_DB_PASSWORD", pgPassword)
+        .WithEnvironment("KC_DB_USERNAME", "keycloak")
+        .WithEnvironment("KC_DB_PASSWORD", kcDbPassword)
         .WaitFor(keycloakDb);
+
+    // Realm-Anlage/-Abgleich ausschließlich über keycloak-config-cli aus deploy/keycloak/config/*.json (14 D14-ADR-03)
+    keycloakConfig = builder.AddContainer("keycloak-config", "adorsys/keycloak-config-cli", "PINNED_TAG")
+        .WithBindMount("../../../deploy/keycloak/config", "/config", isReadOnly: true)
+        .WithEnvironment("KEYCLOAK_URL", keycloak.GetEndpoint("http"))
+        .WithEnvironment("KEYCLOAK_USER", "admin")
+        .WithEnvironment("KEYCLOAK_PASSWORD", kcAdminPassword)
+        .WithEnvironment("IMPORT_FILES_LOCATIONS", "/config/*.json")
+        .WithEnvironment("IMPORT_VARSUBSTITUTION_ENABLED", "true")
+        .WithEnvironment("PLANE_WEB_CLIENT_SECRET", oidcWebSecret)
+        .WithEnvironment("PLANE_ADMIN_CLIENT_SECRET", oidcAdminSecret)
+        .WithEnvironment("PLANE_SPACE_CLIENT_SECRET", oidcSpaceSecret)
+        .WithEnvironment("PLANE_BACKEND_CLIENT_SECRET", oidcBackendSecret)
+        .WaitFor(keycloak);
 }
 
 // ---- Migrator (EF-Migrationen, Seeds, Bucket, Instanz-Init) ----
@@ -421,20 +459,28 @@ IResourceBuilder<ProjectResource> PlaneHost(IResourceBuilder<ProjectResource> r)
     .WithEnvironment("Plane__Storage__AccessKey", s3AccessKey)
     .WithEnvironment("Plane__Storage__SecretKey", s3SecretKey)
     .WithEnvironment("Plane__Urls__Web", "http://localhost:3000")
+    .WithEnvironment("Plane__Security__SigningKey", signingKey)
     .WithEnvironment("Plane__Auth__Oidc__Authority", ReferenceExpression.Create($"{keycloak.GetEndpoint("http")}/realms/plane"))
-    .WithEnvironment("Plane__Auth__Oidc__ClientSecret", oidcClientSecret)
+    // Schlüssel aus PlaneAuthOptions (ABG-035); es gibt KEIN Plane__Auth__Oidc__ClientSecret
+    .WithEnvironment("Plane__Auth__Clients__Web__ClientSecret", oidcWebSecret)
+    .WithEnvironment("Plane__Auth__Clients__Admin__ClientSecret", oidcAdminSecret)
+    .WithEnvironment("Plane__Auth__Clients__Space__ClientSecret", oidcSpaceSecret)
+    .WithEnvironment("Plane__Auth__Backend__ClientSecret", oidcBackendSecret)
+    // Management-Port 8081 (Container) bzw. dynamisch (dev/test) für /health/* (ABG-014)
+    .WithHttpEndpoint(name: "management", env: "Plane__Management__Port")
     .WaitForCompletion(migrator);
 
 var api = PlaneHost(builder.AddProject<Projects.Plane_Api>("api"))
-    .WithEnvironment("Plane__Mail__Smtp__Host", mailpit.GetEndpoint("smtp"))
+    .WithEnvironment("Plane__Mail__DevSmtp__Host", mailpit.GetEndpoint("smtp"))   // nur dev/test, überschreibt Instanz-SMTP (14 §3.2.2)
     .WaitFor(keycloak)
-    .WithHttpHealthCheck("/health/ready");
+    .WithHttpHealthCheck("/health/ready", endpointName: "management");
+if (keycloakConfig is not null) api.WaitForCompletion(keycloakConfig);   // prodlike: Realm erst abgleichen
 
 var worker = PlaneHost(builder.AddProject<Projects.Plane_Worker>("worker"))
-    .WithEnvironment("Plane__Mail__Smtp__Host", mailpit.GetEndpoint("smtp"));
+    .WithEnvironment("Plane__Mail__DevSmtp__Host", mailpit.GetEndpoint("smtp"));
 
 var realtime = PlaneHost(builder.AddProject<Projects.Plane_Realtime>("realtime"))
-    .WithHttpHealthCheck("/live/health/");
+    .WithHttpHealthCheck("/health/ready", endpointName: "management");   // /live/health/ bleibt App-Port-Endpunkt (Original-Vertrag)
 
 // ---- Forgejo (ADR-007: Dev/Test immer, Prod optional) ----
 if (isDevOrTest || builder.Configuration.GetValue<bool>("Plane:Forgejo:Bundled"))
@@ -445,8 +491,8 @@ if (isDevOrTest || builder.Configuration.GetValue<bool>("Plane:Forgejo:Bundled")
         .WithEnvironment("FORGEJO__database__DB_TYPE", "postgres")
         .WithEnvironment("FORGEJO__database__HOST", postgres.Resource.PrimaryEndpoint.Property(EndpointProperty.HostAndPort))
         .WithEnvironment("FORGEJO__database__NAME", "forgejo")
-        .WithEnvironment("FORGEJO__database__USER", "postgres")
-        .WithEnvironment("FORGEJO__database__PASSWD", pgPassword)
+        .WithEnvironment("FORGEJO__database__USER", "forgejo")                // eigene Rolle, nicht Superuser (ABG-018 c)
+        .WithEnvironment("FORGEJO__database__PASSWD", forgejoDbPassword)
         .WithEnvironment("FORGEJO__server__ROOT_URL", "http://localhost:3300/")
         .WaitFor(forgejoDb).WaitFor(keycloak);
 
@@ -504,12 +550,12 @@ builder.Build().Run();
 | `admin` | React-SPA unter `/god-mode/`, Caddy | **Angular-App `admin`** im Gateway | Static Files, Fallback `/god-mode/index.html` | mit Gateway | Base `/god-mode/`; Login über Keycloak (ADR-008) |
 | `space` | React-Router-**SSR** (`react-router-serve`, Node) | **Angular-App `space`** (CSR) im Gateway | Static Files + **OG-Meta-Templating** in .NET für `/spaces/issues/{anchor}` (CE-SPACE-017) | mit Gateway | kein Node-SSR (ADR-002); Bots erhalten Meta-Tags aus `index.html`-Template |
 | `proxy` | Caddy (`Caddyfile.ce`, ACME) | **`Plane.Gateway`** | YARP + Kestrel-TLS | horizontal | Regeln 1:1 (`A01` §2.8.1); ACME optional per vorgeschaltetem Caddy (Compose-Profil `acme`) |
-| `plane-db` | PostgreSQL 15.7 (`max_connections=1000`) | **PostgreSQL 17** (+ `vector`, `pg_trgm`, `unaccent`) | Image `pgvector/pgvector:pg17` | vertikal; Read-Replica optional (`ENABLE_READ_REPLICA`) | zusätzlich DBs `keycloak`, `forgejo`; Npgsql-Pool je Host (Default 50) statt 1000 Verbindungen |
-| `plane-redis` | Valkey 7.2.11 | **Valkey 8** (optional bei Einzelinstanz) | `AddValkey` | – | nur Backplane/L2-Cache/Rate-Limit; Magic-Codes entfallen (ADR-008); kein `cache.clear()` beim Start |
+| `plane-db` | PostgreSQL 15.7 (`max_connections=1000`) | **PostgreSQL 17** (+ `vector`, `pg_trgm`, `unaccent`) | Image `pgvector/pgvector:pg17` | vertikal; Read-Replica optional (`Plane:Database:ReadReplicaEnabled`, Alias `ENABLE_READ_REPLICA`; zweiter `DbContext`-Typ ohne DbContext-Pooling, ABG-048) | zusätzlich DBs `keycloak`, `forgejo`; Npgsql-Pool je Host (Default 50) statt 1000 Verbindungen |
+| `plane-redis` | Valkey 7.2.11 | **Valkey 8** (optional bei Einzelinstanz) | `AddValkey`, flüchtig ohne Volume (`--save "" --appendonly no`) | – | nur Backplane/L2-Cache/Rate-Limit; Magic-Codes entfallen (ADR-008); kein `cache.clear()` beim Start |
 | `plane-mq` | RabbitMQ 3.13 | **entfällt** | PostgreSQL-Queue (ADR-020) | – | `AMQP_URL`/`RABBITMQ_*` werden ignoriert (Warnung im Log) |
 | `plane-minio` | `pgsty/silo` (MinIO-Fork) | **S3-kompatibler Speicher** (Dev/Test SeaweedFS; Prod: Betreiberwahl) **oder** Dateisystem | AWSSDK.S3 / `FileSystemObjectStorage` | je Backend | Bucket-Pfad `/{AWS_S3_BUCKET_NAME}` (Default `uploads`) über Gateway; `USE_MINIO`-Host-Trick ersetzt durch `PublicEndpoint` |
-| *(neu)* | – | **Keycloak** | Aspire-Ressource, Realm-Import `deploy/keycloak/realms/plane-realm.json`, Theme `deploy/keycloak/themes/plane` | Keycloak-Cluster (Infinispan) bei Bedarf | Clients `plane-web`, `plane-admin`, `plane-space`, `plane-forgejo`, `plane-api` (Bearer-Audience, H1); Realm-Rolle `plane-instance-admin`; Testbenutzer (nur Dev/Test) |
-| *(neu)* | – | **Forgejo** | Aspire-Container, DB `forgejo` auf gemeinsamem PostgreSQL | Forgejo-eigene Skalierung | Dev/Test immer; Produktion optional (Betreiber kann bestehendes Forgejo anbinden) |
+| *(neu)* | – | **Keycloak** | Aspire-Ressource; Realm-Import `deploy/keycloak/realms/plane-realm.json` (dev), generierte `deploy/keycloak/realms/plane-realm.test.json` (test), `deploy/keycloak/config/*.json` per keycloak-config-cli (Container `keycloak-config`, prodlike/Prod) (ABG-018); Themes `deploy/keycloak/themes` (`plane`, `plane-space`) | Keycloak-Cluster (Infinispan) bei Bedarf | Clients `plane-web`, `plane-admin`, `plane-space`, `plane-forgejo`, `plane-api` (Bearer-Audience, H1); Realm-Rolle `plane-instance-admin`; Testbenutzer (nur Dev/Test) |
+| *(neu)* | – | **Forgejo** | Aspire-Container, DB `forgejo` (Rolle `forgejo`, Parameter `forgejo-db-password`) auf gemeinsamem PostgreSQL | Forgejo-eigene Skalierung | Dev/Test immer; Produktion optional (Betreiber kann bestehendes Forgejo anbinden) |
 | *(neu, Dev/Test)* | – | **Mailpit** | Container | – | ersetzt SMTP in Dev/Test |
 
 ### 4.2 EE-Dienste (nur Ausblick mit Andockstelle)
@@ -542,13 +588,14 @@ Quelle: `makeplane/helm-charts/charts/plane-enterprise/templates/workloads/*`. K
 
 ### 5.1 Repository- und Verzeichnisbaum
 
-Das Zielsystem liegt in einem **neuen Repository** `plane-net/` (Arbeitstitel); das Original bleibt unter `/home/user/plane` als Referenz (ADR-006). Die Planungsdokumente werden nach `plane-net/docs/migration/` gespiegelt.
+Das Zielsystem liegt im **neuen Repository** `funk.` (ADR-009, O-07; ersetzt den früheren Arbeitstitel `plane-net/`, ABG-018 g); das Original bleibt unter `/home/user/plane` als Referenz (ADR-006). Die Planungsdokumente werden nach `funk./docs/migration/` gespiegelt. Projekt-, Assembly- und Namespace-Präfix bleibt `Plane.*`.
 
 ```text
-plane-net/
+funk./
 ├── Plane.slnx                                  # Solution (XML-Format, .NET 10)
 ├── global.json                                 # SDK-Pin 10.0.1xx, Aspire-SDK-Pin
 ├── Directory.Build.props                       # Nullable, TreatWarningsAsErrors, LangVersion, AGPL-Header-Check
+├── Directory.Build.targets                     # u. a. InternalsVisibleTo aus Property PlaneInternalsVisibleTo (R9-Ausnahme, ABG-047)
 ├── Directory.Packages.props                    # Central Package Management (alle Versionen aus §8)
 ├── .editorconfig  .gitattributes  LICENSE (AGPL-3.0)  NOTICE (Drittlizenzen)
 ├── src/
@@ -559,7 +606,10 @@ plane-net/
 │   │   ├── Plane.Worker/                       # Program.cs: Outbox-Dispatcher, JobRunner, Scheduler
 │   │   ├── Plane.Realtime/                     # Program.cs: /live (Collaboration, SignalR, Convert, PDF, Health)
 │   │   ├── Plane.Gateway/                      # YARP-Routen, StaticFrontendMiddleware, OgMetaMiddleware, RuntimeConfigEndpoint
-│   │   └── Plane.Migrator/                     # MigrateAsync, Seeds, Bucket, InstanceBootstrap
+│   │   ├── Plane.Migrator/                     # MigrateAsync, Seeds, Bucket, InstanceBootstrap
+│   │   ├── Plane.Hosting/                      # Kompositionsbibliothek je Host (ApiComposition, RealtimeComposition, WorkerComposition,
+│   │   │                                       # GatewayComposition) – von Einzel-Hosts und AIO genutzt (14 D14-ADR-14, ABG-018 g)
+│   │   └── Plane.AllInOne/                     # AIO: ein .NET-Prozess (Gateway+Api+Realtime+Worker), Image plane-aio (I7, CE-OPS-004)
 │   ├── building-blocks/
 │   │   ├── Plane.BuildingBlocks/               # Ids (UUIDv7), IClock, Result/PlaneError, ScopeRef/ScopeLevel,
 │   │   │                                       # Pagination-Contracts (Cursor), IModule, Permission-Abstraktionen, DomainEvent
@@ -569,7 +619,7 @@ plane-net/
 │   │   ├── Plane.BuildingBlocks.Persistence/   # DbContext-Basis, Konventionen, Interceptors (Audit, SoftDelete,
 │   │   │                                       # DomainEvents→Outbox, OwnershipGuard), SequenceAllocator
 │   │   ├── Plane.BuildingBlocks.Messaging/     # Outbox, Inbox, JobQueue, Scheduler (Cronos + Advisory Lock), EventCatalog
-│   │   └── Plane.BuildingBlocks.Testing/       # PlaneAppFactory, Aspire-Test-Fixtures, Respawn, Golden-Helpers, Builders
+│   │   └── Plane.BuildingBlocks.Testing/       # PlaneApiFactory, PostgresContainerFixture, Respawn, Golden-Helpers, Builders (15 §9.2)
 │   ├── data/
 │   │   └── Plane.Data/                         # PlaneDbContext, Entities/<Modul>/, Configurations/<Modul>/,
 │   │                                           # Migrations/, Seeds/ (States, Instanz-Konfig, Demo-Workspace)
@@ -596,7 +646,7 @@ plane-net/
 │   │   ├── Intake/            Plane.Intake, Plane.Intake.Contracts
 │   │   ├── Pages/             Plane.Pages, Plane.Pages.Contracts
 │   │   ├── Collaboration/     Plane.Collaboration, Plane.Collaboration.Contracts     # Hocuspocus-Protokoll, Doc-Lifecycle
-│   │   ├── RealtimeEvents/    Plane.RealtimeEvents, Plane.RealtimeEvents.Contracts   # SignalR-Hub (H6)
+│   │   ├── RealtimeEvents/    Plane.RealtimeEvents, Plane.RealtimeEvents.Contracts   # SignalR-Hub (H6), gehostet in Plane.Realtime
 │   │   ├── Assets/            Plane.Assets, Plane.Assets.Contracts
 │   │   ├── Analytics/         Plane.Analytics, Plane.Analytics.Contracts
 │   │   ├── Home/              Plane.Home, Plane.Home.Contracts
@@ -630,18 +680,29 @@ plane-net/
 │   ├── Plane.Documents.Tests/                  # Golden-Files HTML/JSON/Yjs
 │   ├── Plane.Documents.Pdf.Tests/              # PDF-Inhalt + Visual-Diff
 │   ├── Plane.Collaboration.Tests/              # Protokoll-Tests gegen @hocuspocus/provider (über Playwright-Browser)
-│   └── contracts/                              # aufgezeichnete Original-Requests/-Responses (Parity-Harness)
+│   ├── Plane.Worker.Tests/  Plane.Contracts.Tests/  Plane.Security.Tests/            # 15 §3.2
+│   ├── Plane.BuildingBlocks.Testing.Tests/  Plane.Tools.ParityHarness.Tests/  Plane.Tools.Gates.Tests/   # 15 §3.2
+│   ├── seed/  original-tests/  load/  security/  # Seed-Spezifikation, Ledger, Lasttests, Matrix (15 §3.2)
+│   └── contracts/                              # aufgezeichnete Original-Requests/-Responses (Parity-Harness), deviations.yaml
 ├── frontend/                                   # Angular-Workspace (§6)
 ├── deploy/
-│   ├── keycloak/realms/plane-realm.json        # Clients, Rollen, Mapper, Testbenutzer (Dev/Test-Variante + Prod-Template)
-│   ├── keycloak/themes/plane/                  # Login-Theme im Plane-Design (web/admin/space-Varianten)
+│   ├── keycloak/realms/plane-realm.json        # nur Profil dev (Clients, Scopes, Mapper, Flows, Testbenutzer); Prod: config/*.json (ABG-018 g)
+│   ├── keycloak/realms/plane-realm.test.json   # Profil test, GENERIERT (Plane.Tools.ParityHarness keycloak-test-realm), eingecheckt (ABG-001)
+│   ├── keycloak/config/*.json                  # 00-plane-realm, 10-plane-bootstrap-admin, 20-forgejo-client (keycloak-config-cli, prodlike/Prod)
+│   ├── keycloak/themes/                        # Login-Themes plane (web + God-Mode) und plane-space
+│   ├── postgres/init/10-roles-and-databases.sh # Rollen/DBs plane, keycloak, forgejo (ABG-018 c, 14 §3.2.1)
 │   ├── seaweedfs/s3.json
-│   ├── compose/                                # aus Aspire publiziert + Profile (acme, aio, single-node); Swarm-kompatibel (CE-OPS-003)
+│   ├── compose/                                # docker-compose.yaml aus Aspire publiziert (Profile bundled-s3, forgejo, valkey, acme, observability, tools);
+│   │                                           # docker-compose.aio.yaml GENERIERT aus --Plane:Publish:Variant=aio (ABG-019); Swarm-kompatibel (CE-OPS-003)
 │   ├── helm/plane/                             # I7
 │   └── airgap/                                 # Bundle-Skripte, Image-Liste
 └── tools/
+    ├── Plane.PermissionGen/                    # Generator: Permission-Keys/-Deskriptoren (+ Prerequisite-Regeln) und tests/security/permission-matrix.yaml
+    │                                           # aus 05-permission-matrix.json (05 §5.8, ABG-041)
     ├── golden/generate.mjs                     # Node-Werkzeug (nur Dev): erzeugt Golden-Files aus Original-Paketen
-    ├── icons/codegen.mjs                       # Propel-Icons → Angular-Komponenten
+    │                                           # (Icon-Codegen liegt in frontend/tools/propel-port/port-icons.mjs, §6.1, ABG-027)
+    ├── parity/                                 # start-original.sh (einziger Einstieg), compose.original.yml (Original v1.4.2,
+    │                                           # Proxy :13000), original.env (Image-Digests, ORIGINAL_SHA) (ABG-006)
     └── ci/                                     # assert-no-node.sh, license-header-check, license-gate (SPDX-Allowlist), i18n-sync-check
 ```
 
@@ -675,7 +736,7 @@ flowchart TB
 | R6 | `Plane.PublicApi` hat keine Entitäten und keine eigenen Commands mit Geschäftslogik; es übersetzt v1-Verträge auf Commands/Queries der Fach-Module. | ArchUnitNET |
 | R7 | `platform/*` und `documents/*` kennen keine Fachmodule. | ArchUnitNET |
 | R8 | Keine statischen Zustände, kein `DateTime.UtcNow` (nur `IClock`), kein `Guid.NewGuid()` für Entitäten (nur `IIdGenerator` → UUIDv7). | Analyzer-Regel (Banned API Analyzer `BannedSymbols.txt`) |
-| R9 | Öffentliche Typen in `Plane.<M>` sind `internal`, außer `<M>Module` (Registrierung). | ArchUnitNET |
+| R9 | Öffentliche Typen in `Plane.<M>` sind `internal`, außer `<M>Module` (Registrierung). **Ausnahme:** `InternalsVisibleTo` für die Hosts `Plane.Api`, `Plane.Worker`, `Plane.Realtime` und das Testprojekt `Plane.<M>.Tests` (zentral über `Directory.Build.targets`, Property `PlaneInternalsVisibleTo`), damit der Mediator-Source-Generator im Host `internal`-Handler registriert (02 D02-ADR-27, ABG-047). Fallback nur, falls Spike S0 scheitert: Handler/Commands `public`, R9-Ausnahme per ArchUnit-Regel (Dokument 17, Zurückgestellt Z-01). | ArchUnitNET; Architekturtest prüft zusätzlich, dass in den `InternalsVisibleTo`-Attributen jedes Modul-Assemblys **keine anderen** Assemblies als die vier genannten stehen |
 | R10 | Platzhalter-Projekte (`extensions/*`) enthalten in der CE ausschließlich Interfaces, DTOs, Enums und Konstanten. | ArchUnitNET |
 
 ### 5.3 Modul-Schablone (jedes Fachmodul identisch)
@@ -722,7 +783,7 @@ public interface IModule
     void AddServices(IServiceCollection services, IConfiguration configuration);
     void MapEndpoints(PlaneEndpointRouteBuilder endpoints);      // App/V1/Space/Instance-Gruppen
     void RegisterMessaging(IMessagingRegistry messaging) { }     // Consumers, Jobs, Cron
-    IEnumerable<Permission> Permissions => [];                   // Katalog-Beiträge
+    IEnumerable<PermissionDescriptor> Permissions => [];         // Katalog-Beiträge (Deskriptor trägt die Permission, 02 §5.1.7; ABG-046)
 }
 
 // src/modules/Projects/Plane.Projects/Endpoints/App/LabelEndpoints.cs
@@ -732,16 +793,22 @@ internal static class LabelEndpoints
     {
         var g = e.App("workspaces/{slug}/projects/{project_id:guid}/issue-labels")   // Trailing-Slash-tolerant
                  .WithTags("Labels");
-        g.MapGet("", ListLabels).RequirePermission(ProjectsPermissions.LabelsRead);
-        g.MapPost("", CreateLabel).RequirePermission(ProjectsPermissions.LabelsWrite).Validate<CreateLabelRequest>();
+        // Permission-Konstanten sind generiert (ProjectsPermissions.ProjectLabelRead/-Create/-Update/-Delete, 02 §5.2; ABG-046)
+        g.MapGet("", ListLabels).RequirePermission(ProjectsPermissions.ProjectLabelRead);
+        g.MapPost("", CreateLabel)
+         .RequirePermission(ProjectsPermissions.ProjectLabelCreate, PermissionRule.Prerequisite(StandardPermissions.WorkspaceProjectBaseCreate))
+         .Validate<CreateLabelRequest>();
     }
 
-    static async Task<IResult> CreateLabel(ProjectScope scope, CreateLabelRequest body, ISender sender, CancellationToken ct)
-        => (await sender.Send(new CreateLabelCommand(scope, body), ct)).ToCreated();      // 201 + LabelDto
+    // Scope kommt aus dem scoped Halter IRequestScope (vom ScopeBindingFilter befüllt; scope.Project/scope.Workspace,
+    // für den Evaluator scope.Current) – KEIN ProjectScope-/WorkspaceScope-Parameter, weil Minimal-API-Parameter
+    // vor Endpoint-Filtern gebunden werden (02 §5; ABG-046)
+    static async Task<IResult> CreateLabel(IRequestScope scope, CreateLabelRequest body, ISender sender, CancellationToken ct)
+        => (await sender.Send(new CreateLabelCommand(scope.Project, body), ct)).ToCreated();      // 201 + LabelDto
 }
 
 // src/modules/Projects/Plane.Projects/Application/Commands/CreateLabel/CreateLabelCommand.cs
-internal sealed record CreateLabelCommand(ProjectScope Scope, CreateLabelRequest Body) : ICommand<Result<LabelDto>>;
+internal sealed record CreateLabelCommand(ProjectScope Scope, CreateLabelRequest Body) : ICommand<Result<LabelDto>>;   // ProjectScope = Wert aus IRequestScope.Project
 
 internal sealed class CreateLabelHandler(PlaneDbContext db, IIdGenerator ids, LabelMapper map)
     : ICommandHandler<CreateLabelCommand, Result<LabelDto>>
@@ -776,7 +843,7 @@ Jede der 507 CE-IDs ist in dieser Tabelle **genau einer** Zeile zugeordnet (Back
 | `Plane.Intake` | Intake je Projekt, Triage-State, Annehmen/Ablehnen/Snooze/Duplikat, Unsnooze-Job, öffentliche Intake-Einreichung (Space-API) | CE-INT-001…012; CE-SPACE-006 (Backend) | `API/app/views/intake/**`, `API/db/models/intake.py`, `API/space/views/intake.py` | `libs/web/intake` | I3 |
 | `Plane.Pages` | Pages (Metadaten, Zugriff, Sperre, Archiv, Duplizieren, Favoriten, Versionen, PageLog/Referenzen, Beschreibung REST-Fallback), Persistenz-API für Collaboration | CE-PAGE-001…012, -019, CE-RT-003 | `API/app/views/page/**`, `API/db/models/page.py`, `API/bgtasks/{page_transaction_task,page_version_task}.py` | `libs/web/pages`, `libs/shared/editor` | I4 |
 | `Plane.Collaboration` | Hocuspocus-Protokoll, Dokument-Lebenszyklus (Laden/Speichern/Debounce, HTML→Binary-Migration), Awareness, Stateless-Events, Titel-Sync, Force-Close/Admin-Kanal, Mehrinstanz, Health, Dokument-Konvertierung, PDF-Export-Endpunkt | CE-RT-001, -002 (Serverteil), -004…009; technischer Träger des PDF-Exports (fachlich in `Plane.Pages`) | `apps/live/src/**` | `libs/shared/editor/collaboration` | I4 (Spike I0) |
-| `Plane.RealtimeEvents` | SignalR-Hub `/live/events/`, Gruppen-Autorisierung, Fan-out aus Outbox (H6-Andockstelle) | – (Fundament für den Zähler-Push der Notification-Inbox und für H6) | – (neu) | `libs/web/core/live-events` | I0 (Hub) / I5 |
+| `Plane.RealtimeEvents` | SignalR-Hub `/live/events/` (gehostet im Host `Plane.Realtime`, ABG-058), Gruppen-Autorisierung, Fan-out aus Outbox (H6-Andockstelle) | – (Fundament für den Zähler-Push der Notification-Inbox und für H6) | – (neu) | `libs/web/core/live-events` | I0 (Hub) / I5 |
 | `Plane.Assets` | FileAsset-Modell, Upload (Presigned POST/Proxy), Bestätigung + Metadaten-Job, Download-Redirects (Disposition/MIME), Duplizieren, Löschen, Bereinigung nicht hochgeladener Assets, Kommentarbilder Space | CE-OPS-009, -012, -013 (technische Basis für Anhänge, Page-Assets, Editor-Bilder, Space-Kommentarbilder, Upload-UI) | `API/app/views/asset/**`, `API/settings/storage.py`, `API/bgtasks/{storage_metadata_task,file_asset_task,copy_s3_object}.py` | `libs/web/core/assets` (`editorAssetStore`) | I1 |
 | `Plane.Analytics` | Workspace-Analytics (Tabs, Kennzahlen, Insights, Created vs Resolved, Customized), Analytics-Panel Projekt/Cycle/Modul, Legacy-Analytics + gespeicherte Views + CSV-Export per E-Mail | CE-ANA-001…009 | `API/app/views/analytic/**`, `API/bgtasks/analytic_plot_export.py` | `libs/web/analytics`, `libs/shared/blocks/charts` | I5 |
 | `Plane.Home` | Home-Widgets, Quick Links, Recents (`recent_visited_task`), Stickies, Legacy-Dashboard, Quickstart/Tour-Status | CE-HOME-001…010 | `API/app/views/workspace/{home,quick_link,recent_visit,sticky}.py`, `API/app/views/dashboard/*` | `libs/web/home`, `libs/web/stickies` | I5 |
@@ -808,7 +875,7 @@ public interface IScopeResolver                   // B1: CE löst nur Workspace/
 public sealed record Permission(string Key, ScopeLevel Scope, string? ApiScope = null);  // "project.work_item.create"
 public interface IPermissionEvaluator
 {
-    ValueTask<bool> HasAsync(PlanePrincipal principal, Permission permission, ScopeRef scope, CancellationToken ct);
+    ValueTask<bool> HasAsync(PlanePrincipal principal, Permission permission, ScopeRef scope, CancellationToken ct);   // Kurzform für EvaluateAsync(...).Allowed (02 §5.1.7, ABG-046)
 }
 public interface IRoleDefinitionProvider          // CE: SystemRoleProvider (20/15/5); E5: CustomRoleProvider
 {
@@ -894,7 +961,7 @@ frontend/
 ├── angular.json                    # Projekte web, admin, space (+ Libraries als Pfad-Mappings, kein Lib-Build)
 ├── tsconfig.base.json              # Pfade @plane/types, @plane/constants, @plane/utils, @plane/i18n, @plane/propel/*, @plane/blocks/*, @plane/editor, …
 ├── sheriff.config.ts               # Modulgrenzen (§6.3)
-├── eslint.config.js  .prettierrc  vitest.workspace.ts
+├── eslint.config.js  .prettierrc  vitest.config.ts   # vitest.config.ts mit test.projects: shared-node, shared-dom, web, admin, space, browser (ABG-007)
 ├── apps/
 │   ├── web/                        # base href "/"
 │   │   └── src/
@@ -906,6 +973,7 @@ frontend/
 │   │       └── pages/              # Routen-Komponenten 1:1 zu apps/web/app/(all)/**/page.tsx (gleiche Ordnernamen)
 │   ├── admin/                      # base href "/god-mode/"; pages/ 1:1 zu apps/admin/app/**
 │   ├── space/                      # base href "/spaces/";  pages/ 1:1 zu apps/space/app/**
+│   ├── gallery/                    # Angular-Komponenten-Galerie, nur Test-Builds, base href "/__gallery/" (Gateway-Route G-17, ABG-008)
 │   └── e2e/                        # Playwright: web/, admin/, space/, visual/ (Referenz-Screenshots des Originals), a11y/
 ├── libs/
 │   ├── shared/                     # ← packages/* (framework-agnostisch übernommen bzw. Angular-Port)
@@ -916,10 +984,13 @@ frontend/
 │   │   ├── services/               # ← packages/services        (Klassen 1:1, HttpClient statt Axios, Promise-API)
 │   │   ├── shared-state/           # ← packages/shared-state    (work-item-filters Store → Signal-Store)
 │   │   ├── cdk/                    # ← packages/hooks           (useOutsideClickDetector→Direktive, useLocalStorage→persisted(), usePlatformOS, useDialogDismissal, useHashScroll)
+│   │   │                           #   src/extensions/: app-neutrale Registry-Mechanik RouteExtension<K>, mergeRoutes, injectRegistry (Import @plane/cdk/extensions, ABG-023)
 │   │   ├── state-kit/              # neu: EntityMap, LoaderState, persisted(), QueryCache (SWR-Ersatz), debounceSignal
 │   │   ├── runtime-config/         # neu: RUNTIME_CONFIG-Token, Loader (provideAppInitializer)
 │   │   ├── tailwind-config/        # ← packages/tailwind-config (CSS 1:1)
-│   │   ├── propel/                 # ← @makeplane/propel@0.7.3: components/ (68), elements/ (57), base/, icons/ (Codegen), state-icons/, styles/ (1:1)
+│   │   ├── propel/                 # ← @makeplane/propel@0.7.3: components/ (68), elements/ (57), base/, headless/ (u. a. portal.ts, ABG-026), icons/ (Codegen), state-icons/, styles/ (1:1)
+│   │   ├── icons-lucide/           # generierte PlIconDef-Konstanten src/v0469 (lucide@0.469.0, Apps/Blocks) und src/v134 (lucide@1.34.0, Propel-intern) (ABG-027)
+│   │   ├── theme/                  # ThemeService, THEME_INLINE_SCRIPT, theme-asset-helpers.ts (ABG-027, Detail 09)
 │   │   ├── blocks/                 # ← packages/blocks: auth, breadcrumb, card, charts/{area,bar,line,pie,radar,tree-map}, common, context-menu, dialog,
 │   │   │                           #   emoji-icon-picker, emoji-reaction, empty-state (+59 Illustrationen), icons, layout, pill-button, portal,
 │   │   │                           #   property-select, select, skeleton, spinner, toast, types, utils, virtual-list
@@ -955,11 +1026,18 @@ frontend/
 │   │   ├── favorites/              # ← store/favorite.store.ts, sidebar-Favoriten
 │   │   ├── archives/               # ← components/archives
 │   │   ├── project-publish/        # ← store/project/project-publish.store.ts + Publish-Modal
-│   │   └── extensions/             # Registries (§6.4); CE-Implementierungen leer bzw. Default
+│   │   └── extensions/             # Web-Registries (§6.4), provideWebExtensions(); CE-Implementierungen leer bzw. Default
 │   ├── admin/                      # ← apps/admin: core/ (Root-, Instance-, Theme-, User-, Workspace-Store), authentication/ (nur Keycloak-Status), instance/, workspace/, common/
+│   │   └── extensions/             # ADMIN_SETTINGS_PAGES, ADMIN_ROUTE_EXTENSIONS, ADMIN_HEADER_SEGMENT_LABELS, provideAdminExtensions() (ABG-023)
 │   └── space/                      # ← apps/space: core/ (Root-Store, Instance, User), issues/ (List/Kanban read-only, Peek), views/, editor/, account/
+│       └── extensions/             # SPACE_ROUTE_EXTENSIONS, provideSpaceExtensions() (ABG-023)
 └── tools/
-    ├── icons-codegen/              # Propel-/Blocks-Icons → Angular-Komponenten (gleiches SVG)
+    ├── propel-port/                # Node-Werkzeuge (nur Dev): fetch-propel, vendor-css, extract-classes, port-variants, port-icons.mjs
+    │                               #   (Propel-/Solid-/lucide-/Blocks-/Web-Icons → PlIconDef-Konstanten + Render-Komponente svg[plSvgIcon];
+    │                               #   ersetzt das frühere tools/icons-codegen/, ABG-027), port-illustrations
+    ├── reference-gallery/          # React-19-Referenz-Galerie gegen Original-Propel/Blocks (nur Dev, 09 D09-ADR-16)
+    ├── gallery-stories/            # *.stories.json – gemeinsame Story-Definitionen (Original- und Angular-Galerie)
+    ├── visual/                     # css-diff, Referenz-CSS, capture-reference, Visual-Report (09 §3.2/§3.14)
     ├── contract-check/             # openapi-typescript-Typen vs. libs/shared/types (ADR-047)
     └── i18n-sync-check/            # wie Original-CI
 ```
@@ -995,13 +1073,16 @@ frontend/
 | `type:data` | `libs/shared/{services,state-kit,shared-state,i18n,runtime-config}` | `type:types/constants/utils`, `type:data` |
 | `scope:web` | `libs/web/*` | `scope:shared`, `libs/web/core`, eigene Domäne; **keine** andere `libs/web/<domäne>` außer über deren `public-api.ts` und nur in Richtung der Matrix in `08-…` (z. B. `cycles` → `work-items`) |
 | `scope:admin` / `scope:space` | `libs/admin/*` / `libs/space/*` | `scope:shared` + eigene Scope-Libs |
+| `domain:extensions` | `libs/{web,admin,space}/extensions` | nur `scope:shared` (u. a. `@plane/cdk/extensions`) (ABG-023) |
 | `type:app` | `apps/*` | Libs des eigenen Scopes + `scope:shared` |
 
 Jede Lib exportiert ausschließlich über `public-api.ts`; Deep-Imports sind verboten (Sheriff `encapsulation`).
 
 ### 6.4 Erweiterungs-Registries im Frontend (CE-Pflicht, 🧱)
 
-| Registry (`libs/web/extensions`) | Zweck | Original-Vorbild | Pakete |
+Token-Libs je App (ABG-023): `libs/web/extensions` (Web-Tokens unten, `provideWebExtensions()`), `libs/admin/extensions` (`ADMIN_SETTINGS_PAGES`, `ADMIN_ROUTE_EXTENSIONS`, `ADMIN_HEADER_SEGMENT_LABELS`, `provideAdminExtensions()`), `libs/space/extensions` (`SPACE_ROUTE_EXTENSIONS`, `provideSpaceExtensions()`); die app-neutrale Mechanik (`RouteExtension<K>`, `mergeRoutes`, `injectRegistry`) liegt in `libs/shared/cdk/src/extensions` (Import `@plane/cdk/extensions`). Sheriff-Tag `domain:extensions` darf nur `scope:shared` importieren.
+
+| Registry (`libs/{web,admin,space}/extensions`, Mechanik `@plane/cdk/extensions`) | Zweck | Original-Vorbild | Pakete |
 |---|---|---|---|
 | `ROUTE_EXTENSIONS` (Multi-Provider `Routes`) | zusätzliche Routen unter Workspace/Projekt/Settings | `extendedRoutes`/CE-Stubs in `apps/web` | B1, D1, A3…A7, F2 |
 | `SIDEBAR_ITEMS` | Workspace-/Projekt-Sidebar-Einträge mit Reihenfolge, Permission, Feature-Flag | `components/sidebar`, `navigation` | B1, D1, A4 |
@@ -1015,6 +1096,10 @@ Jede Lib exportiert ausschließlich über `public-api.ts`; Deep-Imports sind ver
 | `RELATION_TYPES` | Relationstypen (Label, Icon, Gegenrichtung) aus dem Katalog `work_item_relation_types` statt fest verdrahteter Konstante; CE-Default = Werte aus `ISSUE_RELATION_OPTIONS` des Originals | `WEB/components/relations/index.tsx` | A9 |
 | `PERMISSION_EVALUATOR` (Token, kein Multi-Provider) | Implementierung hinter `PermissionService.allowPermissions(...)`; CE = rollenbasiert wie `user.permission`-Store | `store/user/permission` | E5, B1 |
 | `LIVE_EVENT_HANDLERS` | Reaktionen auf SignalR-Events (Store-Updates je Objekttyp) | – (neu) | H6, F2 |
+| `ADMIN_SETTINGS_PAGES` (`libs/admin/extensions`) | zusätzliche God-Mode-Einstellungsseiten | `apps/admin` Settings-Navigation | E3, E7 |
+| `ADMIN_ROUTE_EXTENSIONS` (`libs/admin/extensions`) | zusätzliche Routen in der Admin-App | `apps/admin/app/routes.ts` | E3, E7 |
+| `ADMIN_HEADER_SEGMENT_LABELS` (`libs/admin/extensions`) | Beschriftungen zusätzlicher Header-/Breadcrumb-Segmente (ersetzt `EXTENDED_HEADER_SEGMENT_LABELS`) | `apps/admin` Header | E7 |
+| `SPACE_ROUTE_EXTENSIONS` (`libs/space/extensions`) | zusätzliche Routen in der Space-App | `apps/space/app/routes.ts` | B5 |
 
 ### 6.5 Store-Skelett (Konvention, Detail in `08-…`)
 
@@ -1065,7 +1150,7 @@ export class CycleStore {
 | 7.6 | **IDs** | Primärschlüssel `uuid`, erzeugt in der Anwendung als **UUIDv7** (`IIdGenerator`); fachliche Nummern (`sequence_id` je Projekt, Projekt-`identifier`) über `SequenceAllocator` (Zeilen-Lock auf Projekt-Zähler, nebenläufigkeitssicher, lückenfrei pro Transaktion wie Original `IssueSequence`); öffentliche Anchors (Space) als zufällige 32-Zeichen-Hex wie Original | Concurrency-Test (100 parallele Creates) |
 | 7.7 | **Soft-Delete** | `ISoftDeletable` (`deleted_at`), `Remove()` wird vom Interceptor in ein Update umgewandelt; benannter Query-Filter `soft_delete`; Kaskade explizit über `SoftDeleteCascadeRegistry` (entspricht `soft_delete_related_objects`); `IgnoreQueryFilters(["soft_delete"])` ersetzt `all_objects`; Unique-Indizes als partielle Indizes `WHERE deleted_at IS NULL`; Hard-Delete-Job nach `HARD_DELETE_AFTER_DAYS` (Default 60) | Integrationstests je Kaskade |
 | 7.8 | **Audit** | `created_at`, `updated_at`, `created_by_id`, `updated_by_id` automatisch (Interceptor, aus `ICurrentActor`); Bot-/System-Aktor als eigener Benutzer (`is_bot`); fachliche Historie ausschließlich über die Activity-Pipeline (je Feldänderung ein Activity-Eintrag mit `field`, `old_value`, `new_value`, `verb`, `comment` wie `issue_activity`) **synchron in derselben Transaktion**; Webhooks/Notifications/E-Mails asynchron über Outbox | Activity-Golden-Tests |
-| 7.9 | **Multi-Tenancy** | Jede workspace-gebundene Entität hat `workspace_id`; `IWorkspaceContext` (aus `{slug}`, Projekt, Anchor, API-Key) ist Pflicht-Parameter aller Handler mit Workspace-Bezug (`WorkspaceScope`/`ProjectScope` als Endpoint-Parameter, gebunden durch `ScopeBindingFilter`); benannter Filter `workspace_tenant` als Netz; Workspace-Slug-Regeln (Regex, Länge 48, reservierte Slugs inkl. `RESTRICTED_URLS`) aus `API/utils/constants.py` | Tenant-Isolationstest je Modul (Zugriff mit fremdem Slug → 403/404 wie Original) |
+| 7.9 | **Multi-Tenancy** | Jede workspace-gebundene Entität hat `workspace_id`; `IWorkspaceContext` (aus `{slug}`, Projekt, Anchor, API-Key) ist Pflicht-Parameter aller Handler mit Workspace-Bezug (`WorkspaceScope`/`ProjectScope` werden vom `ScopeBindingFilter` aufgelöst und im scoped Halter `IRequestScope` abgelegt; Endpunkte und Handler lesen `scope.Workspace`/`scope.Project`/`scope.Current` – **keine** `WorkspaceScope`/`ProjectScope`-Endpoint-Parameter, 02 §5, ABG-046); benannter Filter `workspace_tenant` als Netz; Workspace-Slug-Regeln (Regex, Länge 48, reservierte Slugs inkl. `RESTRICTED_URLS`) aus `API/utils/constants.py` | Tenant-Isolationstest je Modul (Zugriff mit fremdem Slug → 403/404 wie Original) |
 | 7.10 | **Berechtigungen** | Jede Route trägt genau eine `.RequirePermission(...)`-Angabe oder `.AllowAnonymous()` (Architekturtest); Rollenwerte nie im Fachcode, nur im `SystemRoleProvider`; Sonderregeln (Ersteller-Bypass, WS-Admin-Override, Gast-Sichtbarkeit, Page-Zugriff privat/öffentlich, Sperre) als benannte Regeln im Katalog; 401 vs. 403 exakt wie Original (`A06` §3.19.3) | Permission-Matrix-Test (Rolle × Endpunkt) aus `05-…` |
 | 7.11 | **Trailing Slash** | Routen-Templates ohne abschließenden Slash; Server akzeptiert **mit und ohne** Slash ohne Redirect (kein 301 für POST/PATCH; `APPEND_SLASH`-Semantik nicht nachgebaut); Client-Interceptor normalisiert wie Original auf Slash | Routing-Test über alle registrierten Endpunkte (je Route beide Varianten) |
 | 7.12 | **Runtime-Config** | Keine Build-Zeit-ENV im Frontend; Gateway liefert `/{base}runtime-config.json` (`{ "api_base_url", "api_base_path", "web_base_url", "admin_base_url", "admin_base_path", "space_base_url", "space_base_path", "live_base_url", "live_base_path", "app_version", "enable_session_recorder": false }` – Felder entsprechen den Original-`VITE_*`-Variablen, `A08` §2.13) aus `Plane__Urls__*`; Laden per `provideAppInitializer` vor dem ersten Routing; Instanz-Konfiguration weiterhin über `GET /api/instances/` | E2E: gleiche Builds unter anderen Base-URLs |
@@ -1096,7 +1181,7 @@ Versionen = Mindest-/Zielstand zum Start von I0 (Minor-Updates erlaubt, Major nu
 | `Aspire.Hosting.JavaScript` | 13.6.x (stabil; `AddJavaScriptApp(name, appDirectory, runScriptName)` + `WithPnpm()` geprüft) | MIT | Angular-Dev-Server (pnpm) | AppHost |
 | `Aspire.Hosting.Docker` (stabil), `Aspire.Hosting.Kubernetes` (**Preview**) | 13.6.x | MIT | Publisher Compose/K8s | AppHost |
 | `Aspire.Hosting.Testing` | 13.x | MIT | AppHost-Tests | Tests |
-| `Aspire.Npgsql.EntityFrameworkCore.PostgreSQL` | 13.x | MIT | Client-Integration (Health, Telemetrie, Retry) | Api, Worker, Realtime, Migrator |
+| `Aspire.Npgsql.EntityFrameworkCore.PostgreSQL` | 13.x | MIT | Client-Integration (Health, Telemetrie, Retry) nur über `EnrichNpgsqlDbContext` nach `AddDbContext`; `AddNpgsqlDbContext<T>()` (DbContext-Pooling) verboten (ABG-048) | Api, Worker, Realtime, Migrator |
 | `Aspire.StackExchange.Redis` (+ `.DistributedCaching`) | 13.x | MIT | Valkey-Client-Integration | Api, Worker, Realtime |
 | `Microsoft.EntityFrameworkCore` (+ `.Design`, `.Relational`) | 10.0.x | MIT | ORM | Data, Module |
 | `Npgsql.EntityFrameworkCore.PostgreSQL` | 10.0.x | PostgreSQL License | EF-Provider | Data |
@@ -1143,7 +1228,10 @@ Versionen = Mindest-/Zielstand zum Start von I0 (Minor-Updates erlaubt, Major nu
 | **Test** `Verify.XunitV3` | 33.x | MIT | Golden-Files/Snapshots | Tests |
 | **Test** `WireMock.Net` | 2.x | Apache-2.0 | HTTP-Fakes (Forgejo, LLM, Webhook-Ziele) | Tests |
 | **Test** `TngTech.ArchUnitNET.xUnitV3` | 0.13.x | Apache-2.0 | Architekturtests | ArchitectureTests |
-| **Test** `Microsoft.Playwright` | 1.6x (1.64.x) | MIT | Browser-Tests (Collaboration-Protokoll mit echtem Provider) | Collaboration.Tests |
+| **Test** `Microsoft.Playwright` | 1.64.x (gleiche Minor wie `@playwright/test`; Browser-Container `mcr.microsoft.com/playwright:v1.64.1-noble`, per Digest gepinnt, ABG-004) | MIT | Browser-Tests (Collaboration-Protokoll mit echtem Provider) | Collaboration.Tests |
+| **Test** `FsCheck` | 3.x | BSD-3-Clause | Property-Based-Tests (nur Testprojekte, ABG-005) | Tests |
+| **Test** `coverlet.MTP` | 10.x | MIT | **einziges** .NET-Coverage-Paket (Microsoft.Testing.Platform, Ausgabe Cobertura, ABG-005) | Tests |
+| **Test/CI** `ReportGenerator` (`dotnet-reportgenerator-globaltool`) | 5.x ⚠ | Apache-2.0 | Coverage-Berichte und Diff-Coverage (ABG-005) | CI |
 | **Test** `Bogus` | 35.x | MIT | Testdaten/Dummy-Daten (CE-OPS-024) | Tests, Cli |
 
 ### 8.2 Frontend (npm, `pnpm`-Catalog)
@@ -1151,7 +1239,7 @@ Versionen = Mindest-/Zielstand zum Start von I0 (Minor-Updates erlaubt, Major nu
 | Paket | Version | Lizenz | Zweck |
 |---|---|---|---|
 | `@angular/core`, `common`, `router`, `forms`, `platform-browser`, `compiler`, `animations` | 22.x | MIT | Framework (zoneless, Signals, Signal Forms, `httpResource`) |
-| `@angular/cdk` | 22.x | MIT | a11y (FocusTrap, LiveAnnouncer), Overlay-Basis, Layout |
+| `@angular/cdk` | 22.x | MIT | **nur a11y** (FocusTrap, LiveAnnouncer, InteractivityChecker); **kein** `@angular/cdk/overlay` (Lint-Regel `no-cdk-overlay`) – Overlays über eigene Portal-Schicht `libs/shared/propel/headless/portal.ts` + `@floating-ui/dom` (09 D09-ADR-10/-11, ABG-026) |
 | `@angular/aria` | 22.x | MIT | Headless-ARIA-Patterns (Menu, Listbox, Combobox, Tabs, Tree) |
 | `@angular/cli`, `@angular/build` | 22.x | MIT | Build (esbuild), Dev-Server, Vitest-Runner |
 | `typescript` | **6.0.x** (Peer von `@angular/build` 22: `>=6.0 <6.1`; TS 7 nicht zulässig; Original: 5.8.3) | Apache-2.0 | Sprache |
@@ -1159,7 +1247,7 @@ Versionen = Mindest-/Zielstand zum Start von I0 (Minor-Updates erlaubt, Major nu
 | `@tailwindcss/typography` | 0.5.19 | MIT | Prose-Styles (wie Original) |
 | `class-variance-authority` | 0.7.1 | Apache-2.0 | Varianten (wie Propel) |
 | `clsx`, `tailwind-merge` | 2.1.x, 3.x | MIT | `cn()` |
-| `@floating-ui/dom` | 1.7.x | MIT | Popover-/Tooltip-Positionierung |
+| `@floating-ui/dom` | 1.7.x | MIT | Popover-/Tooltip-Positionierung (mit eigener Portal-Schicht, ABG-026) |
 | `@tiptap/core`, `@tiptap/pm`, `@tiptap/starter-kit`, `@tiptap/extension-*` (blockquote, character-count, collaboration, document, emoji, heading, image, list-item, mention, placeholder, task-item, task-list, text, text-align, text-style, underline), `@tiptap/html`, `@tiptap/suggestion` | 2.27.3 (core) / 2.22.3 (Rest), wie Catalog des Originals | MIT | Editor (Schema-Freeze) |
 | `prosemirror-view`, `prosemirror-model` | 1.42.6, 1.25.12 (gepinnt) | MIT | ProseMirror |
 | `prosemirror-codemark` | 0.4.2 | MIT | Inline-Code-Cursor |
@@ -1183,11 +1271,14 @@ Versionen = Mindest-/Zielstand zum Start von I0 (Minor-Updates erlaubt, Major nu
 | `unified`, `rehype-parse`, `rehype-remark`, `remark-stringify`, `hast-util-to-mdast` | wie Original-Catalog | MIT | HTML→Markdown (`packages/utils` 1:1) |
 | `uuid` | 14.0.0 | MIT | IDs im Editor |
 | `chroma-js` | 3.2.x | BSD-3-Clause | Custom-Theme-Farbberechnung (wie `packages/utils`) |
-| `lucide` (statische SVGs) | 0.469.x (Icon-Stand wie Original) | ISC | Icons (Codegen) |
+| `lucide` (statische SVGs, Apps/Blocks) | **0.469.0** (Icon-Stand wie Original) | ISC | statische SVG-Quelle für den Codegen `frontend/tools/propel-port/port-icons.mjs` → `libs/shared/icons-lucide/src/v0469` (ABG-027) |
+| `lucide` (statische SVGs, Propel-intern) | **1.34.0** (npm-Alias, z. B. `lucide-v134`) | ISC | statische SVG-Quelle für den Codegen → `libs/shared/icons-lucide/src/v134` (ABG-027) |
 | `@fontsource-variable/inter`, `@fontsource/ibm-plex-mono`, `@fontsource/material-symbols-rounded` | 5.2.8, 5.2.7, 5.2.30 | OFL-1.1 / Apache-2.0 | gebündelte Schriften |
-| **Dev** `vitest`, `@vitest/coverage-v8` | 4.1.x (wie Original; `@angular/build` 22 erlaubt `^4.0.8 \|\| ^5.0.0`) | MIT | Unit-Tests |
+| **Dev** `vitest`, `@vitest/coverage-v8` | 4.1.x (wie Original; `@angular/build` 22 erlaubt `^4.0.8 \|\| ^5.0.0`) | MIT | Unit-Tests (`frontend/vitest.config.ts` mit `test.projects`, ABG-007) |
+| **Dev** `@vitest/browser-playwright` | 4.1.x | MIT | Vitest-Browser-Modus (`provider: playwright()`, Projekt `browser`, ABG-007) |
+| **Dev** `@tailwindcss/oxide` | 4.1.17 (gleiche Version wie der Tailwind-Compiler) | MIT | Tailwind-Scanner für `extract-classes.mjs` (ABG-027) |
 | **Dev** `@testing-library/angular`, `@testing-library/user-event` | 19.x (Peer `@angular/core >= 21`), 14.6.x | MIT | Komponententests |
-| **Dev** `@playwright/test` | 1.5x | Apache-2.0 | E2E, Visual Regression |
+| **Dev** `@playwright/test` | **1.64.x** (npm-Stand 23.10.2026: 1.64.1; gleiche Minor wie `Microsoft.Playwright`, gemeinsames Browser-Image `mcr.microsoft.com/playwright:v1.64.1-noble` per Digest gepinnt, Digest zum I0-Start, ABG-004) | Apache-2.0 | E2E, Visual Regression |
 | **Dev** `@axe-core/playwright` | 4.x | MPL-2.0 | Accessibility-Tests |
 | **Dev** `eslint`, `angular-eslint`, `typescript-eslint` | 9.x, 22.x, 8.x | MIT/BSD-2 | Lint |
 | **Dev** `@softarc/sheriff-core`, `@softarc/eslint-plugin-sheriff` | 0.20.x | MIT | Modulgrenzen |
@@ -1213,7 +1304,7 @@ Alle Spikes **starten** in I0 als paralleler Spike-Track (S0, S7, S11 gaten die 
 | **S8** Objektspeicher-Kompatibilität | Welches S3-Backend ist Dev/Test-Default, welcher Upload-Modus Standard? | 3 PT | Matrix SeaweedFS, Garage, Ceph-RGW (optional), `pgsty/silo`: Presigned POST mit `content-length-range` + `Content-Type`-Bedingung, Presigned GET mit `response-content-disposition`/`-type`, HEAD, Copy, Batch-Delete, Zugriff über Gateway mit Original-Host (SigV4); Dateisystem-Provider mit Proxy-Modus besteht dieselben Contract-Tests | kein Open-Source-Backend erfüllt Presigned POST | Default `UploadMode=Proxy` (Frontend unverändert), Dev-Container = bestes Backend der Matrix | I1 |
 | **S9** Work-Item-Listen-Performance & Filter-Engine | Übersetzt EF Core die Filter-AST + Gruppierung/Sub-Gruppierung/Pagination effizient? | 5 PT | 50 000 Work Items/Projekt, 20 Labels, 30 Mitglieder: gruppierte Liste (state, Sub-Gruppe priority) p95 < 300 ms, Spreadsheet 100 Zeilen p95 < 200 ms, AND/OR/NOT mit 6 Bedingungen p95 < 400 ms; SQL-Plan ohne Seq-Scan auf `work_items` bei Projektfilter; Ergebnisse identisch zu Original-Fixtures | Zielwerte um > 2× verfehlt | handgeschriebenes SQL über `FromSql`/`SqlQuery` für Gruppierungs-Pfade (Window-Functions wie Original), Materialisierung von M2M-IDs per `array_agg` | I2 |
 | **S10** Designsystem-Parität | Erreichen Angular-Komponenten mit Angular Aria/CDK + floating-ui DOM- und Pixelgleichheit zu Propel/Base UI? | 5 PT | 10 Leit-Komponenten (Button, Input, Menu, Combobox/Select, Tooltip, Dialog, Tabs, Popover, Avatar, Toast) + Workspace-Shell: DOM-Snapshot gleich (Klassen, `data-*`, ARIA), Visual-Diff ≤ 0,1 % hell/dunkel/High-Contrast; Tastaturbedienung wie Original | Angular Aria fehlt benötigte Patterns **oder** Host-Elemente erzwingen Abweichung | eigene Headless-Implementierung auf CDK a11y; `display: contents`-Konvention verschärfen | I0 (Shell), alle UI |
-| **S11** Paritäts-Harness | Können Original und Ziel automatisch verglichen werden? | 4 PT | Original per `docker-compose-local.yml` + deterministischem Seed (`Plane.Tools.ParityHarness seed`) startbar; Recorder zeichnet Requests/Responses als Golden-Files auf; Replay gegen Ziel mit JSON-Diff (ignorierte Felder: IDs, Zeitstempel per Pfad-Regeln, `deviations.yaml`); Playwright-Screenshot-Katalog für 5 Seiten des Originals erzeugt; CI-Job läuft < 15 min | Original nicht deterministisch seedbar | Seeds über Original-API statt DB; Vergleich nur strukturell (Schema + Enum-Werte) | Definition of Done aller WPs |
+| **S11** Paritäts-Harness | Können Original und Ziel automatisch verglichen werden? | 4 PT | Original per `tools/parity/start-original.sh` (`tools/parity/compose.original.yml`, Original v1.4.2 mit per Digest gepinnten `makeplane/*`-Images, Proxy `http://localhost:13000`, Pins in `tools/parity/original.env` inkl. `ORIGINAL_SHA`; `--from-source` für Visual-Aufnahmen; ABG-006) + deterministischem Seed (`Plane.Tools.ParityHarness seed`) startbar; Recorder zeichnet Requests/Responses als Golden-Files auf; Replay gegen Ziel mit JSON-Diff (ignorierte Felder: IDs, Zeitstempel per Pfad-Regeln, `deviations.yaml`); Playwright-Screenshot-Katalog für 5 Seiten des Originals erzeugt; CI-Job läuft < 15 min | Original nicht deterministisch seedbar | Seeds über Original-API statt DB; Vergleich nur strukturell (Schema + Enum-Werte) | Definition of Done aller WPs |
 | **S12** Eigene Outbox/Job-Queue | Erfüllt die PostgreSQL-Implementierung Zuverlässigkeit und Durchsatz? | 4 PT | 1 000 Jobs/s mit 3 Worker-Instanzen ohne Doppelverarbeitung (Inbox-Nachweis); Outbox-Latenz p95 < 500 ms (mit `LISTEN/NOTIFY`); Leader-Failover des Schedulers < 30 s, kein doppelter Cron-Lauf; Retries/Backoff/Dead-Letter wie spezifiziert; Kill -9 eines Workers verliert keine Nachricht | ein Kriterium nach 4 PT rot | Wolverine (MIT) mit PostgreSQL-Persistenz hinter denselben Interfaces (`IJobScheduler`, `IEventConsumer`) | I1 |
 
 ```mermaid
@@ -1403,3 +1494,27 @@ Dieses Dokument legt den Rahmen fest; Details gehören in die folgenden Dokument
 ### Verbleibende Punkte (nicht im Dokument lösbar)
 
 Siehe Anhang B (O-01 … O-11). Querverweise auf andere Dokumente: `00-grundsatzentscheidungen.md` nennt CE-INST-004 nicht als angepasst (O-11) und führt in ADR-004 noch „Integrationen wie GitHub/Slack“ als optionale externe Dienste (überholt durch ADR-007); `30-paid-auswahlliste.md` nennt in F2 „Forgejo-Login“, während `00` (ADR-007) einen eigenen Forgejo-Login ausschließt (gemeint ist SSO über Keycloak).
+
+---
+
+## Abgleich-Protokoll (Dokument 17)
+
+Umgesetzt am 23.10.2026 nach den verbindlichen Entscheidungen aus `17-abgleich-dokumentuebergreifend.md` / `_data/17-abgleich.json` (alle 15 Aufträge an dieses Dokument). Die Änderungen sind Präzisierungen; keine ADR-Entscheidung wurde inhaltlich umgestoßen.
+
+| ABG-ID | Umgesetzt in | Kern der Änderung |
+|---|---|---|
+| ABG-004 | §8.1, §8.2 | `@playwright/test` 1.64.x = `Microsoft.Playwright` 1.64.x; gemeinsames Browser-Image `mcr.microsoft.com/playwright:v1.64.1-noble` (Digest-Pin zum I0-Start) |
+| ABG-005 | §8.1, §2.3 | `FsCheck` 3.x, `coverlet.MTP` 10.x (einziges .NET-Coverage-Paket), `ReportGenerator`; `Microsoft.Testing.Extensions.CodeCoverage` verboten (proprietäre Lizenz) |
+| ABG-006 | §5.1 (`tools/parity/`), §9 S11 | Original per `tools/parity/start-original.sh` (`compose.original.yml`, Proxy :13000, `original.env`, `--from-source`) statt `docker-compose-local.yml` |
+| ABG-007 | §6.1, §8.2 | `frontend/vitest.config.ts` mit `test.projects` statt `vitest.workspace.ts`; `@vitest/browser-playwright` 4.1.x |
+| ABG-014 | §3.3, §3.4, ADR-035 | Endpoint `management` (`Plane__Management__Port`, 8081); `api`/`realtime` mit `WithHttpHealthCheck("/health/ready", endpointName: "management")`; `/health/startup`, JSON-Format statt ProblemDetails |
+| ABG-018 | §3.3, §3.4, §4.1, §5.1 | (a) Keycloak dev/test ohne Datenvolume; (b) Valkey ohne Volume, `--save "" --appendonly no`; (c) Forgejo-DB-Rolle `forgejo` mit `forgejo-db-password` (Init-Skript `deploy/postgres/init/10-roles-and-databases.sh`); (d) vier OIDC-Secrets `oidc-web-secret`, `oidc-admin-secret`, `oidc-space-secret`, `oidc-backend-secret`; (e) `WithRealmImport` mit genau einer Datei je Profil, Prod/`prodlike` über `deploy/keycloak/config/*.json` + Container `keycloak-config`; (f) Theme-Bind-Mount `deploy/keycloak/themes`; (g) Repository `funk.`, neue Projekte `src/hosts/Plane.Hosting` und `src/hosts/Plane.AllInOne`, Kommentar zu `plane-realm.json`. **O-14-07** ist damit inhaltlich erledigt (Schließen des Eintrags in 14 obliegt dem 14-Abgleich) |
+| ABG-019 | ADR-052, §5.1 | AIO als eigene generierte Compose-Datei `deploy/compose/docker-compose.aio.yaml` (14 D14-ADR-13), kein Compose-Profil `aio` |
+| ABG-023 | §6.1, §6.3, §6.4 | Token-Libs `libs/{web,admin,space}/extensions`, Mechanik `@plane/cdk/extensions`, Admin-/Space-Tokens, Sheriff-Tag `domain:extensions` |
+| ABG-026 | ADR-041, §8.2 | Angular CDK nur a11y; Overlays über eigene Portal-Schicht + `@floating-ui/dom`; `@angular/cdk/overlay` verboten (`no-cdk-overlay`) |
+| ABG-027 | §5.1, §6.1, §8.2 | `libs/shared/icons-lucide/`, `libs/shared/theme/`, `frontend/tools/{propel-port,reference-gallery,gallery-stories,visual}`; `tools/icons-codegen/` bzw. `tools/icons/codegen.mjs` entfällt; `lucide` 0.469.0 und 1.34.0; `@tailwindcss/oxide` |
+| ABG-035 | §3.4 | über ABG-018 (d): `Plane__Auth__Clients__Web__ClientSecret`, `…__Admin__…`, `…__Space__…`, `Plane__Auth__Backend__ClientSecret`; `Plane__Auth__Oidc__ClientSecret` entfernt |
+| ABG-046 | §5.3, §5.5, §7 (7.9) | `IRequestScope` statt `ProjectScope`-Parameter, `IModule.Permissions` als `IEnumerable<PermissionDescriptor>`, generierte `ProjectsPermissions.ProjectLabel*`; `HasAsync` = Kurzform von `EvaluateAsync(...).Allowed`. O-D02-02 in 02 geschlossen |
+| ABG-047 | §5.1, §5.2 R9 | R9-Ausnahme `InternalsVisibleTo` für `Plane.Api`, `Plane.Worker`, `Plane.Realtime`, `Plane.<M>.Tests` (`Directory.Build.targets`, `PlaneInternalsVisibleTo`); Architekturtest gegen weitere Einträge |
+| ABG-048 | ADR-037, §4.1, §8.1 | Read-Replica als zweiter `DbContext`-Typ ohne DbContext-Pooling (`AddDbContext` + `EnrichNpgsqlDbContext`; `AddNpgsqlDbContext<T>()` verboten) |
+| ABG-058 | §1.1, §1.4, §5.1, §5.4 | H6: Modul `Plane.RealtimeEvents`, gehostet in `Plane.Realtime`; B1: `ScopeRef`/`IScopeResolver`/`RouterStore.teamspaceId` ab I0, Schema-Vorhalte `teamspace_id` ab I1 |

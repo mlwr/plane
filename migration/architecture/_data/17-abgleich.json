@@ -1,0 +1,766 @@
+[
+  {
+    "id": "ABG-001",
+    "decision": "Profil `test` importiert genau **eine** Datei `deploy/keycloak/realms/plane-realm.test.json` per `WithRealmImport`. Sie ist **generiert** (nie von Hand editiert, eingecheckt) durch `Plane.Tools.ParityHarness keycloak-test-realm --out deploy/keycloak/realms/plane-realm.test.json` aus `plane-realm.json` (Clients, Scopes, Mapper, Flows **und** die sieben D05-Testbenutzer §3.15.7) ⊕ `tests/seed/keycloak/test-overrides.json` (Access-Token 60 s, Brute-Force-Testschwellen, Back-Channel-URL) ⊕ `tests/seed/keycloak/parity-users.json` (Parity-Seed-Benutzer mit UUIDv5-IDs, Gruppen `team-a`/`team-b`, Test-Client `plane-test-app`). Aktualität prüft `--check` in `KeycloakRealmConfigTests.TestRealm_IsUpToDate`. Es gibt **keine** AppHost-Ressource `keycloak-test-users` und **keinen** Partial Import. Härtungsprüfungen des Prod-Templates (D15-SEC-11) laufen gegen `deploy/keycloak/config/00-plane-realm.json`.",
+    "targets": [
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "§3.3.3 Zeile `test`: Datei als **generiert** kennzeichnen (Generator + Quelldateien wie Entscheidung), Benutzerangabe „D05-Benutzer + Parity-Seed-Benutzer aus dem Generator“, Marker „⚠ Abgleich mit D15“ entfernen; §3.3.4-Baumkommentar Z. 338 und Z. 105 entsprechend; O-14-14 als erledigt (ABG-001) markieren."
+      },
+      {
+        "doc": "09-ui-paritaet-designsystem.md",
+        "change": "§3.14.2 Z. 554: `deploy/keycloak/realms/parity-users.partial.json` und „Partial Import über die Ressource `keycloak-test-users`“ ersetzen durch „Benutzer aus `tests/seed/keycloak/parity-users.json` im generierten Test-Realm (`15` §3.14.2)“."
+      },
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "§3.13/Tabelle Z. 942 (D15-SEC-11): Prüfobjekt „`plane-realm.json`-Prod-Template“ durch `deploy/keycloak/config/00-plane-realm.json` (+ `20-forgejo-client.json`) ersetzen; §9.3-Zeilen 05/14 als durch ABG-001 erledigt markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-002",
+    "decision": "Eigenes Keycloak-Image heißt `${PLANE_REGISTRY}/plane-keycloak:${PLANE_VERSION}` (Basis `quay.io/keycloak/keycloak:26.x`, Themes + `kc.sh build`).",
+    "targets": [
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "§3.15.1 Z. 730: `funk/keycloak` → `${PLANE_REGISTRY}/plane-keycloak:${PLANE_VERSION}`."
+      },
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "O-14-15 als erledigt (ABG-002) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-003",
+    "decision": "Client-ID `plane-forgejo` (confidential, Secret `${FORGEJO_CLIENT_SECRET}`, Redirect `${FORGEJO_PUBLIC_URL}/user/oauth2/keycloak/callback`). Aspire-Parameter bleibt `forgejo-client-secret`; der Forgejo-Auth-Source-Name bleibt `keycloak`.",
+    "targets": [
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "Z. 204 „Client `forgejo`“ → „Client `plane-forgejo`“; §3.3.2 Clients-Zelle `forgejo` → `plane-forgejo`; Z. 1899 `\"clientId\": \"forgejo\"` → `\"plane-forgejo\"`."
+      },
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "§3.14.2 Tabelle Z. 976: Client-Liste `plane-web`/`plane-admin`/`plane-space`/`forgejo` → `…/plane-forgejo`."
+      }
+    ]
+  },
+  {
+    "id": "ABG-004",
+    "decision": "`@playwright/test` **1.64.x** (npm-Stand geprüft 23.10.2026: 1.64.1) = `Microsoft.Playwright` **1.64.x**; Browser-Container für Referenz- und Ziel-Aufnahmen sowie .NET-Browser-Tests: `mcr.microsoft.com/playwright:v1.64.1-noble` (per Digest gepinnt, Digest-Wert zum I0-Start, O-D09-08).",
+    "targets": [
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "§8.2 Z. 1190: `1.5x` → `1.64.x` (gleiche Minor wie `Microsoft.Playwright`, gemeinsames Image `mcr.microsoft.com/playwright:v1.64.1-noble`)."
+      },
+      {
+        "doc": "08-frontend-angular-architektur.md",
+        "change": "§5 Library-Tabelle Z. 1124: `1.5x / 4.x` → `1.64.x / 4.x`."
+      },
+      {
+        "doc": "09-ui-paritaet-designsystem.md",
+        "change": "D09-ADR-17: `@playwright/test` 1.5x → 1.64.x; §3.14.3 Z. 562: Image `mcr.microsoft.com/playwright:v1.5x.y-noble` → `mcr.microsoft.com/playwright:v1.64.1-noble`."
+      }
+    ]
+  },
+  {
+    "id": "ABG-005",
+    "decision": "01 §8.1 ergänzt: `FsCheck` 3.x (BSD-3-Clause, nur Testprojekte), `coverlet.MTP` 10.x (MIT, Cobertura) als einziges .NET-Coverage-Paket, `ReportGenerator` (Apache-2.0) für Diff-Coverage. `Microsoft.Testing.Extensions.CodeCoverage` ist **verboten** (Eintrag in 01 §2.3).",
+    "targets": [
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "§8.1: drei Zeilen ergänzen (FsCheck 3.x, coverlet.MTP 10.x, ReportGenerator); §2.3: `Microsoft.Testing.Extensions.CodeCoverage` mit Grund „proprietäre Lizenz“ aufnehmen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-006",
+    "decision": "Einziger Einstieg `tools/parity/start-original.sh` (Repo-Wurzel `funk.`), startet `tools/parity/compose.original.yml` (Original v1.4.2, `makeplane/*`-Images per Digest, Mount `tests/seed` → `/parity` im `api`-Container) hinter dem Proxy `http://localhost:13000`; Pins in `tools/parity/original.env` (Image-Digests **und** `ORIGINAL_SHA`). Option `--from-source` baut die Images aus den Original-Dockerfiles am `ORIGINAL_SHA` (Pflicht für Visual-Aufnahmen). `docker-compose-local.yml` und `tools/ci/parity/` werden nicht verwendet.",
+    "targets": [
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "§9 S11: „Original per `docker-compose-local.yml`“ → „Original per `tools/parity/start-original.sh` (`compose.original.yml`, Proxy :13000, `original.env`)“."
+      },
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "§3.20 Z. 871 und Workflow-Zeile `parity.yml` Z. 882: Pfad/Compose-Datei/Ports durch Entscheidung ersetzen (Port 13000 statt 5432/6379/8000/9000/9090); Z. 2185 `tools/ci/parity/start-original.sh` → `tools/parity/start-original.sh`; Review-Protokoll Nr. 17 um Verweis ABG-006 ergänzen."
+      },
+      {
+        "doc": "09-ui-paritaet-designsystem.md",
+        "change": "§3.14.2 Z. 549: ⚠-Hinweis auf 14 §3.20 entfernen; O-D09-14 als erledigt (ABG-006) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-007",
+    "decision": "`frontend/vitest.config.ts` mit `test.projects` (Projekte `shared-node`, `shared-dom`, `web`, `admin`, `space`, `browser`); Browser-Modus über `@vitest/browser-playwright` 4.1.x (`provider: playwright()`). `vitest.workspace.ts` entfällt.",
+    "targets": [
+      {
+        "doc": "08-frontend-angular-architektur.md",
+        "change": "§3 Baum Z. 147: `vitest.workspace.ts` → `vitest.config.ts`; §5 Library-Liste: `@vitest/browser-playwright` 4.1.x (MIT, Dev) ergänzen."
+      },
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "§6.1 Z. 897: `vitest.workspace.ts` → `vitest.config.ts`; §8.2: `@vitest/browser-playwright` 4.1.x ergänzen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-008",
+    "decision": "Angular-Galerie: `frontend/apps/gallery/`, nur Test-Builds, vom Gateway ausschließlich im Profil `test` unter **`/__gallery/`** ausgeliefert (Route G-17, `<base href=\"/__gallery/\">`). Original-/Referenz-Galerie (React 19 + `@makeplane/propel@0.7.3` + Original-`packages/blocks`, nur Dev/Paritäts-CI): **`frontend/tools/reference-gallery/`**. Gemeinsame Story-Definitionen: `frontend/tools/gallery-stories/*.stories.json`. Beide Galerien verwenden dieselben relativen Routen `<component>/<story>?theme=<theme>` unter der Basis `/__gallery/` (Referenz-Galerie per Vite-`base: '/__gallery/'`). Der Name `original-gallery` entfällt. DOM-Normalisierung N1–N9 (09 §3.14.6) gilt für beide.",
+    "targets": [
+      {
+        "doc": "09-ui-paritaet-designsystem.md",
+        "change": "Z. 159: base href `\"/gallery/\"` → `\"/__gallery/\"`; §3.14.5 Z. 642: Route `/gallery/<component>/<story>` → `/__gallery/<component>/<story>` (Vite-`base`); H-08 auf ABG-008 umstellen (Name D09, Pfad D14)."
+      },
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "§3.2-Baum Z. 221, §3.10 Mermaid Z. 758, O-D15-08 Z. 1983, §9.2 Z. 2034 und Z. 231: `tools/original-gallery` → `frontend/tools/reference-gallery`; Kommentar „(= D09 `tools/reference-gallery`)“ streichen."
+      },
+      {
+        "doc": "08-frontend-angular-architektur.md",
+        "change": "§3-Baum Z. 185 `original-gallery/` → `reference-gallery/`; §8 Z. 2110 und Review Z. 2222 entsprechend."
+      }
+    ]
+  },
+  {
+    "id": "ABG-009",
+    "decision": "T0 = `2026-02-01T10:00:00Z` für Server-Uhr (`Plane__Testing__FixedUtcNow`), Browser-Uhr und alle Seed-Zeitstempel. Browser-Uhr ausschließlich per `page.clock.install({ time: new Date('2026-02-01T10:00:00Z') })` vor jeder Navigation; `page.clock.setFixedTime` wird nicht verwendet.",
+    "targets": [
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "§3.10 Tabelle Z. 746: `page.clock.setFixedTime('2026-02-01T10:00:00Z')` → `page.clock.install({ time: new Date('2026-02-01T10:00:00Z') })`; O-D15-11 als erledigt markieren (09 übernommen)."
+      }
+    ]
+  },
+  {
+    "id": "ABG-010",
+    "decision": "Präfix `D15-SEC-01…11` für die Sicherheitstests von 15, unpräfixiertes `SEC-xx` bleibt den Sicherheitskorrekturen von 05 vorbehalten. Geprüft: alle 05-Verweise lösen korrekt auf (D15-SEC-09 = Webhook-Signatur `X-Plane-Signature`, D15-SEC-04/-05 = DAST passiv/aktiv). Keine Textänderung nötig.",
+    "targets": [
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "§9.3 Zeile 05: Punkt „Test-IDs D15-SEC-xx“ als erledigt (ABG-010) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-011",
+    "decision": "Bis zur Erstellung gelten die Interims-Quellen aus 15 §9.1 (Endpunktliste, FloatField-/Referenztabellen, Event-Katalog, Task→Job-Tabelle) als verbindliche Vorlage. Jedes neu erstellte Dokument übernimmt die an es gerichteten Rückmeldungen aus 15 §9.3, 16 §9 und diesem Abgleich (ABG-053) und liefert die maschinenlesbaren Dateien `_data/endpoints.json` (04), FloatField-Liste (03), Event-Katalog (06).",
+    "targets": [
+      {
+        "doc": "03-datenmodell-efcore.md (noch nicht erstellt)",
+        "change": "bei Erstellung: FloatField-/Referenztabellen-Liste nach 15 §9.1; Outbox-Spalten nach ABG-053."
+      },
+      {
+        "doc": "04-api-design-und-endpunktkatalog.md (noch nicht erstellt)",
+        "change": "bei Erstellung: `_data/endpoints.json`; Entscheidung ABG-043 (Label-PUT) übernehmen."
+      },
+      {
+        "doc": "06-hintergrundjobs-events-benachrichtigungen.md (noch nicht erstellt)",
+        "change": "bei Erstellung: maschinenlesbarer Event-Katalog, Task→Job-Tabelle; Event-Namen aus 16 (O-16-08); Outbox-Spalten ABG-053."
+      }
+    ]
+  },
+  {
+    "id": "ABG-012",
+    "decision": "(1) `ApiLogHmacKey` **entfällt**; `api_activity_logs.token_identifier = token_hash` (SHA-256-Hex des API-Keys, D05-ADR-16). (2) `Plane:Security:SigningKey` bleibt Pflicht-Secret (Base64, ≥ 32 Byte, Aspire-Parameter `signing-key`, ENV `Plane__Security__SigningKey`) **nur** für HMAC-signierte Upload-Tokens und Dateisystem-URLs (Dateisystem-/Proxy-Modus, 14 §3.7.6) – nicht für Verschlüsselung, nicht für API-Key-Kennungen. (3) `SECRET_KEY` ist **kein** Alias: wird nicht gelesen; ist er gesetzt, Startwarnung `\"SECRET_KEY is ignored; ASP.NET Core Data Protection is used.\"`, bei bekannten Platzhalterwerten zusätzlich Level Critical (05 §4.4).",
+    "targets": [
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "D14-ADR-09 Z. 111: Satz zu `ApiLogHmacKey` (HKDF aus SigningKey) und „Alias `SECRET_KEY`“ streichen, Zweck auf Upload-Tokens/signierte Dateisystem-URLs beschränken; §3.9.1 Z. 540: Feld `ApiLogHmacKey` streichen; §3.9.2 Z. 1072: `SECRET_KEY` → Kategorie „E (ignoriert, Warnung; bekannter Platzhalter → Critical)“ ohne Zielschlüssel; O-14-12 als entschieden (ABG-012) markieren."
+      },
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "§3.15 Z. 940: „`SigningKey` … nur falls 14 D14-ADR-09 ihn weiterhin braucht“ → „`SigningKey` (Pflicht-Secret, Base64 ≥ 32 Byte; Upload-Tokens, signierte Dateisystem-URLs, ABG-012)“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-013",
+    "decision": "Bereits umgesetzt und damit verbindlich: `PlaneUrlsOptions.Idp`, `PlaneDatabaseOptions.MaxPoolSize`, `PlaneSecurityOptions.SigningKey` (siehe ABG-012), `PlaneScaleOptions`, `PlaneDataProtectionOptions`, `PlaneTelemetryOptions`; `PlaneGatewayOptions`/`PlaneTlsOptions` nur referenziert, Felder in 14 §3.9.1.",
+    "targets": [
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "Anhang Zuständigkeit Z. 2174: Nachträge als erledigt markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-014",
+    "decision": "Health-Endpunkte **nur auf dem Management-Port 8081** (`Plane__Management__Port`, in `dev`/`test` von Aspire dynamisch vergeben, Endpoint-Name `management`): `/health/live` (keine Abhängigkeiten), `/health/ready` (PostgreSQL, Schema-Gate, Data-Protection-Key-Ring, Valkey falls konfiguriert, Keycloak-Metadaten nur Api; Objektspeicher als Warnung, nicht blockierend), `/health/startup` (Migrationen/Initialisierung). Antwort `application/json`: `{\"status\": \"Healthy|Degraded|Unhealthy\", \"checks\": {\"<name>\": \"Healthy|Degraded|Unhealthy\"}}` ohne interne Details; HTTP 200 bei Healthy/Degraded, 503 bei Unhealthy. Kein ProblemDetails. App-Port-Endpunkte `GET /` (`{\"status\": \"OK\"}`), `/robots.txt` und `/live/health/` (Realtime) bleiben wie Original.",
+    "targets": [
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "§3.17: Spalte „Port“ ergänzen (8081 Management für `/health/*`, App-Port für `/`, `/robots.txt`, `/live/health/`), `/health/startup` aufnehmen, „Antwort als ProblemDetails-JSON“ durch das JSON-Format der Entscheidung ersetzen, Objektspeicher als nicht blockierend markieren; AK-19 Z. 2397 anpassen."
+      },
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "§3.4: `realtime`/`api` Health-Check auf `WithHttpHealthCheck(\"/health/ready\", endpointName: \"management\")` umstellen."
+      },
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "Verbleibende-Punkte-Liste: „Health response format … still needs to be unified“ als erledigt (ABG-014) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-015",
+    "decision": "Dev-Server `web` 4200, `admin` 4201 (`--serve-path /god-mode/`), `space` 4202 (`--serve-path /spaces/`), nur `127.0.0.1`, nur Profil `dev`; Port 3000 gehört ausschließlich dem Gateway.",
+    "targets": [
+      {
+        "doc": "08-frontend-angular-architektur.md",
+        "change": "§3.1.2 Tabelle: Dev-Ports 3000/3001/3002 → 4200/4201/4202; Hinweis „Aufruf immer über Gateway http://localhost:3000“."
+      },
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "O-14-13 als erledigt (ABG-015) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-016",
+    "decision": "Das Gateway setzt die CSP zentral: ab I0 `Content-Security-Policy-Report-Only`, ab I7 erzwungen (`Content-Security-Policy`), gesteuert über `Plane:Gateway:Csp:Mode` (`ReportOnly`│`Enforce`│`Off`, 05 §3.17), Verstöße an `POST /csp-report`; Theme-Inline-Script per Hash aus `theme-script.sha256`; `frame-ancestors 'none'` für Web/Admin, Space-Boards einbettbar, Space-Startseite `SAMEORIGIN`. `subresourceIntegrity: false` in 08 bleibt (Begründung: CSP mit Hash, Assets same-origin).",
+    "targets": [
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "§3.7.3 Z. 492: Zeile `Content-Security-Policy` auf Report-Only ab I0/Enforce ab I7 nach D05-ADR-23 umstellen, Option `Plane__Gateway__Csp__Mode`; „optional `Plane__Gateway__ContentSecurityPolicy`“ streichen."
+      },
+      {
+        "doc": "08-frontend-angular-architektur.md",
+        "change": "§3.1.2 Z. 199: Klammer „(Gateway setzt CSP)“ → „(Gateway setzt CSP nach 05 D05-ADR-23; Inline-Script per Hash)“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-017",
+    "decision": "Entschieden durch D05-ADR-12: `ENABLE_SIGNUP` bleibt Instanz-Konfiguration, Default `\"1\"`; bei `\"0\"` wird ein neuer Plane-Benutzer ohne offene Workspace-/Projekt-Einladung mit 5015 `SIGNUP_DISABLED` abgewiesen (Instanz-Admins ausgenommen); optional `Plane:Auth:RequiredRole`.",
+    "targets": [
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "Z. 1137: „regelt D05 (O-14-05)“ → „D05-ADR-12 (Default `1`, 5015 ohne Einladung)“; O-14-05 als entschieden (ABG-017) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-018",
+    "decision": "01 wird an den verfeinerten Stand angeglichen (Präzisierung, keine ADR-Änderung): (a) Keycloak in `dev`/`test` **ohne** Datenvolume (Dev-Datei-DB, Realm-Import bei jedem Start), `prodlike` mit `keycloakdb`; (b) Valkey **ohne** Volume, `--save \"\" --appendonly no` (flüchtig); (c) Forgejo-DB-Rolle `forgejo` mit Parameter `forgejo-db-password` (Init-Skript `deploy/postgres/init/10-roles-and-databases.sh`), nicht Superuser `postgres`; (d) vier OIDC-Secrets `oidc-web-secret`, `oidc-admin-secret`, `oidc-space-secret`, `oidc-backend-secret` → `Plane__Auth__Clients__Web__ClientSecret`, `…__Admin__…`, `…__Space__…`, `Plane__Auth__Backend__ClientSecret`; (e) `WithRealmImport` mit genau **einer Datei** je Profil (`plane-realm.json` bzw. generierte `plane-realm.test.json`), kein Verzeichnis; Prod/Publish über `deploy/keycloak/config/*.json` + Container `keycloak-config` (keycloak-config-cli); (f) Theme-Bind-Mount `deploy/keycloak/themes` (enthält `plane`, `plane-space`); (g) §5.1: Repository `funk.` statt `plane-net/`, neue Projekte `src/hosts/Plane.Hosting` und `src/hosts/Plane.AllInOne`; Kommentar zu `plane-realm.json` „nur Profil dev (Prod: config/*.json)“.",
+    "targets": [
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "§3.3 Tabelle und §3.4 Program.cs gemäß (a)–(f) anpassen; §4.1 Zeile Keycloak: Realm-Import „`plane-realm.json` (dev), generierte `plane-realm.test.json` (test), `config/*.json` per keycloak-config-cli (prodlike/Prod)“; §5.1 gemäß (g); O-14-07 schließen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-019",
+    "decision": "AIO wird als eigene, aus der Publish-Variante `--Plane:Publish:Variant=aio` **generierte** Datei `deploy/compose/docker-compose.aio.yaml` ausgeliefert (Dienste `postgres`, `keycloak`, `keycloak-config`, `plane-aio`, Profile `acme`, `forgejo`); kein Compose-Profil in der Standarddatei. AIO bleibt optional.",
+    "targets": [
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "ADR-052: „AIO nur optional (CE-OPS-004) als Compose-Profil“ → „AIO nur optional (CE-OPS-004) als eigene generierte Compose-Datei `docker-compose.aio.yaml` (14 D14-ADR-13)“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-020",
+    "decision": "Zugriffsschutz über Wrapper-Komponenten mit In-Place-Zuständen: `AuthenticationWrapperComponent` (`pl-authentication-wrapper`, `input pageType`), `WorkspaceAuthWrapperComponent`, `ProjectAuthWrapperComponent` in `frontend/libs/web/core/wrappers/`. Funktionale Guards nur für Redirect-Routen, Legacy-Loader-Redirects (`canActivate` mit `UrlTree`) und Splat-Matcher.",
+    "targets": [
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "Z. 168: `AuthGuard` streichen; §3.13.8 Z. 690: Zeile „Guards“ → „Wrapper-Komponenten `AuthenticationWrapperComponent`, `WorkspaceAuthWrapperComponent`, `ProjectAuthWrapperComponent` (08 D08-ADR-12)“; Z. 1586: Ziel `libs/web/core/wrappers/authentication-wrapper.component.ts`."
+      },
+      {
+        "doc": "08-frontend-angular-architektur.md",
+        "change": "O-D08-04 als erledigt (ABG-020) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-021",
+    "decision": "Die Admin-App sendet bei 401 `error_code` 5210 immer `max_age=0` (`/auth/oidc/login/?app=admin&max_age=0&next_path=…`); kein neues Konfigurationsfeld im Frontend. N-01 akzeptiert `max_age` als Ganzzahl **≥ 0** (nur `app=admin`) und reicht auch `0` an Keycloak durch (Bedingung im Skelett `q.MaxAge is >= 0`). Die Schwelle prüft weiterhin nur der Server (`AdminStepUpFilter`, `Plane:Auth:AdminStepUpMaxAgeSeconds`, Default 0 = aus).",
+    "targets": [
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "N-01: `max_age` „Ganzzahl ≥ 0, nur `app=admin`“; Skelett Z. 1827: `q.MaxAge is > 0` → `q.MaxAge is >= 0`; D05-ADR-11: „Admin-App leitet zu `…&max_age=0&…`“."
+      },
+      {
+        "doc": "08-frontend-angular-architektur.md",
+        "change": "§3.5.2 Nr. 6: Interimshinweis entfernen, `n = 0` verbindlich; O-D08-14 als entschieden (ABG-021) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-022",
+    "decision": "Darstellender Teil (Original `AuthBase`-Rahmen, `AuthBanner`, Button) als `pl-auth-landing-base` in `frontend/libs/shared/blocks/auth` (Port `PKG/blocks/src/auth`); je App eine dünne `AuthLandingComponent` in `libs/web/auth/components/auth-landing/`, `libs/admin/authentication/`, `libs/space/account/` mit `app = 'web'│'admin'│'space'`.",
+    "targets": [
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "§3.2 Z. 168: Ablage um `frontend/libs/shared/blocks/auth/` (`pl-auth-landing-base`) ergänzen; Skelett Z. 2191 als App-spezifische Hülle kennzeichnen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-023",
+    "decision": "Drei Token-Libs: `frontend/libs/web/extensions` (Web-Tokens, `provideWebExtensions()`), `frontend/libs/admin/extensions` (`ADMIN_SETTINGS_PAGES`, `ADMIN_ROUTE_EXTENSIONS`, `ADMIN_HEADER_SEGMENT_LABELS`, `provideAdminExtensions()`), `frontend/libs/space/extensions` (`SPACE_ROUTE_EXTENSIONS`, `provideSpaceExtensions()`); app-neutrale Mechanik (`RouteExtension<K>`, `mergeRoutes`, `injectRegistry`) in `frontend/libs/shared/cdk/src/extensions` (Import `@plane/cdk/extensions`). Sheriff-Tag `domain:extensions` darf nur `scope:shared` importieren.",
+    "targets": [
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "§6.1-Baum: `libs/admin/extensions/`, `libs/space/extensions/` ergänzen; §6.4: Registry-Kopf auf „`libs/{web,admin,space}/extensions`, Mechanik `@plane/cdk/extensions`“ erweitern und die Admin-/Space-Tokens aufnehmen."
+      },
+      {
+        "doc": "16-erweiterungspunkte-bezahl-features.md",
+        "change": "X12 Z. 133: Ort „`FE/libs/web/extensions/src/`“ → „`FE/libs/{web,admin,space}/extensions/src/` (Mechanik `@plane/cdk/extensions`)“; Provider `provideAdminExtensions()`/`provideSpaceExtensions()` nennen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-024",
+    "decision": "I0 liefert für die Admin-App nur den Walking-Skeleton-Schnitt: Einstieg (Login/Auto-Redirect, `NO_ADMIN_ROLE`, Erst-Einrichtung) und eine lauffähige Seite `general`. Abgesichert durch einen mit `@I0` getaggten Abschnitt in `frontend/apps/e2e/admin/instance-setup.spec.ts`. `admin/admin-shell.spec.ts` (CE-INST-008…-016) und `admin/admin-settings.spec.ts` (CE-INST-017…) bleiben Abnahme in I6.",
+    "targets": [
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "§5 Spec-Tabelle Z. 717: `admin/instance-setup.spec.ts` um Abschnitt `@I0` (Einstieg + `general`) ergänzen; §3.4/Testinventar I0 entsprechend."
+      },
+      {
+        "doc": "08-frontend-angular-architektur.md",
+        "change": "O-D08-15 als entschieden (ABG-024) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-025",
+    "decision": "`sw.js`/Workbox wird nicht ausgeliefert (08 E19); die Gateway-Cache-Regeln nennen `sw.js` nicht. `no-cache` gilt für `index.html`, `runtime-config.json`, `manifest.json`, `site.webmanifest.json`.",
+    "targets": [
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "D14-ADR-01 Z. 109 und AK-14-07 Z. 2079: `sw.js` aus der `no-cache`-Liste streichen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-026",
+    "decision": "Angular CDK nur für a11y (FocusTrap, LiveAnnouncer, InteractivityChecker u. ä.); Overlays über die eigene Portal-Schicht `frontend/libs/shared/propel/headless/portal.ts` (Portale an `document.body` wie Base UI) + `@floating-ui/dom` für die Positionierung; `@angular/cdk/overlay` ist verboten (Lint-Regel `no-cdk-overlay`). Marker für die Outside-Click-Logik des Peeks stammen aus dem Base-UI-DOM-Vertrag (S10).",
+    "targets": [
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "ADR-041: „Angular CDK (a11y, Overlay-Basis)“ → „Angular CDK (nur a11y); Overlays über eigene Portal-Schicht + `@floating-ui/dom` (09 D09-ADR-10/-11)“; §8.2 CDK-Zeile entsprechend."
+      },
+      {
+        "doc": "08-frontend-angular-architektur.md",
+        "change": "§3.9 Overlays Z. 569: „CDK Overlay mit eigenem Container an `document.body`“ → „Portal-Schicht `PRP/headless/portal.ts` (09 H-01)“; Z. 1171 „CDK Overlay (§3.9 Overlays)“ → „Portal-Schicht (§3.9)“."
+      },
+      {
+        "doc": "09-ui-paritaet-designsystem.md",
+        "change": "O-D09-01 als entschieden (ABG-026) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-027",
+    "decision": "01 §6.1 ergänzt `libs/shared/icons-lucide/` (generierte `PlIconDef`-Konstanten `v0469`, `v134`), `libs/shared/theme/` und `frontend/tools/{propel-port,reference-gallery,gallery-stories,visual}`; `tools/icons-codegen/` entfällt (ersetzt durch `frontend/tools/propel-port/port-icons.mjs` → Konstanten + Render-Komponente `svg[plSvgIcon]`). 01 §8.2: `lucide` **0.469.0** (Apps/Blocks) **und** **1.34.0** (Propel-intern), beide als statische SVG-Quellen für den Codegen; `@tailwindcss/oxide` (Scanner, Dev).",
+    "targets": [
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "§6.1-Baum und §8.2 gemäß Entscheidung ändern (Version `lucide` 0.469.x → zwei Zeilen 0.469.0 und 1.34.0)."
+      }
+    ]
+  },
+  {
+    "id": "ABG-028",
+    "decision": "`ThemeService`, Inline-Script-Quelle und Theme-Asset-Helfer liegen in `frontend/libs/shared/theme/src/{theme.service,inline-script,theme-asset-helpers}.ts` (eine Implementierung für web/admin/space mit app-spezifischer Theme-Liste per Token); der web-spezifische Profil-Sync bleibt in `libs/web/core`.",
+    "targets": [
+      {
+        "doc": "08-frontend-angular-architektur.md",
+        "change": "§3.8 Z. 540: Pfad auf `libs/shared/theme/src/theme.service.ts` ändern, „Admin/Space eigene Instanz“ → „gleicher Dienst, Theme-Liste per Token“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-029",
+    "decision": "Gebündelte Daten unter `frontend/apps/{web,space}/src/assets/emojibase/<version>/<locale>/{data,messages}.json` (Version im Pfad). Die Version ist **genau eine** gepinnte `emojibase-data`-Version für Editor und Picker; Kandidat `15.3.2` (Original-Lockfile), endgültig festgelegt beim ersten `capture-reference`-Lauf (siehe Zurückgestellt Z-04). Die Referenzaufnahme liefert dieselbe Version per `page.route` aus.",
+    "targets": [
+      {
+        "doc": "08-frontend-angular-architektur.md",
+        "change": "D08-ADR-20 Z. 127 und §3.1.2 Z. 200: Pfad `/{base}/assets/emoji/` → `assets/emojibase/<version>/<locale>/`; „Version wie frimousse 0.3 ⚠“ → „gepinnt nach ABG-029“; O-D08-02 auf ABG-029/Z-04 verweisen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-030",
+    "decision": "Neue Multi-Tokens in `frontend/libs/web/extensions`: `WORK_ITEM_IDENTIFIER_DECORATORS` (Registry-Ausgang im Original-`div.flex.shrink-0.items-center.space-x-2` vor `IdentifierText`, A1) und `MEMBER_ROW_DECORATORS` (hinter der Rollen-Spalte der Mitgliederzeilen, E3); Rendering per `NgComponentOutlet` ohne Wrapper; CE-Default leere Liste (kein DOM-Element). Ab I2 (Identifier) bzw. I1 (Mitgliederzeilen).",
+    "targets": [
+      {
+        "doc": "08-frontend-angular-architektur.md",
+        "change": "§6.1 Token-Tabelle: beide Tokens mit Typ, CE-Default `[]`, Ab-Inkrement und Paket (A1, E3) aufnehmen."
+      },
+      {
+        "doc": "16-erweiterungspunkte-bezahl-features.md",
+        "change": "Frontend-Andockstellen-Inventar (X12/§6): beide Tokens mit Paketzuordnung A1/E3 ergänzen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-031",
+    "decision": "Bei einem ungültigen Wert in `localStorage.theme` setzt das Inline-Script `data-theme` **unverändert** auf diesen Wert und setzt kein `color-scheme` – identisch zu next-themes 0.4.6 (Original-Defekt wird nachgebaut, ADR-005).",
+    "targets": [
+      {
+        "doc": "08-frontend-angular-architektur.md",
+        "change": "AK-D08-20: „einen ungültigen Wert … trägt das korrekte `data-theme`“ → „bei ungültigem Wert trägt `<html>` `data-theme` = gespeicherter Wert unverändert, ohne `color-scheme` (wie next-themes 0.4.6)“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-032",
+    "decision": "Ein Provider je Registry-Satz, Name `provideFakeExtensions(config?: FakeExtensionConfig)` in `frontend/libs/web/extensions/testing/` (web), `provideFakeAdminExtensions(config?)` in `frontend/libs/admin/extensions/testing/`, `provideFakeSpaceExtensions(config?)` in `frontend/libs/space/extensions/testing/`. `config` erlaubt gezielte Einträge (z. B. `{ propertyRenderers: [TEST_PROPERTY_RENDERER] }`) und `{ mode: 'empty' }` (Neutralitätstest); ohne `config` registriert er je Token einen Standard-Fake. `provideTestExtensions` und `frontend/libs/shared/testing/extensions/` entfallen.",
+    "targets": [
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "EP-T08 Z. 1765, §6.2 Z. 1779/1792, Skelett Z. 1859–1872, §9.1 Z. 2005: `provideTestExtensions({...})` → `provideFakeExtensions({...})`, Ort `frontend/libs/web/extensions/testing/` (+ Admin/Space-Varianten); §3.2-Baum `frontend/libs/shared/testing/extensions` streichen."
+      },
+      {
+        "doc": "08-frontend-angular-architektur.md",
+        "change": "AK-D08-36: Signatur `provideFakeExtensions(config?: FakeExtensionConfig)` und Admin-/Space-Varianten aufnehmen; §3-Baum um `libs/admin/extensions/testing`, `libs/space/extensions/testing` ergänzen."
+      },
+      {
+        "doc": "16-erweiterungspunkte-bezahl-features.md",
+        "change": "Z. 902 Skelett: optionalen Parameter `config?: FakeExtensionConfig` ergänzen; O-16-13 als entschieden (ABG-032) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-033",
+    "decision": "Ablage unter `frontend/apps/e2e/visual/`: `catalog/{web,admin,space,gallery,keycloak}.catalog.yaml`, `catalog/acceptance/<app>.acceptance.yaml`, `baselines/<app>/<entry-id>/<state-id>/<theme>-<viewport>.png`, `baselines-new/…` (Selbst-Baselines neuer Screens, 09 §6.4), `dom-contracts/<app>/<entry-id>/<state-id>.dom.html`, `aria-contracts/<app>/<entry-id>/<state-id>.aria.yml`; Masken nur im Katalog. Ein UI-Abweichungsregister `frontend/apps/e2e/visual/ui-deviations.yaml` (`kind`: `extra-css`, `extra-utility`, `pixel`, `dom`, `mask`, `route`, `behavior`, `asset`); Contract-Abweichungen bleiben in `tests/contracts/deviations.yaml`. Fünf Viewports `mobile-390`, `tablet-768`, `laptop-1024`, `desktop-1440`, `wide-1920` (Regeln 09 §3.14.4). DOM-Normalisierung N1–N9 + Z1 für alle Verträge, Z2 (SVG nur bis Tiefe 1) **nur** für Seiten-Verträge. Gates/Ebenen G0–G6/L0–L9 von 15 bleiben unberührt.",
+    "targets": [
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "§3.10 (Mermaid Z. 759, Masken Z. 780, Viewports Z. 786, §3.10.2 `_approved-new.yaml`, §3.10.4 Z2) gemäß Entscheidung umstellen; `visual/deviations.yaml` und `css-deviations.yaml` → `ui-deviations.yaml`; DoD-Checkliste §3.15 anpassen."
+      },
+      {
+        "doc": "09-ui-paritaet-designsystem.md",
+        "change": "O-D09-04 und O-D09-13 als entschieden (ABG-033) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-034",
+    "decision": "`deploy/keycloak/themes/plane/login/resources/js/plane-login.js` setzt **synchron im `<head>`** `data-theme` (`light`│`dark`) an `<html>` nach der Auflösungslogik von 09 §5.8 mit Eingabe `system` (`matchMedia('(prefers-color-scheme: dark)')`) und folgt `matchMedia`-Wechseln; `plane-login.css` nutzt die Propel-Dark-Variante `[data-theme*=\"dark\"]`, **keine** `@media (prefers-color-scheme)`-Regeln. Kein Inline-Script (Keycloak-CSP unberührt). Abweichung `UI-DEV-010`.",
+    "targets": [
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "§3.16.3 Z. 927: „Dark-Mode über `prefers-color-scheme`“ → „Dark-Mode über `data-theme`, gesetzt von `plane-login.js` synchron im `<head>` aus `prefers-color-scheme` (09 §3.13)“; Z. 928 `build-js.mjs`-Zweck um „Theme-Auflösung“ ergänzen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-035",
+    "decision": "Verbindliche Schlüssel (`PlaneAuthOptions`, Abschnitt `Plane:Auth`): `Oidc:Authority`, `Oidc:MetadataAddress` (optional, intern), `Oidc:RequireHttpsMetadata`; `Clients:Web|Admin|Space:ClientId` / `:ClientSecret` (ENV `Plane__Auth__Clients__Web__ClientSecret` usw.); `Backend:ClientId` / `Backend:ClientSecret`; `Bearer:Enabled` (Default `false`) und `Bearer:Audience` (`plane-api`); ENV `Plane__Auth__Bearer__Enabled`. Schreibweise der Segmente in Dokumenten: PascalCase (`Web`, nicht `web`). `Plane:Auth:BearerEnabled` und `Plane:Auth:Oidc:ClientSecret` existieren nicht.",
+    "targets": [
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "§3.4 Z. 425: siehe ABG-018 (vier Secrets)."
+      },
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "§3.2.2: Hinweis „endgültige Feldnamen legt D05 fest“ durch „final (05 §3.4.3, ABG-035)“ ersetzen; Z. 271/1263: `Clients__web`/`{web,admin,space}` → `Clients__Web`/`{Web,Admin,Space}`."
+      },
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "§6.2 H1 Z. 1794: `Plane__Auth__BearerEnabled=true` → `Plane__Auth__Bearer__Enabled=true`."
+      }
+    ]
+  },
+  {
+    "id": "ABG-036",
+    "decision": "Kanonisch sind die Typen aus 02 §5.1.7: `PermissionDescriptor.Project|Workspace|Instance|Authenticated(...)` (INST = `Instance(...)`, AUTH = `Authenticated(...)`), `PermissionRule.Creator<TEntity>(string routeParam = \"pk\", bool requireMembership = true)`, `Own`, `Self`, `GuestVisibility`, `PageAccess` (umfasst den Eigentümer-Bypass der Pages, 05 §3.13.5 Schritt 3), `Board`, `WorkspaceAdminOrProjectAdmin`, `ProjectMemberOfBody`, `Prerequisite(PermissionDescriptor)`. Der WS-Admin-Override (HARM-00) ist **kein** `PermissionRule`, sondern fester Evaluator-Schritt (05 §3.13.4 Schritt 8) für **alle** Deskriptoren mit `ScopeLevel.Project`. `CreatorBypass`, `OwnerBypass`, `InstanceAdminOnly`, `AnyAuthenticated`, `WorkspaceAdminOverride`, `ActiveWorkspaceMember` entfallen als Namen.",
+    "targets": [
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "§5.1.7: `Creator<TEntity>` um Parameter `bool requireMembership = true` ergänzen; §3.6.1-Tabelle Z. 433 dto.; Satz „WS-Admin-Override = Evaluator-Schritt (05 §3.13.4 Schritt 8), keine Regel“ in §3.6.2 aufnehmen."
+      },
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "Z. 641 Namensabgleich und Skelett Z. 2104–2116 auf die 02-Namen umstellen (Liste der Entscheidung); „PRJ-Override = `PermissionRule.WorkspaceAdminOverride` (… standardmäßig gesetzt)“ → „PRJ-Override = Evaluator-Schritt 8 für alle `ScopeLevel.Project`-Deskriptoren“; Z. 634 Verweis „Regel WorkspaceAdminOverride aus 02 §3.6.2“ streichen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-037",
+    "decision": "Der Override ist grant-basiert: interner Key `workspace.admin_override` (in `InternalPermissionKeys`, kein Endpunkt-Key, Grant in der CE nur für die System-Rolle `workspace.admin`). Der Evaluator prüft `wsRole.Grants ∋ \"workspace.admin_override\"`, nie eine Rollenzahl (`PLANE0001`). E5-Custom-Roles erhalten den Override über diesen Grant.",
+    "targets": [
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "§3.6.4 Z. 489: „wird nicht als eigener Key modelliert … `ws.level == 20` … bekannte Grenze“ → grant-basiert nach ABG-037; Z. 2362 „WS-Admin-Override hängt in der CE an `Level = 20`“ → „… am internen Grant `workspace.admin_override`“; K-03 als erledigt markieren."
+      },
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "Z. 639: Herkunftsangabe „(aus `02` §3.6.4 …)“ → „(05 §3.13.4, ABG-037)“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-038",
+    "decision": "`public sealed record RoleDefinition(Guid Id, string Namespace, string Slug, string Name, int Level, bool IsSystem, IReadOnlySet<string> Grants);` – `Namespace` ∈ {`workspace`, `project`}, `Level` = API-Wert `role` (20/15/5 für System-Rollen), `Name` = Anzeigename (System-Rollen: englischer Original-Text „Admin“/„Member“/„Guest“).",
+    "targets": [
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "§3.6.1 Z. 435: Signatur um `string Name` (nach `Slug`) ergänzen."
+      },
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "Z. 610: `RoleDefinition.LegacyValue` → `RoleDefinition.Level`; Z. 641 und Skelett Z. 2123: Signatur der Entscheidung übernehmen, Kommentar „Form 1:1 aus 02 §3.6.1“ beibehalten."
+      }
+    ]
+  },
+  {
+    "id": "ABG-039",
+    "decision": "Code nutzt `ForwardedHeadersOptions.KnownIPNetworks` mit `System.Net.IPNetwork` (Parsen per `IPNetwork.Parse`); die veraltete Eigenschaft `KnownNetworks` und `Microsoft.AspNetCore.HttpOverrides.IPNetwork` sind verboten (Warnung `ASPDEPR005` als Fehler). Der **Konfigurationsschlüssel** bleibt `Plane:ForwardedHeaders:KnownNetworks` (CIDR-Liste, Alias `TRUSTED_PROXIES`).",
+    "targets": [
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "§3.4.1 Z. 359: „`KnownNetworks` aus `Plane:ForwardedHeaders`“ → „`KnownIPNetworks` (System.Net.IPNetwork) aus `Plane:ForwardedHeaders:KnownNetworks`“."
+      },
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "§3.6 Z. 439: `ForwardedHeadersOptions` mit `KnownIPNetworks` aus `Plane__ForwardedHeaders__KnownNetworks`."
+      }
+    ]
+  },
+  {
+    "id": "ABG-040",
+    "decision": "SSRF-geschützte Clients (`AddSsrfSafeHttpClient`, **ohne** `AddStandardResilienceHandler`, Wiederholung nur über die Job-Queue): `webhooks`, `link-preview`, `avatar-import`, `unsplash`, `llm`, `integrations`, `forgejo`. Standard-Resilience nur für interne Infrastruktur-Clients (`keycloak` 10 s, Objektspeicher).",
+    "targets": [
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "§3.6 Z. 433: Liste der ausgenommenen Clients durch die Entscheidung ersetzen (`link-crawler` → `link-preview`, `avatar-download` → `avatar-import`, + `integrations`, `forgejo`); „Forgejo-API“ aus den internen Clients streichen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-041",
+    "decision": "„∧“-Zeilen aus 05 Anhang B werden als Haupt-Key + `PermissionRule.Prerequisite(<Vorbedingungs-Deskriptor>)` abgebildet; der Evaluator prüft Schritt P (Vorbedingungen in Deklarationsreihenfolge) vor der Hauptprüfung, die Ablehnung trägt den `DenyStyle` der fehlgeschlagenen Stufe. `tools/Plane.PermissionGen` erzeugt die `Prerequisite`-Regel für jede „∧“-Zeile.",
+    "targets": [
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "§3.13.4: Schritt P (vor Schritt 1) aufnehmen; §5.8 Generator: Ausgabe der `Prerequisite`-Regel für „∧“-Zeilen; Anhang B: Spalte „Ziel“ der „∧“-Zeilen um `+ Prerequisite(<Key>)` ergänzen; `05-permission-matrix.json` um Feld `prerequisite` erweitern."
+      }
+    ]
+  },
+  {
+    "id": "ABG-042",
+    "decision": "Die Vorbedingungs-Keys `workspace.project_base.read`, `workspace.project_base.create`, `project.project_base.write`, `project.project_entity.read|write`, `project.project_member.read|write`, `workspace.workspace_entity.read|write` stehen in 05 Anhang A in einem eigenen Abschnitt „Vorbedingungs-Keys“ (Konstanten in `StandardPermissions`, generiert) mit Grants nach der Methodenmatrix der Original-Klassen (A06 §2.10). Architekturtest 2 zählt `Prerequisite`-Referenzen als Verwendung; sie sind weder reserviert noch intern.",
+    "targets": [
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "Anhang A: Abschnitt „Vorbedingungs-Keys“ mit den Keys und Grants ergänzen; Architekturtest 2 (Z. 679): „referenziert = als Haupt-Key oder als `Prerequisite`“; `05-permission-matrix.json` ergänzen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-043",
+    "decision": "Die Route wird **nicht** portiert: `PUT …/issue-labels/{pk}/` antwortet 405 mit DRF-Körper `{\"detail\": \"Method \\\"PUT\\\" not allowed.\"}`. Dokumentierte Abweichung `DEV-API-…` in `tests/contracts/deviations.yaml`; Zeile in 05 Anhang B und `05-permission-matrix.json` als `entfällt`.",
+    "targets": [
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "Anhang B Z. 3051: Spalten Key/Ziel → `entfällt (405, ABG-043)`; Matrix-Datei entsprechend."
+      },
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "L4 Z. 1765: „tote Route“ → „im Original funktionsfähig, ohne Client-Nutzung; nicht portiert, 405 (A04 §5.1, ABG-043), Abweichung in `tests/contracts/deviations.yaml`“; §7.3 Abweichungskatalog um den Eintrag ergänzen."
+      },
+      {
+        "doc": "04-api-design-und-endpunktkatalog.md (noch nicht erstellt)",
+        "change": "bei Erstellung: L4 als nicht portiert (405) führen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-044",
+    "decision": "Maßgeblich sind die 02-Schlüssel: `SKIP_ENV_VAR` → `Plane:Instance:ConfigurationSource` (`1` → `Database`, `0` → `Environment`); `FILE_SIZE_LIMIT` → `Plane:Uploads:MaxFileSizeBytes`; `WEBHOOK_ALLOWED_IPS` → `Plane:Webhooks:AllowedNetworks`, `WEBHOOK_ALLOWED_HOSTS` → `Plane:Webhooks:AllowedHosts`, `WEBHOOK_DISALLOWED_DOMAINS` → `Plane:Webhooks:DisallowedDomains`.",
+    "targets": [
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "§4.4 Z. 1492–1496: Zielschlüssel durch die 02-Schlüssel ersetzen, `SKIP_ENV_VAR` von „entfällt“ auf `Plane:Instance:ConfigurationSource`; Z. 1546 `PlaneStorageOptions` → `PlaneUploadsOptions` (FILE_SIZE_LIMIT)."
+      },
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "O-D02-10 als erledigt (ABG-044) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-045",
+    "decision": "Contract-/API-Abweichungen (inkl. `SEC-*`, `HARM-*`) stehen ausschließlich in `tests/contracts/deviations.yaml` (Schlüssel = ID). UI-/CSS-Abweichungen stehen in `frontend/apps/e2e/visual/ui-deviations.yaml` (ABG-033). `tests/parity/exceptions.yaml` existiert nicht.",
+    "targets": [
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "§3.18 Z. 1116: `tests/parity/exceptions.yaml` → `tests/contracts/deviations.yaml`."
+      }
+    ]
+  },
+  {
+    "id": "ABG-046",
+    "decision": "Skelett-Konventionen nach 02: Endpunkte und Handler erhalten den Scope über `IRequestScope` (`scope.Current`), nicht über `ProjectScope`/`WorkspaceScope`-Parameter; `IModule.Permissions` ist `IEnumerable<PermissionDescriptor>`; Permission-Konstanten sind generiert (`ProjectsPermissions.ProjectLabelRead`, `…ProjectLabelCreate`, `…ProjectLabelUpdate`, `…ProjectLabelDelete`). `IPermissionEvaluator.HasAsync` aus 01 §5.5 bleibt als Kurzform (`EvaluateAsync(...).Allowed`).",
+    "targets": [
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "§5.3 Skelett und §7 Z. 1068 gemäß Entscheidung anpassen; O-D02-02 schließen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-047",
+    "decision": "R9 gilt mit einer definierten Ausnahme: Jedes Modul-Assembly trägt `[assembly: InternalsVisibleTo(...)]` für `Plane.Api`, `Plane.Worker`, `Plane.Realtime` und `Plane.<M>.Tests` (zentral über `Directory.Build.targets`, Property `PlaneInternalsVisibleTo`), damit der Mediator-Source-Generator im Host `internal`-Handler registriert. Fallback nur, falls Spike S0 scheitert: Handler/Commands `public`, R9-Ausnahme per ArchUnit-Regel (siehe Zurückgestellt Z-01).",
+    "targets": [
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "§5.2 R9: Zusatz „Ausnahme: `InternalsVisibleTo` für Hosts und Testprojekte (02 D02-ADR-27)“; Architekturtest prüft, dass keine anderen Assemblies in der Liste stehen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-048",
+    "decision": "`PlaneDbContext` und `PlaneReadDbContext` werden **ohne** EF-DbContext-Pooling registriert (`AddDbContext` + `EnrichNpgsqlDbContext`); `AddNpgsqlDbContext<T>()` ist verboten (Architekturtest). Die Read-Replica ist ein zweiter `DbContext`-Typ mit eigener Verbindungszeichenfolge (eigener Npgsql-Verbindungspool), aktiviert über `Plane:Database:ReadReplicaEnabled`.",
+    "targets": [
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "ADR-037: „Read-Replica als zweiter `DbContext`-Pool“ → „Read-Replica als zweiter `DbContext`-Typ (eigene Verbindung, **kein** DbContext-Pooling, 02 D02-ADR-26)“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-049",
+    "decision": "Callback-Pfade mit abschließendem Slash: `GET /api/integrations/forgejo/oauth/callback/` (Workspace-Verbindung) und `GET /api/integrations/forgejo/oauth/user-callback/` (persönliches Konto), beide auf der Oberfläche `Integrations` mit opt-in `.WithSessionAuthentication()` (Schema `Session`, ohne Origin-Check). `forgejo-init` registriert die OAuth2-App mit `redirect_uris: [\"<WEB_URL>/api/integrations/forgejo/oauth/callback/\", \"<WEB_URL>/api/integrations/forgejo/oauth/user-callback/\"]`.",
+    "targets": [
+      {
+        "doc": "16-erweiterungspunkte-bezahl-features.md",
+        "change": "§3.4: Verweis auf 02 §3.3.2 `.WithSessionAuthentication()` ergänzen."
+      },
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "§3.4.3 Schritt 8 Z. 397: zweite Redirect-URI `…/oauth/user-callback/` ergänzen, „⚠ Pfad legt F1/W1 fest“ entfernen."
+      },
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "Z. 305, 2363: Pfade mit abschließendem Slash schreiben."
+      }
+    ]
+  },
+  {
+    "id": "ABG-050",
+    "decision": "Erledigt: 02 verwendet die Test-Bezeichner aus 15. Keine weitere Änderung an 02.",
+    "targets": [
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "§9.3 Zeile 02: Punkt „Naming“ als erledigt (ABG-050) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-051",
+    "decision": "Policy `integration_webhook` (`600/minute`, Partition `connection_id`) wird ab **I0** registriert, weil die CE-Route `/api/integrations/{provider}/webhooks/{connection_id:guid}/` ab I0 `RequireRateLimiting(\"integration_webhook\")` nutzt.",
+    "targets": [
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "D02-ADR-17 Z. 120 „(+ `integration_webhook` ab W1 …)“ → „ab I0“; Z. 305 und Tabelle Z. 890: Spalte „ab“ → I0."
+      },
+      {
+        "doc": "16-erweiterungspunkte-bezahl-features.md",
+        "change": "O-16-10 als entschieden (ABG-051) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-052",
+    "decision": "Ab I0 verbindlich: ungültige/fehlende Signatur → 401 `{\"error\": \"Invalid signature\"}`; doppelte Delivery-ID → 200 `{\"status\": \"duplicate\"}`; angenommen → 202 `{\"status\": \"accepted\"}`.",
+    "targets": [
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "§6.2 F1 Z. 1791: „(Status wird in W1 festgelegt, Test prüft `IsRejected`)“ → „401 `{\"error\": \"Invalid signature\"}`, Duplikat 200 `{\"status\": \"duplicate\"}`, Annahme 202 `{\"status\": \"accepted\"}` (16 AK-16-07)“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-053",
+    "decision": "`outbox_messages` erhält ab I0 zusätzlich `actor_id uuid NULL`, `actor_kind smallint NULL`, `origin text NOT NULL`, `workspace_id uuid NULL`, `project_id uuid NULL`, `correlation_id text NULL`, `causation_depth int NOT NULL DEFAULT 0`; der `OutboxInterceptor` füllt sie aus `ICurrentActor`/`ICommandOrigin`, der Dispatcher rekonstruiert daraus `EventContext`; Folgeänderungen mit `causation_depth > 5` werden verworfen.",
+    "targets": [
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "§3.2.2 Nr. 5 Z. 246: Spaltenliste um die sieben Spalten ergänzen, Verweis 16 §5.11."
+      },
+      {
+        "doc": "16-erweiterungspunkte-bezahl-features.md",
+        "change": "O-16-12 als entschieden (ABG-053) markieren."
+      },
+      {
+        "doc": "03-datenmodell-efcore.md (noch nicht erstellt)",
+        "change": "bei Erstellung: Spalten in die Tabelle `outbox_messages` übernehmen."
+      },
+      {
+        "doc": "06-hintergrundjobs-events-benachrichtigungen.md (noch nicht erstellt)",
+        "change": "bei Erstellung: `EventContext`-Rekonstruktion im Dispatcher beschreiben."
+      }
+    ]
+  },
+  {
+    "id": "ABG-054",
+    "decision": "Einzige Quelle der Reservierungen ist `docs/extensions/reservations.yaml` (Inhalt = 16 §3.2.1, 95 Präfixe + 1 Key); `src/modules/Authorization/Plane.Authorization.Contracts/ReservedPermissionKeys.cs` wird daraus generiert; Architekturtests 2 und `ReservedKeysUnusedInCe` sowie `ReservationCollisionTests` lesen dieselbe Liste.",
+    "targets": [
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "§6.1 Z. 2334: Präfixliste durch Verweis auf `docs/extensions/reservations.yaml` (16 §3.2.1, generiert) ersetzen; die bisherigen 10 Präfixe bleiben als Teilmenge enthalten."
+      },
+      {
+        "doc": "16-erweiterungspunkte-bezahl-features.md",
+        "change": "O-16-11 als entschieden (ABG-054) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-055",
+    "decision": "`export interface PermissionCheck { allowed: EUserPermissions[]; level: EUserPermissionsLevel; workspaceRole?: EUserPermissions; projectRole?: EUserPermissions; workspaceSlug?: string; projectId?: string; teamspaceId?: string; }`, `export type PermissionEvaluatorFn = (ctx: PermissionCheck) => boolean;`, `export const PERMISSION_EVALUATOR = new InjectionToken<PermissionEvaluatorFn>('PERMISSION_EVALUATOR', { factory: () => roleBasedEvaluator });` in `frontend/libs/web/core/permissions/`.",
+    "targets": [
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "Skelett Z. 2254: Kontexttyp durch `PermissionCheck` ersetzen (`roles` → `allowed`, + `workspaceSlug`, `projectId`, `teamspaceId`)."
+      },
+      {
+        "doc": "08-frontend-angular-architektur.md",
+        "change": "§6.5 Z. 1829–1830: `teamspaceId?` ergänzen und Token mit `factory: () => roleBasedEvaluator` deklarieren."
+      },
+      {
+        "doc": "16-erweiterungspunkte-bezahl-features.md",
+        "change": "O-16-06 als entschieden (ABG-055) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-056",
+    "decision": "Auto-Archive ist **kein** State-Wechsel und ruft `IWorkItemStateChanger` nicht auf; `StateChangeOriginTests` prüft die Pfade UI, Public API, Intake-Annahme, Cycle-Transfer, Auto-Close, Integration und zusätzlich negativ: Auto-Archive ändert nur `archived_at` (kein Changer-Aufruf, kein `state_changed`-Event). Der Enum-Wert `StateChangeOrigin.AutoArchive` bleibt (01 §5.5), wird von keinem CE-Pfad verwendet.",
+    "targets": [
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "§6.2 C1 Z. 1785: „Auto-Archive“ aus der Changer-Pfadliste streichen und Negativfall ergänzen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-057",
+    "decision": "`export type DuplicateDetectionFn = (input: { workspaceSlug?: string; workspaceId?: string; projectId?: string; formData: { name?: string; description_html?: string; issueId?: string } }) => Signal<TDeDupeIssue[]>;` CE-Default liefert `signal([])`.",
+    "targets": [
+      {
+        "doc": "08-frontend-angular-architektur.md",
+        "change": "§6.1 Z. 1723: Signatur durch `DuplicateDetectionFn` der Entscheidung ersetzen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-058",
+    "decision": "H6: Hub-Modul `Plane.RealtimeEvents` (+ `.Contracts`), **gehostet** im Host `Plane.Realtime` unter `/live/events/` (Realtime-Modulkatalog). B1: `ScopeLevel.Teamspace`/`ScopeRef`, `IScopeResolver` und `RouterStore.teamspaceId` ab **I0** (Voraussetzung für `IPermissionEvaluator.HasAsync(…, ScopeRef …)` in I0); `teamspace_id`-Schemavorhalte ab I1.",
+    "targets": [
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "§1.4 H6: „SignalR-Hub `/live/events/` in `Plane.Realtime`“ → „Modul `Plane.RealtimeEvents`, gehostet in `Plane.Realtime`“; B1 Spalte Inkrement „I1“ → „I0 (ScopeRef, IScopeResolver, RouterStore.teamspaceId), I1 (Schema-Vorhalte)“."
+      }
+    ]
+  }
+]
