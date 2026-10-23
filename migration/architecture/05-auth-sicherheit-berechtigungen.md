@@ -760,7 +760,7 @@ Platzhalter (Keycloak ersetzt `${VAR}` beim Import aus Umgebungsvariablen; confi
 | `loginTheme` | `plane` | §3.16 |
 | `accountTheme` | `keycloak.v3` | Kontokonsole (Passwort, 2FA, Passkeys, Geräte); kein 1:1-Vorbild im Original |
 | `emailTheme` | `plane` | Keycloak-Mails im Original-Layout mit funk.-Branding (Templates aus `apps/api/templates/emails/auth/*` übernommen; Texte „Plane“ → „funk.“, Logo nach BR-06, Marketing-/Social-Bilder entfernt wie `06` `BRAND-MAIL-05`; `BRAND-KC-05`) |
-| `internationalizationEnabled` / `supportedLocales` / `defaultLocale` | `true` / alle 22 funk.-Locales aus `packages/i18n/src/locales` (`bg`, `cs`, `de`, `en`, `es`, `fr`, `id`, `it`, `ja`, `ka-ge`, `ko`, `nl`, `pl`, `pt-BR`, `ro`, `ru`, `sk`, `tr-TR`, `ua`, `vi-VN`, `zh-CN`, `zh-TW`) – im Realm stehen die **Keycloak-Codes** (BCP 47), die der Build aus `tools/keycloak-theme/locale-map.json` ableitet (z. B. `ua` → `uk`, `ka-ge` → `ka`, `tr-TR` → `tr`, `vi-VN` → `vi`); `ui_locales` aus N-01 wird mit derselben Tabelle übersetzt / `en` | i18n-Parität |
+| `internationalizationEnabled` / `supportedLocales` / `defaultLocale` | `true` / nur `de` (Default) und `en` (ADR-009D) – früher alle 22 Locales aus `packages/i18n/src/locales` (`bg`, `cs`, `de`, `en`, `es`, `fr`, `id`, `it`, `ja`, `ka-ge`, `ko`, `nl`, `pl`, `pt-BR`, `ro`, `ru`, `sk`, `tr-TR`, `ua`, `vi-VN`, `zh-CN`, `zh-TW`) – im Realm stehen die **Keycloak-Codes** (BCP 47), die der Build aus `tools/keycloak-theme/locale-map.json` ableitet (z. B. `ua` → `uk`, `ka-ge` → `ka`, `tr-TR` → `tr`, `vi-VN` → `vi`); `ui_locales` aus N-01 wird mit derselben Tabelle übersetzt / `en` | i18n-Parität |
 | `registrationAllowed` | `false` | ADR-008; Betreiber kann aktivieren |
 | `registrationEmailAsUsername` / `loginWithEmailAllowed` / `duplicateEmailsAllowed` / `editUsernameAllowed` | `true` / `true` / `false` / `false` | E-Mail ist Identifikator wie im Original |
 | `resetPasswordAllowed` | `true` | Nachfolger CE-AUTH-017/-018 |
@@ -2509,7 +2509,7 @@ Teststrategie, Werkzeuge, Pyramide und Gates stehen in `15` (D15-ADR-04, -05, -1
 | `KeycloakConfigCliIdempotencyTests` | Profil `prodlike`: config-cli zweimal; zweiter Lauf meldet 0 Änderungen; Secrets kommen aus Umgebungsvariablen (keine Literale in `config/*.json`, Regex-Check `"secret":\s*"(?!\$\{)`) |
 | `KeycloakHeadlessLogin` (Hilfsklasse `15`) | Login per HTTP gegen das Theme-Formular: nutzt die Formular-IDs `username`, `password`, `kc-login` → Theme muss diese IDs beibehalten (Vertrag Theme ↔ Tests) |
 | `visual.spec.ts` | Screenshots §3.16.3; Referenz = Original-Sign-in (`/`, `/spaces/`, `/god-mode/`) mit identischem Viewport/Theme |
-| `theme-i18n.spec.ts` | für jede der 22 Locales: Seite `login-username` rendert ohne fehlende Message-Keys (`???key???`-Muster) |
+| `theme-i18n.spec.ts` | für beide Locales `de` und `en` (ADR-009D): Seite `login-username` rendert ohne fehlende Message-Keys (`???key???`-Muster) |
 | `ForgejoSsoSmokeTests` | Forgejo-Login via Keycloak; Forgejo-Benutzer hat `login_source` „keycloak“ mit `sub` des funk.-Testbenutzers |
 
 ### 7.4 Matrix-Test (Generierung und Abdeckung)

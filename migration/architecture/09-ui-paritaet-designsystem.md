@@ -440,7 +440,7 @@ Rendering: `<svg plSvgIcon [icon]="PaletteOutline" class="…">` erzeugt dieselb
 | Emoji-Glyphen | **System-Emoji-Font** wie Original (frimousse rendert native Emojis); Test-Container mit gepinnter `Noto Color Emoji` (§3.14.3) | – | OFL-1.1 (nur Test) |
 | Inter statisch (PDF) | nicht hier → `07` | – | – |
 
-Subset-Abdeckung für die 22 Locales (`A13a` O-05) wird automatisch geprüft: E2E-Test lädt je Locale die Startseite und prüft per `document.fonts`, dass alle geladenen `@font-face`-Ranges aus dem gebündelten Paket stammen (keine externe URL, Netzwerk-Allowlist = Gateway-Origin).
+Subset-Abdeckung für die Locales `de` und `en` (ADR-009D) (`A13a` O-05) wird automatisch geprüft: E2E-Test lädt je Locale die Startseite und prüft per `document.fonts`, dass alle geladenen `@font-face`-Ranges aus dem gebündelten Paket stammen (keine externe URL, Netzwerk-Allowlist = Gateway-Origin).
 
 #### 3.8.2 Emoji-Daten (Korrektur E-22)
 
@@ -1071,7 +1071,7 @@ Einzige Quelle ist `assets/funk_logo.svg` im Repository `funk.`; `frontend/tools
 | `BRAND-UI-06` | Raster und Illustrationen mit Plane-Logo oder -Schriftzug: Prüfliste I0 `og-image.png`, `plane-takeoff.png` (Web/Admin), `takeoff-icon-{light,dark}.svg`, `instance-setup-done.webp`, `instance-not-ready.webp` (Web/Space), `onboarding/*.webp`, `empty-state/**` und `BLK/empty-state/assets/**` (Treffer der Bildprüfung) | jede Datei mit Logo/Schriftzug wird mit derselben Fläche neu gerendert (Logo ersetzt) oder das Logo entfernt; Dateien ohne Branding bleiben byte-identisch; Ergebnis der Prüfung (Datei, Befund, Verfahren) in `brand-assets.json` | `render-brand-assets.mjs` bzw. Maske, wo die Referenz das Logo nicht separat ausliefert (§3.14.2) | betroffene Einträge §4.14 |
 | `BRAND-UI-07` | God-Mode-AI-Kontakt-Hinweis mit Link `plane.so/contact` (U23) | entfällt (BR-12) – geführt als `UI-DEV-017` | – | A-007 |
 
-Sichtbare UI-Texte und i18n-Strings mit „Plane“ (Seitentitel, Literale, 22 Locales) sind Eintragsbereich von `08` (`BRAND-WEB-*`, `BRAND-I18N-*`, BR-10/BR-11); D09 vergleicht sie über die Referenz mit ersetztem Branding (§3.14.2).
+Sichtbare UI-Texte und i18n-Strings mit „Plane“ (Seitentitel, Literale, Locales `de`/`en`) sind Eintragsbereich von `08` (`BRAND-WEB-*`, `BRAND-I18N-*`, BR-10/BR-11); D09 vergleicht sie über die Referenz mit ersetztem Branding (§3.14.2).
 
 ### 4.12 Upsell-Elemente (ADR-001) → Ersatz
 
@@ -1903,7 +1903,7 @@ Gilt für jeden Screen, jedes Panel und jeden Dialog eines Pakets, für den es i
 | G-06 | **Illustrationen:** vorhandene Registry-Schlüssel (§6.5) und Raster-Empty-States aus `assets/empty-state/**`; neue Illustrationen nur als Registry-Eintrag mit ausschließlich `var(--illustration-*)`-Farben (theme-fähig wie die 59 vorhandenen) | Review; Story in allen Themes |
 | G-07 | **Seitenaufbau = Schablone:** jeder neue Screen wählt genau eine Schablone aus §6.3 und übernimmt deren Rahmen (Header mit `PlBlkHeader`/`PlBlkBreadcrumbs`, `PlBlkContentWrapper`, Settings-Hülle, Peek-Hülle …) unverändert; nur die Inhaltsregion ist frei komponiert | **auto:** Rahmen-DOM-Vergleich (§6.4 Schritt 2) |
 | G-08 | **Interaktionsmuster wie Original:** destruktive Aktionen über `PlBlkConfirmDialog` (`variant="danger"`) bzw. `PlAlertDialog`; Ergebnisse über Blocks-Toast (`setToast`/`setPromiseToast`, Typen wie Original); Überlauf-Aktionen über `PlMenu` („…“-Trigger mit `PlIconButton`); Property-Auswahl über die Select-Engine; Tooltips über `PlTooltip` mit Default-Delays; ungespeicherte Änderungen über `PlDialog` `discard`; **keine** eigenen Popups, Overlays oder Positionierungen | Review; `no-cdk-overlay` |
-| G-09 | **Texte & i18n:** zuerst vorhandene EE-Schlüssel der 1:1 kopierten Locale-Dateien nutzen (1 875 Schlüssel in 22 Sprachen, Namespaces `automation`, `editor`, `integration`, `template`, `tour`, `update`, `wiki`, `work-item-type`, `workflow` u. a., `F20` §7/Anhang A); neue Schlüssel nur mit allen 22 Locales (Skill `translate`, Fallback `en`) und unter dem Namespace des Pakets | **auto:** i18n-Sync-Check (L0, `15`); Review |
+| G-09 | **Texte & i18n:** zuerst vorhandene EE-Schlüssel der 1:1 kopierten Locale-Dateien nutzen (1 875 Schlüssel; übernommen werden nur `de` und `en` (ADR-009D), Namespaces `automation`, `editor`, `integration`, `template`, `tour`, `update`, `wiki`, `work-item-type`, `workflow` u. a., `F20` §7/Anhang A); neue Schlüssel nur mit allen 22 Locales (Skill `translate`, Fallback `en`) und unter dem Namespace des Pakets | **auto:** i18n-Sync-Check (L0, `15`); Review |
 | G-10 | **Themes:** jeder neue Screen funktioniert in allen Web-Themes (`light`, `dark`, `light-contrast`, `dark-contrast`, `custom-light`, `custom-dark`), Admin/Space in `light`/`dark`; theme-abhängige Raster-Assets nur über `isLightStrict`/`isDarkStrict`/`resolveGeneralTheme` (§3.8.3) | **auto:** Visual in allen Themes (§6.4) |
 | G-11 | **Responsiveness:** gleiche Breakpoints und gleiches Mobilverhalten wie der Schablonen-Screen (Settings-Mobile-Navigation, Sidebar-Overlay, Peek → Vollbild); Viewports wie §3.14.4 | **auto:** Viewport-Matrix |
 | G-12 | **Barrierefreiheit:** Tastaturmodell der verwendeten Propel-Bausteine nicht überschreiben; jedes Icon-only-Element mit `aria-label`; Formulare mit `PlField`/`PlFieldLabel`; axe ohne `critical`/`serious` | **auto:** axe (§3.14.7) – für neue Screens absolut (kein Original-Ratchet) |
@@ -1959,7 +1959,7 @@ Dasselbe Verfahren gilt **bereits in der CE** für die durch ADR-008 entstandene
 | Illustrationen vertikal (Detailed) | `changelog`, `customer`, `dashboard`, `epic`, `initiative`, `milestone`, `property`, `teamspace`, `workflow` | `BLK/empty-state/assets/vertical-stack/*` | generiert ab I1 |
 | Raster-Empty-States | `assets/empty-state/epics/*` (4), `assets/empty-state/wiki/*` (16), `assets/empty-state/dashboard/*` (20) | `WEB/app/assets/empty-state/**` | kopiert ab I1 (§4.11) |
 | Tokens | Plan-Tokens `--txt-plans-*`, `--bg-plans-*` | `PROPEL/styles/variables.css` | bleiben im vendored CSS, Nutzung verboten (G-13) |
-| i18n | 1 875 EE-relevante Schlüssel in 22 Sprachen | `packages/i18n/src/locales/**` (1:1-Kopie) | bleiben, Nutzung gemäß G-09 |
+| i18n | 1 875 EE-relevante Schlüssel (nur `de`/`en` übernommen, ADR-009D) | `packages/i18n/src/locales/**` (1:1-Kopie) | bleiben, Nutzung gemäß G-09 |
 | **fehlt** | Forgejo-Markenlogo | – | Aufnahme in W1 über `extra-brands` (G-05), Lizenzprüfung O-D09-10 |
 
 ### 6.6 Code-Skelette der Andockstellen (Konvention)

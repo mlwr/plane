@@ -426,7 +426,7 @@ Erledigte Aufträge werden im Zieldokument im Review-Protokoll mit „ABG-1xx um
 
 ### Umbenennungstabelle für Zielbezeichner (ADR-009C, verbindlich)
 
-Die Architektur-Dokumente 01–16 verwenden noch die Schreibweise `Plane…` für Zielbezeichner. **Bei der Umsetzung gilt diese Tabelle**; Plan-Dokumente ab Schritt 4 verwenden bereits die neuen Namen.
+Die Architektur-Dokumente 01–16, die Plan-Dokumente und ihre Daten-/Generator-Dateien wurden am 23.10.2026 per Skript (`migration/_werkzeuge/rename_funk.py`) auf die funk-Namen umgestellt. Stellen, die das Original beschreiben (Pfade, Module, Original-Header wie `X-Plane-Signature`, Original-Komponenten wie `PlaneLogo`, Original-Cookie `session-id`, Original-Pakete `@plane/*`), blieben bewusst unverändert. **Bei Zweifeln gilt diese Tabelle.**
 
 | In den Dokumenten 01–16 | Im Code / Betrieb von `funk.` |
 |---|---|
@@ -450,3 +450,8 @@ Ausnahmen: Verweise auf das Original (Pfade, Module, Header, Cookies des Origina
 **Kein dauerhaft betriebener Referenz-Server.** Das Original wird bei Bedarf über `tools/parity/` (offizielle Images, Commit `053b2c0`/Branch `funk-referenz-1.4.2`, deterministischer Seed) in der jeweiligen Session gestartet. Referenzen (API-Antworten, Screenshots, Golden Files, Protokoll-Mitschnitte) werden je Spike bzw. Inkrement **aufgezeichnet und in `funk.` eingecheckt**; die Tests von funk. laufen gegen diese gespeicherten Referenzen. Original und funk. laufen nacheinander, nicht gleichzeitig (Ressourcen der Cloud-Sessions: 4 CPU, 15 GB RAM). Neu aufgezeichnet wird nur bei geänderten Seeds oder neuen Prüffällen.
 
 Netzwerkfreigaben (dotnet, quay.io, codeberg.org, data.forgejo.org, NuGet-Suche) und Standard-Branch `develop` in `mlwr/funk.` sind eingerichtet (geprüft 23.10.2026).
+
+
+### Sprachumfang (ADR-009D, Nachtrag)
+
+Wo Architektur- oder Plandokumente noch „22 Locales/Sprachen“ des Originals nennen (z. B. Ordnerlisten in 08 §3.7, Inventare in 09, Keycloak-Theme-Locales in 05), gilt **nur `de` (Standard) und `en`**. Die Original-Locales dienen lediglich als Quelle für diese beiden Sprachen.
