@@ -664,3 +664,179 @@ ENV: `OPENAI_API_BASE`, `OPENAI_API_KEY` werden **nicht** gelesen (14 §4.7 Klas
 | Ressourcen | Index: ca. 1–2 KB je Work Item (ohne Body) plus Body-Text; Indexierungslast ≈ Schreiblast der Work Items (entprellt); Reconcile nachts. Lokales LLM ist Betreiber-Sache (nicht Teil des Plane-Stacks) |
 | Dev/Test | Test-Profil: WireMock-Vorlagen `T/fixtures/wiremock/llm-openai-compatible/` (`POST /v1/chat/completions` → feste Antwort, Variante leerer Inhalt, Variante 500) und `T/fixtures/wiremock/unsplash/` (`/photos/`, `/search/photos/`); optional im Dev-Profil ein `ollama/ollama`-Container (MIT) über AppHost-Parameter `Plane:Dev:LocalLlm=true` (Änderungsauftrag 14) |
 
+---
+
+## 4. Vollständige Mapping-Tabellen Original → Ziel
+
+### 4.1 Endpunkte
+
+| ID (A03/A05) | Original (Methode, Pfad, View) | Ziel (Datei, Handler) | Permission (05) | CE-IDs | Status | ab |
+|---|---|---|---|---|---|---|
+| SR-01 | `GET /api/workspaces/{slug}/search/` – `GlobalSearchEndpoint.get` (`API/app/views/search/base.py`, URL `API/app/urls/search.py` Name `global-search`) | `Plane.Search/Endpoints/App/GlobalSearchEndpoints.cs` → `GlobalSearchQuery` | `workspace.search.read` | CE-SRCH-001, CE-SRCH-004 | übernommen + `DEV-SRCH-001/-002/-004/-007/-011/-014/-015` | I5 |
+| SR-02 | `GET /api/workspaces/{slug}/projects/{project_id}/search-issues/` – `IssueSearchEndpoint.get` (`API/app/views/search/issue.py`, Name `project-issue-search`) | `Plane.Search/Endpoints/App/WorkItemPickerSearchEndpoints.cs` → `WorkItemPickerSearchQuery` | `project.work_item.search` | CE-SRCH-003, CE-WI-008, CE-WI-031, CE-WI-048 | übernommen + `DEV-SRCH-001/-003/-004/-006/-011/-014/-015` | I2 (Parameter `cycle`, `module`: I3) |
+| SR-03 | `GET /api/workspaces/{slug}/entity-search/` – `SearchEndpoint.get` (`API/app/views/search/base.py`, Name `entity-search`) | `Plane.Search/Endpoints/App/EntitySearchEndpoints.cs` → `EntitySearchQuery` | `workspace.search.read` (+ `project.work_item.search` bei `project_id`) | CE-SRCH-002, CE-PAGE-034, CE-WI-044 | übernommen + `DEV-SRCH-003/-004/-005/-008/-009/-014/-015` | I2 (`cycle`, `module`: I3; `page`: I4) |
+| v1-S1 | `GET /api/v1/workspaces/{slug}/issues/search/` – `IssueSearchEndpoint.get` (`API/api/views/issue.py` Z. 2246, URL `API/api/urls/work_item.py` Z. 26, Name `issue-search`) | `Plane.PublicApi/V1/Search/WorkItemSearchV1Endpoints.cs` → `IWorkItemSearchService` → `PublicApiWorkItemSearchQuery` | `workspace.search.read` | CE-API-019 | übernommen + `DEV-SRCH-001/-010/-013` | I6 |
+| v1-S2 | `GET /api/v1/workspaces/{slug}/work-items/search/` – dieselbe View (`API/api/urls/work_item.py` Z. 90, Name `work-item-search`) | dto. (zweite Route, gleicher Handler) | dto. | CE-API-019 | dto. | I6 |
+| EXT-01 | `GET /api/unsplash/` – `UnsplashEndpoint.get` (`API/app/views/external/base.py`, `API/app/urls/external.py` Name `unsplash`) | `Plane.Assistant/Endpoints/App/UnsplashEndpoints.cs` → `SearchUnsplashQuery` → `UnsplashClient` | `user.unsplash.read` | CE-AI-002, CE-UIX-009 | übernommen + `DEV-AI-007` | I6 |
+| EXT-02 | `POST /api/workspaces/{slug}/projects/{project_id}/ai-assistant/` – `GPTIntegrationEndpoint.post` | **nicht registriert** (405 nach 02 §3.3.1 Regel 6) | (`project.ai_assistant.use` ohne Endpunkt) | – | `DEV-AI-008` | – |
+| EXT-03 | `POST /api/workspaces/{slug}/ai-assistant/` – `WorkspaceGPTIntegrationEndpoint.post` | `Plane.Assistant/Endpoints/App/AiAssistantEndpoints.cs` → `RunAiAssistantTaskCommand` | `workspace.ai_assistant.use` | CE-AI-001 | übernommen + `DEV-AI-001…-006` | I6 |
+| – | `POST /api/workspaces/{slug}/rephrase-grammar/` (nur Frontend-Aufruf, im CE-Backend nicht vorhanden → 404) | nicht vorhanden (404 `{"error": "Page not found."}` wie Original); Route reserviert (§6.4) | – | – | 1:1 | – |
+| INST | `GET/PATCH /api/instances/configurations/` (Keys `LLM_*`, `UNSPLASH_ACCESS_KEY`) | Eigentümer `Plane.Instance`; Katalog um `LLM_BASE_URL` ergänzt | Instanz-Admin (05) | CE-INST-025, CE-INST-026, CE-INST-002 | angepasst | I0 (Seed), I6 (Formular) |
+| INST | `GET /api/instances/` Felder `has_llm_configured`, `has_unsplash_configured` | Eigentümer `Plane.Instance`, Berechnung über `LlmSettingsResolver` | anonym (05) | CE-INST-003 | angepasst (`DEV-AI-002`) | I0 (Feld), I6 (Semantik) |
+
+### 4.2 Backend-Code (Funktion für Funktion)
+
+| Original | Ziel | Status |
+|---|---|---|
+| `API/app/views/search/base.py` `GlobalSearchEndpoint.filter_workspaces` | `Application/Sources/WorkspaceSearchSource.cs` (Profil `Global`) | angepasst (Q-36) |
+| `…GlobalSearchEndpoint.filter_projects` | `ProjectSearchSource.cs` (`Global`) | angepasst (`deleted_at`) |
+| `…GlobalSearchEndpoint.filter_issues` | `WorkItemSearchSource.cs` (`Global`) | angepasst (Ordnung) |
+| `…GlobalSearchEndpoint.filter_cycles` | `CycleSearchSource.cs` (`Global`) | angepasst (`deleted_at`) |
+| `…GlobalSearchEndpoint.filter_modules` | `ModuleSearchSource.cs` (`Global`) | angepasst (`deleted_at`) |
+| `…GlobalSearchEndpoint.filter_pages` | `PageSearchSource.cs` (`Global`, Aggregate §3.4) | 1:1 |
+| `…GlobalSearchEndpoint.filter_views` | `ViewSearchSource.cs` (`Global`) | 1:1 |
+| `…GlobalSearchEndpoint.filter_intakes` | `IntakeSearchSource.cs` (`Global`) | 1:1 |
+| `…GlobalSearchEndpoint.get` (`MODELS_MAPPER`, `entities`-Parsing) | `Application/Queries/GlobalSearch/GlobalSearchQuery.cs` + `SearchEntityTypes.GlobalOrder` | 1:1 |
+| `…SearchEndpoint.get` Zweig `project_id` / ohne, je `query_type` (`user_mention`, `project`, `issue`, `cycle`, `module`, `page`) | `EntitySearchQuery.cs` + `UserMentionSearchSource`, `ProjectSearchSource`, `WorkItemSearchSource`, `CycleSearchSource`, `ModuleSearchSource`, `PageSearchSource` (Profil `Entity`) | angepasst (Q-35, `count`) |
+| `…SearchEndpoint` Cycle-`status`-`Case` | `Domain/CycleSearchStatus.cs` | 1:1 |
+| `…SearchEndpoint` `member__avatar_url`-`Case` | Projektion `UserAvatarUrl` (Eigentum Identity, A-025) | 1:1 |
+| `API/app/views/search/issue.py` `IssueSearchEndpoint.filter_issues_by_project` | `Domain/WorkItemPickerExclusions.ProjectOnly` | 1:1 |
+| `…search_issues_by_query` | `WorkItemSearchSource` + `SequenceIdExtractor(maxQueryLength: 20)` | 1:1 |
+| `…search_issues_and_excluding_parent` | `WorkItemPickerExclusions.ExcludeSelfParentChildren` | 1:1 |
+| `…filter_issues_excluding_related_issues` | `WorkItemPickerExclusions.ExcludeRelated` | 1:1 |
+| `…filter_root_issues_only` | `WorkItemPickerExclusions.RootOnly` | angepasst (`DEV-SRCH-006`) |
+| `…exclude_issues_in_cycles` | `WorkItemPickerExclusions.ExcludeInActiveCycle` | 1:1 |
+| `…exclude_issues_in_module` | `WorkItemPickerExclusions.ExcludeInModule` | 1:1 |
+| `…filter_issues_without_target_date` | `WorkItemPickerExclusions.WithoutTargetDate` | 1:1 |
+| `…IssueSearchEndpoint.get` (Parameter, Reihenfolge, `.values()[:100]`) | `WorkItemPickerSearchQuery.cs` + `WorkItemPickerHydrator.cs` | angepasst (Ordnung) |
+| `API/utils/issue_search.py` `search_issues` | `Plane.Platform.Search/Text/SequenceIdExtractor.cs` + `LikePattern` (in `WorkItemSearchSource`) | 1:1 (ASCII-Ziffern) |
+| `API/api/views/issue.py` `IssueSearchEndpoint` (v1) | `Plane.PublicApi/V1/Search/WorkItemSearchV1Endpoints.cs`, `Plane.Search/Application/Services/WorkItemSearchService.cs`, `PublicApiWorkItemSearchQuery.cs`, `PublicApiWorkItemHydrator.cs` | angepasst (Gast-Regel, `limit`) |
+| `API/app/views/external/base.py` `LLMProvider`, `OpenAIProvider`, `AnthropicProvider`, `GeminiProvider`, `SUPPORTED_PROVIDERS` | `Plane.Platform.Ai/Configuration/LlmProviderKind.cs` (`OpenAi`, `OpenAiCompatible`, `Anthropic`, `Gemini`) + Default-Tabelle im `LlmSettingsResolver` | angepasst (keine Whitelist) |
+| `…get_llm_config` | `Plane.Assistant/Application/Services/InstanceLlmSettingsSource.cs` + `LlmSettingsResolver.Resolve` | angepasst (`LLM_BASE_URL`) |
+| `…get_llm_response` | `RunAiAssistantTaskCommand` (Handler) + `IChatClient` (`DynamicChatClient`) | angepasst (`DEV-AI-003/-004`) |
+| `…GPTIntegrationEndpoint` | – | entfällt (Regel 6) |
+| `…WorkspaceGPTIntegrationEndpoint` | `AiAssistantEndpoints.cs` | 1:1 + Korrekturen |
+| `…text.replace("\n", "<br/>")` | `Domain/AiResponseFormatter.ToHtml` | angepasst (`DEV-AI-005`) |
+| `…UnsplashEndpoint` | `UnsplashEndpoints.cs`, `SearchUnsplashQuery.cs`, `Application/Services/UnsplashClient.cs` | angepasst (Q-27) |
+| `API/utils/instance_config_variables/core.py` `llm_config_variables`, `unsplash_config_variables` | `InstanceConfigurationKeys` (02 §4.10) + `LLM_BASE_URL` | angepasst |
+| `API/license/api/views/instance.py` Z. 135–139 (`has_unsplash_configured`, `has_llm_configured`) | `Plane.Instance` (Instanz-Info-Projektion) mit `LlmSettingsResolver` | angepasst |
+| `API/app/urls/search.py`, `API/app/urls/external.py` | Endpunkt-Registrierungen in `SearchModule.MapEndpoints`, `AssistantModule.MapEndpoints` | 1:1 (Pfade, Trailing Slash) |
+| DRF `rest_framework.filters.SearchFilter` (über `filter_backends` in `API/app/views/base.py`) | `Plane.Platform.Search/Text/DrfSearchFilter.cs`, `DrfSearchTerms.cs` | 1:1 |
+| `openai==1.63.2` (Python-SDK) | `OpenAI` .NET-SDK über `Microsoft.Extensions.AI.OpenAI` | ersetzt |
+| `requests` (Unsplash) | Named Client `unsplash` (`Plane.Platform.Security`) | ersetzt |
+
+### 4.3 Frontend-Dateien
+
+| Original | Ziel | Status | ab |
+|---|---|---|---|
+| `WEB/components/power-k/ui/modal/search-menu.tsx` | `FE/libs/web/power-k/components/ui/modal/search-menu.component.{ts,html}` (`PowerKModalSearchMenuComponent`) | 1:1 + Abbruch alter Anfragen | I5 |
+| `WEB/components/power-k/ui/modal/search-results.tsx` | `…/search-results.component.{ts,html}` (`PowerKModalSearchResultsComponent`) | 1:1 | I5 |
+| `WEB/components/power-k/ui/modal/search-results-map.tsx` | `…/search-results-map.ts` (`POWER_K_SEARCH_RESULTS_GROUPS_MAP`) + CE-Einträge `SEARCH_RESULT_RENDERERS` in `FE/libs/web/extensions/src/search.ts` | 1:1 | I5 |
+| `WEB/components/power-k/ui/modal/no-results-command.tsx` | `…/no-results-command.component.{ts,html}` | 1:1 | I5 |
+| `WEB/components/power-k/core/types.ts` (`TPowerKSearchResultsKeys`) | `FE/libs/web/power-k/core/types.ts` | 1:1 (Eigentum 08) | I5 |
+| `WEB/components/power-k/ui/modal/wrapper.tsx` (Filterfunktion, `shouldFilter`) | `…/wrapper.component.ts` (Eigentum 08; Filter 1:1 laut §3.11) | 1:1 | I5 |
+| `WEB/services/workspace.service.ts` (`searchWorkspace`, `searchEntity`) | `FE/libs/web/workspace/services/workspace.service.ts` | 1:1 | I2/I5 |
+| `WEB/services/project/project.service.ts` (`projectIssuesSearch`) | `FE/libs/web/project/services/project/project.service.ts` | 1:1 | I2 |
+| `PKG/services/src/workspace/workspace.service.ts` (`searchWorkspace`) | `FE/libs/shared/services/src/workspace/workspace.service.ts` | 1:1 | I5 |
+| `PKG/types/src/workspace.ts` (`IWorkspaceSearchResults`, `IWorkspaceSearchResult`, `IWorkspaceProjectSearchResult`, `IWorkspaceIssueSearchResult`, `IWorkspaceDefaultSearchResult`, `IWorkspacePageSearchResult`) | `FE/libs/shared/types/src/workspace.ts` | 1:1 | I5 |
+| `PKG/types` (`TSearchEntityRequestPayload`, `TSearchResponse`, `TSearchEntities`, `TUserSearchResponse`, `TProjectIssuesSearchParams`, `ISearchIssueResponse`) | `FE/libs/shared/types/src/**` (gleiche Dateien) | 1:1 | I2 |
+| `PKG/constants/src/workspace.ts` (`WORKSPACE_DEFAULT_SEARCH_RESULT`) | `FE/libs/shared/constants/src/workspace.ts` | 1:1 | I5 |
+| `WEB/hooks/use-debounce.tsx` | `debounceSignal()` (08 §4.7) | ersetzt | I2 |
+| `WEB/hooks/editor/use-editor-mention.tsx`, `WEB/hooks/use-additional-editor-mention.tsx` | `EditorMentionService` + Token `EDITOR_MENTION_TYPES` (08 §6) | ersetzt | I2 |
+| `WEB/components/core/modals/existing-issues-list-modal.tsx`, `issue-search-modal-empty-state.tsx`, `bulk-delete-issues-modal.tsx` | `FE/libs/web/work-items/components/core/modals/*.component.{ts,html}` | 1:1 | I2 |
+| `WEB/components/issues/parent-issues-list-modal.tsx` | `FE/libs/web/work-items/components/issues/parent-issues-list-modal.component.{ts,html}` | 1:1 | I2 |
+| `WEB/components/inbox/modals/select-duplicate.tsx` | `FE/libs/web/intake/components/inbox/modals/select-duplicate.component.{ts,html}` | 1:1 | I3 |
+| `WEB/services/ai.service.ts` | `FE/libs/web/work-items/services/ai.service.ts` | 1:1 | I6 |
+| `PKG/services/src/ai/ai.service.ts`, `PKG/services/src/ai/index.ts` | `FE/libs/shared/services/src/ai/*` | 1:1 | I6 |
+| `PKG/constants/src/ai.ts` | `FE/libs/shared/constants/src/ai.ts` | 1:1 | I6 |
+| `WEB/components/core/modals/gpt-assistant-popover.tsx` | `FE/libs/web/work-items/components/core/modals/gpt-assistant-popover.component.{ts,html}` | 1:1 | I6 |
+| `WEB/components/issues/issue-modal/components/description-editor.tsx` (AI-Buttons) | `FE/libs/web/work-items/components/issues/issue-modal/components/description-editor.component.{ts,html}` | 1:1 | I2 (Editor), I6 (AI-Buttons) |
+| `WEB/hooks/use-editor-flagging.ts` | Token `EDITOR_FLAGS` (08 §6) | ersetzt | I2 |
+| `WEB/components/pages/editor/ai/menu.tsx` | `FE/libs/web/pages/components/pages/editor/ai/menu.component.{ts,html}` (portiert, über `EDITOR_FLAGS` deaktiviert) | 1:1 | I4 |
+| `WEB/services/file.service.ts` (`getUnsplashImages`) | `FE/libs/web/core/services/file.service.ts` | 1:1 | I1 |
+| `WEB/components/core/image-picker-popover.tsx` | `FE/libs/web/core/components/core/image-picker-popover.component.{ts,html}` | 1:1 | I1 (Tab sichtbar ab I6) |
+| `ADM/app/(all)/(dashboard)/ai/{page,form}.tsx` | `FE/apps/admin/src/pages/(all)/(dashboard)/ai/{page.ts,form.component.ts,form.component.html}` | angepasst (`DEV-UI-D11-01/-02`) | I6 |
+| `ADM/app/(all)/(dashboard)/image/{page,form}.tsx` | `FE/apps/admin/src/pages/(all)/(dashboard)/image/{page.ts,form.component.*}` | 1:1 | I6 |
+| `PKG/types/src/instance/ai.ts`, `PKG/types/src/instance/image.ts` | `FE/libs/shared/types/src/instance/{ai,image}.ts` | `ai.ts` additiv `LLM_BASE_URL` | I6 |
+| `PKG/i18n/src/locales/*/power-k.json` (`power_k.search_menu.*`) | `FE/libs/shared/i18n/locales/*/power-k.json` | 1:1 | I5 |
+
+### 4.4 CE-IDs → Bausteine
+
+| CE-ID | Bausteine dieses Dokuments | Inkrement | Tests |
+|---|---|---|---|
+| CE-SRCH-001 | SR-01, `ParitySearchProvider`, alle Quellen (Profil `Global`), `GlobalSearchHydrator`, Power-K-Suchseite | I5 | `GlobalSearchContractTests`, `SearchGuestScopeAppTests` (A-051), `web/search/search.spec.ts`, LT-09 |
+| CE-SRCH-002 | SR-03, Quellen (Profil `Entity`), `EntitySearchHydrator`, `EditorMentionService` | I2–I4 | `EntitySearchContractTests`, A-051 |
+| CE-SRCH-003 | SR-02, `WorkItemPickerExclusions`, `WorkItemPickerHydrator` | I2/I3 | `WorkItemPickerSearchContractTests` |
+| CE-SRCH-004 | Power-K-Suchseite (§3.11), `SEARCH_RESULT_RENDERERS` | I5 | `web/search/power-k.spec.ts`, Galerie `pl-command` |
+| CE-SRCH-005 … CE-SRCH-009 | – (Eigentum 08 §3.10) | I5 | 08 |
+| CE-API-019 | v1-Suche (§3.7) | I6 | `PublicApiWorkItemSearchContractTests` |
+| CE-API-014 | `LikePattern` für `query` (Stickies v1, Eigentum Home/PublicApi) | I6 | Contract-Golden Stickies v1 |
+| CE-HOME-009 | `LikePattern` für `query` (Stickies App) | I5 | Contract-Golden Stickies |
+| CE-WS-005, CE-WS-009, CE-PRJ-021, CE-PAGE-002 | `DrfSearchFilter` | I1/I4 | `DrfSearchFilterTests` + Contract-Goldens mit `?search=` |
+| CE-INST-027 | `LikePattern` für `search` (God-Mode-Workspaces) | I6 | Contract-Golden |
+| CE-AI-001 | EXT-03, `Plane.Platform.Ai`, Frontend §3.17 | I6 | `AssistantEndpointTests`, `LlmSettingsResolverTests`, `web/ai/ai-unsplash.spec.ts` |
+| CE-AI-002, CE-UIX-009 (Unsplash-Tab) | EXT-01, `UnsplashClient`, Bild-Picker | I6 | `UnsplashEndpointTests`, `web/ai/ai-unsplash.spec.ts` |
+| CE-INST-025 | Key `LLM_BASE_URL`, God-Mode-Formular AI | I6 | `admin/admin-settings.spec.ts`, Visual A-007 |
+| CE-INST-026 | Key `UNSPLASH_ACCESS_KEY`, Formular Bilder | I6 | `admin/admin-settings.spec.ts` |
+| CE-INST-003 | `has_llm_configured`, `has_unsplash_configured` | I0/I6 | `InstanceEndpointContractTests` (05) |
+| CE-PAGE-034, CE-WI-044 | SR-03 `user_mention` | I2/I4 | `EntitySearchContractTests.UserMention_*` |
+| CE-WI-008, CE-WI-031, CE-WI-048 | SR-02 | I2 | `WorkItemPickerSearchContractTests` |
+
+### 4.5 ENV und Instanz-Keys
+
+| ENV / Key | Ziel | Hinweis |
+|---|---|---|
+| `LLM_API_KEY`, `LLM_PROVIDER`, `LLM_MODEL` | Instanz-Keys (Seed beim ersten Start aus ENV) | §3.13.1 |
+| `LLM_BASE_URL` | Instanz-Key (neu, Seed aus ENV) | §3.13.1 |
+| `GPT_ENGINE` | entfällt | 02 §4.10 (14 §4.7.1 Zeile „Seed nur als Fallback“ wird angepasst, §9.2) |
+| `UNSPLASH_ACCESS_KEY` | Instanz-Key | – |
+| `OPENAI_API_BASE`, `OPENAI_API_KEY` | entfällt | 14 §4.7 Klasse E |
+| – | `Plane:Search:*`, `Plane:Ai:*`, `Plane:Unsplash:*`, `Plane:RateLimits:AiAssistant` | §3.18 |
+
+### 4.6 Textsuche in anderen Modulen (Querschnitt, vollständige Liste aus dem Original)
+
+| Original-Stelle | Mechanik | Zielmodul / Datei | Baustein | Bemerkung |
+|---|---|---|---|---|
+| `API/app/views/workspace/member.py` Z. 50 `WorkSpaceMemberViewSet.search_fields = ["member__display_name", "member__first_name"]` | DRF-`SearchFilter` über `get_queryset` → `filter_queryset` | `Plane.Workspaces` (Liste der Mitglieder, W-17) | `DrfSearchFilter` | CE-WS-009 |
+| `API/app/views/workspace/base.py` Z. 59 `WorkSpaceViewSet.search_fields = ["name"]` | DRF-`SearchFilter` | – | – | W-02 tot (Q-01), nicht registriert |
+| `API/app/views/workspace/base.py` Z. 177/207 `UserWorkSpacesEndpoint.search_fields = ["name"]` | `self.filter_queryset(workspace)` | `Plane.Workspaces` (U-17 `GET users/me/workspaces/`) | `DrfSearchFilter` | CE-WS-005 |
+| `API/app/views/project/member.py` Z. 31 `ProjectMemberViewSet.search_fields = ["member__display_name", "member__first_name"]` | DRF-`SearchFilter` (wo `get_queryset` genutzt wird) | `Plane.Projects` | `DrfSearchFilter` | CE-PRJ-021; Wirkung je Methode per Contract-Golden bestätigen |
+| `API/app/views/page/base.py` Z. 81 `PageViewSet.search_fields = ["name"]` | DRF-`SearchFilter` in `get_queryset` | `Plane.Pages` | `DrfSearchFilter` | CE-PAGE-002 (Frontend filtert zusätzlich clientseitig) |
+| `API/app/views/issue/base.py` Z. 212 `IssueViewSet.search_fields = ["name"]` | `self.filter_queryset(issue_queryset)` in `list` | `Plane.WorkItems` | `DrfSearchFilter` | Work-Item-Liste `?search=` |
+| `API/app/views/workspace/sticky.py` Z. 45 `description_stripped__icontains=query` | `icontains` | `Plane.Home` | `LikePattern` | CE-HOME-009 |
+| `API/api/views/sticky.py` Z. 70 `description_stripped__icontains=query` | `icontains` | `Plane.PublicApi` → `Plane.Home` | `LikePattern` | CE-API-014 |
+| `API/license/api/views/workspace.py` Z. 61 `name__icontains=search` | `icontains` | `Plane.Instance` | `LikePattern` | CE-INST-027 |
+| `API/utils/issue_filters.py` Z. 205 `name__icontains` | Legacy-Filter `name` | `Plane.WorkItems` (`LegacyFilterParser`, 02 §3.11.3) | `LikePattern` | – |
+| `API/app/views/notification/base.py` Z. 71, 102, 104, 215, 225 `sender__icontains="mentioned"` | konstanter Teilstring | `Plane.Notifications` | `LikePattern.Contains("mentioned")` | CE-NOTIF-004 |
+| `API/app/views/base.py` Z. 59/158, `API/app/views/project/invite.py` Z. 43, `API/license/api/views/base.py` Z. 51, `API/space/views/base.py` Z. 73/157 (`search_fields = []`) | DRF-`SearchFilter` ohne Felder | – | – | wirkungslos, nicht portiert |
+
+### 4.7 Abweichungskatalog (Einträge für `T/contracts/deviations.yaml`)
+
+| ID | Kurzbeschreibung | Wirkung auf Contract-Vergleich | Abschnitt |
+|---|---|---|---|
+| `DEV-SRCH-001` | Deterministische Relevanzreihenfolge, wo das Original keine festlegt (SR-01 `issue`, SR-02, v1) | `compare: unordered` für diese Listen; Seed hält Treffermengen ≤ Limit | D11-ADR-03 |
+| `DEV-SRCH-002` | Kappung unbegrenzter SR-01-Listen bei 1000 | keine (Seed < 1000) | D11-ADR-18 |
+| `DEV-SRCH-003` | Sequenznummern nur ASCII-Ziffern; Werte außerhalb `int` ignoriert statt 500 | Fehlerfall-Golden | §3.2.2 |
+| `DEV-SRCH-004` | NUL-Zeichen im Suchtext entfernt statt 500 | Fehlerfall-Golden | §3.2.1 |
+| `DEV-SRCH-005` | SR-03 `count` ungültig/≤ 0 → 5, > 100 → 100 statt 500/unbegrenzt | Fehlerfall-Golden | §3.5 |
+| `DEV-SRCH-006` | SR-02 `sub_issue=true` mit unbekanntem `issue_id` → keine Filterung statt 500 | Fehlerfall-Golden | §3.6 |
+| `DEV-SRCH-007` | SR-01 `workspace`: nur aktive, nicht gelöschte Mitgliedschaften (Q-36, SEC-56) | Golden mit inaktivem Mitglied | §3.4 |
+| `DEV-SRCH-008` | SR-03 mit `project_id`: Mitgliedschaft des Anfragenden Pflicht (Q-35, SEC-56) | 403-Golden | §3.5 |
+| `DEV-SRCH-009` | SR-03 `project`: nur aktive, nicht gelöschte Mitgliedschaft (Original: auch inaktive/gelöschte) | Golden | §3.5 |
+| `DEV-SRCH-010` | v1-Suche wendet die Gast-Regel an (Sicherheitskorrektur) | Gast-Golden | §3.7 |
+| `DEV-SRCH-011` | SR-01/SR-02 für Nicht-Mitglieder 403 statt 200 mit leeren Listen (05 Anhang B) | 403-Golden | §3.4, §3.6 |
+| `DEV-SRCH-012` | Mitgliedschafts-Joins der Suche prüfen immer `deleted_at IS NULL` (Cycles, Module, Projekte; Original teils nur `is_active`) – Unterfall von `DEV-PERM-001` (02) | Golden | §3.4, §3.5 |
+| `DEV-SRCH-013` | v1 `limit` ungültig/≤ 0 → 10, > 100 → 100 statt 500/unbegrenzt | Fehlerfall-Golden | §3.7 |
+| `DEV-SRCH-014` | Fallfaltung `ILIKE` statt `UPPER(..) LIKE UPPER(..)` (Sonderfälle wie `ß`) | Ausnahme-Liste der Testwörter | §3.2.1 |
+| `DEV-SRCH-015` | Suchtexte > 1000 Zeichen werden gekürzt | keine | §3.3.2 |
+| `DEV-AI-001` | Keine Modell-Whitelist; `anthropic`/`gemini` über deren OpenAI-kompatible Endpunkte statt Fehlaufruf an OpenAI | Konfigurations-Golden | §3.13.2 |
+| `DEV-AI-002` | `LLM_BASE_URL` neu; Key optional mit Basis-URL; `has_llm_configured` = nutzbare Konfiguration statt `bool(LLM_API_KEY)` | Instanz-Golden | §3.13 |
+| `DEV-AI-003` | fehlender `prompt` → `""`; nicht-String-`task` → Textdarstellung (statt 500) | Fehlerfall-Golden | §3.15 |
+| `DEV-AI-004` | leere/`null`-LLM-Antwort → `""` (200) statt 500 | WireMock-Golden | §3.15 |
+| `DEV-AI-005` | `response_html` HTML-kodiert vor `\n` → `<br/>` | Golden mit `<`/`&` in der Antwort | §3.15 |
+| `DEV-AI-006` | `GPT_ENGINE` entfällt | – | §3.13.1 |
+| `DEV-AI-007` | Unsplash: `page` ohne `$`, URL-Kodierung, Key im Header, Timeout | WireMock-Golden (Request-Match) | §3.16 |
+| `DEV-AI-008` | `POST {P}/ai-assistant/` nicht registriert (405) | 405-Golden | D11-ADR-16 |
+| `DEV-UI-D11-01` | God-Mode AI: zusätzliches Feld „Base URL“ | Visual-Baseline A-007 neu aufgenommen (Maske über drittes Feld nicht nötig, eigene Baseline) | §3.17 |
+| `DEV-UI-D11-02` | God-Mode AI: Kontakt-Hinweis entfällt (ADR-001) | dto. | §3.17 |
+

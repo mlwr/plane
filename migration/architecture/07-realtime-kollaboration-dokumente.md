@@ -472,3 +472,334 @@ stateDiagram-v2
 
 `PlanePrincipal` für WebSocket-Verbindungen hat `Kind = User`; `ApiKey`, `App` und `Bot` werden in der CE abgewiesen (`PermissionDenied`) – Andockstelle H1 in §6.
 
+### 3.6 Dokument-Lebenszyklus (Laden, Migration, Sitzung, Speichern, Titel-Sync, Entladen)
+
+#### 3.6.1 Registry und Actor
+
+- `DocumentRegistry` hält `ConcurrentDictionary<DocumentKey, DocumentSession>` mit `DocumentKey(DocumentType, DocumentName)`. `GetOrLoadAsync` ist pro Schlüssel einmalig (laufendes Laden wird geteilt, Hocuspocus `loadingDocuments`).
+- `DocumentSession` besitzt: `YDotNet.Document.Doc` (`DocOptions { SkipGarbageCollection = false }` = Hocuspocus `gc: true`), Verbindungsliste, `AwarenessRegistry`, `StoreScheduler`, `TitleSyncScheduler`, `LastStoredRevision`, Flags `IsLocked`, `IsArchived`, `IsLoading`.
+- Alle Eingänge sind Kommandos im `Channel<IDocumentCommand>` (unbegrenzt, Reihenfolge = Eingang): `ConnectionAdded`, `ConnectionRemoved`, `IncomingMessage`, `BackplaneMessage`, `StoreDue`, `TitleDue`, `SignalReceived`, `ForceClose`, `Shutdown`. Ausgänge (Senden an Sockets, Backplane-Publish, Store) werden aus der Schleife angestoßen; der **Store** läuft asynchron außerhalb der Schleife und meldet das Ergebnis als Kommando `StoreCompleted` zurück (die Schleife blockiert nicht während der DB-Transaktion).
+- Update-Erfassung: `Doc.ObserveUpdatesV1` liefert das tatsächlich erzeugte Update je Transaktion; die Schleife kennt die auslösende Quelle (aktuelles Kommando) und setzt `Origin` = `Local(connectionId)` | `Backplane` | `Store` | `Migration`.
+
+#### 3.6.2 Laden
+
+`ProjectPageDocumentType.LoadAsync` → `IPageDocumentStore.LoadAsync(pageId, user)`:
+
+1. Page per ID lesen inkl. Prüfung „im Workspace + aktive `project_pages`-Verknüpfung zum Projekt der Verbindung“ (sonst `NotFound` → Ladefehler).
+2. `description_binary` nicht leer → Snapshot `{State, Name, IsLocked, ArchivedAt, Revision}` zurück.
+3. `description_binary` leer (Page per API/HTML angelegt, Seeds) → **Migration unter Zeilensperre**: `BEGIN; SELECT … FOR UPDATE`; erneut prüfen, ob leer; `state = DocumentConverter.CreateDocumentState(description_html ?? "<p></p>", name)` (D07-ADR-09/-10: deterministischer Writer, Variante `Document`, Fragmente `default` + `title`); abgeleitete Formate erzeugen und speichern wie beim Store (§3.6.4 Schritte 5–8, aber **ohne** Version und **ohne** `description_updated`-Event, weil sich das HTML fachlich nicht ändert); `COMMIT`. Fehler beim Speichern werden wie im Original nur protokolliert (`collab.migration.persist_failed`), die Sitzung arbeitet mit dem erzeugten Zustand weiter. Entspricht `LIVE/extensions/database.ts` `fetchDocument` (Zweig `byteLength === 0`).
+4. In der Sitzung: `ApplyV1(state)`; danach **Titel-Migration** wie `TitleSyncExtension.onLoadDocument`: ist das Fragment `title` leer und `name` nicht `null`, wird `TitleDocuments.CreateTitleUpdate(pageId, name)` angewendet (deterministische Client-ID `ClientIds.TitleMigration(pageId)`, Inhalt `heading(level: 1)` mit Text `name`; bei leerem Namen nur `heading` ohne Text). Diese Änderung plant **keinen** Store (Original: `merge` außerhalb einer Verbindung → kein `onStoreDocument`), wird aber beim nächsten Store mitgeschrieben.
+5. Backplane abonnieren, `SyncStep1` (eigener State-Vector) und `QueryAwareness` publizieren (Hocuspocus-Redis `afterLoadDocument`).
+6. Fehler in 1–4 → `BroadcastedEvent` `error` (`error_type: "fetch"`, `error_message: "Unable to load the page. Please try refreshing."`) an bereits verbundene Verbindungen (in der Praxis keine) und `PermissionDenied` an alle wartenden Verbindungen (D07-ADR-28); Sitzung wird verworfen (kein Store eines leeren Dokuments, Hocuspocus-Regel `!document.isLoading`).
+
+#### 3.6.3 Sitzung: Verarbeitung eingehender Nachrichten
+
+| Eingang | Verarbeitung im Actor |
+|---|---|
+| `Sync/Step1` | §3.3.3; kein Store |
+| `Sync/Step2`, `Sync/Update` von `read-write` | Wenn `IsLocked` oder `IsArchived`: **nicht anwenden**, `SyncStatus(0)`, einmal je Verbindung und Zustand `BroadcastedEvent` `error` mit `error_code` `page_locked` bzw. `page_archived`, `error_type: "store"`, Text „Unable to save the page. Please try again.“ an diese Verbindung (Fix E4). Sonst `ApplyV1` in Transaktion mit Origin `Local`; Größenprüfung des Gesamtzustands erfolgt beim Store; `SyncStatus(1)` an Sender; erzeugtes Update an **alle** Verbindungen (inkl. Sender) und an die Backplane; `StoreScheduler.Touch()`; `TitleSyncScheduler.Check()` |
+| `Sync/*` von `readonly` | §3.3.3 (keine Anwendung) |
+| `Awareness` | §3.9 |
+| `Stateless` | §3.7 |
+| `CLOSE` | Verbindung schließen 1000 |
+| Ungültige Nachricht (Dekodierfehler, falscher Dokumentname auf dieser Verbindung) | Verbindung schließen 4403 `Forbidden` (Hocuspocus: Exception → Forbidden); Log `collab.protocol.invalid` mit Hexdump der ersten 64 Byte (Debug) |
+
+#### 3.6.4 Speichern (Store) und Merge-on-Store
+
+**Planung (`StoreScheduler`, exakt `useDebounce` aus `@hocuspocus/server/src/util/debounce.ts`):**
+
+```text
+Touch():                                  # nur bei Updates mit Origin Local
+  start = pending?.Start ?? now
+  cancel pending timer
+  if now - start >= MaxDebounce (10 000 ms): run now
+  else: pending = (Start: start, Timer: now + Debounce (10 000 ms))
+ConnectionRemoved and connections == 0:
+  if !IsLoading and pending != null: run now (unloadImmediately) → nach Erfolg Entladen (§3.6.6)
+  else: Entladen sofort
+```
+
+**Ausführung** (`DocumentPersister.StoreAsync`, außerhalb der Schleife, höchstens ein laufender Store je Dokument; währenddessen eintreffende Updates setzen `pending` erneut):
+
+1. `state = Doc.ReadTransaction().StateDiffV1(emptySv)` (= `encodeStateAsUpdate`), `title = TitleDocuments.ExtractTitleText(doc)`.
+2. `ICollaborationDocumentType.SaveAsync(documentName, state, title: null, auth, ct)` → `IPageDocumentStore.SaveAsync(pageId, state, title: null, user)` (Titel separat, §3.6.5). Akteur = Nutzer der Verbindung, die das **erste** ungespeicherte Update geliefert hat (Hocuspocus: Kontext der auslösenden Verbindung).
+3. In `PageDocumentStore.SaveAsync` (Transaktion `ReadCommitted`, `CreateExecutionStrategy`):
+   1. `SELECT … FROM pages WHERE id = @id FOR UPDATE` (+ Projektverknüpfung).
+   2. `IsLocked` → Ergebnis `Locked`; `archived_at != null` → `Archived` (kein Schreiben).
+   3. `merged = dbState.IsEmpty ? state : YjsMerge.Merge(dbState, state)`.
+   4. `YjsMerge.SnapshotEquals(merged, dbState)` → `Unchanged` (kein Schreiben, `Revision` unverändert).
+   5. `merged.Length > MaxDocumentBytes` → `TooLarge`.
+   6. `formats = DocumentConverter.FromDocumentState(merged)` → `ContentJson`, `ContentHtml` (danach `HtmlSanitizerProfile.Sanitize`), `TitleText`; `description_stripped = HtmlTextExtractor.Strip(html)`.
+   7. Felder setzen: `description_binary`, `description_html`, `description_json`, `description_stripped`, `description_revision = description_revision + 1`, `updated_by_id`, `updated_at`.
+   8. Wenn sich `description_html` geändert hat: `PageVersionTracker.Track(page, user)` (D07-ADR-22) und Integration-Event `PageDescriptionUpdatedV1` (`plane.page.description_updated.v1`, Payload `{page_id, workspace_id, project_ids[], actor_id, revision}`) in die Outbox (D07-ADR-23).
+   9. `SELECT pg_notify('plane_collab', @payload)` mit `{"k":"stored","t":"project_page","d":"<pageId>","r":<revision>,"i":"<instanceId>"}` (wird erst beim Commit zugestellt).
+   10. Commit → Ergebnis `Saved(merged, revision)`.
+4. Rückmeldung an den Actor (`StoreCompleted`):
+
+| Ergebnis | Reaktion der Sitzung |
+|---|---|
+| `Saved(merged, r)` | `ApplyV1(merged)` mit Origin `Store` (bringt Updates anderer Instanzen/REST-Fallback in die Sitzung; Broadcast nur, wenn ein Update entsteht), `LastStoredRevision = r` |
+| `Unchanged` | nichts |
+| `Locked` / `Archived` | `IsLocked`/`IsArchived` setzen; `error` mit `error_code` `page_locked`/`page_archived` an alle Verbindungen (Fix E4) |
+| `TooLarge` | `error` (`content_too_large`, „Document is too large to save. Please reduce the content size.“, `should_disconnect: true`) an alle; dann Force-Close `document_too_large`/4001 instanzübergreifend (§3.8); **kein** Wiederholungsversuch |
+| `NotFound` (Page gelöscht) | Stateless `deleted` (Client-Name) mit JSON-Variante, dann Force-Close `critical_error`/4000 |
+| Exception | `error` (`error_type: "store"`, „Unable to save the page. Please try again.“) an alle; `pending` bleibt gesetzt → nächster Versuch beim nächsten `Touch` bzw. spätestens nach `StoreRetryMilliseconds` (10 000) |
+
+#### 3.6.5 Titel-Synchronisation
+
+- Nach jeder angewendeten Transaktion mit Origin `Local` liest `TitleSyncScheduler.Check()` den Titeltext (`TitleDocuments.ExtractTitleText`: Text aller `XmlText` im Fragment `title` in Dokumentreihenfolge, `Trim()`); weicht er vom zuletzt gesehenen ab → `Schedule(title)`.
+- `Schedule`: Trailing-Debounce `TitleDebounceMilliseconds` = 5 000; ein laufender Speichervorgang wird abgebrochen (`CancellationToken`, Original `AbortController` mit 20 ms Wartezeit); bei Fehler (kein Abbruch) erneuter Versuch nach 5 000 ms; Erfolg mit unverändertem Wert setzt den Puffer zurück (Original `DebounceManager`).
+- Ausführung: `ICollaborationDocumentType.UpdateTitleAsync(documentName, title, auth, ct)` → `IPageDocumentStore.UpdateTitleAsync(pageId, title, user)` = fachlich identisch zu `PATCH …/pages/{id}/` mit `{name}` (gleiche Validierung, Activity/Events des Pages-Moduls; gesperrte/archivierte Page → abgelehnt, nur Log).
+- `beforeUnloadDocument`-Äquivalent: vor dem Entladen `Flush()` (nur wenn ein Wert ansteht); danach Beobachter abmelden.
+- Eltern-Broadcast `property_updated {name}` an `parentPage` (Original E7, nie aktiv): in der CE kein Eltern-Bezug (`IPageHierarchy` flach) → Andockstelle D2 (§6).
+- **Abweichung DEV-07-05:** Das Original extrahiert den Titel über `extractTextFromHTML(fragment.toJSON())` (XML-String → DOMPurify-Text). Text mit `<…>`-Folgen kann dort verloren gehen; das Ziel nutzt den reinen Text. Für alle Titel ohne spitze Klammern identisch.
+
+#### 3.6.6 Entladen
+
+Bedingung: 0 Verbindungen **und** kein laufender/ausstehender Store. Ablauf: `TitleSyncScheduler.Flush()` → Backplane `UNSUBSCRIBE` (nach `BackplaneUnsubscribeDelayMilliseconds` = 1 000, Original `disconnectDelay`) → Awareness leeren → `Doc.Dispose()` → aus Registry entfernen → Metrik `plane.realtime.documents.loaded` −1. Kommt während des Entladens eine Verbindung, wird die Sitzung reaktiviert (Zustand `Draining → Active`).
+
+#### 3.6.7 Laden/Speichern-Konstanten (Original → Ziel)
+
+| Konstante | Original | Ziel (Option, Default) |
+|---|---|---|
+| Store-Debounce | `debounce: 10000` (`LIVE/hocuspocus.ts`) | `Plane:Realtime:DebounceMilliseconds` = 10 000 |
+| Store-Max-Debounce | `maxDebounce` Default 10 000 (`@hocuspocus/server` `defaultConfiguration`) | `MaxDebounceMilliseconds` = 10 000 |
+| Sofort-Store bei letzter Trennung | `unloadImmediately: true` | fest |
+| Titel-Debounce | `TitleUpdateManager(…, 5000)` | `TitleDebounceMilliseconds` = 5 000 |
+| Auth-Timeout | `timeout: 30000` | `AuthenticationTimeoutMilliseconds` = 30 000 |
+| Ping/Pong | `timeout` 30 000 (Intervall + Prüfung) | `KeepAliveIntervalSeconds` = 30, `KeepAliveTimeoutSeconds` = 30 |
+| Redis-Disconnect-Verzögerung | `disconnectDelay` 1 000 | `BackplaneUnsubscribeDelayMilliseconds` = 1 000 |
+| Force-Close-Wartezeiten | 50 ms / 800 ms | `ForceCloseNotifyDelayMilliseconds` = 50, `ForceCloseUnloadDelayMilliseconds` = 800 |
+| Binary-Limit | 10 MB (`validate_binary_data`) | `MaxDocumentBytes` = 10 485 760 |
+
+#### 3.6.8 Anforderungen an das Datenmodell (an `03` zu übernehmen)
+
+| Tabelle | Spalte | Typ | Regel | Grund |
+|---|---|---|---|---|
+| `pages` | `description_binary` | `bytea` NULL | Quelle der Wahrheit | `A12` §5.5 |
+| `pages` | `description_html` | `text` NOT NULL Default `'<p></p>'` | abgeleitet, sanitisiert | Vertrag Exporte/PageLog |
+| `pages` | `description_json` | `jsonb` NOT NULL Default `'{}'` | abgeleitet | – |
+| `pages` | `description_stripped` | `text` NULL | abgeleitet (`strip_tags`) | Suche |
+| `pages` | `description_revision` | `bigint` NOT NULL Default 0 | +1 je geändertem Store/PATCH | Signal-Abgleich ohne Binärvergleich (neu) |
+| `pages` | `name` | `text` NOT NULL | synchron zu Fragment `title` | – |
+| `page_versions` | `last_saved_at`, `owned_by_id`, `description_binary`, `description_html`, `description_json`, `description_stripped`, `sub_pages_data` (`jsonb`, CE `{}`) | wie Original `API/db/models/page.py` Z. 158–182 | – | D07-ADR-22 |
+| `page_logs` | wie Original (`transaction`, `entity_identifier`, `entity_name`, `entity_type`, `page_id`) | – | Consumer `PageLogSyncConsumer` | D07-ADR-23 |
+
+Kein separates Update-Log (`page_yjs_updates`) in der CE: der Merge-on-Store-Ansatz braucht es nicht; Andockstelle D3 (§6).
+
+### 3.7 Stateless-Ereignisse und Server-Ereignisse
+
+#### 3.7.1 Mapping (1:1 `EDITOR/constants/document-collaborative-events.ts`)
+
+| Schlüssel | Client sendet (`server`) | Server sendet (`client`) | Payload-Typ (JSON-Variante) | In CE vom Client gesendet | Plausibilisierung vor dem Rundsenden (SEC-RT-01) |
+|---|---|---|---|---|---|
+| `lock` | `lock` | `locked` | `{is_locked}` | ja | Page `is_locked = true` |
+| `unlock` | `unlock` | `unlocked` | `{}` | ja | `is_locked = false` |
+| `archive` | `archive` | `archived` | `{archived_at}` | ja | `archived_at != null` |
+| `unarchive` | `unarchive` | `unarchived` | `{}` | ja | `archived_at == null` |
+| `make-public` | `make-public` | `made-public` | `{access}` | ja | `access = 0` |
+| `make-private` | `make-private` | `made-private` | `{access}` | ja | `access = 1` |
+| `delete` | `delete` | `deleted` | `{deleted_at}` | nein | Page gelöscht (`deleted_at != null` bzw. nicht mehr auffindbar) |
+| `move` | `move` | `moved` | `{new_project_id, new_page_id}` | nein | CE: verworfen (Andockstelle D2) |
+| `duplicate` | `duplicate` | `duplicated` | `{new_page_id}` | nein | CE: verworfen |
+| `property_update` | `property_update` | `property_updated` | `Partial<TPage>` | nein | CE: verworfen |
+| `restore` | `restore` | `restored` | `{deleted_page_ids?}` | nein | CE: verworfen |
+| `error` | – | `error` | `{error_message, error_type, error_code?, should_disconnect?}` | – | nur serverseitig erzeugt |
+
+Ablauf: Client-Stateless-String → `StatelessEventMap.TryGetClientName` (unbekannt → ignorieren, wie Original) → `StatelessValidator.ValidateAsync(page, key)` über `IPageDocumentStore.GetStateAsync(pageId)` (liest `is_locked`, `archived_at`, `access`, `deleted_at`; HybridCache 2 s) → bei Erfolg Sitzungsflags aktualisieren (`IsLocked`/`IsArchived`) und `Stateless(clientName)` an **alle** lokalen Verbindungen (inkl. Sender) + Backplane `Stateless`. Bei Fehlschlag: verwerfen, Log `collab.stateless.rejected` (Warnung). Die Plausibilisierung ist abschaltbar (`Plane:Realtime:ValidateStateless`, Default `true`) nur für Paritäts-Replays.
+
+#### 3.7.2 Server-JSON-Ereignisse (`BroadcastedEvent`)
+
+Format byte-kompatibel zu `createRealtimeEvent` (`EDITOR/types/document-collaborative-events.ts`), Schlüsselreihenfolge wie dort:
+
+```json
+{
+  "affectedPages": { "currentPage": "<pageId>", "parentPage": null, "descendantPages": [] },
+  "workspace_slug": "<slug>",
+  "project_id": "",
+  "teamspace_id": "",
+  "user_id": "<userId>",
+  "timestamp": "2026-10-23T10:00:00.000Z",
+  "action": "error",
+  "data": { "error_message": "…", "error_type": "store", "error_code": "content_too_large", "should_disconnect": true, "user_id": "<userId>" }
+}
+```
+
+`project_id`/`teamspace_id` sind wie im Original leere Strings, wenn nicht gesetzt (Original `broadcastError` setzt `project_id` nicht). Versand als `Stateless(JSON)` an alle lokalen Verbindungen **und** über die Backplane an andere Instanzen (Original: `broadcastMessageToPage` über Redis `BroadcastStateless` mit leerem Identifier → alle Instanzen inkl. eigener). `undefined`-Felder des Originals (`error_code`, `should_disconnect`) werden **weggelassen**, nicht als `null` geschrieben (`JsonIgnoreCondition.WhenWritingNull` für `data`).
+
+Erzeuger in der CE: Lade-/Speicherfehler (§3.6), Sperr-/Archiv-Ablehnung (E4-Fix). Weitere Aktionen (`moved`, `duplicated`, `restored`, `property_updated` mit `parentPage`/`descendantPages`) sind Andockstellen (§6, D2). Der Angular-Client wertet JSON-Ereignisse über `RealtimePageEventsService` aus (Fix E5, `08` §3.12; Handler 1:1 aus `WEB/hooks/use-realtime-page-events.tsx`).
+
+#### 3.7.3 `ICollaborationDocumentControl` (serverseitige Auslöser aus anderen Modulen)
+
+`Plane.Collaboration.Contracts/Services/ICollaborationDocumentControl` (implementiert nur im Realtime-Host; in Api/Worker als `SignalingCollaborationDocumentControl`, das ein PostgreSQL-Signal sendet):
+
+| Methode | Wirkung | Nutzer CE | Nutzer später |
+|---|---|---|---|
+| `BroadcastEventAsync(DocumentKey, BroadcastedEvent)` | Stateless-JSON an alle Verbindungen des Dokuments (alle Instanzen) | – | D2 (`moved`, `restored`), D8 |
+| `ForceCloseAsync(DocumentKey, ForceCloseReason, int code)` | §3.8 | CLI `plane-cli realtime force-close` | E7 (God Mode) |
+| `NotifyChangedAsync(DocumentKey, CollaborationChangeKind)` | Signal `content`/`access`/`deleted` | `Plane.Pages` (REST-PATCH, Lock, Access, Archiv, Löschen) | D1/D2/B1 |
+
+### 3.8 Force-Close, Admin-Kanal, Graceful Shutdown
+
+#### 3.8.1 Force-Close-Ablauf (1:1 `LIVE/extensions/force-close-handler.ts`)
+
+`ForceCloseCoordinator.ForceCloseAcrossInstancesAsync(documentName, reason, code = 4000)`:
+
+1. Dokument lokal nicht geladen → Ende (Log „already unloaded“).
+2. An alle lokalen Verbindungen `Stateless` mit `{"type":"force_close","reason":"<reason>","code":<code>,"message":"<Text>","timestamp":"<ISO>"}`.
+3. 50 ms warten.
+4. Jede lokale Verbindung schließen mit `(code, reason)`.
+5. Admin-Kommando publizieren: `{"command":"force_close","docId":"<documentName>","reason":"<reason>","code":<code>,"originServer":"<InstanceName>","timestamp":"<ISO>"}` auf `plane:collab:admin`.
+6. 800 ms warten.
+7. Dokument entladen (ohne Store; der Inhalt ist in den Fällen 4001/4000 bereits persistiert bzw. nicht speicherbar).
+
+Empfangende Instanz (`AdminCommandHandlerMap["force_close"]`): Schritte 2–4 für ihre Verbindungen, **kein** Entladen (wie Original; die Sitzung entlädt sich, sobald die letzte Verbindung weg ist, und speichert ggf. ausstehende Änderungen).
+
+Texte (`ForceCloseReason`, exakt):
+
+| Grund | Text |
+|---|---|
+| `critical_error` | A critical error occurred. Please refresh the page. |
+| `memory_leak` | Memory limit exceeded. Please refresh the page. |
+| `document_too_large` | Content limit reached and live sync is off. Create a new page or use nested pages to continue syncing. |
+| `admin_request` | Connection closed by administrator. Please try again later. |
+| `server_shutdown` | Server is shutting down. Please reconnect in a moment. |
+| `security_violation` | Security violation detected. Connection terminated. |
+| `corruption_detected` | Data corruption detected. Please refresh the page. |
+| sonst | Connection closed. Please refresh the page. |
+
+#### 3.8.2 Admin-Kanal
+
+| Kommando | Felder | Handler CE | Bemerkung |
+|---|---|---|---|
+| `force_close` | `command, docId, reason, code, originServer, timestamp?` | ja | Validierung: `reason` ∈ Enum, `code` ∈ {4000, 4001, 4002, 4003}; ungültig → Log `collab.admin.invalid` |
+| `health_check` | `command, originServer, timestamp` | ja (neu: Antwort im Log + Metrik `plane.realtime.admin.health_checks`) | Original: kein Handler (Warnung) |
+| `restart_document` | `command, docId, originServer, timestamp` | ja (neu): Dokument lokal ohne Force-Close-Meldung neu aus dem Store laden (Abgleich wie Signal `content`) | Original: kein Handler |
+
+Ohne Valkey gehen Admin-Kommandos über das PostgreSQL-Signal (`{"k":"admin","c":{…}}`).
+
+#### 3.8.3 Speicherdruck (optional)
+
+`Plane:Realtime:MemoryPressureThresholdBytes` (Default 0 = aus). Bei aktivem Grenzwert prüft `CollaborationMemoryWatchdog` alle 10 s `GC.GetGCMemoryInfo().TotalCommittedBytes` + Native-Schätzung (Summe der Zustandsgrößen); Überschreitung → die zuletzt aktive Hälfte der Sitzungen **bleibt**, für die übrigen (älteste Aktivität zuerst) Store + Force-Close `memory_leak`/4002, bis 80 % des Grenzwerts erreicht sind. Metrik `plane.realtime.memory.evictions`.
+
+#### 3.8.4 Betriebsbefehle (`plane-cli`, I7)
+
+| Befehl | Wirkung |
+|---|---|
+| `plane-cli realtime documents` | Liste geladener Dokumente je Instanz (über `health_check`-Antworten im Admin-Kanal) |
+| `plane-cli realtime force-close <pageId> [--reason admin_request] [--code 4000]` | Force-Close über Admin-Kanal/Signal |
+| `plane-cli realtime refresh <pageId>` | `restart_document` |
+
+#### 3.8.5 Graceful Shutdown (beantwortet `14` §9 „Shutdown-Verhalten“)
+
+`CollaborationShutdownService` (`IHostedLifecycleService.StoppingAsync`), Budget `ShutdownFlushTimeoutSeconds` = 60 (< `terminationGracePeriodSeconds` 120 der Realtime-Pods, 14):
+
+1. Neue Upgrades mit 503 ablehnen (`/health/ready` → `Unhealthy`, damit das Gateway umleitet).
+2. Für alle Sitzungen ausstehende Stores **sofort** ausführen (parallel, max. 8 gleichzeitig) und Titel-Flush.
+3. Alle Verbindungen mit **1001 `server_shutdown`** schließen (kein Force-Close-JSON, D07-ADR-17).
+4. Backplane abmelden, Signal-Listener schließen, Sitzungen entsorgen.
+
+SignalR-Hub: `HubConnectionContext` werden vom Framework beim Stopp geschlossen; Clients verbinden über `withAutomaticReconnect([0, 2000, 10000, 30000])` neu (08).
+
+### 3.9 Awareness
+
+`AwarenessRegistry` je Sitzung implementiert die Semantik von `y-protocols/awareness.js` 1.0.6:
+
+| Regel | Umsetzung |
+|---|---|
+| Speicher | `Dictionary<ulong clientId, (ulong Clock, string? StateJson, long LastUpdatedMs)>`; `StateJson == null` ⇔ entfernt |
+| Anwenden eines Updates (`applyAwarenessUpdate`) | je Eintrag: `current = states[clientId]`; akzeptieren, wenn `current == null` **oder** `clock > current.Clock` **oder** (`clock == current.Clock` **und** `state == null` **und** `current.State != null`); Ergebnislisten `added`/`updated`/`removed` (Änderung = JSON-String ungleich) |
+| Zuordnung zur Verbindung | `added` → `connection.Clients.Add(id)`, `removed` → `Remove` (nur bei Origin `Local`) |
+| Weiterleitung | Update mit allen geänderten Client-IDs (`added ∪ updated ∪ removed`) neu kodieren (aktueller Zustand der Registry) und an **alle** lokalen Verbindungen senden (inkl. Sender) + Backplane `Awareness` (nur bei Origin `Local`) |
+| Trennen | für alle `connection.Clients`: Eintrag mit `clock + 1`, `state = null` → Weiterleitung wie oben (Hocuspocus `removeAwarenessStates`) |
+| Neue Verbindung | wenn Registry nicht leer: vollständiges Update aller Einträge mit `state != null` an die neue Verbindung (`sendCurrentAwareness`) |
+| Zeitüberschreitung | alle 3 000 ms: Einträge fremder Clients mit `now − LastUpdated ≥ 30 000 ms` und `state != null` → entfernt (`removed`), weiterleiten (y-protocols `outdatedTimeout`) |
+| Server-eigener Zustand | keiner (Hocuspocus `setLocalState(null)`) |
+| Grenzen | max. 64 Einträge je Update, 16 KiB je State, 1 024 Clients je Dokument → sonst Close 1008 |
+
+Die CE zeigt keine fremden Cursor (`EDITOR_FLAGS` deaktiviert `collaboration-cursor`, D4), die Weiterleitung ist trotzdem Pflicht (D07-ADR-25).
+
+### 3.10 Horizontale Skalierung (Valkey-Backplane, PostgreSQL-Signale, Konvergenz)
+
+#### 3.10.1 Kanäle
+
+| Kanal | Medium | Inhalt | Abonniert von |
+|---|---|---|---|
+| `plane:collab:doc:{documentType}:{documentName}` | Valkey Pub/Sub (Binär) | `BackplaneEnvelope` (§3.10.2) | Instanzen mit geladener Sitzung |
+| `plane:collab:admin` | Valkey Pub/Sub (JSON UTF-8) | Admin-Kommandos (§3.8.2) | alle Realtime-Instanzen |
+| `plane:session:revoked` | Valkey Pub/Sub | Session-Widerruf (05) | alle Hosts |
+| `plane_collab` | PostgreSQL `LISTEN/NOTIFY` (JSON ≤ 512 Byte) | Signale `stored`, `content`, `access`, `deleted`, `member_removed`, `session_revoked` (nur ohne Valkey), `admin` (nur ohne Valkey) | alle Realtime-Instanzen (`CollaborationSignalListener`) |
+| `plane_live_events` | PostgreSQL `LISTEN/NOTIFY` | Live-Events ohne Valkey (§3.16.4) | Realtime-Instanz |
+
+#### 3.10.2 `BackplaneEnvelope` (Valkey, Binär)
+
+| Offset | Länge | Feld | Werte |
+|---|---|---|---|
+| 0 | 1 | `Version` | `1` |
+| 1 | 16 | `InstanceId` | GUID der sendenden Instanz (Echo-Unterdrückung) |
+| 17 | 1 | `Kind` | `1` Update, `2` SyncStep1, `3` SyncStep2, `4` Awareness, `5` QueryAwareness, `6` Stateless |
+| 18 | 16 | `TargetInstanceId` | nur bei `3` (Antwort an Anfragende), sonst `Guid.Empty` |
+| 34 | rest | `Payload` | `1`/`3`: Yjs-Update v1; `2`: State-Vector v1; `4`: Awareness-Update; `5`: leer; `6`: UTF-8-String |
+
+Verarbeitung beim Empfang (eigene `InstanceId` → verwerfen; Dokument nicht geladen → verwerfen):
+
+| Kind | Reaktion |
+|---|---|
+| Update | `ApplyV1` mit Origin `Backplane` → erzeugtes Update an lokale Verbindungen; **kein** Store-`Touch` |
+| SyncStep1 | Antwort `SyncStep2` mit `StateDiffV1(sv)` an `TargetInstanceId = Absender`; zusätzlich eigenes `SyncStep1` zurück (beidseitiger Abgleich) |
+| SyncStep2 | nur wenn `TargetInstanceId == self`: `ApplyV1` mit Origin `Backplane` |
+| Awareness | in `AwarenessRegistry` mit Origin `Backplane` anwenden (keine Verbindungszuordnung), an lokale Verbindungen weiterleiten |
+| QueryAwareness | vollständige lokale Awareness (nur Clients eigener Verbindungen) als `Awareness` publizieren |
+| Stateless | an alle lokalen Verbindungen als `Stateless` |
+
+Sendezeitpunkte: Update nach jeder Transaktion mit Origin `Local`; SyncStep1 + QueryAwareness nach dem Laden und nach jeder Wiederverbindung zu Valkey (`ConnectionRestored`); Awareness bei Origin `Local`; Stateless bei Client-Stateless und Server-Ereignissen.
+
+#### 3.10.3 Konvergenzargument
+
+1. Updates sind CRDT-Operationen; Anwenden ist kommutativ und idempotent.
+2. Valkey-Pub/Sub ist „höchstens einmal“. Verlorene Nachrichten werden ausgeglichen durch (a) SyncStep1/2 nach Laden und Wiederverbindung, (b) **Merge-on-Store** (jede speichernde Instanz übernimmt den DB-Zustand) und (c) das Signal `stored` (§3.10.4), das alle anderen Instanzen zum Abgleich mit dem DB-Zustand veranlasst.
+3. Daraus folgt: Spätestens `MaxDebounce + Signal-Latenz` (≈ 10–11 s) nach der letzten Änderung sind alle Instanzen und die DB konvergent – auch bei vollständigem Valkey-Ausfall (Test `Scaling/ValkeyOutageConvergenceTests`).
+
+#### 3.10.4 Verarbeitung der Signale (`CollaborationSignalListener`)
+
+Eigene dedizierte `NpgsqlConnection` (nicht aus dem Pool), `LISTEN plane_collab`, `WaitAsync`-Schleife, Wiederverbindung mit Backoff 1 s … 30 s; nach Wiederverbindung werden **alle** geladenen Sitzungen einmal abgeglichen (verpasste Signale). `/health/ready` ist `Degraded`, solange der Listener getrennt ist.
+
+| Signal | Payload | Reaktion |
+|---|---|---|
+| `stored` | `{k,t,d,r,i}` | `i == self` → ignorieren; Sitzung geladen und `r > LastStoredRevision` → `LoadStateAsync` (nur Binary) → `ApplyV1` mit Origin `Store` |
+| `content` | `{k,t,d,r}` | wie `stored` (REST-PATCH, Duplikat-Ziel, Version wiederhergestellt) |
+| `access` | `{k,t,d}` | Flags (`IsLocked`, `IsArchived`) neu lesen; alle Verbindungen neu autorisieren (D07-ADR-05) |
+| `deleted` | `{k,t,d}` | Stateless `deleted` an alle, dann Force-Close `critical_error`/4000 |
+| `member_removed` | `{k,u,w,p?}` | alle Verbindungen des Nutzers `u` in Workspace `w` (Projekt `p`) neu autorisieren |
+| `session_revoked` | `{k,s}` | Verbindungen der Session `s` schließen 4401 (nur wenn kein Valkey konfiguriert, sonst Valkey-Kanal aus 05) |
+| `admin` | `{k,c}` | wie Admin-Kanal |
+
+Sender: `Plane.Pages` (über `IDbNotificationPublisher.NotifyAsync(CollaborationSignals.Channel, payload)` in der laufenden Transaktion), `Plane.Projects`/`Plane.Workspaces` (`member_removed`), `Plane.Identity` (`session_revoked`), `plane-cli` (`admin`). `IDbNotificationPublisher`/`IDbNotificationListener` liegen in `Plane.BuildingBlocks.Persistence` (Änderungsauftrag an 02, §9.2).
+
+#### 3.10.5 Betrieb mit einer Replika ohne Valkey
+
+`Plane:Realtime:Backplane` = `Auto` (Default): Valkey, wenn `ConnectionStrings:valkey` gesetzt, sonst `InMemory`. Mit `Plane:Scale:ExpectMultipleInstances=true` und ohne Valkey meldet `/health/ready` `Unhealthy` (14 D14-ADR-21). AIO (`Plane.AllInOne`) nutzt `InMemory` und dieselben PostgreSQL-Signale (Api und Realtime im selben Prozess, Signale trotzdem über PostgreSQL – ein Codepfad).
+
+#### 3.10.6 Kapazität (beantwortet `14` §9 „Speicherbedarf je Dokument“)
+
+| Größe | Richtwert (in S1 zu messen und in `docs/spikes/S1-ergebnis.md` festzuschreiben) |
+|---|---|
+| Speicher je geladenem Dokument | ≈ 3 × Zustandsgröße (yrs-Blockstruktur) + 8 KiB je Verbindung (Puffer) + Awareness; typische Page 20 KB → ≈ 80 KB |
+| Dokumente je Replika (1 GiB Limit) | ≥ 5 000 typische Pages oder ≥ 30 Dokumente à 10 MiB |
+| Verbindungen je Replika | ≥ 5 000 (Kestrel `MaxConcurrentUpgradedConnections` = `Plane:Realtime:MaxConnections`, Default 10 000) |
+| Store-Kosten | Merge + Konvertierung p95 < 50 ms für 1 MiB-Zustand |
+
+### 3.11 REST-Pfade der Pages mit Realtime-Bezug (Fallback, Versionen, Duplizieren)
+
+Die Endpunkte gehören dem Modul `Plane.Pages` (Katalog in `04`); dieses Dokument legt ihr Dokumentverhalten fest.
+
+| Endpunkt (Original) | Verhalten im Ziel | Abweichung | CE-ID |
+|---|---|---|---|
+| `GET {P}/pages/{page_id}/description/` | `application/octet-stream`, `Content-Disposition: attachment; filename="page_description.bin"`, Body = `description_binary` (leer, wenn `NULL`). **Neu:** ist die Page in einer Sitzung geladen, liefert der Endpunkt trotzdem den DB-Stand (kein Hostwechsel); der Client merged ohnehin (CE-RT-003) | – | CE-RT-003, CE-PAGE-013 |
+| `PATCH {P}/pages/{page_id}/description/` | Validierung wie Original (`PageBinaryUpdateSerializer`: Base64, `BinaryContentValidator` + `YjsUpdateValidator`, HTML-Sanitizing nur als Prüfung); Sperre/Archiv → 400 `{"error_code":4701,"error_message":"PAGE_LOCKED"}` bzw. `4702 PAGE_ARCHIVED`; danach **Merge-on-Store** mit dem gesendeten Binary (§3.6.4 Schritte 3.1–3.10, Signal `content` statt `stored`); Antwort 200 `{"message":"Updated successfully"}` | DEV-07-02: HTML/JSON werden aus dem gemergten Zustand abgeleitet, nicht aus dem Request übernommen | CE-RT-003 |
+| `GET {P}/pages/{page_id}/versions/`, `…/versions/{pk}/` | unverändert (04); Versionen existieren jetzt (D07-ADR-22) | DEV-07-03 | CE-PAGE-019 |
+| Version wiederherstellen (Client ersetzt Editorinhalt durch Versions-HTML) | rein clientseitig wie Original (`editorRef.setEditorValue` → Yjs-Updates über die Verbindung) | – | CE-PAGE-019 |
+| `POST {P}/pages/{page_id}/duplicate/` | D07-ADR-24: neue Page mit `name = "{name} (Copy)"`, `description_binary` sofort gesetzt (umgeschriebene Asset-IDs), `description_html/json/stripped` abgeleitet; neue `FileAsset`-Zeilen (`is_uploaded = false`) + Job `CopyDuplicatedAssetsJob` (Queue `default`, 06) kopiert Objekte und setzt `is_uploaded = true`; PageLog über Event | DEV-07-04 (synchron, Variante `document` statt `rich`, E2) | CE-PAGE-009 |
+| `PATCH {P}/pages/{page_id}/` (`name`) | unverändert; zusätzlich Signal `content` nicht nötig (Titel-Fragment ist führend; REST-Umbenennung außerhalb des Editors ändert das Fragment nicht – Original-Verhalten, CE-Client benennt nur über den Titel-Editor um) | – | CE-PAGE-004 |
+| `POST/DELETE {P}/pages/{page_id}/lock/`, `…/archive/`, `…/access/`, `DELETE …/pages/{page_id}/` | unverändert (04); zusätzlich Signal `access` bzw. `deleted` (§3.10.4) im selben Commit | Ergänzung | CE-PAGE-005 … -008 |
+
