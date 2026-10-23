@@ -548,3 +548,119 @@ Pakete ergänzen weitere `entityType` (B6: z. B. `work_item_comment`; G1: semant
 | Aufrufer der Mention-Suche | `WEB/components/editor/lite-text/editor.tsx`, `…/rich-text/description-input/root.tsx`, `…/issues/issue-modal/components/description-editor.tsx`, `…/inbox/modals/create-modal/issue-description.tsx`, `WEB/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/pages/(detail)/[pageId]/page.tsx`, `WEB/components/pages/editor/editor-body.tsx` | jeweilige Komponenten (Dokument 10 / 08) | Endpunkt SR-03 aus diesem Dokument |
 | Picker-Dialoge | `WEB/components/core/modals/existing-issues-list-modal.tsx` (Debounce, `workspace_search`-Umschalter, `searchParams`), `WEB/components/issues/parent-issues-list-modal.tsx`, `WEB/components/core/modals/bulk-delete-issues-modal.tsx`, `WEB/components/inbox/modals/select-duplicate.tsx` | `FE/libs/web/work-items/components/…` bzw. `FE/libs/web/intake/components/…` (08) | Endpunkt SR-02; Leerzustandsbilder `WEB/app/assets/empty-state/search/*` gebündelt |
 
+### 3.13 AI-Konfiguration (Instanz-Keys, Provider-Auflösung)
+
+#### 3.13.1 Instanz-Keys (Ergänzung zu 05 §4.4 / 02 §4.10, Eigentum dieses Dokuments für die AI-Schlüssel)
+
+| Key | Kategorie | verschlüsselt | Seed-Default (ENV gleichen Namens) | Lese-Default | Status | Leser |
+|---|---|---|---|---|---|---|
+| `LLM_API_KEY` | `AI` | ja | – | `""` | übernommen | `InstanceLlmSettingsSource`, `has_llm_configured` |
+| `LLM_PROVIDER` | `AI` | nein | `openai` | `openai` | übernommen, Werte erweitert (§3.13.2) | dto. |
+| `LLM_MODEL` | `AI` | nein | `gpt-4o-mini` | `""` (→ Provider-Default) | übernommen | dto. |
+| **`LLM_BASE_URL`** | `AI` | nein | `""` | `""` | **neu** (D11-ADR-10) – Basis-URL eines OpenAI-kompatiblen Endpunkts inkl. Versionspfad, z. B. `http://ollama:11434/v1`, `http://vllm:8000/v1`, `http://localai:8080/v1` | dto. |
+| `GPT_ENGINE` | `AI` | nein | – | – | **entfällt** (kein Leser im Original; 02 §4.10) | – |
+| `UNSPLASH_ACCESS_KEY` | `UNSPLASH` | ja | `""` | `""` | übernommen | `UnsplashClient`, `has_unsplash_configured` |
+| `LLM_EMBEDDING_MODEL` | `AI` | nein | – | – | **reserviert** (Klasse R, G1), in der CE weder geseedet noch akzeptiert | – |
+
+Damit umfasst der Instanz-Katalog der CE **15 Schlüssel** (14 aus 05 §4.4 + `LLM_BASE_URL`). `PATCH /api/instances/configurations/` nimmt `LLM_BASE_URL` an; der Wert wird – wie alle Original-Keys – ohne Formatprüfung gespeichert, eine ungültige URL macht die Konfiguration nur „nicht nutzbar“ (kein neuer Fehlervertrag).
+
+#### 3.13.2 Auflösung (`LlmSettingsResolver.Resolve(LlmRawSettings raw) → LlmSettings`)
+
+Reine Funktion in `Plane.Platform.Ai` (ohne I/O), genutzt von `Plane.Assistant` (Aufruf) **und** `Plane.Instance` (`has_llm_configured`). Eingabe: getrimmte Rohwerte; Provider leer → `openai`, Vergleich case-insensitiv.
+
+| `LLM_PROVIDER` | `LLM_BASE_URL` leer | `LLM_BASE_URL` gesetzt | Default-Modell (wenn `LLM_MODEL` leer) | Key erforderlich |
+|---|---|---|---|---|
+| `openai` | Endpunkt `https://api.openai.com/v1` | Endpunkt = `LLM_BASE_URL` | `gpt-4o-mini` | nur ohne `LLM_BASE_URL` |
+| `openai-compatible` | **nicht nutzbar** (`MissingBaseUrl`) | Endpunkt = `LLM_BASE_URL` | – (Modell Pflicht, sonst `MissingModel`) | nein |
+| `anthropic` | Endpunkt `https://api.anthropic.com/v1` (OpenAI-SDK-Kompatibilität des Anbieters ⚠ beim ersten Einsatz prüfen) | Endpunkt = `LLM_BASE_URL` | `claude-3-sonnet-20240229` (Original-Default, vom Anbieter abgekündigt – Betreiber setzt `LLM_MODEL`) | nur ohne `LLM_BASE_URL` |
+| `gemini` | Endpunkt `https://generativelanguage.googleapis.com/v1beta/openai` (⚠ wie oben) | Endpunkt = `LLM_BASE_URL` | `gemini-pro` (Original-Default, abgekündigt) | nur ohne `LLM_BASE_URL` |
+| anderer Wert | **nicht nutzbar** (`UnsupportedProvider`, wie Original) | **nicht nutzbar** | – | – |
+
+Weitere Regeln: (1) Modell-Whitelist des Originals entfällt (`DEV-AI-001`); das Präfix `gemini/` (LiteLLM-Stil) entfällt. (2) `LLM_BASE_URL` muss eine absolute `http`/`https`-URL ohne Benutzerinfo, Query und Fragment sein, sonst `InvalidBaseUrl`; abschließender `/` wird entfernt. (3) Ergebnis `LlmSettings(bool IsUsable, LlmUnusableReason? Reason, Uri? Endpoint, string? Model, string? ApiKey, LlmProviderKind Provider, string Fingerprint)`; `Fingerprint` = SHA-256 über Endpunkt, Modell und `SHA-256(ApiKey)` (für den Client-Cache, enthält den Key nicht). (4) Nicht nutzbar → Log `Warning` Kategorie `plane.external`: `"LLM configuration unusable: {Reason}"` (ohne Werte), Antwort der Endpunkte 400 `{"error": "LLM provider API key and model are required"}` (Text 1:1).
+
+**`has_llm_configured`** (`GET /api/instances/`, Eigentümer `Plane.Instance`) = `LlmSettingsResolver.Resolve(raw).IsUsable` (Original: `bool(LLM_API_KEY)`, `DEV-AI-002`). **`has_unsplash_configured`** = `UNSPLASH_ACCESS_KEY` nicht leer (1:1).
+
+### 3.14 AI-Client-Aufbau
+
+| Baustein | Festlegung |
+|---|---|
+| Registrierung (`AddPlaneAi`) | `services.AddSsrfSafeHttpClient("llm", …)` (05 §3.17.2: Timeout 120 s, 0 Redirects, 8 MiB, Allowlist `Plane:Ai:AllowedInternalHosts`); `services.AddSingleton<IChatClientFactory, OpenAiCompatibleChatClientFactory>()`; `services.AddScoped<IChatClient, DynamicChatClient>()`; `services.AddSingleton<IEmbeddingGenerator<string, Embedding<float>>, NullEmbeddingGenerator>()`; Optionen `PlaneAiOptions` mit `ValidateOnStart` |
+| `ILlmSettingsSource` | Platform-Interface `ValueTask<LlmSettings> GetAsync(CancellationToken)`; CE-Implementierung `InstanceLlmSettingsSource` in `Plane.Assistant` liest `LLM_*` über `IInstanceConfigurationStore.GetManyAsync` (Cache `plane:instance:config`, 02 §3.12.2) und ruft den Resolver |
+| `OpenAiCompatibleChatClientFactory.GetOrCreate(LlmSettings s)` | Cache `ConcurrentDictionary<string, IChatClient>` je `Fingerprint`, höchstens `Plane:Ai:ClientCacheSize` = 4 Einträge (älteste werden verworfen und entsorgt); Aufbau: `OpenAIClientOptions { Endpoint = s.Endpoint, Transport = new HttpClientPipelineTransport(httpClientFactory.CreateClient("llm")), RetryPolicy = new ClientRetryPolicy(maxRetries: 0), NetworkTimeout = 120 s }` → `new OpenAIClient(new ApiKeyCredential(s.ApiKey ?? "unused"), options).GetChatClient(s.Model).AsIChatClient()` → `new ChatClientBuilder(inner).UseLogging(loggerFactory).UseOpenTelemetry(loggerFactory, sourceName: "Plane.Ai", configure: c => c.EnableSensitiveData = false).Build()` (⚠ API-Namen des OpenAI-SDK 2.x/System.ClientModel in S0 gegen die gepinnte Version prüfen) |
+| `DynamicChatClient` | implementiert `IChatClient`; jeder Aufruf: Einstellungen holen → nicht nutzbar → `LlmNotConfiguredException` → innerer Client per Factory → Aufruf weiterreichen; `GetService` liefert `ChatClientMetadata("openai-compatible", s.Endpoint, s.Model)` |
+| Ohne Konfiguration | kein ausgehender Aufruf; Endpunkte antworten 400 (s. o.) |
+| Airgapped | Standard ist kein Egress (ADR-004): Betreiber setzt `LLM_BASE_URL` auf den internen Dienst **und** dessen Host in `Plane:Ai:AllowedInternalHosts` (ENV `Plane__Ai__AllowedInternalHosts__0=ollama`), weil der SSRF-Handler private Adressen sonst blockiert; Block-Fehler werden mit Hinweis geloggt: `"LLM endpoint host {Host} blocked by SSRF policy; add it to Plane:Ai:AllowedInternalHosts"` |
+| Lokale Provider (getestet) | Ollama (`/v1`-Kompatibilitätsschicht), vLLM (OpenAI-Server), LocalAI; Vertrag nur `POST {endpoint}/chat/completions` mit `model` und `messages` |
+| Lizenz | `Microsoft.Extensions.AI` / `.OpenAI` MIT, `OpenAI` (.NET-SDK) MIT, `System.ClientModel` MIT |
+
+### 3.15 KI-Assistent EXT-03 (CE-AI-001)
+
+**Endpunkt:** `POST /api/workspaces/{slug}/ai-assistant/` – `e.App("workspaces/{slug}/ai-assistant")`, `.RequirePermission(AssistantPermissions.WorkspaceAiAssistantUse)` (WS A, M), `.WithOriginalContract("EXT-03")`. Körper wird als `JsonObject` gelesen (keine DTO-Validierung, weil das Original Python-Wahrheitswerte auswertet).
+
+| Schritt | Verhalten |
+|---|---|
+| 1 | Einstellungen auflösen; nicht nutzbar → 400 `{"error": "LLM provider API key and model are required"}` (**vor** der Task-Prüfung, 1:1) |
+| 2 | `task`: fehlt, `null`, `false`, `""`, `0`, `[]`, `{}` → 400 `{"error": "Task is required"}`; String → unverändert; Zahl/`true` → invariante Textdarstellung (Original 500 `TypeError`, `DEV-AI-003`) |
+| 3 | `prompt`: fehlt/`null`/`false`/`""` → `""` (Original: fehlender `prompt` → 500, `DEV-AI-003`); String → unverändert; anderes → Textdarstellung |
+| 4 | Nachricht: genau eine `ChatMessage(ChatRole.User, task + "\n" + prompt)`, `ChatOptions` = `null` (keine Temperatur, keine Token-Grenze, kein Systemprompt – 1:1) |
+| 5 | Fehler des Aufrufs (`ClientResultException`, `HttpRequestException`, `SsrfBlockedException`, Timeout) → Log `Error` Kategorie `plane.external` mit Fehlerklasse und HTTP-Status (ohne Prompt/Antwort) → 500 `{"error": "An internal error has occurred."}` (1:1); Abbruch durch den Client (`RequestAborted`) → kein Antwortkörper |
+| 6 | `text = response.Text ?? ""` (leere/`null`-Antwort → `""`, Original 500, `DEV-AI-004`) |
+| 7 | 200 `{"response": text, "response_html": AiResponseFormatter.ToHtml(text)}`; `ToHtml` ersetzt `&`, `<`, `>`, `"` durch Entitäten und danach `\n` durch `<br/>` (`DEV-AI-005`) |
+| Rate-Limit | Original keins; optional `Plane:RateLimits:AiAssistant` (Format `n/period`, Default leer = aus); bei Überschreitung Standard-429 aus 02 §3.13 |
+
+**EXT-02** `POST /api/workspaces/{slug}/projects/{project_id}/ai-assistant/`: nicht registriert (D11-ADR-16, `DEV-AI-008`); falls ein Client sie später braucht, liefert sie dieselbe Logik plus `project_detail` (`ProjectLiteDto`) und `workspace_detail` (`WorkspaceLiteDto`) aus den Lookups der Contracts.
+
+### 3.16 Unsplash EXT-01 (CE-AI-002)
+
+**Endpunkt:** `GET /api/unsplash/` – `e.App("unsplash")`, `.RequirePermission(AssistantPermissions.UserUnsplashRead)`, `.WithOriginalContract("EXT-01")`.
+
+| Schritt | Verhalten |
+|---|---|
+| 1 | `UNSPLASH_ACCESS_KEY` leer → 200 `[]` (1:1) |
+| 2 | Parameter `query` (Default leer), `page` (Default `1`), `per_page` (Default `20`) als Strings übernommen, **URL-kodiert** (`DEV-AI-007`) |
+| 3 | `query` nicht leer → `GET {ApiBaseUrl}search/photos/?query={q}&page={page}&per_page={per_page}` (ohne das fehlerhafte `$`, Q-27); sonst `GET {ApiBaseUrl}photos/?page={page}&per_page={per_page}`; `ApiBaseUrl` = `Plane:Unsplash:ApiBaseUrl` (Default `https://api.unsplash.com/`, Tests: WireMock) |
+| 4 | Header `Authorization: Client-ID {key}` statt `client_id`-Query (Key erscheint nicht in URLs/Logs, `DEV-AI-007`); Named Client `unsplash` (05: 10 s, 5 Redirects, 2 MiB) |
+| 5 | Antwort: Statuscode **und** JSON-Körper der Unsplash-API unverändert (1:1, auch 4xx); `Content-Type: application/json` |
+| 6 | Netzwerkfehler, Timeout, Nicht-JSON, > 2 MiB → 500 `{"error": "Something went wrong please try again later"}` (entspricht dem Original-Ausnahmepfad) |
+
+Bilder lädt der Browser direkt von `images.unsplash.com`; die CSP erlaubt das nur bei gesetztem Key (05 §3.17.7). Airgapped bleibt der Key leer, der Tab ist unsichtbar.
+
+### 3.17 Frontend: KI-Assistent, Bild-Picker, God-Mode-Formulare
+
+| Original | Ziel | Verhalten (1:1, Texte wörtlich) |
+|---|---|---|
+| `WEB/services/ai.service.ts` (`createGptTask`, `performEditorTask`) | `FE/libs/web/work-items/services/ai.service.ts` | `createGptTask` → `POST /api/workspaces/{slug}/ai-assistant/`, Fehler `throw error.response`; `performEditorTask` (`rephrase-grammar`) wird mitportiert, ist aber in der CE nicht erreichbar |
+| `PKG/services/src/ai/ai.service.ts` (`prompt`, `rephraseGrammar`) | `FE/libs/shared/services/src/ai/ai.service.ts` | 1:1 |
+| `PKG/constants/src/ai.ts` (`AI_EDITOR_TASKS`, `LOADING_TEXTS`) | `FE/libs/shared/constants/src/ai.ts` | 1:1 |
+| `WEB/components/issues/issue-modal/components/description-editor.tsx` (AI-Teil) | `FE/libs/web/work-items/components/issues/issue-modal/components/description-editor.component.{ts,html}` | „I'm feeling lucky“ nur bei nicht leerem Titel **und** `config.has_llm_configured`; Task `"Generate a proper description for this work item."`, Prompt = Titel; `response === ""` → Toast „Work item title isn't informative enough to generate the description. Please try with a different title.“; sonst `response_html` an der Cursorposition einfügen; 429 → `error` oder „You have reached the maximum number of requests of 50 requests per month per user.“; sonst `error` oder „Some error occurred. Please try again.“; während der Anfrage „Generating response“ und `cursor-wait` |
+| `WEB/components/core/modals/gpt-assistant-popover.tsx` | `FE/libs/web/work-items/components/core/modals/gpt-assistant-popover.component.{ts,html}` (Domäne nach 01 §5.4 „AI-Modal“) | Popover `variant="rich"`, Breite `w-200`; Enter (ohne Shift) sendet; leerer Task → Toast „Please enter some task to get AI assistance.“; Buttons „Generating response...“ / „Generate response“ / „Generate again“, „Use this response“; ungültige Antwort → „No response could be generated. This may be due to insufficient content or task information. Please try again.“; Antwortanzeige im schreibgeschützten Rich-Editor `<p>${response_html}</p>` |
+| `WEB/hooks/use-editor-flagging.ts` | Token `EDITOR_FLAGS` (08 §6) | `disabled: ["ai", "collaboration-cursor"]` für document/liteText/richText (1:1) → Editor-KI-Menü (`WEB/components/pages/editor/ai/menu.tsx`) bleibt unsichtbar |
+| `WEB/services/file.service.ts` `getUnsplashImages(query?)` | `FE/libs/web/core/services/file.service.ts` | `GET /api/unsplash/?query=…` → `res.data.results ?? res.data` |
+| `WEB/components/core/image-picker-popover.tsx` | `FE/libs/web/core/components/core/image-picker-popover.component.{ts,html}` (Ablage nach 08 §3.1.4; 01 §5.4 nennt `libs/shared/blocks`, die Komponente nutzt aber den Web-`FileService` → Sheriff verbietet `shared → web`, Änderungsauftrag §9.2) | Tab „Unsplash“ nur bei `has_unsplash_configured`; Query-Cache-Schlüssel `UNSPLASH_IMAGES_${searchParams}` |
+| `ADM/app/(all)/(dashboard)/ai/form.tsx` | `FE/apps/admin/src/pages/(all)/(dashboard)/ai/form.component.{ts,html}` | Felder 1:1 (`LLM_MODEL` „LLM Model“, Beschreibung „Choose an OpenAI engine. Learn more“, Platzhalter `gpt-4o-mini`; `LLM_API_KEY` „API key“, Typ `password`, Platzhalter `sk-asddassdfasdefqsdfasd23das3dasdcasd`) **plus** drittes Feld `LLM_BASE_URL`: Label „Base URL“, Typ `text`, Platzhalter `http://localhost:11434/v1`, Beschreibung „Optional. Leave empty to use OpenAI. Enter the base URL of an OpenAI-compatible server such as Ollama, vLLM or LocalAI to use a self-hosted model.“, nicht Pflicht (`DEV-UI-D11-01`); Hinweis-Kasten „If you have a preferred AI models vendor, please get in touch with us.“ entfällt (`DEV-UI-D11-02`); Toast „AI Settings updated successfully“; Überschrift „OpenAI“ / „If you use ChatGPT, this is for you.“ bleibt |
+| `ADM/app/(all)/(dashboard)/ai/page.tsx` | `…/ai/page.ts` | Titel „AI features for all your workspaces“, Beschreibung, Skeleton, Meta „Artificial Intelligence Settings - God Mode“ (1:1) |
+| `ADM/app/(all)/(dashboard)/image/{page,form}.tsx` | `…/image/{page.ts,form.component.ts}` | `UNSPLASH_ACCESS_KEY` Pflichtfeld (1:1, CE-INST-026) |
+| `PKG/types/src/instance/ai.ts` `TInstanceAIConfigurationKeys = "LLM_API_KEY" \| "LLM_MODEL"` | `FE/libs/shared/types/src/instance/ai.ts` | **additiv** `\| "LLM_BASE_URL"` (dokumentierte Abweichung der übernommenen Typquelle) |
+
+### 3.18 Options-Klassen
+
+| Klasse | Sektion | Felder (Default) | Eigentümer | ab |
+|---|---|---|---|---|
+| `PlaneSearchOptions` (neu) | `Plane:Search` | `Routing` (`Dictionary<SearchProfile, string>`, leer → `parity`), `MaxUnboundedResults` = 1000 (0 = unbegrenzt), `MaxQueryLength` = 1000, `IndexingEnabled` = true, `IndexingDebounceMilliseconds` = 2000, `BodyMaxChars` = 100000, `ReconcileCron` = `23 3 * * *`, `ReconcileBatchSize` = 1000, `RebuildBatchSize` = 500 | `Plane.Platform.Search` | I2/I5 |
+| `PlaneAiOptions` (02, erweitert) | `Plane:Ai` | `EmbeddingDimensions` = 1536 (G1), `Enabled` = false (G1-Hauptschalter für Embeddings; CE-AI hängt nur an den Instanz-Keys), **neu:** `AllowedInternalHosts` (string[] = [], 05 §3.17.2), `RequestTimeoutSeconds` = 120, `ClientCacheSize` = 4 | `Plane.Platform.Ai` | I5/I6 |
+| `PlaneUnsplashOptions` (neu) | `Plane:Unsplash` | `ApiBaseUrl` = `https://api.unsplash.com/` | `Plane.Assistant` | I6 |
+| `PlaneRateLimitOptions` (02, erweitert) | `Plane:RateLimits` | **neu** `AiAssistant` = `""` (aus) | `Plane.BuildingBlocks.Web` | I6 |
+
+ENV: `OPENAI_API_BASE`, `OPENAI_API_KEY` werden **nicht** gelesen (14 §4.7 Klasse E bestätigt); der Betreiber nutzt `LLM_BASE_URL`/`LLM_API_KEY` (Seed beim ersten Start) oder den God Mode.
+
+### 3.19 Observability, Datenschutz, Betrieb
+
+| Thema | Festlegung |
+|---|---|
+| Traces | Suche: Activity `plane.search` mit Tags `search.profile`, `search.entity_types`, `search.text_length` (nie der Text), `search.result_count`; AI: GenAI-Spans aus `UseOpenTelemetry` (`gen_ai.request.model`, `gen_ai.usage.*`), `EnableSensitiveData = false` |
+| Metriken | `plane.search.duration` (Histogramm, Tags `profile`, `entity_type`), `plane.search.index.writes`, `plane.search.index.unchanged`, `plane.search.index.lag` (Sekunden zwischen `source_updated_at` und Schreibzeitpunkt), `gen_ai.client.operation.duration`, `gen_ai.client.token.usage`, `plane.unsplash.requests` (Tag `status`) |
+| Logs | Kategorie `plane.external` für LLM/Unsplash; **niemals** Prompt, Antwort, API-Key, Unsplash-Key, Suchtexte loggen (Log-Redaktion AK-25 in 05 deckt die Testwerte ab) |
+| Datenschutz | Prompts (Titel, Task) verlassen die Instanz nur zum konfigurierten Endpunkt; die Betreiberdoku (`funk./docs/operations/ai.md`) beschreibt lokale Provider als Airgap-Variante |
+| Ressourcen | Index: ca. 1–2 KB je Work Item (ohne Body) plus Body-Text; Indexierungslast ≈ Schreiblast der Work Items (entprellt); Reconcile nachts. Lokales LLM ist Betreiber-Sache (nicht Teil des Plane-Stacks) |
+| Dev/Test | Test-Profil: WireMock-Vorlagen `T/fixtures/wiremock/llm-openai-compatible/` (`POST /v1/chat/completions` → feste Antwort, Variante leerer Inhalt, Variante 500) und `T/fixtures/wiremock/unsplash/` (`/photos/`, `/search/photos/`); optional im Dev-Profil ein `ollama/ollama`-Container (MIT) über AppHost-Parameter `Plane:Dev:LocalLlm=true` (Änderungsauftrag 14) |
+

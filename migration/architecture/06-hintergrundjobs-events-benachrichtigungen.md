@@ -632,3 +632,139 @@ sequenceDiagram
 | CE-Event `notification.created` | Gruppe `user:{receiver_id}`, Payload `{"workspace_id": "<uuid>", "workspace_slug": "<slug>", "notification_ids": ["<uuid>", …], "unread": {"total_unread_notifications_count": <int>, "mention_unread_notifications_count": <int>}}`; die Zähler berechnet der `RealtimeFanOutConsumer` beim Senden mit **derselben** Query wie `GET /api/workspaces/{slug}/users/notifications/unread/` (`UnreadNotificationCountQuery` aus `Plane.Notifications.Contracts`), Form = `TUnreadNotificationsCount`. Frontend-Handler (`08` Store 49): ist `workspace_slug` der aktuelle Workspace → `setUnreadNotificationsCount(payload.unread)`, sonst ignorieren. |
 | Weitere CE-Events | `label.created│updated│deleted`, `state.created│updated│deleted` an `project:{project_id}` mit `{ "id": "<uuid>" }` (`02` §5.2.12); in der CE ohne Frontend-Handler (Andockstelle H6). |
 | Latenz | Ziel < 2 s vom Commit bis zum Client (AK-D08-35): Outbox-`NOTIFY` → Dispatcher → `NOTIFY plane_jobs realtime` → Realtime-JobRunner. |
+
+### 3.13 E-Mail-Plattform und Templates
+
+#### 3.13.1 Versand (`Plane.Platform.Mail`)
+
+| Element | Festlegung |
+|---|---|
+| Schnittstelle | `IMailSender.SendAsync(MailMessageSpec spec, CancellationToken ct)`; `MailMessageSpec(To[], Subject, HtmlBody, TextBody, Attachments[], LinkedResources[])`; Aufruf **nur** aus Jobs der Queue `emails` (Ausnahme: synchroner God-Mode-Test, siehe unten) |
+| Konfiguration | zur Laufzeit je Versand aus `IInstanceConfigurationStore` (`02` §3.16): `EMAIL_HOST`, `EMAIL_PORT` (Default `587`), `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` (verschlüsselt), `EMAIL_USE_TLS` (`"1"` → `SecureSocketOptions.StartTls`), `EMAIL_USE_SSL` (`"1"` → `SslOnConnect`; beide `"0"` → `None`; beide `"1"` → `SslOnConnect`), `EMAIL_FROM` (Format `Name <adresse>`, leer → `PlaneMailOptions.DefaultFrom` = `Team Plane <team@mailer.plane.so>` wie Original-Lesedefault); Cache `plane:instance:config` (`02` §3.12) |
+| Dev/Test | `Plane__Mail__DevSmtp__Host`/`Port` (Mailpit, `14` §3.2.3) überschreibt Host/Port, TLS aus, ohne Anmeldung |
+| Verbindung | MailKit `SmtpClient`, `Timeout = 30 s`, je Job eine Verbindung (wie Original `get_connection` je Task); Zertifikatsprüfung Standard, CA-Bundle des Containers |
+| Text-Teil | `PlainTextFromHtml.Convert(html)` = Port `generate_plain_text_from_html`: `<style>`-Blöcke entfernen, Tags entfernen (AngleSharp `TextContent` pro Blockelement), HTML-Entities dekodieren, ≥ 3 Leerzeilen → 2, Ergebnis mit `"\n\n"` umschließen; byte-gleich zum Original geprüft (G-MAIL) |
+| Bilder | `MailImageResolver`: Template referenziert `{{ images.logo_white }}` usw.; `ImageMode=Inline` → `cid:<name>@plane` + `LinkedResource` (nur tatsächlich gerenderte Bilder werden angehängt), `Hosted` → `{WEB_URL}/static/emails/<datei>` |
+| Fehler | SMTP-/Netzwerkfehler → `JobResult.Retry`; `SmtpCommandException` mit `MailboxUnavailable` an **allen** Empfängern → `JobResult.Fail` (Dead-Letter, kein Sinn in Wiederholung) |
+| God-Mode-Test (`POST /api/instances/email-credentials-check/`, M13) | **synchron** im Request (wie Original), Klartext-Mail Betreff `Email Notification from Plane`, Text `This is a sample email notification sent from Plane application.`; `SmtpErrorMapper` liefert die Original-Texte (A07 §2.17.1): `Invalid email header.`, `Invalid credentials provided`, `Could not connect with the SMTP server.`, `From address is invalid.`, `SMTP server disconnected unexpectedly.`, `All recipient addresses were refused.`, `Timeout error while trying to connect to the SMTP server.`, `Network connection error. Please check your internet connection.`, sonst `Could not send email. Please check your configuration` (alle 400) – MailKit-Ausnahmen werden darauf abgebildet (`AuthenticationException` → Credentials, `SocketException`/`SslHandshakeException` → Connect, `SmtpCommandException` mit `SenderNotAccepted` → From, `RecipientNotAccepted` → Recipients, `ServiceNotConnectedException` → Disconnected, `TimeoutException`/`OperationCanceledException` → Timeout, `ParseException` → Header) |
+| CLI | `plane-cli test-email <to>` (CE-OPS-020) rendert `emails/test_email.liquid`, Betreff `Test email from Plane` (M14) |
+
+#### 3.13.2 Template-Port (Django → Liquid)
+
+Jede Datei `TPL/emails/<pfad>.html` wird nach `MAIL/Templates/emails/<pfad>.liquid` übertragen; HTML, Inline-CSS und Texte bleiben **byte-gleich**, nur Template-Syntax und Bildquellen ändern sich. Die Datei `MAIL/Templates/PORTING.md` dokumentiert je Template den Diff gegenüber dem Original (für Reviews).
+
+| Django (im Original verwendet; Häufigkeit) | Liquid (Fluid) | Hinweis |
+|---|---|---|
+| `{{ var }}` | `{{ var }}` | HTML-Encoder aktiv (`TemplateOptions` mit `HtmlEncoder.Default`) wie Django-Autoescape |
+| `{{ x\|safe }}` (1) | `{{ x \| raw }}` | nur `actor_comment` in `issue-updates` |
+| `{% if %}` / `{% elif %}` / `{% else %}` / `{% endif %}` (56/6/11/56) | `{% if %}` / `{% elsif %}` / `{% else %}` / `{% endif %}` | Vergleiche `==` unverändert |
+| `{% for x in xs %}` / `{% endfor %}` (8/8) | identisch | – |
+| `\|length` (17) | `\| size` | – |
+| `\|add:"-1"` (4), `\|add:"-2"` (4) | `\| minus: 1`, `\| minus: 2` | „+N more“-Zähler |
+| `\|slice:":2"` (4) | `{% for v in xs limit: 2 %}` bzw. `\| slice: 0, 2` | Verhalten an Golden prüfen |
+| `\|last` (15) | `\| last` | – |
+| Index `.0`, `.1`, `.2` | `[0]`, `[1]`, `[2]` | – |
+| Kommentare `<!-- … {{ … }} -->` | unverändert | werden wie in Django ausgewertet, bleiben unsichtbar |
+| externe Bild-URLs (A07 §2.17.3) | `{{ images.<name> }}` (§3.13.1) | `DEV-MAIL-006`; `fonts.googleapis.com`-Import wird entfernt (Fallback-Fonts des Templates greifen) |
+| Link-Ziele (`github.com`, `x.com`, `linkedin.com`, `plane.so`, `forum.plane.so`) | unverändert | nur Hyperlinks, keine Laufzeitabrufe |
+
+**Gebündelte Bilder** (`MAIL/Assets/`, einmalig aus den Original-URLs übernommen, Herkunft in `MAIL/Assets/SOURCES.md`, Lizenzklärung O-D06-05): `logo-white.png`, `logo-dark.png` (`media.docs.plane.so/logo/new-logo-{white,dark}.png`), `social-{github,linkedin,twitter,website}-32.png` (`creative-assets.mailinblue.com/…/rounded_colored/*` und `{current_site}/static/logos/*`), `invite-hero.png` (`ik.imagekit.io/…/115727700_n9t8rrnwT.png`), `icon-{due-date,duplicate,assignee,labels,state,backlog,in-progress,todo,done,cancelled,forward-arrow,link,priority,blocking}.png` (`plane-marketing.s3.ap-south-1.amazonaws.com/plane-assets/emails/*`).
+
+**Template-Katalog** (`MailTemplates`, vollständig; Betreffzeilen exakt, A07 §2.17.2): siehe §4.9.
+
+#### 3.13.3 Renderer
+
+`MailTemplateRenderer.RenderAsync(string templatePath, IReadOnlyDictionary<string, object?> model)`: Templates werden beim Start aus eingebetteten Ressourcen geparst (`FluidParser`, Cache je Pfad), Parse-Fehler brechen den Start ab (`MailTemplateStartupCheck`). Der Kontext ist ein `Dictionary<string, object?>` mit den Original-Variablennamen (z. B. `workspace_name`, `abs_url`, `first_name`); verschachtelte Werte als `Dictionary`/`IReadOnlyList` (keine `MemberAccessStrategy`-Registrierung nötig). Werte, die Django als `None` rendert, werden als `null` übergeben (Fluid rendert leer, Django ebenfalls bei `{{ None }}` → `None`! – deshalb liefern alle Aufrufer die exakt gleichen String-Werte wie das Original, z. B. `"None"` in `issue-updates` über `PythonText.Str`).
+
+### 3.14 Webhooks
+
+#### 3.14.1 Datenmodell (Vorgabe für `03`)
+
+`webhooks` (`workspace_id`, `url` varchar(1024), `is_active` bool = true, `secret_key` – DP-geschützt mit Purpose `Plane.Webhooks.Secret.v1` (`05` §3.17.5), Klartextformat `plane_wh_` + 32 Hex –, Flags `project`, `issue`, `module`, `cycle`, `issue_comment` bool = false, `version` varchar(50) = `"v1"`, Audit, Soft-Delete; partieller Unique-Index `(workspace_id, url) WHERE deleted_at IS NULL`). `webhook_logs` (`workspace_id`, `webhook_id` uuid **ohne FK** (1:1), `event_type`, `request_method` (= Aktion `created`/`updated`/`deleted`, 1:1 WH8), `request_headers` text (JSON), `request_body` text (JSON), `response_status` text, `response_headers` text (JSON), `response_body` text (max. 64 KiB, `05` §3.17.2), `retry_count` smallint, `created_at`). `is_internal`, `ProjectWebhook` entfallen (D06-ADR-23).
+
+#### 3.14.2 Trigger-Tabelle (`WebhookTriggerMap`, vollständig)
+
+Der `WebhookEventConsumer` erzeugt nur dann Zustellungen, wenn **alle** Bedingungen einer Zeile zutreffen; `EventContext.Origin` ist die Oberfläche des Requests.
+
+| Integration-Event | Origin | `Operation` | Webhook-`event` (Header `X-Plane-Event`) | Flag | `action` | Fan-out | Original-Stellen |
+|---|---|---|---|---|---|---|---|
+| `plane.project.created.v1` | App, V1 | `create` | `project` | `project` | `created` | 1 Zustellung, `activity.field = null` | W11, W21 |
+| `plane.project.updated.v1` | App, V1 | `update` | `project` | `project` | `updated` | je Eintrag in `Changes` | W12, W22 |
+| `plane.project.deleted.v1` | App, V1 | – | `project` | `project` | `deleted` | 1, `data = {"id"}` | WD1, WD2 |
+| `plane.work_item.created.v1` | App, V1 | `create`, `put_create` | `issue` | `issue` | `created` | 1 | W3, W5, W15 |
+| `plane.work_item.updated.v1` | App, V1 | `update`, `put` | `issue` | `issue` | `updated` | je `Changes` | W4, W6, W16 |
+| `plane.cycle.created.v1` | App, V1 | `create` | `cycle` | `cycle` | `created` | 1 | W1, W13 |
+| `plane.cycle.updated.v1` | App, V1 | `update` | `cycle` | `cycle` | `updated` | je `Changes` | W2, W14 |
+| `plane.module.created.v1` | App, V1 | `create` | `module` | `module` | `created` | 1 | W9, W19 |
+| `plane.module.updated.v1` | App, V1 | `update` | `module` | `module` | `updated` | je `Changes` | W10, W20 |
+| `plane.work_item_comment.created.v1` | App, V1 | `create` | `issue_comment` | `issue_comment` | `created` | 1 | W7, W17 |
+| `plane.work_item_comment.updated.v1` | App, V1 | `update` | `issue_comment` | `issue_comment` | `updated` | je `Changes` | W8, W18 |
+
+Nicht ausgelöst (1:1 A07 §2.10.3): Löschen von Work Items, Cycles, Modulen, Kommentaren; Archivierung; Cycle-/Modul-Zuordnungen; Bulk-Operationen; Automationen; Intake; Links/Anhänge/Reaktionen; Space. Die Event-Arten `cycle_issue`, `module_issue`, `intake_issue`, `user` haben im CE keinen Auslöser (WH7) und werden nicht abgebildet.
+
+#### 3.14.3 Diff-Regel (`Changes`, Port `model_activity`)
+
+`ChangeSetBuilder.FromRequest(JsonObject request, JsonObject before)` (`Plane.BuildingBlocks/Messaging/ChangeSetBuilder.cs`): für **jeden** Schlüssel `k` des Request-JSON, der auch in `before` existiert und dessen Wert sich per **roher JSON-Gleichheit** unterscheidet (`JsonNode.DeepEquals`; typ- und reihenfolgesensitiv wie Python `!=`: `["a","b"] ≠ ["b","a"]`, `"5" ≠ 5`), ein `FieldChange(k, before[k], request[k])`. `before` ist die DTO-Form der Oberfläche **vor** der Änderung (App: Form von `current_instance` im jeweiligen View, V1: v1-Serializer-Form; Detail je Endpunkt in `04`). Der Handler berechnet `Changes` vor `SaveChanges` und legt sie ins Event.
+
+#### 3.14.4 Zustellung
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant C as WebhookEventConsumer (Queue webhooks)
+  participant DB as PostgreSQL
+  participant D as DeliverWebhookJob (Queue webhooks)
+  participant S as SSRF-Client "webhooks" (05 §3.17.2)
+  participant T as Empfänger
+  C->>DB: aktive Webhooks des Workspace mit Flag = true
+  loop je Webhook × je Change (bzw. 1)
+    C->>DB: INSERT jobs webhooks.deliver {webhook_id, event, action, entity_id, change, actor_id} dedupe "wh:{message_id}:{webhook_id}:{field}"; delivery_id = UUIDv7
+  end
+  D->>DB: Webhook laden (gelöscht/inaktiv → Ende, WH5)
+  D->>DB: data = aktueller Stand (v1-Form) bzw. {"id"} bei deleted; actor = UserLite
+  D->>D: Body (UTF-8, System.Text.Json) + X-Plane-Signature
+  D->>S: POST url (Pinning, 30 s, keine Redirects, kein Proxy)
+  alt Antwort (jeder Status)
+    D->>DB: webhook_logs (status, headers, body ≤ 64 KiB, retry_count = attempt−1)
+  else Transportfehler, Versuch < 6
+    D->>DB: webhook_logs (status "500", Fehlertext); JobResult.Retry (0…600 s)
+  else Transportfehler, Versuch = 6
+    D->>DB: webhook_logs; UPDATE webhooks SET is_active=false; INSERT jobs emails.webhook_deactivated
+  else SSRF-Ablehnung
+    D->>DB: webhook_logs (status "400", "Webhook URL rejected: <grund>"); JobResult.Success (kein Retry, keine Deaktivierung)
+  end
+```
+
+| Aspekt | Festlegung |
+|---|---|
+| Methode/Header | `POST`; `Content-Type: application/json`, `User-Agent: Autopilot`, `X-Plane-Delivery: <delivery_id>` (stabil über alle Versuche einer Zustellung, `DEV-WH-001`), `X-Plane-Event: <event>`, `X-Plane-Signature: <hex>` (nur wenn Secret nicht leer); `Host` = Original-Host (Pinning, `05`) |
+| Body | `{"event", "action", "webhook_id", "workspace_id", "workspace_slug", "data", "activity": {"field", "new_value", "old_value", "actor", "old_identifier": null, "new_identifier": null}}` (1:1 A07 §2.10.4); `action` ∈ `created`/`updated`/`deleted`; `actor` = `UserLite`-Form der Public API |
+| `data` | aktueller Stand **bei Ausführung** des Zustell-Jobs (WH3, 1:1), geliefert von `IWebhookEventSource.LoadDataAsync` (v1-Serializer-Form: Projekt `ProjectSerializer` + Zähler, Issue `IssueExpandSerializer` mit `expand=["labels","assignees"]`, Cycle/Modul mit Zählern, Kommentar ohne `comment_stripped`/`comment_json` + `is_member`); Objekt inzwischen gelöscht → Zustellung entfällt still (WH2) |
+| Serialisierung | `System.Text.Json`, snake_case, kompakt; Abweichung zu Python-`json.dumps` (Leerzeichen nach `,`/`:`) ist zulässig, weil die Signatur über die gesendeten Bytes gebildet wird (`DEV-WH-003`, `05` D15-SEC-09 prüft Signatur gegen Body) |
+| Signatur | `WebhookSigner.Sign(secret, bodyBytes)` = `Convert.ToHexStringLower(HMACSHA256.HashData(UTF8(secret), bodyBytes))` |
+| Retry | Policy `Webhook` (§3.5.3): nur `HttpRequestException`, `TaskCanceledException` (Timeout), `IOException`; HTTP-Status 1xx–5xx = zugestellt (WH4, 1:1) |
+| Deaktivierung | beim 6. Transportfehler: `is_active = false`; Job `emails.webhook_deactivated` an `webhook.created_by` (M10, `reason` wird wie im Original **nicht** angezeigt, WH10) |
+| Logs | jede Ausführung eine `webhook_logs`-Zeile; Header/Body als JSON statt Python-Repr (`DEV-WH-002`); Aufbewahrung `WebhookLogDays` (14) |
+| Rate/Last | Queue `webhooks` mit 16 parallelen Zustellungen je Instanz; eigener Pool möglich (§3.5.6) |
+
+### 3.15 Exporte
+
+#### 3.15.1 Work-Item-Export (CE-EXP-001/-002)
+
+1. `POST /api/workspaces/{slug}/export-issues/` (Handler in `Plane.Exports`, Endpunkt-Detail `04`): `provider ∉ {csv, xlsx, json}` → 400 `{"error": "Provider '<x>' not found."}`; ohne `project` alle nicht archivierten Projekte mit aktiver Mitgliedschaft; legt `export_histories` (Vorgabe `03`; Original-Tabelle `exporters`, Felder A07 §2.12.1) mit `status = "queued"`, `type = "issue_exports"`, `token = 32 Hex` an und reiht **transaktional** `ExportWorkItemsJob(exportId)` ein; Antwort 200 `{"message": "Once the export is ready you will be able to download it"}`.
+2. Job (`exports.work_items`, Queue `exports`, Policy `Default`, Heartbeat): `status = "processing"` → Datenquelle über `IExportTypeProvider` (`type`) → Berechtigungsfilter 1:1 A07 §3.5.2 (inkl. Drafts, archivierter und Intake-Work-Items; aktive Projektmitgliedschaft des **Initiators**; `role > GUEST OR guest_view_all_features OR created_by = initiator`) → Formatierung → ZIP (`CompressionLevel.Optimal`, Deflate): `multiple = true` → je Projekt `"<slug>-<project_id>.<ext>"`, sonst `"<slug>-<workspace_id>.<ext>"`.
+3. Ablage: `IObjectStorage.PutAsync(key, zip, "application/zip")` mit `key = "<workspace_id>/export-<slug>-<token[:6]>-<yyyy-MM-dd>.zip"` (1:1); Objekt **privat** (kein `public-read`, Korrektur der MinIO-Sonderlogik inkl. hart kodiertem `/uploads`, `DEV-EXP-003`); `url` = presigned GET 7 Tage über `PublicEndpoint` (S3) bzw. HMAC-signierte Gateway-URL (Dateisystem, `14` §3.7.6); `status = "completed"`, `key`, `url`. Fehler: `status = "failed"`, `reason` = Fehlermeldung (bei unbekanntem Format `"Unsupported format: <x>"`), danach **kein** Retry (Fehler sind deterministisch; `JobResult.Fail` nach Status-Update).
+4. Historie `GET …/export-issues/?per_page&cursor` (Frontend pollt alle 3 s, 1:1); Ablauf über Cron `exports.expire_links` (§3.16).
+
+| Format | Implementierung (`Plane.Exports/Formatters/`) | Regeln (1:1 `API/utils/porters/formatters.py`) |
+|---|---|---|
+| CSV | `CsvExportFormatter` (`CsvHelper`, `NewLine = "\r\n"`, Quoting nur bei Bedarf wie Python-`csv`) | flach: verschachtelte Objekte → `a__b`; Listen → `json.dumps`-Form (`["Alice", "Bob"]`, mit `", "`-Trenner wie Python); Listen von Objekten → JSON-String; Kopfzeile = Vereinigung aller Schlüssel in Erstauftrittsreihenfolge, `key.replace("_"," ").title()` (Python-`title()`-Semantik inkl. „Sequence Id“, `PythonTitleCase`); leere Daten → leerer String |
+| XLSX | `XlsxExportFormatter` (`ClosedXML`, ein Blatt `Sheet`) | `None` → `""`; Listen → `", ".join(str(v))`; **Listen von Objekten als JSON** statt Python-Repr (`DEV-EXP-002`); Objekte → JSON; leere Daten → leere Mappe |
+| JSON | `JsonExportFormatter` (`System.Text.Json`, Einrückung 2) | `default=str`-Semantik: Datums-/Zeitwerte als Python-`str()` (`YYYY-MM-DD HH:MM:SS.ffffff+00:00`), UUIDs als String |
+| alle | `SpreadsheetSafeText.Escape` | Strings mit Präfix `=`, `+`, `-`, `@`, Tab, CR, LF erhalten `'` (CSV, XLSX; `API/utils/csv_utils.py`) |
+
+Spalten (Reihenfolge = `IssueExportSerializer.Meta.fields`): §4.12. Die drei Zählspalten `sub_issues_count`, `link_count`, `attachment_count` fehlen im Original, weil das Export-Queryset sie nicht annotiert und DRF die `read_only`-`IntegerField`s per `SkipField` auslässt (geprüft in `API/utils/porters/serializers/issue.py` und `API/app/serializers/issue.py` Z. 753–755); die Zielversion **befüllt** sie (Korrektur `DEV-EXP-001`, G-EXPORT führt die Abweichung).
+
+#### 3.15.2 Analytics-Export per E-Mail (CE-ANA-009)
+
+`POST /api/workspaces/{slug}/export-analytics/` validiert Achsen (Texte 1:1 A07 §3.6) und reiht `ExportAnalyticsEmailJob(workspaceId, userId, request)` (Queue `exports`) ein; Antwort `{"message": "Once the export is ready it will be emailed to you at <email>"}`. Der Job nutzt dieselbe Distribution wie die Analytics-API (`IAnalyticsPlotQuery` aus `Plane.Analytics.Contracts`), erzeugt CSV (`QUOTE_ALL`, Formel-Schutz, Spaltenköpfe `row_mapping` A07 §2.13) und reiht die Mail M11 (`emails/exports/analytics.liquid`, Anhang `<slug>-analytics.csv`, `text/csv`) ein. Korrekturen: Segment nach Modul verwendet `module_details` (`DEV-EXP-004`); Segmentspalten in stabiler Reihenfolge (sortiert nach Anzeigename, statt Mengen-Reihenfolge).

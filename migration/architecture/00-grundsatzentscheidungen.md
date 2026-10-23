@@ -1,4 +1,4 @@
-# Grundsatzentscheidungen (ADR-000 … ADR-009)
+# Grundsatzentscheidungen (ADR-000 … ADR-010)
 
 Dieses Dokument enthält die mit dem Auftraggeber abgestimmten Grundsatzentscheidungen. Sie sind **bindend** für alle weiteren Architektur-Dokumente und für jeden Implementierungs-Agenten. Weicht ein Dokument davon ab, gilt dieses Dokument.
 
@@ -14,6 +14,7 @@ Dieses Dokument enthält die mit dem Auftraggeber abgestimmten Grundsatzentschei
 | ADR-007 | **Forgejo ist die einzige Code-Hosting-Integration – und zwar eine starke.** Die GitHub-, GitLab- und Bitbucket-Integrationen des Originals werden **nicht** portiert. Stattdessen gibt es eine tiefe, bidirektionale Forgejo-Integration (Umfang siehe unten). Forgejo darf als Dienst in den Stack aufgenommen werden (Aspire-Ressource für Entwicklung, Tests und optional den Produktivbetrieb). | akzeptiert | Auftraggeber |
 | ADR-008 | **Anmeldung ausschließlich über Keycloak (OpenID Connect).** Plane hat keine eigene Benutzer-Authentifizierung mehr: kein Passwort-Login, keine Registrierung, kein Magic-Code, keine OAuth-Logins über Google/GitHub/GitLab/Gitea, kein separates God-Mode-Admin-Login. Web, God-Mode (Admin) und Space melden sich per OIDC Authorization Code Flow mit PKCE an Keycloak an. Keycloak ist Teil des Stacks (Aspire-Ressource, auch Airgapped). | akzeptiert | Auftraggeber |
 | ADR-009 | **Neues Repository `funk.`** für den gesamten neuen Code (Backend, Frontend, Infrastruktur, Tests). Das Original-Repo (dieses Repo mit dem Plan unter `migration/`) bleibt unverändert als Referenz bestehen. Für den God Mode gibt es keine erneute Anmeldung (Step-up) per Default; sie ist konfigurierbar. Repository: `github.com/mlwr/funk.` (privat), **Hauptbranch `develop`** (Arbeits-Branches zweigen von `develop` ab und werden dorthin gemergt; `main` bleibt unangetastet). Logo/Wortmarke: `assets/funk_logo.svg` im Repo `funk.`. | akzeptiert | Auftraggeber |
+| ADR-010 | **Produktname und Marke: „funk.“ ersetzt „Plane“ überall.** Name, Logo/Wortmarke (`assets/funk_logo.svg` im Repo `funk.`), Favicon, App-Icons, Seitentitel, UI-Texte und i18n-Strings (alle 22 Sprachen), E-Mail-Templates, Keycloak-Login-Theme, God Mode, Space, Fehlerseiten, Platzhalter-Illustrationen mit Plane-Branding, Dokumentation und Container-/Paketnamen. Das Layout bleibt 1:1 (ADR-005); nur Markenelemente werden getauscht. Interne Code-Bezeichner (z. B. `Plane.*`-Namespaces, `Plane:`-Konfigurationsschlüssel) dürfen bleiben, bis ein eigenes Umbenennungs-Arbeitspaket sie vereinheitlicht; nach außen sichtbar ist nur „funk.“. | akzeptiert | Auftraggeber |
 
 ## Konsequenzen
 
@@ -41,4 +42,9 @@ Dieses Dokument enthält die mit dem Auftraggeber abgestimmten Grundsatzentschei
   - **Bezahl-Pakete:** E1 (SAML/OIDC-SSO), E2 (Workspace-Identity/Domains), E4 (2FA, Passkeys, Password Policy) und LDAP aus E3 werden **nicht in Plane gebaut**, sondern durch Keycloak abgedeckt (Identity Brokering für SAML/OIDC, User Federation für LDAP/AD, OTP und WebAuthn/Passkeys, Passwort-Richtlinien, Domain-Regeln). E3 behält IdP Group Sync (Keycloak-Gruppen → Plane-Rollen) und optional SCIM.
   - **1:1-UI:** Die Anmeldeseite liegt jetzt in Keycloak. Damit die Optik dem Original entspricht, bekommt Keycloak ein eigenes Login-Theme im Plane-Design (Layout, Farben, Schriften der Original-Sign-in-Seite aus `apps/web` bzw. `apps/space`).
   - **Technik:** Keycloak (Apache-2.0) als Aspire-Ressource mit Realm-Import (Clients für web/admin/space, Forgejo als weiterer Client, Testbenutzer für Dev/Test); ASP.NET Core OpenID-Connect-Handler; Integrationstests gegen einen echten Keycloak-Container.
+- **ADR-010 – Branding:**
+  - **Visuelle Parität:** Screenshot-Vergleiche gegen das Original maskieren Markenelemente (Logo, Produktname) bzw. vergleichen gegen Referenzen, in denen das Original-Branding vorab ersetzt wurde; jede Ersetzung steht in der Abweichungsliste als `BRAND-*`.
+  - **Texte:** „Plane“ in Strings wird durch „funk.“ ersetzt, auch in zusammengesetzten Begriffen („Plane AI“ entfällt mangels Paket G; „Plane-Apps“ → „funk.-Apps“). Begriffe aus dem Original-Fachvokabular (Work Items, Cycles, Modules, Pages, Intake) bleiben.
+  - **Externe Links** auf plane.so, docs.plane.so, GitHub/Forum von Plane entfallen oder zeigen auf konfigurierbare eigene Ziele (ADR-004).
+  - **Rechtliches:** „Plane“ ist eine Marke der Plane Software, Inc.; sie wird in der Oberfläche nicht verwendet. Der AGPL-Herkunftshinweis auf das Original (Copyright/Lizenz) bleibt in LICENSE/NOTICE und im About-Dialog erhalten.
 - **ADR-004:** Alle Assets (Fonts, Icons, Emoji-Daten, Editor-Plugins) werden gebündelt ausgeliefert. Container-Images müssen ohne Internetzugang startbar sein.
