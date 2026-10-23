@@ -54,14 +54,14 @@ Dieses Dokument macht die Backend-Rahmenentscheidungen aus 01 **direkt implement
 5. Listen mit dem Cursor-Format des Originals paginieren und Work-Item-Listen über die Filter-/Grouping-/Ordering-Engine abfragen,
 6. Caching, Rate Limiting, Logging, Konfiguration und Instanz-Konfiguration einheitlich nutzen.
 
-Das vollständige Referenzmodul **„Labels“** (Teil von `Plane.Projects`, 01 §5.4) in §5 ist die Kopiervorlage für alle weiteren Module.
+Das vollständige Referenzmodul **„Labels“** (Teil von `Funk.Projects`, 01 §5.4) in §5 ist die Kopiervorlage für alle weiteren Module.
 
 ### 1.2 Scope
 
 | Im Scope | Nicht im Scope (zuständiges Dokument) |
 |---|---|
 | Solution- und Modulstruktur unterhalb der in 01 §5.1 festgelegten Ordner; Projektreferenzen; Registrierung | Verzeichnisbaum oberhalb von `src/` und `tests/` (01 §5.1), Frontend (08) |
-| Persistenz-Basisklassen, Interceptors, Konventionen, `PlaneEntityConfiguration<T>` | Entitäten, Tabellen, Indizes aller Module (03) |
+| Persistenz-Basisklassen, Interceptors, Konventionen, `FunkEntityConfiguration<T>` | Entitäten, Tabellen, Indizes aller Module (03) |
 | Endpunkt-Konventionen, Oberflächen, Pipeline, Fehlerform, JSON, Pagination | Vollständiger Endpunktkatalog Original → Handler, Bug-/Sicherheits-Entscheidungstabelle (04) |
 | Permission-Katalog (Mechanik, Deskriptor-Format, CE-Rollen-Mapping, Regeln) | Keycloak-Realm, Login-Flows, vollständige Permission-Matrix je Endpunkt (05) |
 | Filter-/Grouping-/Ordering-/Pagination-Engine für Work Items (Port von `API/utils/{issue_filters,grouper,order_queryset,paginator,global_paginator}.py`, `API/utils/filters/*`) | Fachlogik der Work Items (Anlegen, Activity-Inhalte) (04, 06) |
@@ -101,33 +101,33 @@ Spalte „ab“ = Inkrement der ersten Umsetzung. Alle Entscheidungen sind Präz
 
 | ID | Belang | Entscheidung | Alternativen (verworfen) | Begründung | ab |
 |---|---|---|---|---|---|
-| **D02-ADR-01** | Modulregistrierung (ADR-010) | Module werden **explizit** in `src/hosts/Plane.Api/ModuleCatalog.cs` (und analog Worker/Realtime) als Liste `IModule`-Instanzen aufgeführt; keine Assembly-Scans. Jeder Host ruft `AddPlaneModules(catalog)` und `MapPlaneModules(catalog)` auf. | Reflection-Scan aller `IModule`; Plugin-Loader | Deterministische Reihenfolge, AOT-/Trim-freundlich, Merge-Konflikte paralleler Agenten auf eine Zeile pro Modul begrenzt; Architekturtest prüft, dass jedes `Plane.<M>`-Assembly genau einmal im Katalog steht. | I0 |
+| **D02-ADR-01** | Modulregistrierung (ADR-010) | Module werden **explizit** in `src/hosts/Funk.Api/ModuleCatalog.cs` (und analog Worker/Realtime) als Liste `IModule`-Instanzen aufgeführt; keine Assembly-Scans. Jeder Host ruft `AddPlaneModules(catalog)` und `MapPlaneModules(catalog)` auf. | Reflection-Scan aller `IModule`; Plugin-Loader | Deterministische Reihenfolge, AOT-/Trim-freundlich, Merge-Konflikte paralleler Agenten auf eine Zeile pro Modul begrenzt; Architekturtest prüft, dass jedes `Plane.<M>`-Assembly genau einmal im Katalog steht. | I0 |
 | **D02-ADR-02** | Entity-Basistypen (ADR-037) | Flache Vererbung mit drei abstrakten Basisklassen `Entity` → `AuditableEntity` → `WorkspaceEntity` / `ProjectEntity`, ergänzt um **Marker-Interfaces** (`ISoftDeletable`, `IAuditable`, `IWorkspaceScoped`, `IProjectScoped`, `IExternallyReferenced`, `ISortable`, `IHasDomainEvents`). Audit-Semantik **wie Original** (`BaseModel.save`): bei Anlage `created_by_id = Akteur`, `updated_by_id = NULL`; bei Änderung nur `updated_by_id = Akteur`. | Ein „God-Base“ mit allen Feldern; reine Interfaces ohne Basisklassen; EF-Owned-Types für Audit | Spiegelt `BaseModel`/`AuditModel`/`WorkspaceBaseModel`/`ProjectBaseModel` (`API/db/models/base.py`, `API/db/mixins.py`) 1:1 → Golden-Files bleiben vergleichbar (`updated_by: null` nach Anlage). Interfaces erlauben Interceptors ohne Typprüfung auf Basisklassen. | I0 |
 | **D02-ADR-03** | Soft-Delete (01 §7.7) | `SoftDeleteInterceptor` wandelt `EntityState.Deleted` für `ISoftDeletable` in ein Update von `deleted_at` um und wertet die **`SoftDeleteCascadeRegistry`** aus. Kaskadenmodus je Beziehung: `Inline` (Set-basiertes `ExecuteUpdateAsync` in derselben Transaktion; Default) oder `Deferred` (Job `SoftDeleteCascadeJob` über die Job-Queue; nur für Wurzeln mit potenziell sehr vielen Kindern: Workspace, Project). Hartes Löschen ausschließlich über `IHardDelete`-Pfad (Hard-Delete-Job, explizite Fachfälle wie `UserRecentVisit`). | Kaskade immer asynchron wie Original (`soft_delete_related_objects.delay`); Datenbank-Trigger | Inline-Kaskade beseitigt das Original-Zeitfenster, in dem Kinder eines gelöschten Objekts noch sichtbar sind (dokumentierte Abweichung `DEV-OPS-001` in `tests/contracts/deviations.yaml`); für große Wurzeln bleibt das asynchrone Original-Verhalten. | I0 |
 | **D02-ADR-04** | Tenant-Auflösung (ADR-038) | `ScopeBindingFilter` löst `{slug}` (und `{project_id}`) **ohne eigenen 404** auf: ein unbekannter Slug ergibt einen `WorkspaceScope` mit `Exists = false`; die nachfolgende Permission-Prüfung liefert dann die **Original-Ablehnung** (403 in der Form des jeweiligen Prüfmechanismus). Nur Endpunkte, die im Original per `Workspace.objects.get(...)` 404 liefern, deklarieren `.ResolveWorkspaceOrNotFound()`. | Middleware, die bei unbekanntem Slug sofort 404 liefert | Original prüft Mitgliedschaft über `workspace__slug=…` → unbekannter Slug = „keine Mitgliedschaft“ = 403 (`A03` §2.4.2). 404 würde zudem die Existenz fremder Workspaces offenlegen. | I0 |
 | **D02-ADR-05** | Permission-Deklaration (ADR-019, 01 §7.10, D05-ADR-17/-20) | Je Route **genau ein** `.RequirePermission(<PermissionDescriptor>, params PermissionRule[] rules)` (Signatur aus 05 §3.13.7); der **Deskriptor** (generiert aus `05-permission-matrix.json`, 05 §5.8) trägt Schlüssel, Ebene, Rollenmenge, `ApiScope` und den Default-`DenyStyle` (`Error` = `{"error": "You don't have the required permissions."}` wie `allow_permission`, `Detail` = `{"detail": "You do not have permission to perform this action."}` wie DRF-Permission-Klassen). **Regeln** werden am Endpunkt angehängt (05-Notation `C:<Model>`, `OWN`, `SELF`, `VIS`, `PAGE`, `BOARD`, `WSA\|PA`) und zusätzlich – Ergänzung dieses Dokuments – die Regel **`PermissionRule.Prerequisite(<Deskriptor>)`**: eine vorgeschaltete Prüfung mit **eigenem** `DenyStyle`, die die Original-Kombination „Permission-Klasse **und** Decorator“ (`WS(A,M) ∧ PRJ⁺(A)` in 05 Anhang B) mit den jeweils unterschiedlichen Fehlerkörpern reproduziert. `.WithDenyStyle(...)` überschreibt den Default je Endpunkt. | Mehrere `.RequirePermission`-Aufrufe je Route; ASP.NET-Policies je Rolle; Prüfung im Handler; Vorbedingungen fest im Deskriptor (verworfen im Review, weil derselbe Key an Endpunkten mit und ohne Vorbedingung vorkommt, z. B. `project.label.create` an L2 und L7) | Erfüllt 01 §7.10 („genau eine Angabe“) und D05-ADR-20 („Körper je Prüfmechanismus wie Original“). E5 tauscht nur den `IRoleDefinitionProvider`. | I0 |
-| **D02-ADR-06** | Oberflächen (ADR-011) | Sechs typisierte **Oberflächen** (`ApiSurface`): `App` (`/api/`), `V1` (`/api/v1/`), `Space` (`/api/public/`), `Instance` (`/api/instances/`), `Auth` (`/auth/`), `Integrations` (`/api/integrations/`), dazu `Root` (`/`, `/robots.txt`). Jede Oberfläche ist eine `RouteGroupBuilder`-Hülle (`PlaneEndpointRouteBuilder.App(...)`, `.V1(...)`, `.Space(...)`, `.Instance(...)`, `.Auth(...)`, `.Integrations(...)`, `.Root(...)`) mit festem Authentifizierungsschema, CSRF-/Origin-Regel, Rate-Limit-Policy, Fehlerprofil und OpenAPI-Dokument. | Ein globales Präfix mit Attributen je Endpunkt | Das Original unterscheidet genau diese Bereiche (`A01` §2.14) mit unterschiedlicher Auth, Cookies und Throttles; Fehlkonfiguration einzelner Endpunkte wird so unmöglich. | I0 |
+| **D02-ADR-06** | Oberflächen (ADR-011) | Sechs typisierte **Oberflächen** (`ApiSurface`): `App` (`/api/`), `V1` (`/api/v1/`), `Space` (`/api/public/`), `Instance` (`/api/instances/`), `Auth` (`/auth/`), `Integrations` (`/api/integrations/`), dazu `Root` (`/`, `/robots.txt`). Jede Oberfläche ist eine `RouteGroupBuilder`-Hülle (`FunkEndpointRouteBuilder.App(...)`, `.V1(...)`, `.Space(...)`, `.Instance(...)`, `.Auth(...)`, `.Integrations(...)`, `.Root(...)`) mit festem Authentifizierungsschema, CSRF-/Origin-Regel, Rate-Limit-Policy, Fehlerprofil und OpenAPI-Dokument. | Ein globales Präfix mit Attributen je Endpunkt | Das Original unterscheidet genau diese Bereiche (`A01` §2.14) mit unterschiedlicher Auth, Cookies und Throttles; Fehlkonfiguration einzelner Endpunkte wird so unmöglich. | I0 |
 | **D02-ADR-07** | Trailing Slash (01 §7.11) | `TrailingSlashMiddleware` **vor** `UseRouting` entfernt genau einen abschließenden `/` aus `Request.Path` (außer bei `/`), ohne Redirect und für alle Methoden. Routen-Templates enthalten nie einen abschließenden Slash. | Doppelte Registrierung je Route; `APPEND_SLASH`-Redirect; Vertrauen auf implizites Routing-Verhalten | Deterministisch und unabhängig von Routing-Interna; kein 301 auf POST/PATCH (Original würde bei fehlendem Slash und POST einen Fehler werfen). Ein Routing-Test über alle Endpunkte prüft beide Varianten. | I0 |
-| **D02-ADR-08** | Fehlerbehandlung (ADR-016, 01 §7.4) | **Zwei Wege, eine Fabrik:** (a) erwartbare Fehler als `Result`/`Result<T>` mit `PlaneError` aus `PlaneErrors` (kein Exception-Control-Flow); (b) unerwartete Ausnahmen über `PlaneExceptionHandler : IExceptionHandler`, der die Abbildung von `BaseViewSet.handle_exception` 1:1 reproduziert (`DbUpdateException` mit Unique-Verletzung → 400 `{"error": "The payload is not valid"}`, `EntityNotFoundException` → 404 `{"error": "The required object does not exist."}`, `RequiredKeyMissingException` → 400 `{"error": "The required key does not exist."}`, sonst 500 `{"error": "Something went wrong please try again later"}` + Log `plane.exception`). RFC-9457-ProblemDetails nur für interne Fehler des Gateways; `/health/*` antwortet mit eigenem JSON-Format `{"status", "checks"}` (§3.17, ABG-014). | Exceptions für alle Fehler; ProblemDetails überall | Erwartete Fehler sind Teil des Vertrags und müssen testbar ohne Exceptions sein; unerwartete Fehler brauchen die exakten Original-Texte, weil das Frontend sie als Toast anzeigt. | I0 |
-| **D02-ADR-09** | Validierung (ADR-013) | **Zwei Validierungsstufen:** (1) `ValidationEndpointFilter<TRequest>` (`.Validate<TRequest>()`) führt `IValidator<TRequest>` aus – reine Formprüfung (Pflichtfelder, Längen, Formate, Enum-Werte) mit **DRF-Standardtexten** aus `DrfMessages`; (2) `ValidationBehavior<TCommand>` im Mediator führt `IValidator<TCommand>` aus – kontextabhängige Prüfungen mit DB-Zugriff (Eindeutigkeit, Fremdschlüssel im selben Projekt). Beide liefern `PlaneError.Fields` → `{"<feld>": ["<meldung>"]}`. Endpunktspezifische Abweichungen (z. B. `{"error": "Label with the same name already exists in the project"}`) werden **im Handler** als `PlaneErrors.Plain(...)` erzeugt, nicht im Validator. | Nur Endpoint-Filter; nur Mediator-Behavior; .NET-10-`AddValidation()` | Trennung hält Formregeln ohne DB testbar; DB-Regeln laufen im selben Scope/Transaktion wie der Handler; Original-Texte bleiben an einer Stelle. | I0 |
+| **D02-ADR-08** | Fehlerbehandlung (ADR-016, 01 §7.4) | **Zwei Wege, eine Fabrik:** (a) erwartbare Fehler als `Result`/`Result<T>` mit `FunkError` aus `FunkErrors` (kein Exception-Control-Flow); (b) unerwartete Ausnahmen über `FunkExceptionHandler : IExceptionHandler`, der die Abbildung von `BaseViewSet.handle_exception` 1:1 reproduziert (`DbUpdateException` mit Unique-Verletzung → 400 `{"error": "The payload is not valid"}`, `EntityNotFoundException` → 404 `{"error": "The required object does not exist."}`, `RequiredKeyMissingException` → 400 `{"error": "The required key does not exist."}`, sonst 500 `{"error": "Something went wrong please try again later"}` + Log `plane.exception`). RFC-9457-ProblemDetails nur für interne Fehler des Gateways; `/health/*` antwortet mit eigenem JSON-Format `{"status", "checks"}` (§3.17, ABG-014). | Exceptions für alle Fehler; ProblemDetails überall | Erwartete Fehler sind Teil des Vertrags und müssen testbar ohne Exceptions sein; unerwartete Fehler brauchen die exakten Original-Texte, weil das Frontend sie als Toast anzeigt. | I0 |
+| **D02-ADR-09** | Validierung (ADR-013) | **Zwei Validierungsstufen:** (1) `ValidationEndpointFilter<TRequest>` (`.Validate<TRequest>()`) führt `IValidator<TRequest>` aus – reine Formprüfung (Pflichtfelder, Längen, Formate, Enum-Werte) mit **DRF-Standardtexten** aus `DrfMessages`; (2) `ValidationBehavior<TCommand>` im Mediator führt `IValidator<TCommand>` aus – kontextabhängige Prüfungen mit DB-Zugriff (Eindeutigkeit, Fremdschlüssel im selben Projekt). Beide liefern `FunkError.Fields` → `{"<feld>": ["<meldung>"]}`. Endpunktspezifische Abweichungen (z. B. `{"error": "Label with the same name already exists in the project"}`) werden **im Handler** als `FunkErrors.Plain(...)` erzeugt, nicht im Validator. | Nur Endpoint-Filter; nur Mediator-Behavior; .NET-10-`AddValidation()` | Trennung hält Formregeln ohne DB testbar; DB-Regeln laufen im selben Scope/Transaktion wie der Handler; Original-Texte bleiben an einer Stelle. | I0 |
 | **D02-ADR-10** | PATCH-Semantik | Request-Typen für PATCH nutzen **`Optional<T>`** (Struct mit `IsSet`/`Value`, eigener `OptionalJsonConverterFactory`): nicht gesendet ≠ `null` gesendet. Unbekannte Felder werden ignoriert (DRF-Verhalten). Schreibgeschützte Original-Felder (`read_only_fields`) existieren im Request-Typ nicht. | `JsonPatchDocument`; Nullable-Felder mit Raten; `JsonObject` im Handler | Original-PATCH ist „partial update“ (`partial=True`): nur gesendete Felder ändern sich; Activity schreibt nur gesendete Felder (`requested_data`). `Optional<T>` macht das typsicher. | I0 |
-| **D02-ADR-11** | JSON & Zeitformate (ADR-015, 01 §7.2/7.3) | `System.Text.Json` mit Source-Generated `PlaneJsonContext`, `PropertyNamingPolicy = SnakeCaseLower`, `DefaultIgnoreCondition = Never`, `NumberHandling = Strict`, unbekannte Felder ignoriert. Pflicht-Converter: `DrfDateTimeOffsetConverter` (Ausgabe `yyyy-MM-ddTHH:mm:ss.ffffffZ`, **bei Mikrosekunde 0 ohne Bruchteil** wie Python `isoformat()`; Präzisierung zu 01 §7.3), `DateOnlyConverter` (`yyyy-MM-dd`), `PythonFloatConverter` (ganzzahlige `double` als `65535.0`), `LowercaseGuidConverter`, Enum-Converter mit Original-Werten. Doppel-Unterstrich-Felder (`state__group`) per `[JsonPropertyName]`. **Zeitzone der Ausgabe:** Default UTC (`Z`) gemäß 01 §7.3; Schalter `Plane:Json:DateTimeOutputZone = Utc \| RequestTimeZone` für den Fall, dass der Paritäts-Harness Abhängigkeiten des Frontends von der DRF-Nutzerzeitzone nachweist (siehe Befund B-02 und O-D02-01). | Newtonsoft.Json; Reflection-basierte Serialisierung; Ausgabe immer in Nutzerzeitzone | Frontend-Typen (`packages/types`) bleiben unverändert; Source-Generation spart Startzeit; der Zeitzonen-Befund wird messbar entschieden statt geraten. | I0 |
+| **D02-ADR-11** | JSON & Zeitformate (ADR-015, 01 §7.2/7.3) | `System.Text.Json` mit Source-Generated `FunkJsonContext`, `PropertyNamingPolicy = SnakeCaseLower`, `DefaultIgnoreCondition = Never`, `NumberHandling = Strict`, unbekannte Felder ignoriert. Pflicht-Converter: `DrfDateTimeOffsetConverter` (Ausgabe `yyyy-MM-ddTHH:mm:ss.ffffffZ`, **bei Mikrosekunde 0 ohne Bruchteil** wie Python `isoformat()`; Präzisierung zu 01 §7.3), `DateOnlyConverter` (`yyyy-MM-dd`), `PythonFloatConverter` (ganzzahlige `double` als `65535.0`), `LowercaseGuidConverter`, Enum-Converter mit Original-Werten. Doppel-Unterstrich-Felder (`state__group`) per `[JsonPropertyName]`. **Zeitzone der Ausgabe:** Default UTC (`Z`) gemäß 01 §7.3; Schalter `Funk:Json:DateTimeOutputZone = Utc \| RequestTimeZone` für den Fall, dass der Paritäts-Harness Abhängigkeiten des Frontends von der DRF-Nutzerzeitzone nachweist (siehe Befund B-02 und O-D02-01). | Newtonsoft.Json; Reflection-basierte Serialisierung; Ausgabe immer in Nutzerzeitzone | Frontend-Typen (`packages/types`) bleiben unverändert; Source-Generation spart Startzeit; der Zeitzonen-Befund wird messbar entschieden statt geraten. | I0 |
 | **D02-ADR-12** | Weggelassene Felder (DRF `SkipField`) | Wo das Original Felder **weglässt** (Read-only-Feld ohne Annotation, `A03` §2.3), wird eine **eigene DTO-Klasse je Antwortform** definiert (z. B. `CycleDto` vs. `CycleWithStatusDto`), nicht ein Feld mit `null`. Nur bei variabler Präsenz zur Laufzeit: Typ `Omittable<T>` mit Converter + `[JsonIgnore(Condition = WhenWritingDefault)]`. | Ein DTO mit `null`; dynamische `JsonObject`-Antworten | Contract-Diffs unterscheiden „Feld fehlt“ von `null`; das Frontend prüft teils auf `undefined`. | I0 |
-| **D02-ADR-13** | Pagination (01 §7.5) | Generischer **`CursorPaginator`** in `Plane.BuildingBlocks.Web/Pagination` für ungruppierte Listen (Port `OffsetPaginator` + `BasePaginator.paginate` inkl. aller Fehlertexte), **`GlobalPaginator`** für `ENV-GLOBAL`, gruppierte/untergruppierte Pagination ausschließlich in der Work-Item-Query-Engine (§3.11). Sortierung erhält als letzten Tiebreaker zusätzlich `id DESC` (Original: nur `created_at DESC`, nicht deterministisch; Abweichung `DEV-PAG-001`). | Keyset-Pagination; Pagination je Modul selbst gebaut | Cursor-Format ist Vertrag; deterministische Reihenfolge ist Voraussetzung für stabile Contract-Tests. | I1 |
+| **D02-ADR-13** | Pagination (01 §7.5) | Generischer **`CursorPaginator`** in `Funk.BuildingBlocks.Web/Pagination` für ungruppierte Listen (Port `OffsetPaginator` + `BasePaginator.paginate` inkl. aller Fehlertexte), **`GlobalPaginator`** für `ENV-GLOBAL`, gruppierte/untergruppierte Pagination ausschließlich in der Work-Item-Query-Engine (§3.11). Sortierung erhält als letzten Tiebreaker zusätzlich `id DESC` (Original: nur `created_at DESC`, nicht deterministisch; Abweichung `DEV-PAG-001`). | Keyset-Pagination; Pagination je Modul selbst gebaut | Cursor-Format ist Vertrag; deterministische Reihenfolge ist Voraussetzung für stabile Contract-Tests. | I1 |
 | **D02-ADR-14** | Filter-AST als einzige Abfragesprache (01 §1.4 B6, CE-LV-006) | Legacy-Query-Parameter (`issue_filters`) und Rich-Filter-JSON (`filters`) werden von **zwei Parsern** in **denselben** `FilterExpression`-AST übersetzt, dann von einem **Compiler** über eine **Feld-Registry** (`IFilterFieldProvider` + `IWorkItemFilterTranslator`) in `Expression<Func<WorkItem,bool>>`. Kein Parser erzeugt SQL oder LINQ direkt. | Zwei getrennte Filterpfade wie Original; Dynamic-LINQ-Strings | Ein Ausdrucksbaum ist Voraussetzung für B6 (PQL als dritter Parser) und A1 (Custom-Property-Felder als weitere Registry-Einträge). | I2 |
 | **D02-ADR-15** | Gruppierte Abfragen (S9, `A04` §5.2) | Zweiphasig: Phase 1 ermittelt per **SQL-Baustein** (`GroupedPageSqlBuilder`, CTE mit `ROW_NUMBER() OVER (PARTITION BY …)`, nur allowlist-geprüfte Ausdrücke aus der Group-Key-Registry, Ausführung über `Database.SqlQuery<GroupedRow>`) die Tupel `(work_item_id, group_key, sub_group_key, rn)` (Zielnamen nach 03 §4.5, ABG-140) sowie Gruppensummen; Phase 2 projiziert die Issue-Felder per EF (`WHERE id = ANY(@ids)`) und ID-Arrays per zweiter Abfrage (`array_agg`). Die gefilterte Basismenge gelangt entweder als materialisiertes ID-Array (Variante A) oder als aus demselben AST erzeugtes, parametrisiertes SQL-Prädikat (Variante B) in den CTE (§3.11.6). | Alles in LINQ (EF übersetzt Window-Functions nicht); `linq2db` | Performance-Ziele aus S9; ein schmaler, gut testbarer SQL-Baustein statt vieler handgeschriebener Queries. | I2 |
 | **D02-ADR-16** | Caching (ADR-021) | Fassade **`IPlaneCache`** über `HybridCache` mit Schlüssel-Präfix `plane:`, Tag-Invalidierung und **knotenübergreifender L1-Invalidierung** über Valkey-Pub/Sub-Kanal `plane:cache:invalidate` (HybridCache invalidiert L1 nur auf dem eigenen Knoten). **Berechtigungen/Mitgliedschaften werden nicht request-übergreifend gecacht** (nur Memoisierung pro Request). Kein generisches Response-Caching; gecacht werden benannte Lesemodelle (§3.12). | `@cache_response`-Nachbau (Schlüssel = Pfad+User); Output-Caching | Original-Invalidierungen treffen ihre Schlüssel nicht (`A03` §2.1.6) → Tags lösen das korrekt; Rechteänderungen müssen sofort wirken (Sicherheit). | I1 |
 | **D02-ADR-17** | Rate Limiting (ADR-034) | Benannte Policies `anon`, `authentication`, `asset_duplicate`, `api_key` (+ `integration_webhook` ab **I0**, weil die CE-Route `/api/integrations/{provider}/webhooks/{connection_id:guid}/` ab I0 `RequireRateLimiting("integration_webhook")` nutzt (ABG-051); `email_verification` entfällt, D05-ADR-08), gebunden an Oberflächen bzw. Endpunkte; Raten im Original-Format `n/period`; Partitionierung exakt wie Original (IP, User, Asset-ID, API-Key → **`token_hash`**, D05-ADR-16); Ablehnung 429 `{"error_code": 5900, "error_message": "RATE_LIMIT_EXCEEDED"}` + `Retry-After`; `/api/v1/` zusätzlich `X-RateLimit-Remaining`/`X-RateLimit-Reset` auf **jeder** Antwort. Algorithmus Sliding Window (DRF-History-Semantik). | Token Bucket; nur Gateway-Limit | Paritätsvertrag CE-API-002; API-Key nicht im Klartext als Schlüssel (Korrektur gegenüber `api_key:<key>`, Sicherheitskorrektur nach 01 §7.20). | I1 |
-| **D02-ADR-18** | Logging/Tracing (ADR-035, 01 §7.16) | `ILogger<T>` mit **festen Kategorien** über `PlaneLogCategories` (`plane.api.request`, `plane.api`, `plane.worker`, `plane.realtime`, `plane.exception`, `plane.external`, `plane.authentication`, `plane.migrations`, `plane.query`, `plane.config`); `RequestLoggingMiddleware` schreibt eine Zeile pro Request (`"{Method} {Path} {StatusCode}"` + Felder wie Original), nicht für `GET /` und `/health/*`; `ActivitySource`-Namen `Plane.Api`, `Plane.Worker`, `Plane.Realtime`, `Plane.Messaging`, `Plane.Query`; Redaktion über `Microsoft.Extensions.Compliance.Redaction` für Felder mit `[PersonalData]`/`[SecretData]`. | Serilog; freie Kategorien | Betreiber-Dashboards/Alerts des Originals bleiben übertragbar; keine PII in Logs. | I0 |
-| **D02-ADR-19** | Konfiguration (ADR-036, 01 §7.13) | Eine Options-Klasse je Bereich `Plane<Bereich>Options` unter `Plane:<Bereich>`; **ENV-Aliase** der Original-Variablen über die Konfigurationsquelle `LegacyEnvironmentConfigurationSource` (Tabelle §4.9), die vor den Standard-ENV-Variablen geladen wird (`Plane__…` hat Vorrang); Validierung per `IValidateOptions<T>` + `ValidateOnStart`; Raten-Strings (`60/minute`) per `RateExpression.Parse`. | Direktes Lesen von `Environment.GetEnvironmentVariable`; nur neue Namen | Betreiber können vorhandene `.env`-Dateien des Originals weiterverwenden; ungültige Werte fallen beim Start auf, nicht beim ersten Request. | I0 |
-| **D02-ADR-20** | Instanz-Konfiguration (ADR-036, CE-INST-002) | Tabelle `instance_configurations` (Key, Value, Category, IsEncrypted), Zugriff nur über **`IInstanceConfigurationStore`** (`Plane.Instance.Contracts`); geheime Werte mit **ASP.NET Core Data Protection** (Purpose `Plane.Instance.Configuration.v1` nach 05 §3.17.5, Key-Ring in PostgreSQL); Seed **nur fehlender** Keys aus ENV beim Migrator-Lauf (`configure_instance`-Semantik); Lesemodus `Database` (Default, `SKIP_ENV_VAR=1`) oder `Environment`; Key-Katalog als Code (`InstanceConfigurationKeys`) – OAuth-/Passwort-Keys entfallen (ADR-008). | Fernet-Nachbau mit `SECRET_KEY`; Speicherung im Klartext | Key-Rotation eingebaut, kein selbst gebautes Krypto; Greenfield erlaubt neuen Verschlüsselungsweg (ADR-003). | I0 |
+| **D02-ADR-18** | Logging/Tracing (ADR-035, 01 §7.16) | `ILogger<T>` mit **festen Kategorien** über `FunkLogCategories` (`plane.api.request`, `plane.api`, `plane.worker`, `plane.realtime`, `plane.exception`, `plane.external`, `plane.authentication`, `plane.migrations`, `plane.query`, `plane.config`); `RequestLoggingMiddleware` schreibt eine Zeile pro Request (`"{Method} {Path} {StatusCode}"` + Felder wie Original), nicht für `GET /` und `/health/*`; `ActivitySource`-Namen `Funk.Api`, `Funk.Worker`, `Funk.Realtime`, `Funk.Messaging`, `Funk.Query`; Redaktion über `Microsoft.Extensions.Compliance.Redaction` für Felder mit `[PersonalData]`/`[SecretData]`. | Serilog; freie Kategorien | Betreiber-Dashboards/Alerts des Originals bleiben übertragbar; keine PII in Logs. | I0 |
+| **D02-ADR-19** | Konfiguration (ADR-036, 01 §7.13) | Eine Options-Klasse je Bereich `Plane<Bereich>Options` unter `Plane:<Bereich>`; **ENV-Aliase** der Original-Variablen über die Konfigurationsquelle `LegacyEnvironmentConfigurationSource` (Tabelle §4.9), die vor den Standard-ENV-Variablen geladen wird (`Funk__…` hat Vorrang); Validierung per `IValidateOptions<T>` + `ValidateOnStart`; Raten-Strings (`60/minute`) per `RateExpression.Parse`. | Direktes Lesen von `Environment.GetEnvironmentVariable`; nur neue Namen | Betreiber können vorhandene `.env`-Dateien des Originals weiterverwenden; ungültige Werte fallen beim Start auf, nicht beim ersten Request. | I0 |
+| **D02-ADR-20** | Instanz-Konfiguration (ADR-036, CE-INST-002) | Tabelle `instance_configurations` (Key, Value, Category, IsEncrypted), Zugriff nur über **`IInstanceConfigurationStore`** (`Funk.Instance.Contracts`); geheime Werte mit **ASP.NET Core Data Protection** (Purpose `Funk.Instance.Configuration.v1` nach 05 §3.17.5, Key-Ring in PostgreSQL); Seed **nur fehlender** Keys aus ENV beim Migrator-Lauf (`configure_instance`-Semantik); Lesemodus `Database` (Default, `SKIP_ENV_VAR=1`) oder `Environment`; Key-Katalog als Code (`InstanceConfigurationKeys`) – OAuth-/Passwort-Keys entfallen (ADR-008). | Fernet-Nachbau mit `SECRET_KEY`; Speicherung im Klartext | Key-Rotation eingebaut, kein selbst gebautes Krypto; Greenfield erlaubt neuen Verschlüsselungsweg (ADR-003). | I0 |
 | **D02-ADR-21** | Request-Zeitzone (`TimezoneMixin`) | `IRequestTimeZone` (scoped) wird nach der Authentifizierung aus `users.user_timezone` gesetzt (anonym: UTC). Datumskomponenten-Vergleiche (`__date`, `TruncDate`, Analytics-Gruppierung) nutzen ausschließlich `IRequestTimeZone` bzw. explizit die Projekt-Zeitzone; „heute“ in Legacy-Datumsfiltern bleibt **UTC-Datum** (Original-Verhalten `A04` §3.2). | Thread-statische Zeitzone; Konvertierung im Frontend | Exakte Parität der Filter- und Analytics-Ergebnisse; R8 (kein `DateTime.UtcNow`) bleibt erhalten (`IClock`). | I0 |
-| **D02-ADR-22** | Read-Replica (CE-OPS-010) | Endpunkt-Metadatum `.UseReadReplica()` (nur GET/HEAD/OPTIONS); Query-Handler beziehen `PlaneReadDbContext` (gleiches Modell, `QueryTrackingBehavior.NoTracking`, Connection-String `plane-replica`) über `IReadDbContextAccessor`, der ohne Replica bzw. bei anderen Methoden auf die Primary fällt. Liste der Replica-Endpunkte wie Original (`A03` §2.1.1). | Middleware-Routing über `DbConnection`-Tausch | Expliziter, testbarer Pfad; keine Schreibzugriffe auf die Replica möglich. | I1 |
-| **D02-ADR-23** | Handler-Stil (ADR-011/012) | Endpunkte als `internal static class <Ding>Endpoints` mit `Map(PlaneEndpointRouteBuilder)` und statischen lokalen Handler-Methoden; Handler geben `IResult` über die Erweiterungen `Result<T>.ToOk()/ToCreated()/ToNoContent()/ToStatus(int)` zurück; Commands/Queries per Mediator (`ISender`). Kein Controller, kein MVC. | MVC-Controller; Lambdas inline in `Map*` | Eine Datei je Ressource, kleine Diffs, OpenAPI-Metadaten zentral; Regel R4 (kein `PlaneDbContext` in Endpunkten) maschinell prüfbar. | I0 |
+| **D02-ADR-22** | Read-Replica (CE-OPS-010) | Endpunkt-Metadatum `.UseReadReplica()` (nur GET/HEAD/OPTIONS); Query-Handler beziehen `FunkReadDbContext` (gleiches Modell, `QueryTrackingBehavior.NoTracking`, Connection-String `plane-replica`) über `IReadDbContextAccessor`, der ohne Replica bzw. bei anderen Methoden auf die Primary fällt. Liste der Replica-Endpunkte wie Original (`A03` §2.1.1). | Middleware-Routing über `DbConnection`-Tausch | Expliziter, testbarer Pfad; keine Schreibzugriffe auf die Replica möglich. | I1 |
+| **D02-ADR-23** | Handler-Stil (ADR-011/012) | Endpunkte als `internal static class <Ding>Endpoints` mit `Map(FunkEndpointRouteBuilder)` und statischen lokalen Handler-Methoden; Handler geben `IResult` über die Erweiterungen `Result<T>.ToOk()/ToCreated()/ToNoContent()/ToStatus(int)` zurück; Commands/Queries per Mediator (`ISender`). Kein Controller, kein MVC. | MVC-Controller; Lambdas inline in `Map*` | Eine Datei je Ressource, kleine Diffs, OpenAPI-Metadaten zentral; Regel R4 (kein `FunkDbContext` in Endpunkten) maschinell prüfbar. | I0 |
 | **D02-ADR-24** | Transaktionsgrenze (ADR-012/020) | Jeder Command läuft im `TransactionBehavior` in einer **expliziten** Transaktion (`BeginTransactionAsync(IsolationLevel.ReadCommitted)` wie Django; Präzisierung im Review: immer, nicht nur bei `ISequenceAllocator`, weil Inline-Soft-Delete-Kaskaden per `ExecuteUpdateAsync` sonst außerhalb der SaveChanges-Transaktion liefen). Ablauf: Handler → **Domain-Event-Schleife** (`DomainEventDispatcher` dispatcht `IDomainEvent`s aller getrackten Entitäten in-process, wiederholt bis keine neuen Events entstehen, max. 5 Runden) → genau **ein** `SaveChangesAsync` (Interceptors §3.2.2, Integration-Events über `OutboxInterceptor` im selben Commit) → `CommitAsync` → Post-Commit-Aktionen. Domain-Events werden bewusst **nicht** in einem Interceptor dispatcht, weil von Handlern angelegte/geänderte Entitäten sonst Audit-, Soft-Delete- und Ownership-Interceptor verpassen würden. Synchrones `SaveChanges()` ist verboten (Banned-API). Queries laufen ohne Transaktion, `AsNoTracking`. | Unit-of-Work-Klasse je Modul; `TransactionScope`; Dispatch im `SavingChanges`-Interceptor | Gleiche Atomarität wie Django-`transaction.atomic` + `on_commit`; keine verteilten Transaktionen. | I0 |
-| **D02-ADR-25** | Activity-Aufzeichnung (01 §7.8) | Fachhistorie ausschließlich über **`IActivityRecorder`** (`Plane.WorkItems.Contracts`, Implementierung in `Plane.WorkItems`), synchron im selben Commit; Module liefern **Feld-Resolver** (`IActivityFieldResolver`, z. B. `LabelActivityFieldResolver` für Feld `labels`), die IDs in Anzeigewerte (`old_value`/`new_value`) übersetzen. Keine Activity-Logik in Endpunkten. | Celery-Nachbau (asynchron, wie Original `issue_activity.delay`) | Konsistenz (Activity existiert genau dann, wenn die Änderung committet ist); asynchrone Folgen (Notifications, Webhooks) bleiben über Outbox asynchron. | I1 (Gerüst), I2 (Work Items) |
-| **D02-ADR-26** | DbContext-Registrierung (ADR-037, Review-Ergänzung) | `PlaneDbContext` und `PlaneReadDbContext` werden **ohne Pooling** registriert: `services.AddDbContext<PlaneDbContext>((sp, o) => o.UseNpgsql(cs).UseSnakeCaseNamingConvention().AddInterceptors(sp.GetServices<IPlaneSaveChangesInterceptor>()))` mit **scoped** Interceptors, danach `builder.EnrichNpgsqlDbContext<PlaneDbContext>()` (Aspire: Health-Check, Tracing, Retries). `builder.AddNpgsqlDbContext<T>()` ist verboten (Architekturtest), weil es Pooling aktiviert. | `AddNpgsqlDbContext` (gepoolt) + `IDbContextFactory` mit Tenant-Setter | Bei Pooling werden in den Kontext injizierte scoped Dienste (hier `IWorkspaceContext` für den Filter `workspace_tenant`, `ICurrentActor` in Interceptors) nur einmal aus dem ersten Scope aufgelöst (Microsoft Learn, `AddDbContextPool` Remarks) → Tenant-Leck zwischen Requests. Pooling-Gewinn ist laut Microsoft gering. | I0 |
-| **D02-ADR-27** | Mediator-Konfiguration (ADR-012, Review-Ergänzung) | Jeder Host ruft genau einmal `services.AddMediator(o => { o.ServiceLifetime = ServiceLifetime.Scoped; o.GenerateTypesAsInternal = true; o.Assemblies = [<alle Modul-Assemblies des Host-Katalogs>]; o.PipelineBehaviors = [typeof(LoggingBehavior<,>), typeof(ModuleScopeBehavior<,>), typeof(ValidationBehavior<,>), typeof(TransactionBehavior<,>)]; })`. Weil der Source-Generator den Registrierungscode **im Host-Assembly** erzeugt und Handler/Commands nach R9 `internal` sind, trägt jedes Modul-Assembly `[assembly: InternalsVisibleTo("Plane.Api")]`, `("Plane.Worker")`, `("Plane.Realtime")` und `("Plane.<M>.Tests")` (zentral über `Directory.Build.targets` aus der Property `PlaneInternalsVisibleTo`). | Default-Lifetime `Singleton` (fängt scoped `PlaneDbContext` ein → Laufzeitfehler); Handler `public` (bricht R9) | Spike S0 prüft mit einem `internal`-Handler in einem Modul-Assembly, dass der Generator ihn im Host registriert; scheitert das, gilt Fallback „Commands/Handler `public`, R9 nur für übrige Typen“ (Änderungsantrag an 01 R9, O-D02-09). | I0 |
+| **D02-ADR-25** | Activity-Aufzeichnung (01 §7.8) | Fachhistorie ausschließlich über **`IActivityRecorder`** (`Funk.WorkItems.Contracts`, Implementierung in `Funk.WorkItems`), synchron im selben Commit; Module liefern **Feld-Resolver** (`IActivityFieldResolver`, z. B. `LabelActivityFieldResolver` für Feld `labels`), die IDs in Anzeigewerte (`old_value`/`new_value`) übersetzen. Keine Activity-Logik in Endpunkten. | Celery-Nachbau (asynchron, wie Original `issue_activity.delay`) | Konsistenz (Activity existiert genau dann, wenn die Änderung committet ist); asynchrone Folgen (Notifications, Webhooks) bleiben über Outbox asynchron. | I1 (Gerüst), I2 (Work Items) |
+| **D02-ADR-26** | DbContext-Registrierung (ADR-037, Review-Ergänzung) | `FunkDbContext` und `FunkReadDbContext` werden **ohne Pooling** registriert: `services.AddDbContext<FunkDbContext>((sp, o) => o.UseNpgsql(cs).UseSnakeCaseNamingConvention().AddInterceptors(sp.GetServices<IPlaneSaveChangesInterceptor>()))` mit **scoped** Interceptors, danach `builder.EnrichNpgsqlDbContext<FunkDbContext>()` (Aspire: Health-Check, Tracing, Retries). `builder.AddNpgsqlDbContext<T>()` ist verboten (Architekturtest), weil es Pooling aktiviert. | `AddNpgsqlDbContext` (gepoolt) + `IDbContextFactory` mit Tenant-Setter | Bei Pooling werden in den Kontext injizierte scoped Dienste (hier `IWorkspaceContext` für den Filter `workspace_tenant`, `ICurrentActor` in Interceptors) nur einmal aus dem ersten Scope aufgelöst (Microsoft Learn, `AddDbContextPool` Remarks) → Tenant-Leck zwischen Requests. Pooling-Gewinn ist laut Microsoft gering. | I0 |
+| **D02-ADR-27** | Mediator-Konfiguration (ADR-012, Review-Ergänzung) | Jeder Host ruft genau einmal `services.AddMediator(o => { o.ServiceLifetime = ServiceLifetime.Scoped; o.GenerateTypesAsInternal = true; o.Assemblies = [<alle Modul-Assemblies des Host-Katalogs>]; o.PipelineBehaviors = [typeof(LoggingBehavior<,>), typeof(ModuleScopeBehavior<,>), typeof(ValidationBehavior<,>), typeof(TransactionBehavior<,>)]; })`. Weil der Source-Generator den Registrierungscode **im Host-Assembly** erzeugt und Handler/Commands nach R9 `internal` sind, trägt jedes Modul-Assembly `[assembly: InternalsVisibleTo("Funk.Api")]`, `("Funk.Worker")`, `("Funk.Realtime")` und `("Plane.<M>.Tests")` (zentral über `Directory.Build.targets` aus der Property `FunkInternalsVisibleTo`). | Default-Lifetime `Singleton` (fängt scoped `FunkDbContext` ein → Laufzeitfehler); Handler `public` (bricht R9) | Spike S0 prüft mit einem `internal`-Handler in einem Modul-Assembly, dass der Generator ihn im Host registriert; scheitert das, gilt Fallback „Commands/Handler `public`, R9 nur für übrige Typen“ (Änderungsantrag an 01 R9, O-D02-09). | I0 |
 
 ---
 ## 3. Detaildesign
@@ -140,29 +140,29 @@ Alle Projekte nutzen `Directory.Build.props` (Nullable, `TreatWarningsAsErrors`,
 
 | Projekt (Pfad relativ zu `funk.`) | SDK | Referenziert (nur diese) | Inhalt (Ordner) | ab |
 |---|---|---|---|---|
-| `src/building-blocks/Plane.BuildingBlocks/Plane.BuildingBlocks.csproj` | `Microsoft.NET.Sdk` | – (nur `Mediator.Abstractions`, `Microsoft.Extensions.*.Abstractions`) | `Ids/` (`IIdGenerator`, `UuidV7Generator`), `Time/` (`IClock`, `SystemClock`, `IRequestTimeZone`), `Results/` (`Result`, `Result<T>`, `PlaneError`, `PlaneErrorKind`), `Scoping/` (`ScopeLevel`, `ScopeRef`, `IScopeResolver`, `WorkspaceScope`, `ProjectScope`), `Security/` (`PlanePrincipal`, `PrincipalRef`, `PrincipalKind`, `Permission`, `ICurrentActor`), `Modules/` (`IModule`, `IMessagingRegistry`), `Messaging/` (`IIntegrationEvent`, `IDomainEvent`, `IEventConsumer<T>`, `IJob`, `IJobScheduler`, `IRecurringJobRegistry`, `EventContext`), `Pagination/` (`Cursor`, `PageRequest`, `PaginatedResponse<T>`, `GlobalPage<T>`), `Optional/` (`Optional<T>`, `Omittable<T>`), `Activity/` (Marker `IActivityFieldResolver` nur als Contract-Basis), `Branding/` (`Brand` mit `ProductName = "funk."`, BR-03, ABG-148) | I0 |
-| `src/building-blocks/Plane.BuildingBlocks.Web/Plane.BuildingBlocks.Web.csproj` | `Microsoft.NET.Sdk` + `FrameworkReference Microsoft.AspNetCore.App` | `Plane.BuildingBlocks`, `Plane.Authorization.Contracts` | `Surfaces/` (`ApiSurface`, `PlaneEndpointRouteBuilder`, `SurfaceConventions`), `Routing/` (`TrailingSlashMiddleware`, `PlaneRouteConstraints`), `Json/` (`PlaneJsonOptions`, Converter), `Errors/` (HTTP-Abbildung von `PlaneErrors`/`PlaneErrorCodes` aus `Plane.BuildingBlocks/Results`, `DrfMessages`, `PlaneExceptionHandler`, `ResultExtensions`, `StatusCodeBodiesMiddleware`), `Validation/` (`ValidationEndpointFilter<T>`, `DrfValidationErrorMapper`), `Scoping/` (`ScopeBindingFilter`, `WorkspaceScopeBinder`), `Permissions/` (`PermissionEndpointFilter`, `RequirePermissionExtensions`, `AllowAnonymousSurfaceExtensions`), `Pagination/` (`CursorPaginator`, `GlobalPaginator`, `PaginationQuery`), `Security/` (`OriginCheckMiddleware`, `RequestBodyLimitMiddleware`, `ApiKeyAuthenticationHandler`), `RateLimiting/` (`PlaneRateLimitPolicies`, `SlidingWindowByKeyPolicy`), `Logging/` (`RequestLoggingMiddleware`, `PlaneLogCategories`), `ReadReplica/` (`UseReadReplicaMetadata`), `OpenApi/` (`PlaneOpenApiTransformers`) | I0 |
-| `src/building-blocks/Plane.BuildingBlocks.Persistence/Plane.BuildingBlocks.Persistence.csproj` | `Microsoft.NET.Sdk` | `Plane.BuildingBlocks` + EF Core/Npgsql | `Entities/` (`Entity`, `AuditableEntity`, `WorkspaceEntity`, `ProjectEntity`, Marker-Interfaces, `OwnedByAttribute`), `Configuration/` (`PlaneEntityConfiguration<T>`, `PlaneModelConventions`), `Interceptors/` (`IPlaneSaveChangesInterceptor`, `OwnershipGuardInterceptor`, `SoftDeleteInterceptor`, `AuditInterceptor`, `ScopeConsistencyInterceptor`, `OutboxInterceptor`), `Events/` (`DomainEventDispatcher`, vom `TransactionBehavior` genutzt), `SoftDelete/` (`SoftDeleteCascadeRegistry`, `CascadeMode`, `SoftDeleteCascadeJob`), `Filters/` (`QueryFilterNames`), `Sequences/` (`ISequenceAllocator`, `SequenceAllocator`), `Errors/` (`PostgresErrorClassifier` für `23505` Unique, `23503` FK) | I0 |
-| `src/building-blocks/Plane.Analyzers/Plane.Analyzers.csproj` | `Microsoft.NET.Sdk` (`netstandard2.0`, `IsRoslynComponent`) | – (nur `Microsoft.CodeAnalysis.CSharp`) | Roslyn-Analyzer, über `Directory.Build.props` als Analyzer in alle `src/`-Projekte eingebunden; ID-Katalog s. u. (ABG-147) | I0 |
-| `src/building-blocks/Plane.BuildingBlocks.Messaging/…` | `Microsoft.NET.Sdk` | `Plane.BuildingBlocks`, `Plane.BuildingBlocks.Persistence` | Outbox/Inbox/Job-Queue/Scheduler (Detail: 06) | I0 |
-| `src/building-blocks/Plane.BuildingBlocks.Testing/…` | `Microsoft.NET.Sdk` | alle BuildingBlocks, `Plane.Data`, Test-Pakete | Namen verbindlich nach 15 §9.2: `Hosting/PlaneApiFactory` (`CreateClientAs(SeedUser)`, `Query<PlaneDbContext>(…)`), `PostgresContainerFixture` + `TemplateDatabase` + `PlaneRespawner`, `ModuleIntegrationTest`, `Builders/*` mit Fassade `ScenarioBuilder` (`Factory.Scenario()`, legt Daten über Commands an), `GoldenSettings` (Verify), `ContractScenarioRunner`, `Security/PermissionMatrixTest`, `FixedClock`, `TestPrincipalHeader`/`SeedUser` | I0 |
-| `src/data/Plane.Data/Plane.Data.csproj` | `Microsoft.NET.Sdk` | `Plane.BuildingBlocks.Persistence` (+ `Mediator.Abstractions`, `FluentValidation`) | `PlaneDbContext`, `PlaneReadDbContext`, `PlaneDataServiceCollectionExtensions` (§3.2.4), `Entities/<Modul>/`, `Configurations/<Modul>/` + `AuditForeignKeyConvention`, `Querying/` (`IWorkItemFilterTranslator`, `WorkItemQueryableExtensions`), `Pipeline/` (Mediator-Behaviors `LoggingBehavior<,>`, `ModuleScopeBehavior<,>`, `ValidationBehavior<,>`, `TransactionBehavior<,>`, `ICacheInvalidationCollector`, `IPostCommitAction`, `IUniqueViolationMap` – Review-Ergänzung: Ort war offen), `Migrations/`, `Seeds/` | I0 |
-| `src/modules/<M>/Plane.<M>.Contracts` | `Microsoft.NET.Sdk` | **nur** `Plane.BuildingBlocks` (R2) | `Dtos/`, `Requests/`, `Events/`, `Permissions/`, `Services/`, `Extensions/` | je Modul |
-| `src/modules/<M>/Plane.<M>` | `Microsoft.NET.Sdk` + `FrameworkReference Microsoft.AspNetCore.App` | `Plane.<M>.Contracts`, andere `*.Contracts`, `Plane.Data`, `Plane.BuildingBlocks.*`, `platform/*`, `documents/*` | Schablone §3.1.2 | je Modul |
-| `src/hosts/Plane.Api` | `Microsoft.NET.Sdk.Web` | alle `Plane.<M>`, `Plane.ServiceDefaults`, `Plane.BuildingBlocks.Web` | `Program.cs`, `ModuleCatalog.cs`, `PipelineExtensions.cs`, `appsettings.json` | I0 |
+| `src/building-blocks/Funk.BuildingBlocks/Funk.BuildingBlocks.csproj` | `Microsoft.NET.Sdk` | – (nur `Mediator.Abstractions`, `Microsoft.Extensions.*.Abstractions`) | `Ids/` (`IIdGenerator`, `UuidV7Generator`), `Time/` (`IClock`, `SystemClock`, `IRequestTimeZone`), `Results/` (`Result`, `Result<T>`, `FunkError`, `FunkErrorKind`), `Scoping/` (`ScopeLevel`, `ScopeRef`, `IScopeResolver`, `WorkspaceScope`, `ProjectScope`), `Security/` (`FunkPrincipal`, `PrincipalRef`, `PrincipalKind`, `Permission`, `ICurrentActor`), `Modules/` (`IModule`, `IMessagingRegistry`), `Messaging/` (`IIntegrationEvent`, `IDomainEvent`, `IEventConsumer<T>`, `IJob`, `IJobScheduler`, `IRecurringJobRegistry`, `EventContext`), `Pagination/` (`Cursor`, `PageRequest`, `PaginatedResponse<T>`, `GlobalPage<T>`), `Optional/` (`Optional<T>`, `Omittable<T>`), `Activity/` (Marker `IActivityFieldResolver` nur als Contract-Basis), `Branding/` (`Brand` mit `ProductName = "funk."`, BR-03, ABG-148) | I0 |
+| `src/building-blocks/Funk.BuildingBlocks.Web/Funk.BuildingBlocks.Web.csproj` | `Microsoft.NET.Sdk` + `FrameworkReference Microsoft.AspNetCore.App` | `Funk.BuildingBlocks`, `Funk.Authorization.Contracts` | `Surfaces/` (`ApiSurface`, `FunkEndpointRouteBuilder`, `SurfaceConventions`), `Routing/` (`TrailingSlashMiddleware`, `FunkRouteConstraints`), `Json/` (`FunkJsonOptions`, Converter), `Errors/` (HTTP-Abbildung von `FunkErrors`/`FunkErrorCodes` aus `Funk.BuildingBlocks/Results`, `DrfMessages`, `FunkExceptionHandler`, `ResultExtensions`, `StatusCodeBodiesMiddleware`), `Validation/` (`ValidationEndpointFilter<T>`, `DrfValidationErrorMapper`), `Scoping/` (`ScopeBindingFilter`, `WorkspaceScopeBinder`), `Permissions/` (`PermissionEndpointFilter`, `RequirePermissionExtensions`, `AllowAnonymousSurfaceExtensions`), `Pagination/` (`CursorPaginator`, `GlobalPaginator`, `PaginationQuery`), `Security/` (`OriginCheckMiddleware`, `RequestBodyLimitMiddleware`, `ApiKeyAuthenticationHandler`), `RateLimiting/` (`FunkRateLimitPolicies`, `SlidingWindowByKeyPolicy`), `Logging/` (`RequestLoggingMiddleware`, `FunkLogCategories`), `ReadReplica/` (`UseReadReplicaMetadata`), `OpenApi/` (`FunkOpenApiTransformers`) | I0 |
+| `src/building-blocks/Funk.BuildingBlocks.Persistence/Funk.BuildingBlocks.Persistence.csproj` | `Microsoft.NET.Sdk` | `Funk.BuildingBlocks` + EF Core/Npgsql | `Entities/` (`Entity`, `AuditableEntity`, `WorkspaceEntity`, `ProjectEntity`, Marker-Interfaces, `OwnedByAttribute`), `Configuration/` (`FunkEntityConfiguration<T>`, `FunkModelConventions`), `Interceptors/` (`IPlaneSaveChangesInterceptor`, `OwnershipGuardInterceptor`, `SoftDeleteInterceptor`, `AuditInterceptor`, `ScopeConsistencyInterceptor`, `OutboxInterceptor`), `Events/` (`DomainEventDispatcher`, vom `TransactionBehavior` genutzt), `SoftDelete/` (`SoftDeleteCascadeRegistry`, `CascadeMode`, `SoftDeleteCascadeJob`), `Filters/` (`QueryFilterNames`), `Sequences/` (`ISequenceAllocator`, `SequenceAllocator`), `Errors/` (`PostgresErrorClassifier` für `23505` Unique, `23503` FK) | I0 |
+| `src/building-blocks/Funk.Analyzers/Funk.Analyzers.csproj` | `Microsoft.NET.Sdk` (`netstandard2.0`, `IsRoslynComponent`) | – (nur `Microsoft.CodeAnalysis.CSharp`) | Roslyn-Analyzer, über `Directory.Build.props` als Analyzer in alle `src/`-Projekte eingebunden; ID-Katalog s. u. (ABG-147) | I0 |
+| `src/building-blocks/Funk.BuildingBlocks.Messaging/…` | `Microsoft.NET.Sdk` | `Funk.BuildingBlocks`, `Funk.BuildingBlocks.Persistence` | Outbox/Inbox/Job-Queue/Scheduler (Detail: 06) | I0 |
+| `src/building-blocks/Funk.BuildingBlocks.Testing/…` | `Microsoft.NET.Sdk` | alle BuildingBlocks, `Funk.Data`, Test-Pakete | Namen verbindlich nach 15 §9.2: `Hosting/FunkApiFactory` (`CreateClientAs(SeedUser)`, `Query<FunkDbContext>(…)`), `PostgresContainerFixture` + `TemplateDatabase` + `FunkRespawner`, `ModuleIntegrationTest`, `Builders/*` mit Fassade `ScenarioBuilder` (`Factory.Scenario()`, legt Daten über Commands an), `GoldenSettings` (Verify), `ContractScenarioRunner`, `Security/PermissionMatrixTest`, `FixedClock`, `TestPrincipalHeader`/`SeedUser` | I0 |
+| `src/data/Funk.Data/Funk.Data.csproj` | `Microsoft.NET.Sdk` | `Funk.BuildingBlocks.Persistence` (+ `Mediator.Abstractions`, `FluentValidation`) | `FunkDbContext`, `FunkReadDbContext`, `FunkDataServiceCollectionExtensions` (§3.2.4), `Entities/<Modul>/`, `Configurations/<Modul>/` + `AuditForeignKeyConvention`, `Querying/` (`IWorkItemFilterTranslator`, `WorkItemQueryableExtensions`), `Pipeline/` (Mediator-Behaviors `LoggingBehavior<,>`, `ModuleScopeBehavior<,>`, `ValidationBehavior<,>`, `TransactionBehavior<,>`, `ICacheInvalidationCollector`, `IPostCommitAction`, `IUniqueViolationMap` – Review-Ergänzung: Ort war offen), `Migrations/`, `Seeds/` | I0 |
+| `src/modules/<M>/Plane.<M>.Contracts` | `Microsoft.NET.Sdk` | **nur** `Funk.BuildingBlocks` (R2) | `Dtos/`, `Requests/`, `Events/`, `Permissions/`, `Services/`, `Extensions/` | je Modul |
+| `src/modules/<M>/Plane.<M>` | `Microsoft.NET.Sdk` + `FrameworkReference Microsoft.AspNetCore.App` | `Plane.<M>.Contracts`, andere `*.Contracts`, `Funk.Data`, `Funk.BuildingBlocks.*`, `platform/*`, `documents/*` | Schablone §3.1.2 | je Modul |
+| `src/hosts/Funk.Api` | `Microsoft.NET.Sdk.Web` | alle `Plane.<M>`, `Funk.ServiceDefaults`, `Funk.BuildingBlocks.Web` | `Program.cs`, `ModuleCatalog.cs`, `PipelineExtensions.cs`, `appsettings.json` | I0 |
 
-**Analyzer-Katalog `Plane.Analyzers` (ABG-147, verbindlich; neue IDs fortlaufend nur hier):**
+**Analyzer-Katalog `Funk.Analyzers` (ABG-147, verbindlich; neue IDs fortlaufend nur hier):**
 
 | ID | Regel | Schwere |
 |---|---|---|
-| `PLANE0001` | Rollenzahlen (5/15/20) nur in `SystemRoles` und `Plane.Authorization/Visibility/*` | Fehler |
-| `PLANE0002` | Audit-Felder (`CreatedAt`, `UpdatedAt`, `CreatedById`, `UpdatedById`) werden nur durch `AuditInterceptor` gesetzt (ersetzt den Erstfassungsnamen `PL0002`) | Fehler |
-| `PLANE0003` | reserviert | – |
-| `PLANE0004` | keine String-Literale als Meldungstext in `PlaneErrors.*`-Aufrufen (Texte aus `DrfMessages`/Konstanten) | Fehler |
-| `PLANE0005` | Format des `WithOriginalContract`-Arguments (Original-Referenz) | Fehler |
-| `PLANE0006` | Route ohne `WithName`/`WithOriginalContract` | Fehler |
+| `FUNK0001` | Rollenzahlen (5/15/20) nur in `SystemRoles` und `Funk.Authorization/Visibility/*` | Fehler |
+| `FUNK0002` | Audit-Felder (`CreatedAt`, `UpdatedAt`, `CreatedById`, `UpdatedById`) werden nur durch `AuditInterceptor` gesetzt (ersetzt den Erstfassungsnamen `PL0002`) | Fehler |
+| `FUNK0003` | reserviert | – |
+| `FUNK0004` | keine String-Literale als Meldungstext in `FunkErrors.*`-Aufrufen (Texte aus `DrfMessages`/Konstanten) | Fehler |
+| `FUNK0005` | Format des `WithOriginalContract`-Arguments (Original-Referenz) | Fehler |
+| `FUNK0006` | Route ohne `WithName`/`WithOriginalContract` | Fehler |
 
-**Produktname (ADR-009B, ABG-148):** Einzige Backend-Quelle des sichtbaren Produktnamens ist `Plane.BuildingBlocks/Branding/Brand.cs` (`public static class Brand { public const string ProductName = "funk."; }`, BR-03). Mail-Absender-Default (§3.15 `PlaneMailOptions`), OpenAPI-Info (§3.18), Seeds (Instanzname, Bot-Anzeigenamen, 03 §3.14.1) und API-Texte mit Produktnamen (04 BRAND-API-02) beziehen den Namen von dort; `Plane.*`-Namespaces, `Plane:`-Schlüssel, `PLANE_*`/`Plane__*`-Variablen, Log-/Metrik-/ActivitySource-Namen `plane.*` bleiben (BR-02). Restvorkommen prüft Gate G-BRAND (15, BR-14).
+**Produktname (ADR-009B, ABG-148):** Einzige Backend-Quelle des sichtbaren Produktnamens ist `Funk.BuildingBlocks/Branding/Brand.cs` (`public static class Brand { public const string ProductName = "funk."; }`, BR-03). Mail-Absender-Default (§3.15 `FunkMailOptions`), OpenAPI-Info (§3.18), Seeds (Instanzname, Bot-Anzeigenamen, 03 §3.14.1) und API-Texte mit Produktnamen (04 BRAND-API-02) beziehen den Namen von dort; `Plane.*`-Namespaces, `Plane:`-Schlüssel, `PLANE_*`/`Funk__*`-Variablen, Log-/Metrik-/ActivitySource-Namen `plane.*` bleiben (BR-02). Restvorkommen prüft Gate G-BRAND (15, BR-14).
 
 #### 3.1.2 Modul-Schablone (Ergänzung zu 01 §5.3 – Dateinamen verbindlich)
 
@@ -190,14 +190,14 @@ src/modules/<Name>/
     ├── Mapping/<Ding>Mapper.cs               # Mapperly [Mapper] + static Expression-Projektionen
     └── Activity/<Ding>ActivityFieldResolver.cs           # nur falls das Modul Activity-Felder beisteuert
 
-src/data/Plane.Data/
+src/data/Funk.Data/
 ├── Entities/<Name>/<Ding>.cs                 # [OwnedBy("<Name>")]
-└── Configurations/<Name>/<Ding>Configuration.cs          # : PlaneEntityConfiguration<<Ding>>
+└── Configurations/<Name>/<Ding>Configuration.cs          # : FunkEntityConfiguration<<Ding>>
 
 tests/modules/Plane.<Name>.Tests/
 ├── Unit/<Ding>RulesTests.cs, <Verb><Ding>RequestValidatorTests.cs, <Ding>MapperTests.cs
 ├── Integration/<UseCase>Tests.cs             # : ModuleIntegrationTest(PostgresContainerFixture), OwnershipGuard aktiv
-├── Permissions/<Ding>PermissionMatrixTests.cs           # : PermissionMatrixTest – exakte Original-Körper (Vollständigkeit prüft zentral Plane.Security.Tests, 15 §9.2)
+├── Permissions/<Ding>PermissionMatrixTests.cs           # : PermissionMatrixTest – exakte Original-Körper (Vollständigkeit prüft zentral Funk.Security.Tests, 15 §9.2)
 └── Contract/<Name>ContractTests.cs             # spielt tests/contracts/scenarios/<modul>/*.yaml über ContractScenarioRunner ab (15 §3.3.3); Goldens unter tests/contracts/golden/<modul>/<szenario>/
 ```
 
@@ -212,15 +212,15 @@ tests/modules/Plane.<Name>.Tests/
 | Permission-Konstante | `<Objekt><Aktion>` in `<Modul>Permissions`; Schlüssel `<scope>.<objekt>.<aktion>` in `snake_case` | `ProjectsPermissions.LabelCreate` = `project.label.create` |
 | Endpunkt-Klasse | `<Objekt>Endpoints` je Oberfläche in eigenem Ordner | `Endpoints/App/LabelEndpoints.cs` |
 | OpenAPI-`operationId` | `snake_case` wie drf-spectacular (`list_labels`); intern `app_<objekt>_<aktion>` | `create_label` (V1) |
-| Integration-Event | `<Objekt><Ereignis>V<n>`, `EventType` = `plane.<objekt>.<ereignis>.v<n>` | `LabelDeletedV1` → `plane.label.deleted.v1` |
+| Integration-Event | `<Objekt><Ereignis>V<n>`, `EventType` = `plane.<objekt>.<ereignis>.v<n>` | `LabelDeletedV1` → `funk.label.deleted.v1` |
 
-#### 3.1.3 Host-Komposition `Plane.Api`
+#### 3.1.3 Host-Komposition `Funk.Api`
 
 ```mermaid
 flowchart LR
   P[Program.cs] --> SD[AddServiceDefaults]
   P --> OPT[AddPlaneOptions + LegacyEnvironmentConfigurationSource]
-  P --> DATA[AddPlaneData: PlaneDbContext, PlaneReadDbContext, Interceptors]
+  P --> DATA[AddPlaneData: FunkDbContext, FunkReadDbContext, Interceptors]
   P --> WEB[AddPlaneWeb: JSON, Errors, Surfaces, RateLimiter, Auth-Schemata]
   P --> MOD[AddPlaneModules ModuleCatalog]
   MOD --> M1[IdentityModule] & M2[AuthorizationModule] & M3[InstanceModule] & M4[WorkspacesModule] & M5[ProjectsModule] & Mx[...]
@@ -230,16 +230,16 @@ flowchart LR
 
 Reihenfolge in `ModuleCatalog.All` (verbindlich, weil Permission-Katalog und Activity-Resolver in Registrierungsreihenfolge gesammelt werden): `Identity`, `Authorization`, `Instance`, `Workspaces`, `Projects`, `WorkItems`, `Views`, `Cycles`, `ProjectModules`, `Intake`, `Pages`, `Assets`, `Analytics`, `Home`, `Notifications`, `Search`, `PublicSpace`, `PublicApi`, `Webhooks`, `Exports`, `Assistant`, `RealtimeEvents` (nur Contracts-Publisher), danach Extension-Module der Wellen (W1: `Integrations`, `Forgejo`, `Apps`). Ein Modul, das noch nicht implementiert ist, steht **nicht** im Katalog (01 §7.19).
 
-**Kataloge je Host (Review-Ergänzung):** `Plane.Api/ModuleCatalog.cs` = obige Liste ohne `Collaboration`; `Plane.Worker/ModuleCatalog.cs` = dieselben Module, aber `MapEndpoints` wird nicht aufgerufen (nur `AddServices` + `RegisterMessaging`); `Plane.Realtime/ModuleCatalog.cs` = `Identity`, `Authorization`, `Workspaces`, `Projects`, `Pages`, `Collaboration` (01 §5.1, Hocuspocus-Protokoll), `RealtimeEvents` (SignalR-Hub). Live-Events (ABG-106): `IRealtimePublisher` ist in Api und Worker `QueuedRealtimePublisher` (Job `realtime.push` transaktional auf Queue `live`), im Host `Plane.Realtime` (und `Plane.AllInOne`) `HubRealtimePublisher` (`IHubContext<LiveEventsHub>`); nur diese beiden Hosts registrieren SignalR und verarbeiten `live`; `RealtimeFanOutConsumer` läuft im Worker auf Queue `realtime`. Architekturtest: jedes `Plane.<M>`-Assembly steht in mindestens einem Katalog, `Collaboration` nur im Realtime-Katalog, die Reihenfolge der gemeinsamen Module ist in allen Katalogen identisch.
+**Kataloge je Host (Review-Ergänzung):** `Funk.Api/ModuleCatalog.cs` = obige Liste ohne `Collaboration`; `Funk.Worker/ModuleCatalog.cs` = dieselben Module, aber `MapEndpoints` wird nicht aufgerufen (nur `AddServices` + `RegisterMessaging`); `Funk.Realtime/ModuleCatalog.cs` = `Identity`, `Authorization`, `Workspaces`, `Projects`, `Pages`, `Collaboration` (01 §5.1, Hocuspocus-Protokoll), `RealtimeEvents` (SignalR-Hub). Live-Events (ABG-106): `IRealtimePublisher` ist in Api und Worker `QueuedRealtimePublisher` (Job `realtime.push` transaktional auf Queue `live`), im Host `Funk.Realtime` (und `Funk.AllInOne`) `HubRealtimePublisher` (`IHubContext<LiveEventsHub>`); nur diese beiden Hosts registrieren SignalR und verarbeiten `live`; `RealtimeFanOutConsumer` läuft im Worker auf Queue `realtime`. Architekturtest: jedes `Plane.<M>`-Assembly steht in mindestens einem Katalog, `Collaboration` nur im Realtime-Katalog, die Reihenfolge der gemeinsamen Module ist in allen Katalogen identisch.
 
 ### 3.2 Persistenz-Basisklassen (Entity, Audit, Soft-Delete, Scoping)
 
 #### 3.2.1 Typen
 
-| Typ (`Plane.BuildingBlocks.Persistence/Entities`) | Spalten | Original | Verhalten |
+| Typ (`Funk.BuildingBlocks.Persistence/Entities`) | Spalten | Original | Verhalten |
 |---|---|---|---|
 | `abstract class Entity` | `id uuid PK` | `BaseModel.id` (`uuid4`) | Id wird **im Konstruktor/Fabrikmethode** über `IIdGenerator` (UUIDv7) gesetzt; nie `Guid.NewGuid()` (R8); `IHasDomainEvents`-Implementierung (`Raise`, `DequeueDomainEvents`, `DequeueIntegrationEvents`) |
-| `abstract class AuditableEntity : Entity, IAuditable, ISoftDeletable` | `created_at timestamptz NOT NULL`, `updated_at timestamptz NOT NULL`, `created_by_id uuid NULL FK users ON DELETE SET NULL`, `updated_by_id uuid NULL FK …`, `deleted_at timestamptz NULL` | `AuditModel` = `TimeAuditModel` + `UserAuditModel` + `SoftDeleteModel` | `AuditInterceptor`: Added → `created_at = updated_at = clock.UtcNow`, `created_by_id = actor`, `updated_by_id = null`; Modified → `updated_at = now`, `updated_by_id = actor` (nur wenn `actor` gesetzt; System-/Bot-Aktor ist ein echter User mit `is_bot`). Fachcode setzt diese Felder nie (Analyzer-Regel `PLANE0002`, ABG-147), Ausnahme: `ICreatedByOverride` für v1-Import (CE-API-017 „Override von created_at/created_by“) |
+| `abstract class AuditableEntity : Entity, IAuditable, ISoftDeletable` | `created_at timestamptz NOT NULL`, `updated_at timestamptz NOT NULL`, `created_by_id uuid NULL FK users ON DELETE SET NULL`, `updated_by_id uuid NULL FK …`, `deleted_at timestamptz NULL` | `AuditModel` = `TimeAuditModel` + `UserAuditModel` + `SoftDeleteModel` | `AuditInterceptor`: Added → `created_at = updated_at = clock.UtcNow`, `created_by_id = actor`, `updated_by_id = null`; Modified → `updated_at = now`, `updated_by_id = actor` (nur wenn `actor` gesetzt; System-/Bot-Aktor ist ein echter User mit `is_bot`). Fachcode setzt diese Felder nie (Analyzer-Regel `FUNK0002`, ABG-147), Ausnahme: `ICreatedByOverride` für v1-Import (CE-API-017 „Override von created_at/created_by“) |
 | `abstract class WorkspaceEntity : AuditableEntity, IWorkspaceScoped` | `workspace_id uuid NOT NULL FK workspaces ON DELETE CASCADE`, `project_id uuid NULL FK projects ON DELETE CASCADE` | `WorkspaceBaseModel` (`API/db/models/workspace.py`) | Bei gesetztem `project_id` erzwingt `ScopeConsistencyInterceptor` `workspace_id = project.workspace_id` (Original `save()`) |
 | `abstract class ProjectEntity : AuditableEntity, IProjectScoped, IWorkspaceScoped` | `project_id uuid NOT NULL FK`, `workspace_id uuid NOT NULL FK` | `ProjectBaseModel` (`API/db/models/project.py`) | wie oben, `project_id` Pflicht |
 | `interface ISoftDeletable { DateTimeOffset? DeletedAt }` | – | `SoftDeleteModel` | benannter Query-Filter `soft_delete`; `IgnoreQueryFilters([QueryFilterNames.SoftDelete])` = `all_objects` |
@@ -263,7 +263,7 @@ Domain-Events (`IDomainEvent`) werden **nicht** in dieser Kette, sondern vorher 
 
 `SoftDeleteCascadeRegistry` wird je Modul in `IModule.AddServices` befüllt (`registry.Cascade<Label, WorkItemLabel>(l => l.LabelId, CascadeMode.Inline)`). Ein Architekturtest prüft, dass **jede** FK-Beziehung mit `OnDelete(Cascade)` auf eine `ISoftDeletable`-Entität einen Registry-Eintrag oder einen expliziten `NoSoftCascade`-Vermerk hat (entspricht `soft_delete_related_objects`, das alle Reverse-Relationen mit `CASCADE` bzw. `SET_NULL` durchläuft).
 
-#### 3.2.3 Modellkonventionen (`PlaneModelConventions`, angewendet in `PlaneDbContext.ConfigureConventions`/`OnModelCreating`)
+#### 3.2.3 Modellkonventionen (`FunkModelConventions`, angewendet in `FunkDbContext.ConfigureConventions`/`OnModelCreating`)
 
 | Konvention | Regel |
 |---|---|
@@ -276,9 +276,9 @@ Domain-Events (`IDomainEvent`) werden **nicht** in dieser Kette, sondern vorher 
 | Filter | `HasQueryFilter(QueryFilterNames.SoftDelete, e => e.DeletedAt == null)` für alle `ISoftDeletable`; `HasQueryFilter(QueryFilterNames.WorkspaceTenant, …)` für alle `IWorkspaceScoped` (EF-10 benannte Filter, belegt: Microsoft Learn „Named query filters“) |
 | IDs | `ValueGeneratedNever()` für `Id` |
 | Concurrency | keine Row-Version (Original hat keine); Lost-Update-Semantik bewusst wie Original |
-| Audit-FKs | `created_by_id`/`updated_by_id` → `users.id` `ON DELETE SET NULL` werden **nicht** in `PlaneEntityConfiguration<T>` (BuildingBlocks kennt `User` nicht), sondern in `Plane.Data/Configurations/AuditForeignKeyConvention.cs` für alle `IAuditable`-Entitätstypen in `PlaneDbContext.OnModelCreating` gesetzt (nach `ApplyConfigurationsFromAssembly`) |
+| Audit-FKs | `created_by_id`/`updated_by_id` → `users.id` `ON DELETE SET NULL` werden **nicht** in `FunkEntityConfiguration<T>` (BuildingBlocks kennt `User` nicht), sondern in `Funk.Data/Configurations/AuditForeignKeyConvention.cs` für alle `IAuditable`-Entitätstypen in `FunkDbContext.OnModelCreating` gesetzt (nach `ApplyConfigurationsFromAssembly`) |
 
-#### 3.2.4 DbContext-Registrierung (`Plane.Data/PlaneDataServiceCollectionExtensions.AddPlaneData`, D02-ADR-26)
+#### 3.2.4 DbContext-Registrierung (`Funk.Data/FunkDataServiceCollectionExtensions.AddPlaneData`, D02-ADR-26)
 
 ```csharp
 public static IHostApplicationBuilder AddPlaneData(this IHostApplicationBuilder builder)
@@ -289,21 +289,21 @@ public static IHostApplicationBuilder AddPlaneData(this IHostApplicationBuilder 
     s.AddScoped<IPlaneSaveChangesInterceptor, AuditInterceptor>();
     s.AddScoped<IPlaneSaveChangesInterceptor, ScopeConsistencyInterceptor>();
     s.AddScoped<IPlaneSaveChangesInterceptor, OutboxInterceptor>();
-    s.AddDbContext<PlaneDbContext>((sp, o) => o
+    s.AddDbContext<FunkDbContext>((sp, o) => o
         .UseNpgsql(builder.Configuration.GetConnectionString("plane"), n => n.UseVector())     // pgvector (ADR-000)
         .UseSnakeCaseNamingConvention()
         .AddInterceptors(sp.GetServices<IPlaneSaveChangesInterceptor>()));
-    builder.EnrichNpgsqlDbContext<PlaneDbContext>();                                         // Aspire: Health, Tracing, Retry
-    s.AddDbContext<PlaneReadDbContext>((sp, o) => o
+    builder.EnrichNpgsqlDbContext<FunkDbContext>();                                         // Aspire: Health, Tracing, Retry
+    s.AddDbContext<FunkReadDbContext>((sp, o) => o
         .UseNpgsql(builder.Configuration.GetConnectionString("plane-replica") ?? builder.Configuration.GetConnectionString("plane"))
         .UseSnakeCaseNamingConvention().UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));
-    builder.EnrichNpgsqlDbContext<PlaneReadDbContext>();
+    builder.EnrichNpgsqlDbContext<FunkReadDbContext>();
     s.AddScoped<IReadDbContextAccessor, ReadDbContextAccessor>();
     return builder;
 }
 ```
 
-Hinweise: (1) Die Retry-Strategie von `EnrichNpgsqlDbContext` (`NpgsqlRetryingExecutionStrategy`) verbietet benutzerinitiierte Transaktionen ohne `CreateExecutionStrategy().ExecuteAsync(...)`; der `TransactionBehavior` kapselt deshalb Handler + `SaveChanges` + Commit in `db.Database.CreateExecutionStrategy().ExecuteAsync(...)` (Handler müssen dafür wiederholbar sein – sie sind es, weil vor `SaveChanges` keine Seiteneffekte außerhalb der DB entstehen; Post-Commit-Aktionen laufen erst nach erfolgreichem Commit). Alternativ `DisableRetry = true` in `Aspire:Npgsql:EntityFrameworkCore:PostgreSQL` – Entscheidung im Spike S0, Default: Execution-Strategy-Kapselung. (2) `PlaneReadDbContext` erhält keine Schreib-Interceptors; ein `SaveChanges` darauf wirft (`ReadOnlyContextGuard`). (3) Ob `UseVector()` im Read-Kontext nötig ist, hängt von 11 ab (Vektorsuche nur über Primary, Default).
+Hinweise: (1) Die Retry-Strategie von `EnrichNpgsqlDbContext` (`NpgsqlRetryingExecutionStrategy`) verbietet benutzerinitiierte Transaktionen ohne `CreateExecutionStrategy().ExecuteAsync(...)`; der `TransactionBehavior` kapselt deshalb Handler + `SaveChanges` + Commit in `db.Database.CreateExecutionStrategy().ExecuteAsync(...)` (Handler müssen dafür wiederholbar sein – sie sind es, weil vor `SaveChanges` keine Seiteneffekte außerhalb der DB entstehen; Post-Commit-Aktionen laufen erst nach erfolgreichem Commit). Alternativ `DisableRetry = true` in `Aspire:Npgsql:EntityFrameworkCore:PostgreSQL` – Entscheidung im Spike S0, Default: Execution-Strategy-Kapselung. (2) `FunkReadDbContext` erhält keine Schreib-Interceptors; ein `SaveChanges` darauf wirft (`ReadOnlyContextGuard`). (3) Ob `UseVector()` im Read-Kontext nötig ist, hängt von 11 ab (Vektorsuche nur über Primary, Default).
 
 ### 3.3 Endpunkt-Konventionen (Oberflächen, Präfixe, Routen, Statuscodes)
 
@@ -311,16 +311,16 @@ Hinweise: (1) Die Retry-Strategie von `EnrichNpgsqlDbContext` (`NpgsqlRetryingEx
 
 | Oberfläche (`ApiSurface`) | Präfix | Builder-Methode | Auth-Schema(ta) | Cookie | CSRF/Origin-Prüfung | Rate-Limit-Default | Fehlerprofil (`ErrorProfile`) | OpenAPI-Dokument | Original (`A01` §2.14) | ab |
 |---|---|---|---|---|---|---|---|---|---|---|
-| `App` | `/api/` | `e.App("workspaces/{slug}/…")` | `Session` (Cookie) | `session-id` | `OriginCheckMiddleware` für unsichere Methoden | `anon` (nur anonyme Requests) | `App` (handle_exception-Abbildung) | `internal` | `plane.app` | I0 |
+| `App` | `/api/` | `e.App("workspaces/{slug}/…")` | `Session` (Cookie) | `funk-session` | `OriginCheckMiddleware` für unsichere Methoden | `anon` (nur anonyme Requests) | `App` (handle_exception-Abbildung) | `internal` | `plane.app` | I0 |
 | `V1` | `/api/v1/` | `e.V1("workspaces/{slug}/…")` | `ApiKey` (Header `X-Api-Key`); `Bearer` (Keycloak-JWT, H1, Default deaktiviert) | – | keine | `api_key` (+ Header) | `V1` (wie App + v1-Spezifika, `A05` §2.1.4) | `v1` (öffentlich) | `plane.api` | Gerüst I0, Endpunkte I6 |
-| `Space` | `/api/public/` | `e.Space("anchor/{anchor}/…")` | `Session` optional (anonym erlaubt) | `session-id` | wie App | `anon` | `App` | `internal` | `plane.space` | I6 |
-| `Instance` | `/api/instances/` | `e.Instance("…")` | `Session` (Instanz-Admin aus Keycloak-Rolle; kein separates `admin-session-id`-Cookie, ADR-008) | `session-id` | wie App | `anon` | `App` | `internal` | `plane.license` | I0 (Kern) |
-| `Auth` | `/auth/` | `e.Auth("oidc/…")` | `Session` + OIDC-Challenge | `session-id` | Formular-Endpunkte: Antiforgery-Token (`GET /auth/get-csrf-token/`) | je Endpunkt (05 §3.17.6; kein Oberflächen-Default, ABG-144) | `Auth` (Redirect mit `error_code`/`error_message`-Query, `A06` §2.12) | – | `plane.authentication` | I0 |
+| `Space` | `/api/public/` | `e.Space("anchor/{anchor}/…")` | `Session` optional (anonym erlaubt) | `funk-session` | wie App | `anon` | `App` | `internal` | `plane.space` | I6 |
+| `Instance` | `/api/instances/` | `e.Instance("…")` | `Session` (Instanz-Admin aus Keycloak-Rolle; kein separates `admin-session-id`-Cookie, ADR-008) | `funk-session` | wie App | `anon` | `App` | `internal` | `plane.license` | I0 (Kern) |
+| `Auth` | `/auth/` | `e.Auth("oidc/…")` | `Session` + OIDC-Challenge | `funk-session` | Formular-Endpunkte: Antiforgery-Token (`GET /auth/get-csrf-token/`) | je Endpunkt (05 §3.17.6; kein Oberflächen-Default, ABG-144) | `Auth` (Redirect mit `error_code`/`error_message`-Query, `A06` §2.12) | – | `plane.authentication` | I0 |
 | `Integrations` | `/api/integrations/` | `e.Integrations("{provider}/webhooks/{connection_id:guid}")` (16 §3.4) | Webhook-Routen: keine (Signaturprüfung per `IWebhookSignatureVerifier`); OAuth-Callback-Routen der Pakete (`GET /api/integrations/forgejo/oauth/callback/` für die Workspace-Verbindung, `GET /api/integrations/forgejo/oauth/user-callback/` für das persönliche Konto – mit abschließendem Slash, ABG-049; 16 D16-ADR-09) opt-in `.WithSessionAuthentication()` (Schema `Session`, ohne Origin-Check, weil Top-Level-Redirect von Forgejo) | – | keine | eigene Policy `integration_webhook` (ab I0, ABG-051) | `Plain` (nur Statuscode + `{"error"}`) | – | – (F1) | Route I0 (liefert 404 ohne Provider), W1 |
 | `Root` | `/` | `e.Root(...)` | keine | – | – | keine | – | – | `plane.web` | I0 |
 
 Regeln:
-1. Jede Route wird über genau eine Oberfläche registriert; `app.MapGet(...)` direkt ist per Architekturtest verboten (`ArchRule: no call to EndpointRouteBuilderExtensions.Map* outside Plane.BuildingBlocks.Web.Surfaces`).
+1. Jede Route wird über genau eine Oberfläche registriert; `app.MapGet(...)` direkt ist per Architekturtest verboten (`ArchRule: no call to EndpointRouteBuilderExtensions.Map* outside Funk.BuildingBlocks.Web.Surfaces`).
 2. Routen-Templates beginnen **ohne** führenden und enden **ohne** abschließenden Slash (`"workspaces/{slug}/projects/{project_id:guid}/issue-labels"`); der Präfix der Oberfläche wird vorangestellt.
 3. Parameternamen exakt wie in den Django-URL-Mustern (`slug`, `project_id`, `pk`, `issue_id`, `cycle_id`, `module_id`, `page_id`, `anchor`, …) – die Permission-Regeln (Ersteller-Bypass) referenzieren Routenwerte per Name.
 4. Constraints: `:guid` für alle `uuid:`-Segmente; `slug` ohne Constraint (Original `str:`); Sonderroute `{W}/work-items/{project_identifier}-{issue_identifier}` **ohne** Constraint auf die Sequenz – der Handler parst (Split am letzten `-`) und antwortet bei nicht numerischem Wert 400 `{"error": "Invalid issue identifier"}` (04 §3.1.2, ABG-145; `A04` §5.1).
@@ -329,7 +329,7 @@ Regeln:
 7. Statuscodes exakt wie Original je Endpunkt (Golden-File). Standard: GET 200, POST 201, PATCH 200 (Ausnahmen wie `PATCH {P}/issues/{pk}/` → 204 in 04), DELETE 204 ohne Körper.
 8. Antwort-Header: `Content-Type: application/json` (ohne `charset`-Zusatz, DRF liefert `application/json`), `Vary: Cookie` auf App/Space/Instance, `X-Frame-Options: DENY`, `Cache-Control` nur wo das Original es setzt (`private, max-age=12` für `GET /api/users/me/`, `GET /api/users/me/settings/`, `GET /api/users/me/profile/` und `GET /api/instances/` (ABG-145, 04-Tabelle); `max-age=7200` für `GET /api/timezones/`) – deklariert per `.WithCacheControl("private, max-age=12")`.
 
-#### 3.3.2 Endpunkt-Metadaten (Fluent-API, alle in `Plane.BuildingBlocks.Web`)
+#### 3.3.2 Endpunkt-Metadaten (Fluent-API, alle in `Funk.BuildingBlocks.Web`)
 
 | Erweiterung | Wirkung | Pflicht |
 |---|---|---|
@@ -340,7 +340,7 @@ Regeln:
 | `.Validate<TRequest>()` | `ValidationEndpointFilter<TRequest>` | bei Requests mit Körper |
 | `.ResolveWorkspaceOrNotFound()` / `.ResolveProjectOrNotFound()` | unbekannter Slug/Projekt → 404 mit Original-Text der Route (Parameter) statt Permission-Ablehnung | nur wo Original 404 |
 | `.UseReadReplica()` | D02-ADR-22 | optional |
-| `.WithRateLimit(PlaneRateLimitPolicies.X)` | überschreibt Oberflächen-Default | optional |
+| `.WithRateLimit(FunkRateLimitPolicies.X)` | überschreibt Oberflächen-Default | optional |
 | `.WithCacheControl(string)` | setzt Header bei 200 | optional |
 | `.RecentVisit(entityName, routeParam)` | enqueued `RecentVisitJob` nach Erfolg (Port `recent_visited_task`) | wo Original |
 | `.WithOriginalContract("I2")` | verknüpft Endpunkt mit Original-ID aus `A03`–`A05` (für Coverage-Report des Parity-Harness) | Pflicht (Architekturtest) |
@@ -348,11 +348,11 @@ Regeln:
 
 ### 3.4 Request-Pipeline (Middleware + Endpoint-Filter)
 
-#### 3.4.1 Middleware-Reihenfolge `Plane.Api` (verbindlich, `PipelineExtensions.UsePlanePipeline`)
+#### 3.4.1 Middleware-Reihenfolge `Funk.Api` (verbindlich, `PipelineExtensions.UsePlanePipeline`)
 
 ```mermaid
 flowchart TB
-  A[ForwardedHeaders] --> B[PlaneExceptionHandler UseExceptionHandler]
+  A[ForwardedHeaders] --> B[FunkExceptionHandler UseExceptionHandler]
   B --> C[StatusCodeBodiesMiddleware 404/405/413 Körper]
   C --> D[RequestBodyLimitMiddleware 413 JSON]
   D --> E[ResponseCompression gzip]
@@ -370,20 +370,20 @@ flowchart TB
 
 | # | Komponente | Verhalten (Original-Bezug) | ab |
 |---|---|---|---|
-| 1 | `UseForwardedHeaders` | `X-Forwarded-For/-Proto/-Host`; `ForwardLimit` aus `NUM_PROXIES`, `ForwardedHeadersOptions.KnownIPNetworks` (`System.Net.IPNetwork`, geparst per `IPNetwork.Parse`) aus `Plane:ForwardedHeaders:KnownNetworks` (`A01` §3.5; die veraltete Eigenschaft `KnownNetworks` und `Microsoft.AspNetCore.HttpOverrides.IPNetwork` sind verboten, Warnung `ASPDEPR005` als Fehler; ABG-039) | I0 |
-| 2 | `UseExceptionHandler` + `PlaneExceptionHandler` | Abbildung `handle_exception` (§3.8.2). Registrierung `services.AddExceptionHandler<PlaneExceptionHandler>(); services.AddProblemDetails();` – ohne `AddProblemDetails` (oder `ExceptionHandlingPath`) wirft `app.UseExceptionHandler()` beim Start; ProblemDetails wird nur für `/health/*` verwendet | I0 |
+| 1 | `UseForwardedHeaders` | `X-Forwarded-For/-Proto/-Host`; `ForwardLimit` aus `NUM_PROXIES`, `ForwardedHeadersOptions.KnownIPNetworks` (`System.Net.IPNetwork`, geparst per `IPNetwork.Parse`) aus `Funk:ForwardedHeaders:KnownNetworks` (`A01` §3.5; die veraltete Eigenschaft `KnownNetworks` und `Microsoft.AspNetCore.HttpOverrides.IPNetwork` sind verboten, Warnung `ASPDEPR005` als Fehler; ABG-039) | I0 |
+| 2 | `UseExceptionHandler` + `FunkExceptionHandler` | Abbildung `handle_exception` (§3.8.2). Registrierung `services.AddExceptionHandler<FunkExceptionHandler>(); services.AddProblemDetails();` – ohne `AddProblemDetails` (oder `ExceptionHandlingPath`) wirft `app.UseExceptionHandler()` beim Start; ProblemDetails wird nur für `/health/*` verwendet | I0 |
 | 3 | `StatusCodeBodiesMiddleware` | ergänzt leere 404/405-Antworten des Routings um Original-Körper (§3.3.1 Regel 5) | I0 |
-| 4 | `RequestBodyLimitMiddleware` | `Plane:Uploads:MaxFileSizeBytes` (Alias `FILE_SIZE_LIMIT`, ABG-044) als `MaxRequestBodySize`; Überschreitung → 413 `{"error": "REQUEST_BODY_TOO_LARGE", "detail": "The size of the request body exceeds the maximum allowed size."}` (`API/middleware/request_body_size.py`) | I0 |
+| 4 | `RequestBodyLimitMiddleware` | `Funk:Uploads:MaxFileSizeBytes` (Alias `FILE_SIZE_LIMIT`, ABG-044) als `MaxRequestBodySize`; Überschreitung → 413 `{"error": "REQUEST_BODY_TOO_LARGE", "detail": "The size of the request body exceeds the maximum allowed size."}` (`API/middleware/request_body_size.py`) | I0 |
 | 5 | `UseResponseCompression` | gzip für `application/json` (Original `GZipMiddleware`) | I0 |
 | 6 | `TrailingSlashMiddleware` | D02-ADR-07; legt den **unveränderten** Pfad (inkl. Slash und Query) als `IOriginalPathFeature` ab – Request-Log (Nr. 7) und API-Activity-Log (Nr. 14) protokollieren diesen Original-Pfad wie Django `get_full_path()` | I0 |
 | 7 | `RequestLoggingMiddleware` | `"{METHOD} {full_path} {status}"` mit `path, method, status_code, duration_ms, remote_addr, user_agent, user_id` – nicht für `GET /`, `/health/*` (`API/middleware/logger.py`) | I0 |
 | 8 | `UseRouting` | **explizit** aufrufen: ohne expliziten Aufruf setzt `WebApplication` `UseRouting` an den Anfang der Pipeline, dann wirkt die Pfadänderung aus Nr. 6 nicht auf das Matching | I0 |
-| 9 | `UseCors` | nach `UseRouting`, vor `UseAuthentication` (Microsoft-Vorgabe für Endpoint-Routing); Policy `plane`: Origins aus `Plane:Cors:AllowedOrigins` (leer = nur eigene Origins aus `Plane:Urls`, Korrektur von `CORS_ALLOW_ALL_ORIGINS=True`, `A01` E-10, SEC-30 in 05), `AllowCredentials`, Header-Default + `X-API-Key` | I0 |
-| 10 | `UseAuthentication` | Policy-Scheme `Plane` wählt je Oberfläche: App/Space/Instance/Auth → `Session`; V1 → `ApiKey`, bei `Authorization: Bearer` und aktivem H1-Schalter → `Bearer`. Ergebnis: `PlanePrincipal` im `HttpContext.Features` (`IPlanePrincipalFeature`) | I0 |
-| 11 | `OriginCheckMiddleware` | Port `BaseSessionAuthentication.enforce_csrf` (`A01` §2.14): nur bei Cookie-Auth und Methode ∉ {GET, HEAD, OPTIONS, TRACE}; kein `Origin` → erlaubt; `Origin: null`/unparsebar → 403 `{"detail": "CSRF Failed: origin not allowed"}`; gleicher `host[:port]` → erlaubt; sonst Allowlist aus `Plane:Urls:*` ∪ `Plane:Cors:AllowedOrigins` ∪ `Plane:Security:TrustedOrigins`; Härtung aus D05-ADR-06: fehlt `Origin` und ist `Sec-Fetch-Site: cross-site` → 403 | I0 |
+| 9 | `UseCors` | nach `UseRouting`, vor `UseAuthentication` (Microsoft-Vorgabe für Endpoint-Routing); Policy `plane`: Origins aus `Funk:Cors:AllowedOrigins` (leer = nur eigene Origins aus `Funk:Urls`, Korrektur von `CORS_ALLOW_ALL_ORIGINS=True`, `A01` E-10, SEC-30 in 05), `AllowCredentials`, Header-Default + `X-API-Key` | I0 |
+| 10 | `UseAuthentication` | Policy-Scheme `Plane` wählt je Oberfläche: App/Space/Instance/Auth → `Session`; V1 → `ApiKey`, bei `Authorization: Bearer` und aktivem H1-Schalter → `Bearer`. Ergebnis: `FunkPrincipal` im `HttpContext.Features` (`IPlanePrincipalFeature`) | I0 |
+| 11 | `OriginCheckMiddleware` | Port `BaseSessionAuthentication.enforce_csrf` (`A01` §2.14): nur bei Cookie-Auth und Methode ∉ {GET, HEAD, OPTIONS, TRACE}; kein `Origin` → erlaubt; `Origin: null`/unparsebar → 403 `{"detail": "CSRF Failed: origin not allowed"}`; gleicher `host[:port]` → erlaubt; sonst Allowlist aus `Funk:Urls:*` ∪ `Funk:Cors:AllowedOrigins` ∪ `Funk:Security:TrustedOrigins`; Härtung aus D05-ADR-06: fehlt `Origin` und ist `Sec-Fetch-Site: cross-site` → 403 | I0 |
 | 12 | `RequestTimeZoneMiddleware` | setzt `IRequestTimeZone` (D02-ADR-21) | I0 |
 | 13 | `UseRateLimiter` | D02-ADR-17, §3.13 | I0 (`anon`), I1 |
-| 14 | `ApiActivityLogMiddleware` | nur V1 und nur mit `X-Api-Key`: puffert Request/Response (max. 64 KiB je Körper, Binärsignaturen → `[Binary Content]`), redigiert `x-api-key`, `authorization`, `cookie` → `[REDACTED]`, enqueued `ApiActivityLogJob` mit `token_identifier = token_hash` (SHA-256 des Tokens, 05 §3.12.2 / D05-ADR-16; der im Erstentwurf vorgesehene HMAC-Schlüssel `Plane:Security:ApiLogHmacKey` entfällt) (CE-API-003) | I6 |
+| 14 | `ApiActivityLogMiddleware` | nur V1 und nur mit `X-Api-Key`: puffert Request/Response (max. 64 KiB je Körper, Binärsignaturen → `[Binary Content]`), redigiert `x-api-key`, `authorization`, `cookie` → `[REDACTED]`, enqueued `ApiActivityLogJob` mit `token_identifier = token_hash` (SHA-256 des Tokens, 05 §3.12.2 / D05-ADR-16; der im Erstentwurf vorgesehene HMAC-Schlüssel `Funk:Security:ApiLogHmacKey` entfällt) (CE-API-003) | I6 |
 | 15 | Endpoints | Endpoint-Filter §3.4.2 | I0 |
 
 #### 3.4.2 Endpoint-Filter-Kette (in dieser Reihenfolge, angefügt durch die Oberfläche bzw. die Metadaten)
@@ -398,11 +398,11 @@ flowchart TB
 
 **Begründung der Reihenfolge Permission vor Validierung:** DRF prüft Permissions in `initial()` vor dem Serializer (`A03` §2.1.2). Ein Gast erhält deshalb auch bei ungültigem Körper 403, nicht 400 – Contract-Tests prüfen das.
 
-**Grenze (Review):** Minimal APIs binden Parameter – auch den JSON-Körper – **vor** den Endpoint-Filtern. Syntaktisch ungültiges JSON (400 `{"detail": "JSON parse error - …"}`) und falscher `Content-Type` (415) werden deshalb **vor** der Permission-Prüfung beantwortet; DRF parst `request.data` erst lazy im View und hätte einem Gast 403 geliefert. Das betrifft nur fehlerhafte Clients und wird als `DEV-JSON-002` geführt. Formal gültiges JSON mit Feldfehlern bleibt in der Original-Reihenfolge (403 vor 400), weil die Feldprüfung im `ValidationEndpointFilter` nach dem `PermissionEndpointFilter` läuft. Falls der Paritäts-Harness einen Client-relevanten Fall findet, wird ein `PlaneBody<T>`-Parameter mit `BindAsync` (nur Buffering, Deserialisierung im `ValidationEndpointFilter`) nachgerüstet – ohne Änderung der Handler-Signaturen außer dem Parametertyp.
+**Grenze (Review):** Minimal APIs binden Parameter – auch den JSON-Körper – **vor** den Endpoint-Filtern. Syntaktisch ungültiges JSON (400 `{"detail": "JSON parse error - …"}`) und falscher `Content-Type` (415) werden deshalb **vor** der Permission-Prüfung beantwortet; DRF parst `request.data` erst lazy im View und hätte einem Gast 403 geliefert. Das betrifft nur fehlerhafte Clients und wird als `DEV-JSON-002` geführt. Formal gültiges JSON mit Feldfehlern bleibt in der Original-Reihenfolge (403 vor 400), weil die Feldprüfung im `ValidationEndpointFilter` nach dem `PermissionEndpointFilter` läuft. Falls der Paritäts-Harness einen Client-relevanten Fall findet, wird ein `FunkBody<T>`-Parameter mit `BindAsync` (nur Buffering, Deserialisierung im `ValidationEndpointFilter`) nachgerüstet – ohne Änderung der Handler-Signaturen außer dem Parametertyp.
 
 ### 3.5 Tenant-Auflösung über den Workspace-Slug
 
-#### 3.5.1 Typen (`Plane.BuildingBlocks/Scoping`)
+#### 3.5.1 Typen (`Funk.BuildingBlocks/Scoping`)
 
 ```csharp
 public sealed record WorkspaceScope(Guid WorkspaceId, string Slug, bool Exists, string TimeZone, WorkspaceMembership? Membership);
@@ -426,31 +426,31 @@ public sealed record ProjectMembership(Guid MemberId, int Role, bool IsActive, G
 
 #### 3.5.3 Validierungsregeln Slug (bei Anlage/Änderung, nicht bei Auflösung)
 
-Regex `^[a-zA-Z0-9_-]+$`, Länge ≤ 48, nicht in `RestrictedWorkspaceSlugs` (vollständige Liste aus `API/utils/constants.py`, `A05` §2.7.8, Duplikate entfernt, Vergleich case-insensitive), global eindeutig (partieller Unique-Index). Ort: `Plane.Workspaces/Domain/WorkspaceSlugRules.cs` (CE-WS-001).
+Regex `^[a-zA-Z0-9_-]+$`, Länge ≤ 48, nicht in `RestrictedWorkspaceSlugs` (vollständige Liste aus `API/utils/constants.py`, `A05` §2.7.8, Duplikate entfernt, Vergleich case-insensitive), global eindeutig (partieller Unique-Index). Ort: `Funk.Workspaces/Domain/WorkspaceSlugRules.cs` (CE-WS-001).
 
 #### 3.5.4 Sicherheitsnetz `workspace_tenant`
 
-`PlaneDbContext` erhält über den Konstruktor `IWorkspaceContext`; benannter Filter `e => !_tenant.IsBound || e.WorkspaceId == _tenant.WorkspaceId`. Ist kein Workspace gebunden (z. B. `GET /api/users/me/workspaces/`, Worker-Jobs), greift der Filter nicht; Abfragen über mehrere Workspaces müssen dann explizit über Mitgliedschaften filtern. Jobs setzen den Kontext explizit (`using var _ = tenant.Bind(workspaceId)`). Pflicht-Test je Modul: Zugriff mit fremdem Slug liefert die Original-Ablehnung und **nie** Daten des fremden Workspaces (01 §7.9).
+`FunkDbContext` erhält über den Konstruktor `IWorkspaceContext`; benannter Filter `e => !_tenant.IsBound || e.WorkspaceId == _tenant.WorkspaceId`. Ist kein Workspace gebunden (z. B. `GET /api/users/me/workspaces/`, Worker-Jobs), greift der Filter nicht; Abfragen über mehrere Workspaces müssen dann explizit über Mitgliedschaften filtern. Jobs setzen den Kontext explizit (`using var _ = tenant.Bind(workspaceId)`). Pflicht-Test je Modul: Zugriff mit fremdem Slug liefert die Original-Ablehnung und **nie** Daten des fremden Workspaces (01 §7.9).
 
 ### 3.6 Permission-Katalog und CE-Rollen-Mapping (Port von `allow_permission`)
 
-**Normative Quelle (Review):** Keys, Rollenmengen, Regeln je Endpunkt und die Evaluator-Reihenfolge legt **05 §3.13 + Anhang A/B** fest (generiert aus `migration/architecture/_data/05-permission-matrix.json` durch `tools/Plane.PermissionGen`, 05 §5.8). Dieser Abschnitt beschreibt die **Mechanik** (Typen, Ort, Filter, Fehlerkörper) und ergänzt genau eine Regel (`Prerequisite`), die 05 für die „∧“-Zeilen von Anhang B braucht. Ein Agent schreibt **keine** Deskriptoren von Hand; er nutzt die generierten `<M>Permissions.g.cs`-Konstanten.
+**Normative Quelle (Review):** Keys, Rollenmengen, Regeln je Endpunkt und die Evaluator-Reihenfolge legt **05 §3.13 + Anhang A/B** fest (generiert aus `migration/architecture/_data/05-permission-matrix.json` durch `tools/Funk.PermissionGen`, 05 §5.8). Dieser Abschnitt beschreibt die **Mechanik** (Typen, Ort, Filter, Fehlerkörper) und ergänzt genau eine Regel (`Prerequisite`), die 05 für die „∧“-Zeilen von Anhang B braucht. Ein Agent schreibt **keine** Deskriptoren von Hand; er nutzt die generierten `<M>Permissions.g.cs`-Konstanten.
 
 #### 3.6.1 Bausteine
 
 | Typ | Projekt | Aufgabe |
 |---|---|---|
-| `Permission(string Key, ScopeLevel Scope, string? ApiScope)` | `Plane.BuildingBlocks/Security` (Signatur 01 §5.5) | Schlüssel; `ScopeLevel` ∈ {`Anonymous`, `Authenticated`, `Instance`, `User`, `Workspace`, `Project`, `Public`, `Teamspace` (B1, in CE ungenutzt)} – entspricht den 05-Ebenen `ANON`, `AUTH`, `INST`, `user`, `WS`, `PRJ`, `public` |
-| `PermissionDescriptor(Permission Permission, IReadOnlySet<SystemRoleLevel> Roles, DenyStyle Deny, string OriginalCheck)` mit Fabriken `PermissionDescriptor.Workspace(key, roles, denyStyle, apiScope)`, `.Project(…)`, `.Instance(…)`, `.Authenticated(…)`, `.User(…)`, `.Public(…)` | `Plane.Authorization.Contracts` | Katalogeintrag (generiert); `OriginalCheck` = Spalte „Original-Prüfung“ aus 05 Anhang B (z. B. `"WS(A,M) ∧ PRJ⁺(A)"`) |
+| `Permission(string Key, ScopeLevel Scope, string? ApiScope)` | `Funk.BuildingBlocks/Security` (Signatur 01 §5.5) | Schlüssel; `ScopeLevel` ∈ {`Anonymous`, `Authenticated`, `Instance`, `User`, `Workspace`, `Project`, `Public`, `Teamspace` (B1, in CE ungenutzt)} – entspricht den 05-Ebenen `ANON`, `AUTH`, `INST`, `user`, `WS`, `PRJ`, `public` |
+| `PermissionDescriptor(Permission Permission, IReadOnlySet<SystemRoleLevel> Roles, DenyStyle Deny, string OriginalCheck)` mit Fabriken `PermissionDescriptor.Workspace(key, roles, denyStyle, apiScope)`, `.Project(…)`, `.Instance(…)`, `.Authenticated(…)`, `.User(…)`, `.Public(…)` | `Funk.Authorization.Contracts` | Katalogeintrag (generiert); `OriginalCheck` = Spalte „Original-Prüfung“ aus 05 Anhang B (z. B. `"WS(A,M) ∧ PRJ⁺(A)"`) |
 | `enum DenyStyle { Error, Detail }` | dto. | Fehlerkörper (D02-ADR-05, D05-ADR-20) |
-| `enum SystemRoleLevel { Guest = 5, Member = 15, Admin = 20 }` + `static class SystemRoles` (feste UUIDv7 der sechs System-Rollen) | dto. (Namen aus 05 §3.13.3) | einziger Ort mit Rollenzahlen (Analyzer `PLANE0001`) |
+| `enum SystemRoleLevel { Guest = 5, Member = 15, Admin = 20 }` + `static class SystemRoles` (feste UUIDv7 der sechs System-Rollen) | dto. (Namen aus 05 §3.13.3) | einziger Ort mit Rollenzahlen (Analyzer `FUNK0001`) |
 | `abstract record PermissionRule` mit `Creator<TEntity>(string routeParam = "pk", bool requireMembership = true)`, `Own`, `Self`, `GuestVisibility`, `PageAccess` (umfasst den Eigentümer-Bypass der Pages, 05 §3.13.5 Schritt 3), `Board`, `WorkspaceAdminOrProjectAdmin`, `ProjectMemberOfBody` (05 §5.8) **+** `Prerequisite(PermissionDescriptor)` (dieses Dokument). Kanonische Namen nach ABG-036; `CreatorBypass`, `OwnerBypass`, `InstanceAdminOnly`, `AnyAuthenticated`, `WorkspaceAdminOverride`, `ActiveWorkspaceMember` existieren **nicht** (INST = `PermissionDescriptor.Instance(...)`, AUTH = `PermissionDescriptor.Authenticated(...)`, WS-Admin-Override = Evaluator-Schritt, §3.6.2) | dto. | Endpunkt-Regeln |
 | `IPermissionCatalog` | dto. | alle Deskriptoren (aus `IModule.Permissions`), Lookup per Key; Startprüfung: Keys eindeutig, jede `Prerequisite` referenziert einen Katalog-Key, keine Zyklen |
 | `public sealed record RoleDefinition(Guid Id, string Namespace, string Slug, string Name, int Level, bool IsSystem, IReadOnlySet<string> Grants)` | dto. (Signatur 05 §5.8, ABG-038; ersetzt die Erstfassung `…ScopeLevel Scope, int LegacyValue…`) | Rolle als Grant-Menge; `Namespace` ∈ {`workspace`, `project`}; `Name` = Anzeigename (System-Rollen: englischer Original-Text „Admin“/„Member“/„Guest“); `Level` = API-Wert `role` (20/15/5 für System-Rollen) |
 | `IRoleDefinitionProvider` | dto. (Signatur 01 §5.5 / 05 §5.8) | CE: `SystemRoleProvider`; Erweiterung der System-Grants durch Pakete über `ISystemRoleGrantContributor` (16 E-09) |
-| `IPermissionEvaluator` | dto. (Signatur 01 §5.5) | CE: `PermissionEvaluator` in `Plane.Authorization` |
+| `IPermissionEvaluator` | dto. (Signatur 01 §5.5) | CE: `PermissionEvaluator` in `Funk.Authorization` |
 | `IVisibilityFilter<TEntity>` | dto. | Gast-Sichtbarkeit als Query-Prädikat (01 §5.5); komponierbar (`CompositeVisibilityFilter<T>`, B1) |
-| Tabelle `roles` | `Plane.Data/Entities/Authorization/Role.cs` | Spalten und Seeds **wie 05 §3.13.3** (`id`, `workspace_id` NULL = System, `namespace`, `slug`, `name`, `level`, `is_system`, `sort_order`); `role_permissions` (CE leer, E5) |
+| Tabelle `roles` | `Funk.Data/Entities/Authorization/Role.cs` | Spalten und Seeds **wie 05 §3.13.3** (`id`, `workspace_id` NULL = System, `namespace`, `slug`, `name`, `level`, `is_system`, `sort_order`); `role_permissions` (CE leer, E5) |
 
 #### 3.6.2 Auswertungsalgorithmus
 
@@ -494,34 +494,34 @@ Jede Original-Permission-Klasse (`API/app/permissions/*.py`, `A06` §2.10) und j
 
 **Kombination (Beispiel Labels):** `POST {P}/issue-labels/` = `.RequirePermission(ProjectsPermissions.ProjectLabelCreate, PermissionRule.Prerequisite(StandardPermissions.WorkspaceProjectBaseCreate))`. Ergebnis wie Original: WS-Gast → 403 Detail-Text; WS-Member und Projekt-Member → 403 Error-Text; Projekt-Admin oder WS-Admin mit aktiver Projektmitgliedschaft → erlaubt. `POST {P}/bulk-create-labels/` nutzt **denselben** Key ohne Vorbedingung (Original: `BaseAPIView` mit `IsAuthenticated` + `allow_permission([ADMIN])`).
 
-`StandardPermissions` (`Plane.Authorization.Contracts/StandardPermissions.cs`, generiert) enthält je Original-Klasse × Methodengruppe genau einen Deskriptor für die Verwendung als Vorbedingung: `WorkspaceProjectBaseRead` (`workspace.project_base.read`, WS(A,M,G), Detail), `WorkspaceProjectBaseCreate` (`workspace.project_base.create`, WS(A,M), Detail), `ProjectProjectBaseWrite` (`project.project_base.write`, PRJ(A), Detail), `ProjectEntityRead`/`ProjectEntityWrite`, `ProjectMemberRead`/`ProjectMemberWrite`, `WorkspaceEntityRead`/`WorkspaceEntityWrite`, `InstanceAdmin`. Diese Keys sind reine Vorbedingungs-Keys (in 05 Anhang A als „intern“ zu führen, siehe Review-Protokoll K-04).
+`StandardPermissions` (`Funk.Authorization.Contracts/StandardPermissions.cs`, generiert) enthält je Original-Klasse × Methodengruppe genau einen Deskriptor für die Verwendung als Vorbedingung: `WorkspaceProjectBaseRead` (`workspace.project_base.read`, WS(A,M,G), Detail), `WorkspaceProjectBaseCreate` (`workspace.project_base.create`, WS(A,M), Detail), `ProjectProjectBaseWrite` (`project.project_base.write`, PRJ(A), Detail), `ProjectEntityRead`/`ProjectEntityWrite`, `ProjectMemberRead`/`ProjectMemberWrite`, `WorkspaceEntityRead`/`WorkspaceEntityWrite`, `InstanceAdmin`. Diese Keys sind reine Vorbedingungs-Keys (in 05 Anhang A als „intern“ zu führen, siehe Review-Protokoll K-04).
 
 #### 3.6.4 CE-Rollen-Mapping (`SystemRoleProvider`)
 
 Die Grant-Mengen der sechs System-Rollen (`workspace.admin/member/guest`, `project.admin/member/guest`) entstehen **beim Build** aus der Matrix-Datei (Generator-Ausgabe `SystemRoleGrants.g.cs`, 05 §3.13.3) – nicht von Hand und nicht zur Laufzeit aus Vorlagen. Pakete ergänzen Grants für ihre neuen Keys über `ISystemRoleGrantContributor` (16 E-09), ohne `SystemRoleProvider` zu ändern. Die Tabelle `roles` speichert nur Kopfzeilen; `role_permissions` existiert im Schema (leer für Systemrollen, E5 befüllt sie für Custom Roles). Ein Snapshot-Test (`SystemRolePermissionsSnapshotTests`) friert die Mengen als Golden-File ein und vergleicht sie mit `05-permission-matrix.json`.
 
-Der Workspace-Admin-Override ist **grant-basiert** (ABG-037): interner Key `workspace.admin_override` in `InternalPermissionKeys` (kein Endpunkt-Key, nicht in 05 Anhang A; Grant in der CE **nur** für die System-Rolle `workspace.admin`). Der Evaluator prüft in 05 §3.13.4 Schritt 8 `wsRole.Grants ∋ "workspace.admin_override"` – **nie** eine Rollenzahl (`ws.level == 20` ist verboten, Analyzer `PLANE0001`). E5-Custom-Roles erhalten den Override über diesen Grant; eine bekannte Grenze besteht damit nicht mehr (Review-Protokoll K-03 erledigt).
+Der Workspace-Admin-Override ist **grant-basiert** (ABG-037): interner Key `workspace.admin_override` in `InternalPermissionKeys` (kein Endpunkt-Key, nicht in 05 Anhang A; Grant in der CE **nur** für die System-Rolle `workspace.admin`). Der Evaluator prüft in 05 §3.13.4 Schritt 8 `wsRole.Grants ∋ "workspace.admin_override"` – **nie** eine Rollenzahl (`ws.level == 20` ist verboten, Analyzer `FUNK0001`). E5-Custom-Roles erhalten den Override über diesen Grant; eine bekannte Grenze besteht damit nicht mehr (Review-Protokoll K-03 erledigt).
 
 #### 3.6.5 Gast-Sichtbarkeit und fachliche Prädikate
 
 | Prädikat (Original, `A03` §2.4.4) | Ziel | Ort |
 |---|---|---|
-| `_visible_issues_q` | `WorkItemVisibilityFilter : IVisibilityFilter<WorkItem>` – aktive, nicht gelöschte Projektmitgliedschaft **und** (`pm.level > 5` **oder** `guest_view_all_features` **oder** `created_by_id = user`) in **einem** `Any(...)`; vollständige Liste der Filter (Kommentare, Versionen, Intake, Views) in 05 §3.14 | `Plane.Authorization/Visibility/` (05 §3.14; Erstfassung `Plane.WorkItems/Application/Services` korrigiert) |
+| `_visible_issues_q` | `WorkItemVisibilityFilter : IVisibilityFilter<WorkItem>` – aktive, nicht gelöschte Projektmitgliedschaft **und** (`pm.level > 5` **oder** `guest_view_all_features` **oder** `created_by_id = user`) in **einem** `Any(...)`; vollständige Liste der Filter (Kommentare, Versionen, Intake, Views) in 05 §3.14 | `Funk.Authorization/Visibility/` (05 §3.14; Erstfassung `Funk.WorkItems/Application/Services` korrigiert) |
 | Gast-Filter `IssueViewSet.list` | dasselbe Prädikat auf Projekt-Ebene vor Zählung und Pagination | dto. |
-| `is_sole_admin_of_any_project` | `ProjectMembershipRules.IsSoleAdminOfAnyProject` (Zählung wie Original **inkl.** inaktiver und gelöschter Zeilen – fachliche Parität, `A03` §2.4.4) | `Plane.Projects/Domain` |
-| `can_write_project` | Permission `project.work_item.create` (`PRJ(A,M)`, Override HARM-00) | `Plane.WorkItems` |
-| `get_favorite_entities` | `IFavoriteVisibility` je Entitätstyp | `Plane.Workspaces` |
-| `ProjectPagePermission` Link-Prüfung | Regel `PermissionRule.PageAccess` (05 §3.13.5) | `Plane.Authorization/Rules/PageAccessRule.cs` |
+| `is_sole_admin_of_any_project` | `ProjectMembershipRules.IsSoleAdminOfAnyProject` (Zählung wie Original **inkl.** inaktiver und gelöschter Zeilen – fachliche Parität, `A03` §2.4.4) | `Funk.Projects/Domain` |
+| `can_write_project` | Permission `project.work_item.create` (`PRJ(A,M)`, Override HARM-00) | `Funk.WorkItems` |
+| `get_favorite_entities` | `IFavoriteVisibility` je Entitätstyp | `Funk.Workspaces` |
+| `ProjectPagePermission` Link-Prüfung | Regel `PermissionRule.PageAccess` (05 §3.13.5) | `Funk.Authorization/Rules/PageAccessRule.cs` |
 
-Der Vergleich `pm.level > 5` steht ausschließlich in `Plane.Authorization/Visibility/*` (Analyzer `PLANE0001` erlaubt Rollenzahlen nur dort und in `SystemRoles`). Der Key `project.work_item.read_all` ist in der CE **reserviert** und unbenutzt (05 `ReservedPermissionKeys`); E5 ersetzt das Level-Prädikat später durch „Rolle hat Grant `project.work_item.read_all`“ (Korrektur der Erstfassung, die den Key schon in der CE vergab).
+Der Vergleich `pm.level > 5` steht ausschließlich in `Funk.Authorization/Visibility/*` (Analyzer `FUNK0001` erlaubt Rollenzahlen nur dort und in `SystemRoles`). Der Key `project.work_item.read_all` ist in der CE **reserviert** und unbenutzt (05 `ReservedPermissionKeys`); E5 ersetzt das Level-Prädikat später durch „Rolle hat Grant `project.work_item.read_all`“ (Korrektur der Erstfassung, die den Key schon in der CE vergab).
 
 ### 3.7 Validierung
 
 | Aspekt | Regel |
 |---|---|
-| Stufe 1 (Form) | `AbstractValidator<TRequest>` in `Plane.<M>/Validation/`, registriert per `services.AddValidatorsFromAssemblyContaining<<M>Module>(ServiceLifetime.Scoped, includeInternalTypes: true)` (ein Aufruf je Modul registriert Stufe 1 **und** Stufe 2; `Scoped`, weil Stufe-2-Validatoren `PlaneDbContext` injizieren – `Singleton` würde den scoped Kontext einfangen, Korrektur im Review); nur synchron, kein DB-Zugriff |
-| Stufe 2 (Kontext) | `AbstractValidator<TCommand>` neben dem Handler; `ValidationBehavior<TCommand,TResult>` ruft `ValidateAsync`; darf `PlaneDbContext` (read-only) nutzen |
-| Fehlerform | `PlaneError.Fields(IReadOnlyDictionary<string, IReadOnlyList<string>>)` → 400 `{"<feld>": ["<meldung>", …]}`; Property-Name per `JsonNamingPolicy.SnakeCaseLower` bzw. `OverridePropertyName("label_ids")`; objektübergreifende Fehler unter `non_field_errors` |
+| Stufe 1 (Form) | `AbstractValidator<TRequest>` in `Plane.<M>/Validation/`, registriert per `services.AddValidatorsFromAssemblyContaining<<M>Module>(ServiceLifetime.Scoped, includeInternalTypes: true)` (ein Aufruf je Modul registriert Stufe 1 **und** Stufe 2; `Scoped`, weil Stufe-2-Validatoren `FunkDbContext` injizieren – `Singleton` würde den scoped Kontext einfangen, Korrektur im Review); nur synchron, kein DB-Zugriff |
+| Stufe 2 (Kontext) | `AbstractValidator<TCommand>` neben dem Handler; `ValidationBehavior<TCommand,TResult>` ruft `ValidateAsync`; darf `FunkDbContext` (read-only) nutzen |
+| Fehlerform | `FunkError.Fields(IReadOnlyDictionary<string, IReadOnlyList<string>>)` → 400 `{"<feld>": ["<meldung>", …]}`; Property-Name per `JsonNamingPolicy.SnakeCaseLower` bzw. `OverridePropertyName("label_ids")`; objektübergreifende Fehler unter `non_field_errors` |
 | Meldungstexte | ausschließlich aus `DrfMessages` (DRF 3.17, Original-Version `djangorestframework==3.17.2`) oder Original-Fehlercodes (`"LABEL_NAME_ALREADY_EXISTS"`): `Required = "This field is required."`, `Null = "This field may not be null."`, `Blank = "This field may not be blank."`, `MaxLength(n) = "Ensure this field has no more than {n} characters."`, `MinLength(n) = "Ensure this field has at least {n} characters."`, `InvalidUuid = "Must be a valid UUID."`, `InvalidChoice(v) = "\"{v}\" is not a valid choice."`, `InvalidInteger = "A valid integer is required."`, `InvalidNumber = "A valid number is required."`, `InvalidBoolean = "Must be a valid boolean."`, `InvalidDate = "Date has wrong format. Use one of these formats instead: YYYY-MM-DD."`, `InvalidDateTime = "Datetime has wrong format. Use one of these formats instead: YYYY-MM-DDThh:mm[:ss[.uuuuuu]][+HH:MM\|-HH:MM\|Z]."`, `PkDoesNotExist(v) = "Invalid pk \"{v}\" - object does not exist."`, `NotAList(t) = "Expected a list of items but got type \"{t}\"."`, `InvalidEmail = "Enter a valid email address."`, `InvalidUrl = "Enter a valid URL."`, `MaxValue(n) = "Ensure this value is less than or equal to {n}."`, `MinValue(n) = "Ensure this value is greater than or equal to {n}."` |
 | JSON-Parsefehler | 400 `{"detail": "JSON parse error - <Text>"}`; `<Text>` darf vom Python-Text abweichen (`DEV-JSON-001`, Contract-Test vergleicht nur Präfix `JSON parse error - `) |
 | Falscher Content-Type | 415 `{"detail": "Unsupported media type \"<type>\" in request."}` |
@@ -530,7 +530,7 @@ Der Vergleich `pm.level > 5` steht ausschließlich in `Plane.Authorization/Visib
 
 ### 3.8 Fehlerformate und Fehlerkatalog
 
-#### 3.8.1 Fehlerfabrik `PlaneErrors` (`Plane.BuildingBlocks/Results` + Abbildung in `Plane.BuildingBlocks.Web/Errors`)
+#### 3.8.1 Fehlerfabrik `FunkErrors` (`Funk.BuildingBlocks/Results` + Abbildung in `Funk.BuildingBlocks.Web/Errors`)
 
 | Fabrikmethode | HTTP | Körper | Original-Beispiel |
 |---|---|---|---|
@@ -544,39 +544,39 @@ Der Vergleich `pm.level > 5` steht ausschließlich in `Plane.Authorization/Visib
 | `Redirect(url, code, key, payload?)` | 302 | – (Query `error_code`, `error_message`, payload) | Auth-Fehler (`get_safe_redirect_url`) |
 | Konstanten | – | – | `NotAuthenticated` (401 `detail`), `PermissionDeniedError` (403 `error`), `PermissionDeniedDetail` (403 `detail`), `NotFound` (404 `{"error": "The required object does not exist."}`), `PageNotFound` (404 `{"error": "Page not found."}`), `InvalidPayload` (400 `{"error": "The payload is not valid"}`), `InvalidDetail` (400 `{"error": "Please provide valid detail"}`), `RequiredKeyMissing` (400 `{"error": "The required key does not exist."}`), `ServerError` (500 `{"error": "Something went wrong please try again later"}`), `RateLimited` (429 coded 5900), `BodyTooLarge` (413), `CsrfOriginDenied` (403 `{"detail": "CSRF Failed: origin not allowed"}`); Meldungskonstante `DrfMessages.NullCharacters = "Null characters are not allowed."` (für `DrfList`, ABG-129) |
 
-#### 3.8.2 Abbildung unerwarteter Ausnahmen (`PlaneExceptionHandler`, Port `BaseViewSet.handle_exception` + `auth_exception_handler`)
+#### 3.8.2 Abbildung unerwarteter Ausnahmen (`FunkExceptionHandler`, Port `BaseViewSet.handle_exception` + `auth_exception_handler`)
 
 | Ausnahme (.NET) | Entspricht (Original) | Antwort | Log |
 |---|---|---|---|
 | `DbUpdateException` mit `PostgresException.SqlState = 23505` (Unique) oder `23503` (FK) oder `23514` (Check) | `IntegrityError` | 400 `{"error": "The payload is not valid"}` | Warnung `plane.exception` |
 | `DbUpdateException` 23505 mit Constraint-Name aus `IUniqueViolationMap` (Modul-Registrierung, z. B. `unique_project_name_when_not_deleted` → `Plain(400, "Label with the same name already exists in the project")`) | `except IntegrityError` im View | endpunktspezifischer Körper laut Map (Auswertung im `TransactionBehavior`, nicht im globalen Handler) | – |
 | `EntityNotFoundException` (aus `FirstOrThrowAsync`-Helfer) | `ObjectDoesNotExist` | 404 `{"error": "The required object does not exist."}` | – |
-| `PlaneValidationException` (nur Bibliotheksfehler, nicht für erwartete Fehler) | Django-`ValidationError` | 400 `{"error": "Please provide valid detail"}` | Warnung |
+| `FunkValidationException` (nur Bibliotheksfehler, nicht für erwartete Fehler) | Django-`ValidationError` | 400 `{"error": "Please provide valid detail"}` | Warnung |
 | `RequiredKeyMissingException` | `KeyError` | 400 `{"error": "The required key does not exist."}` | Info |
 | `BadHttpRequestException` (413) | `RequestDataTooBig` | 413 Body wie §3.4.1 Nr. 4 | – |
 | `JsonException` beim Binding | DRF `ParseError` | 400 `{"detail": "JSON parse error - …"}` | – |
-| `PlaneErrorException(PlaneError)` (nur in Building Blocks, die keinen `Result` zurückgeben können, z. B. `CursorPaginator`, `PaginationQuery.Bind`) | DRF `ParseError`/`APIException` | Körper gemäß `PlaneError` (§5.1.4) | – |
+| `FunkErrorException(FunkError)` (nur in Building Blocks, die keinen `Result` zurückgeben können, z. B. `CursorPaginator`, `PaginationQuery.Bind`) | DRF `ParseError`/`APIException` | Körper gemäß `FunkError` (§5.1.4) | – |
 | `OperationCanceledException` bei abgebrochener Verbindung | – | 499 (kein Körper), kein Error-Log | Debug |
 | alle anderen | `Exception` | 500 `{"error": "Something went wrong please try again later"}` | Error `plane.exception` mit Exception + Trace-ID |
 
 #### 3.8.3 Fehlercode-Katalog (Werte aus `API/utils/error_codes.py` und `API/authentication/adapter/error.py`)
 
-Zwei Kataloge, eine Fabrik (`PlaneErrors.Coded(status, code)`):
+Zwei Kataloge, eine Fabrik (`FunkErrors.Coded(status, code)`):
 
 | Katalog | Ort | Inhalt | Status in der Zielplattform |
 |---|---|---|---|
-| `PlaneErrorCodes` (fachlich, `ERROR_CODES`) | `Plane.BuildingBlocks/Results/PlaneErrorCodes.cs` | `INVALID_ARCHIVE_STATE_GROUP` 4091, `INVALID_ISSUE_DATES` 4100, `INVALID_ISSUE_START_DATE` 4101, `INVALID_ISSUE_TARGET_DATE` 4102, `PAGE_LOCKED` 4701, `PAGE_ARCHIVED` 4702, `RATE_LIMIT_EXCEEDED` 5900 | übernommen (4100–4102 im Original definiert, aber ungenutzt – Konstanten bleiben, Nutzung in 04) |
-| `AuthErrorCodes` (`AUTHENTICATION_ERROR_CODES`) | `Plane.Identity.Contracts/AuthErrorCodes.cs` – **verbindlich 05 §4.3** | **alle** Original-Codes 5000–5999 (Vertrag mit den Frontend-Enums, E-26), je Code Status „aktiv“ oder „ruhend“; aktiv u. a. 5000, 5005, 5010, 5015 `SIGNUP_DISABLED`, 5017, 5019, 5124 `OAUTH_PROVIDER_UNVERIFIED_EMAIL`, 5150, 5155, 5175, 5190, 5900, 5999; **neu** 5200 `OIDC_AUTHENTICATION_FAILED`, 5201 `IDENTITY_PROVIDER_UNAVAILABLE`, 5202 `IDENTITY_ALREADY_LINKED`, 5210 `ADMIN_REAUTHENTICATION_REQUIRED` | Bereich 5200–5299 für Keycloak-Flows reserviert |
+| `FunkErrorCodes` (fachlich, `ERROR_CODES`) | `Funk.BuildingBlocks/Results/FunkErrorCodes.cs` | `INVALID_ARCHIVE_STATE_GROUP` 4091, `INVALID_ISSUE_DATES` 4100, `INVALID_ISSUE_START_DATE` 4101, `INVALID_ISSUE_TARGET_DATE` 4102, `PAGE_LOCKED` 4701, `PAGE_ARCHIVED` 4702, `RATE_LIMIT_EXCEEDED` 5900 | übernommen (4100–4102 im Original definiert, aber ungenutzt – Konstanten bleiben, Nutzung in 04) |
+| `AuthErrorCodes` (`AUTHENTICATION_ERROR_CODES`) | `Funk.Identity.Contracts/AuthErrorCodes.cs` – **verbindlich 05 §4.3** | **alle** Original-Codes 5000–5999 (Vertrag mit den Frontend-Enums, E-26), je Code Status „aktiv“ oder „ruhend“; aktiv u. a. 5000, 5005, 5010, 5015 `SIGNUP_DISABLED`, 5017, 5019, 5124 `OAUTH_PROVIDER_UNVERIFIED_EMAIL`, 5150, 5155, 5175, 5190, 5900, 5999; **neu** 5200 `OIDC_AUTHENTICATION_FAILED`, 5201 `IDENTITY_PROVIDER_UNAVAILABLE`, 5202 `IDENTITY_ALREADY_LINKED`, 5210 `ADMIN_REAUTHENTICATION_REQUIRED` | Bereich 5200–5299 für Keycloak-Flows reserviert |
 
 Korrektur im Review: Die Erstfassung legte die entfallenen Login-Codes **nicht** an und vergab 5200–5202 mit anderen Namen (`OIDC_PROVIDER_ERROR`, `OIDC_EMAIL_NOT_VERIFIED`, `OIDC_STATE_MISMATCH`); maßgeblich ist 05 §4.3 (ruhende Codes bleiben im Katalog, damit die portierten Frontend-Enums unverändert bleiben).
 
-Test `PlaneErrorCodesTests`: Werte beider Kataloge eindeutig und disjunkt, Namen = Konstantennamen, Inhalt von `AuthErrorCodes` = Tabelle 05 §4.3.
+Test `FunkErrorCodesTests`: Werte beider Kataloge eindeutig und disjunkt, Namen = Konstantennamen, Inhalt von `AuthErrorCodes` = Tabelle 05 §4.3.
 
 ### 3.9 JSON-Konventionen
 
 | Thema | Regel | Converter/Ort | Test |
 |---|---|---|---|
-| Benennung | `SnakeCaseLower`; Felder mit `__` oder abweichender Schreibung per `[JsonPropertyName("state__group")]` | `PlaneJsonOptions` | Snapshot je DTO |
+| Benennung | `SnakeCaseLower`; Felder mit `__` oder abweichender Schreibung per `[JsonPropertyName("state__group")]` | `FunkJsonOptions` | Snapshot je DTO |
 | `null` | wird geschrieben; Lesen: `null` für Nicht-Nullable-Felder → Feldfehler `This field may not be null.` | `DefaultIgnoreCondition = Never` | – |
 | Unbekannte Felder | ignoriert | `UnmappedMemberHandling = Skip` | – |
 | UUID | lowercase, Bindestriche; Eingabe toleriert Großbuchstaben und Format ohne Bindestriche wie Django `UUIDField` | `LowercaseGuidConverter` | Eingabe `"A1B2…"` |
@@ -589,13 +589,13 @@ Test `PlaneErrorCodesTests`: Werte beider Kataloge eindeutig und disjunkt, Namen
 | Binärdaten | `description_binary` als Base64-String (DRF `ModelField`, `A03` §2.3) | `Base64BytesConverter` | – |
 | Gruppenschlüssel | Strings: `str(uuid)`, `"None"`, `"YYYY-MM-DD"`, Enum-Text | `GroupKeyFormatter` (§3.11.5) | – |
 | Kommastellen-Cursor | Strings (`"50:1:0"`) | – | – |
-| Zeitzonenwahl | `Plane:Json:DateTimeOutputZone` (`Utc` Default; `RequestTimeZone` → Offset der Nutzerzeitzone wie DRF `enforce_timezone`) | `DrfDateTimeOffsetConverter` liest `IRequestTimeZone` über `AsyncLocal`-freien Weg: Serialisierung in `ResultExtensions` mit pro Request erzeugten Options-Kopien **nur** bei `RequestTimeZone` | Paritätstest S11 |
+| Zeitzonenwahl | `Funk:Json:DateTimeOutputZone` (`Utc` Default; `RequestTimeZone` → Offset der Nutzerzeitzone wie DRF `enforce_timezone`) | `DrfDateTimeOffsetConverter` liest `IRequestTimeZone` über `AsyncLocal`-freien Weg: Serialisierung in `ResultExtensions` mit pro Request erzeugten Options-Kopien **nur** bei `RequestTimeZone` | Paritätstest S11 |
 
 **Befund B-02 (Zeitzone):** DRF-`DateTimeField.to_representation` ruft `enforce_timezone` und gibt aware Datetimes in der **aktiven** Zeitzone aus; `TimezoneMixin` aktiviert pro Request die Nutzerzeitzone (`API/app/views/base.py`). Serializer-basierte Antworten (z. B. `LabelDto` hat keine Zeitfelder, aber `ProjectListSerializer`, `CycleSerializer`) liefern daher bei Nutzern mit `user_timezone ≠ UTC` Offsets wie `+02:00`, während `.values()`-Pfade (`issue_on_results`, `A04` §2.17.1) UTC mit `Z` liefern. Instant-semantisch sind beide gleich; 01 §7.3 legt UTC fest. Der Paritäts-Harness (S11) läuft deshalb mit zwei Testnutzern (`UTC`, `Europe/Berlin`); zeigt sich, dass das Frontend Zeitstrings textuell auswertet (z. B. `split("T")[0]`), wird `RequestTimeZone` für die betroffenen DTOs aktiviert (O-D02-01).
 
 ### 3.10 Pagination
 
-#### 3.10.1 Typen (`Plane.BuildingBlocks/Pagination`, Antwortformen exakt `A03` §2.2 / `A04` §2.17.2)
+#### 3.10.1 Typen (`Funk.BuildingBlocks/Pagination`, Antwortformen exakt `A03` §2.2 / `A04` §2.17.2)
 
 ```csharp
 public readonly record struct Cursor(double Value, int Offset, bool IsPrev)        // "value:offset:is_prev"
@@ -680,16 +680,16 @@ Projekte und Orte:
 
 | Baustein | Typ | Ort |
 |---|---|---|
-| AST, Operatoren, Feld-/Gruppen-/Sortier-Definitionen, Provider-Interfaces | `FilterExpression`, `And`, `Or`, `Not`, `Condition`, `FilterOperator`, `FilterFieldDefinition`, `GroupKeyDefinition`, `OrderKeyDefinition`, `IFilterFieldProvider`, `IGroupKeyProvider`, `IOrderKeyProvider`, `WorkItemListRequest`, `IWorkItemQueryService` | `Plane.WorkItems.Contracts/Query/` |
-| Übersetzer-Schnittstellen (EF-gebunden) | `IWorkItemFilterTranslator`, `IWorkItemGroupExpressionProvider`, `IWorkItemOrderExpressionProvider` | `Plane.Data/Querying/WorkItems/` |
-| Parser | `LegacyFilterParser`, `RichFilterParser`, `LegacyDateTermParser` | `Plane.WorkItems/Query/Parsing/` |
-| Compiler | `WorkItemFilterCompiler`, `ExpressionCombiner` | `Plane.WorkItems/Query/Compilation/` |
-| Basismengen-Prädikate | `WorkItemBaseSetPredicates` (`IssueObjects`, `AllObjects` als `Expression<Func<WorkItem,bool>>`; lesend genutzt von `Plane.WorkItems` und `Plane.Search`, R1; Andockstelle `IWorkItemBaseSetFilter` (E-04) in beiden angewandt; ABG-130) | `Plane.Data/Querying/WorkItems/WorkItemBaseSetPredicates.cs` |
-| Basismengen | `WorkItemBaseSets` (`IssueObjects`, `AllObjects`, `Archived`, `CycleIssues`, `ModuleIssues`, `WorkspaceView`, `DetailWithRights`, `ById`, `ProfileIssues`, `SpaceBoard`) – nutzt `WorkItemBaseSetPredicates` | `Plane.WorkItems/Query/BaseSets/` |
-| Sortierung | `OrderKeyRegistry`, `CoreOrderKeys` | `Plane.WorkItems/Query/Ordering/` |
-| Gruppierung | `GroupKeyRegistry`, `CoreGroupKeys`, `GroupValueProvider` (Port `issue_group_values`), `GroupedPageSqlBuilder`, `GroupResultAssembler` | `Plane.WorkItems/Query/Grouping/` |
-| Projektion | `WorkItemListProjection` (S-ISSUE-LIST), `WorkItemValuesProjection` (S-ISSUE-VALUES), `WorkItemIdArraysLoader` | `Plane.WorkItems/Query/Projection/` |
-| Fassade | `WorkItemQueryService : IWorkItemQueryService` | `Plane.WorkItems/Application/Services/` |
+| AST, Operatoren, Feld-/Gruppen-/Sortier-Definitionen, Provider-Interfaces | `FilterExpression`, `And`, `Or`, `Not`, `Condition`, `FilterOperator`, `FilterFieldDefinition`, `GroupKeyDefinition`, `OrderKeyDefinition`, `IFilterFieldProvider`, `IGroupKeyProvider`, `IOrderKeyProvider`, `WorkItemListRequest`, `IWorkItemQueryService` | `Funk.WorkItems.Contracts/Query/` |
+| Übersetzer-Schnittstellen (EF-gebunden) | `IWorkItemFilterTranslator`, `IWorkItemGroupExpressionProvider`, `IWorkItemOrderExpressionProvider` | `Funk.Data/Querying/WorkItems/` |
+| Parser | `LegacyFilterParser`, `RichFilterParser`, `LegacyDateTermParser` | `Funk.WorkItems/Query/Parsing/` |
+| Compiler | `WorkItemFilterCompiler`, `ExpressionCombiner` | `Funk.WorkItems/Query/Compilation/` |
+| Basismengen-Prädikate | `WorkItemBaseSetPredicates` (`IssueObjects`, `AllObjects` als `Expression<Func<WorkItem,bool>>`; lesend genutzt von `Funk.WorkItems` und `Funk.Search`, R1; Andockstelle `IWorkItemBaseSetFilter` (E-04) in beiden angewandt; ABG-130) | `Funk.Data/Querying/WorkItems/WorkItemBaseSetPredicates.cs` |
+| Basismengen | `WorkItemBaseSets` (`IssueObjects`, `AllObjects`, `Archived`, `CycleIssues`, `ModuleIssues`, `WorkspaceView`, `DetailWithRights`, `ById`, `ProfileIssues`, `SpaceBoard`) – nutzt `WorkItemBaseSetPredicates` | `Funk.WorkItems/Query/BaseSets/` |
+| Sortierung | `OrderKeyRegistry`, `CoreOrderKeys` | `Funk.WorkItems/Query/Ordering/` |
+| Gruppierung | `GroupKeyRegistry`, `CoreGroupKeys`, `GroupValueProvider` (Port `issue_group_values`), `GroupedPageSqlBuilder`, `GroupResultAssembler` | `Funk.WorkItems/Query/Grouping/` |
+| Projektion | `WorkItemListProjection` (S-ISSUE-LIST), `WorkItemValuesProjection` (S-ISSUE-VALUES), `WorkItemIdArraysLoader` | `Funk.WorkItems/Query/Projection/` |
+| Fassade | `WorkItemQueryService : IWorkItemQueryService` | `Funk.WorkItems/Application/Services/` |
 
 #### 3.11.2 AST und Operator-Katalog
 
@@ -755,7 +755,7 @@ Sonderregeln des `LegacyFilterParser` (Port `API/utils/issue_filters.py`, Funkti
 - Datumsgrammatik (`date_filter`, `string_date_filter`): Terme `YYYY-MM-DD;after|before`, `N_weeks;after|before;fromnow|<anderes>`, `N_months;…` (N × 30 Tage), Term ohne `;` → `DateContains`; „heute“ = **UTC-Datum** (`IClock`), Terme gleicher Richtung überschreiben sich (letzter gewinnt), relative Terme mit nur zwei Teilen werden ignoriert (`A04` §3.2).
 - Alle Legacy-Bedingungen werden zu **einem** `And` verknüpft.
 
-Strukturvalidierung des `RichFilterParser` (Port `ComplexFilterBackend._validate_structure`, Fehler via `PlaneErrors.FilterError`): JSON-Parse (`invalid_json`), Wurzel Objekt (`invalid_filter_type`), Tiefe ≤ 5 (`max_depth_exceeded`, Text `Filter nesting is too deep (max 5); found depth <n>`), Knoten Objekt (`invalid_filter_node`), nicht leer (`empty_filter_object`), max. ein logischer Operator (`multiple_logical_operators`), keine Mischung (`mixed_operator_and_fields`), `and`/`or` nicht-leere Liste (`invalid_operator_children`) von Objekten (`invalid_operator_child_type`), `not` genau ein Objekt (`invalid_not_child`), Blatt nicht leer (`invalid_leaf`), kein Operator im Blatt (`operator_in_leaf`), Listen nicht leer (`empty_list_value`) und skalar (`non_scalar_list_item`), Werte Skalar/`null`/Liste (`invalid_value_type`), Feld bekannt (`invalid_filter_field`, Text `Filtering on field '<f>' is not allowed`), Werttypprüfung je Feld (`invalid_filterset` mit `errors`). Operatoren case-insensitive (`AND`, `Or`). Mehrere Schlüssel in einem Blatt = `And`.
+Strukturvalidierung des `RichFilterParser` (Port `ComplexFilterBackend._validate_structure`, Fehler via `FunkErrors.FilterError`): JSON-Parse (`invalid_json`), Wurzel Objekt (`invalid_filter_type`), Tiefe ≤ 5 (`max_depth_exceeded`, Text `Filter nesting is too deep (max 5); found depth <n>`), Knoten Objekt (`invalid_filter_node`), nicht leer (`empty_filter_object`), max. ein logischer Operator (`multiple_logical_operators`), keine Mischung (`mixed_operator_and_fields`), `and`/`or` nicht-leere Liste (`invalid_operator_children`) von Objekten (`invalid_operator_child_type`), `not` genau ein Objekt (`invalid_not_child`), Blatt nicht leer (`invalid_leaf`), kein Operator im Blatt (`operator_in_leaf`), Listen nicht leer (`empty_list_value`) und skalar (`non_scalar_list_item`), Werte Skalar/`null`/Liste (`invalid_value_type`), Feld bekannt (`invalid_filter_field`, Text `Filtering on field '<f>' is not allowed`), Werttypprüfung je Feld (`invalid_filterset` mit `errors`). Operatoren case-insensitive (`AND`, `Or`). Mehrere Schlüssel in einem Blatt = `And`.
 
 #### 3.11.4 Basismengen (Port `A04` §3.1.2 und §3.1.10)
 
@@ -836,7 +836,7 @@ SELECT id, g, rn FROM ranked WHERE rn > @offset AND rn < @stop;     -- offset = 
 
 | ID | Original-Verhalten | Ziel | Begründung |
 |---|---|---|---|
-| `DEV-GRP-001` | Gruppensumme 0 wird als 1 ausgegeben | **übernommen** (Client zeigt Zähler; Abweichung würde Visual-Diffs erzeugen) – Schalter `Plane:Query:EmulateZeroGroupCountQuirk` (Default `true`) | Parität ADR-005 |
+| `DEV-GRP-001` | Gruppensumme 0 wird als 1 ausgegeben | **übernommen** (Client zeigt Zähler; Abweichung würde Visual-Diffs erzeugen) – Schalter `Funk:Query:EmulateZeroGroupCountQuirk` (Default `true`) | Parität ADR-005 |
 | `DEV-GRP-002` | `group_by=assignees__id` + `sub_group_by` → nicht zugewiesene Issues fehlen | übernommen | Parität |
 | `DEV-GRP-003` | `sub_group_by` mit Gruppenwert außerhalb Gerüst → 400 `KeyError` | korrigiert: Zeile wird verworfen | Fehler ohne fachlichen Nutzen |
 | `DEV-GRP-004` | `sub_issues_count`, `link_count`, `attachment_count` = `null` bei 0 | übernommen (`int?`, Projektion liefert `null` bei 0) | Contract-Gleichheit; Client behandelt `null` wie 0 |
@@ -857,19 +857,19 @@ public interface IWorkItemQueryService
 }
 ```
 
-`Plane.Cycles`, `Plane.ProjectModules`, `Plane.Views`, `Plane.PublicSpace`, `Plane.Workspaces` (Profil) rufen nur diese Fassade auf (R1). Das Ergebnis ist ein `JsonNode`, weil `IWorkItemPayloadExtension` (A1) Felder anhängen darf, ohne dass Contracts-DTOs geändert werden.
+`Funk.Cycles`, `Funk.ProjectModules`, `Funk.Views`, `Funk.PublicSpace`, `Funk.Workspaces` (Profil) rufen nur diese Fassade auf (R1). Das Ergebnis ist ein `JsonNode`, weil `IWorkItemPayloadExtension` (A1) Felder anhängen darf, ohne dass Contracts-DTOs geändert werden.
 
 ### 3.12 Caching
 
 #### 3.12.1 Fassade
 
 ```csharp
-public interface IPlaneCache                                   // Plane.Platform.Caching
+public interface IPlaneCache                                   // Funk.Platform.Caching
 {
     ValueTask<T> GetOrCreateAsync<T>(CacheKey key, Func<CancellationToken, ValueTask<T>> factory, CacheEntryPolicy policy, CancellationToken ct);
     ValueTask InvalidateTagsAsync(IEnumerable<string> tags, CancellationToken ct);   // lokal + L2 + Pub/Sub an alle Knoten
     ValueTask RemoveAsync(CacheKey key, CancellationToken ct);
-    ValueTask ClearAsync(CancellationToken ct);                                        // Plane.Cli clear-cache (CE-OPS-020)
+    ValueTask ClearAsync(CancellationToken ct);                                        // Funk.Cli clear-cache (CE-OPS-020)
 }
 public readonly record struct CacheKey(string Value);          // immer mit Präfix "plane:" erzeugt über CacheKeys.*
 public sealed record CacheEntryPolicy(TimeSpan Expiration, TimeSpan LocalExpiration, IReadOnlyList<string> Tags);
@@ -896,13 +896,13 @@ public sealed record CacheEntryPolicy(TimeSpan Expiration, TimeSpan LocalExpirat
 
 ### 3.13 Rate Limiting
 
-| Policy (`PlaneRateLimitPolicies`) | Rate (Default, Konfig-Schlüssel) | Partition | Gilt für | Original | ab |
+| Policy (`FunkRateLimitPolicies`) | Rate (Default, Konfig-Schlüssel) | Partition | Gilt für | Original | ab |
 |---|---|---|---|---|---|
-| `anon` | `30/minute` (`Plane:RateLimits:Anon`) | Client-IP (nach ForwardedHeaders) – **nur nicht authentifizierte Requests**; authentifizierte → kein Limit | Oberflächen App, Space, Instance (Default); in der Oberfläche Auth nur je Endpunkt (N-06, N-08 nach 05 §3.17.6, 04 §3.12) | DRF `AnonRateThrottle` | I0 |
-| `authentication` | `10/minute` (`Plane:RateLimits:Authentication`, Alias `AUTHENTICATION_RATE_LIMIT`) | Client-IP (auch angemeldet) | je Endpunkt nach 05 §3.17.6: N-01, N-02, N-13 (u. a. `GET /auth/oidc/login/`, `GET /auth/oidc/callback/`); Sign-out unbegrenzt; Auth-Oberfläche ohne Oberflächen-Default (ABG-144) | `AuthenticationThrottle` | I0 |
+| `anon` | `30/minute` (`Funk:RateLimits:Anon`) | Client-IP (nach ForwardedHeaders) – **nur nicht authentifizierte Requests**; authentifizierte → kein Limit | Oberflächen App, Space, Instance (Default); in der Oberfläche Auth nur je Endpunkt (N-06, N-08 nach 05 §3.17.6, 04 §3.12) | DRF `AnonRateThrottle` | I0 |
+| `authentication` | `10/minute` (`Funk:RateLimits:Authentication`, Alias `AUTHENTICATION_RATE_LIMIT`) | Client-IP (auch angemeldet) | je Endpunkt nach 05 §3.17.6: N-01, N-02, N-13 (u. a. `GET /auth/oidc/login/`, `GET /auth/oidc/callback/`); Sign-out unbegrenzt; Auth-Oberfläche ohne Oberflächen-Default (ABG-144) | `AuthenticationThrottle` | I0 |
 | `email_verification` | – | – | **entfällt** (E-Mail-Änderung nur in Keycloak, D05-ADR-08) | `EmailVerificationThrottle` | – |
 | `asset_duplicate` | `5/minute` | Quell-Asset-ID (Routenwert `asset_id`), ohne ID kein Limit | `POST /api/assets/v2/workspaces/{slug}/duplicate-assets/{asset_id}/` (EP-0430, ABG-144) | `AssetRateThrottle` | I1 |
-| `api_key` | `60/minute` (`Plane:RateLimits:ApiKey`, Alias `API_KEY_RATE_LIMIT`) | `token_hash` (SHA-256 des API-Keys, D05-ADR-16; nicht Klartext) | Oberfläche V1 (inkl. Einladungen/Stickies, 05 B-04) | `ApiKeyRateThrottle` | I6 |
+| `api_key` | `60/minute` (`Funk:RateLimits:ApiKey`, Alias `API_KEY_RATE_LIMIT`) | `token_hash` (SHA-256 des API-Keys, D05-ADR-16; nicht Klartext) | Oberfläche V1 (inkl. Einladungen/Stickies, 05 B-04) | `ApiKeyRateThrottle` | I6 |
 | `integration_webhook` | `600/minute` | `connection_id` | Oberfläche Integrations | – (F1) | I0 (ABG-051) |
 
 Mechanik:
@@ -916,51 +916,51 @@ Mechanik:
 
 | Aspekt | Regel |
 |---|---|
-| Kategorien | `PlaneLogCategories.ApiRequest = "plane.api.request"`, `Api = "plane.api"`, `Worker = "plane.worker"`, `Realtime = "plane.realtime"`, `Exception = "plane.exception"`, `External = "plane.external"` (ausgehende HTTP-Aufrufe: Webhooks, Forgejo, LLM, Unsplash), `Authentication = "plane.authentication"`, `Migrations = "plane.migrations"`, `Query = "plane.query"` (Engine-Diagnose, Debug), `Config = "plane.config"` (ENV-Alias-Warnungen, 14 §3.9.2) |
-| Logger-Erzeugung | `ILoggerFactory.CreateLogger(PlaneLogCategories.X)` über `[LoggerMessage]`-Source-Generator je Modul (`<Modul>Log.cs`); keine String-Interpolation in Log-Aufrufen |
+| Kategorien | `FunkLogCategories.ApiRequest = "plane.api.request"`, `Api = "plane.api"`, `Worker = "plane.worker"`, `Realtime = "plane.realtime"`, `Exception = "plane.exception"`, `External = "plane.external"` (ausgehende HTTP-Aufrufe: Webhooks, Forgejo, LLM, Unsplash), `Authentication = "plane.authentication"`, `Migrations = "plane.migrations"`, `Query = "plane.query"` (Engine-Diagnose, Debug), `Config = "plane.config"` (ENV-Alias-Warnungen, 14 §3.9.2) |
+| Logger-Erzeugung | `ILoggerFactory.CreateLogger(FunkLogCategories.X)` über `[LoggerMessage]`-Source-Generator je Modul (`<Modul>Log.cs`); keine String-Interpolation in Log-Aufrufen |
 | Request-Log | eine Zeile je Request, Level Information (4xx Information, 5xx Error), Template `"{Method} {Path} {StatusCode}"`, Felder `path`, `method`, `status_code`, `duration_ms`, `remote_addr`, `user_agent`, `user_id`; ausgenommen `GET /`, `GET /robots.txt`, `/health/*` |
 | Format | JSON-Console (`AddJsonConsole`, UTC-Zeitstempel) in Produktion; OTLP-Export nur, wenn `OTEL_EXPORTER_OTLP_ENDPOINT` gesetzt (ServiceDefaults; Default aus, ADR-004) |
-| Redaktion | `Microsoft.Extensions.Compliance.Redaction`: Datenklassen `PlaneDataClasses.Personal` (E-Mail, Name, IP im Klartext außer `remote_addr` des Request-Logs) und `Secret` (Tokens, Passwörter, API-Keys, Cookies) → `[REDACTED]`; Pflicht-Test `LogRedactionTests` |
-| Tracing | `ActivitySource`s `Plane.Api`, `Plane.Worker`, `Plane.Realtime`, `Plane.Messaging` (Outbox/Inbox/Jobs; `traceparent` aus `outbox_messages`), `Plane.Query` (Spans `workitems.filter.compile`, `workitems.group.page`); Instrumentierung ASP.NET Core, HttpClient, Npgsql |
+| Redaktion | `Microsoft.Extensions.Compliance.Redaction`: Datenklassen `FunkDataClasses.Personal` (E-Mail, Name, IP im Klartext außer `remote_addr` des Request-Logs) und `Secret` (Tokens, Passwörter, API-Keys, Cookies) → `[REDACTED]`; Pflicht-Test `LogRedactionTests` |
+| Tracing | `ActivitySource`s `Funk.Api`, `Funk.Worker`, `Funk.Realtime`, `Funk.Messaging` (Outbox/Inbox/Jobs; `traceparent` aus `outbox_messages`), `Funk.Query` (Spans `workitems.filter.compile`, `workitems.group.page`); Instrumentierung ASP.NET Core, HttpClient, Npgsql |
 | Metriken | `Meter "Plane"`: `plane.http.requests` (Standard), `plane.outbox.lag_ms`, `plane.jobs.failed`, `plane.query.grouped_page_ms` (Histogramm), `plane.cache.hit_ratio`; **kein** Telemetrie-Push nach außen (Original `push_instance_metrics` entfällt, ADR-004) |
-| Exceptions | nur `PlaneExceptionHandler` und Worker-Job-Runner loggen unerwartete Exceptions (Kategorie `plane.exception`); Handler fangen keine Exceptions zum Loggen |
+| Exceptions | nur `FunkExceptionHandler` und Worker-Job-Runner loggen unerwartete Exceptions (Kategorie `plane.exception`); Handler fangen keine Exceptions zum Loggen |
 
 ### 3.15 Konfiguration (Options-Klassen)
 
-- Ort: `Plane.BuildingBlocks` (Typen ohne Abhängigkeiten) bzw. dem nutzenden Platform-/Modul-Projekt; Registrierung `services.AddPlaneOptions<TOptions>(PlaneOptionsSections.X)` = `AddOptions<T>().Bind(...).ValidateOnStart()` + `IValidateOptions<T>`.
-- `LegacyEnvironmentConfigurationSource` (in `Plane.ServiceDefaults`) liest die Original-ENV-Variablen (§4.9) und schreibt sie unter die Zielschlüssel; Werte von `Plane__…`-Variablen und `appsettings` haben Vorrang. Ungültige Legacy-Werte werden wie im Original behandelt (z. B. `NUM_PROXIES` nicht dezimal → Warnung + ignoriert; Aufbewahrungstage negativ → Default).
+- Ort: `Funk.BuildingBlocks` (Typen ohne Abhängigkeiten) bzw. dem nutzenden Platform-/Modul-Projekt; Registrierung `services.AddPlaneOptions<TOptions>(FunkOptionsSections.X)` = `AddOptions<T>().Bind(...).ValidateOnStart()` + `IValidateOptions<T>`.
+- `LegacyEnvironmentConfigurationSource` (in `Funk.ServiceDefaults`) liest die Original-ENV-Variablen (§4.9) und schreibt sie unter die Zielschlüssel; Werte von `Funk__…`-Variablen und `appsettings` haben Vorrang. Ungültige Legacy-Werte werden wie im Original behandelt (z. B. `NUM_PROXIES` nicht dezimal → Warnung + ignoriert; Aufbewahrungstage negativ → Default).
 - Secrets nie in `appsettings.json`; Aspire injiziert Connection-Strings (`ConnectionStrings__plane`, `__plane-replica`, `__valkey`, `__objectstore`).
 
 | Options-Klasse | Abschnitt | Eigenschaften (Typ = Default) | Projekt | ab |
 |---|---|---|---|---|
-| `PlaneUrlsOptions` | `Plane:Urls` | `Web` (Uri, Pflicht; Fallback `App`), `App` (Uri?), `Admin` (Uri? = `Web`), `AdminPath` = `/god-mode/`, `Space` (Uri? = `Web`), `SpacePath` = `/spaces/`, `Live` (Uri? = `Web`), `LivePath` = `/live/`, `Api` (Uri? = `Web`), `ApiPath` = `""`, `Idp` (Uri? = `Web` + `/idp`; Nachtrag aus 14 §3.9.1) | BuildingBlocks | I0 |
-| `PlaneCorsOptions` | `Plane:Cors` | `AllowedOrigins` (string[] = []) | BuildingBlocks.Web | I0 |
-| `PlaneForwardedHeadersOptions` | `Plane:ForwardedHeaders` | `ForwardLimit` (int = 1; Wertebereich 1–999 wie `NUM_PROXIES`-Regel; Angleichung an 14 – `null` hieße in ASP.NET „unbegrenzt“), `KnownNetworks` (CIDR[] = Container-Netz aus 14; Konfigurationsschlüssel `Plane:ForwardedHeaders:KnownNetworks`, Alias `TRUSTED_PROXIES`; im Code abgebildet auf `ForwardedHeadersOptions.KnownIPNetworks` mit `System.Net.IPNetwork.Parse`, nie auf die veraltete Eigenschaft `KnownNetworks` – ABG-039), `KnownProxies` (string[] = []) | BuildingBlocks.Web | I0 |
-| `PlaneAuthOptions` | `Plane:Auth` | **Felder und Defaults verbindlich in 05 §3.2/§4.4** (Session: `SessionCookieName` = `session-id`, `SessionLifetimeSeconds` = 604800, `SlidingSession` = false, `CookieDomain`; Keycloak: `Oidc:Authority`, `Oidc:RequireHttpsMetadata`, `Oidc:UsePar`, `Oidc:CaCertificatePath`, `Oidc:AccountConsoleUrl`, `Oidc:DisplayName`, Clients web/admin/space; `InstanceAdminRole` = `plane-instance-admin`, `InstanceAdminGroup`, `RequiredRole`, `SyncProfileOnLogin` = false, `AutoRedirect` = true, `RevalidateIntervalSeconds` = 300, `AdminStepUpMaxAgeSeconds` = 0, `Bearer:Enabled` = false, `Bearer:Audience` = `plane-api`, `IdpUserSync:Enabled` = true). Die Erstfassung führte Session-Werte getrennt als `PlaneSessionOptions` unter `Plane:Session` – entfällt zugunsten 05. | Identity | I0 |
-| `PlaneAntiforgeryOptions` | `Plane:Antiforgery` | `FormFieldName` = `csrfmiddlewaretoken`, `HeaderName` = `X-CSRFToken`, `Cookie.Name` = `csrftoken` (05 S-12) | BuildingBlocks.Web | I0 |
-| `PlaneDatabaseOptions` | `Plane:Database` | `ReadReplicaEnabled` = false, `CommandTimeoutSeconds` = 30, `EnableSensitiveDataLogging` = false, `MaxPoolSize` (je Host: Api 50, Worker 20, Realtime 30, Migrator 5; Nachtrag aus 14 §3.9.1, wird als `Maximum Pool Size` in den Connection-String geschrieben) | Data | I0 |
-| `PlaneValkeyOptions` | `Plane:Valkey` | `Enabled` (abgeleitet aus `ConnectionStrings:valkey`), `SslCertificateValidation` = `required` (`required`\|`none`), `CaCertificatePath`, `KeyPrefix` = `plane:` (14 §3.9.1) | Platform.Caching | I1 |
-| `PlaneScaleOptions` | `Plane:Scale` | `ExpectMultipleInstances` = false (mit `true` ist Valkey Pflicht, Startprüfung; 14 D14-ADR-21) | ServiceDefaults | I1 |
-| `PlaneDataProtectionOptions` | `Plane:DataProtection` | `ApplicationName` = `plane` (Konstante, gleich in allen Hosts), `KeyLifetimeDays` = 90 (05 §3.17.5), `CertificatePath`, `CertificatePassword`, `PreviousCertificatePaths`, `AllowUnencryptedKeys` = false (Key-Ring in PostgreSQL, Schutz per Zertifikat; 14 §3.9.1) | Platform.Security | I0 |
-| `PlaneTelemetryOptions` | `Plane:Telemetry` | `TraceSampleRatio` = 1.0, `LogFormat` = `json` (`json`\|`simple`) (14 §3.9.1) | ServiceDefaults | I0 |
-| `PlaneGatewayOptions`, `PlaneTlsOptions` | `Plane:Gateway`, `Plane:Tls` | nur `Plane.Gateway`; Felder verbindlich in 14 §3.9.1 (hier nur gelistet, damit die Options-Liste vollständig ist) | Gateway | I0 |
-| `PlaneStorageOptions` | `Plane:Storage` | `Provider` = `S3` (`S3`\|`FileSystem`), `Bucket` = `uploads`, `Region` = `""`, `InternalEndpoint`, `PublicEndpoint`, `AccessKey`, `SecretKey`, `ForcePathStyle` = true, `PresignExpirySeconds` = 3600, `UploadMode` = `Direct`, `FileSystemRoot` | Platform.Storage | I1 |
-| `PlaneUploadsOptions` | `Plane:Uploads` | `MaxFileSizeBytes` = 5242880, `AttachmentMimeTypes` (Liste `A01` §2.12), `InlineSafeMimeTypes` = `image/jpeg, image/jpg, image/png, image/gif, image/webp` | Platform.Storage | I1 |
-| `PlaneRateLimitOptions` | `Plane:RateLimits` | `Anon` = `30/minute`, `Authentication` = `10/minute`, `AssetDuplicate` = `5/minute`, `ApiKey` = `60/minute`, `IntegrationWebhook` = `600/minute` | BuildingBlocks.Web | I0 |
-| `PlaneRetentionOptions` | `Plane:Retention` | `HardDeleteDays` = 60, `ApiActivityLogDays` = 14, `WebhookLogDays` = 14, `EmailLogDays` = 7, `UnuploadedAssetDays` = 7, `PageVersionsKeep` = 20 (Schlüssel `Plane:Retention:PageVersionsKeep`; keine Instanz-Einstellung `PAGE_VERSION_LIMIT`, ABG-102), `WorkItemVersionsKeep` = 20 (Inline-Begrenzung von `work_item_versions` durch `WorkItemVersionRecorder`, kein Cron; Nachtrag 03, ABG-102), `DescriptionVersionsKeep` = 20, `ExportLinkDays` = 8, `UnsentEmailLogDays` = 30 (Nachtrag 06 §3.16, `DEV-MAIL-007`) | Messaging/Module | I1 |
-| `PlaneWorkerOptions` | `Plane:Worker` | **Nachtrag aus 06 §3.5.5 (Pflicht-Restpunkt 17 §7, benannte Worker-Pools):** `Queues` (string[]; Host-Default: Api `[]`, Worker `["*"]`, Realtime `["live"]`, AllInOne `["*"]`; ENV als Array oder Komma-Liste `Plane__Worker__Queues=webhooks,emails`), `ExcludeQueues` (string[]; Default `[]`, Host-Default Worker `["live"]`; Consumer-Queue `realtime` (`RealtimeFanOutConsumer`) läuft im Worker, Queue `live` (`realtime.push`, `PlaneQueues.Live`) nur in Realtime/AllInOne – ABG-106), `Concurrency` (Dictionary<string,int>: `default` 8, `notifications` 8, `emails` 4, `webhooks` 16, `exports` 2, `maintenance` 1, `realtime` 16, `live` 16, `indexing` 4), `PollIntervalMilliseconds` = 2000, `ClaimBatchSize` = 20, `LeaseSeconds` = 300, `ReaperIntervalSeconds` = 30, `ShutdownGraceSeconds` = 30, `UseListenNotify` = true, `Scheduler:Enabled` (Host-Default: nur Worker/AllInOne `true`), `Scheduler:TickSeconds` = 10, `Scheduler:LeaderRetrySeconds` = 10, `Outbox:Enabled` (Host-Default wie Scheduler), `Outbox:BatchSize` = 200, `Outbox:PollIntervalMilliseconds` = 1000, `Outbox:RetentionHours` = 24, `InboxRetentionDays` = 7, `DeadLetterRetentionDays` = 30; Validierung: nur bekannte bzw. in 16 §3.2.5 reservierte Queue-Namen, `"*"` nur allein | BuildingBlocks.Messaging | I0 |
-| `PlaneWebhookOptions` | `Plane:Webhooks` | `AllowedNetworks` (CIDR[]), `AllowedHosts` (string[]), `DisallowedDomains` (string[]), `MaxAttempts` = 5, `BackoffBaseSeconds` = 600 | Webhooks | I6 |
-| `PlaneOpenApiOptions` | `Plane:OpenApi` | `Enabled` = false, `ServerUrls` (string[]) | Api | I0 |
-| `PlaneInstanceOptions` | `Plane:Instance` | `ConfigurationSource` = `Database` (`Database`\|`Environment`), `DefaultName` = `"funk."` (Default-`instance_name` beim ersten Bootstrap, vom Admin änderbar; 03 §3.14.1, 17 ABG-104, BR-07), `ChangelogUrl` = `""`, `AppVersion` (aus Assembly), `IsTest` = false | Instance | I0 |
-| `PlaneJsonOptions` | `Plane:Json` | `DateTimeOutputZone` = `Utc` | BuildingBlocks.Web | I0 |
-| `PlaneQueryOptions` | `Plane:Query` | `EmulateZeroGroupCountQuirk` = true, `GroupedPageStrategy` = `IdArray`, `MaxFilterDepth` = 5, `MaxIdArraySize` = 50000 | WorkItems | I2 |
-| `PlaneSecurityOptions` | `Plane:Security` | `SsrfBlockPrivateNetworks` = true, `TrustedOrigins` (string[] = [], Alias `CSRF_TRUSTED_ORIGINS`, zusätzliche Origin-Allowlist 05 §3.5), `MaskInstanceSecrets` = true (05), `SigningKey` (**Pflicht-Secret**, Base64 ≥ 32 Byte, Aspire-Parameter `signing-key`, ENV `Plane__Security__SigningKey`; **nur** für HMAC-signierte Upload-Tokens und signierte Dateisystem-URLs im Dateisystem-/Proxy-Modus, 14 §3.7.6 – nicht für Verschlüsselung, nicht für API-Key-Kennungen; ABG-012). `ApiLogHmacKey` **entfällt** (05: `token_identifier = token_hash`, SHA-256-Hex des API-Keys, D05-ADR-16) | Platform.Security | I0 |
-| `PlaneCacheOptions` | `Plane:Cache` | `DefaultLocalExpirationSeconds` = 30, `InvalidationChannel` = `plane:cache:invalidate` | Platform.Caching | I1 |
-| `PlaneRealtimeOptions` | `Plane:Realtime` | `DebounceMilliseconds` = 10000, `InternalSecret` (optional), `CompressionLevel` = 6, `CompressionThresholdBytes` = 5000 | Realtime | I4 |
-| `PlaneAiOptions` | `Plane:Ai` | `EmbeddingDimensions` = 1536, `Enabled` = false (Instanz-Keys `LLM_*` bleiben in der Instanz-Konfiguration) | Platform.Ai | I5 |
-| `PlaneForgejoOptions` | `Plane:Forgejo` | `Bundled` = false, `DevInstanceUrl` (Uri?, nur Dev/Test, vom AppHost gesetzt: `Plane__Forgejo__DevInstanceUrl`, 01 §3.4/14 §5.1), `AllowedHosts` (string[]; Allowlist des SSRF-Clients `forgejo`, gebündeltes Forgejo vorbelegt, 05 §6.1/16 §3.4) | Forgejo (Contracts in CE) | I0 (nur AppHost) |
-| `PlaneMailOptions` | `Plane:Mail` | `TemplatesPath`, `DefaultFrom` = `funk. <noreply@<Host aus Plane:Urls:Web>>` (ABG-105, BR-08; ersetzt den Lese-Default des Originals `Team Plane <team@mailer.plane.so>`; Anzeigename aus `Brand.ProductName`; SMTP-Werte aus Instanz-Konfiguration; Lesedefault von `EMAIL_FROM`), `FooterLinks` (Liste `{Label, Url, Icon}` = leer; einzige Quelle der Footer-Links der Mails, ABG-105), `ImageMode` = `Inline` (`Inline`│`Hosted`; Nachtrag 06 D06-ADR-14) | Platform.Mail | I1 |
-| `PlaneLinkPreviewOptions` | `Plane:LinkPreview` | `Enabled` = true (Link-Crawler T44; Airgap-Bundle setzt `false`; Nachtrag 06 §3.18) | WorkItems | I2 |
+| `FunkUrlsOptions` | `Funk:Urls` | `Web` (Uri, Pflicht; Fallback `App`), `App` (Uri?), `Admin` (Uri? = `Web`), `AdminPath` = `/god-mode/`, `Space` (Uri? = `Web`), `SpacePath` = `/spaces/`, `Live` (Uri? = `Web`), `LivePath` = `/live/`, `Api` (Uri? = `Web`), `ApiPath` = `""`, `Idp` (Uri? = `Web` + `/idp`; Nachtrag aus 14 §3.9.1) | BuildingBlocks | I0 |
+| `FunkCorsOptions` | `Funk:Cors` | `AllowedOrigins` (string[] = []) | BuildingBlocks.Web | I0 |
+| `FunkForwardedHeadersOptions` | `Funk:ForwardedHeaders` | `ForwardLimit` (int = 1; Wertebereich 1–999 wie `NUM_PROXIES`-Regel; Angleichung an 14 – `null` hieße in ASP.NET „unbegrenzt“), `KnownNetworks` (CIDR[] = Container-Netz aus 14; Konfigurationsschlüssel `Funk:ForwardedHeaders:KnownNetworks`, Alias `TRUSTED_PROXIES`; im Code abgebildet auf `ForwardedHeadersOptions.KnownIPNetworks` mit `System.Net.IPNetwork.Parse`, nie auf die veraltete Eigenschaft `KnownNetworks` – ABG-039), `KnownProxies` (string[] = []) | BuildingBlocks.Web | I0 |
+| `FunkAuthOptions` | `Funk:Auth` | **Felder und Defaults verbindlich in 05 §3.2/§4.4** (Session: `SessionCookieName` = `funk-session`, `SessionLifetimeSeconds` = 604800, `SlidingSession` = false, `CookieDomain`; Keycloak: `Oidc:Authority`, `Oidc:RequireHttpsMetadata`, `Oidc:UsePar`, `Oidc:CaCertificatePath`, `Oidc:AccountConsoleUrl`, `Oidc:DisplayName`, Clients web/admin/space; `InstanceAdminRole` = `funk-instance-admin`, `InstanceAdminGroup`, `RequiredRole`, `SyncProfileOnLogin` = false, `AutoRedirect` = true, `RevalidateIntervalSeconds` = 300, `AdminStepUpMaxAgeSeconds` = 0, `Bearer:Enabled` = false, `Bearer:Audience` = `funk-api`, `IdpUserSync:Enabled` = true). Die Erstfassung führte Session-Werte getrennt als `FunkSessionOptions` unter `Funk:Session` – entfällt zugunsten 05. | Identity | I0 |
+| `FunkAntiforgeryOptions` | `Funk:Antiforgery` | `FormFieldName` = `csrfmiddlewaretoken`, `HeaderName` = `X-CSRFToken`, `Cookie.Name` = `csrftoken` (05 S-12) | BuildingBlocks.Web | I0 |
+| `FunkDatabaseOptions` | `Funk:Database` | `ReadReplicaEnabled` = false, `CommandTimeoutSeconds` = 30, `EnableSensitiveDataLogging` = false, `MaxPoolSize` (je Host: Api 50, Worker 20, Realtime 30, Migrator 5; Nachtrag aus 14 §3.9.1, wird als `Maximum Pool Size` in den Connection-String geschrieben) | Data | I0 |
+| `FunkValkeyOptions` | `Funk:Valkey` | `Enabled` (abgeleitet aus `ConnectionStrings:valkey`), `SslCertificateValidation` = `required` (`required`\|`none`), `CaCertificatePath`, `KeyPrefix` = `plane:` (14 §3.9.1) | Platform.Caching | I1 |
+| `FunkScaleOptions` | `Funk:Scale` | `ExpectMultipleInstances` = false (mit `true` ist Valkey Pflicht, Startprüfung; 14 D14-ADR-21) | ServiceDefaults | I1 |
+| `FunkDataProtectionOptions` | `Funk:DataProtection` | `ApplicationName` = `plane` (Konstante, gleich in allen Hosts), `KeyLifetimeDays` = 90 (05 §3.17.5), `CertificatePath`, `CertificatePassword`, `PreviousCertificatePaths`, `AllowUnencryptedKeys` = false (Key-Ring in PostgreSQL, Schutz per Zertifikat; 14 §3.9.1) | Platform.Security | I0 |
+| `FunkTelemetryOptions` | `Funk:Telemetry` | `TraceSampleRatio` = 1.0, `LogFormat` = `json` (`json`\|`simple`) (14 §3.9.1) | ServiceDefaults | I0 |
+| `FunkGatewayOptions`, `FunkTlsOptions` | `Funk:Gateway`, `Funk:Tls` | nur `Funk.Gateway`; Felder verbindlich in 14 §3.9.1 (hier nur gelistet, damit die Options-Liste vollständig ist) | Gateway | I0 |
+| `FunkStorageOptions` | `Funk:Storage` | `Provider` = `S3` (`S3`\|`FileSystem`), `Bucket` = `uploads`, `Region` = `""`, `InternalEndpoint`, `PublicEndpoint`, `AccessKey`, `SecretKey`, `ForcePathStyle` = true, `PresignExpirySeconds` = 3600, `UploadMode` = `Direct`, `FileSystemRoot` | Platform.Storage | I1 |
+| `FunkUploadsOptions` | `Funk:Uploads` | `MaxFileSizeBytes` = 5242880, `AttachmentMimeTypes` (Liste `A01` §2.12), `InlineSafeMimeTypes` = `image/jpeg, image/jpg, image/png, image/gif, image/webp` | Platform.Storage | I1 |
+| `FunkRateLimitOptions` | `Funk:RateLimits` | `Anon` = `30/minute`, `Authentication` = `10/minute`, `AssetDuplicate` = `5/minute`, `ApiKey` = `60/minute`, `IntegrationWebhook` = `600/minute` | BuildingBlocks.Web | I0 |
+| `FunkRetentionOptions` | `Funk:Retention` | `HardDeleteDays` = 60, `ApiActivityLogDays` = 14, `WebhookLogDays` = 14, `EmailLogDays` = 7, `UnuploadedAssetDays` = 7, `PageVersionsKeep` = 20 (Schlüssel `Funk:Retention:PageVersionsKeep`; keine Instanz-Einstellung `PAGE_VERSION_LIMIT`, ABG-102), `WorkItemVersionsKeep` = 20 (Inline-Begrenzung von `work_item_versions` durch `WorkItemVersionRecorder`, kein Cron; Nachtrag 03, ABG-102), `DescriptionVersionsKeep` = 20, `ExportLinkDays` = 8, `UnsentEmailLogDays` = 30 (Nachtrag 06 §3.16, `DEV-MAIL-007`) | Messaging/Module | I1 |
+| `FunkWorkerOptions` | `Funk:Worker` | **Nachtrag aus 06 §3.5.5 (Pflicht-Restpunkt 17 §7, benannte Worker-Pools):** `Queues` (string[]; Host-Default: Api `[]`, Worker `["*"]`, Realtime `["live"]`, AllInOne `["*"]`; ENV als Array oder Komma-Liste `Funk__Worker__Queues=webhooks,emails`), `ExcludeQueues` (string[]; Default `[]`, Host-Default Worker `["live"]`; Consumer-Queue `realtime` (`RealtimeFanOutConsumer`) läuft im Worker, Queue `live` (`realtime.push`, `FunkQueues.Live`) nur in Realtime/AllInOne – ABG-106), `Concurrency` (Dictionary<string,int>: `default` 8, `notifications` 8, `emails` 4, `webhooks` 16, `exports` 2, `maintenance` 1, `realtime` 16, `live` 16, `indexing` 4), `PollIntervalMilliseconds` = 2000, `ClaimBatchSize` = 20, `LeaseSeconds` = 300, `ReaperIntervalSeconds` = 30, `ShutdownGraceSeconds` = 30, `UseListenNotify` = true, `Scheduler:Enabled` (Host-Default: nur Worker/AllInOne `true`), `Scheduler:TickSeconds` = 10, `Scheduler:LeaderRetrySeconds` = 10, `Outbox:Enabled` (Host-Default wie Scheduler), `Outbox:BatchSize` = 200, `Outbox:PollIntervalMilliseconds` = 1000, `Outbox:RetentionHours` = 24, `InboxRetentionDays` = 7, `DeadLetterRetentionDays` = 30; Validierung: nur bekannte bzw. in 16 §3.2.5 reservierte Queue-Namen, `"*"` nur allein | BuildingBlocks.Messaging | I0 |
+| `FunkWebhookOptions` | `Funk:Webhooks` | `AllowedNetworks` (CIDR[]), `AllowedHosts` (string[]), `DisallowedDomains` (string[]), `MaxAttempts` = 5, `BackoffBaseSeconds` = 600 | Webhooks | I6 |
+| `FunkOpenApiOptions` | `Funk:OpenApi` | `Enabled` = false, `ServerUrls` (string[]) | Api | I0 |
+| `FunkInstanceOptions` | `Funk:Instance` | `ConfigurationSource` = `Database` (`Database`\|`Environment`), `DefaultName` = `"funk."` (Default-`instance_name` beim ersten Bootstrap, vom Admin änderbar; 03 §3.14.1, 17 ABG-104, BR-07), `ChangelogUrl` = `""`, `AppVersion` (aus Assembly), `IsTest` = false | Instance | I0 |
+| `FunkJsonOptions` | `Funk:Json` | `DateTimeOutputZone` = `Utc` | BuildingBlocks.Web | I0 |
+| `FunkQueryOptions` | `Funk:Query` | `EmulateZeroGroupCountQuirk` = true, `GroupedPageStrategy` = `IdArray`, `MaxFilterDepth` = 5, `MaxIdArraySize` = 50000 | WorkItems | I2 |
+| `FunkSecurityOptions` | `Funk:Security` | `SsrfBlockPrivateNetworks` = true, `TrustedOrigins` (string[] = [], Alias `CSRF_TRUSTED_ORIGINS`, zusätzliche Origin-Allowlist 05 §3.5), `MaskInstanceSecrets` = true (05), `SigningKey` (**Pflicht-Secret**, Base64 ≥ 32 Byte, Aspire-Parameter `signing-key`, ENV `Funk__Security__SigningKey`; **nur** für HMAC-signierte Upload-Tokens und signierte Dateisystem-URLs im Dateisystem-/Proxy-Modus, 14 §3.7.6 – nicht für Verschlüsselung, nicht für API-Key-Kennungen; ABG-012). `ApiLogHmacKey` **entfällt** (05: `token_identifier = token_hash`, SHA-256-Hex des API-Keys, D05-ADR-16) | Platform.Security | I0 |
+| `FunkCacheOptions` | `Funk:Cache` | `DefaultLocalExpirationSeconds` = 30, `InvalidationChannel` = `plane:cache:invalidate` | Platform.Caching | I1 |
+| `FunkRealtimeOptions` | `Funk:Realtime` | `DebounceMilliseconds` = 10000, `InternalSecret` (optional), `CompressionLevel` = 6, `CompressionThresholdBytes` = 5000 | Realtime | I4 |
+| `FunkAiOptions` | `Funk:Ai` | `EmbeddingDimensions` = 1536, `Enabled` = false (Instanz-Keys `LLM_*` bleiben in der Instanz-Konfiguration) | Platform.Ai | I5 |
+| `FunkForgejoOptions` | `Funk:Forgejo` | `Bundled` = false, `DevInstanceUrl` (Uri?, nur Dev/Test, vom AppHost gesetzt: `Funk__Forgejo__DevInstanceUrl`, 01 §3.4/14 §5.1), `AllowedHosts` (string[]; Allowlist des SSRF-Clients `forgejo`, gebündeltes Forgejo vorbelegt, 05 §6.1/16 §3.4) | Forgejo (Contracts in CE) | I0 (nur AppHost) |
+| `FunkMailOptions` | `Funk:Mail` | `TemplatesPath`, `DefaultFrom` = `funk. <noreply@<Host aus Funk:Urls:Web>>` (ABG-105, BR-08; ersetzt den Lese-Default des Originals `Team Plane <team@mailer.plane.so>`; Anzeigename aus `Brand.ProductName`; SMTP-Werte aus Instanz-Konfiguration; Lesedefault von `EMAIL_FROM`), `FooterLinks` (Liste `{Label, Url, Icon}` = leer; einzige Quelle der Footer-Links der Mails, ABG-105), `ImageMode` = `Inline` (`Inline`│`Hosted`; Nachtrag 06 D06-ADR-14) | Platform.Mail | I1 |
+| `FunkLinkPreviewOptions` | `Funk:LinkPreview` | `Enabled` = true (Link-Crawler T44; Airgap-Bundle setzt `false`; Nachtrag 06 §3.18) | WorkItems | I2 |
 
 ### 3.16 Instanz-Konfiguration (verschlüsselte Keys)
 
@@ -968,22 +968,22 @@ Mechanik:
 
 | Element | Definition |
 |---|---|
-| Tabelle `instance_configurations` (`Plane.Data/Entities/Instance/InstanceConfiguration.cs`, `[OwnedBy("Instance")]`) | `id uuid PK`, `key varchar(100) UNIQUE`, `value text NULL`, `category varchar(100)`, `is_encrypted bool`, Audit-Spalten |
-| `IInstanceConfigurationStore` (`Plane.Instance.Contracts/Services`) | `ValueTask<string?> GetAsync(string key, CancellationToken)`, `ValueTask<IReadOnlyDictionary<string,string?>> GetManyAsync(IEnumerable<InstanceConfigurationKey>, CancellationToken)`, `ValueTask SetManyAsync(IReadOnlyDictionary<string,string?>, CancellationToken)` (nur Instance-Modul, Ownership) |
+| Tabelle `instance_configurations` (`Funk.Data/Entities/Instance/InstanceConfiguration.cs`, `[OwnedBy("Instance")]`) | `id uuid PK`, `key varchar(100) UNIQUE`, `value text NULL`, `category varchar(100)`, `is_encrypted bool`, Audit-Spalten |
+| `IInstanceConfigurationStore` (`Funk.Instance.Contracts/Services`) | `ValueTask<string?> GetAsync(string key, CancellationToken)`, `ValueTask<IReadOnlyDictionary<string,string?>> GetManyAsync(IEnumerable<InstanceConfigurationKey>, CancellationToken)`, `ValueTask SetManyAsync(IReadOnlyDictionary<string,string?>, CancellationToken)` (nur Instance-Modul, Ownership) |
 | `InstanceConfigurationKey(string Key, string Category, bool Encrypted, string? SeedDefault, string? ReadDefault, string? EnvVariable)` | Katalog `InstanceConfigurationKeys.All` (Tabelle §4.10) |
-| Verschlüsselung | `IDataProtector` mit Purpose `Plane.Instance.Configuration.v1` (05 §3.17.5); Wert leer → `""` gespeichert ohne Verschlüsselung (Original `encrypt_data`); Entschlüsselungsfehler → `""` + Warnung `plane.exception` (Original `decrypt_data`) |
-| Lesemodus | `Plane:Instance:ConfigurationSource = Database`: DB-Wert, fehlender Key → `ReadDefault`; `Environment`: nur ENV (`SKIP_ENV_VAR=0`-Semantik) |
-| Seed | `Plane.Migrator` → `InstanceConfigurationSeeder`: für jeden Katalog-Key **ohne** DB-Zeile: Wert = ENV-Variable gleichen Namens oder `SeedDefault`; vorhandene Zeilen werden nie überschrieben (`configure_instance`) |
+| Verschlüsselung | `IDataProtector` mit Purpose `Funk.Instance.Configuration.v1` (05 §3.17.5); Wert leer → `""` gespeichert ohne Verschlüsselung (Original `encrypt_data`); Entschlüsselungsfehler → `""` + Warnung `plane.exception` (Original `decrypt_data`) |
+| Lesemodus | `Funk:Instance:ConfigurationSource = Database`: DB-Wert, fehlender Key → `ReadDefault`; `Environment`: nur ENV (`SKIP_ENV_VAR=0`-Semantik) |
+| Seed | `Funk.Migrator` → `InstanceConfigurationSeeder`: für jeden Katalog-Key **ohne** DB-Zeile: Wert = ENV-Variable gleichen Namens oder `SeedDefault`; vorhandene Zeilen werden nie überschrieben (`configure_instance`) |
 | Cache | `plane:instance:config` (§3.12.2) |
 | Ausgabe | `GET /api/instances/` liefert nur abgeleitete Flags (Detail 05/04); God-Mode-`GET /api/instances/configurations/` liefert verschlüsselte Keys **maskiert** wie Original (Detail 04) |
 
 #### 3.16.2 Abgeleitete `config`-Felder von `GET /api/instances/` (Bezug für 04/05)
 
-Verbindliche Feldliste in 05 §4.4: `enable_signup` (`ENABLE_SIGNUP == "1"`), `is_workspace_creation_disabled` (`DISABLE_WORKSPACE_CREATION == "1"`), `has_unsplash_configured`, `has_llm_configured`, `file_size_limit` (float aus `Plane:Uploads:MaxFileSizeBytes`), `is_smtp_configured` (`EMAIL_HOST` nicht leer), `admin_base_url`, `space_base_url`, `app_base_url`, `instance_changelog_url`, `is_self_managed = true`; feste Werte für die entfallenen Flags (`is_google_enabled`, `is_github_enabled`, `is_gitlab_enabled`, `is_gitea_enabled`, `is_magic_login_enabled`, `is_email_password_enabled` = `false`, `github_app_name` = `""`, `slack_client_id` = `null`), damit `packages/types` unverändert kompiliert; neu `is_oidc_auto_redirect_enabled`, `oidc_account_console_url`, `oidc_provider_name` (O-D02-03 damit entschieden).
+Verbindliche Feldliste in 05 §4.4: `enable_signup` (`ENABLE_SIGNUP == "1"`), `is_workspace_creation_disabled` (`DISABLE_WORKSPACE_CREATION == "1"`), `has_unsplash_configured`, `has_llm_configured`, `file_size_limit` (float aus `Funk:Uploads:MaxFileSizeBytes`), `is_smtp_configured` (`EMAIL_HOST` nicht leer), `admin_base_url`, `space_base_url`, `app_base_url`, `instance_changelog_url`, `is_self_managed = true`; feste Werte für die entfallenen Flags (`is_google_enabled`, `is_github_enabled`, `is_gitlab_enabled`, `is_gitea_enabled`, `is_magic_login_enabled`, `is_email_password_enabled` = `false`, `github_app_name` = `""`, `slack_client_id` = `null`), damit `packages/types` unverändert kompiliert; neu `is_oidc_auto_redirect_enabled`, `oidc_account_console_url`, `oidc_provider_name` (O-D02-03 damit entschieden).
 
 ### 3.17 Health-Endpunkte
 
-Verbindlich nach ABG-014: Die Endpunkte `/health/*` liegen **ausschließlich** auf dem **Management-Port 8081** (Konfiguration `Plane__Management__Port`; in `dev`/`test` vergibt Aspire den Port dynamisch, Endpoint-Name `management`, AppHost `WithHttpHealthCheck("/health/ready", endpointName: "management")`). Die Original-Endpunkte bleiben auf dem App-Port.
+Verbindlich nach ABG-014: Die Endpunkte `/health/*` liegen **ausschließlich** auf dem **Management-Port 8081** (Konfiguration `Funk__Management__Port`; in `dev`/`test` vergibt Aspire den Port dynamisch, Endpoint-Name `management`, AppHost `WithHttpHealthCheck("/health/ready", endpointName: "management")`). Die Original-Endpunkte bleiben auf dem App-Port.
 
 | Pfad | Host | Port | Antwort | Logging | Original | ab |
 |---|---|---|---|---|---|---|
@@ -1002,17 +1002,17 @@ Health-Endpunkte sind im Gateway nicht nach außen geroutet (`/health/*` nur üb
 
 | Dokument | Pfad | Inhalt | Aktiv | Zweck |
 |---|---|---|---|---|
-| `v1` | `GET /api/schema/` (YAML `application/vnd.oai.openapi` wie drf-spectacular, `?format=json` JSON; ABG-145), UI `GET /api/schema/swagger-ui/` und `GET /api/schema/redoc/` (beide Scalar, offline gebündelt) | nur Oberfläche V1; Titel „The funk. REST API“ (04 BRAND-API-01, ABG-148; Original „The Plane REST API“), Lizenz AGPL-3.0, 14 Tags wie Original (`A01` §2.20), Security-Schema `ApiKeyAuthentication` (Header `X-Api-Key`), `operationId` wie drf-spectacular | `Plane:OpenApi:Enabled` (Alias `ENABLE_DRF_SPECTACULAR`) | CE-API-004 |
+| `v1` | `GET /api/schema/` (YAML `application/vnd.oai.openapi` wie drf-spectacular, `?format=json` JSON; ABG-145), UI `GET /api/schema/swagger-ui/` und `GET /api/schema/redoc/` (beide Scalar, offline gebündelt) | nur Oberfläche V1; Titel „The funk. REST API“ (04 BRAND-API-01, ABG-148; Original „The Plane REST API“), Lizenz AGPL-3.0, 14 Tags wie Original (`A01` §2.20), Security-Schema `ApiKeyAuthentication` (Header `X-Api-Key`), `operationId` wie drf-spectacular | `Funk:OpenApi:Enabled` (Alias `ENABLE_DRF_SPECTACULAR`) | CE-API-004 |
 | `internal` | nur in CI/Dev unter `/api/schema/internal/` | Oberflächen App, Space, Instance | Dev/Test | Contract-Check gegen `libs/shared/types` (ADR-047) |
 
-Regeln: OpenAPI-Version 3.1 (Default .NET 10); Transformer `PlaneOpenApiTransformers` setzen `snake_case`-Schemanamen, `nullable`-Kennzeichnung aus NRT, Enum-Werte aus Original-Werten, Beispiele aus Golden-Files (`tests/contracts/v1/*.golden.json`).
+Regeln: OpenAPI-Version 3.1 (Default .NET 10); Transformer `FunkOpenApiTransformers` setzen `snake_case`-Schemanamen, `nullable`-Kennzeichnung aus NRT, Enum-Werte aus Original-Werten, Beispiele aus Golden-Files (`tests/contracts/v1/*.golden.json`).
 
 ### 3.19 Transaktionen, Domain-/Integration-Events, Activity
 
 | Element | Regel |
 |---|---|
 | Mediator-Pipeline (Reihenfolge) | `LoggingBehavior` → `ModuleScopeBehavior` (setzt `ModuleScope` aus dem Assembly des Handlers, R3) → `ValidationBehavior` → `TransactionBehavior` (nur `ICommand`) |
-| `TransactionBehavior` | innerhalb `db.Database.CreateExecutionStrategy().ExecuteAsync(...)` (§3.2.4): `BeginTransactionAsync(ReadCommitted)` → Handler ausführen → bei `IsFailure` **kein** `SaveChanges`, Rollback, `ChangeTracker.Clear()` → sonst Domain-Event-Schleife (D02-ADR-24) → `SaveChangesAsync` (Interceptors §3.2.2) → `CommitAsync`; Unique-Verletzung (`23505`) mit Constraint-Name aus `IUniqueViolationMap` → endpunktspezifischer `PlaneError` statt Exception (§3.8.2); danach Cache-Invalidierungen (§3.12.1) und `IPostCommitAction`s (z. B. Realtime-Hinweise, nur in-process). Verschachtelte Commands (ein Handler sendet einen weiteren Command) laufen in derselben Transaktion (Behavior erkennt `Database.CurrentTransaction != null`) |
+| `TransactionBehavior` | innerhalb `db.Database.CreateExecutionStrategy().ExecuteAsync(...)` (§3.2.4): `BeginTransactionAsync(ReadCommitted)` → Handler ausführen → bei `IsFailure` **kein** `SaveChanges`, Rollback, `ChangeTracker.Clear()` → sonst Domain-Event-Schleife (D02-ADR-24) → `SaveChangesAsync` (Interceptors §3.2.2) → `CommitAsync`; Unique-Verletzung (`23505`) mit Constraint-Name aus `IUniqueViolationMap` → endpunktspezifischer `FunkError` statt Exception (§3.8.2); danach Cache-Invalidierungen (§3.12.1) und `IPostCommitAction`s (z. B. Realtime-Hinweise, nur in-process). Verschachtelte Commands (ein Handler sendet einen weiteren Command) laufen in derselben Transaktion (Behavior erkennt `Database.CurrentTransaction != null`) |
 | Domain-Event | `IDomainEvent` (in-process, gleiche Transaktion, dispatcht vom `TransactionBehavior` **vor** `SaveChanges`), Handler `IDomainEventHandler<T>` im **eigenen** Modul; modulübergreifend nur Integration-Events (R5) |
 | Integration-Event | `record <Ding><Ereignis>V1(...) : IIntegrationEvent` in `*.Contracts/Events`; Payload: IDs + geänderte Felder (keine Entitäten); unveränderlich nach Merge (01 §7.15) |
 | Consumer | `IEventConsumer<T>` in `Application/Consumers`, Registrierung in `IModule.RegisterMessaging`; idempotent über Inbox |
@@ -1027,22 +1027,22 @@ Status-Legende: **1:1** = Verhalten identisch portiert · **angepasst** = Verhal
 
 | Original (Pfad) | Ziel (Typ, Pfad relativ zu `funk.`) | Status | CE-IDs |
 |---|---|---|---|
-| `TimeAuditModel` (`API/db/mixins.py`) | `AuditableEntity.CreatedAt/UpdatedAt` + `AuditInterceptor` (`src/building-blocks/Plane.BuildingBlocks.Persistence/Entities/AuditableEntity.cs`, `…/Interceptors/AuditInterceptor.cs`) | 1:1 | CE-OPS-014 (Basis) |
+| `TimeAuditModel` (`API/db/mixins.py`) | `AuditableEntity.CreatedAt/UpdatedAt` + `AuditInterceptor` (`src/building-blocks/Funk.BuildingBlocks.Persistence/Entities/AuditableEntity.cs`, `…/Interceptors/AuditInterceptor.cs`) | 1:1 | CE-OPS-014 (Basis) |
 | `UserAuditModel` | `AuditableEntity.CreatedById/UpdatedById` + `ICurrentActor` | 1:1 (inkl. `updated_by = NULL` bei Anlage) | – |
 | `SoftDeleteModel`, `SoftDeletionManager`, `SoftDeletionQuerySet` | `ISoftDeletable`, benannter Filter `soft_delete`, `SoftDeleteInterceptor` | angepasst (Kaskade inline, D02-ADR-03) | CE-OPS-014 |
 | `all_objects` | `IgnoreQueryFilters([QueryFilterNames.SoftDelete])` | 1:1 | – |
 | `soft_delete_related_objects` (`API/bgtasks/deletion_task.py`) | `SoftDeleteCascadeRegistry` + `SoftDeleteCascadeJob` | angepasst | CE-OPS-014 |
 | `restore_related_objects` (`deletion_task.py`) | `SoftDeleteRestoreService` (Spiegel der Registry) | 1:1 | CE-OPS-014 |
-| `hard_delete` (`deletion_task.py`) | `HardDeleteJob` (Cron, `Plane:Retention:HardDeleteDays`) | 1:1 (Detail 06) | CE-OPS-014, CE-OPS-016 |
+| `hard_delete` (`deletion_task.py`) | `HardDeleteJob` (Cron, `Funk:Retention:HardDeleteDays`) | 1:1 (Detail 06) | CE-OPS-014, CE-OPS-016 |
 | `AuditModel` | `AuditableEntity` | 1:1 | – |
-| `ChangeTrackerMixin` (`TRACKED_FIELDS`, `changed_fields`, `old_values`) | EF `EntityEntry.OriginalValues` über `IChangeSet<TEntity>`-Helfer (`Plane.BuildingBlocks.Persistence/Tracking/ChangeSet.cs`) | angepasst | – |
-| `BaseModel` (`API/db/models/base.py`, UUID4, `crum.get_current_user`) | `Entity` (UUIDv7 via `IIdGenerator`) + `ICurrentActor` (aus `PlanePrincipal`, im Worker aus Job-Kontext) | angepasst (UUIDv7) | – |
+| `ChangeTrackerMixin` (`TRACKED_FIELDS`, `changed_fields`, `old_values`) | EF `EntityEntry.OriginalValues` über `IChangeSet<TEntity>`-Helfer (`Funk.BuildingBlocks.Persistence/Tracking/ChangeSet.cs`) | angepasst | – |
+| `BaseModel` (`API/db/models/base.py`, UUID4, `crum.get_current_user`) | `Entity` (UUIDv7 via `IIdGenerator`) + `ICurrentActor` (aus `FunkPrincipal`, im Worker aus Job-Kontext) | angepasst (UUIDv7) | – |
 | `WorkspaceBaseModel` (`API/db/models/workspace.py`) | `WorkspaceEntity` + `ScopeConsistencyInterceptor` | 1:1 | – |
 | `ProjectBaseModel` (`API/db/models/project.py`) | `ProjectEntity` | 1:1 | – |
 | `IssueManager` (`Issue.issue_objects`, `API/db/models/issue.py`) | `WorkItemBaseSets.IssueObjects` | 1:1 | CE-LV-005 |
 | `TimezoneMixin` (`API/app/views/base.py`) | `RequestTimeZoneMiddleware` + `IRequestTimeZone` | angepasst | CE-PROF (Zeitzone) |
 | `ReadReplicaControlMixin`, `ReadReplicaRoutingMiddleware`, `ReadReplicaRouter` (`API/utils/core/*`, `API/middleware/db_routing.py`) | `.UseReadReplica()` + `IReadDbContextAccessor` | angepasst | CE-OPS-010 |
-| `BaseViewSet`, `BaseAPIView` (`API/app/views/base.py`) | Oberfläche `App` + Endpoint-Filter + `PlaneExceptionHandler` | angepasst | – |
+| `BaseViewSet`, `BaseAPIView` (`API/app/views/base.py`) | Oberfläche `App` + Endpoint-Filter + `FunkExceptionHandler` | angepasst | – |
 | `BaseViewSet` (`API/space/views/base.py`), (`API/license/api/views/base.py`), (`API/api/views/base.py`) | Oberflächen `Space`, `Instance`, `V1` | angepasst | CE-SPACE, CE-INST, CE-API |
 | `BaseViewSet.workspace_slug`/`project_id` (inkl. URL-Name-`project`-Sonderfall `pk`) | `ScopeBindingFilter` (Projektrouten `projects/{pk}` nutzen Routenwert `pk` explizit über `.ProjectFromRoute("pk")`) | 1:1 | – |
 | `BaseViewSet.fields`/`expand` | `ExpandQuery` (nur `expand` wirkt; `fields` wird ignoriert wie Original, `A03` §2.3) | 1:1 | CE-API-017 |
@@ -1057,7 +1057,7 @@ Status-Legende: **1:1** = Verhalten identisch portiert · **angepasst** = Verhal
 |---|---|---|---|
 | 1 | `corsheaders.middleware.CorsMiddleware` | `UseCors("plane")` | korrigiert (kein Allow-All bei leerer Liste) |
 | 2 | `SecurityMiddleware` | `SecurityHeadersMiddleware` im Gateway (Detail 14) + Kestrel | angepasst |
-| 3 | `WhiteNoiseMiddleware` (`/static/`) | entfällt (keine Django-Static-Dateien; E-Mail-Assets in `Plane.Platform.Mail`) | entfällt |
+| 3 | `WhiteNoiseMiddleware` (`/static/`) | entfällt (keine Django-Static-Dateien; E-Mail-Assets in `Funk.Platform.Mail`) | entfällt |
 | 4 | `plane.authentication.middleware.session.SessionMiddleware` | Cookie-Authentication-Handler `Session` mit `ITicketStore` (`user_sessions`) – Detail 05 | angepasst (ein Cookie, ADR-008) |
 | 5 | `CommonMiddleware` (`APPEND_SLASH`) | `TrailingSlashMiddleware` | korrigiert (kein Redirect) |
 | 6 | `CsrfViewMiddleware` | Antiforgery nur für Formular-Endpunkte unter `/auth/` | angepasst |
@@ -1078,48 +1078,48 @@ Status-Legende: **1:1** = Verhalten identisch portiert · **angepasst** = Verhal
 
 | Original | Ziel | Status | ab |
 |---|---|---|---|
-| `analytics_plot.py` | `Plane.Analytics/Application/Services/AnalyticsPlotBuilder.cs`, Burndown `Plane.Cycles/Application/Services/BurndownCalculator.cs` | 1:1 (Detail 04) | I3/I5 |
-| `build_chart.py` | `Plane.Analytics/Application/Services/ChartBuilder.cs` | 1:1 | I5 |
+| `analytics_plot.py` | `Funk.Analytics/Application/Services/AnalyticsPlotBuilder.cs`, Burndown `Funk.Cycles/Application/Services/BurndownCalculator.cs` | 1:1 (Detail 04) | I3/I5 |
+| `build_chart.py` | `Funk.Analytics/Application/Services/ChartBuilder.cs` | 1:1 | I5 |
 | `cache.py` | `IPlaneCache` + benannte Lesemodelle (§3.12) | korrigiert (Tags statt fehlerhafter Schlüssel) | I1 |
-| `color.py` | `Plane.BuildingBlocks/Text/RandomColor.cs` (`#` + 6 Zeichen aus `0-9a-fA-F`) | 1:1 | I1 |
-| `constants.py` (`RESTRICTED_WORKSPACE_SLUGS`) | `Plane.Workspaces/Domain/RestrictedWorkspaceSlugs.cs` | 1:1 (Duplikate entfernt) | I0 |
-| `content_validator.py` | `Plane.Platform.Security/Html/PlaneHtmlSanitizer.cs`, `BinaryDocumentValidator.cs` | 1:1 (Allowlist) | I2 |
+| `color.py` | `Funk.BuildingBlocks/Text/RandomColor.cs` (`#` + 6 Zeichen aus `0-9a-fA-F`) | 1:1 | I1 |
+| `constants.py` (`RESTRICTED_WORKSPACE_SLUGS`) | `Funk.Workspaces/Domain/RestrictedWorkspaceSlugs.cs` | 1:1 (Duplikate entfernt) | I0 |
+| `content_validator.py` | `Funk.Platform.Security/Html/FunkHtmlSanitizer.cs`, `BinaryDocumentValidator.cs` | 1:1 (Allowlist) | I2 |
 | `core/dbrouters.py`, `core/request_scope.py`, `core/mixins/view.py` | `IReadDbContextAccessor`, `.UseReadReplica()` | angepasst | I1 |
-| `csv_utils.py` | `Plane.Exports/Formatting/FormulaInjectionGuard.cs` | 1:1 | I6 |
-| `cycle_transfer_issues.py` | `Plane.Cycles/Application/Commands/TransferCycleWorkItems/…` | 1:1 | I3 |
-| `date_utils.py` | `Plane.Analytics/Domain/AnalyticsDateRanges.cs` | 1:1 | I5 |
-| `email.py` | `Plane.Platform.Mail/HtmlToTextAlternative.cs` | 1:1 | I1 |
-| `error_codes.py` | `PlaneErrorCodes` (§3.8.3) | 1:1 | I0 |
-| `exception_logger.py` | `PlaneExceptionHandler` + Kategorie `plane.exception` | angepasst | I0 |
-| `exporters/*` (Schema-Exporter) | `Plane.Exports/Schema/*` | 1:1 (Detail 06) | I6 |
+| `csv_utils.py` | `Funk.Exports/Formatting/FormulaInjectionGuard.cs` | 1:1 | I6 |
+| `cycle_transfer_issues.py` | `Funk.Cycles/Application/Commands/TransferCycleWorkItems/…` | 1:1 | I3 |
+| `date_utils.py` | `Funk.Analytics/Domain/AnalyticsDateRanges.cs` | 1:1 | I5 |
+| `email.py` | `Funk.Platform.Mail/HtmlToTextAlternative.cs` | 1:1 | I1 |
+| `error_codes.py` | `FunkErrorCodes` (§3.8.3) | 1:1 | I0 |
+| `exception_logger.py` | `FunkExceptionHandler` + Kategorie `plane.exception` | angepasst | I0 |
+| `exporters/*` (Schema-Exporter) | `Funk.Exports/Schema/*` | 1:1 (Detail 06) | I6 |
 | `filters/filter_backend.py` | `RichFilterParser` | 1:1 | I2 |
 | `filters/filterset.py` (`BaseFilterSet`, `IssueFilterSet`, `UUIDInFilter`, `CharInFilter`, `DateCSVRangeFilter`) | `CoreWorkItemFilterFields` + `IWorkItemFilterTranslator`-Implementierungen | 1:1 | I2 |
 | `filters/converters.py` (`LegacyToRichFiltersConverter`) | entfällt (nur Migration `0107`, Greenfield ADR-003) | entfällt | – |
 | `filters/filter_migrations.py` | entfällt (Greenfield) | entfällt | – |
 | `global_paginator.py` | `GlobalPaginator` | 1:1 | I2 |
 | `grouper.py` (`issue_queryset_grouper`, `issue_on_results`, `issue_group_values`) | `WorkItemIdArraysLoader`, `WorkItemListProjection`, `GroupValueProvider` | 1:1 | I2 |
-| `host.py` (`base_host`) | `PlaneUrls.BaseHost(app)` (`Plane.BuildingBlocks.Web/Urls`) | angepasst (Detail 05) | I0 |
-| `html_processor.py` | `Plane.Documents/Text/HtmlTextExtractor.cs` | 1:1 | I2 |
+| `host.py` (`base_host`) | `FunkUrls.BaseHost(app)` (`Funk.BuildingBlocks.Web/Urls`) | angepasst (Detail 05) | I0 |
+| `html_processor.py` | `Funk.Documents/Text/HtmlTextExtractor.cs` | 1:1 | I2 |
 | `imports.py` | entfällt (kein dynamischer Import) | entfällt | – |
 | `instance_config_variables/{core,extended}.py` | `InstanceConfigurationKeys` (§4.10) | angepasst (ADR-008) | I0 |
-| `ip_address.py` | `Plane.Platform.Security/Net/IpAddressRules.cs`, `ClientIpResolver` | 1:1 | I0 |
+| `ip_address.py` | `Funk.Platform.Security/Net/IpAddressRules.cs`, `ClientIpResolver` | 1:1 | I0 |
 | `issue_filters.py` | `LegacyFilterParser`, `LegacyDateTermParser` | 1:1 (Abweichungen §3.11) | I2 |
-| `issue_relation_mapper.py` | `Plane.WorkItems/Domain/RelationTypeMapper.cs` (Katalog `work_item_relation_types`, A9) | 1:1 | I2 |
-| `issue_search.py` | `Plane.Search/Application/Services/WorkItemSearch.cs` | 1:1 | I5 |
+| `issue_relation_mapper.py` | `Funk.WorkItems/Domain/RelationTypeMapper.cs` (Katalog `work_item_relation_types`, A9) | 1:1 | I2 |
+| `issue_search.py` | `Funk.Search/Application/Services/WorkItemSearch.cs` | 1:1 | I5 |
 | `logging.py` (`SizedTimedRotatingFileHandler`) | entfällt (Console/OTLP; Datei-Logging Sache des Betreibers) | entfällt | – |
-| `markdown.py` | `Plane.Documents/Markdown/MarkdownRenderer.cs` | 1:1 | I4 |
-| `openapi/*` | `PlaneOpenApiTransformers` + Endpunkt-Metadaten | angepasst | I6 |
+| `markdown.py` | `Funk.Documents/Markdown/MarkdownRenderer.cs` | 1:1 | I4 |
+| `openapi/*` | `FunkOpenApiTransformers` + Endpunkt-Metadaten | angepasst | I6 |
 | `order_queryset.py` | `OrderKeyRegistry` (Work Items), `OrderSpec`-Allowlists je Modul (§4.6) | 1:1 | I1/I2 |
 | `otlp_endpoints.py` | entfällt (kein Telemetrie-Push, ADR-004) | entfällt | – |
 | `paginator.py` | §4.1 | 1:1 | I1 |
-| `path_validator.py` | `Plane.Platform.Security/Redirects/SafeRedirect.cs`, `FileNameSanitizer.cs` | 1:1 | I0 |
-| `permissions/*` (Kopie) | eine Implementierung `Plane.Authorization` | angepasst | I0 |
-| `porters/*` | `Plane.Exports/Porters/*` | 1:1 | I6 |
-| `serializers.py` (Payload-Bereinigung) | `Plane.BuildingBlocks.Web/Json/PayloadSanitizer.cs` | 1:1 | I2 |
-| `timezone_converter.py` | `Plane.BuildingBlocks/Time/TimeZoneConversions.cs` (`ToUtcForProjectStart`, `ToUtcForProjectEnd`, `ProjectDayStart`, `SnoozeDayStart`, `UtcToProject`) | 1:1 | I3 |
-| `url.py` | `Plane.Platform.Security/Net/UrlDetection.cs` | 1:1 | I1 |
+| `path_validator.py` | `Funk.Platform.Security/Redirects/SafeRedirect.cs`, `FileNameSanitizer.cs` | 1:1 | I0 |
+| `permissions/*` (Kopie) | eine Implementierung `Funk.Authorization` | angepasst | I0 |
+| `porters/*` | `Funk.Exports/Porters/*` | 1:1 | I6 |
+| `serializers.py` (Payload-Bereinigung) | `Funk.BuildingBlocks.Web/Json/PayloadSanitizer.cs` | 1:1 | I2 |
+| `timezone_converter.py` | `Funk.BuildingBlocks/Time/TimeZoneConversions.cs` (`ToUtcForProjectStart`, `ToUtcForProjectEnd`, `ProjectDayStart`, `SnoozeDayStart`, `UtcToProject`) | 1:1 | I3 |
+| `url.py` | `Funk.Platform.Security/Net/UrlDetection.cs` | 1:1 | I1 |
 | `url_security.py` | `SsrfSafeHttpHandler` | 1:1 | I1/I6 |
-| `uuid.py` | `Plane.BuildingBlocks/Ids/UuidRules.cs` | 1:1 | I0 |
+| `uuid.py` | `Funk.BuildingBlocks/Ids/UuidRules.cs` | 1:1 | I0 |
 
 ### 4.4 Permission-Klassen und Decorator
 
@@ -1139,11 +1139,11 @@ Vollständige Abbildung in §3.6.3 (Vorlagen). Zusätzlich:
 
 | Original | Ziel | Status |
 |---|---|---|
-| `handle_exception` (`API/app/views/base.py` + Space/Instance/V1-Pendants) | `PlaneExceptionHandler` (§3.8.2) | 1:1 |
-| `AUTHENTICATION_ERROR_CODES` (`API/authentication/adapter/error.py`) | `AuthErrorCodes` (`Plane.Identity.Contracts`, 05 §4.3) | 1:1 (ruhende Codes bleiben) |
-| `AuthenticationException.get_error_dict` | `PlaneErrors.Coded` | 1:1 |
-| `ERROR_CODES` (`API/utils/error_codes.py`) | `PlaneErrorCodes` | 1:1 |
-| DRF `ValidationError` (Serializer) | `PlaneError.Fields` | 1:1 |
+| `handle_exception` (`API/app/views/base.py` + Space/Instance/V1-Pendants) | `FunkExceptionHandler` (§3.8.2) | 1:1 |
+| `AUTHENTICATION_ERROR_CODES` (`API/authentication/adapter/error.py`) | `AuthErrorCodes` (`Funk.Identity.Contracts`, 05 §4.3) | 1:1 (ruhende Codes bleiben) |
+| `AuthenticationException.get_error_dict` | `FunkErrors.Coded` | 1:1 |
+| `ERROR_CODES` (`API/utils/error_codes.py`) | `FunkErrorCodes` | 1:1 |
+| DRF `ValidationError` (Serializer) | `FunkError.Fields` | 1:1 |
 | DRF `ParseError` (Pagination) | `PaginationQuery.Bind` | 1:1 |
 | DRF `MethodNotAllowed` | `StatusCodeBodiesMiddleware` 405 | 1:1 |
 | `csrf_failure` (HTML) | Antiforgery-Fehler der verbleibenden Formular-Endpunkte (`POST /auth/sign-out/`, `/auth/spaces/sign-out/`, `/api/instances/admins/sign-out/`) → HTML `csrf_failure.html` 1:1 wie 05 §3.5 (CE-AUTH-016; Erstfassung „403 JSON“ korrigiert) | 1:1 |
@@ -1152,18 +1152,18 @@ Vollständige Abbildung in §3.6.3 (Vorlagen). Zusätzlich:
 
 | Konstante | Werte | Ziel | Default |
 |---|---|---|---|
-| `ISSUE_ORDER_BY_ALLOWLIST` | §3.11.5 | `CoreOrderKeys` (`Plane.WorkItems/Query/Ordering`) | `-created_at` |
-| `INTAKE_ISSUE_ORDER_BY_ALLOWLIST` | `issue__created_at, issue__updated_at, issue__sequence_id, issue__sort_order, issue__target_date, issue__start_date, issue__priority, issue__state__name, created_at, updated_at, status` | `IntakeOrderSpec` (`Plane.Intake/Query`), `issue__priority` alphabetisch wie Original | `-issue__created_at` |
-| `ACTIVITY_ORDER_BY_ALLOWLIST` | `created_at, updated_at` | `ActivityOrderSpec` (`Plane.WorkItems`/`Plane.Workspaces`) | `-created_at` |
-| `PROJECT_ORDER_BY_ALLOWLIST` | `created_at, updated_at, name, network, sort_order` | `ProjectOrderSpec` (`Plane.Projects`) | `-created_at` |
-| `VIEW_ORDER_BY_ALLOWLIST` | `created_at, updated_at, name` | `ViewOrderSpec` (`Plane.Views`) | `-created_at` |
-| `NOTIFICATION_ORDER_BY_ALLOWLIST` | `created_at, updated_at` | `NotificationOrderSpec` (`Plane.Notifications`) | `-created_at` |
-| `PAGE_ORDER_BY_ALLOWLIST` | `created_at, updated_at, name, sort_order` | `PageOrderSpec` (`Plane.Pages`) | `-created_at` |
-| `EXPORTER_HISTORY_ORDER_BY_ALLOWLIST` | `created_at, updated_at` | `ExportOrderSpec` (`Plane.Exports`) | `-created_at` |
-| `CYCLE_ORDER_BY_ALLOWLIST` | `created_at, updated_at, name, start_date, end_date, sort_order` | `CycleOrderSpec` (`Plane.Cycles`) | `-created_at` |
-| `MODULE_ORDER_BY_ALLOWLIST` | `created_at, updated_at, name, start_date, target_date, status, sort_order` | `ModuleOrderSpec` (`Plane.ProjectModules`) | `-created_at` |
+| `ISSUE_ORDER_BY_ALLOWLIST` | §3.11.5 | `CoreOrderKeys` (`Funk.WorkItems/Query/Ordering`) | `-created_at` |
+| `INTAKE_ISSUE_ORDER_BY_ALLOWLIST` | `issue__created_at, issue__updated_at, issue__sequence_id, issue__sort_order, issue__target_date, issue__start_date, issue__priority, issue__state__name, created_at, updated_at, status` | `IntakeOrderSpec` (`Funk.Intake/Query`), `issue__priority` alphabetisch wie Original | `-issue__created_at` |
+| `ACTIVITY_ORDER_BY_ALLOWLIST` | `created_at, updated_at` | `ActivityOrderSpec` (`Funk.WorkItems`/`Funk.Workspaces`) | `-created_at` |
+| `PROJECT_ORDER_BY_ALLOWLIST` | `created_at, updated_at, name, network, sort_order` | `ProjectOrderSpec` (`Funk.Projects`) | `-created_at` |
+| `VIEW_ORDER_BY_ALLOWLIST` | `created_at, updated_at, name` | `ViewOrderSpec` (`Funk.Views`) | `-created_at` |
+| `NOTIFICATION_ORDER_BY_ALLOWLIST` | `created_at, updated_at` | `NotificationOrderSpec` (`Funk.Notifications`) | `-created_at` |
+| `PAGE_ORDER_BY_ALLOWLIST` | `created_at, updated_at, name, sort_order` | `PageOrderSpec` (`Funk.Pages`) | `-created_at` |
+| `EXPORTER_HISTORY_ORDER_BY_ALLOWLIST` | `created_at, updated_at` | `ExportOrderSpec` (`Funk.Exports`) | `-created_at` |
+| `CYCLE_ORDER_BY_ALLOWLIST` | `created_at, updated_at, name, start_date, end_date, sort_order` | `CycleOrderSpec` (`Funk.Cycles`) | `-created_at` |
+| `MODULE_ORDER_BY_ALLOWLIST` | `created_at, updated_at, name, start_date, target_date, status, sort_order` | `ModuleOrderSpec` (`Funk.ProjectModules`) | `-created_at` |
 | `ISSUE_GROUP_BY_ALLOWLIST` | `state_id, state__group, priority, labels__id, assignees__id, issue_module__module_id, cycle_id, project_id, created_by, target_date, start_date` | `CoreGroupKeys` | – |
-| `sanitize_order_by` | höchstens ein führendes `-`, unbekannt → Default | `OrderSpec.Sanitize(string?)` (`Plane.BuildingBlocks.Web/Pagination`) | – |
+| `sanitize_order_by` | höchstens ein führendes `-`, unbekannt → Default | `OrderSpec.Sanitize(string?)` (`Funk.BuildingBlocks.Web/Pagination`) | – |
 
 ### 4.7 Legacy-Filter und Rich-Filter
 
@@ -1175,7 +1175,7 @@ Vollständig in §3.13 (Spalte „Original“). `throttle_auth_redirect` (Redire
 
 ### 4.9 ENV-Variablen → Options (API-Server `A01` §2.11.1, Live `A01` §2.11.3)
 
-Spalte „Ziel“: Konfigurationsschlüssel (ENV-Form `Plane__Bereich__Feld`); die Original-Variable bleibt als **Alias** gültig, sofern nicht „entfällt“.
+Spalte „Ziel“: Konfigurationsschlüssel (ENV-Form `Funk__Bereich__Feld`); die Original-Variable bleibt als **Alias** gültig, sofern nicht „entfällt“.
 
 | Original-ENV | Ziel | Bemerkung |
 |---|---|---|
@@ -1183,55 +1183,55 @@ Spalte „Ziel“: Konfigurationsschlüssel (ENV-Form `Plane__Bereich__Feld`); d
 | `SECRET_KEY` | entfällt (**kein** Alias, wird nicht gelesen – insbesondere nicht als `SigningKey`, ABG-012) | Data-Protection-Key-Ring (ADR-036); ist er gesetzt, Startwarnung `"SECRET_KEY is ignored; ASP.NET Core Data Protection is used."` (Kategorie `plane.config`), bei bekannten Platzhalterwerten zusätzlich Level Critical (05 §4.4, 14 §3.9.2 Regel 3) |
 | `DEBUG` | entfällt | `ASPNETCORE_ENVIRONMENT=Development` |
 | `ALLOWED_HOSTS` | `AllowedHosts` | ASP.NET-Standard |
-| `WEBHOOK_ALLOWED_IPS` | `Plane:Webhooks:AllowedNetworks` | ungültige Einträge → Warnung, übersprungen |
-| `WEBHOOK_ALLOWED_HOSTS` | `Plane:Webhooks:AllowedHosts` | lowercase, ohne Punkt am Ende |
-| `WEBHOOK_DISALLOWED_DOMAINS` | `Plane:Webhooks:DisallowedDomains` | – |
-| `NUM_PROXIES` | `Plane:ForwardedHeaders:ForwardLimit` | nur dezimal, max. 3 Ziffern |
-| `API_KEY_RATE_LIMIT` | `Plane:RateLimits:ApiKey` | Format `n/period` |
-| `AUTHENTICATION_RATE_LIMIT` | `Plane:RateLimits:Authentication` | dto. |
-| `CORS_ALLOWED_ORIGINS` | `Plane:Cors:AllowedOrigins` | zugleich Origin-Allowlist |
+| `WEBHOOK_ALLOWED_IPS` | `Funk:Webhooks:AllowedNetworks` | ungültige Einträge → Warnung, übersprungen |
+| `WEBHOOK_ALLOWED_HOSTS` | `Funk:Webhooks:AllowedHosts` | lowercase, ohne Punkt am Ende |
+| `WEBHOOK_DISALLOWED_DOMAINS` | `Funk:Webhooks:DisallowedDomains` | – |
+| `NUM_PROXIES` | `Funk:ForwardedHeaders:ForwardLimit` | nur dezimal, max. 3 Ziffern |
+| `API_KEY_RATE_LIMIT` | `Funk:RateLimits:ApiKey` | Format `n/period` |
+| `AUTHENTICATION_RATE_LIMIT` | `Funk:RateLimits:Authentication` | dto. |
+| `CORS_ALLOWED_ORIGINS` | `Funk:Cors:AllowedOrigins` | zugleich Origin-Allowlist |
 | `DATABASE_URL`, `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`, `POSTGRES_PORT` | `ConnectionStrings:plane` | `DatabaseUrlConverter` (URL → Npgsql-Connection-String); `DATABASE_URL` hat Vorrang |
-| `ENABLE_READ_REPLICA` | `Plane:Database:ReadReplicaEnabled` | – |
+| `ENABLE_READ_REPLICA` | `Funk:Database:ReadReplicaEnabled` | – |
 | `DATABASE_READ_REPLICA_URL`, `POSTGRES_READ_REPLICA_DB/_USER/_PASSWORD/_HOST/_PORT` | `ConnectionStrings:plane-replica` | dto. |
 | `REDIS_URL` | `ConnectionStrings:valkey` | `rediss://` → TLS |
 | `REDIS_HOST`, `REDIS_PORT` | `ConnectionStrings:valkey` (nur wenn `REDIS_URL` fehlt; Live-Fallback) | – |
-| `REDIS_SSL_CERT_REQS`, `REDIS_SSL_CA_CERTS` | `Plane:Valkey:SslCertificateValidation` (`required`\|`none`), `Plane:Valkey:CaCertificatePath` | CE-OPS-011 |
-| `USE_MINIO`, `MINIO_ENDPOINT_URL`, `MINIO_ENDPOINT_SSL` | entfällt → `Plane:Storage:PublicEndpoint` | Request-Host-Trick ersetzt (ADR-026) |
-| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | `Plane:Storage:AccessKey`, `:SecretKey` | – |
-| `AWS_S3_BUCKET_NAME` | `Plane:Storage:Bucket` | Default `uploads` |
-| `AWS_REGION` | `Plane:Storage:Region` | – |
-| `AWS_S3_ENDPOINT_URL` | `Plane:Storage:InternalEndpoint` | – |
-| `SIGNED_URL_EXPIRATION` | `Plane:Storage:PresignExpirySeconds` | – |
-| `FILE_SIZE_LIMIT` | `Plane:Uploads:MaxFileSizeBytes` | auch Gateway-Limit |
-| `WEB_URL`, `APP_BASE_URL` | `Plane:Urls:Web`, `Plane:Urls:App` | `WEB_URL` Fallback `APP_BASE_URL` wie Original |
+| `REDIS_SSL_CERT_REQS`, `REDIS_SSL_CA_CERTS` | `Funk:Valkey:SslCertificateValidation` (`required`\|`none`), `Funk:Valkey:CaCertificatePath` | CE-OPS-011 |
+| `USE_MINIO`, `MINIO_ENDPOINT_URL`, `MINIO_ENDPOINT_SSL` | entfällt → `Funk:Storage:PublicEndpoint` | Request-Host-Trick ersetzt (ADR-026) |
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | `Funk:Storage:AccessKey`, `:SecretKey` | – |
+| `AWS_S3_BUCKET_NAME` | `Funk:Storage:Bucket` | Default `uploads` |
+| `AWS_REGION` | `Funk:Storage:Region` | – |
+| `AWS_S3_ENDPOINT_URL` | `Funk:Storage:InternalEndpoint` | – |
+| `SIGNED_URL_EXPIRATION` | `Funk:Storage:PresignExpirySeconds` | – |
+| `FILE_SIZE_LIMIT` | `Funk:Uploads:MaxFileSizeBytes` | auch Gateway-Limit |
+| `WEB_URL`, `APP_BASE_URL` | `Funk:Urls:Web`, `Funk:Urls:App` | `WEB_URL` Fallback `APP_BASE_URL` wie Original |
 | `APP_BASE_PATH` | entfällt | im Original ungenutzt |
-| `ADMIN_BASE_URL`, `ADMIN_BASE_PATH` | `Plane:Urls:Admin`, `:AdminPath` | Normalisierung auf `/…/` |
-| `SPACE_BASE_URL`, `SPACE_BASE_PATH` | `Plane:Urls:Space`, `:SpacePath` | dto. |
-| `LIVE_BASE_URL`, `LIVE_BASE_PATH` | `Plane:Urls:Live`, `:LivePath` | – |
-| `LIVE_SERVER_SECRET_KEY` | `Plane:Realtime:InternalSecret` | nur falls interne Aufrufe (In-Process-Persistenz macht ihn i. d. R. überflüssig) |
+| `ADMIN_BASE_URL`, `ADMIN_BASE_PATH` | `Funk:Urls:Admin`, `:AdminPath` | Normalisierung auf `/…/` |
+| `SPACE_BASE_URL`, `SPACE_BASE_PATH` | `Funk:Urls:Space`, `:SpacePath` | dto. |
+| `LIVE_BASE_URL`, `LIVE_BASE_PATH` | `Funk:Urls:Live`, `:LivePath` | – |
+| `LIVE_SERVER_SECRET_KEY` | `Funk:Realtime:InternalSecret` | nur falls interne Aufrufe (In-Process-Persistenz macht ihn i. d. R. überflüssig) |
 | `RABBITMQ_HOST/_PORT/_USER/_PASSWORD/_VHOST`, `AMQP_URL` | entfällt | PostgreSQL-Job-Queue (ADR-020) |
-| `SESSION_COOKIE_AGE` | `Plane:Auth:SessionLifetimeSeconds` | 05 §3.2 |
-| `SESSION_COOKIE_NAME` | `Plane:Auth:SessionCookieName` | 05 §3.2 |
-| `COOKIE_DOMAIN` | `Plane:Auth:CookieDomain` | 05 §3.2 |
-| `SESSION_SAVE_EVERY_REQUEST` | `Plane:Auth:SlidingSession` | `"1"` → true (05 §3.2) |
-| `CSRF_TRUSTED_ORIGINS` (im Original aus anderen Werten abgeleitet, als ENV nicht gesetzt) | `Plane:Security:TrustedOrigins` | zusätzliche Origin-Allowlist (05 §4.4) |
-| `ADMIN_SESSION_COOKIE_AGE` | entfällt | kein Admin-Cookie (ADR-008); Step-up `Plane:Auth:AdminStepUpMaxAgeSeconds` |
-| `HARD_DELETE_AFTER_DAYS` | `Plane:Retention:HardDeleteDays` | – |
-| `API_ACTIVITY_LOG_RETENTION_DAYS` | `Plane:Retention:ApiActivityLogDays` | ungültig/negativ → Default |
-| `WEBHOOK_LOG_RETENTION_DAYS` | `Plane:Retention:WebhookLogDays` | dto. |
-| `EMAIL_LOG_RETENTION_DAYS` | `Plane:Retention:EmailLogDays` | dto. |
-| `UNUPLOADED_ASSET_DELETE_DAYS` | `Plane:Retention:UnuploadedAssetDays` | – |
-| `INSTANCE_CHANGELOG_URL` | `Plane:Instance:ChangelogUrl` | Default leer (ADR-004) |
-| `ENABLE_DRF_SPECTACULAR` | `Plane:OpenApi:Enabled` | – |
-| `SKIP_ENV_VAR` | `Plane:Instance:ConfigurationSource` (`1` → `Database`, `0` → `Environment`) | – |
+| `SESSION_COOKIE_AGE` | `Funk:Auth:SessionLifetimeSeconds` | 05 §3.2 |
+| `SESSION_COOKIE_NAME` | `Funk:Auth:SessionCookieName` | 05 §3.2 |
+| `COOKIE_DOMAIN` | `Funk:Auth:CookieDomain` | 05 §3.2 |
+| `SESSION_SAVE_EVERY_REQUEST` | `Funk:Auth:SlidingSession` | `"1"` → true (05 §3.2) |
+| `CSRF_TRUSTED_ORIGINS` (im Original aus anderen Werten abgeleitet, als ENV nicht gesetzt) | `Funk:Security:TrustedOrigins` | zusätzliche Origin-Allowlist (05 §4.4) |
+| `ADMIN_SESSION_COOKIE_AGE` | entfällt | kein Admin-Cookie (ADR-008); Step-up `Funk:Auth:AdminStepUpMaxAgeSeconds` |
+| `HARD_DELETE_AFTER_DAYS` | `Funk:Retention:HardDeleteDays` | – |
+| `API_ACTIVITY_LOG_RETENTION_DAYS` | `Funk:Retention:ApiActivityLogDays` | ungültig/negativ → Default |
+| `WEBHOOK_LOG_RETENTION_DAYS` | `Funk:Retention:WebhookLogDays` | dto. |
+| `EMAIL_LOG_RETENTION_DAYS` | `Funk:Retention:EmailLogDays` | dto. |
+| `UNUPLOADED_ASSET_DELETE_DAYS` | `Funk:Retention:UnuploadedAssetDays` | – |
+| `INSTANCE_CHANGELOG_URL` | `Funk:Instance:ChangelogUrl` | Default leer (ADR-004) |
+| `ENABLE_DRF_SPECTACULAR` | `Funk:OpenApi:Enabled` | – |
+| `SKIP_ENV_VAR` | `Funk:Instance:ConfigurationSource` (`1` → `Database`, `0` → `Environment`) | – |
 | `UNSPLASH_ACCESS_KEY` | Instanz-Key `UNSPLASH_ACCESS_KEY` (Seed) | – |
 | `GITHUB_ACCESS_TOKEN`, `ANALYTICS_SECRET_KEY`, `ANALYTICS_BASE_API` | entfällt | im Original ungenutzt |
 | `EMAIL_BACKEND` | entfällt | Dev: Mailpit; Test: `InMemoryMailSender` |
 | `SCOUT_MONITOR`, `SCOUT_KEY` | entfällt | OpenTelemetry |
 | `GUNICORN_WORKERS`, `PORT` | entfällt / `HTTP_PORTS` | Kestrel |
 | `MACHINE_SIGNATURE` | entfällt | – |
-| `APP_VERSION` | `Plane:Instance:AppVersion` | Default Assembly-Version |
-| `IS_TEST` | `Plane:Instance:IsTest` | – |
+| `APP_VERSION` | `Funk:Instance:AppVersion` | Default Assembly-Version |
+| `IS_TEST` | `Funk:Instance:IsTest` | – |
 | `METRICS_PUSH_INTERVAL_MINUTES`, `OTLP_ENDPOINT`, `OTLP_METRICS_PROTOCOL`, `OTEL_EXPORTER_OTLP_METRICS_INSECURE`, `SERVICE_NAME` | entfällt | kein Telemetrie-Push; Standard-`OTEL_*` der ServiceDefaults |
 | `LLM_API_KEY`, `LLM_PROVIDER`, `LLM_MODEL` | Instanz-Keys (Seed) | – |
 | `DISABLE_WORKSPACE_CREATION` | Instanz-Key (Seed) | – |
@@ -1240,16 +1240,16 @@ Spalte „Ziel“: Konfigurationsschlüssel (ENV-Form `Plane__Bereich__Feld`); d
 | `EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_PORT`, `EMAIL_USE_TLS`, `EMAIL_USE_SSL`, `EMAIL_FROM` | Instanz-Keys (Seed) | – |
 | `GOOGLE_*`, `GITHUB_CLIENT_ID/_SECRET/_ORGANIZATION_ID`, `GITLAB_*`, `GITEA_*`, `IS_*_ENABLED`, `ENABLE_*_SYNC` | entfällt | ADR-008 |
 | `GITHUB_APP_NAME`, `SLACK_CLIENT_ID` | entfällt | ADR-007, Paket F7 nicht gewählt |
-| Live: `APP_VERSION` | `Plane:Instance:AppVersion` | – |
-| Live: `HOSTNAME` | `Plane:Realtime:InstanceName` | Default Maschinenname |
-| Live: `PORT`, `LIVE_BASE_PATH` | Kestrel / `Plane:Urls:LivePath` | – |
+| Live: `APP_VERSION` | `Funk:Instance:AppVersion` | – |
+| Live: `HOSTNAME` | `Funk:Realtime:InstanceName` | Default Maschinenname |
+| Live: `PORT`, `LIVE_BASE_PATH` | Kestrel / `Funk:Urls:LivePath` | – |
 | Live: `API_BASE_URL` | entfällt | In-Process (ADR-022) |
-| Live: `CORS_ALLOWED_ORIGINS` | `Plane:Cors:AllowedOrigins` | – |
-| Live: `COMPRESSION_LEVEL`, `COMPRESSION_THRESHOLD` | `Plane:Realtime:CompressionLevel`, `:CompressionThresholdBytes` | – |
+| Live: `CORS_ALLOWED_ORIGINS` | `Funk:Cors:AllowedOrigins` | – |
+| Live: `COMPRESSION_LEVEL`, `COMPRESSION_THRESHOLD` | `Funk:Realtime:CompressionLevel`, `:CompressionThresholdBytes` | – |
 | Live: `LOG_LEVEL` | `Logging:LogLevel:Default` | – |
-| Frontend `VITE_*` (`A01` §2.11.4) | Runtime-Config aus `Plane:Urls:*` (01 §7.12) | Detail 08/14 |
-| Proxy `SITE_ADDRESS`, `CERT_*`, `BUCKET_NAME`, `LISTEN_*` (`A01` §2.11.5) | `Plane:Gateway:*` | Detail 14 |
-| Proxy `TRUSTED_PROXIES` (`A01` §2.11.5) | `Plane:ForwardedHeaders:KnownNetworks` | CIDR-Liste; Code-Abbildung auf `KnownIPNetworks` (ABG-039) |
+| Frontend `VITE_*` (`A01` §2.11.4) | Runtime-Config aus `Funk:Urls:*` (01 §7.12) | Detail 08/14 |
+| Proxy `SITE_ADDRESS`, `CERT_*`, `BUCKET_NAME`, `LISTEN_*` (`A01` §2.11.5) | `Funk:Gateway:*` | Detail 14 |
+| Proxy `TRUSTED_PROXIES` (`A01` §2.11.5) | `Funk:ForwardedHeaders:KnownNetworks` | CIDR-Liste; Code-Abbildung auf `KnownIPNetworks` (ABG-039) |
 
 ### 4.10 Instanz-Konfigurations-Keys (`API/utils/instance_config_variables/core.py`, `A05` §2.7.4)
 
@@ -1268,7 +1268,7 @@ Spalte „Ziel“: Konfigurationsschlüssel (ENV-Form `Plane__Bereich__Feld`); d
 | 26 | `EMAIL_HOST_USER` | SMTP | nein | `""` | `""` | übernommen |
 | 27 | `EMAIL_HOST_PASSWORD` | SMTP | **ja** | `""` | `""` | übernommen |
 | 28 | `EMAIL_PORT` | SMTP | nein | `587` | `587` | übernommen |
-| 29 | `EMAIL_FROM` | SMTP | nein | `""` | `Team Plane <team@mailer.plane.so>` (Original) | übernommen; Lesedefault im Ziel `funk. <noreply@…>` (Host aus `Plane:Urls:Web`, ABG-105) |
+| 29 | `EMAIL_FROM` | SMTP | nein | `""` | `Team Plane <team@mailer.plane.so>` (Original) | übernommen; Lesedefault im Ziel `funk. <noreply@…>` (Host aus `Funk:Urls:Web`, ABG-105) |
 | 30 | `EMAIL_USE_TLS` | SMTP | nein | `1` | `1` | übernommen |
 | 31 | `EMAIL_USE_SSL` | SMTP | nein | `0` | `0` | übernommen |
 | 32 | `LLM_API_KEY` | AI | **ja** | – | – | übernommen |
@@ -1284,18 +1284,18 @@ Ergebnis CE (deckungsgleich mit 05 §4.4): **14 Keys** übernommen – Nr. 1, 4,
 
 | Setting | Ziel |
 |---|---|
-| `IS_SELF_MANAGED = True` | Konstante in `Plane.Instance` (`is_self_managed: true`) |
-| `REST_FRAMEWORK.DEFAULT_THROTTLE_RATES` (`anon`, `asset_id`) | `PlaneRateLimitOptions` |
+| `IS_SELF_MANAGED = True` | Konstante in `Funk.Instance` (`is_self_managed: true`) |
+| `REST_FRAMEWORK.DEFAULT_THROTTLE_RATES` (`anon`, `asset_id`) | `FunkRateLimitOptions` |
 | `REST_FRAMEWORK.DEFAULT_PERMISSION_CLASSES = IsAuthenticated` | `AuthenticatedFilter` als Oberflächen-Default |
 | `REST_FRAMEWORK.DEFAULT_RENDERER_CLASSES = JSONRenderer` | nur JSON |
 | `REST_FRAMEWORK.EXCEPTION_HANDLER` | §3.8.2 |
 | `CORS_ALLOW_CREDENTIALS`, `CORS_ALLOW_HEADERS` (+ `X-API-Key`) | CORS-Policy `plane` |
 | `AUTH_PASSWORD_VALIDATORS`, `PASSWORD_RESET_TIMEOUT` | entfällt (Keycloak) |
 | `LANGUAGE_CODE`, `USE_TZ`, `TIME_ZONE = UTC` | UTC-Speicherung, `IClock` |
-| `ATTACHMENT_MIME_TYPES`, `INLINE_SAFE_MIME_TYPES` | `PlaneUploadsOptions` |
+| `ATTACHMENT_MIME_TYPES`, `INLINE_SAFE_MIME_TYPES` | `FunkUploadsOptions` |
 | `SECURE_PROXY_SSL_HEADER` | ForwardedHeaders (`X-Forwarded-Proto`) |
 | `CELERY_*` | entfällt (ADR-020) |
-| `SEED_DIR` | `Plane.Data/Seeds/` |
+| `SEED_DIR` | `Funk.Data/Seeds/` |
 | `CSRF_TRUSTED_ORIGINS` | Origin-Allowlist (`OriginCheckMiddleware`) |
 
 ### 4.12 CE-IDs → Bausteine dieses Dokuments
@@ -1316,15 +1316,15 @@ Ergebnis CE (deckungsgleich mit 05 §4.4): **14 Keys** übernommen – Nr. 1, 4,
 | CE-API-002 | Rate-Limit je API-Key | Policy `api_key` (§3.13) | I6 |
 | CE-API-003 | API-Aktivitätsprotokoll | `ApiActivityLogMiddleware` (§3.4.1) | I6 |
 | CE-API-004 | OpenAPI | §3.18 | I6 |
-| CE-OPS-007 | Base-URLs/-Paths | `PlaneUrlsOptions` | I0 |
+| CE-OPS-007 | Base-URLs/-Paths | `FunkUrlsOptions` | I0 |
 | CE-OPS-008 | Health + robots.txt | §3.17 | I0 |
 | CE-OPS-009 | Upload-Größenlimit 413 | `RequestBodyLimitMiddleware` | I0 |
 | CE-OPS-010 | Read-Replica | D02-ADR-22 | I1 |
-| CE-OPS-011 | Redis/Valkey mit TLS | `Plane:Valkey:*` | I1 |
+| CE-OPS-011 | Redis/Valkey mit TLS | `Funk:Valkey:*` | I1 |
 | CE-OPS-014 | Soft-Delete und Hard-Delete | §3.2 | I0 (Soft), I1 (Job) |
-| CE-OPS-015 | Aufbewahrung | `PlaneRetentionOptions` | I1 |
+| CE-OPS-015 | Aufbewahrung | `FunkRetentionOptions` | I1 |
 | CE-OPS-017 | Sanitizing | Validierung §3.7 (Aufruf), ADR-030 | I2 |
-| CE-OPS-018 | SSRF-sichere ausgehende Requests | `PlaneSecurityOptions.SsrfBlockPrivateNetworks`, `PlaneWebhookOptions` (Allow-/Blocklisten), Log-Kategorie `plane.external`; Handler selbst in 05 §5.9 | I1 (Avatar/Link-Vorschau), I6 (Webhooks) |
+| CE-OPS-018 | SSRF-sichere ausgehende Requests | `FunkSecurityOptions.SsrfBlockPrivateNetworks`, `FunkWebhookOptions` (Allow-/Blocklisten), Log-Kategorie `plane.external`; Handler selbst in 05 §5.9 | I1 (Avatar/Link-Vorschau), I6 (Webhooks) |
 | CE-OPS-020 | Betriebs-CLI `clear_cache` | `IPlaneCache.ClearAsync` (= `HybridCache.RemoveByTagAsync("*")`, Wildcard-Tag, + Pub/Sub an alle Knoten, §3.12.1); übrige Kommandos in 14 | I1 |
 | CE-OPS-019 | Strukturiertes Request-Logging | §3.14 | I0 |
 | CE-OPS-021 … CE-OPS-023 | Dev-Umgebung, Test-Stack, CI | Modul-Schablone, Testprojekte, Architekturtests (§3.1, §7) | I0 |
@@ -1338,10 +1338,10 @@ Die Skelette sind **Konventionsreferenz**: Signaturen, Namen, Dateiorte und Verh
 
 ### 5.1 Building Blocks
 
-#### 5.1.1 Entity-Basistypen – `src/building-blocks/Plane.BuildingBlocks.Persistence/Entities/`
+#### 5.1.1 Entity-Basistypen – `src/building-blocks/Funk.BuildingBlocks.Persistence/Entities/`
 
 ```csharp
-namespace Plane.BuildingBlocks.Persistence.Entities;
+namespace Funk.BuildingBlocks.Persistence.Entities;
 
 public interface ISoftDeletable { DateTimeOffset? DeletedAt { get; set; } }
 public interface IAuditable
@@ -1380,7 +1380,7 @@ public abstract class AuditableEntity : Entity, IAuditable, ISoftDeletable
 {
     protected AuditableEntity(Guid id) : base(id) { }
     protected AuditableEntity() { }
-    public DateTimeOffset CreatedAt { get; set; }            // nur AuditInterceptor setzt (Analyzer PLANE0002)
+    public DateTimeOffset CreatedAt { get; set; }            // nur AuditInterceptor setzt (Analyzer FUNK0002)
     public DateTimeOffset UpdatedAt { get; set; }
     public Guid? CreatedById { get; set; }
     public Guid? UpdatedById { get; set; }
@@ -1433,10 +1433,10 @@ internal sealed class AuditInterceptor(IClock clock, ICurrentActor actor) : Save
 }
 ```
 
-#### 5.1.3 Basis-Konfiguration – `…/Configuration/PlaneEntityConfiguration.cs`
+#### 5.1.3 Basis-Konfiguration – `…/Configuration/FunkEntityConfiguration.cs`
 
 ```csharp
-public abstract class PlaneEntityConfiguration<T> : IEntityTypeConfiguration<T> where T : class
+public abstract class FunkEntityConfiguration<T> : IEntityTypeConfiguration<T> where T : class
 {
     public void Configure(EntityTypeBuilder<T> b)
     {
@@ -1447,8 +1447,8 @@ public abstract class PlaneEntityConfiguration<T> : IEntityTypeConfiguration<T> 
         {
             b.Property<DateTimeOffset>(nameof(IAuditable.CreatedAt)).HasPrecision(6);
             b.Property<DateTimeOffset>(nameof(IAuditable.UpdatedAt)).HasPrecision(6);
-            // FKs created_by_id/updated_by_id → users: NICHT hier (Plane.BuildingBlocks.Persistence kennt Plane.Data.User nicht),
-            // sondern AuditForeignKeyConvention in Plane.Data (§3.2.3, Zeile „Audit-FKs“).
+            // FKs created_by_id/updated_by_id → users: NICHT hier (Funk.BuildingBlocks.Persistence kennt Funk.Data.User nicht),
+            // sondern AuditForeignKeyConvention in Funk.Data (§3.2.3, Zeile „Audit-FKs“).
         }
         ConfigureEntity(b);
     }
@@ -1461,10 +1461,10 @@ public abstract class PlaneEntityConfiguration<T> : IEntityTypeConfiguration<T> 
 }
 ```
 
-Der Tenant-Filter `workspace_tenant` wird nicht in der Basis-Konfiguration, sondern zentral in `PlaneDbContext.OnModelCreating` für alle `IWorkspaceScoped` angewendet, weil er das Feld `_tenant` des Kontexts referenziert.
+Der Tenant-Filter `workspace_tenant` wird nicht in der Basis-Konfiguration, sondern zentral in `FunkDbContext.OnModelCreating` für alle `IWorkspaceScoped` angewendet, weil er das Feld `_tenant` des Kontexts referenziert.
 
 ```csharp
-// src/data/Plane.Data/Configurations/AuditForeignKeyConvention.cs – aufgerufen am Ende von PlaneDbContext.OnModelCreating
+// src/data/Funk.Data/Configurations/AuditForeignKeyConvention.cs – aufgerufen am Ende von FunkDbContext.OnModelCreating
 internal static class AuditForeignKeyConvention
 {
     public static void Apply(ModelBuilder mb)
@@ -1479,71 +1479,71 @@ internal static class AuditForeignKeyConvention
 }
 ```
 
-**Benannte Filter und `IgnoreQueryFilters`:** Mit EF-10-benannten Filtern deaktiviert `IgnoreQueryFilters([QueryFilterNames.SoftDelete])` nur den Soft-Delete-Filter; `IgnoreQueryFilters()` ohne Argument deaktiviert **beide** (also auch `workspace_tenant`) und ist außerhalb von `Plane.Data`, Migrator und Tests per Banned-API verboten.
+**Benannte Filter und `IgnoreQueryFilters`:** Mit EF-10-benannten Filtern deaktiviert `IgnoreQueryFilters([QueryFilterNames.SoftDelete])` nur den Soft-Delete-Filter; `IgnoreQueryFilters()` ohne Argument deaktiviert **beide** (also auch `workspace_tenant`) und ist außerhalb von `Funk.Data`, Migrator und Tests per Banned-API verboten.
 
-#### 5.1.4 Ergebnis- und Fehlertypen – `src/building-blocks/Plane.BuildingBlocks/Results/`
+#### 5.1.4 Ergebnis- und Fehlertypen – `src/building-blocks/Funk.BuildingBlocks/Results/`
 
 ```csharp
-public enum PlaneErrorKind { Plain, PlainWith, Detail, Coded, Fields, Filter, Redirect }
+public enum FunkErrorKind { Plain, PlainWith, Detail, Coded, Fields, Filter, Redirect }
 
-public sealed record PlaneError(int Status, PlaneErrorKind Kind, string? Message = null, int? Code = null, string? Key = null,
+public sealed record FunkError(int Status, FunkErrorKind Kind, string? Message = null, int? Code = null, string? Key = null,
                                 IReadOnlyDictionary<string, IReadOnlyList<string>>? FieldErrors = null,
                                 IReadOnlyDictionary<string, object?>? Extra = null);
 
 public readonly struct Result
 {
-    private Result(PlaneError? error) => Error = error;
-    public PlaneError? Error { get; }
+    private Result(FunkError? error) => Error = error;
+    public FunkError? Error { get; }
     public bool IsSuccess => Error is null;
     public bool IsFailure => Error is not null;
     public static readonly Result Success = new(null);
-    public static implicit operator Result(PlaneError error) => new(error);
+    public static implicit operator Result(FunkError error) => new(error);
 }
 
-public sealed class PlaneErrorException(PlaneError error) : Exception(error.Message) { public PlaneError Error { get; } = error; }  // nur Building Blocks (§3.8.2)
+public sealed class FunkErrorException(FunkError error) : Exception(error.Message) { public FunkError Error { get; } = error; }  // nur Building Blocks (§3.8.2)
 
 public readonly struct Result<T>
 {
-    private Result(T? value, PlaneError? error) { Value = value; Error = error; }
-    public T? Value { get; } public PlaneError? Error { get; }
+    private Result(T? value, FunkError? error) { Value = value; Error = error; }
+    public T? Value { get; } public FunkError? Error { get; }
     public bool IsSuccess => Error is null;
     public bool IsFailure => Error is not null;
     public static implicit operator Result<T>(T value) => new(value, null);
-    public static implicit operator Result<T>(PlaneError error) => new(default, error);
+    public static implicit operator Result<T>(FunkError error) => new(default, error);
 }
 
-public static class PlaneErrors
+public static class FunkErrors
 {
-    public static PlaneError Plain(int status, string message) => new(status, PlaneErrorKind.Plain, message);
-    public static PlaneError PlainWith(int status, string message, IReadOnlyDictionary<string, object?> extra) => new(status, PlaneErrorKind.PlainWith, message, Extra: extra);
-    public static PlaneError Detail(int status, string message) => new(status, PlaneErrorKind.Detail, message);
-    public static PlaneError Coded(int status, PlaneErrorCode code, IReadOnlyDictionary<string, object?>? payload = null)
-        => new(status, PlaneErrorKind.Coded, Code: code.Value, Key: code.Name, Extra: payload);
-    public static PlaneError Field(string field, string message) => Fields(new Dictionary<string, IReadOnlyList<string>> { [field] = [message] });
-    public static PlaneError Fields(IReadOnlyDictionary<string, IReadOnlyList<string>> map) => new(400, PlaneErrorKind.Fields, FieldErrors: map);
-    public static PlaneError FilterError(string code, string message, IReadOnlyDictionary<string, object?>? errors = null)
-        => new(400, PlaneErrorKind.Filter, message, Key: code, Extra: errors is null ? null : new Dictionary<string, object?> { ["errors"] = errors });
+    public static FunkError Plain(int status, string message) => new(status, FunkErrorKind.Plain, message);
+    public static FunkError PlainWith(int status, string message, IReadOnlyDictionary<string, object?> extra) => new(status, FunkErrorKind.PlainWith, message, Extra: extra);
+    public static FunkError Detail(int status, string message) => new(status, FunkErrorKind.Detail, message);
+    public static FunkError Coded(int status, FunkErrorCode code, IReadOnlyDictionary<string, object?>? payload = null)
+        => new(status, FunkErrorKind.Coded, Code: code.Value, Key: code.Name, Extra: payload);
+    public static FunkError Field(string field, string message) => Fields(new Dictionary<string, IReadOnlyList<string>> { [field] = [message] });
+    public static FunkError Fields(IReadOnlyDictionary<string, IReadOnlyList<string>> map) => new(400, FunkErrorKind.Fields, FieldErrors: map);
+    public static FunkError FilterError(string code, string message, IReadOnlyDictionary<string, object?>? errors = null)
+        => new(400, FunkErrorKind.Filter, message, Key: code, Extra: errors is null ? null : new Dictionary<string, object?> { ["errors"] = errors });
 
-    public static readonly PlaneError NotFound              = Plain(404, "The required object does not exist.");
-    public static readonly PlaneError PageNotFound          = Plain(404, "Page not found.");
-    public static readonly PlaneError InvalidPayload        = Plain(400, "The payload is not valid");
-    public static readonly PlaneError RequiredKeyMissing    = Plain(400, "The required key does not exist.");
-    public static readonly PlaneError ServerError           = Plain(500, "Something went wrong please try again later");
-    public static readonly PlaneError NotAuthenticated      = Detail(401, "Authentication credentials were not provided.");
-    public static readonly PlaneError PermissionDeniedError = Plain(403, "You don't have the required permissions.");
-    public static readonly PlaneError PermissionDeniedDetail = Detail(403, "You do not have permission to perform this action.");
-    public static PlaneError DrfNotFound(string model) => Detail(404, $"No {model} matches the given query.");   // get_object()
+    public static readonly FunkError NotFound              = Plain(404, "The required object does not exist.");
+    public static readonly FunkError PageNotFound          = Plain(404, "Page not found.");
+    public static readonly FunkError InvalidPayload        = Plain(400, "The payload is not valid");
+    public static readonly FunkError RequiredKeyMissing    = Plain(400, "The required key does not exist.");
+    public static readonly FunkError ServerError           = Plain(500, "Something went wrong please try again later");
+    public static readonly FunkError NotAuthenticated      = Detail(401, "Authentication credentials were not provided.");
+    public static readonly FunkError PermissionDeniedError = Plain(403, "You don't have the required permissions.");
+    public static readonly FunkError PermissionDeniedDetail = Detail(403, "You do not have permission to perform this action.");
+    public static FunkError DrfNotFound(string model) => Detail(404, $"No {model} matches the given query.");   // get_object()
 }
 ```
 
-`ResultExtensions` (`Plane.BuildingBlocks.Web/Errors/ResultExtensions.cs`): `ToOk()` → 200 JSON, `ToCreated()` → 201 JSON (ohne `Location`-Header, DRF setzt keinen), `ToNoContent()` → 204, `ToStatus(int)`; bei Fehler → `PlaneErrorResult` (schreibt Körper gemäß `Kind`: `Plain` → `{"error"}`, `Detail` → `{"detail"}`, `Coded` → `{"error_code","error_message",…}`, `Fields` → Map, `Filter` → `{"message","code"[, "errors"]}`).
+`ResultExtensions` (`Funk.BuildingBlocks.Web/Errors/ResultExtensions.cs`): `ToOk()` → 200 JSON, `ToCreated()` → 201 JSON (ohne `Location`-Header, DRF setzt keinen), `ToNoContent()` → 204, `ToStatus(int)`; bei Fehler → `FunkErrorResult` (schreibt Körper gemäß `Kind`: `Plain` → `{"error"}`, `Detail` → `{"detail"}`, `Coded` → `{"error_code","error_message",…}`, `Fields` → Map, `Filter` → `{"message","code"[, "errors"]}`).
 
-#### 5.1.5 Oberflächen – `src/building-blocks/Plane.BuildingBlocks.Web/Surfaces/PlaneEndpointRouteBuilder.cs`
+#### 5.1.5 Oberflächen – `src/building-blocks/Funk.BuildingBlocks.Web/Surfaces/FunkEndpointRouteBuilder.cs`
 
 ```csharp
 public enum ApiSurface { App, V1, Space, Instance, Auth, Integrations, Root }
 
-public sealed class PlaneEndpointRouteBuilder(IEndpointRouteBuilder inner, SurfaceConventions conventions)
+public sealed class FunkEndpointRouteBuilder(IEndpointRouteBuilder inner, SurfaceConventions conventions)
 {
     public RouteGroupBuilder App(string template)          => Group(ApiSurface.App, "/api/", template);
     public RouteGroupBuilder V1(string template)           => Group(ApiSurface.V1, "/api/v1/", template);
@@ -1580,12 +1580,12 @@ internal sealed class TrailingSlashMiddleware(RequestDelegate next)
 // Program.cs: app.UseMiddleware<TrailingSlashMiddleware>(); app.UseRouting();   ← Reihenfolge verbindlich
 ```
 
-#### 5.1.7 Permission-Deskriptoren, Regeln, Filter – `Plane.Authorization.Contracts` / `Plane.BuildingBlocks.Web/Permissions`
+#### 5.1.7 Permission-Deskriptoren, Regeln, Filter – `Funk.Authorization.Contracts` / `Funk.BuildingBlocks.Web/Permissions`
 
-Abgestimmt mit 05 §5.8 (Namen `SystemRoleLevel`, `PermissionDescriptor.Project(...)`, `PermissionRule.Creator<T>()`, `RoleDefinition`); die Deskriptoren selbst erzeugt `tools/Plane.PermissionGen` aus `05-permission-matrix.json`.
+Abgestimmt mit 05 §5.8 (Namen `SystemRoleLevel`, `PermissionDescriptor.Project(...)`, `PermissionRule.Creator<T>()`, `RoleDefinition`); die Deskriptoren selbst erzeugt `tools/Funk.PermissionGen` aus `05-permission-matrix.json`.
 
 ```csharp
-namespace Plane.Authorization.Contracts;
+namespace Funk.Authorization.Contracts;
 
 public enum DenyStyle { Error, Detail }
 public enum SystemRoleLevel { Guest = 5, Member = 15, Admin = 20 }
@@ -1622,7 +1622,7 @@ public abstract record PermissionRule
 }
 public sealed record CreatorRuleSpec(Type Entity, string RouteParam, bool RequireMembership) : PermissionRule;
 public sealed record PrerequisiteRuleSpec(PermissionDescriptor Descriptor) : PermissionRule;
-// OwnRuleSpec, SelfRuleSpec, VisibilityRuleSpec, PageRuleSpec, BoardRuleSpec, WsaOrPaRuleSpec, ProjectMembershipRuleSpec: leere sealed records (Auswerter in Plane.Authorization/Rules, 05 §3.13)
+// OwnRuleSpec, SelfRuleSpec, VisibilityRuleSpec, PageRuleSpec, BoardRuleSpec, WsaOrPaRuleSpec, ProjectMembershipRuleSpec: leere sealed records (Auswerter in Funk.Authorization/Rules, 05 §3.13)
 
 public sealed record PermissionMetadata(PermissionDescriptor Descriptor, IReadOnlyList<PermissionRule> Rules, DenyStyle? DenyOverride);
 public sealed record PermissionDecision(bool Allowed, DenyStyle DenyStyle);
@@ -1640,7 +1640,7 @@ public static partial class StandardPermissions
 ```
 
 ```csharp
-// src/building-blocks/Plane.BuildingBlocks.Web/Permissions/RequirePermissionExtensions.cs
+// src/building-blocks/Funk.BuildingBlocks.Web/Permissions/RequirePermissionExtensions.cs
 public static class RequirePermissionExtensions
 {
     public static TBuilder RequirePermission<TBuilder>(this TBuilder b, PermissionDescriptor d, params PermissionRule[] rules)
@@ -1650,7 +1650,7 @@ public static class RequirePermissionExtensions
         => b.Add(eb => { var m = eb.Metadata.OfType<PermissionMetadata>().Single(); eb.Metadata.Remove(m); eb.Metadata.Add(m with { DenyOverride = style }); });
 }
 
-// src/building-blocks/Plane.BuildingBlocks.Web/Permissions/PermissionEndpointFilter.cs
+// src/building-blocks/Funk.BuildingBlocks.Web/Permissions/PermissionEndpointFilter.cs
 internal sealed class PermissionEndpointFilter(IPermissionEvaluator evaluator, IRequestScope scope) : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext ctx, EndpointFilterDelegate next)
@@ -1663,14 +1663,14 @@ internal sealed class PermissionEndpointFilter(IPermissionEvaluator evaluator, I
         var decision = await evaluator.EvaluateAsync(principal, meta, scope.Current, ctx.HttpContext.GetRouteData().Values, ctx.HttpContext.RequestAborted);
         return decision.Allowed
             ? await next(ctx)
-            : new PlaneErrorResult(decision.DenyStyle == DenyStyle.Error ? PlaneErrors.PermissionDeniedError : PlaneErrors.PermissionDeniedDetail);
+            : new FunkErrorResult(decision.DenyStyle == DenyStyle.Error ? FunkErrors.PermissionDeniedError : FunkErrors.PermissionDeniedDetail);
     }
 }
 ```
 
 `PermissionEvaluator.EvaluateAsync` implementiert §3.6.2 (Schritte 0 und P) und danach 05 §3.13.4. Die Ablehnung trägt den `DenyStyle` der fehlgeschlagenen Stufe: Vorbedingung → `Prerequisite.Descriptor.Deny`; Hauptprüfung → `meta.DenyOverride ?? meta.Descriptor.Deny`. `HasAsync` aus 01 §5.5 ist `EvaluateAsync(...).Allowed`.
 
-#### 5.1.8 JSON-Converter (Auszug) – `src/building-blocks/Plane.BuildingBlocks.Web/Json/`
+#### 5.1.8 JSON-Converter (Auszug) – `src/building-blocks/Funk.BuildingBlocks.Web/Json/`
 
 ```csharp
 public sealed class DrfDateTimeOffsetConverter : JsonConverter<DateTimeOffset>
@@ -1684,7 +1684,7 @@ public sealed class DrfDateTimeOffsetConverter : JsonConverter<DateTimeOffset>
     }
     public override void Write(Utf8JsonWriter w, DateTimeOffset v, JsonSerializerOptions o)
     {
-        var u = v.ToUniversalTime();                                           // Plane:Json:DateTimeOutputZone = Utc
+        var u = v.ToUniversalTime();                                           // Funk:Json:DateTimeOutputZone = Utc
         var micro = (u.Ticks % TimeSpan.TicksPerSecond) / 10;                  // 1 Tick = 100 ns
         w.WriteStringValue(micro == 0
             ? u.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture)            // Python isoformat ohne µs
@@ -1716,7 +1716,7 @@ public readonly struct Optional<T>
 // Write wird nicht benötigt (Optional<T> nur in Requests; Analyzer verbietet Optional<T> in *Dto).
 ```
 
-#### 5.1.9 Cursor-Paginator – `src/building-blocks/Plane.BuildingBlocks.Web/Pagination/CursorPaginator.cs`
+#### 5.1.9 Cursor-Paginator – `src/building-blocks/Funk.BuildingBlocks.Web/Pagination/CursorPaginator.cs`
 
 ```csharp
 public sealed class CursorPaginator
@@ -1730,7 +1730,7 @@ public sealed class CursorPaginator
     {
         var limit = Math.Min(page.PerPage, MaxLimit);
         var pageIndex = page.Cursor.Offset;
-        if (pageIndex < 0) throw new PlaneErrorException(PlaneErrors.Detail(400, "Error in parsing"));
+        if (pageIndex < 0) throw new FunkErrorException(FunkErrors.Detail(400, "Error in parsing"));
         var offset = (long)pageIndex * limit;
 
         var ordered = order.Apply(query)                       // Schlüssel NULLS LAST
@@ -1755,7 +1755,7 @@ public sealed class CursorPaginator
 }
 ```
 
-#### 5.1.10 ENV-Aliase – `src/hosts/Plane.ServiceDefaults/Configuration/LegacyEnvironmentConfigurationSource.cs` (Auszug)
+#### 5.1.10 ENV-Aliase – `src/hosts/Funk.ServiceDefaults/Configuration/LegacyEnvironmentConfigurationSource.cs` (Auszug)
 
 ```csharp
 internal static class LegacyEnvironmentMap
@@ -1763,22 +1763,22 @@ internal static class LegacyEnvironmentMap
     // Original-ENV → Zielschlüssel (vollständige Liste = §4.9; Test LegacyEnvironmentMapTests vergleicht mit der Tabelle)
     public static readonly IReadOnlyDictionary<string, string> Map = new Dictionary<string, string>
     {
-        ["API_KEY_RATE_LIMIT"] = "Plane:RateLimits:ApiKey",
-        ["AUTHENTICATION_RATE_LIMIT"] = "Plane:RateLimits:Authentication",
-        ["CORS_ALLOWED_ORIGINS"] = "Plane:Cors:AllowedOrigins",          // CSV → Array
-        ["FILE_SIZE_LIMIT"] = "Plane:Uploads:MaxFileSizeBytes",
-        ["HARD_DELETE_AFTER_DAYS"] = "Plane:Retention:HardDeleteDays",
-        ["WEB_URL"] = "Plane:Urls:Web", ["APP_BASE_URL"] = "Plane:Urls:App",
-        ["ADMIN_BASE_URL"] = "Plane:Urls:Admin", ["ADMIN_BASE_PATH"] = "Plane:Urls:AdminPath",
-        ["SPACE_BASE_URL"] = "Plane:Urls:Space", ["SPACE_BASE_PATH"] = "Plane:Urls:SpacePath",
-        ["LIVE_BASE_URL"] = "Plane:Urls:Live", ["LIVE_BASE_PATH"] = "Plane:Urls:LivePath",
-        ["ENABLE_DRF_SPECTACULAR"] = "Plane:OpenApi:Enabled",             // "1" → true
+        ["API_KEY_RATE_LIMIT"] = "Funk:RateLimits:ApiKey",
+        ["AUTHENTICATION_RATE_LIMIT"] = "Funk:RateLimits:Authentication",
+        ["CORS_ALLOWED_ORIGINS"] = "Funk:Cors:AllowedOrigins",          // CSV → Array
+        ["FILE_SIZE_LIMIT"] = "Funk:Uploads:MaxFileSizeBytes",
+        ["HARD_DELETE_AFTER_DAYS"] = "Funk:Retention:HardDeleteDays",
+        ["WEB_URL"] = "Funk:Urls:Web", ["APP_BASE_URL"] = "Funk:Urls:App",
+        ["ADMIN_BASE_URL"] = "Funk:Urls:Admin", ["ADMIN_BASE_PATH"] = "Funk:Urls:AdminPath",
+        ["SPACE_BASE_URL"] = "Funk:Urls:Space", ["SPACE_BASE_PATH"] = "Funk:Urls:SpacePath",
+        ["LIVE_BASE_URL"] = "Funk:Urls:Live", ["LIVE_BASE_PATH"] = "Funk:Urls:LivePath",
+        ["ENABLE_DRF_SPECTACULAR"] = "Funk:OpenApi:Enabled",             // "1" → true
         // …
     };
 }
 ```
 
-### 5.2 Referenzmodul „Labels“ (Teil von `Plane.Projects`, CE-PRJ-028 … CE-PRJ-033, Inkrement I1)
+### 5.2 Referenzmodul „Labels“ (Teil von `Funk.Projects`, CE-PRJ-028 … CE-PRJ-033, Inkrement I1)
 
 **Original-Verträge (Golden-Files):** `A04` §2.3 L1–L7; Code `API/app/views/issue/label.py`, `API/app/serializers/issue.py` (`LabelSerializer`), `API/db/models/label.py`; Client `apps/web/services/issue/issue_label.service.ts`, `apps/web/store/label.store.ts`.
 
@@ -1798,10 +1798,10 @@ Permissions gemäß 05 Anhang A Nr. 48–51 / Anhang B (Keys `project.label.*`, 
 
 Die Vorbedingung bei L5/L6 ändert nur den Fehlerkörper: Ein Projekt-Member erhält wie im Original `{"detail": …}` (ProjectBasePermission lehnt vor dem Decorator ab), nicht `{"error": …}`.
 
-#### 5.2.1 Entität – `src/data/Plane.Data/Entities/Projects/Label.cs`
+#### 5.2.1 Entität – `src/data/Funk.Data/Entities/Projects/Label.cs`
 
 ```csharp
-namespace Plane.Data.Entities.Projects;
+namespace Funk.Data.Entities.Projects;
 
 [OwnedBy("Projects")]
 public sealed class Label : WorkspaceEntity, IExternallyReferenced, ISortable, IScopedCatalogEntry   // = Label(WorkspaceBaseModel)
@@ -1836,10 +1836,10 @@ public sealed class Label : WorkspaceEntity, IExternallyReferenced, ISortable, I
 }
 ```
 
-#### 5.2.2 EF-Konfiguration – `src/data/Plane.Data/Configurations/Projects/LabelConfiguration.cs`
+#### 5.2.2 EF-Konfiguration – `src/data/Funk.Data/Configurations/Projects/LabelConfiguration.cs`
 
 ```csharp
-internal sealed class LabelConfiguration : PlaneEntityConfiguration<Label>
+internal sealed class LabelConfiguration : FunkEntityConfiguration<Label>
 {
     protected override void ConfigureEntity(EntityTypeBuilder<Label> b)
     {
@@ -1874,7 +1874,7 @@ cascade.Cascade<Label, PageLabel>(pl => pl.LabelId, CascadeMode.Inline);        
 
 Kaskaden auf fremde Tabellen sind die einzige zulässige Schreibwirkung auf fremde Entitäten ohne Contracts-Service; der `OwnershipGuardInterceptor` erlaubt sie, weil sie über die Registry deklariert sind (Architekturtest listet alle fremden Kaskaden).
 
-#### 5.2.4 Contracts – `src/modules/Projects/Plane.Projects.Contracts/`
+#### 5.2.4 Contracts – `src/modules/Projects/Funk.Projects.Contracts/`
 
 ```csharp
 // Dtos/LabelDto.cs – Feldreihenfolge wie LabelSerializer.Meta.fields
@@ -1899,13 +1899,13 @@ public sealed record BulkCreateLabelsResponse(IReadOnlyList<LabelDto> Labels);
 
 // Events/LabelEvents.cs
 public sealed record LabelCreatedV1(Guid LabelId, Guid WorkspaceId, Guid? ProjectId, Guid? ActorId) : IIntegrationEvent
-{ public static string EventType => "plane.label.created.v1"; }
+{ public static string EventType => "funk.label.created.v1"; }
 public sealed record LabelUpdatedV1(Guid LabelId, Guid WorkspaceId, Guid? ProjectId, Guid? ActorId, IReadOnlyList<string> ChangedFields) : IIntegrationEvent
-{ public static string EventType => "plane.label.updated.v1"; }
+{ public static string EventType => "funk.label.updated.v1"; }
 public sealed record LabelDeletedV1(Guid LabelId, Guid WorkspaceId, Guid? ProjectId, Guid? ActorId) : IIntegrationEvent
-{ public static string EventType => "plane.label.deleted.v1"; }
+{ public static string EventType => "funk.label.deleted.v1"; }
 
-// Permissions/ProjectsPermissions.g.cs (Label-Ausschnitt) – GENERIERT von tools/Plane.PermissionGen aus 05-permission-matrix.json (05 §5.8), nicht von Hand ändern
+// Permissions/ProjectsPermissions.g.cs (Label-Ausschnitt) – GENERIERT von tools/Funk.PermissionGen aus 05-permission-matrix.json (05 §5.8), nicht von Hand ändern
 public static partial class ProjectsPermissions
 {
     private static readonly SystemRoleLevel[] A = [SystemRoleLevel.Admin];
@@ -1929,7 +1929,7 @@ public interface ILabelCatalog
 }
 ```
 
-#### 5.2.5 Validatoren – `src/modules/Projects/Plane.Projects/Validation/` und neben den Commands
+#### 5.2.5 Validatoren – `src/modules/Projects/Funk.Projects/Validation/` und neben den Commands
 
 ```csharp
 // Stufe 1: Form (DRF-Feldregeln des LabelSerializer: name CharField(max_length=255) Pflicht, color max 255 blank erlaubt)
@@ -1968,7 +1968,7 @@ internal sealed class BulkCreateLabelsRequestValidator : AbstractValidator<BulkC
 }
 ```
 
-#### 5.2.6 Domänenregeln – `src/modules/Projects/Plane.Projects/Domain/LabelRules.cs`
+#### 5.2.6 Domänenregeln – `src/modules/Projects/Funk.Projects/Domain/LabelRules.cs`
 
 ```csharp
 internal static class LabelRules
@@ -1982,7 +1982,7 @@ internal static class LabelRules
 }
 ```
 
-#### 5.2.7 Commands – `src/modules/Projects/Plane.Projects/Application/Commands/`
+#### 5.2.7 Commands – `src/modules/Projects/Funk.Projects/Application/Commands/`
 
 ```csharp
 // CreateLabel/CreateLabelCommand.cs
@@ -1990,7 +1990,7 @@ internal sealed record CreateLabelCommand(ProjectScope Scope, CreateLabelRequest
 
 internal sealed class CreateLabelCommandValidator : AbstractValidator<CreateLabelCommand>   // Stufe 2 (DB)
 {
-    public CreateLabelCommandValidator(PlaneDbContext db)
+    public CreateLabelCommandValidator(FunkDbContext db)
     {
         RuleFor(c => c.Body.Name!)
             .MustAsync((c, name, ct) => db.Labels.AllAsync(l => l.ProjectId != c.Scope.ProjectId || l.Name.ToLower() != name.ToLower(), ct))
@@ -2002,7 +2002,7 @@ internal sealed class CreateLabelCommandValidator : AbstractValidator<CreateLabe
     }
 }
 
-internal sealed class CreateLabelHandler(PlaneDbContext db, IIdGenerator ids, ICurrentActor actor, ICacheInvalidationCollector cache)
+internal sealed class CreateLabelHandler(FunkDbContext db, IIdGenerator ids, ICurrentActor actor, ICacheInvalidationCollector cache)
     : ICommandHandler<CreateLabelCommand, Result<LabelDto>>
 {
     public async ValueTask<Result<LabelDto>> Handle(CreateLabelCommand c, CancellationToken ct)
@@ -2015,14 +2015,14 @@ internal sealed class CreateLabelHandler(PlaneDbContext db, IIdGenerator ids, IC
         cache.Invalidate(CacheTags.WorkspaceLabels(label.WorkspaceId));
         return LabelMapper.ToDto(label);
         // Unique-Verletzung im Commit (Race) → TransactionBehavior übersetzt über UniqueViolationMap:
-        //   "unique_project_name_when_not_deleted" → PlaneErrors.Plain(400, "Label with the same name already exists in the project")
+        //   "unique_project_name_when_not_deleted" → FunkErrors.Plain(400, "Label with the same name already exists in the project")
     }
 }
 
 // UpdateLabel/UpdateLabelCommand.cs
 internal sealed record UpdateLabelCommand(ProjectScope Scope, Guid LabelId, UpdateLabelRequest Body) : ICommand<Result<LabelDto>>;
 
-internal sealed class UpdateLabelHandler(PlaneDbContext db, ICurrentActor actor, ICacheInvalidationCollector cache)
+internal sealed class UpdateLabelHandler(FunkDbContext db, ICurrentActor actor, ICacheInvalidationCollector cache)
     : ICommandHandler<UpdateLabelCommand, Result<LabelDto>>
 {
     public async ValueTask<Result<LabelDto>> Handle(UpdateLabelCommand c, CancellationToken ct)
@@ -2030,16 +2030,16 @@ internal sealed class UpdateLabelHandler(PlaneDbContext db, ICurrentActor actor,
         // 1. Original-Reihenfolge: case-sensitive Namensprüfung VOR get_object (LabelViewSet.partial_update)
         if (c.Body.Name is { IsSet: true, Value: { } newName } &&
             await db.Labels.AnyAsync(l => l.ProjectId == c.Scope.ProjectId && l.Name == newName && l.Id != c.LabelId, ct))
-            return PlaneErrors.Plain(400, "Label with the same name already exists in the project");
+            return FunkErrors.Plain(400, "Label with the same name already exists in the project");
 
         // 2. get_object(): Queryset = Projekt + Projektmitgliedschaft des Nutzers
         var label = await db.Labels.VisibleToMember(c.Scope).FirstOrDefaultAsync(l => l.Id == c.LabelId, ct);
-        if (label is null) return PlaneErrors.DrfNotFound("Label");
+        if (label is null) return FunkErrors.DrfNotFound("Label");
 
         // 3. Serializer.validate_name (iexact) – Feldfehler
         if (c.Body.Name is { IsSet: true, Value: { } n } &&
             await db.Labels.AnyAsync(l => l.ProjectId == c.Scope.ProjectId && l.Name.ToLower() == n.ToLower() && l.Id != label.Id, ct))
-            return PlaneErrors.Field("name", "LABEL_NAME_ALREADY_EXISTS");
+            return FunkErrors.Field("name", "LABEL_NAME_ALREADY_EXISTS");
 
         var changed = new List<string>();
         if (c.Body.Name.IsSet)      { label.Rename(c.Body.Name.Value!);   changed.Add("name"); }
@@ -2056,13 +2056,13 @@ internal sealed class UpdateLabelHandler(PlaneDbContext db, ICurrentActor actor,
 // DeleteLabel/DeleteLabelCommand.cs
 internal sealed record DeleteLabelCommand(ProjectScope Scope, Guid LabelId) : ICommand<Result>;
 
-internal sealed class DeleteLabelHandler(PlaneDbContext db, ICurrentActor actor, ICacheInvalidationCollector cache)
+internal sealed class DeleteLabelHandler(FunkDbContext db, ICurrentActor actor, ICacheInvalidationCollector cache)
     : ICommandHandler<DeleteLabelCommand, Result>
 {
     public async ValueTask<Result> Handle(DeleteLabelCommand c, CancellationToken ct)
     {
         var label = await db.Labels.VisibleToMember(c.Scope).FirstOrDefaultAsync(l => l.Id == c.LabelId, ct);
-        if (label is null) return PlaneErrors.DrfNotFound("Label");
+        if (label is null) return FunkErrors.DrfNotFound("Label");
         db.Labels.Remove(label);                                   // SoftDeleteInterceptor → deleted_at + Kaskaden (§5.2.3)
         label.Raise(new LabelDeletedV1(label.Id, label.WorkspaceId, label.ProjectId, actor.UserId));
         cache.Invalidate(CacheTags.WorkspaceLabels(label.WorkspaceId));
@@ -2073,7 +2073,7 @@ internal sealed class DeleteLabelHandler(PlaneDbContext db, ICurrentActor actor,
 // BulkCreateLabels/BulkCreateLabelsCommand.cs
 internal sealed record BulkCreateLabelsCommand(ProjectScope Scope, BulkCreateLabelsRequest Body) : ICommand<Result<BulkCreateLabelsResponse>>;
 
-internal sealed class BulkCreateLabelsHandler(PlaneDbContext db, IIdGenerator ids, ICurrentActor actor, ICacheInvalidationCollector cache)
+internal sealed class BulkCreateLabelsHandler(FunkDbContext db, IIdGenerator ids, ICurrentActor actor, ICacheInvalidationCollector cache)
     : ICommandHandler<BulkCreateLabelsCommand, Result<BulkCreateLabelsResponse>>
 {
     public async ValueTask<Result<BulkCreateLabelsResponse>> Handle(BulkCreateLabelsCommand c, CancellationToken ct)
@@ -2138,7 +2138,7 @@ internal sealed class GetLabelHandler(IReadDbContextAccessor dbs) : IQueryHandle
     {
         var dto = await dbs.Current.Labels.AsNoTracking().VisibleToMember(q.Scope).Where(l => l.Id == q.LabelId)
                            .Select(LabelMapper.Projection).FirstOrDefaultAsync(ct);
-        return dto is null ? PlaneErrors.DrfNotFound("Label") : dto;
+        return dto is null ? FunkErrors.DrfNotFound("Label") : dto;
     }
 }
 
@@ -2155,12 +2155,12 @@ internal sealed class LabelCatalog(IReadDbContextAccessor dbs) : ILabelCatalog
 }
 ```
 
-#### 5.2.9 Endpunkte – `src/modules/Projects/Plane.Projects/Endpoints/App/LabelEndpoints.cs`
+#### 5.2.9 Endpunkte – `src/modules/Projects/Funk.Projects/Endpoints/App/LabelEndpoints.cs`
 
 ```csharp
 internal static class LabelEndpoints
 {
-    public static void Map(PlaneEndpointRouteBuilder e)
+    public static void Map(FunkEndpointRouteBuilder e)
     {
         var g = e.App("workspaces/{slug}/projects/{project_id:guid}/issue-labels").WithTags("Labels");
 
@@ -2181,7 +2181,7 @@ internal static class LabelEndpoints
     }
 
     static async Task<IResult> List(IRequestScope scope, ISender sender, CancellationToken ct)
-        => TypedResults.Json(await sender.Send(new ListProjectLabelsQuery(scope.Project), ct), PlaneJson.Options);
+        => TypedResults.Json(await sender.Send(new ListProjectLabelsQuery(scope.Project), ct), FunkJson.Options);
     static async Task<IResult> Create(IRequestScope scope, CreateLabelRequest body, ISender sender, CancellationToken ct)
         => (await sender.Send(new CreateLabelCommand(scope.Project, body), ct)).ToCreated();
     static async Task<IResult> Get(IRequestScope scope, Guid pk, ISender sender, CancellationToken ct)
@@ -2195,9 +2195,9 @@ internal static class LabelEndpoints
 }
 ```
 
-Weitere Label-Oberflächen (nicht im Labels-Teil von `Plane.Projects`, sondern Adapter, R1/R6): `GET /api/workspaces/{slug}/labels/` in `Plane.Workspaces` (CE-WS-006, über `ILabelCatalog` + Cache `plane:ws:{id}:labels:{userId}`), `/api/v1/workspaces/{slug}/projects/{project_id}/labels/` in `Plane.PublicApi` (CE-API-010, ruft dieselben Commands; v1-Spezifika 409 + `id`, externe IDs laut 04), `GET /api/public/anchor/{anchor}/labels/` in `Plane.PublicSpace` (CE-SPACE).
+Weitere Label-Oberflächen (nicht im Labels-Teil von `Funk.Projects`, sondern Adapter, R1/R6): `GET /api/workspaces/{slug}/labels/` in `Funk.Workspaces` (CE-WS-006, über `ILabelCatalog` + Cache `plane:ws:{id}:labels:{userId}`), `/api/v1/workspaces/{slug}/projects/{project_id}/labels/` in `Funk.PublicApi` (CE-API-010, ruft dieselben Commands; v1-Spezifika 409 + `id`, externe IDs laut 04), `GET /api/public/anchor/{anchor}/labels/` in `Funk.PublicSpace` (CE-SPACE).
 
-#### 5.2.10 Activity-Beitrag – `src/modules/Projects/Plane.Projects/Activity/LabelActivityFieldResolver.cs`
+#### 5.2.10 Activity-Beitrag – `src/modules/Projects/Funk.Projects/Activity/LabelActivityFieldResolver.cs`
 
 Labels erzeugen selbst keine Activity (Original: keine `issue_activity`-Aufrufe in `label.py`). Sie liefern aber die Anzeigewerte für das Work-Item-Activity-Feld `labels` (Port `track_labels`, `API/bgtasks/issue_activities_task.py`: `comment = "added label "`/`"removed label "`, `new_value`/`old_value` = Label-Name, `new_identifier`/`old_identifier` = Label-ID; nur Labels des Projekts, nicht gelöscht).
 
@@ -2217,7 +2217,7 @@ internal sealed class LabelActivityFieldResolver(ILabelCatalog labels) : IActivi
 }
 ```
 
-#### 5.2.11 Modul-Registrierung – `src/modules/Projects/Plane.Projects/ProjectsModule.cs` (Label-Ausschnitt)
+#### 5.2.11 Modul-Registrierung – `src/modules/Projects/Funk.Projects/ProjectsModule.cs` (Label-Ausschnitt)
 
 ```csharp
 public sealed class ProjectsModule : IModule
@@ -2237,7 +2237,7 @@ public sealed class ProjectsModule : IModule
         });
     }
 
-    public void MapEndpoints(PlaneEndpointRouteBuilder endpoints)
+    public void MapEndpoints(FunkEndpointRouteBuilder endpoints)
     {
         LabelEndpoints.Map(endpoints);
         // ProjectEndpoints.Map, StateEndpoints.Map, EstimateEndpoints.Map, …
@@ -2253,12 +2253,12 @@ Hinweis zu 01 §5.5: `IModule.Permissions` ist dort als `IEnumerable<PermissionD
 
 #### 5.2.12 Integration-Event-Nutzung (Domain-Event-Beispiel)
 
-`LabelCreatedV1`/`LabelUpdatedV1`/`LabelDeletedV1` landen über den `OutboxInterceptor` im Commit. CE-Konsumenten: **ab I5** `RealtimeFanOutConsumer` in `Plane.RealtimeEvents` (generisch für alle `plane.label.*`-Events → `IRealtimePublisher.PublishAsync("project:{ProjectId}", "label.updated", payload)`, H6-Andockstelle); in der CE vor I5 gibt es keinen Konsumenten (der Outbox-Dispatcher markiert Nachrichten ohne Consumer als erledigt). Ein in-process Domain-Event ist für Labels nicht nötig; Beispiel für ein Domain-Event liefert 06 (`WorkItemStateChanged` → Activity).
+`LabelCreatedV1`/`LabelUpdatedV1`/`LabelDeletedV1` landen über den `OutboxInterceptor` im Commit. CE-Konsumenten: **ab I5** `RealtimeFanOutConsumer` in `Funk.RealtimeEvents` (generisch für alle `plane.label.*`-Events → `IRealtimePublisher.PublishAsync("project:{ProjectId}", "label.updated", payload)`, H6-Andockstelle); in der CE vor I5 gibt es keinen Konsumenten (der Outbox-Dispatcher markiert Nachrichten ohne Consumer als erledigt). Ein in-process Domain-Event ist für Labels nicht nötig; Beispiel für ein Domain-Event liefert 06 (`WorkItemStateChanged` → Activity).
 
-Es gibt **keinen** eigenen `LabelRealtimeConsumer` (ABG-106): Labels registrieren nur ihre Einträge im `RealtimeFanOutMap`; der generische `RealtimeFanOutConsumer` (Worker, Queue `realtime`) löst Gruppe, Event-Name und Payload daraus auf und ruft `IRealtimePublisher` (`QueuedRealtimePublisher` → Job `realtime.push` auf Queue `live` → `HubRealtimePublisher` im Host `Plane.Realtime`). Builder-Signatur verbindlich in 06 §3.12.
+Es gibt **keinen** eigenen `LabelRealtimeConsumer` (ABG-106): Labels registrieren nur ihre Einträge im `RealtimeFanOutMap`; der generische `RealtimeFanOutConsumer` (Worker, Queue `realtime`) löst Gruppe, Event-Name und Payload daraus auf und ruft `IRealtimePublisher` (`QueuedRealtimePublisher` → Job `realtime.push` auf Queue `live` → `HubRealtimePublisher` im Host `Funk.Realtime`). Builder-Signatur verbindlich in 06 §3.12.
 
 ```csharp
-// src/modules/RealtimeEvents/Plane.RealtimeEvents/Application/RealtimeFanOutMap.cs  (Label-Einträge, ab I5)
+// src/modules/RealtimeEvents/Funk.RealtimeEvents/Application/RealtimeFanOutMap.cs  (Label-Einträge, ab I5)
 static void AddLabelEntries(RealtimeFanOutMapBuilder map)
 {
     map.On<LabelCreatedV1>("label.created", e => e.ProjectId is { } p ? $"project:{p}" : null, e => new JsonObject { ["id"] = e.LabelId.ToString() });
@@ -2267,7 +2267,7 @@ static void AddLabelEntries(RealtimeFanOutMapBuilder map)
 }
 ```
 
-#### 5.2.13 Tests – `tests/modules/Plane.Projects.Tests/`
+#### 5.2.13 Tests – `tests/modules/Funk.Projects.Tests/`
 
 ```csharp
 // Unit/LabelRulesTests.cs
@@ -2367,7 +2367,7 @@ public sealed class ProjectsContractTests(PostgresContainerFixture pg) : ModuleI
 }
 ```
 
-Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTests`): R1–R10 (01 §5.2), „jede Route genau eine Permission oder AllowAnonymous“, „jede Route `WithOriginalContract`“, „kein Template mit führendem/abschließendem Slash“, „kein `Optional<T>` in `*Dto`“, „Handler-Klassen `internal sealed`“, „Validatoren für jeden Request-Typ mit Körper“, „jede `ISoftDeletable`-Cascade-FK in der Registry“.
+Architekturtests, die das Modul automatisch prüfen (`tests/Funk.ArchitectureTests`): R1–R10 (01 §5.2), „jede Route genau eine Permission oder AllowAnonymous“, „jede Route `WithOriginalContract`“, „kein Template mit führendem/abschließendem Slash“, „kein `Optional<T>` in `*Dto`“, „Handler-Klassen `internal sealed`“, „Validatoren für jeden Request-Typ mit Körper“, „jede `ISoftDeletable`-Cascade-FK in der Registry“.
 
 ---
 ## 6. Erweiterungspunkte für Bezahl-Pakete
@@ -2378,20 +2378,20 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 |---|---|---|---|---|
 | **A1** Work-Item-Types & Custom Properties (W2) | Feld-Registry: weitere `IFilterFieldProvider` mit `Source = "property:<id>"` + `IWorkItemFilterTranslator`; Gruppen-Registry: `IGroupKeyProvider` liefert `GroupKeyDefinition` (Art Skalar/M2M, SQL-Ausdruck für CTE, Werteliste); Sortier-Registry: `IOrderKeyProvider` (neu in dieser Präzisierung, analog A1-Bedarf „nach Property sortieren“); `IWorkItemPayloadExtension` hängt Felder an `JsonNode`-Ergebnis der Fassade (§3.11.7); `work_items.type_id` als Filter-/Gruppenfeld vorgesehen, aber in der CE nicht registriert | nur `CoreWorkItemFilterFields`, `CoreGroupKeys`, `CoreOrderKeys` | `FilterRegistryExtensionTests` (Test-Provider registriert Feld `test_field` → Rich-Filter akzeptiert es, Legacy nicht) | I2 |
 | **A2** Workspace-Types, Hierarchie, Roll-ups (W6) | `ScopeRef` in Feld-/Gruppen-Definitionen (`Fields(ScopeRef)`), Registry-Abfragen immer mit Scope des Requests; Basismengen workspaceweit (`WorkspaceView`) bereits Teil der Engine | Registry ignoriert Scope (Kernfelder gelten überall) | Scope wird durchgereicht (Spy-Provider) | I2 |
-| **A9** Relationen & Abhängigkeiten (W2) | Relationstyp-Katalog `work_item_relation_types` als Seed (`Plane.Data/Seeds`), Filterfelder für Relationen über Registry erweiterbar; Expansion `issue_relation`/`issue_related` im `ExpandProjector` katalogbasiert | Seed mit 10 Original-Typen | Seed-Snapshot | I2 |
+| **A9** Relationen & Abhängigkeiten (W2) | Relationstyp-Katalog `work_item_relation_types` als Seed (`Funk.Data/Seeds`), Filterfelder für Relationen über Registry erweiterbar; Expansion `issue_relation`/`issue_related` im `ExpandProjector` katalogbasiert | Seed mit 10 Original-Typen | Seed-Snapshot | I2 |
 | **A17** Workspace-Governance States/Labels (W6) | `IScopedCatalogEntry` an `Label`/`State`, Lesezugriff aller Module **nur** über `ILabelCatalog`/`IStateCatalog` (§5.2.4); Unique-Index für Workspace-Labels auf `(workspace_id, name)` (`DEV-LBL-04`); Cache-Tags `ws:{id}:labels` decken geerbte Labels bereits ab | `LabelCatalog.ListAsync` liefert für Workspace-Scope `[]` | Architekturtest: kein Modul außer Projects liest `db.Labels`/`db.States` direkt | I1 |
 | **B1** Teamspaces (W5) | `ScopeLevel.Teamspace` in `ScopeRef`; `ScopeBindingFilter` kennt Routenwert `teamspace_id` (in CE ungenutzt, Binder registriert und liefert `NotSupported`); Permission-Deskriptoren mit `Scope = Teamspace` zulässig (Katalog-Validierung erlaubt den Wert); `IVisibilityFilter<T>` erhält `ScopeRef` (Teamspace-Sichtbarkeit); Oberfläche `App` reserviert Präfix `workspaces/{slug}/teamspaces/{teamspace_id}` (keine Routen in CE) | `IScopeResolver` löst nur Workspace/Project | Katalog akzeptiert Teamspace-Deskriptor in Test-Modul | I1 |
-| **B6** Erweiterte Filter/PQL (W5) | AST ist die einzige Abfragesprache (D02-ADR-14); ein `PqlParser` wird als dritter Parser in `Plane.WorkItems/Query/Parsing` registriert (`IFilterParser`-Interface: `Name`, `TryParse(string, out FilterExpression, out PlaneError)`); Operator-Katalog `FilterOperator` erweiterbar (Enum + Compiler-Switch mit `default → NotSupported`-Fehler `invalid_filterset`); `ISearchProvider` für Volltext (11) | Parser `legacy`, `rich` | `IFilterParser`-Liste enthält genau zwei Einträge; unbekannter Operator → 400 | I2 |
+| **B6** Erweiterte Filter/PQL (W5) | AST ist die einzige Abfragesprache (D02-ADR-14); ein `PqlParser` wird als dritter Parser in `Funk.WorkItems/Query/Parsing` registriert (`IFilterParser`-Interface: `Name`, `TryParse(string, out FilterExpression, out FunkError)`); Operator-Katalog `FilterOperator` erweiterbar (Enum + Compiler-Switch mit `default → NotSupported`-Fehler `invalid_filterset`); `ISearchProvider` für Volltext (11) | Parser `legacy`, `rich` | `IFilterParser`-Liste enthält genau zwei Einträge; unbekannter Operator → 400 | I2 |
 | **C1** Workflows (nicht gewählt) | Alle State-Wechsel-Commands rufen `IWorkItemStateChanger` (01 §5.5); `StateChangeOrigin` wird aus der Oberfläche abgeleitet (`App` → `User`, `V1` → `PublicApi`, Worker-Jobs explizit) – Konvention in `TransactionBehavior`-Kontext `ICommandOrigin` | Guard erlaubt alles, Hook schreibt nichts | Architekturtest: kein Schreibzugriff auf `WorkItem.StateId` außerhalb `WorkItemStateChanger` | I2 |
 | **C3** Automation-Engine (nicht gewählt) | Integration-Events je Command (Namensschema §3.1.2), Outbox im selben Commit (§3.2.2 Nr. 6), `IEventConsumer`-Registrierung über `IModule.RegisterMessaging`, `IRecurringJobRegistry` | Consumer der CE | Event-Katalog-Test (01 §7.15) | I0 |
 | **D1** Wiki & Collections (W3) | `pages.workspace_id` ohne Projektpflicht, Keys `project.page.*` mit Regel `PermissionRule.PageAccess` (05 §3.13.5, CE-Default `IPageAccessExtension` = `false` für private Pages); Präfix `workspace.page.` reserviert (05 `ReservedPermissionKeys`) | nur Projekt-Pages | – (Detail 07/16) | I4 |
 | **D2** Nested Pages (W3) | `IPageHierarchy` (01 §5.5); Soft-Delete-Kaskade `Page → Page (parent_id)` als **Deferred**-Eintrag vorbereitet (Original hängt Kinder beim Löschen ab, Archiv rekursiv – `A04` §5.3 Nr. 18) | flach | – | I4 |
-| **E3** IdP Group Sync (W4) | `PlanePrincipal.Groups` wird in `PermissionEvaluator` nicht ausgewertet, steht aber im Prinzipal; `IUserProvisioningStep`-Kette (Identity, 05) | JIT + Einladungen | – (05) | I0 |
+| **E3** IdP Group Sync (W4) | `FunkPrincipal.Groups` wird in `PermissionEvaluator` nicht ausgewertet, steht aber im Prinzipal; `IUserProvisioningStep`-Kette (Identity, 05) | JIT + Einladungen | – (05) | I0 |
 | **E5** Rollenmodell (W4) | `IRoleDefinitionProvider` austauschbar (System-Grants generiert aus der 05-Matrix, §3.6.4); `ISystemRoleGrantContributor` (16 E-09); Tabelle `roles` + `role_permissions`; Mitgliedschaften referenzieren `role_id`; API liefert `role: 20/15/5` aus `RoleDefinition.Level`; Permission-Keys sind stabil und in Snapshot-Test eingefroren; reservierter Key `project.work_item.read_all` für die Gast-Sichtbarkeit (§3.6.5); WS-Admin-Override hängt am internen Grant `workspace.admin_override` (`InternalPermissionKeys`, CE-Grant nur `workspace.admin`; §3.6.4, ABG-037) | `SystemRoleProvider` | `SystemRolePermissionsSnapshotTests`, Permission-Matrix-Tests | I0 |
 | **F1** Integrations-Framework (W1) | Oberfläche `Integrations` (`/api/integrations/{provider}/webhooks/{connection_id:guid}`, 16 §3.4) mit eigener Rate-Limit-Policy `integration_webhook` (ab I0, ABG-051), ohne Session/CSRF, Körper roh (für HMAC) über `EnableBuffering`; `IWebhookSignatureVerifier`-Registry nach `Provider`; `IWebhookIngress` (16 E-25); Inbox-Idempotenz; opt-in `.WithSessionAuthentication()` für OAuth-Callbacks (`/api/integrations/forgejo/oauth/callback/`, `/api/integrations/forgejo/oauth/user-callback/`, ABG-049; `forgejo-init` registriert genau diese beiden `redirect_uris` mit `<WEB_URL>`-Präfix) | Route liefert 404 `{"error": "Page not found."}` für unbekannten Provider | Route registriert, 404 ohne Verifier | I0 |
-| **F2** Forgejo (W1) | Activity-Felder `forgejo_branch`, `forgejo_commit`, `forgejo_pull_request` im Activity-Katalog reserviert (`IActivityFieldResolver` registrierbar); Options `PlaneForgejoOptions` (AppHost); `StateChangeOrigin.Integration` | keine Resolver | Katalog enthält reservierte Namen | I0 |
-| **G1** AI-Basis (nicht gewählt) | Integration-Events aller indexrelevanten Aggregate (Work Item, Page, Kommentar) bilden die Indexierungsquelle (`IEventConsumer` in `Plane.Search`); Options `PlaneAiOptions.EmbeddingDimensions` | `NullEmbeddingGenerator` | – (11) | I5 |
-| **H1** OAuth-App-Plattform (W1) | Policy-Scheme der Oberfläche `V1` enthält `Bearer` (Keycloak-JWT, `Plane:Auth:Bearer:Enabled=false`, 05 D05-ADR-15); `Permission.ApiScope` (z. B. `projects.labels:write`, 05 Anhang A) wird für Bearer-Prinzipale zusätzlich zur Rolle geprüft (Schritt 0 in §3.6.2: `principal.Kind ∈ {App, Bot}` → Scope-Prüfung, sonst übersprungen); `PrincipalKind` im Request-Log | Bearer aus; ApiScopes in CE nicht gesetzt | Bearer-Schema registriert, deaktiviert → 401 | I0 |
+| **F2** Forgejo (W1) | Activity-Felder `forgejo_branch`, `forgejo_commit`, `forgejo_pull_request` im Activity-Katalog reserviert (`IActivityFieldResolver` registrierbar); Options `FunkForgejoOptions` (AppHost); `StateChangeOrigin.Integration` | keine Resolver | Katalog enthält reservierte Namen | I0 |
+| **G1** AI-Basis (nicht gewählt) | Integration-Events aller indexrelevanten Aggregate (Work Item, Page, Kommentar) bilden die Indexierungsquelle (`IEventConsumer` in `Funk.Search`); Options `FunkAiOptions.EmbeddingDimensions` | `NullEmbeddingGenerator` | – (11) | I5 |
+| **H1** OAuth-App-Plattform (W1) | Policy-Scheme der Oberfläche `V1` enthält `Bearer` (Keycloak-JWT, `Funk:Auth:Bearer:Enabled=false`, 05 D05-ADR-15); `Permission.ApiScope` (z. B. `projects.labels:write`, 05 Anhang A) wird für Bearer-Prinzipale zusätzlich zur Rolle geprüft (Schritt 0 in §3.6.2: `principal.Kind ∈ {App, Bot}` → Scope-Prüfung, sonst übersprungen); `PrincipalKind` im Request-Log | Bearer aus; ApiScopes in CE nicht gesetzt | Bearer-Schema registriert, deaktiviert → 401 | I0 |
 | **H6** Realtime-Event-Server (W1) | Integration-Events je Command (Labels: §5.2.12) sind die Quelle; `IPostCommitAction` für latenzkritische Hinweise; Gruppenschema `ws:{id}`, `project:{id}`, `user:{id}` | Hub ohne Konsumenten bis I5 | – (01 §1.4) | I0/I5 |
 
 **Weitere gewählte, nicht 🧱-Pakete mit Berührung dieses Dokuments (nur Hinweis):** H3 (API v2, W9) – Oberfläche `V2` (`/api/v2/`) ist als Enum-Wert **nicht** angelegt; sie wird mit H3 hinzugefügt, ohne bestehende Oberflächen zu ändern (Präfix kollidiert mit keiner CE-Route, Prüfung per Routing-Test). E6 (Audit/Activity-Logs, W4) – nutzt die Integration-Events (C3-Andockstelle) und `ICurrentActor`; keine zusätzliche CE-Andockstelle nötig.
@@ -2404,11 +2404,11 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 
 | Nr. | Kriterium | Messung | Inkrement |
 |---|---|---|---|
-| AK-01 | Jedes Backend-Projekt folgt der Schablone §3.1; Architekturtests R1–R10 + Zusatzregeln §5.2.13 grün | `dotnet test tests/Plane.ArchitectureTests` | I0 |
+| AK-01 | Jedes Backend-Projekt folgt der Schablone §3.1; Architekturtests R1–R10 + Zusatzregeln §5.2.13 grün | `dotnet test tests/Funk.ArchitectureTests` | I0 |
 | AK-02 | Jede registrierte Route ist **mit und ohne** abschließenden Slash erreichbar (gleicher Status, gleicher Körper), ohne Redirect | `RoutingConventionTests` iteriert `EndpointDataSource` | I0 |
 | AK-03 | Unbekannter Pfad unter `/api/` → 404 `{"error": "Page not found."}`; falsche Methode → 405 `{"detail": "Method \"X\" not allowed."}` | `StatusCodeBodiesTests` | I0 |
-| AK-04 | Fehlerkörper aller Fabrikmethoden byte-gleich zu den Original-Beispielen (§3.8) | `PlaneErrorsGoldenTests` | I0 |
-| AK-05 | `PlaneExceptionHandler` bildet die fünf Original-Fälle (IntegrityError, ValidationError, ObjectDoesNotExist, KeyError, sonstige) exakt ab; 500 loggt in `plane.exception` mit Trace-ID | `ExceptionMappingTests` | I0 |
+| AK-04 | Fehlerkörper aller Fabrikmethoden byte-gleich zu den Original-Beispielen (§3.8) | `FunkErrorsGoldenTests` | I0 |
+| AK-05 | `FunkExceptionHandler` bildet die fünf Original-Fälle (IntegrityError, ValidationError, ObjectDoesNotExist, KeyError, sonstige) exakt ab; 500 loggt in `plane.exception` mit Trace-ID | `ExceptionMappingTests` | I0 |
 | AK-06 | Permission-Evaluator reproduziert `allow_permission` für alle Kombinationen (WS-Rolle ∈ {A, M, G, keine, inaktiv} × Projektrolle ∈ {A, M, G, keine, inaktiv} × creator ∈ {ja, nein}) – 50 Fälle – inkl. DenyStyle; Abweichungen nur dort, wo 05 sie als `HARM-00`/`SEC-*` führt; Vorbedingungs-Fälle (`Prerequisite`) liefern den Körper der fehlgeschlagenen Stufe | `AllowPermissionPortTests` (Erwartung aus Original-Aufzeichnung + 05-Abweichungsliste) | I0 |
 | AK-07 | Jede Original-Permission-Klasse aus §3.6.3 hat einen Vorbedingungs-Deskriptor in `StandardPermissions`; Methodenmatrix je Klasse (anonym/GET/POST/PATCH/DELETE) stimmt mit `A06` §2.10 überein; jede „∧“-Zeile aus 05 Anhang B trägt eine `Prerequisite`-Regel | `PermissionTemplateTests` | I0 |
 | AK-08 | Fremder oder unbekannter Workspace-Slug liefert nie Daten und nie 404 (außer `.Resolve…OrNotFound()`-Routen) | `TenantIsolationTests` je Modul | I0 |
@@ -2417,13 +2417,13 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 | AK-11 | Cursor-Pagination: Default-Cursor, `next_cursor`/`prev_cursor` (auch `-1`), `total_pages`, Fehlertexte für `per_page`/`cursor`/negativen Offset identisch zu Original-Fixtures | `CursorPaginatorTests` (12 Fixtures aus `API/tests`) | I1 |
 | AK-12 | Query-Engine: für 120 aufgezeichnete Original-Requests (`IssueViewSet.list` mit Legacy-, Rich-Filtern, allen 11 `group_by`-Werten, 25 Sub-Gruppen-Kombinationen, allen 14 `order_by`-Werten ±) sind `results`-IDs, Gruppenschlüssel, `total_results` je Gruppe und Envelope-Felder identisch (Reihenfolge innerhalb gleicher `created_at` ausgenommen) | `WorkItemQueryParityTests` (Golden-Files) | I2 |
 | AK-13 | Rich-Filter-Strukturfehler liefern alle 20 Original-Codes mit identischem `message`-Text | `RichFilterParserTests` | I2 |
-| AK-14 | Performance S9: gruppierte Liste (state, Sub-Gruppe priority, 50 000 Work Items) p95 < 300 ms, Spreadsheet 100 Zeilen p95 < 200 ms, AND/OR/NOT mit 6 Bedingungen p95 < 400 ms | `Plane.Benchmarks` (k6/BenchmarkDotNet) gegen Testcontainer | I2 |
+| AK-14 | Performance S9: gruppierte Liste (state, Sub-Gruppe priority, 50 000 Work Items) p95 < 300 ms, Spreadsheet 100 Zeilen p95 < 200 ms, AND/OR/NOT mit 6 Bedingungen p95 < 400 ms | `Funk.Benchmarks` (k6/BenchmarkDotNet) gegen Testcontainer | I2 |
 | AK-15 | Rate Limits: `anon` 30/min nur anonym, `api_key` 60/min (Partition `token_hash`) mit Headern `X-RateLimit-Remaining`/`-Reset` auf jeder erfolgreichen V1-Antwort, 429-Körper coded 5900 + `Retry-After` (ohne X-RateLimit-Header); in beiden Profilen (lokal, Valkey) | `RateLimitTests` (FakeTimeProvider) | I1/I6 |
 | AK-16 | Cache: Label-Änderung invalidiert `GET {W}/labels/` auf **zwei** API-Instanzen innerhalb 1 s | `CacheInvalidationTests` (Aspire-Testing, 2 Replikas + Valkey) | I1 |
 | AK-17 | Options: jede Original-ENV aus §4.9 mit Status ≠ „entfällt“ wirkt als Alias; ungültige Werte brechen den Start mit Meldung (außer Original-Toleranzfälle) | `LegacyEnvironmentMapTests`, `OptionsValidationTests` | I0 |
 | AK-18 | Instanz-Konfiguration: Seed legt nur fehlende Keys an; verschlüsselte Keys sind in der DB nicht im Klartext; Entschlüsselung nach Key-Rotation funktioniert; falscher Key-Ring → `""` + Warnung | `InstanceConfigurationStoreTests` | I0 |
 | AK-19 | Health: `GET /` (App-Port) → `{"status": "OK"}` ohne Log-Eintrag; `/health/live`, `/health/ready`, `/health/startup` nur auf dem Management-Port 8081 (App-Port → 404); `/health/ready` 503 mit `{"status": "Unhealthy", "checks": {…}}` bei gestoppter DB, 200 mit `"Degraded"` bei nicht erreichbarem Objektspeicher; Antwort `application/json` ohne interne Details, kein ProblemDetails (ABG-014) | `HealthTests` | I0 |
-| AK-20 | Referenzmodul Labels: Golden-Contract-Tests L1–L3, L5–L7 grün; Permission-Matrix (§5.2.13) grün; Kaskade (Kind-Labels, `work_item_labels`, `page_labels`) | `Plane.Projects.Tests` | I1 |
+| AK-20 | Referenzmodul Labels: Golden-Contract-Tests L1–L3, L5–L7 grün; Permission-Matrix (§5.2.13) grün; Kaskade (Kind-Labels, `work_item_labels`, `page_labels`) | `Funk.Projects.Tests` | I1 |
 | AK-21 | Kein Log-Eintrag enthält API-Keys, Cookies, Passwörter oder E-Mail-Adressen im Klartext | `LogRedactionTests` | I0 |
 | AK-22 | OpenAPI `v1` enthält nur `/api/v1/`-Pfade, 14 Tags, Security-Schema `X-Api-Key`; Scalar lädt ohne Internet | `OpenApiDocumentTests` + Airgap-E2E | I6 |
 | AK-23 | Tenant-Isolation über DbContext-Lebenszyklus: 200 parallele Requests abwechselnd für zwei Workspaces liefern nie Zeilen des anderen Workspace; Architekturtest verbietet `AddNpgsqlDbContext`/`AddDbContextPool` (D02-ADR-26) | `DbContextTenantIsolationTests` (Api-Host, Testcontainers) | I0 |
@@ -2435,13 +2435,13 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 
 | Testprojekt | Inhalte aus diesem Dokument |
 |---|---|
-| `tests/Plane.BuildingBlocks.Tests` | Converter (AK-09), `Optional<T>` (AK-10), `CursorPaginator`/`GlobalPaginator` (AK-11), `PlaneErrors` (AK-04), `RateExpression`, `TrailingSlashMiddleware`, `SoftDeleteInterceptor` + Registry, `AuditInterceptor`, `OwnershipGuardInterceptor` |
-| `tests/modules/Plane.Authorization.Tests` (Modul-Testprojekt, Pfad nach 01 §5.1) | AK-06, AK-07, `SystemRolePermissionsSnapshotTests` |
-| `tests/modules/Plane.WorkItems.Tests` | AK-12 … AK-14, `LegacyFilterParserTests` (alle Parameter aus §3.11.3 inkl. Datumsgrammatik mit `FixedClock`), `GroupedPageStrategyEquivalenceTests` |
-| `tests/modules/Plane.Projects.Tests` | AK-20 |
-| `tests/Plane.AppHost.Tests` | AK-02, AK-03, AK-16, AK-19, AK-23, AK-24, AK-26 (gegen laufenden Api-Host) |
-| `tests/Plane.BuildingBlocks.Tests` (Ergänzung) | AK-25 (`TransactionBehavior`, Domain-Event-Schleife, Execution-Strategy) |
-| `tests/Plane.ArchitectureTests` | AK-01 |
+| `tests/Funk.BuildingBlocks.Tests` | Converter (AK-09), `Optional<T>` (AK-10), `CursorPaginator`/`GlobalPaginator` (AK-11), `FunkErrors` (AK-04), `RateExpression`, `TrailingSlashMiddleware`, `SoftDeleteInterceptor` + Registry, `AuditInterceptor`, `OwnershipGuardInterceptor` |
+| `tests/modules/Funk.Authorization.Tests` (Modul-Testprojekt, Pfad nach 01 §5.1) | AK-06, AK-07, `SystemRolePermissionsSnapshotTests` |
+| `tests/modules/Funk.WorkItems.Tests` | AK-12 … AK-14, `LegacyFilterParserTests` (alle Parameter aus §3.11.3 inkl. Datumsgrammatik mit `FixedClock`), `GroupedPageStrategyEquivalenceTests` |
+| `tests/modules/Funk.Projects.Tests` | AK-20 |
+| `tests/Funk.AppHost.Tests` | AK-02, AK-03, AK-16, AK-19, AK-23, AK-24, AK-26 (gegen laufenden Api-Host) |
+| `tests/Funk.BuildingBlocks.Tests` (Ergänzung) | AK-25 (`TransactionBehavior`, Domain-Event-Schleife, Execution-Strategy) |
+| `tests/Funk.ArchitectureTests` | AK-01 |
 | `tests/contracts/` | Golden-Files (Parity-Harness S11), `deviations.yaml` mit allen `DEV-*`-IDs dieses Dokuments |
 
 ### 7.3 Abweichungskatalog (Einträge für `tests/contracts/deviations.yaml`)
@@ -2482,7 +2482,7 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 | R-D02-05 | HybridCache-L1 auf fremden Knoten veraltet bei Ausfall des Pub/Sub-Kanals | niedrig / niedrig | L1-Ablauf 30 s für veränderliche Daten; keine Rechte im Cache |
 | R-D02-06 | Mediator-Source-Generator und viele Module verlängern Build-Zeiten | mittel / niedrig | Module als eigene Projekte, inkrementeller Build; Messung in S0 |
 | R-D02-07 | DRF-Standardtexte unvollständig katalogisiert → Frontend zeigt andere Feldfehler | mittel / niedrig | `DrfMessages` aus DRF-3.17-Quelltext (`rest_framework/fields.py`, `relations.py`) ergänzen; Contract-Tests vergleichen Feldfehler wörtlich |
-| R-D02-08 | Optional<T> + Source-Generated JSON (`PlaneJsonContext`) – Converter-Factory für generische Structs muss im Kontext registriert werden | niedrig / niedrig | S0-Smoke-Test „PATCH mit Optional<T> im Source-Gen-Kontext“ |
+| R-D02-08 | Optional<T> + Source-Generated JSON (`FunkJsonContext`) – Converter-Factory für generische Structs muss im Kontext registriert werden | niedrig / niedrig | S0-Smoke-Test „PATCH mit Optional<T> im Source-Gen-Kontext“ |
 | R-D02-09 | Mediator-Source-Generator registriert `internal` Handler aus Modul-Assemblies nicht im Host (D02-ADR-27) | mittel / hoch | `InternalsVisibleTo` je Modul; AK-24 in S0; Fallback „Commands/Handler `public`“ (O-D02-09) |
 | R-D02-10 | Aspire-Retry-Strategie (`NpgsqlRetryingExecutionStrategy`) kollidiert mit expliziten Transaktionen | hoch (ohne Gegenmaßnahme sicher) / hoch | Kapselung in `CreateExecutionStrategy().ExecuteAsync` (§3.2.4); Handler wiederholbar halten (keine externen Seiteneffekte vor Commit) |
 | R-D02-11 | Rate-Limit-Header `X-RateLimit-Remaining` mit verteiltem Limiter ungenau (Statistik nur lokal bzw. je Valkey-Roundtrip) | mittel / niedrig | Contract-Test prüft Header-Existenz und Monotonie, nicht exakte Werte über Instanzen |
@@ -2497,11 +2497,11 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 | O-D02-03 | Instanz-Konfiguration: Anzahl der Keys sinkt von 36 auf 14 (ADR-008); feste Werte der entfallenen `config`-Flags in `GET /api/instances/` | **entschieden durch 05 §4.4:** 14 Keys inkl. `ENABLE_SIGNUP`, feste Werte für entfallene Flags (§3.16.2) | erledigt |
 | O-D02-04 | Gruppensummen-Quirk 0 → 1 (`DEV-GRP-001`) beibehalten? | beibehalten (Visual-Parität), per Schalter abschaltbar | Ende I2 (Abnahme Fachseite) |
 | O-D02-05 | CE-PRJ-032 nennt „entfernt das Label … aus View-Filtern“; im Original-Code (`label.py`, `deletion_task.py`, `label.store.ts`) ist keine Bereinigung von View-Filtern auffindbar | im Paritäts-Harness prüfen; ohne Nachweis **nicht** implementieren (gespeicherte Views behalten die ID, Filter trifft dann nichts) | I1 |
-| O-D02-06 | OpenAPI 3.1 (Default .NET 10) vs. 3.0.3 (drf-spectacular) für `v1` | 3.1; falls externe Generatoren der Betreiber 3.0 verlangen, Option `Plane:OpenApi:Version` | I6 |
+| O-D02-06 | OpenAPI 3.1 (Default .NET 10) vs. 3.0.3 (drf-spectacular) für `v1` | 3.1; falls externe Generatoren der Betreiber 3.0 verlangen, Option `Funk:OpenApi:Version` | I6 |
 | O-D02-07 | Rate-Limit-Algorithmus: Sliding Window mit 6 Segmenten statt exakter DRF-Historie | akzeptieren (`DEV-RL-001`); Contract-Test prüft nur Grenzwert ±1 | I1 |
 | O-D02-08 | E-Mail-Änderungs-/Verifizierungs-Endpunkte (`UserEndpoint.generate_email_verification_code`, `update_email`) bei Keycloak-Login | **entschieden durch 05 (D05-ADR-08):** entfallen; Policy `email_verification` wird **nicht** angelegt; Codes 5005/5010 bleiben aktiv (Claim-Validierung `ValidateIdentityClaimsStep`, 05 §4.3) | erledigt |
 | O-D02-09 | Fallback, falls `InternalsVisibleTo` für Mediator nicht greift (R-D02-09) | Commands/Queries/Handler `public sealed`, R9-Ausnahme per ArchUnit-Regel (ABG-047; Regelfall `InternalsVisibleTo` steht bereits in 01 §5.2 R9; Dokument 17 Z-01) | Ende S0 |
-| O-D02-10 | Widersprüche zu 05/14 bei ENV-Zielschlüsseln (`SKIP_ENV_VAR`, `FILE_SIZE_LIMIT`, `WEBHOOK_*`, `SigningKey`) – Review-Protokoll K-06/K-07 | **erledigt (ABG-044):** maßgeblich sind die 02-Schlüssel `SKIP_ENV_VAR` → `Plane:Instance:ConfigurationSource` (`1` → `Database`, `0` → `Environment`), `FILE_SIZE_LIMIT` → `Plane:Uploads:MaxFileSizeBytes`, `WEBHOOK_ALLOWED_IPS` → `Plane:Webhooks:AllowedNetworks`, `WEBHOOK_ALLOWED_HOSTS` → `Plane:Webhooks:AllowedHosts`, `WEBHOOK_DISALLOWED_DOMAINS` → `Plane:Webhooks:DisallowedDomains`; `SigningKey` entschieden durch ABG-012 (§3.15) | erledigt |
+| O-D02-10 | Widersprüche zu 05/14 bei ENV-Zielschlüsseln (`SKIP_ENV_VAR`, `FILE_SIZE_LIMIT`, `WEBHOOK_*`, `SigningKey`) – Review-Protokoll K-06/K-07 | **erledigt (ABG-044):** maßgeblich sind die 02-Schlüssel `SKIP_ENV_VAR` → `Funk:Instance:ConfigurationSource` (`1` → `Database`, `0` → `Environment`), `FILE_SIZE_LIMIT` → `Funk:Uploads:MaxFileSizeBytes`, `WEBHOOK_ALLOWED_IPS` → `Funk:Webhooks:AllowedNetworks`, `WEBHOOK_ALLOWED_HOSTS` → `Funk:Webhooks:AllowedHosts`, `WEBHOOK_DISALLOWED_DOMAINS` → `Funk:Webhooks:DisallowedDomains`; `SigningKey` entschieden durch ABG-012 (§3.15) | erledigt |
 
 ---
 
@@ -2511,15 +2511,15 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 |---|---|---|---|
 | `00-grundsatzentscheidungen.md` | bindend | – | ADR-001 (keine Gates), ADR-003 (Verträge), ADR-004 (kein Telemetrie-Push), ADR-007/-008 (entfallene Keys/Codes), ADR-009 (`funk.`) |
 | `01-zielarchitektur-und-tech-stack.md` | bindend | Präzisierungen (markiert), Änderungsanträge O-D02-01/-02 | Solution-Struktur §5, ADR-010 … ADR-052, Querschnitt §7 |
-| `03-datenmodell-efcore.md` | nutzt | Basistypen, Interceptors, Konventionen, `PlaneEntityConfiguration<T>`, Soft-Delete-Registry, Label-Entität als Vorlage | alle Entitäten/Indizes/Seeds nach dieser Konvention; Tabellen `roles`, `role_permissions`, `instance_configurations` |
+| `03-datenmodell-efcore.md` | nutzt | Basistypen, Interceptors, Konventionen, `FunkEntityConfiguration<T>`, Soft-Delete-Registry, Label-Entität als Vorlage | alle Entitäten/Indizes/Seeds nach dieser Konvention; Tabellen `roles`, `role_permissions`, `instance_configurations` |
 | `04-api-design-und-endpunktkatalog.md` | nutzt | Oberflächen, Pfad-/Status-/Fehlerkonventionen, Pagination, Engine-Fassade | je Endpunkt: Oberfläche, Permission-Deskriptor, Golden-Files, tote Routen, Sicherheitskorrekturen |
-| `05-auth-sicherheit-berechtigungen.md` | nutzt/liefert | Permission-Mechanik (Typen, Filter, `Prerequisite`-Regel, Fehlerkörper), Origin-Check-Platzierung, Rate-Limit-Mechanik, Options-Mechanik | **maßgeblich** für Keys/Grants/Evaluator (§3.13, Anhang A/B, Generator §5.8), Regeln `C:`/`OWN`/`SELF`/`VIS`/`PAGE`/`BOARD`/`WSA\|PA`, HARM-00, SEC-21, `PlaneAuthOptions`, `token_hash` (D05-ADR-16), CSRF (D05-ADR-06), Keycloak-Realm, Session/BFF; Entscheidungen O-D02-03 (14 Keys, feste `config`-Werte) und O-D02-08 (erledigt) |
+| `05-auth-sicherheit-berechtigungen.md` | nutzt/liefert | Permission-Mechanik (Typen, Filter, `Prerequisite`-Regel, Fehlerkörper), Origin-Check-Platzierung, Rate-Limit-Mechanik, Options-Mechanik | **maßgeblich** für Keys/Grants/Evaluator (§3.13, Anhang A/B, Generator §5.8), Regeln `C:`/`OWN`/`SELF`/`VIS`/`PAGE`/`BOARD`/`WSA\|PA`, HARM-00, SEC-21, `FunkAuthOptions`, `token_hash` (D05-ADR-16), CSRF (D05-ADR-06), Keycloak-Realm, Session/BFF; Entscheidungen O-D02-03 (14 Keys, feste `config`-Werte) und O-D02-08 (erledigt) |
 | `06-hintergrundjobs-events-benachrichtigungen.md` | nutzt | Event-Namensschema, Transaktions-/Outbox-Grenze, `IActivityRecorder`/Resolver-Konvention, Retention-Options | Event-Katalog, Activity-Inhalte, Job-Tabelle (Hard-Delete, Retention) |
-| `07-realtime-kollaboration-dokumente.md` | nutzt | Options `PlaneRealtimeOptions`, Health `/live/health/`, Logging-Kategorie `plane.realtime` | – |
+| `07-realtime-kollaboration-dokumente.md` | nutzt | Options `FunkRealtimeOptions`, Health `/live/health/`, Logging-Kategorie `plane.realtime` | – |
 | `08-frontend-angular-architektur.md` | Vertragspartner | JSON-/Fehler-/Pagination-Formen, Trailing-Slash-Toleranz, Runtime-Config-Quellen | Interceptor normalisiert auf Slash; Auswertung `error`/`detail`/`error_code` wie Original |
 | `09-ui-paritaet-designsystem.md` | indirekt | – | – |
 | `10-editor-angular.md` | indirekt | Sanitizing-Aufrufpunkte (§3.7) | – |
-| `11-suche-und-ai-basis.md` | nutzt | `IFilterParser`/AST (B6), Integration-Events als Indexquelle (G1), `PlaneAiOptions` | `ISearchProvider` |
+| `11-suche-und-ai-basis.md` | nutzt | `IFilterParser`/AST (B6), Integration-Events als Indexquelle (G1), `FunkAiOptions` | `ISearchProvider` |
 | `12-…`, `13-…` | – (in 01 Anhang A nicht vergeben) | – | – |
 | `14-infrastruktur-deployment-betrieb.md` | nutzt | Options-Klassen + ENV-Alias-Tabelle (§4.9), Health-Endpunkte, Log-/Metrik-Namen | Gateway-/TLS-/Valkey-/DataProtection-/Telemetry-/Scale-Optionen (Felder 14 §3.9.1, in §3.15 gelistet), AppHost-Ressourcennamen (`plane`, `plane-replica`, `valkey`, `objectstore`), Kategorie `plane.config` |
 | `15-teststrategie-qualitaet-paritaet.md` | nutzt | Akzeptanzkriterien §7, Testprojekte, `deviations.yaml`-Einträge | Parity-Harness (S11), Golden-File-Format |
@@ -2544,13 +2544,13 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 
 | Nr. | Befund | Korrektur (Abschnitt) |
 |---|---|---|
-| F-01 | `PlaneEntityConfiguration<T>` referenzierte `User` aus `Plane.Data` in `Plane.BuildingBlocks.Persistence` → Zyklus/Kompilierfehler | Audit-FKs in `AuditForeignKeyConvention` (Plane.Data) (§3.2.3, §5.1.3) |
+| F-01 | `FunkEntityConfiguration<T>` referenzierte `User` aus `Funk.Data` in `Funk.BuildingBlocks.Persistence` → Zyklus/Kompilierfehler | Audit-FKs in `AuditForeignKeyConvention` (Funk.Data) (§3.2.3, §5.1.3) |
 | F-02 | `DomainEventDispatchInterceptor` lief **nach** Audit/Soft-Delete/Ownership → von Domain-Handlern erzeugte Änderungen ohne Audit-Felder und ohne Guard | Dispatch im `TransactionBehavior` vor `SaveChanges`, Interceptor entfernt, `IHasDomainEvents` getrennt (D02-ADR-24, §3.2.2, §3.19, §5.1.1) |
 | F-03 | Inline-Soft-Delete-Kaskaden per `ExecuteUpdateAsync` in `SavingChanges` liefen ohne explizite Transaktion **vor** und außerhalb der SaveChanges-Transaktion; keine Rekursion, keine `updated_at` | immer explizite Transaktion, Kaskade in `SavedChangesAsync` vor Commit, rekursiv, Guard ohne Transaktion (D02-ADR-24, §3.2.2) |
 | F-04 | DbContext-Pooling (Default von `AddNpgsqlDbContext`) bricht den Tenant-Filter `workspace_tenant` und scoped Interceptors | D02-ADR-26, §3.2.4, AK-23 |
 | F-05 | Aspire-Retry-Strategie verbietet benutzerinitiierte Transaktionen | Kapselung in `CreateExecutionStrategy().ExecuteAsync` (§3.2.4, §3.19, R-D02-10) |
-| F-06 | Mediator: Default-Lifetime `Singleton` + `internal` Handler in fremden Assemblies nicht berücksichtigt | D02-ADR-27, R-D02-09, O-D02-09, AK-24; Ort der Behaviors (`Plane.Data/Pipeline/`) festgelegt |
-| F-07 | Validatoren als `Singleton` registriert (§3.7), Stufe-2-Validatoren injizieren aber `PlaneDbContext`; Widerspruch zu §5.2.11 (`Scoped`) | einheitlich `Scoped` (§3.7) |
+| F-06 | Mediator: Default-Lifetime `Singleton` + `internal` Handler in fremden Assemblies nicht berücksichtigt | D02-ADR-27, R-D02-09, O-D02-09, AK-24; Ort der Behaviors (`Funk.Data/Pipeline/`) festgelegt |
+| F-07 | Validatoren als `Singleton` registriert (§3.7), Stufe-2-Validatoren injizieren aber `FunkDbContext`; Widerspruch zu §5.2.11 (`Scoped`) | einheitlich `Scoped` (§3.7) |
 | F-08 | `CORS` vor `UseRouting`; implizites `UseRouting` von `WebApplication` nicht erwähnt (Trailing-Slash-Rewrite wäre wirkungslos) | Reihenfolge Routing → CORS → Auth, expliziter Aufruf (§3.4.1) |
 | F-09 | `UseExceptionHandler()` mit `IExceptionHandler` wirft ohne `AddProblemDetails` beim Start | Registrierung ergänzt (§3.4.1 Nr. 2) |
 | F-10 | Request-/API-Activity-Log hätten den um den Slash gekürzten Pfad protokolliert | `IOriginalPathFeature` (§3.4.1 Nr. 6, AK-26) |
@@ -2558,17 +2558,17 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 | F-12 | Permission-Mechanik wich von 05 ab (Vorbedingungen fest im Deskriptor, eigene Regelnamen, `RoleDefinition`-Signatur, `SystemRole`, Laufzeit-Berechnung der Grants, `workspace.admin_override`, `project.work_item.read_all` aktiv) | an 05 angeglichen: Deskriptoren generiert, Regeln am Endpunkt, `Prerequisite`-Regel als Ergänzung, HARM-00, `SystemRoleLevel`, Grants aus Generator, Gast-Sichtbarkeit über `pm.level > 5` (§3.6, §5.1.7) |
 | F-13 | Labels-Referenzmodul nutzte Keys/Konstanten, die 05 nicht kennt (`project.label.bulk_create`, `LabelRead` mit WS-Scope) und ignorierte SEC-21 | Keys/Konstanten nach 05 Anhang A, SEC-21 in L1/L3, Tests angepasst (§5.2) |
 | F-14 | API-Activity-Log mit HMAC-Schlüssel `ApiLogHmacKey` – 05 verlangt `token_hash` | übernommen (§3.4.1 Nr. 14, §3.15, §4.2) |
-| F-15 | Session-Optionen doppelt (`PlaneSessionOptions` hier, `PlaneAuthOptions` in 05); `Bearer`-Schlüsselnamen abweichend | 05-Namen übernommen (§3.15, §4.9, §6 H1) |
+| F-15 | Session-Optionen doppelt (`FunkSessionOptions` hier, `FunkAuthOptions` in 05); `Bearer`-Schlüsselnamen abweichend | 05-Namen übernommen (§3.15, §4.9, §6 H1) |
 | F-16 | Options-Liste unvollständig gegenüber 14 (`Valkey`, `Scale`, `DataProtection`, `Telemetry`, `Gateway`, `Tls`, `Urls.Idp`, `Database.MaxPoolSize`), `ForwardLimit = null` (ASP.NET: unbegrenzt) | ergänzt, Default `1` (§3.15) |
 | F-17 | CSRF-Fehler der Formular-Endpunkte als JSON statt Original-HTML (05 §3.5, CE-AUTH-016); `Sec-Fetch-Site`-Härtung und `TrustedOrigins` fehlten | §4.5, §3.4.1 Nr. 11, §3.15 |
 | F-18 | X-RateLimit-Header: Mechanik nicht umsetzbar beschrieben (eingebaute Middleware liefert Restkontingent nicht) | eigene Policy + `GetStatistics` + `OnStarting`; 429 ohne Header (§3.13, AK-15) |
-| F-19 | Minimal-API-Binding vor Filtern: Aussage „Gast erhält auch bei ungültigem Körper 403“ für JSON-Parse-/Content-Type-Fehler falsch | Grenze dokumentiert, `DEV-JSON-002`, Nachrüstoption `PlaneBody<T>` (§3.4.2) |
+| F-19 | Minimal-API-Binding vor Filtern: Aussage „Gast erhält auch bei ungültigem Körper 403“ für JSON-Parse-/Content-Type-Fehler falsch | Grenze dokumentiert, `DEV-JSON-002`, Nachrüstoption `FunkBody<T>` (§3.4.2) |
 | F-20 | Inkrement von `GlobalPaginator` widersprüchlich (I2 vs. I5) | I2 (§3.10.4) |
-| F-21 | Test-Bezeichner wichen von der verbindlichen Konsolidierung in 15 §9.2 ab (`PlaneAppFactory`, `PostgresFixture`, `FakeClock`, Golden-Pfade, `ContractTest`) | angeglichen (§3.1.1, §3.1.2, §5.2.13, §7.2) |
-| F-22 | Fehlende Bausteine: `Result` (nicht generisch) mit `IsFailure`, `PlaneErrorException`, Prev-Cursor-Quirk im Paginator-Skelett, `IPlaneCache.ClearAsync` (CE-OPS-020), Bulk-Validator, `DEV-LBL-05/-06`, Host-Kataloge (Collaboration nur Realtime), Integrations-OAuth-Callbacks mit Session, `{connection_id:guid}` | ergänzt (§5.1.4, §3.8.2, §5.1.9, §3.12.1, §5.2.5, §7.3, §3.1.3, §3.3.1/§3.3.2, §6) |
+| F-21 | Test-Bezeichner wichen von der verbindlichen Konsolidierung in 15 §9.2 ab (`FunkAppFactory`, `PostgresFixture`, `FakeClock`, Golden-Pfade, `ContractTest`) | angeglichen (§3.1.1, §3.1.2, §5.2.13, §7.2) |
+| F-22 | Fehlende Bausteine: `Result` (nicht generisch) mit `IsFailure`, `FunkErrorException`, Prev-Cursor-Quirk im Paginator-Skelett, `IPlaneCache.ClearAsync` (CE-OPS-020), Bulk-Validator, `DEV-LBL-05/-06`, Host-Kataloge (Collaboration nur Realtime), Integrations-OAuth-Callbacks mit Session, `{connection_id:guid}` | ergänzt (§5.1.4, §3.8.2, §5.1.9, §3.12.1, §5.2.5, §7.3, §3.1.3, §3.3.1/§3.3.2, §6) |
 | F-23 | CE-ID-Zuordnung: CE-OPS-018/-020 fehlten, Verweis „§5.3“ für Labels falsch, CE-PRJ-022 nannte reservierten Key | §4.12 |
 | F-24 | §1.3 „Werte bei Erstnutzung validiert“ widersprach D02-ADR-19 (`ValidateOnStart`) | präzisiert (§1.3) |
-| F-26 | Fehlercode-Katalog widersprach 05 §4.3 (entfallene Codes nicht angelegt, 5015/5124/5150/5155/5175/5190 als entfallen geführt, 5200–5202 anders benannt) | Auth-Codes nach 05 §4.3 (`AuthErrorCodes`, aktiv/ruhend), `PlaneErrorCodes` nur fachlich (§3.8.3) |
+| F-26 | Fehlercode-Katalog widersprach 05 §4.3 (entfallene Codes nicht angelegt, 5015/5124/5150/5155/5175/5190 als entfallen geführt, 5200–5202 anders benannt) | Auth-Codes nach 05 §4.3 (`AuthErrorCodes`, aktiv/ruhend), `FunkErrorCodes` nur fachlich (§3.8.3) |
 | F-25 | `ENABLE_SIGNUP` als „entfällt“ geführt, 05 behält ihn als Signup-Gate (D05-ADR-12); Key-Zählung dadurch falsch; `config`-Feldliste wich von 05 ab | angeglichen (§4.9, §4.10, §3.16.2, O-D02-03 erledigt) |
 
 ### Offene Konflikte mit anderen Dokumenten (nicht in diesem Dokument lösbar)
@@ -2580,8 +2580,8 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 | K-03 | 05 §3.13.4 / D05-ADR-18 | WS-Admin-Override in 05 ohne Grant-Key; E5-Custom-Roles können ihn nur über `Level = 20` erhalten | **erledigt (ABG-037):** grant-basierter interner Key `workspace.admin_override` in `InternalPermissionKeys` (CE-Grant nur `workspace.admin`), Evaluator prüft den Grant statt `Level = 20` (§3.6.4) |
 | K-04 | 05 Anhang A | Vorbedingungs-Keys (`workspace.project_base.read/create`, `project.project_base.write`, `project.project_entity.*`, `project.project_member.*`, `workspace.workspace_entity.*`) sind nicht als „intern“ geführt; Architekturtest 2 („keine toten Keys“) würde sie bemängeln | in 05 Anhang A aufnehmen oder in `ReservedPermissionKeys` führen – **erledigt (ABG-042):** 05 Anhang A Abschnitt „Vorbedingungs-Keys“; Architekturtest 2 zählt `Prerequisite`-Referenzen |
 | K-05 | 05 Anhang B | `PUT {P}/issue-labels/{pk}/` mit `project.label.update` gelistet; 02/`A04` §5.1 registrieren die (im Original funktionsfähige, aber ungenutzte) Route nicht (Architekturtest 3 aus 05 würde fehlschlagen) – **entschieden durch ABG-043** (nicht portiert, 405, `DEV-API-04`; 05 führt die Zeile als `entfällt`) | Zeile in 05 als `entfällt` markieren |
-| K-06 | 05 §4.4 vs. 02 §4.9 / 14 §3.9.1 | `SKIP_ENV_VAR` (05: entfällt, immer DB; 02/14: `Plane:Instance:ConfigurationSource`), `FILE_SIZE_LIMIT` (05: `Plane:Storage:FileSizeLimit`; 02/14: `Plane:Uploads:MaxFileSizeBytes`), `WEBHOOK_*` (05: `Plane:Webhooks:Ssrf:*`; 02: `Plane:Webhooks:AllowedNetworks/AllowedHosts/DisallowedDomains`) | 14 erklärt 02 für maßgeblich → 05 §4.4 angleichen (O-D02-10) – **entschieden durch ABG-044** (02-Schlüssel maßgeblich) – **erledigt (ABG-044):** 05 §4.4 nutzt die 02-Schlüssel |
-| K-07 | 14 §3.9.1 | `PlaneSecurityOptions.ApiLogHmacKey` „abgeleitet aus `SigningKey`“ – entfällt nach 05 (`token_hash`) | 14 nachziehen – **Zweck von `SigningKey` entschieden durch ABG-012** (Pflicht-Secret nur für Upload-Tokens und signierte Dateisystem-URLs; §3.15) – **erledigt (ABG-012):** 14 §3.9.1 ohne `ApiLogHmacKey` |
+| K-06 | 05 §4.4 vs. 02 §4.9 / 14 §3.9.1 | `SKIP_ENV_VAR` (05: entfällt, immer DB; 02/14: `Funk:Instance:ConfigurationSource`), `FILE_SIZE_LIMIT` (05: `Funk:Storage:FileSizeLimit`; 02/14: `Funk:Uploads:MaxFileSizeBytes`), `WEBHOOK_*` (05: `Funk:Webhooks:Ssrf:*`; 02: `Funk:Webhooks:AllowedNetworks/AllowedHosts/DisallowedDomains`) | 14 erklärt 02 für maßgeblich → 05 §4.4 angleichen (O-D02-10) – **entschieden durch ABG-044** (02-Schlüssel maßgeblich) – **erledigt (ABG-044):** 05 §4.4 nutzt die 02-Schlüssel |
+| K-07 | 14 §3.9.1 | `FunkSecurityOptions.ApiLogHmacKey` „abgeleitet aus `SigningKey`“ – entfällt nach 05 (`token_hash`) | 14 nachziehen – **Zweck von `SigningKey` entschieden durch ABG-012** (Pflicht-Secret nur für Upload-Tokens und signierte Dateisystem-URLs; §3.15) – **erledigt (ABG-012):** 14 §3.9.1 ohne `ApiLogHmacKey` |
 | K-08 | 05 §3.18 | Ausnahmeliste `tests/parity/exceptions.yaml`; 02, 14, 15 nutzen `tests/contracts/deviations.yaml` | 05 auf `tests/contracts/deviations.yaml` umstellen (15 ist für Test-Orte maßgeblich) – **erledigt (ABG-045):** 05 §3.18 nutzt `tests/contracts/deviations.yaml` |
 | K-09 | 01 §5.3 / §5.5 | Skelett nutzt `ProjectScope`-Parameter, `IModule.Permissions` als `IEnumerable<Permission>`, `.RequirePermission(ProjectsPermissions.LabelsWrite)` | O-D02-02: 01 auf `IRequestScope`, `IEnumerable<PermissionDescriptor>`, generierte `ProjectLabel*`-Konstanten umstellen – **in 01 umgesetzt (ABG-046)** |
 | K-10 | 01 §5.1 R9 | Mediator-Generator braucht Zugriff auf `internal` Handler (D02-ADR-27) | `InternalsVisibleTo` als zulässige Ausnahme in R9 nennen; Fallback O-D02-09 – **in 01 §5.2 R9 umgesetzt (ABG-047)** |
@@ -2596,14 +2596,14 @@ Umgesetzt am 23.10.2026 nach den verbindlichen Entscheidungen aus `17-abgleich-d
 
 | ABG-ID | Umgesetzt in | Kern der Änderung |
 |---|---|---|
-| ABG-012 | §3.15 (`PlaneSecurityOptions`), §4.9 (`SECRET_KEY`), Review K-07, O-D02-10 | `SigningKey` = Pflicht-Secret (Base64 ≥ 32 Byte, Parameter `signing-key`, ENV `Plane__Security__SigningKey`) nur für Upload-Tokens und signierte Dateisystem-URLs; `ApiLogHmacKey` entfällt (`token_identifier = token_hash`); `SECRET_KEY` kein Alias, Startwarnung bzw. Critical bei Platzhaltern |
+| ABG-012 | §3.15 (`FunkSecurityOptions`), §4.9 (`SECRET_KEY`), Review K-07, O-D02-10 | `SigningKey` = Pflicht-Secret (Base64 ≥ 32 Byte, Parameter `signing-key`, ENV `Funk__Security__SigningKey`) nur für Upload-Tokens und signierte Dateisystem-URLs; `ApiLogHmacKey` entfällt (`token_identifier = token_hash`); `SECRET_KEY` kein Alias, Startwarnung bzw. Critical bei Platzhaltern |
 | ABG-014 | §3.17, D02-ADR-08, AK-19 | Spalte „Port“ (Management 8081 für `/health/*`, App-Port für `/`, `/robots.txt`, `/live/health/`), `/health/startup` ergänzt, JSON `{"status", "checks"}` statt ProblemDetails, Objektspeicher nicht blockierend (`Degraded`) |
 | ABG-036 | §3.6.1, §3.6.2, §5.1.7 | `PermissionRule.Creator<TEntity>(string routeParam = "pk", bool requireMembership = true)`; `PageAccess` inkl. Eigentümer-Bypass; Satz „WS-Admin-Override = Evaluator-Schritt (05 §3.13.4 Schritt 8), keine Regel“; entfallene Namen aufgeführt |
-| ABG-037 | §3.6.2, §3.6.4, §6 (E5), Review K-03 | WS-Admin-Override grant-basiert über internen Key `workspace.admin_override` (`InternalPermissionKeys`, CE-Grant nur `workspace.admin`); keine Rollenzahl (`PLANE0001`); K-03 erledigt |
+| ABG-037 | §3.6.2, §3.6.4, §6 (E5), Review K-03 | WS-Admin-Override grant-basiert über internen Key `workspace.admin_override` (`InternalPermissionKeys`, CE-Grant nur `workspace.admin`); keine Rollenzahl (`FUNK0001`); K-03 erledigt |
 | ABG-038 | §3.6.1 | `public sealed record RoleDefinition(Guid Id, string Namespace, string Slug, string Name, int Level, bool IsSystem, IReadOnlySet<string> Grants)` |
-| ABG-039 | §3.4.1 Nr. 1, §3.15 (`PlaneForwardedHeadersOptions`), §4.9 | Code nutzt `ForwardedHeadersOptions.KnownIPNetworks` mit `System.Net.IPNetwork.Parse`; `KnownNetworks`-Eigenschaft und `Microsoft.AspNetCore.HttpOverrides.IPNetwork` verboten (`ASPDEPR005` als Fehler); Konfigurationsschlüssel bleibt `Plane:ForwardedHeaders:KnownNetworks` (Alias `TRUSTED_PROXIES`) |
+| ABG-039 | §3.4.1 Nr. 1, §3.15 (`FunkForwardedHeadersOptions`), §4.9 | Code nutzt `ForwardedHeadersOptions.KnownIPNetworks` mit `System.Net.IPNetwork.Parse`; `KnownNetworks`-Eigenschaft und `Microsoft.AspNetCore.HttpOverrides.IPNetwork` verboten (`ASPDEPR005` als Fehler); Konfigurationsschlüssel bleibt `Funk:ForwardedHeaders:KnownNetworks` (Alias `TRUSTED_PROXIES`) |
 | ABG-043 | §3.3.1 Regel 6, §5.2 L4, §7.3, Review K-05 | `PUT …/issue-labels/{pk}/`: im Original funktionsfähig, ohne Client-Nutzung; nicht portiert, 405 mit DRF-Körper; Abweichung `DEV-API-04` in `tests/contracts/deviations.yaml` |
-| ABG-044 | §3.4.1 Nr. 4, §8.2 O-D02-10, Review K-06 | O-D02-10 erledigt: 02-Schlüssel `Plane:Instance:ConfigurationSource`, `Plane:Uploads:MaxFileSizeBytes`, `Plane:Webhooks:AllowedNetworks/AllowedHosts/DisallowedDomains` maßgeblich |
+| ABG-044 | §3.4.1 Nr. 4, §8.2 O-D02-10, Review K-06 | O-D02-10 erledigt: 02-Schlüssel `Funk:Instance:ConfigurationSource`, `Funk:Uploads:MaxFileSizeBytes`, `Funk:Webhooks:AllowedNetworks/AllowedHosts/DisallowedDomains` maßgeblich |
 | ABG-049 | §3.3.1 (Oberfläche `Integrations`), §6 (F1) | Callback-Pfade mit abschließendem Slash: `GET /api/integrations/forgejo/oauth/callback/`, `GET /api/integrations/forgejo/oauth/user-callback/` |
 | ABG-051 | §1 (Inkremente), D02-ADR-17, §3.3.1, §3.13, §6 (F1) | Policy `integration_webhook` (`600/minute`, Partition `connection_id`) ab **I0** statt W1 |
 | ABG-053 | §3.2.2 Nr. 5 | `outbox_messages` ab I0 mit `actor_id`, `actor_kind`, `origin`, `workspace_id`, `project_id`, `correlation_id`, `causation_depth` (Verweis 16 §5.11); `EventContext`-Rekonstruktion, Verwerfen bei `causation_depth > 5` |
@@ -2616,15 +2616,15 @@ Umgesetzt nach `17-abgleich-dokumentuebergreifend.md` Teil 2 / `_data/17-abgleic
 
 | ABG-ID | Umgesetzt in | Kern der Änderung |
 |---|---|---|
-| ABG-102 umgesetzt | §3.15 `PlaneRetentionOptions` | `PageVersionsKeep` (Schlüssel `Plane:Retention:PageVersionsKeep`, keine Instanz-Einstellung `PAGE_VERSION_LIMIT`) und neu `WorkItemVersionsKeep` = 20 (Inline-Begrenzung durch `WorkItemVersionRecorder`, kein Cron; Nachtrag 03) |
-| ABG-105 umgesetzt | §3.15 `PlaneMailOptions`, §4.10 Nr. 29 | `DefaultFrom` = `funk. <noreply@<Host aus Plane:Urls:Web>>`, neu `FooterLinks` (`{Label, Url, Icon}`, Default leer); Lesedefault von `EMAIL_FROM` im Ziel = dieser Wert |
-| ABG-106 umgesetzt | §3.1.3 (Host-Kataloge), §3.15 `PlaneWorkerOptions`, §5.2.12 | Host-Defaults Realtime `["live"]`, Worker `["*"]` mit `ExcludeQueues = ["live"]`, `Concurrency` `live` = 16; Publisher `QueuedRealtimePublisher` (Api/Worker) / `HubRealtimePublisher` (Realtime/AllInOne); Skelett `LabelRealtimeConsumer` durch `RealtimeFanOutMap`-Einträge `plane.label.*` ersetzt |
-| ABG-129 umgesetzt | §3.8.1 | `PlaneErrors.DrfList(status, params messages)` (JSON-Array-Körper) und `DrfMessages.NullCharacters` |
-| ABG-130 umgesetzt | §3.11.1 (Bausteintabelle) | `WorkItemBaseSetPredicates` in `Plane.Data/Querying/WorkItems/`; `WorkItemBaseSets` nutzt sie (gemeinsam mit `Plane.Search`, `IWorkItemBaseSetFilter` E-04) |
+| ABG-102 umgesetzt | §3.15 `FunkRetentionOptions` | `PageVersionsKeep` (Schlüssel `Funk:Retention:PageVersionsKeep`, keine Instanz-Einstellung `PAGE_VERSION_LIMIT`) und neu `WorkItemVersionsKeep` = 20 (Inline-Begrenzung durch `WorkItemVersionRecorder`, kein Cron; Nachtrag 03) |
+| ABG-105 umgesetzt | §3.15 `FunkMailOptions`, §4.10 Nr. 29 | `DefaultFrom` = `funk. <noreply@<Host aus Funk:Urls:Web>>`, neu `FooterLinks` (`{Label, Url, Icon}`, Default leer); Lesedefault von `EMAIL_FROM` im Ziel = dieser Wert |
+| ABG-106 umgesetzt | §3.1.3 (Host-Kataloge), §3.15 `FunkWorkerOptions`, §5.2.12 | Host-Defaults Realtime `["live"]`, Worker `["*"]` mit `ExcludeQueues = ["live"]`, `Concurrency` `live` = 16; Publisher `QueuedRealtimePublisher` (Api/Worker) / `HubRealtimePublisher` (Realtime/AllInOne); Skelett `LabelRealtimeConsumer` durch `RealtimeFanOutMap`-Einträge `plane.label.*` ersetzt |
+| ABG-129 umgesetzt | §3.8.1 | `FunkErrors.DrfList(status, params messages)` (JSON-Array-Körper) und `DrfMessages.NullCharacters` |
+| ABG-130 umgesetzt | §3.11.1 (Bausteintabelle) | `WorkItemBaseSetPredicates` in `Funk.Data/Querying/WorkItems/`; `WorkItemBaseSets` nutzt sie (gemeinsam mit `Funk.Search`, `IWorkItemBaseSetFilter` E-04) |
 | ABG-140 umgesetzt | D02-ADR-15, §3.2.2 (Prüfspalte), §3.11.4, §3.11.5, §5.2.3, AK-20 | Raw-SQL und Kommentare mit Zielnamen aus 03 §4.5: `work_item_labels`/`work_item_id`, `work_item_assignees`, `cycle_work_items`, `module_work_items`, `intake_work_items` |
 | ABG-144 umgesetzt | §3.3.1 (Oberfläche `Auth`), §3.13 (`anon`, `authentication`, `asset_duplicate`) | Auth-Oberfläche ohne Rate-Limit-Default, je Endpunkt nach 05 §3.17.6 (N-01/N-02/N-13 `authentication`, Sign-out unbegrenzt, N-06/N-08 `anon`); Pfad `asset_duplicate` = EP-0430 |
 | ABG-145 umgesetzt | §3.3.1 Regeln 4, 6, 8; §3.18 | kein Constraint `work_item_identifier` (Parsen im Handler, 400 `Invalid issue identifier`); nicht registrierte Routen 404 bzw. 405 nach D04-ADR-03; `Cache-Control: private, max-age=12` auch für `GET /api/instances/`; `GET /api/schema/` liefert YAML, `?format=json` JSON |
-| ABG-147 umgesetzt | §3.1.1 (Projekt `Plane.Analyzers`, ID-Katalog), §3.2.1, §5.1.1 | Analyzer-Projekt mit `PLANE0001…PLANE0006`; `PL0002` → `PLANE0002` |
+| ABG-147 umgesetzt | §3.1.1 (Projekt `Funk.Analyzers`, ID-Katalog), §3.2.1, §5.1.1 | Analyzer-Projekt mit `FUNK0001…FUNK0006`; `PL0002` → `FUNK0002` |
 | ABG-148 umgesetzt | §3.1.1 (`Branding/Brand.cs`, Absatz „Produktname“), §3.15 (Mail-Default), §3.18 (OpenAPI-Titel) | `Brand.ProductName = "funk."` als einzige Backend-Quelle; Mail-Absender nach ABG-105; OpenAPI-Titel „The funk. REST API“ (04 BRAND-API-01) |
 
-**Branding-Durchgang (ADR-009B, BR-01 … BR-14):** Alle in diesem Dokument festgelegten, nach außen sichtbaren Namen und Texte der Zielplattform (Mail-Absender, OpenAPI-Titel, Produktname-Konstante) zeigen „funk.“; Original-Defaults stehen nur noch als Herkunftsangabe („Original …“), interne Bezeichner (`Plane.*`-Projekte/Namespaces, `Plane:`-Schlüssel, `Plane__*`/ENV-Aliase, Log-Kategorien/Metriken/ActivitySources `plane.*`/`Meter "Plane"`, `PlaneDataProtection` `ApplicationName = plane`, Keycloak-Rolle `plane-instance-admin`, Audience `plane-api`) bleiben nach BR-02 unverändert.
+**Branding-Durchgang (ADR-009B, BR-01 … BR-14):** Alle in diesem Dokument festgelegten, nach außen sichtbaren Namen und Texte der Zielplattform (Mail-Absender, OpenAPI-Titel, Produktname-Konstante) zeigen „funk.“; Original-Defaults stehen nur noch als Herkunftsangabe („Original …“), interne Bezeichner (`Plane.*`-Projekte/Namespaces, `Plane:`-Schlüssel, `Funk__*`/ENV-Aliase, Log-Kategorien/Metriken/ActivitySources `plane.*`/`Meter "Plane"`, `FunkDataProtection` `ApplicationName = plane`, Keycloak-Rolle `funk-instance-admin`, Audience `plane-api`) bleiben nach BR-02 unverändert.

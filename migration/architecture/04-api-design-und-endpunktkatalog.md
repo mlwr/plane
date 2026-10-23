@@ -4,7 +4,7 @@
 >
 > **Zielrepository:** `funk.` (ADR-009). Pfade für Zielcode sind relativ zur Wurzel von `funk.` (`src/…`, `tests/…`, `frontend/…`). Pfade des Originals sind relativ zu `/home/user/plane` (Referenzstand `053b2c0`, Plane 1.4.2, ADR-006).
 >
-> **Maschinenlesbar:** `migration/architecture/_data/endpoints.json` (732 Endpunkt-Methoden, je Zeile Oberfläche, Route-Template, Modul, Endpoint-Klasse, Handler, Permission, Status Original/Ziel, Abweichungen, DT, Inkrement, CE-IDs, Pagination, Read-Replica, Rate-Limit-Policy `rate_limit`, `cache_control`, dokumentierte Fehlerkörper) und `migration/architecture/_data/04-decisions.json` (Entscheidungstabelle `DT-*`). Beide Dateien sind die Soll-Liste für `Plane.Tools.ParityHarness coverage` (`15` §3.6.3) und für `RouteInventoryTests` (§7). In `funk.` liegen sie gespiegelt unter `docs/plan/architecture/_data/` (ADR-006).
+> **Maschinenlesbar:** `migration/architecture/_data/endpoints.json` (732 Endpunkt-Methoden, je Zeile Oberfläche, Route-Template, Modul, Endpoint-Klasse, Handler, Permission, Status Original/Ziel, Abweichungen, DT, Inkrement, CE-IDs, Pagination, Read-Replica, Rate-Limit-Policy `rate_limit`, `cache_control`, dokumentierte Fehlerkörper) und `migration/architecture/_data/04-decisions.json` (Entscheidungstabelle `DT-*`). Beide Dateien sind die Soll-Liste für `Funk.Tools.ParityHarness coverage` (`15` §3.6.3) und für `RouteInventoryTests` (§7). In `funk.` liegen sie gespiegelt unter `docs/plan/architecture/_data/` (ADR-006).
 >
 > **Kürzel:** `{W}` = `/api/workspaces/{slug}`, `{P}` = `{W}/projects/{project_id}`, `{V1W}` = `/api/v1/workspaces/{slug}`, `{V1P}` = `{V1W}/projects/{project_id}`, `{SP}` = `/api/public/anchor/{anchor}`, `{AV2}` = `/api/assets/v2`, `{I}` = `/api/instances`. Datei-Kürzel des Originals wie `05` Anhang B: `V/` = `apps/api/plane/app/views/`, `V1V/` = `apps/api/plane/api/views/`, `SPV/` = `apps/api/plane/space/views/`, `license/V1V/` = `apps/api/plane/license/api/views/`. Analyse-Kürzel: `A03` … `A12` = `migration/analysis/03-…` … `12-…`. Original-IDs werden als `<Dok>:<ID>` geschrieben (`A04:L1` = Zeile L1 in A04, `A06:#5` = Auth-Route Nr. 5, `A05:S-06` = Space-Endpunkt S-06).
 >
@@ -102,12 +102,12 @@ Spalte „ab“ = Inkrement der ersten Umsetzung. Alle Entscheidungen präzisier
 
 | ID | Belang | Entscheidung | Alternativen (verworfen) | Begründung | ab |
 |---|---|---|---|---|---|
-| **D04-ADR-01** | Katalog als einzige Soll-Liste | `_data/endpoints.json` ist die **einzige** maschinenlesbare Soll-Liste aller Routen. `RouteInventoryTests` (`tests/Plane.AppHost.Tests/Routing/`) vergleicht die `EndpointDataSource` der Hosts `Plane.Api` und `Plane.Realtime` mit allen Zeilen `registered = true` bis zum aktuellen Inkrement (`CURRENT_INCREMENT`, `15` §3.16): jede registrierte Zeile muss existieren (Methode + Route-Template), keine Route darf ohne Katalogzeile existieren, jede Zeile `registered = false` muss 404/405 wie `target_status` liefern. Neue Routen (auch Pakete ab W1) werden **zuerst** im Katalog ergänzt (neue `EP`-Nummer am Ende). | Katalog nur als Markdown; Routen per Attribut-Scan dokumentieren | Agenten arbeiten parallel; nur ein maschinell geprüfter Katalog verhindert stille Abweichungen (01 P2/P3). Der Parity-Harness nutzt dieselbe Datei für `coverage`. | I0 |
+| **D04-ADR-01** | Katalog als einzige Soll-Liste | `_data/endpoints.json` ist die **einzige** maschinenlesbare Soll-Liste aller Routen. `RouteInventoryTests` (`tests/Funk.AppHost.Tests/Routing/`) vergleicht die `EndpointDataSource` der Hosts `Funk.Api` und `Funk.Realtime` mit allen Zeilen `registered = true` bis zum aktuellen Inkrement (`CURRENT_INCREMENT`, `15` §3.16): jede registrierte Zeile muss existieren (Methode + Route-Template), keine Route darf ohne Katalogzeile existieren, jede Zeile `registered = false` muss 404/405 wie `target_status` liefern. Neue Routen (auch Pakete ab W1) werden **zuerst** im Katalog ergänzt (neue `EP`-Nummer am Ende). | Katalog nur als Markdown; Routen per Attribut-Scan dokumentieren | Agenten arbeiten parallel; nur ein maschinell geprüfter Katalog verhindert stille Abweichungen (01 P2/P3). Der Parity-Harness nutzt dieselbe Datei für `coverage`. | I0 |
 | **D04-ADR-02** | Portierungskriterium | Eine Original-Route wird registriert, wenn **mindestens eine** Bedingung gilt: (a) ein Original-Client (web, admin, space, live, `packages/services`) ruft sie auf; (b) sie ist die einzige Trägerin einer CE-ID („nur API“-Features: CE-WS-007, CE-PRJ-010, CE-PRJ-033, CE-HOME-007, CE-ANA-009, CE-WH-010, CE-SPACE-006, CE-WI-046, CE-INST-004); (c) sie gehört zur Public API v1 (öffentlicher Vertrag, CE-API-*); (d) sie ist im Original funktionsfähig und vervollständigt eine Ressource, deren übrige Methoden portiert werden. **Nicht** registriert werden: tote oder defekte Routen ohne fachliche Funktion (immer 4xx/5xx), PUT-Duplikate neben PATCH, Methoden-Nebenprodukte, im Original nicht geroutete Handler, Routen, deren Funktion ADR-008 ersetzt. | alle Original-Routen registrieren (auch defekte); nur Routen mit Client-Aufrufer (02 §3.3.1 Regel 6 wörtlich) | Die CE wird vollständig umgesetzt (Auftrag), „nur API“-Features sind CE-Funktionen; Regel 6 aus `02` gilt für alle übrigen Fälle unverändert. Das Kriterium ist je Zeile in Spalte „Abw./DT“ nachvollziehbar. | I0 |
 | **D04-ADR-03** | Antwort nicht registrierter Routen | Nicht registrierte Routen bekommen **keine** Stub-Endpunkte: existiert der Pfad mit einer anderen Methode, antwortet das Routing mit 405 `{"detail": "Method \"<METHOD>\" not allowed."}`, sonst 404 `{"error": "Page not found."}` (beides `StatusCodeBodiesMiddleware`, `02` §3.3.1 Regel 5). `/live/*` antwortet bei unbekannten Pfaden 404 `{"message": "Not Found"}` (`07` §3.4). | Stubs mit 410 Gone; eigene Fehlertexte je entfallener Route | DRF-Verhalten für fehlende Methoden bleibt erhalten; kein toter Code im Ziel; Contract-Tests prüfen den Status je Zeile. | I0 |
-| **D04-ADR-04** | v1-Adapter (`Plane.PublicApi`, Regel R6) | v1-Endpunkte liegen in `src/modules/PublicApi/Plane.PublicApi/Endpoints/V1/V1<Ressource>Endpoints.cs` (Hilfsklassen je Ressource unter `V1/<Ressource>/`, z. B. `V1FilterParameterGuard`, `16` §5.5), rufen **öffentliche Contract-Commands/-Queries** der Fach-Module (Records in `Plane.<M>.Contracts/Commands/` bzw. `/Queries/`, implementieren `ICommand<Result<T>>`/`IQuery<T>` aus `Plane.BuildingBlocks`; Handler bleiben `internal` im Fach-Modul) und bilden Ergebnisse über `V1<Ressource>Mapper` (Mapperly) auf die v1-Serializer-Formen ab. Der Adapter darf v1-spezifische **Vorprüfungen per Query** (z. B. `external_id`-Duplikat → 409 mit `id`) und eine **Fehlerumformung** (`V1ErrorMap`) vornehmen, aber keine Schreiblogik. Für Work Items nutzt er die Fassade `IWorkItemCommands` (`16` E-18), die selbst auf denselben Contract-Commands aufsetzt. | v1-Endpunkte im jeweiligen Fach-Modul (`Endpoints/V1/`); Handler `public` | R1/R6/R9 aus `01` §5.2 bleiben erfüllt (kein Zugriff auf interne Typen anderer Module); eine Geschäftslogik für App und v1; die Contract-Commands sind zugleich die Andockstelle für H3/H4 (`16`). Prüfpunkt Spike S0: Mediator-Source-Generator registriert Handler für Commands aus fremden Contracts-Assemblies (Ergänzung zu `17` Z-01). | I6 (Gerüst I0) |
-| **D04-ADR-05** | Endpoint-Klassen-Schnitt | Je Modul, Oberfläche und Ressource **eine** Klasse `internal static class <Ressource>Endpoints` mit `Map(PlaneEndpointRouteBuilder)` (`02` D02-ADR-23); Ablage `Endpoints/<Oberfläche>/<Ressource>Endpoints.cs`; Namen laut Spalte „Ziel: Klasse“ in §4. Jede Route trägt `.WithOriginalContract("<Dok>:<ID>")` mit der Original-ID aus §4 (für neue Routen `neu:<Quelle>`) und `.WithName("<EP-nnnn>")` (OpenAPI-/Routing-Name, eindeutig). Alias-Pfade (`issues`↔`work-items`, `inbox-issues`↔`intake-issues`, `inboxes`↔`intakes`, v1 `project-members`↔`members`, v1 `issue-attachments`↔`attachments`) werden als zweite Route auf **denselben** Handler registriert (`.MapAlias(...)`, §5.2). | eine Klasse je Modul; Controller | kleine Dateien, konfliktarme Merges, 1:1-Rückverfolgbarkeit Original ↔ Ziel | I0 |
-| **D04-ADR-06** | Statuscodes und Fehler | Erfolgs- und Fehlerstatus **je Endpunkt wie Original** (Spalte „Status Orig→Ziel“; Abweichungen nur über DT-Zeilen). Fehlerkörper ausschließlich über `PlaneErrors` (`02` §3.8) in den Formen von §3.5; Texte als Konstanten in `src/modules/<M>/Plane.<M>/Errors/<M>ErrorTexts.cs` (§3.6). Golden-Files sind für Texte maßgeblich, `documented_bodies` in `endpoints.json` ist die Vorlage. | einheitliche ProblemDetails; Texte inline im Handler | Frontend wertet `error`/`detail`/`error_code` wörtlich aus (ADR-016); zentrale Konstanten erlauben Branding-Ersatz (§3.20) und Katalogtests. | I0 |
+| **D04-ADR-04** | v1-Adapter (`Funk.PublicApi`, Regel R6) | v1-Endpunkte liegen in `src/modules/PublicApi/Funk.PublicApi/Endpoints/V1/V1<Ressource>Endpoints.cs` (Hilfsklassen je Ressource unter `V1/<Ressource>/`, z. B. `V1FilterParameterGuard`, `16` §5.5), rufen **öffentliche Contract-Commands/-Queries** der Fach-Module (Records in `Plane.<M>.Contracts/Commands/` bzw. `/Queries/`, implementieren `ICommand<Result<T>>`/`IQuery<T>` aus `Funk.BuildingBlocks`; Handler bleiben `internal` im Fach-Modul) und bilden Ergebnisse über `V1<Ressource>Mapper` (Mapperly) auf die v1-Serializer-Formen ab. Der Adapter darf v1-spezifische **Vorprüfungen per Query** (z. B. `external_id`-Duplikat → 409 mit `id`) und eine **Fehlerumformung** (`V1ErrorMap`) vornehmen, aber keine Schreiblogik. Für Work Items nutzt er die Fassade `IWorkItemCommands` (`16` E-18), die selbst auf denselben Contract-Commands aufsetzt. | v1-Endpunkte im jeweiligen Fach-Modul (`Endpoints/V1/`); Handler `public` | R1/R6/R9 aus `01` §5.2 bleiben erfüllt (kein Zugriff auf interne Typen anderer Module); eine Geschäftslogik für App und v1; die Contract-Commands sind zugleich die Andockstelle für H3/H4 (`16`). Prüfpunkt Spike S0: Mediator-Source-Generator registriert Handler für Commands aus fremden Contracts-Assemblies (Ergänzung zu `17` Z-01). | I6 (Gerüst I0) |
+| **D04-ADR-05** | Endpoint-Klassen-Schnitt | Je Modul, Oberfläche und Ressource **eine** Klasse `internal static class <Ressource>Endpoints` mit `Map(FunkEndpointRouteBuilder)` (`02` D02-ADR-23); Ablage `Endpoints/<Oberfläche>/<Ressource>Endpoints.cs`; Namen laut Spalte „Ziel: Klasse“ in §4. Jede Route trägt `.WithOriginalContract("<Dok>:<ID>")` mit der Original-ID aus §4 (für neue Routen `neu:<Quelle>`) und `.WithName("<EP-nnnn>")` (OpenAPI-/Routing-Name, eindeutig). Alias-Pfade (`issues`↔`work-items`, `inbox-issues`↔`intake-issues`, `inboxes`↔`intakes`, v1 `project-members`↔`members`, v1 `issue-attachments`↔`attachments`) werden als zweite Route auf **denselben** Handler registriert (`.MapAlias(...)`, §5.2). | eine Klasse je Modul; Controller | kleine Dateien, konfliktarme Merges, 1:1-Rückverfolgbarkeit Original ↔ Ziel | I0 |
+| **D04-ADR-06** | Statuscodes und Fehler | Erfolgs- und Fehlerstatus **je Endpunkt wie Original** (Spalte „Status Orig→Ziel“; Abweichungen nur über DT-Zeilen). Fehlerkörper ausschließlich über `FunkErrors` (`02` §3.8) in den Formen von §3.5; Texte als Konstanten in `src/modules/<M>/Plane.<M>/Errors/<M>ErrorTexts.cs` (§3.6). Golden-Files sind für Texte maßgeblich, `documented_bodies` in `endpoints.json` ist die Vorlage. | einheitliche ProblemDetails; Texte inline im Handler | Frontend wertet `error`/`detail`/`error_code` wörtlich aus (ADR-016); zentrale Konstanten erlauben Branding-Ersatz (§3.20) und Katalogtests. | I0 |
 | **D04-ADR-07** | Pagination je Endpunkt | Jeder Listen-Endpunkt hat genau einen Modus aus `endpoints.json` (`pagination`): `cursor`, `cursor-grouped`, `cursor-when-requested`, `cursor-required`, `global` oder keiner (unpaginiert). Deklaration per `.WithPagination(PaginationMode.X, defaultPerPage)` (§5.1); Mechanik `02` §3.10/§3.11.6. | Pagination für alle Listen erzwingen | Original paginiert uneinheitlich; Frontend-Stores erwarten die jeweilige Form (Liste vs. Envelope). | I1 |
 | **D04-ADR-08** | Filter-Syntax | Zwei Eingabeformen, ein AST (`02` D02-ADR-14): Legacy-Query-Parameter (`A04` §2.18.1) und Rich-Filter `filters=<JSON>` (`A04` §2.18.2) **nur** an den Endpunkten aus §3.8 (Tabelle); v1 akzeptiert keine Rich-Filter (Original-400 über `IV1FilterParameterBinding`, `16` E-19). Neue Filterfelder nur über `IFilterFieldProvider`. | eigene Filtersprache je Endpunkt; OData | Parität + B6-Andockstelle | I2 |
 | **D04-ADR-09** | `expand`/`fields` | App: `expand` nur mit den Werten aus §3.9 (Allowlist je Endpunkt, Registry `IExpandProvider`, `16` E-07); `fields` wird akzeptiert und ignoriert (DT-GEN-09). v1: dynamische Felder wie Original (`A05` §2.1.6) an den Endpunkten mit `f/e ✓` (§3.9). | generische GraphQL-artige Projektion | Parität; Erweiterung ohne Umbau für A1/A9 | I2/I6 |
@@ -115,10 +115,10 @@ Spalte „ab“ = Inkrement der ersten Umsetzung. Alle Entscheidungen präzisier
 | **D04-ADR-11** | Idempotenz | Keine Idempotency-Key-Semantik in der CE (Original kennt sie nicht); der Header `Idempotency-Key` wird **ignoriert** (reserviert für H3, §6). Idempotenz je Methode laut §3.10.2 (PUT entfällt, DELETE idempotent mit Original-Status, POST nicht idempotent außer den dort genannten „Toggle“-Endpunkten). Eingehende Integrations-Webhooks sind über die Delivery-ID idempotent (Inbox, `16` §3.4.3). | Idempotency-Key für alle POST | kein Vertrag im Original, Frontend sendet keinen Key; Andockstelle bleibt frei | I0 |
 | **D04-ADR-12** | API-Keys | Header `X-API-Key` (Groß-/Kleinschreibung beliebig), Klartextformat und Speicherung nach `05` §3.12 (SHA-256 `token_hash`), Workspace-Bindung, Rate-Limit-Partition `token_hash`, API-Activity-Log; Bearer (H1) registriert, deaktiviert (DT-V1-13). Details §3.11. | Bearer-Tokens für Menschen | Vertrag mit Bestandsintegrationen; ADR-008 erlaubt API-Keys | I6 (Schema I0) |
 | **D04-ADR-13** | Rate-Limits | Policies aus `02` §3.13; Zuordnung je Oberfläche und Sonder-Endpunkt in §3.12. | Limits nur im Gateway | Parität CE-API-002/CE-AUTH-026 | I0/I1/I6 |
-| **D04-ADR-14** | OpenAPI | Zwei Dokumente mit `Microsoft.AspNetCore.OpenApi` (ADR-051): `v1` (öffentlich, nur Oberfläche V1, Pfade/Methoden/`operationId`s/Tags wie das Original-Schema, das einmalig per `manage.py spectacular` am `ORIGINAL_SHA` exportiert und als `tests/contracts/openapi/v1.original.json` eingecheckt wird) und `internal` (App, Space, Instance; nur Dev/Test). Beide werden zur Build-Zeit nach `src/hosts/Plane.Api/openapi/{v1,internal}.json` geschrieben und eingecheckt; CI bricht bei Drift. | Swashbuckle/NSwag; OpenAPI zur Laufzeit generieren | lizenz- und airgap-sauber; Drift sichtbar im PR | I0 (internal), I6 (v1) |
+| **D04-ADR-14** | OpenAPI | Zwei Dokumente mit `Microsoft.AspNetCore.OpenApi` (ADR-051): `v1` (öffentlich, nur Oberfläche V1, Pfade/Methoden/`operationId`s/Tags wie das Original-Schema, das einmalig per `manage.py spectacular` am `ORIGINAL_SHA` exportiert und als `tests/contracts/openapi/v1.original.json` eingecheckt wird) und `internal` (App, Space, Instance; nur Dev/Test). Beide werden zur Build-Zeit nach `src/hosts/Funk.Api/openapi/{v1,internal}.json` geschrieben und eingecheckt; CI bricht bei Drift. | Swashbuckle/NSwag; OpenAPI zur Laufzeit generieren | lizenz- und airgap-sauber; Drift sichtbar im PR | I0 (internal), I6 (v1) |
 | **D04-ADR-15** | TypeScript für Angular | **Kein** generierter Client als Primärquelle (ADR-047): Services werden 1:1 aus dem Original portiert. Aus `internal.json`/`v1.json` erzeugt `openapi-typescript` 7.x in `frontend/tools/contract-check/` Typen (`generated/internal.d.ts`, `generated/v1.d.ts`), die per Typ-Tests gegen `libs/shared/types` geprüft werden (§3.15). | `ng-openapi-gen`/NSwag-Client; OpenAPI aus TS-Typen | Store-Port ohne Umbau; Drift wird automatisch erkannt | I0 |
 | **D04-ADR-16** | Contract-Tests | Jede registrierte Katalogzeile hat ≥ 1 Parity-Szenario (`tests/contracts/scenarios/<modul>/<szenario>.yaml`, `15` §3.6.2); die Zuordnung Schritt → Zeile erfolgt über Methode + Pfad gegen `endpoints.json` (`path`, Platzhalter aufgelöst), Alias-Zeilen sind über ihren eigenen Pfad unterscheidbar; jede nicht registrierte Zeile ist in `RouteInventoryTests` (Status 404/405) abgedeckt; jede DT-Zeile mit Vertragswirkung hat einen `deviations.yaml`-Eintrag mit `decision: "04#DT-…"`. | Contract-Tests nur für Stichproben | Z2 aus `15` §1.1 („jeder Endpunkt des Katalogs“) | I0 ff. |
-| **D04-ADR-17** | Branding in Verträgen | Nach außen sichtbare **Texte** (Fehlermeldungen mit „Plane“, E-Mail-Betreffs, OpenAPI-Titel/Kontakt, Seitentitel der Scalar-UI) zeigen „funk.“ (ADR-009B, Abweichungen `BRAND-API-*`); **Protokollbezeichner** (`X-Plane-*`-Header, Token-Präfixe `plane_api_`/`plane_wh_`, Cookie `session-id`, JSON-Feldnamen, `error_message`-Schlüssel, Rollenwerte) bleiben als interne Bezeichner im Sinne von ADR-009B unverändert. | alles umbenennen; nichts umbenennen | Bestandsintegrationen und portierter Frontend-Code bleiben lauffähig; sichtbare Marke wie verlangt | I0 |
+| **D04-ADR-17** | Branding in Verträgen | Nach außen sichtbare **Texte** (Fehlermeldungen mit „Plane“, E-Mail-Betreffs, OpenAPI-Titel/Kontakt, Seitentitel der Scalar-UI) zeigen „funk.“ (ADR-009B, Abweichungen `BRAND-API-*`); **Protokollbezeichner** (`X-Funk-*`-Header, Token-Präfixe `funk_api_`/`funk_wh_`, Cookie `funk-session`, JSON-Feldnamen, `error_message`-Schlüssel, Rollenwerte) bleiben als interne Bezeichner im Sinne von ADR-009B unverändert. | alles umbenennen; nichts umbenennen | Bestandsintegrationen und portierter Frontend-Code bleiben lauffähig; sichtbare Marke wie verlangt | I0 |
 | **D04-ADR-18** | Vertragsevolution | In der CE nur **additive** Vertragsänderungen nach Merge (neue optionale Felder, neue Endpunkte unter reservierten Präfixen `16` §3.2.2); keine `/api/v2/`-Oberfläche (H3, W9); Entfernen/Umbenennen nur per DT-Zeile vor dem ersten produktiven Release. | Versionierung je Endpunkt | Paketfähigkeit ohne Umbau (01 P7), Parität | I0 |
 | **D04-ADR-19** | Entscheidungsregeln für Original-Fehler | Kategorien S/F/T/Q/A/K (§3.13): **S** Sicherheitslücke → immer korrigieren; **F** funktionaler/sichtbarer Fehler → korrigieren und als `DEV-API-*` dokumentieren (Auftraggeber-Entscheidung Z-12, `17`); **T** tote/defekte/redundante Route → nicht registrieren; **Q** Vertrags-Quirk, auf den Clients bauen → 1:1; **A** ADR-bedingt → entfällt/angepasst; **K** technische Korrektur ohne Vertragswirkung → ohne `deviations`-Eintrag. | alles 1:1; alles korrigieren | Vorgabe des Auftrags („Sicherheitslücken immer, sichtbare Fehler korrigieren und dokumentieren“) und Z-12 | I0 |
 | **D04-ADR-20** | Webhook-Ausgang als Vertrag | Vertrag gegenüber Empfängern (Ereignisse, Header, Body, Signatur, Retry) wie `06` §3.14 (Projektion der Integration-Events); dieses Dokument legt nur die vertragliche Sicht und die auslösenden Endpunkte fest (§3.17, §4.27). | eigenes Webhook-Design | `06` ist Fachdokument für Webhooks (01 Anhang A) | I6 |
@@ -132,21 +132,21 @@ Spalte „ab“ = Inkrement der ersten Umsetzung. Alle Entscheidungen präzisier
 
 #### 3.1.1 Oberflächen
 
-Die Mechanik (`ApiSurface`, `PlaneEndpointRouteBuilder`, `SurfaceConventions`) legt `02` §3.3 fest. Die folgende Tabelle ordnet jeder Oberfläche die vertraglichen Eigenschaften zu, die dieses Dokument festlegt (Spalten „Fehlerprofil“ und „OpenAPI-Dokument“ sind die Werte, die `SurfaceConventions.Apply` setzt).
+Die Mechanik (`ApiSurface`, `FunkEndpointRouteBuilder`, `SurfaceConventions`) legt `02` §3.3 fest. Die folgende Tabelle ordnet jeder Oberfläche die vertraglichen Eigenschaften zu, die dieses Dokument festlegt (Spalten „Fehlerprofil“ und „OpenAPI-Dokument“ sind die Werte, die `SurfaceConventions.Apply` setzt).
 
 | Oberfläche | Präfix | Host | Authentisierung (Schema) | CSRF | Rate-Limit-Default | Fehlerprofil | OpenAPI-Dokument | Zeilen (reg.) | ab |
 |---|---|---|---|---|---|---|---|---|---|
-| `Root` | `/` | `Plane.Api` | keine | – | keins | – | – | 2 (2) | I0 |
-| `Auth` | `/auth/` | `Plane.Api` | Session-Cookie `session-id` bzw. anonym | Origin + Token (`05` §3.10) | Default `authentication` (`02` §3.3.1); je Zeile übersteuert nach §3.12 (`anon` an EP-0001/EP-0019, keines an Sign-out/Backchannel) | Redirect (`PlaneErrors.Redirect`) für Browser-Flows, sonst Coded | – | 41 (7) | I0 |
-| `App` | `/api/` | `Plane.Api` | Session | Origin + Token für unsichere Methoden | `anon` (nur anonym) | App (`error`/`detail`/coded) | `internal` | 444 (362) | I0 |
-| `Instance` | `/api/instances/` | `Plane.Api` | Session (Admin: zusätzlich `Plane:Admin`-Rolle, `05` §3.6) | wie App | `anon` | App | `internal` | 22 (14) | I0 |
-| `Space` | `/api/public/` | `Plane.Api` | Session optional (anonym erlaubt, wo Original anonym erlaubt) | wie App | `anon` | App | `internal` | 42 (37) | I6 |
-| `V1` | `/api/v1/` | `Plane.Api` | `ApiKey` (Header `X-API-Key`); `Bearer` (H1, deaktiviert) | keine (kein Cookie akzeptiert) | `api_key` + `X-RateLimit-*` | V1 (App + `A05` §2.1.4) | `v1` (öffentlich) | 171 (133) | I6 |
-| `OpenApi` | `/api/schema/` | `Plane.Api` | keine (Schalter `Plane:OpenApi:Enabled`; `internal` nur Development/Test) | – | `anon` | – | – | 4 (4) | I0/I6 |
-| `Integrations` | `/api/integrations/` | `Plane.Api` | Signatur des Providers (`IWebhookIngress`, `16` E-25) | keine | `integration_webhook` (600/min) | Plain | – | 1 (1) | I0 |
-| `Live` | `/live/` | `Plane.Realtime` | Session-Cookie (`07` §3.5) | – | keins (Verbindungs-Limits `07`) | `{"message": …}` | – | 5 (4) | I0/I4 |
+| `Root` | `/` | `Funk.Api` | keine | – | keins | – | – | 2 (2) | I0 |
+| `Auth` | `/auth/` | `Funk.Api` | Session-Cookie `funk-session` bzw. anonym | Origin + Token (`05` §3.10) | Default `authentication` (`02` §3.3.1); je Zeile übersteuert nach §3.12 (`anon` an EP-0001/EP-0019, keines an Sign-out/Backchannel) | Redirect (`FunkErrors.Redirect`) für Browser-Flows, sonst Coded | – | 41 (7) | I0 |
+| `App` | `/api/` | `Funk.Api` | Session | Origin + Token für unsichere Methoden | `anon` (nur anonym) | App (`error`/`detail`/coded) | `internal` | 444 (362) | I0 |
+| `Instance` | `/api/instances/` | `Funk.Api` | Session (Admin: zusätzlich `Funk:Admin`-Rolle, `05` §3.6) | wie App | `anon` | App | `internal` | 22 (14) | I0 |
+| `Space` | `/api/public/` | `Funk.Api` | Session optional (anonym erlaubt, wo Original anonym erlaubt) | wie App | `anon` | App | `internal` | 42 (37) | I6 |
+| `V1` | `/api/v1/` | `Funk.Api` | `ApiKey` (Header `X-API-Key`); `Bearer` (H1, deaktiviert) | keine (kein Cookie akzeptiert) | `api_key` + `X-RateLimit-*` | V1 (App + `A05` §2.1.4) | `v1` (öffentlich) | 171 (133) | I6 |
+| `OpenApi` | `/api/schema/` | `Funk.Api` | keine (Schalter `Funk:OpenApi:Enabled`; `internal` nur Development/Test) | – | `anon` | – | – | 4 (4) | I0/I6 |
+| `Integrations` | `/api/integrations/` | `Funk.Api` | Signatur des Providers (`IWebhookIngress`, `16` E-25) | keine | `integration_webhook` (600/min) | Plain | – | 1 (1) | I0 |
+| `Live` | `/live/` | `Funk.Realtime` | Session-Cookie (`07` §3.5) | – | keins (Verbindungs-Limits `07`) | `{"message": …}` | – | 5 (4) | I0/I4 |
 
-`OpenApi` und `Live` sind keine `ApiSurface`-Werte aus `02`: `OpenApi` wird in `Plane.PublicApi` über `MapOpenApi()`/Scalar unterhalb von `Root` registriert (§3.14), `Live` in `Plane.Realtime` (`07` §3.4). Für Katalog und `RouteInventoryTests` werden sie als eigene Oberflächen geführt.
+`OpenApi` und `Live` sind keine `ApiSurface`-Werte aus `02`: `OpenApi` wird in `Funk.PublicApi` über `MapOpenApi()`/Scalar unterhalb von `Root` registriert (§3.14), `Live` in `Funk.Realtime` (`07` §3.4). Für Katalog und `RouteInventoryTests` werden sie als eigene Oberflächen geführt.
 
 #### 3.1.2 Pfadregeln
 
@@ -208,7 +208,7 @@ Grundregel-konforme Zeilen sind nicht aufgeführt. `GET → 101` (WebSocket-Upgr
 | Belang | Regel | Quelle / Mechanik |
 |---|---|---|
 | Content-Type | `application/json` für Bodies; `multipart/form-data` nur an den Original-Multipart-Endpunkten: Legacy-Datei-Uploads entfallen (DT-AST-01), verbleibend `POST {P}/issues/{issue_id}/issue-attachments/` (Legacy-Upload `A04:K8`, Felder `asset`, `attributes`) und der Proxy-Upload `POST {AV2}/upload/{token}/` (`14`) | `02` §3.9 |
-| Body-Größe | 413 `{"error": "REQUEST_BODY_TOO_LARGE", "detail": "The size of the request body exceeds the maximum allowed size."}` bei Überschreitung von `Plane:Uploads:MaxFileSizeBytes` (Alias `FILE_SIZE_LIMIT`) – 1:1 `RequestBodyLimitMiddleware` (Name wie `02` §3.4.1 Nr. 4) | `02` §3.4.1 Nr. 4 |
+| Body-Größe | 413 `{"error": "REQUEST_BODY_TOO_LARGE", "detail": "The size of the request body exceeds the maximum allowed size."}` bei Überschreitung von `Funk:Uploads:MaxFileSizeBytes` (Alias `FILE_SIZE_LIMIT`) – 1:1 `RequestBodyLimitMiddleware` (Name wie `02` §3.4.1 Nr. 4) | `02` §3.4.1 Nr. 4 |
 | v1-Bodies | `POST`/`PUT`/`PATCH` müssen ein JSON-Objekt oder -Array sein, sonst 400 `{"detail": "Request body must be a JSON object or array."}` | `A05` §2.1.1; `V1BodyShapeFilter` |
 | JSON-Namen | snake_case wie Original; unbekannte Felder werden ignoriert (DRF-Verhalten) | `02` §3.9 |
 | `PATCH`-Semantik | `Optional<T>`: nicht gesendet ≠ `null`; nur gesendete Felder ändern; Activity-Diff nur über gesendete Felder | `02` D02-ADR-10 |
@@ -242,17 +242,17 @@ Grundregel-konforme Zeilen sind nicht aufgeführt. `GET → 101` (WebSocket-Upgr
 
 ### 3.5 Fehlerformen
 
-Alle Fehlerkörper entstehen über `PlaneErrors` (`02` §3.8.1). Welche Form ein Endpunkt bei welchem Fehler liefert, ist **Vertragsbestandteil** (DT-GEN-05, 1:1).
+Alle Fehlerkörper entstehen über `FunkErrors` (`02` §3.8.1). Welche Form ein Endpunkt bei welchem Fehler liefert, ist **Vertragsbestandteil** (DT-GEN-05, 1:1).
 
 | Form | Körper | typische Herkunft im Original | Fabrik |
 |---|---|---|---|
-| Plain | `{"error": "<Text>"}` | explizite `Response({"error": …})` in Views; Permission-Fehler der App-Permissions (`allow_permission`) | `PlaneErrors.Plain` |
-| Plain + Extra | `{"error": "<Text>", "id": "<uuid>"}` | v1-Duplikate per `external_id` (409) | `PlaneErrors.PlainWith` |
-| Detail | `{"detail": "<Text>"}` | DRF-Ausnahmen: 401 `Authentication credentials were not provided.`, 403 `You do not have permission to perform this action.`, 404 `No <Model> matches the given query.`, 405, Pagination-Fehler, JSON-Parse-Fehler | `PlaneErrors.Detail`, `DrfNotFound` |
-| Coded | `{"error_code": <int>, "error_message": "<KEY>"[, …payload]}` | `ERROR_CODES` (4091, 4100–4102, 4701, 4702, 5900) und Auth-Codes 5000–5999 | `PlaneErrors.Coded` |
-| Feldfehler | `{"<feld>": ["<Text>"], …}` bzw. `{"non_field_errors": ["…"]}` | Serializer-Validierung | `PlaneErrors.Fields` |
-| Filterfehler | `{"message": "<Text>", "code": "<code>"[, "errors": {…}]}` | Rich-Filter (`ComplexFilterBackend`) | `PlaneErrors.FilterError` |
-| Redirect | 302 mit `error_code`/`error_message` als Query-Parameter | Auth-Flows (`/auth/…`) | `PlaneErrors.Redirect` |
+| Plain | `{"error": "<Text>"}` | explizite `Response({"error": …})` in Views; Permission-Fehler der App-Permissions (`allow_permission`) | `FunkErrors.Plain` |
+| Plain + Extra | `{"error": "<Text>", "id": "<uuid>"}` | v1-Duplikate per `external_id` (409) | `FunkErrors.PlainWith` |
+| Detail | `{"detail": "<Text>"}` | DRF-Ausnahmen: 401 `Authentication credentials were not provided.`, 403 `You do not have permission to perform this action.`, 404 `No <Model> matches the given query.`, 405, Pagination-Fehler, JSON-Parse-Fehler | `FunkErrors.Detail`, `DrfNotFound` |
+| Coded | `{"error_code": <int>, "error_message": "<KEY>"[, …payload]}` | `ERROR_CODES` (4091, 4100–4102, 4701, 4702, 5900) und Auth-Codes 5000–5999 | `FunkErrors.Coded` |
+| Feldfehler | `{"<feld>": ["<Text>"], …}` bzw. `{"non_field_errors": ["…"]}` | Serializer-Validierung | `FunkErrors.Fields` |
+| Filterfehler | `{"message": "<Text>", "code": "<code>"[, "errors": {…}]}` | Rich-Filter (`ComplexFilterBackend`) | `FunkErrors.FilterError` |
+| Redirect | 302 mit `error_code`/`error_message` als Query-Parameter | Auth-Flows (`/auth/…`) | `FunkErrors.Redirect` |
 | Live | `{"message": "<Text>"}` | Express-Server (`/live/…`) | `LiveErrors` (`07`) |
 
 **Permission-Ablehnung:** Die Form (Plain vs. Detail) ergibt sich aus `DenyStyle` des `PermissionDescriptor` (`05` §3.4, `02` §5.1.7); die Spalte „Permission · Ziel-Prüfung“ in §4 nennt den Key, `05` Anhang B den DenyStyle. **401 vs. 403** (D05-ADR-20): anonyme Aufrufe an Endpunkte ohne `AllowAnonymous` ergeben immer 401 `{"detail": "Authentication credentials were not provided."}` (`AuthenticatedFilter`, Original `auth_exception_handler`); ungültiger API-Key → 403 `{"detail": "Given API token is not valid"}` (DT-GEN-13, 1:1).
@@ -272,7 +272,7 @@ Alle Fehlerkörper entstehen über `PlaneErrors` (`02` §3.8.1). Welche Form ein
 
 ### 3.6 Fehlertext-Katalog
 
-1. Jedes Fach-Modul hat `src/modules/<M>/Plane.<M>/Errors/<M>ErrorTexts.cs` (`internal static class`, `const string`-Felder, Name = Inhalt in PascalCase, z. B. `LabelErrorTexts.LabelNameAlreadyExistsInProject = "Label with the same name already exists in the project"`). Handler verwenden **nur** diese Konstanten; String-Literale in `PlaneErrors.Plain/Detail/PlainWith`-Aufrufen sind durch den Analyzer `PLANE0004` verboten. `PLANE0004`–`PLANE0006` sind **neue** Analyzer dieses Dokuments (Projekt `src/building-blocks/Plane.Analyzers`, `netstandard2.0`, `Microsoft.CodeAnalysis.CSharp` (MIT), als Analyzer-Referenz in `Directory.Build.props`; ID-Schema wie `PLANE0001` aus `02` §3.6 – `01`/`02` legen bislang kein Analyzer-Projekt fest); `02` führt sie in seiner Analyzer-Liste nach (Rückmeldung §9).
+1. Jedes Fach-Modul hat `src/modules/<M>/Plane.<M>/Errors/<M>ErrorTexts.cs` (`internal static class`, `const string`-Felder, Name = Inhalt in PascalCase, z. B. `LabelErrorTexts.LabelNameAlreadyExistsInProject = "Label with the same name already exists in the project"`). Handler verwenden **nur** diese Konstanten; String-Literale in `FunkErrors.Plain/Detail/PlainWith`-Aufrufen sind durch den Analyzer `FUNK0004` verboten. `FUNK0004`–`FUNK0006` sind **neue** Analyzer dieses Dokuments (Projekt `src/building-blocks/Funk.Analyzers`, `netstandard2.0`, `Microsoft.CodeAnalysis.CSharp` (MIT), als Analyzer-Referenz in `Directory.Build.props`; ID-Schema wie `FUNK0001` aus `02` §3.6 – `01`/`02` legen bislang kein Analyzer-Projekt fest); `02` führt sie in seiner Analyzer-Liste nach (Rückmeldung §9).
 2. Vorlage für die Konstanten ist `documented_bodies` in `endpoints.json` (aus den Analyse-Tabellen extrahiert, 1 bis n Körper je Zeile); verbindlich sind die Golden-Files des Parity-Harness (`15` §3.6.4). Abweichende Texte (Tippfehler wie „Estimate should be a estimate in the project“) bleiben wörtlich (Q).
 3. Texte mit Produktnamen „Plane“ werden zu „funk.“ (§3.20); diese Konstanten tragen den Kommentar `// BRAND-API-nn`.
 4. Neue Texte aus DT-Korrekturen (z. B. DT-V1-10 `Invalid limit`) sind in der DT-Zeile wörtlich festgelegt und erhalten einen `deviations.yaml`-Eintrag.
@@ -332,7 +332,7 @@ Semantik, Fehlercodes und AST: `02` §3.11 (`LegacyFilterParser`, `RichFilterPar
 
 Unbekannte `expand`-Werte werden ignoriert (1:1). Registry: `IExpandProvider` (`16` E-07, Signatur `string Key` + `ExpandAsync(ids, payloads, ct)`); die erlaubten Schlüssel je Endpunkt deklariert `.WithExpand("issue_reactions", …)` (Metadatum `ExpandAllowlistMetadata`), die CE-Werte sind selbst als Provider registriert (`WorkItemExpandProviders`, je Schlüssel eine Klasse), damit Pakete (🧱 A1 Typen/Properties, A9 Relationen) zusätzliche Schlüssel ohne Umbau ergänzen (Provider registrieren + Allowlist per `IExpandAllowlistContributor` erweitern).
 
-**v1** (`A05` §2.1.6): `fields=a,b` **reduziert** die Felder (auch `id`), `expand=x` expandiert nur Felder, die in `fields` enthalten sind bzw. ohne `fields` alle expandierbaren Felder. Wirksam (Original „f/e ✓“) an EP-0544, EP-0547, EP-0550, EP-0552, EP-0558, EP-0568, EP-0589, EP-0591, EP-0595, EP-0599, EP-0601, EP-0607, EP-0609, EP-0623, EP-0625, EP-0637, EP-0639, EP-0642, EP-0644, EP-0648, EP-0650, EP-0653, EP-0655, EP-0659, EP-0664; an allen anderen v1-Endpunkten werden beide Parameter ignoriert. Umsetzung: `V1FieldSelection` (Parse) + `V1Projection.Apply(JsonObject, V1FieldSelection, IV1ExpandResolver)` im Mapper von `Plane.PublicApi`; `IV1PayloadExtension` (`16` E-07) ergänzt Felder je Ressource. Sonderfälle 1:1: `assignees`/`labels` am Work Item sind ID-Listen, mit `expand` Objekte; `IssueExpandSerializer` liefert immer ID-Listen. `{V1W}/projects/{project_id}/summary/` (V-PRJ-09) nutzt `fields` als Auswahl der Zählbereiche (eigene Semantik, 1:1).
+**v1** (`A05` §2.1.6): `fields=a,b` **reduziert** die Felder (auch `id`), `expand=x` expandiert nur Felder, die in `fields` enthalten sind bzw. ohne `fields` alle expandierbaren Felder. Wirksam (Original „f/e ✓“) an EP-0544, EP-0547, EP-0550, EP-0552, EP-0558, EP-0568, EP-0589, EP-0591, EP-0595, EP-0599, EP-0601, EP-0607, EP-0609, EP-0623, EP-0625, EP-0637, EP-0639, EP-0642, EP-0644, EP-0648, EP-0650, EP-0653, EP-0655, EP-0659, EP-0664; an allen anderen v1-Endpunkten werden beide Parameter ignoriert. Umsetzung: `V1FieldSelection` (Parse) + `V1Projection.Apply(JsonObject, V1FieldSelection, IV1ExpandResolver)` im Mapper von `Funk.PublicApi`; `IV1PayloadExtension` (`16` E-07) ergänzt Felder je Ressource. Sonderfälle 1:1: `assignees`/`labels` am Work Item sind ID-Listen, mit `expand` Objekte; `IssueExpandSerializer` liefert immer ID-Listen. `{V1W}/projects/{project_id}/summary/` (V-PRJ-09) nutzt `fields` als Auswahl der Zählbereiche (eigene Semantik, 1:1).
 
 ### 3.10 Bulk-Operationen und Idempotenz
 
@@ -371,8 +371,8 @@ Regeln: (1) Alles-oder-nichts je Request (Original teilweise ohne Transaktion, z
 
 | Aspekt | Festlegung | Quelle |
 |---|---|---|
-| Header | `X-API-Key: plane_api_<32 hex>`; Name case-insensitive (HTTP), `02` schreibt `X-Api-Key` – identisch | `A05` §2.1.2 |
-| Format/Erzeugung | `plane_api_` + 32 Hex-Zeichen (`RandomNumberGenerator`, 16 Byte), Präfix bleibt (ADR-009B: Protokollbezeichner) | `05` §3.12.3 |
+| Header | `X-API-Key: funk_api_<32 hex>`; Name case-insensitive (HTTP), `02` schreibt `X-Api-Key` – identisch | `A05` §2.1.2 |
+| Format/Erzeugung | `funk_api_` + 32 Hex-Zeichen (`RandomNumberGenerator`, 16 Byte), Präfix bleibt (ADR-009B: Protokollbezeichner) | `05` §3.12.3 |
 | Speicherung | nur `token_hash` (SHA-256 hex) + `token_prefix` (erste 14 Zeichen, D05-ADR-16); Klartext nur in der Anlage-Antwort (`POST /api/users/api-tokens/` → 201 mit `token`) | DT-AUTH-10, SEC-33, SEC-35, `03` |
 | Anzeige | Listen/Detail liefern `APITokenReadSerializer`-Form ohne `token` (1:1); `PATCH` ändert nur `label`/`description` und liefert `token` nicht mehr (SEC-35) | DT-AUTH-10, `05` §3.12.3 |
 | Gültigkeit | `is_active`, `expired_at` (null = unbegrenzt), Besitzer aktiv; **workspaceübergreifend** wie Original (`api_tokens.workspace_id` bleibt ungenutzt; Workspace-Tokens sind 🧱 H3) – die Berechtigung ergibt sich aus den Mitgliedschaften des Besitzers | `05` §3.12.2 |
@@ -380,21 +380,21 @@ Regeln: (1) Alles-oder-nichts je Request (Original teilweise ohne Transaktion, z
 | Seiteneffekt | `last_used` wird nur geschrieben, wenn älter als 60 s (Original: jeder Request; Korrektur K) | `05` §3.12.2 Nr. 3 |
 | Protokoll | `api_activity_logs` je Request (`ApiActivityLogMiddleware`, CE-API-003): `token_identifier = token_hash`, Header `x-api-key`, `authorization`, `cookie` → `[REDACTED]`, Body-Regeln wie Original-`MW/logger.py`, asynchron, Aufbewahrung 14 Tage | `05` §3.12.2 Nr. 6 |
 | Rate-Limit | Policy `api_key`, Partition `token_hash`, Header `X-RateLimit-Remaining`, `X-RateLimit-Reset` | §3.12 |
-| Bearer (🧱 H1) | Schema registriert, `Plane:Auth:Bearer:Enabled=false` → 401 | DT-V1-13 |
+| Bearer (🧱 H1) | Schema registriert, `Funk:Auth:Bearer:Enabled=false` → 401 | DT-V1-13 |
 | Cookie an V1 | wird ignoriert (keine Session-Authentisierung an `/api/v1/`) | `A05` §2.1 |
-| App/Space/Instance | Session-Cookie `session-id` (Keycloak-gestützte Session, `05` §3.3), CSRF Origin + Token | `05` |
+| App/Space/Instance | Session-Cookie `funk-session` (Keycloak-gestützte Session, `05` §3.3), CSRF Origin + Token | `05` |
 | Auth-Oberfläche | anonym bzw. Session; Fehler als Redirect mit Codes (§3.5) | `05` §3.2 |
 
 ### 3.12 Rate Limits
 
 | Policy | Rate (Konfig) | Partition | Endpunkte | Original | ab |
 |---|---|---|---|---|---|
-| `anon` | 30/min (`Plane:RateLimits:Anon`) | Client-IP, **nur anonyme** Requests | alle anonymen Aufrufe der Oberflächen App, Space, Instance, OpenApi sowie EP-0001 (`get-csrf-token`, N-08) und EP-0019 (`oidc/signed-out`, N-06) | `AnonRateThrottle` | I0 |
-| `authentication` | 10/min (`Plane:RateLimits:Authentication`) | Client-IP (auch angemeldet) | genau EP-0018 (`oidc/login`, N-01), EP-0017 (`oidc/callback`, N-02 – über `AuthCallbackRateLimiter` im `OnMessageReceived`, weil der OIDC-Handler den Callback vor `UseRateLimiter` beantwortet) und EP-0079 (`admins/setup`, N-13, Oberfläche Instance) – Zuordnung nach `05` §3.17.6 | `AuthenticationThrottle` | I0 |
+| `anon` | 30/min (`Funk:RateLimits:Anon`) | Client-IP, **nur anonyme** Requests | alle anonymen Aufrufe der Oberflächen App, Space, Instance, OpenApi sowie EP-0001 (`get-csrf-token`, N-08) und EP-0019 (`oidc/signed-out`, N-06) | `AnonRateThrottle` | I0 |
+| `authentication` | 10/min (`Funk:RateLimits:Authentication`) | Client-IP (auch angemeldet) | genau EP-0018 (`oidc/login`, N-01), EP-0017 (`oidc/callback`, N-02 – über `AuthCallbackRateLimiter` im `OnMessageReceived`, weil der OIDC-Handler den Callback vor `UseRateLimiter` beantwortet) und EP-0079 (`admins/setup`, N-13, Oberfläche Instance) – Zuordnung nach `05` §3.17.6 | `AuthenticationThrottle` | I0 |
 | keine | – | – | EP-0002 (Backchannel-Logout, Gateway sperrt extern), EP-0023, EP-0040, EP-0083 (Sign-out-Formulare, Original: Django-`View` ohne Throttle) – `.DisableRateLimiting()`, weil `02` §3.3.1 für die Oberfläche Auth `authentication` als Default setzt | – | I0 |
-| `asset_duplicate` | 5/min (`Plane:RateLimits:AssetDuplicate`) | Routenwert `asset_id` (Quell-Asset; Original `throttle_asset_{asset_id}`, `API/throttles/asset.py`) | EP-0430 `POST {AV2}/workspaces/{slug}/duplicate-assets/{asset_id}/` | `AssetRateThrottle` | I1 |
-| `api_key` | 60/min (`Plane:RateLimits:ApiKey`) | `token_hash` | gesamte Oberfläche V1 (inkl. Einladungen/Stickies, DT-V1-05) | `ApiKeyRateThrottle` | I6 |
-| `integration_webhook` | 600/min (`Plane:RateLimits:IntegrationWebhook`) | `connection_id` (ABG-051; die GUID ist instanzweit eindeutig, `provider` ist redundant) | EP-0729 | – (neu, F1) | I0 (ABG-051) |
+| `asset_duplicate` | 5/min (`Funk:RateLimits:AssetDuplicate`) | Routenwert `asset_id` (Quell-Asset; Original `throttle_asset_{asset_id}`, `API/throttles/asset.py`) | EP-0430 `POST {AV2}/workspaces/{slug}/duplicate-assets/{asset_id}/` | `AssetRateThrottle` | I1 |
+| `api_key` | 60/min (`Funk:RateLimits:ApiKey`) | `token_hash` | gesamte Oberfläche V1 (inkl. Einladungen/Stickies, DT-V1-05) | `ApiKeyRateThrottle` | I6 |
+| `integration_webhook` | 600/min (`Funk:RateLimits:IntegrationWebhook`) | `connection_id` (ABG-051; die GUID ist instanzweit eindeutig, `provider` ist redundant) | EP-0729 | – (neu, F1) | I0 (ABG-051) |
 
 Die Policy je Zeile steht in `endpoints.json` im Feld `rate_limit` (`null` = `.DisableRateLimiting()` bzw. Oberfläche ohne Limit: Root, Live); `RouteInventoryTests.Metadata_matches_catalog` vergleicht sie mit den `EnableRateLimitingAttribute`-/`DisableRateLimitingAttribute`-Metadaten der Route.
 
@@ -423,7 +423,7 @@ Die Spalte „Entscheidung“ der Tabelle in §3.13.2 ist für Implementierungs-
 | <a id="DT-GEN-02"></a>**DT-GEN-02** | T | Querschnitt | Geroutete DRF-Default-Aktionen `retrieve`/`update`/`partial_update` auf Zuordnungs-ViewSets (`cycle-issues/{issue_id}/`, `modules/{module_id}/issues/{issue_id}/`) – 500 (erwartet `pk`) bzw. ohne Projektprüfung | A04 Y9, M10, 05 SEC-02 | nicht registrieren | 405 (DELETE bleibt registriert) | DEV-API-03 (SEC-02) | `CycleModuleIssueRoutesTests` | CE-CYC-010, CE-MOD-008 | I3 |
 | <a id="DT-GEN-03"></a>**DT-GEN-03** | T | Querschnitt | Methoden-Nebenprodukte: Django-`APIView`-Klassen beantworten jede implementierte Methode auf **allen** ihnen zugeordneten Routen (z. B. `DELETE /api/users/api-tokens/` ohne `pk`, `GET {AV2}/workspaces/{slug}/` ohne `asset_id`); im Original meist 500 (`TypeError`) oder fachlich sinnlos; 85 Kombinationen laut `05-permission-matrix.json` ohne Gegenstück im Analyse-Inventar | A05 §2.7.2 (Instanz-Admins), A04 Y24, 05 Anhang B (AST-Extraktion), §4.25 | nicht registrieren | 405 `{"detail": "Method \"X\" not allowed."}`, wenn der Pfad mit einer anderen Methode existiert, sonst 404 `{"error": "Page not found."}` | DEV-API-06 | `RouteInventoryTests.NoByproductRoutes` (vergleicht `EndpointDataSource` mit `_data/endpoints.json`) | je Ressource (siehe §4.25) | I0–I6 |
 | <a id="DT-GEN-04"></a>**DT-GEN-04** | K | Querschnitt | Django `APPEND_SLASH`: Pfade ohne abschließenden Slash → 301 (GET) bzw. 500 (POST/PATCH) | 01 §7.11, D02-ADR-07 | korrigieren | jede Route mit **und** ohne Slash, gleicher Status/Körper, kein Redirect | DEV-API-07 | `RoutingConventionTests` (02 AK-02) | CE-OPS-007 | I0 |
-| <a id="DT-GEN-05"></a>**DT-GEN-05** | Q | Querschnitt | Uneinheitliche Fehlerformen (`{"error"}`, `{"detail"}`, `{"error_code","error_message"}`, DRF-Feldfehler, `{"message","code"}` des Rich-Filters) und endpunktspezifische Texte | A04 §2.20, A06 §2.12, 01 ADR-016 | 1:1 | wortgleich über `PlaneErrors` (02 §3.8); Fehlertext-Katalog §3.6 | – | `PlaneErrorsGoldenTests`, Contract-Goldens (N12) | CE-AUTH-014, CE-UIX-001 | I0 |
+| <a id="DT-GEN-05"></a>**DT-GEN-05** | Q | Querschnitt | Uneinheitliche Fehlerformen (`{"error"}`, `{"detail"}`, `{"error_code","error_message"}`, DRF-Feldfehler, `{"message","code"}` des Rich-Filters) und endpunktspezifische Texte | A04 §2.20, A06 §2.12, 01 ADR-016 | 1:1 | wortgleich über `FunkErrors` (02 §3.8); Fehlertext-Katalog §3.6 | – | `FunkErrorsGoldenTests`, Contract-Goldens (N12) | CE-AUTH-014, CE-UIX-001 | I0 |
 | <a id="DT-GEN-06"></a>**DT-GEN-06** | Q | Querschnitt | Abweichende Erfolgs-Statuscodes einzelner Endpunkte (z. B. `PATCH {P}/issues/{pk}/` → 204, `POST {P}/cycles/date-check/` → 200 auch bei Konflikt, `POST {W}/invitations/` → 200, `POST {P}/pages/{page_id}/favorite` → 204) | A04 §5.1, A03 §2.5 ff. | 1:1 | Status je Endpunkt laut Spalte „Erfolg“ in §4 bzw. `endpoints.json` (`success`) | – | Contract-Goldens | alle | I0–I6 |
 | <a id="DT-GEN-07"></a>**DT-GEN-07** | F | Querschnitt | Response-Cache `@cache_response` (Schlüssel Pfad+User, 1–2 h); Invalidierungen treffen die Schlüssel nicht → veraltete Daten bis 2 h (Workspace-Labels, Instanz, Konfiguration) | A03 Q-30, A06 E-20, A05 B-29 | korrigieren | kein Response-Cache; benannte Lesemodelle mit Tag-Invalidierung (02 D02-ADR-16, §3.12); `Cache-Control`-Header nur wie Original (02 §3.3.1 Regel 8) | DEV-API-08 | `CacheInvalidationTests` (02 AK-16) | CE-WS-006, CE-INST-003, CE-INST-017 | I1 |
 | <a id="DT-GEN-08"></a>**DT-GEN-08** | K | Querschnitt | Sortierung ohne eindeutigen Tiebreaker (`-created_at`) → nicht deterministische Seitenränder | A04 O3, 02 D02-ADR-13 | korrigieren | zusätzlicher Tiebreaker `id DESC` | DEV-PAG-001 | `CursorPaginatorTests` | CE-LV-005, CE-LV-044 | I1 |
@@ -441,7 +441,7 @@ Die Spalte „Entscheidung“ der Tabelle in §3.13.2 ist für Implementierungs-
 | <a id="DT-AUTH-04"></a>**DT-AUTH-04** | F | Auth | Post-Login-Workflow legt Projektmitgliedschaften aus angenommenen Projekt-Einladungen ohne `project_id` an → NOT-NULL-Verletzung, 500 bei jedem Login | A06 E-02 | korrigieren | Provisionierungsschritt `AcceptPendingInvitationsStep` (05 §3.7.3) legt Workspace- **und** Projektmitgliedschaften korrekt an | DEV-API-11 | `OidcProvisioningTests.ProjectInvite_JoinsProject` | CE-AUTH-028 | I1 |
 | <a id="DT-AUTH-05"></a>**DT-AUTH-05** | S | Auth | CSRF: Auth-JSON-Views verlangen klassisches `X-CSRFToken` (DRF-Default) – 403 für angemeldete Aufrufer ohne Token; Session-Views ohne Origin-Härtung | A06 E-17, §3.14 | korrigieren | Origin-/`Sec-Fetch-Site`-Prüfung für alle unsicheren Cookie-Requests (02 §3.4.1 Nr. 11, D05-ADR-06); Antiforgery-Token nur für Formular-POSTs (`/auth/sign-out/`, `/auth/spaces/sign-out/`, `/api/instances/admins/sign-out/`) | – | `OriginCheckTests`, `AntiforgeryTests` | CE-AUTH-016, CE-AUTH-024 | I0 |
 | <a id="DT-AUTH-06"></a>**DT-AUTH-06** | S | Auth | `next_path` bleibt in der Session und wird unkodiert angehängt | A06 E-11, E-27; 05 SEC-50 | korrigieren | `next_path` nur im DP-geschützten OIDC-State je Login, URL-kodiert | SEC-50 | `NextPathValidatorTests` | CE-AUTH-029 | I0 |
-| <a id="DT-AUTH-07"></a>**DT-AUTH-07** | A | Auth | `GET /api/users/me/instance-admin/` liest Tabelle `instance_admins` | A03 U-13, 05 §4.2 | angepasst | Ergebnis aus `PlanePrincipal.IsInstanceAdmin` (Keycloak-Rolle `plane-instance-admin`), Antwortform unverändert | – | `InstanceAdminFlagTests` | CE-INST-005 | I0 |
+| <a id="DT-AUTH-07"></a>**DT-AUTH-07** | A | Auth | `GET /api/users/me/instance-admin/` liest Tabelle `instance_admins` | A03 U-13, 05 §4.2 | angepasst | Ergebnis aus `FunkPrincipal.IsInstanceAdmin` (Keycloak-Rolle `funk-instance-admin`), Antwortform unverändert | – | `InstanceAdminFlagTests` | CE-INST-005 | I0 |
 | <a id="DT-AUTH-08"></a>**DT-AUTH-08** | A | Identity | Konto deaktivieren randomisiert das Passwort und meldet ab; „einziger Admin“-Prüfung ist wirkungslos (deaktiviert faktisch immer) | A03 U-03, Q-16; 05 §3.10 | angepasst + korrigieren | Deaktivierung wirkt in funk. (`is_active=false`, Sessions beendet), Sperre des Keycloak-Kontos separat; einziger Workspace-Admin → 400 mit den im Original vorhandenen Texten | DEV-API-12 | `DeactivateUserTests` | CE-PROF-005 | I1 |
 | <a id="DT-AUTH-09"></a>**DT-AUTH-09** | S | Identity | Mass-Assignment in `PATCH /api/users/me/` (`is_password_expired`, `bot_type`, `is_email_valid`, `last_login` …) | A03 Q-15, 05 SEC-36 | korrigieren | Whitelist `UpdateCurrentUserRequest`; unbekannte Felder ignoriert | SEC-36 | `UserMassAssignmentTests` | CE-PROF-003 | I1 |
 | <a id="DT-AUTH-10"></a>**DT-AUTH-10** | S | Identity | API-Tokens im Klartext gespeichert; `PATCH /api/users/api-tokens/{pk}/` liefert das Token erneut | A03 Q-18, AT-04; 05 SEC-33, SEC-35 | korrigieren | SHA-256-Hash (`token_hash`); Klartext nur einmal in der Antwort von `POST`; `PATCH` ohne `token` | SEC-33, SEC-35 | `ApiKeyStorageTests`, `ApiTokenPatchTests` | CE-WH-012, CE-WH-013, CE-API-001 | I6 |
@@ -454,7 +454,7 @@ Die Spalte „Entscheidung“ der Tabelle in §3.13.2 ist für Implementierungs-
 | <a id="DT-WS-06"></a>**DT-WS-06** | S | Workspaces | Drafts: Lesen nur WS-Admin, Admin darf fremde Drafts löschen, Ersteller-Prüfung gegen falsches Modell | A03 Q-04, Q-05; 05 SEC-15 | korrigieren | Drafts strikt privat (`WS(A,M,G)+OWN`), fremde → 404 | SEC-15 | `DraftPrivacyTests` | CE-WI-049 | I2 |
 | <a id="DT-WS-07"></a>**DT-WS-07** | F | Workspaces | Draft → Work Item schreibt Cycle-Activity mit `project_id="None"` | A03 W-53, Q-06 | korrigieren | Activity mit korrekter Projekt-ID | DEV-API-18 | `ConvertDraftTests.CycleActivity` | CE-WI-049 | I2 |
 | <a id="DT-WS-08"></a>**DT-WS-08** | F | Workspaces | Relationsfilter über `project_projectmember` zählen soft-gelöschte Mitgliedschaften und erzeugen Duplikate (Projektlisten, Mitgliederlisten) | A03 Q-31 | korrigieren | `deleted_at IS NULL` + `is_active` + `DISTINCT` | DEV-PERM-001 | `MembershipFilterTests` | CE-PRJ-001, CE-WS-009 | I1 |
-| <a id="DT-WS-09"></a>**DT-WS-09** | F | Workspaces | Reservierte Workspace-Slugs: Backend-Liste `RESTRICTED_WORKSPACE_SLUGS` (`API/utils/constants.py`) und Frontend-Liste `RESTRICTED_URLS` (`PKG/constants/src/workspace.ts`) weichen voneinander ab; `login` und `register` fehlen in beiden, `signin` nur im Backend (08 FE-E4) – ein Workspace mit diesen Slugs überdeckt App-Routen | 08 §3 E4 (FE-E4), A03 W-01/W-03, A05 I-16/I-18 | korrigieren | eine Liste `ReservedWorkspaceSlugs.All` (`Plane.Workspaces.Contracts`) = Vereinigung beider Original-Listen + `login`, `register`; Slug-Check liefert `{"status": false}` (nicht verfügbar), Anlage 400 `{"slug": ["Slug is not valid"]}` (Original-Text); Frontend nutzt dieselbe Liste (`@plane/constants`, 08) | DEV-API-63 | `ReservedWorkspaceSlugTests` (Backend) + `restricted-urls.spec.ts` (Frontend, gleiche Liste per Golden-Datei `tests/contracts/reserved-slugs.json`) | CE-WS-001, CE-INST-029 | I0 |
+| <a id="DT-WS-09"></a>**DT-WS-09** | F | Workspaces | Reservierte Workspace-Slugs: Backend-Liste `RESTRICTED_WORKSPACE_SLUGS` (`API/utils/constants.py`) und Frontend-Liste `RESTRICTED_URLS` (`PKG/constants/src/workspace.ts`) weichen voneinander ab; `login` und `register` fehlen in beiden, `signin` nur im Backend (08 FE-E4) – ein Workspace mit diesen Slugs überdeckt App-Routen | 08 §3 E4 (FE-E4), A03 W-01/W-03, A05 I-16/I-18 | korrigieren | eine Liste `ReservedWorkspaceSlugs.All` (`Funk.Workspaces.Contracts`) = Vereinigung beider Original-Listen + `login`, `register`; Slug-Check liefert `{"status": false}` (nicht verfügbar), Anlage 400 `{"slug": ["Slug is not valid"]}` (Original-Text); Frontend nutzt dieselbe Liste (`@plane/constants`, 08) | DEV-API-63 | `ReservedWorkspaceSlugTests` (Backend) + `restricted-urls.spec.ts` (Frontend, gleiche Liste per Golden-Datei `tests/contracts/reserved-slugs.json`) | CE-WS-001, CE-INST-029 | I0 |
 | <a id="DT-PRJ-01"></a>**DT-PRJ-01** | F | Projects | `POST {P}/invitations/` immer 500 (`AttributeError` auf QuerySet, `delay` auf Liste) | A03 P-11, Q-09; 05 CE-PRJ-010 („04 entscheidet“) | korrigieren (reparieren) | vorgesehene Logik aus A03 P-11: Rollenabgleich mit WS-Rolle (400 `{"error": "You cannot invite a user with different role than workspace role"}`), Einladungen mit Token, Mail-Job je Empfänger, 200 `{"message": "Email sent successfully"}` | DEV-API-19 | `ProjectInvitationTests.Create` | CE-PRJ-010 | I1 |
 | <a id="DT-PRJ-02"></a>**DT-PRJ-02** | S | Projects | Projekt-Einladungen listen/lesen/löschen ohne Rechteprüfung; eigene Projekt-Einladungen ignorieren den URL-Workspace | A03 Q-08, Q-10; 05 SEC-05, SEC-06 | korrigieren | `PRJ(A)` bzw. Filter `workspace.slug == {slug}` | SEC-05, SEC-06 | `ProjectInvitationPermissionTests` | CE-PRJ-010 | I1 |
 | <a id="DT-PRJ-03"></a>**DT-PRJ-03** | S | Projects | Deploy-Board-Detail ohne Bindung an das URL-Projekt (IDOR) | A03 Q-12; 05 SEC-16 | korrigieren | Objekt muss `project_id == {project_id}` haben, sonst 404 | SEC-16 | `DeployBoardScopeTests` | CE-SPACE-001 | I6 |
@@ -494,7 +494,7 @@ Die Spalte „Entscheidung“ der Tabelle in §3.13.2 ist für Implementierungs-
 | <a id="DT-PAGE-06"></a>**DT-PAGE-06** | S | Pages | Page-Zugriff nur über aktive `project_pages`-Verknüpfung (GHSA-g49r-…, GHSA-ghcr-…) | 05 §3.18.3, §3.13.5 | 1:1 (Schutz erhalten) | `PermissionRule.PageAccess` | – | Port `test_page_guest_view_scope_app.py` | CE-PAGE-004, CE-PAGE-006 | I4 |
 | <a id="DT-PAGE-07"></a>**DT-PAGE-07** | F | Pages | `POST {P}/pages/`: ungültige Referenzen (`parent` aus fremdem Projekt/nicht existent, fremde `labels`) führen zu `IntegrityError`-Abbildung oder stiller Fehlzuordnung | A04 G3, §5.4 | korrigieren | 400 mit DRF-Feldfehler je Feld (wie DT-PAGE-04/-05) | DEV-API-40 | `CreatePageTests.InvalidReferences` | CE-PAGE-003 | I4 |
 | <a id="DT-RT-01"></a>**DT-RT-01** | S | Realtime | Live-Server prüft Dokumentzugriff nur beim ersten Laden, kein Read-only-Scope; Cookie als Query-Parameter; WebSocket ohne Origin-Prüfung | A12 E3, E26; 05 SEC-40…42 | korrigieren | Prüfung je Verbindung (`project.page.read` + `PAGE`), `readonly` ohne `project.page.update`, nur `Cookie`-Header, Origin-Allowlist | SEC-40, SEC-41, SEC-42 | `CollaborationAuthorizationTests`, `WebSocketOriginTests` | CE-RT-001, CE-RT-002 | I4 |
-| <a id="DT-RT-02"></a>**DT-RT-02** | S | Realtime | `POST /live/convert-document/` ohne Authentifizierung über den Proxy öffentlich | A12 E8; 05 SEC-39 | entfällt als HTTP-Endpunkt | Konvertierung In-Process (`IDocumentConverter`, `Plane.Documents`); `POST /live/convert-document/` nur noch auf dem Management-Port 8081 (Diagnose/Paritätstest, 07 D07-ADR-19), über das Gateway 404 | SEC-39 | `GatewayRoutingTests.ConvertDocumentNotRouted` | CE-RT-008 | I4 |
+| <a id="DT-RT-02"></a>**DT-RT-02** | S | Realtime | `POST /live/convert-document/` ohne Authentifizierung über den Proxy öffentlich | A12 E8; 05 SEC-39 | entfällt als HTTP-Endpunkt | Konvertierung In-Process (`IDocumentConverter`, `Funk.Documents`); `POST /live/convert-document/` nur noch auf dem Management-Port 8081 (Diagnose/Paritätstest, 07 D07-ADR-19), über das Gateway 404 | SEC-39 | `GatewayRoutingTests.ConvertDocumentNotRouted` | CE-RT-008 | I4 |
 | <a id="DT-RT-03"></a>**DT-RT-03** | F | Realtime | PDF-Export: Callout-Emoji als Dezimal-Codepoint („128161“); Mentions zeigen `entity_name` (Mentions-Endpunkt fehlt in CE); `page_locked`/`page_archived` werden nie gesendet | A12 E4, E6, E27 | korrigieren | Emoji-Glyphe; Mentions mit Anzeigenamen (In-Process-Auflösung, kein HTTP-Endpunkt `…/mentions/`); Stateless-Events/Close-Codes bei gesperrter/archivierter Page | DEV-API-41 | `PdfExportTests`, `CollaborationLockTests` | CE-PAGE-011, CE-RT-006 | I4 |
 | <a id="DT-NOTIF-01"></a>**DT-NOTIF-01** | F | Notifications | `snoozed=false` zeigt noch gesnoozte; `subscribed`-Subquery vergleicht `IssueAssignee.pk` mit `issue_id` | A03 N-01, Q-22, Q-23 | korrigieren | aktiv gesnoozte (`snoozed_till > now`) ausgeblendet; Subquery über `issue_id` | DEV-API-42 | `NotificationFilterTests` | CE-NOTIF-005 | I5 |
 | <a id="DT-NOTIF-02"></a>**DT-NOTIF-02** | F | Notifications | `POST {W}/users/notifications/mark-all-read/`: `type` erwartet `watching` statt `subscribed`, kein Komma-Split | A03 N-10, Q-24 | korrigieren | Komma-Liste mit denselben Werten wie N-01 (`assigned`, `created`, `subscribed`) | DEV-API-43 | `MarkAllReadTests` | CE-NOTIF-006 | I5 |
@@ -505,7 +505,7 @@ Die Spalte „Entscheidung“ der Tabelle in §3.13.2 ist für Implementierungs-
 | <a id="DT-SRCH-02"></a>**DT-SRCH-02** | Q | Search | Globale Suche begrenzt nur `issue`/`intake` auf 100, alle anderen Typen unbegrenzt | A03 SR-01 | 1:1 | wie Original; Lastgrenze über 15 §3.12 beobachtet | – | Contract-Golden | CE-SRCH-001 | I5 |
 | <a id="DT-AST-01"></a>**DT-AST-01** | A | Assets | Legacy-Asset-Endpunkte v1 (`{W}/file-assets/`, `/api/workspaces/file-assets/{workspace_id}/{asset_key}/…`, `/api/users/file-assets/…`) für Altdaten; GET-Varianten 500 | A03 A-01…A-07, Q-32; 00 ADR-003 (Greenfield) | nicht portieren | 404; die Frontend-Aufrufer (`deleteOldWorkspaceAsset`, `restoreOldEditorAsset`, `deleteOldUserAsset`) werden nur für Legacy-URLs ausgelöst, die es in `funk.` nicht gibt | DEV-API-47 | `RemovedRoutesTests.LegacyAssets` | CE-OPS-013 | I1 |
 | <a id="DT-AST-02"></a>**DT-AST-02** | S | Assets | Workspace-Asset-Download ohne Projektprüfung; `entity_identifier` nicht validiert | A03 Q-33, Q-34; 05 SEC-56 | korrigieren | Download prüft `project.project.read` des Asset-Projekts; unbekannter `entity_identifier` → 400 `{"error": "Invalid entity identifier"}` | SEC-56 | `AssetScopeTests` | CE-OPS-012, CE-OPS-013 | I1 |
-| <a id="DT-AST-03"></a>**DT-AST-03** | A | Assets | Presigned POST direkt an S3/MinIO (silo) mit Request-Host-Trick | 01 ADR-026, 14 §3.7.6 | angepasst (Vertrag gleich) | `upload_data.url/fields` unverändert; zusätzliche Endpunkte `POST /api/assets/v2/upload/{token}/` (Proxy-Modus) und `GET /api/assets/v2/files/{token}/` (Dateisystem-Provider), HMAC mit `Plane:Security:SigningKey` | – | `StorageContractTests` (S8) | CE-OPS-012 | I1 |
+| <a id="DT-AST-03"></a>**DT-AST-03** | A | Assets | Presigned POST direkt an S3/MinIO (silo) mit Request-Host-Trick | 01 ADR-026, 14 §3.7.6 | angepasst (Vertrag gleich) | `upload_data.url/fields` unverändert; zusätzliche Endpunkte `POST /api/assets/v2/upload/{token}/` (Proxy-Modus) und `GET /api/assets/v2/files/{token}/` (Dateisystem-Provider), HMAC mit `Funk:Security:SigningKey` | – | `StorageContractTests` (S8) | CE-OPS-012 | I1 |
 | <a id="DT-AST-04"></a>**DT-AST-04** | S | Assets | Space-Assets ändern/löschen/wiederherstellen ohne Eigentümerprüfung; GET liefert Bilder interner Kommentare | A05 B-24; 05 SEC-19, SEC-51 | korrigieren | `AUTH+BOARD+OWN`; GET nur Board-/Work-Item-/EXTERNAL-Kommentar-Assets | SEC-19, SEC-51 | `SpaceAssetOwnerTests`, `SpaceAssetVisibilityTests` | CE-SPACE-007 | I6 |
 | <a id="DT-SPACE-01"></a>**DT-SPACE-01** | T | PublicSpace | `GET /api/public/workspaces/{slug}/project-boards/` immer 500 (Signatur passt nicht) | A05 S-04, B-20 | nicht registrieren | 404 | DEV-API-48 | `RemovedRoutesTests` | CE-SPACE-002 | I6 |
 | <a id="DT-SPACE-02"></a>**DT-SPACE-02** | F | PublicSpace | Reaktions-/Vote-Listen im Space immer `[]`; Reaktions-`avatar_url` aus Votes berechnet | A05 S-12, S-18, B-19, B-21; A11 K18 | korrigieren | Listen liefern die Einträge des Work Items (Board-Auflösung über `anchor`); `avatar_url` aus dem Reaktions-Akteur | DEV-API-49 | `SpaceReactionVoteListTests` | CE-SPACE-026, CE-SPACE-027, CE-SPACE-028 | I6 |
@@ -517,9 +517,9 @@ Die Spalte „Entscheidung“ der Tabelle in §3.13.2 ist für Implementierungs-
 | <a id="DT-INST-02"></a>**DT-INST-02** | S | Instance | Anonyme Ausgabe aller Instanzfelder (`whitelist_emails`, `instance_id`, `domain` …) | A05 B-27; 05 SEC-49 | korrigieren | anonym reduzierte Feldmenge, Instanz-Admins alle Felder | SEC-49 | `InstanceAnonymousFieldsTests` | CE-INST-003 | I0 |
 | <a id="DT-INST-03"></a>**DT-INST-03** | A | Instance | Erst-Einrichtung per Admin-Sign-up (Formular, Passwort); `sign-up-screen-visited` anonym schreibbar | A05 I-09, I-11; 05 N-13, SEC-48 | ersetzt | `POST /api/instances/admins/setup/` (JSON, angemeldeter Instanz-Admin, atomar `FOR UPDATE`); `sign-up-screen-visited` → 404 | DEV-API-02, SEC-48 | `InstanceBootstrapConcurrencyTests` | CE-INST-006 | I0 |
 | <a id="DT-INST-04"></a>**DT-INST-04** | A | Instance | Instanz-Admins per API anlegen/löschen (auch den letzten) | A05 I-03…I-05, B-28; 05 N-12 | angepasst | `GET /api/instances/admins/` ist Spiegel der Keycloak-Rolle (+ `"source": "keycloak"`); POST/DELETE → 404 | DEV-API-02, SEC-48 | `InstanceAdminMirrorTests` | CE-INST-004 | I0 |
-| <a id="DT-INST-05"></a>**DT-INST-05** | F | Instance | Workspace-Anlage im God Mode ohne Seed-Daten und ohne die Prüfungen der App-Anlage | A05 I-18, B-30 | korrigieren | gemeinsamer Command `CreateWorkspaceCommand` (Plane.Workspaces.Contracts) inkl. Demo-Seed (CE-WS-002) und Slug-Regeln | DEV-API-53 | `InstanceWorkspaceCreateTests` | CE-INST-029, CE-WS-002 | I6 |
+| <a id="DT-INST-05"></a>**DT-INST-05** | F | Instance | Workspace-Anlage im God Mode ohne Seed-Daten und ohne die Prüfungen der App-Anlage | A05 I-18, B-30 | korrigieren | gemeinsamer Command `CreateWorkspaceCommand` (Funk.Workspaces.Contracts) inkl. Demo-Seed (CE-WS-002) und Slug-Regeln | DEV-API-53 | `InstanceWorkspaceCreateTests` | CE-INST-029, CE-WS-002 | I6 |
 | <a id="DT-INST-06"></a>**DT-INST-06** | K | Instance | `GET /api/instances/` ohne Instanz-Datensatz liefert flaches Objekt (Endlos-Spinner) | A05 I-01, B-31 | korrigieren | Migrator legt die Instanz garantiert an (01 §3, `InstanceBootstrap`) | – | `MigratorInstanceBootstrapTests` | CE-INST-003, CE-INST-009 | I0 |
-| <a id="DT-INST-07"></a>**DT-INST-07** | S | Instance | God-Mode-Secrets (SMTP-Passwort, LLM-Key, Unsplash-Key) im Klartext an den Browser | A11 O8; 05 SEC-58, O-D05-03 | korrigieren (Default maskiert; Klartext nur per Betreiber-Option) – Regel S (D04-ADR-19); Review: die Erstfassung übernahm „bewusst beibehalten“ aus `05` SEC-58, das widerspricht der Auftragsregel „Sicherheitslücken immer korrigieren“; `02` §3.15 setzt den Default bereits auf `true` | `GET {I}/configurations/` liefert für `is_encrypted`-Schlüssel (genau `EMAIL_HOST_PASSWORD`, `LLM_API_KEY`, `UNSPLASH_ACCESS_KEY`; die OAuth-Secrets entfallen, 05 §4.4) `"********"`, sofern ein Wert gesetzt ist (leer bleibt `""`); `PATCH` mit `"********"` lässt den gespeicherten Wert unverändert; `Plane:Security:MaskInstanceSecrets` Default `true` (02 §3.15), `false` = Original-Verhalten (Klartext, Betreiberwahl); immer `INST`, `Cache-Control: no-store`, Log-Redaktion; UI optisch 1:1 (Passwortfelder zeigen Punkte, „Anzeigen“ zeigt `********`) | SEC-58, DEV-API-65 | `InstanceSecretsResponseTests` (maskiert, Rundreise `PATCH` mit `********` unverändert, `MaskInstanceSecrets=false` = Klartext) | CE-INST-018, CE-INST-025, CE-INST-026 | I6 |
+| <a id="DT-INST-07"></a>**DT-INST-07** | S | Instance | God-Mode-Secrets (SMTP-Passwort, LLM-Key, Unsplash-Key) im Klartext an den Browser | A11 O8; 05 SEC-58, O-D05-03 | korrigieren (Default maskiert; Klartext nur per Betreiber-Option) – Regel S (D04-ADR-19); Review: die Erstfassung übernahm „bewusst beibehalten“ aus `05` SEC-58, das widerspricht der Auftragsregel „Sicherheitslücken immer korrigieren“; `02` §3.15 setzt den Default bereits auf `true` | `GET {I}/configurations/` liefert für `is_encrypted`-Schlüssel (genau `EMAIL_HOST_PASSWORD`, `LLM_API_KEY`, `UNSPLASH_ACCESS_KEY`; die OAuth-Secrets entfallen, 05 §4.4) `"********"`, sofern ein Wert gesetzt ist (leer bleibt `""`); `PATCH` mit `"********"` lässt den gespeicherten Wert unverändert; `Funk:Security:MaskInstanceSecrets` Default `true` (02 §3.15), `false` = Original-Verhalten (Klartext, Betreiberwahl); immer `INST`, `Cache-Control: no-store`, Log-Redaktion; UI optisch 1:1 (Passwortfelder zeigen Punkte, „Anzeigen“ zeigt `********`) | SEC-58, DEV-API-65 | `InstanceSecretsResponseTests` (maskiert, Rundreise `PATCH` mit `********` unverändert, `MaskInstanceSecrets=false` = Klartext) | CE-INST-018, CE-INST-025, CE-INST-026 | I6 |
 | <a id="DT-INST-08"></a>**DT-INST-08** | A | Instance | 36 Instanz-Konfigurationsschlüssel inkl. OAuth-/Passwort-Schlüssel | A05 §2.7.4; 02 §3.16; 05 §4.4 | angepasst | 14 Schlüssel (05 §4.4); `PATCH` mit entfallenem Schlüssel wird wie im Original ignoriert (nur existierende Keys) | DEV-API-02 | `InstanceConfigurationTests` | CE-INST-002, CE-INST-017 | I6 |
 | <a id="DT-V1-01"></a>**DT-V1-01** | T | PublicApi | v1-Estimates (`{V1P}/estimates/…`, 8 Methoden) implementiert, aber nicht geroutet (`api/urls/estimate.py` nicht eingebunden); 05-Matrix führt sie als Endpunkte | A05 V-DEAD-01…08, B-01; Original `apps/api/plane/api/urls/__init__.py` | 1:1 (nicht registrieren) | 404; Pfad für eine spätere v1-Erweiterung reserviert (§6); Rückmeldung an 05 (Matrixzeilen als „nicht geroutet“) | – | `V1RouteInventoryTests` | – (kein CE-Feature; die Erstfassung nannte fälschlich CE-API-009 „States verwalten“) | I6 |
 | <a id="DT-V1-02"></a>**DT-V1-02** | T | PublicApi | `IssueDetailAPIEndpoint.put` (Upsert per `external_id`) und `ModuleIssueDetailAPIEndpoint.get` implementiert, per `http_method_names` nicht erreichbar | A05 V-DEAD-09, V-DEAD-10, B-02 | 1:1 (nicht registrieren) | 405 | – | `V1RouteInventoryTests` | CE-API-017, CE-API-031 | I6 |
@@ -533,15 +533,15 @@ Die Spalte „Entscheidung“ der Tabelle in §3.13.2 ist für Implementierungs-
 | <a id="DT-V1-10"></a>**DT-V1-10** | F | PublicApi | `limit`/`size` per `int()` ohne Fehlerbehandlung → 500 | A05 B-17 | korrigieren | 400 `{"error": "Invalid limit"}` bzw. `{"error": "Invalid size"}` (neue Texte, dokumentiert) | DEV-API-60 | `V1ParameterValidationTests` | CE-API-016, CE-API-019 | I6 |
 | <a id="DT-V1-11"></a>**DT-V1-11** | F | PublicApi | v1-Projekt-PATCH meldet Fehler zu `default_state`/`estimate` als 409 „identifier already taken“; `IntegrityError` ohne „already exists“ → 500 (View liefert `None`) | A05 V-PRJ-05, B-13 | korrigieren | 400 `{"default_state": ["Default state should be a state in the project"]}` bzw. `{"estimate": ["Estimate should be a estimate in the project"]}`; sonstige Integritätsfehler → 400 `{"error": "The payload is not valid"}` | DEV-API-61 | `V1ProjectUpdateTests.Errors` | CE-API-006 | I6 |
 | <a id="DT-V1-12"></a>**DT-V1-12** | Q | PublicApi | v1-Projektliste enthält archivierte Projekte, Lite-Liste nur mit `include_archived` | A05 O-11 | 1:1 | wie Original | – | Contract-Golden | CE-API-006 | I6 |
-| <a id="DT-V1-13"></a>**DT-V1-13** | A | PublicApi | nur API-Key-Authentisierung | 01 ADR-018, 05 D05-ADR-15 | vorbereitet (🧱 H1) | Schema `Bearer` (Keycloak-JWT, Audience `plane-api`) registriert, `Plane:Auth:Bearer:Enabled=false` → `Authorization: Bearer …` ergibt 401 `{"detail": "Authentication credentials were not provided."}` | – | `BearerSchemeDisabledTests` | CE-API-001 | I0 |
+| <a id="DT-V1-13"></a>**DT-V1-13** | A | PublicApi | nur API-Key-Authentisierung | 01 ADR-018, 05 D05-ADR-15 | vorbereitet (🧱 H1) | Schema `Bearer` (Keycloak-JWT, Audience `funk-api`) registriert, `Funk:Auth:Bearer:Enabled=false` → `Authorization: Bearer …` ergibt 401 `{"detail": "Authentication credentials were not provided."}` | – | `BearerSchemeDisabledTests` | CE-API-001 | I0 |
 | <a id="DT-WH-01"></a>**DT-WH-01** | F | Webhooks | `created`-Events, deren Task vor dem Commit läuft, werden still verworfen (`ObjectDoesNotExist`) | A07 WH1, WH2; 06 D06-ADR-15 | korrigieren | Auslösung als Projektion der Integration-Events aus der Outbox **nach** Commit (06 §3.14.2); bis zur Zustellung gelöschtes Objekt → Zustellung entfällt still (WH2, 1:1) | DEV-API-62 | `WebhookOutboxTests.CreatedAfterCommit` | CE-WH-007 | I6 |
 | <a id="DT-WH-02"></a>**DT-WH-02** | Q | Webhooks | `data` ist der DB-Stand zum Zustellzeitpunkt, nicht zum Ereigniszeitpunkt | A07 WH3 | 1:1 | Payload-Laden im Dispatcher (`WebhookPayloadBuilder`) zum Zustellzeitpunkt | – | `WebhookPayloadTests` | CE-WH-008 | I6 |
-| <a id="DT-WH-03"></a>**DT-WH-03** | Q | Webhooks | HTTP 4xx/5xx des Empfängers gelten als Erfolg (kein Retry, keine Deaktivierung); Retry nur bei Netzwerkfehlern (max. 6 Versuche, Backoff 0…600 s) | A07 §2.10.4, WH4 | 1:1 | wie Original; Option `Plane:Webhooks:RetryOnServerError` (Default `false`) für Betreiber | – | `WebhookRetryTests` | CE-WH-007, CE-WH-009 | I6 |
-| <a id="DT-WH-04"></a>**DT-WH-04** | F | Webhooks | `X-Plane-Delivery` je Versuch neu → Empfänger können Wiederholungen nicht deduplizieren | A07 WH6; 06 §3.14.4 | korrigieren | eine Delivery-ID (UUIDv7) je Zustellung, über alle Versuche stabil | DEV-WH-001 (06) | `WebhookHeaderTests.StableDeliveryId` | CE-WH-008 | I6 |
+| <a id="DT-WH-03"></a>**DT-WH-03** | Q | Webhooks | HTTP 4xx/5xx des Empfängers gelten als Erfolg (kein Retry, keine Deaktivierung); Retry nur bei Netzwerkfehlern (max. 6 Versuche, Backoff 0…600 s) | A07 §2.10.4, WH4 | 1:1 | wie Original; Option `Funk:Webhooks:RetryOnServerError` (Default `false`) für Betreiber | – | `WebhookRetryTests` | CE-WH-007, CE-WH-009 | I6 |
+| <a id="DT-WH-04"></a>**DT-WH-04** | F | Webhooks | `X-Funk-Delivery` je Versuch neu → Empfänger können Wiederholungen nicht deduplizieren | A07 WH6; 06 §3.14.4 | korrigieren | eine Delivery-ID (UUIDv7) je Zustellung, über alle Versuche stabil | DEV-WH-001 (06) | `WebhookHeaderTests.StableDeliveryId` | CE-WH-008 | I6 |
 | <a id="DT-WH-05"></a>**DT-WH-05** | F | Webhooks | Zustellprotokoll speichert Header/Body als Python-Repr; `request_method` enthält die Aktion | A07 WH8, WH9; 06 §3.14.1 | korrigieren (Inhalt), 1:1 (`request_method`) | `request_headers`/`request_body`/`response_headers` als JSON-Text; `request_method` enthält wie im Original die Aktion (`created`/`updated`/`deleted`); `GET {W}/webhook-logs/{webhook_id}/` liefert diese Felder unverändert benannt | DEV-WH-002 (06) | `WebhookLogTests` | CE-WH-010 | I6 |
 | <a id="DT-WH-06"></a>**DT-WH-06** | K | Webhooks | Signatur `hex(HMAC-SHA256(secret, json.dumps(payload)))` mit Python-Defaults (Trenner `", "`/`": "`, `ensure_ascii=True`); Body von `requests` mit denselben Defaults erzeugt | A07 §2.10.4; 06 §3.14.4 | Semantik 1:1, Bytes abweichend | Body kompakt mit `System.Text.Json` (snake_case), Signatur `HexLower(HMACSHA256(UTF8(secret), gesendete Bytes))` – Empfänger, die über die Roh-Bytes prüfen (dokumentierter Weg), bleiben kompatibel | DEV-WH-003 (06) | `WebhookSignatureGoldenTests` (D15-SEC-09) | CE-WH-008 | I6 |
-| <a id="DT-WH-07"></a>**DT-WH-07** | F | Webhooks | Das Webhook-Formular verspricht „Work item created, updated, deleted, added to a cycle or module“, „Cycle/Module created, updated, or deleted“, „Comment posted, updated, or deleted“ (`apps/web/components/web-hooks/form/individual-event-options.tsx`), das Backend löst aber nur die 24 Stellen W1…W22, WD1, WD2 aus: keine Webhooks für das Löschen von Work Items, Cycles, Modulen, Kommentaren und für Cycle-/Modul-Zuordnungen. Archivierung, Intake, Links, Anhänge, Reaktionen werden nicht versprochen und lösen nichts aus | A07 §2.10.3, WH7; Original-UI `individual-event-options.tsx`; 06 §3.14.2 | korrigieren (nur die in der UI versprochenen Ereignisse), Rest 1:1 (Review: Erstfassung „Q, 1:1“; Z-12 verlangt die Korrektur sichtbarer Funktionsfehler) | zusätzliche Auslöser: `issue`/`deleted` (EP-0268, EP-0652, EP-0657, je Element von EP-0256), `cycle`/`deleted` (EP-0323, EP-0549), `module`/`deleted` (EP-0345, EP-0593), `issue_comment`/`deleted` (EP-0253, EP-0641, EP-0646), jeweils `data = {"id": "<uuid>"}` wie WD1/WD2; `issue`/`updated` mit `activity.field = "cycles"` bzw. `"modules"` (Feldnamen wie Original-`issue_activity`) bei Zuordnung/Entfernung (EP-0325, EP-0326, EP-0351, EP-0353, EP-0354, EP-0551, EP-0553, EP-0596, EP-0597); Quelle: Integration-Events `plane.work_item.deleted.v1`, `plane.cycle.deleted.v1`, `plane.module.deleted.v1`, `plane.work_item_comment.deleted.v1`, `plane.work_item.cycle_changed.v1`, `plane.work_item.module_changed.v1` (06-Katalog); alle übrigen Operationen ohne Webhook (1:1); Erweiterung durch Pakete nur über `IWebhookEventSource` (E-08) | DEV-API-64 | `WebhookEventMatrixTests` (Matrix §4.27 inkl. neuer Zeilen), `WebhookTriggerCoverageTests` | CE-WH-001, CE-WH-007, CE-WH-008 | I6 |
-| <a id="DT-WH-08"></a>**DT-WH-08** | S | Webhooks | SSRF-Schutz (Blockliste, IP-Pinning, keine Redirects, kein Proxy) und Loop-Guard über Request-Host | A07 §2.11, A06 §2.14; 05 SEC-31 | 1:1 + Härtung | `SsrfSafeHttpHandler` (Client `webhooks`); Loop-Guard aus `Plane:Urls:*` statt `Host`-Header | SEC-31 | `SsrfSafeHttpHandlerTests`, `WebhookLoopGuardTests` | CE-WH-011 | I6 |
+| <a id="DT-WH-07"></a>**DT-WH-07** | F | Webhooks | Das Webhook-Formular verspricht „Work item created, updated, deleted, added to a cycle or module“, „Cycle/Module created, updated, or deleted“, „Comment posted, updated, or deleted“ (`apps/web/components/web-hooks/form/individual-event-options.tsx`), das Backend löst aber nur die 24 Stellen W1…W22, WD1, WD2 aus: keine Webhooks für das Löschen von Work Items, Cycles, Modulen, Kommentaren und für Cycle-/Modul-Zuordnungen. Archivierung, Intake, Links, Anhänge, Reaktionen werden nicht versprochen und lösen nichts aus | A07 §2.10.3, WH7; Original-UI `individual-event-options.tsx`; 06 §3.14.2 | korrigieren (nur die in der UI versprochenen Ereignisse), Rest 1:1 (Review: Erstfassung „Q, 1:1“; Z-12 verlangt die Korrektur sichtbarer Funktionsfehler) | zusätzliche Auslöser: `issue`/`deleted` (EP-0268, EP-0652, EP-0657, je Element von EP-0256), `cycle`/`deleted` (EP-0323, EP-0549), `module`/`deleted` (EP-0345, EP-0593), `issue_comment`/`deleted` (EP-0253, EP-0641, EP-0646), jeweils `data = {"id": "<uuid>"}` wie WD1/WD2; `issue`/`updated` mit `activity.field = "cycles"` bzw. `"modules"` (Feldnamen wie Original-`issue_activity`) bei Zuordnung/Entfernung (EP-0325, EP-0326, EP-0351, EP-0353, EP-0354, EP-0551, EP-0553, EP-0596, EP-0597); Quelle: Integration-Events `funk.work_item.deleted.v1`, `funk.cycle.deleted.v1`, `funk.module.deleted.v1`, `funk.work_item_comment.deleted.v1`, `funk.work_item.cycle_changed.v1`, `funk.work_item.module_changed.v1` (06-Katalog); alle übrigen Operationen ohne Webhook (1:1); Erweiterung durch Pakete nur über `IWebhookEventSource` (E-08) | DEV-API-64 | `WebhookEventMatrixTests` (Matrix §4.27 inkl. neuer Zeilen), `WebhookTriggerCoverageTests` | CE-WH-001, CE-WH-007, CE-WH-008 | I6 |
+| <a id="DT-WH-08"></a>**DT-WH-08** | S | Webhooks | SSRF-Schutz (Blockliste, IP-Pinning, keine Redirects, kein Proxy) und Loop-Guard über Request-Host | A07 §2.11, A06 §2.14; 05 SEC-31 | 1:1 + Härtung | `SsrfSafeHttpHandler` (Client `webhooks`); Loop-Guard aus `Funk:Urls:*` statt `Host`-Header | SEC-31 | `SsrfSafeHttpHandlerTests`, `WebhookLoopGuardTests` | CE-WH-011 | I6 |
 
 Die vergebenen Abweichungs-IDs `DEV-API-05…65` mit Kurzbeschreibung stehen in §4.29. Die Zuordnung DT → Endpunktzeilen steht in §4 (Spalte „Abw./DT“) und in `endpoints.json` (`dt`).
 
@@ -551,18 +551,18 @@ Die vergebenen Abweichungs-IDs `DEV-API-05…65` mit Kurzbeschreibung stehen in 
 
 | Dokument | Inhalt | Auslieferung | Schalter | Build-Artefakt |
 |---|---|---|---|---|
-| `v1` | Oberfläche V1 (alle registrierten v1-Zeilen außer Alias-Duplikaten, die das Original-Schema ebenfalls enthält – Abgleich per Golden), Security-Schema `ApiKeyAuthentication` (`apiKey`, Header `X-API-Key`, Beschreibung wie Original) | EP-0711 `GET /api/schema/` (wie drf-spectacular: Default YAML mit `Content-Type: application/vnd.oai.openapi`, `?format=json` → `application/vnd.oai.openapi+json`), EP-0713 `GET /api/schema/swagger-ui/`, EP-0712 `GET /api/schema/redoc/` – beide UIs liefern Scalar (offline gebündelt, keine CDN-Assets, DT-V1-04) | `Plane:OpenApi:Enabled` (Default `false`, wie `ENABLE_DRF_SPECTACULAR=0`); aus → 404 | `src/hosts/Plane.Api/openapi/v1.json` |
-| `internal` | Oberflächen App, Space, Instance, Auth (nur JSON-Endpunkte), Integrations | **nicht** ausgeliefert in Produktion; in `Development`/`Test` unter EP-0732 `GET /api/schema/internal/` (JSON) | nur `Development`/`Test` | `src/hosts/Plane.Api/openapi/internal.json` |
+| `v1` | Oberfläche V1 (alle registrierten v1-Zeilen außer Alias-Duplikaten, die das Original-Schema ebenfalls enthält – Abgleich per Golden), Security-Schema `ApiKeyAuthentication` (`apiKey`, Header `X-API-Key`, Beschreibung wie Original) | EP-0711 `GET /api/schema/` (wie drf-spectacular: Default YAML mit `Content-Type: application/vnd.oai.openapi`, `?format=json` → `application/vnd.oai.openapi+json`), EP-0713 `GET /api/schema/swagger-ui/`, EP-0712 `GET /api/schema/redoc/` – beide UIs liefern Scalar (offline gebündelt, keine CDN-Assets, DT-V1-04) | `Funk:OpenApi:Enabled` (Default `false`, wie `ENABLE_DRF_SPECTACULAR=0`); aus → 404 | `src/hosts/Funk.Api/openapi/v1.json` |
+| `internal` | Oberflächen App, Space, Instance, Auth (nur JSON-Endpunkte), Integrations | **nicht** ausgeliefert in Produktion; in `Development`/`Test` unter EP-0732 `GET /api/schema/internal/` (JSON) | nur `Development`/`Test` | `src/hosts/Funk.Api/openapi/internal.json` |
 
-Die OpenAPI-Routen stehen in §4.19. Die Auslieferung liest das Dokument über `IOpenApiDocumentProvider` (`Microsoft.AspNetCore.OpenApi` 10.x, keyed Service mit dem Dokumentnamen als Schlüssel: `[FromKeyedServices("v1")] IOpenApiDocumentProvider`, `GetOpenApiDocumentAsync(ct)`; geprüft auf Microsoft Learn „Use openAPI documents“, .NET 10) und serialisiert per `Microsoft.OpenApi` 2.x als YAML (Default, `application/vnd.oai.openapi`) oder JSON (`?format=json`). `MapOpenApi()` wird **nicht** verwendet, weil drf-spectacular Format-Umschaltung per Query-Parameter auf demselben Pfad erwartet; da der Provider außerhalb eines Requests erzeugt, setzt der `V1DocumentInfoTransformer` `servers` explizit (Remarks der API-Referenz). Die Build-Artefakte erzeugt `dotnet build` über `Microsoft.Extensions.ApiDescription.Server` (`OpenApiGenerateDocumentsOnBuild=true`, `OpenApiDocumentsDirectory=$(MSBuildProjectDirectory)/openapi`). Das Werkzeug benennt die Dateien `Plane.Api.json` (Dokument `v1`) und `Plane.Api_internal.json`; das MSBuild-Target `PlaneRenameOpenApiDocuments` (`AfterTargets="GenerateOpenApiDocuments"`, `src/hosts/Plane.Api/Plane.Api.csproj`) kopiert sie nach `openapi/v1.json` und `openapi/internal.json` und löscht die Originale. Die Generierung startet den Host im Prozess `GetDocument.Insider`: `Program.cs` überspringt in diesem Fall Migrationsprüfung, Keycloak-Metadatenabruf, Valkey- und Objektspeicher-Verbindungen (`if (Assembly.GetEntryAssembly()?.GetName().Name == "GetDocument.Insider") …`), damit der Build ohne laufende Infrastruktur funktioniert. CI prüft per `git diff --exit-code src/hosts/Plane.Api/openapi/` (Drift = Fehler, Aktualisierung im selben PR).
+Die OpenAPI-Routen stehen in §4.19. Die Auslieferung liest das Dokument über `IOpenApiDocumentProvider` (`Microsoft.AspNetCore.OpenApi` 10.x, keyed Service mit dem Dokumentnamen als Schlüssel: `[FromKeyedServices("v1")] IOpenApiDocumentProvider`, `GetOpenApiDocumentAsync(ct)`; geprüft auf Microsoft Learn „Use openAPI documents“, .NET 10) und serialisiert per `Microsoft.OpenApi` 2.x als YAML (Default, `application/vnd.oai.openapi`) oder JSON (`?format=json`). `MapOpenApi()` wird **nicht** verwendet, weil drf-spectacular Format-Umschaltung per Query-Parameter auf demselben Pfad erwartet; da der Provider außerhalb eines Requests erzeugt, setzt der `V1DocumentInfoTransformer` `servers` explizit (Remarks der API-Referenz). Die Build-Artefakte erzeugt `dotnet build` über `Microsoft.Extensions.ApiDescription.Server` (`OpenApiGenerateDocumentsOnBuild=true`, `OpenApiDocumentsDirectory=$(MSBuildProjectDirectory)/openapi`). Das Werkzeug benennt die Dateien `Funk.Api.json` (Dokument `v1`) und `Funk.Api_internal.json`; das MSBuild-Target `FunkRenameOpenApiDocuments` (`AfterTargets="GenerateOpenApiDocuments"`, `src/hosts/Funk.Api/Funk.Api.csproj`) kopiert sie nach `openapi/v1.json` und `openapi/internal.json` und löscht die Originale. Die Generierung startet den Host im Prozess `GetDocument.Insider`: `Program.cs` überspringt in diesem Fall Migrationsprüfung, Keycloak-Metadatenabruf, Valkey- und Objektspeicher-Verbindungen (`if (Assembly.GetEntryAssembly()?.GetName().Name == "GetDocument.Insider") …`), damit der Build ohne laufende Infrastruktur funktioniert. CI prüft per `git diff --exit-code src/hosts/Funk.Api/openapi/` (Drift = Fehler, Aktualisierung im selben PR).
 
 #### 3.14.2 Inhalt `v1` (Parität zum Original-Schema)
 
 | Aspekt | Festlegung |
 |---|---|
 | Version | OpenAPI 3.1 (Original 3.0.3; DT-V1-04, `DEV-API-55`) |
-| `info` | `title` „The funk. REST API“, `description` „The funk. REST API“ (ohne Verweis auf developers.plane.so), `version` `0.0.1`, `license` „GNU AGPLv3“ mit URL des `funk.`-Repos, `contact` aus `Plane:OpenApi:Contact` (Default leer) – Branding nach ADR-009B (`BRAND-API-01`) |
-| `servers` | aus `Plane:OpenApi:Servers` (Default: `Plane:PublicBaseUrl`); Original-Einträge `localhost:8000`/`api.plane.so` entfallen |
+| `info` | `title` „The funk. REST API“, `description` „The funk. REST API“ (ohne Verweis auf developers.plane.so), `version` `0.0.1`, `license` „GNU AGPLv3“ mit URL des `funk.`-Repos, `contact` aus `Funk:OpenApi:Contact` (Default leer) – Branding nach ADR-009B (`BRAND-API-01`) |
+| `servers` | aus `Funk:OpenApi:Servers` (Default: `Funk:PublicBaseUrl`); Original-Einträge `localhost:8000`/`api.plane.so` entfallen |
 | Pfadfilter | nur `/api/v1/`, **kein** `PUT`, keine Pfade mit `server` (Port `preprocess_filter_api_v1_paths`) |
 | Tags | 14 Tags wie Original, gleiche Namen und Reihenfolge: `Assets`, `Cycles`, `Intake`, `Labels`, `Members`, `Modules`, `Projects`, `States`, `Users`, `Work Item Activity`, `Work Item Attachments`, `Work Item Comments`, `Work Item Links`, `Work Items`; Beschreibungen ohne Produktnamen „Plane“ |
 | `operationId` | wie Original (`list_work_items`, `create_label`, … – Spalte `operation_id` in `endpoints.json`, wo bekannt); Golden `tests/contracts/openapi/v1.original.json`, einmalig erzeugt per `manage.py spectacular --file v1.original.json` am `ORIGINAL_SHA` mit `ENABLE_DRF_SPECTACULAR=1` |
@@ -570,11 +570,11 @@ Die OpenAPI-Routen stehen in §4.19. Die Auslieferung liest das Dokument über `
 | Schemas | Komponentennamen wie Original-Serializer (Beispiele `Issue`, `IssueRequest`, `Label`, `PaginatedIssueResponse`; vollständige Liste = `components.schemas` des Goldens) über `OpenApiSchemaNameTransformer` (`[OpenApiSchemaName("Issue")]` an den v1-DTOs) |
 | Beispiele | aus `utils/openapi/examples.py` übernommen (Werte ohne „Plane“-Produktnamen) |
 
-`OpenApiDocumentTests` (`tests/Plane.PublicApi.Tests/OpenApi/`, `02` AK-22): (1) Menge (Pfad, Methode) von `v1.json` = Menge des Originals minus nicht registrierte Zeilen (DT-V1-01/-02/-03); (2) `operationId`, Tags, Parameternamen je Operation gleich; (3) jede Response-Schema-Eigenschaft des Originals existiert (Typ-Kompatibilität `string`/`integer`/`number`/`boolean`/`array`/`object`, `nullable` → `type: [x, "null"]`); (4) `info`/`servers` gemäß Tabelle.
+`OpenApiDocumentTests` (`tests/Funk.PublicApi.Tests/OpenApi/`, `02` AK-22): (1) Menge (Pfad, Methode) von `v1.json` = Menge des Originals minus nicht registrierte Zeilen (DT-V1-01/-02/-03); (2) `operationId`, Tags, Parameternamen je Operation gleich; (3) jede Response-Schema-Eigenschaft des Originals existiert (Typ-Kompatibilität `string`/`integer`/`number`/`boolean`/`array`/`object`, `nullable` → `type: [x, "null"]`); (4) `info`/`servers` gemäß Tabelle.
 
 #### 3.14.3 Konfiguration (Skelett §5.5)
 
-`AddPlaneOpenApi()` in `Plane.PublicApi` registriert `AddOpenApi("v1", …)` und `AddOpenApi("internal", …)` mit `ShouldInclude = d => d.ActionDescriptor.EndpointMetadata.OfType<SurfaceMetadata>().Any(m => m.Surface == ApiSurface.V1)` bzw. `!= V1`, Document-Transformer `V1DocumentInfoTransformer`, Operation-Transformer `OriginalOperationIdTransformer` (liest `OriginalOperationIdMetadata`, gesetzt per `.WithOriginalOperationId("list_work_items")`), `ApiKeySecuritySchemeTransformer` und `RemovePutOperationsTransformer`.
+`AddPlaneOpenApi()` in `Funk.PublicApi` registriert `AddOpenApi("v1", …)` und `AddOpenApi("internal", …)` mit `ShouldInclude = d => d.ActionDescriptor.EndpointMetadata.OfType<SurfaceMetadata>().Any(m => m.Surface == ApiSurface.V1)` bzw. `!= V1`, Document-Transformer `V1DocumentInfoTransformer`, Operation-Transformer `OriginalOperationIdTransformer` (liest `OriginalOperationIdMetadata`, gesetzt per `.WithOriginalOperationId("list_work_items")`), `ApiKeySecuritySchemeTransformer` und `RemovePutOperationsTransformer`.
 
 ### 3.15 TypeScript-Typen und Client für Angular
 
@@ -582,7 +582,7 @@ Die OpenAPI-Routen stehen in §4.19. Die Auslieferung liest das Dokument über `
 |---|---|
 | Services | 1:1-Port der Original-Services (`apps/web/services/**`, `packages/services/src/**`, `apps/space/**/services`, `apps/admin/**/services`) nach `frontend/libs/shared/services/` bzw. `frontend/libs/<app>/services/` (`08` §3.5); keine generierten Services (ADR-047) |
 | Typen | 1:1-Port von `packages/types` nach `frontend/libs/shared/types/` (`08`) |
-| Generierte Typen | `frontend/tools/contract-check/` (eigenes `package.json`, TypeScript 5.x, `openapi-typescript` 7.x): `pnpm --filter contract-check generate` erzeugt `generated/internal.d.ts` und `generated/v1.d.ts` aus `src/hosts/Plane.Api/openapi/*.json` |
+| Generierte Typen | `frontend/tools/contract-check/` (eigenes `package.json`, TypeScript 5.x, `openapi-typescript` 7.x): `pnpm --filter contract-check generate` erzeugt `generated/internal.d.ts` und `generated/v1.d.ts` aus `src/hosts/Funk.Api/openapi/*.json` |
 | Typ-Prüfung | `frontend/tools/contract-check/checks/*.check.ts`: je Endpunkt mit Frontend-Aufruf eine Zuweisungsprüfung `AssertAssignable<ResponseOf<"/api/workspaces/{slug}/projects/{project_id}/issue-labels/", "get">, IIssueLabel[]>` (Antwort des Servers muss dem Frontend-Typ zuweisbar sein) und umgekehrt für Request-Bodies; Ausführung `tsc --noEmit` im CI-Job `frontend` (Gate L0, `15` §2) |
 | Aufrufinventar | `frontend/tools/contract-check/inventory.ts` extrahiert per `ts-morph` alle Service-Aufrufe (Methode, Pfad-Template, Query-Schlüssel) und schreibt `generated/frontend-calls.json`; `contract-check verify-catalog` prüft: (a) jeder Aufruf trifft eine Zeile in `endpoints.json` mit `registered = true` **oder** steht in §4.26 (bewusst nicht gebaute Aufrufe, Datei `frontend/tools/contract-check/allowed-missing.json`); (b) jede registrierte App-/Space-/Instance-Zeile ohne Aufruf hat in `endpoints.json` eine Begründung (`decision` ≠ `frontend`) |
 | Heuristik ablösen | Das Feld `frontend_call_detected` in `endpoints.json` ist eine Erstschätzung per Pfadvergleich; maßgeblich ist ab I0 `generated/frontend-calls.json` (`08` AK-D08-16). Abweichungen werden im Katalog korrigiert (neue Spalte, keine Umnummerierung) |
@@ -592,13 +592,13 @@ Die OpenAPI-Routen stehen in §4.19. Die Auslieferung liest das Dokument über `
 
 | Ebene | Werkzeug | Abdeckung (Soll) | Quelle der Soll-Liste | ab |
 |---|---|---|---|---|
-| Route-Inventar | `RouteInventoryTests` (`tests/Plane.AppHost.Tests/Routing/`) | 100 % aller Zeilen bis `CURRENT_INCREMENT`: registrierte Zeilen existieren (Methode + Route-Template + Name `EP-nnnn`), keine Route ohne Zeile, nicht registrierte Zeilen liefern `target_status` mit Original-Körper | `endpoints.json` | I0 |
+| Route-Inventar | `RouteInventoryTests` (`tests/Funk.AppHost.Tests/Routing/`) | 100 % aller Zeilen bis `CURRENT_INCREMENT`: registrierte Zeilen existieren (Methode + Route-Template + Name `EP-nnnn`), keine Route ohne Zeile, nicht registrierte Zeilen liefern `target_status` mit Original-Körper | `endpoints.json` | I0 |
 | Metadaten | `RouteInventoryTests.MetadataMatchesCatalog` | Permission-Key, Pagination-Modus, Read-Replica, Rate-Limit-Policy, Cache-Control, `WithOriginalContract` je Zeile | `endpoints.json`, `05-permission-matrix.json` | I0 |
 | Parität | Parity-Harness (`15` §3.6) | ≥ 1 Szenario je registrierter Zeile; Fehlerfälle: ≥ 1 Berechtigungsfehler je Permission-Key-Gruppe, ≥ 1 Validierungsfehler je Endpunkt mit Body, jeder Text aus `documented_bodies` mindestens einmal | `endpoints.json`; `coverage --fail-under 100` ab I7 | I0 (5 Endpunkte), danach je Inkrement alle Zeilen des Inkrements |
 | Abweichungen | `deviations.yaml` | jede DT-Zeile mit `dev` ≠ „–“ und Vertragswirkung hat ≥ 1 Eintrag; ungenutzte Einträge brechen das Gate | `_data/04-decisions.json` | I0 |
 | OpenAPI | `OpenApiDocumentTests` | §3.14.2 | `v1.original.json` | I6 |
 | TS-Typen | `contract-check` | §3.15 | `generated/frontend-calls.json` | I0 |
-| Webhook-Ausgang | `WebhookContractTests` (`tests/Plane.Webhooks.Tests/Contract/`) | je Ereignis aus §3.17.1 ein Golden des Original-Payloads (aufgezeichnet mit `tools/parity/webhook-sink`), Vergleich nach Normalisierung N1–N12 und Signaturprüfung | `06` §3.14.2 | I6 |
+| Webhook-Ausgang | `WebhookContractTests` (`tests/Funk.Webhooks.Tests/Contract/`) | je Ereignis aus §3.17.1 ein Golden des Original-Payloads (aufgezeichnet mit `tools/parity/webhook-sink`), Vergleich nach Normalisierung N1–N12 und Signaturprüfung | `06` §3.14.2 | I6 |
 | Live | Protokolltests (`07` §7) | alle Live-Zeilen | `endpoints.json` (Oberfläche Live) | I0/I4 |
 
 Szenario-Konventionen für dieses Dokument (Ergänzung zu `15` §3.6.2): Ordner = Modul in Kleinschreibung ohne `Plane.` (`tests/contracts/scenarios/workitems/…`); Szenario-ID `<modul>.<ressource>-<fall>`; Feld `ce` mit den CE-IDs der abgedeckten Zeilen; v1-Szenarien unter `tests/contracts/scenarios/publicapi/` mit Akteur `{apikey:<key>}`. Beispiel §5.7.
@@ -610,7 +610,7 @@ Mechanik, Datenmodell und Zustellung: `06` §3.14 (bindend). Vertragssicht:
 | Aspekt | Vertrag | DT |
 |---|---|---|
 | Methode/URL | `POST` an `webhooks.url` (http/https, SSRF-geprüft, `05` SEC-31) | DT-WH-08 |
-| Header | `Content-Type: application/json`, `User-Agent: Autopilot`, `X-Plane-Delivery: <uuid>` (stabil über alle Versuche einer Zustellung), `X-Plane-Event: <event>`, `X-Plane-Signature: <hex>` (nur bei gesetztem Secret) – Header-Namen bleiben (ADR-009B: Protokollbezeichner) | DT-WH-04 |
+| Header | `Content-Type: application/json`, `User-Agent: Autopilot`, `X-Funk-Delivery: <uuid>` (stabil über alle Versuche einer Zustellung), `X-Funk-Event: <event>`, `X-Funk-Signature: <hex>` (nur bei gesetztem Secret) – Header-Namen bleiben (ADR-009B: Protokollbezeichner) | DT-WH-04 |
 | Body | `{"event", "action", "webhook_id", "workspace_id", "workspace_slug", "data", "activity": {"field", "new_value", "old_value", "actor", "old_identifier", "new_identifier"}}`; `action` ∈ `created`, `updated`, `deleted` | DT-WH-02, DT-WH-07 |
 | Signatur | `HexLower(HMAC-SHA256(UTF8(secret), gesendete Body-Bytes))`; Body kompakt serialisiert | DT-WH-06 (`DEV-WH-003`) |
 | Erfolg/Retry | jede HTTP-Antwort (1xx–5xx) = zugestellt; Retry nur bei Transportfehlern, 6 Versuche, Backoff 0…600 s; nach dem 6. Fehlschlag `is_active = false` + Mail an den Ersteller | DT-WH-03 |
@@ -632,7 +632,7 @@ Verbindlich `07` §3.4; Katalogzeilen §4.11/§4.12.
 | EP-0413 | `GET /live/health/` | 200 `{"status": "OK", "timestamp": "<iso>", "version": "<version>"}` (1:1 `health.controller.ts`) | A12 §2.26.2 | I0 |
 | EP-0412 | `POST /live/pdf-export/` | PDF-Export (Body wie Original), 200 `application/pdf` (DT-RT-03) | A12 §2.26.2 | I4 |
 | EP-0414 | `GET /live/events/` (SignalR, nur WebSockets) | `LiveEventsHub` (🧱 H6-Vorbereitung, `07`/`16`), in der CE ohne fachliche Nachrichten außer Signalen aus `07` §3.10.4 | neu | I0 |
-| EP-0411 | `POST /live/convert-document/` | **nicht** über das Gateway erreichbar: nur Management-Port 8081 von `Plane.Realtime` (D07-ADR-19, SEC-39, DT-RT-02) | A12 §2.26.2 | I4 |
+| EP-0411 | `POST /live/convert-document/` | **nicht** über das Gateway erreichbar: nur Management-Port 8081 von `Funk.Realtime` (D07-ADR-19, SEC-39, DT-RT-02) | A12 §2.26.2 | I4 |
 
 Unbekannte `/live/*`-Pfade → 404 `{"message": "Not Found"}`.
 
@@ -658,7 +658,7 @@ Unbekannte `/live/*`-Pfade → 404 `{"message": "Not Found"}`.
 | BRAND-API-04 | Seitentitel der Dokumentations-UI (EP-0712/EP-0713) | „The Plane REST API“ (Swagger-/Redoc-Titel aus `SPECTACULAR_SETTINGS.TITLE`) | „The funk. REST API“ (Scalar) |
 | BRAND-API-05 | `GET /api/instances/` → `instance.instance_name` Default | „Plane Community Edition“ (`register_instance`-Kommando) | „funk.“ (Instanz-Seed; vom Admin änderbar) |
 
-**Unverändert (interne Bezeichner im Sinne von ADR-009B):** Header `X-Plane-Delivery`, `X-Plane-Event`, `X-Plane-Signature`; Token-Präfixe `plane_api_`, `plane_wh_`; Cookie `session-id`; Fehlercodes und -schlüssel; JSON-Feldnamen; `User-Agent: Autopilot`; Konfigurationsschlüssel `Plane:*`. Prüfung: `BrandingTests.ApiTexts` durchsucht `openapi/v1.json` und alle `*ErrorTexts.cs` nach `\bPlane\b` (Ausnahmen: Liste der Protokollbezeichner). Die Frage, ob auch die `X-Plane-*`-Header umbenannt werden sollen, ist offen (O-D04-02); die Empfehlung ist „nein“ (Bestandsintegrationen prüfen diese Header).
+**Unverändert (interne Bezeichner im Sinne von ADR-009B):** Header `X-Funk-Delivery`, `X-Funk-Event`, `X-Funk-Signature`; Token-Präfixe `funk_api_`, `funk_wh_`; Cookie `funk-session`; Fehlercodes und -schlüssel; JSON-Feldnamen; `User-Agent: Autopilot`; Konfigurationsschlüssel `Plane:*`. Prüfung: `BrandingTests.ApiTexts` durchsucht `openapi/v1.json` und alle `*ErrorTexts.cs` nach `\bPlane\b` (Ausnahmen: Liste der Protokollbezeichner). Die Frage, ob auch die `X-Funk-*`-Header umbenannt werden sollen, ist offen (O-D04-02); die Empfehlung ist „nein“ (Bestandsintegrationen prüfen diese Header).
 
 ---
 
@@ -666,9 +666,9 @@ Unbekannte `/live/*`-Pfade → 404 `{"message": "Not Found"}`.
 
 **Spalten:** „EP“ = Katalog-ID; „Original-ID“ = `<Dok>:<ID>` (für `.WithOriginalContract`); „Methode · Pfad (Original)“ mit Kürzeln aus dem Kopf; „Original-View (Datei)“ = Klasse.Aktion mit Datei:Zeile im Referenzstand; „Ziel: Klasse → Handler“ = `<Ressource>Endpoints` (Datei unter dem Ablagepfad des Abschnitts) und Mediator-Request (`…Query`/`…Command`), bei Modulgrenze mit vorangestelltem Ziel-Modul; „Permission · Ziel-Prüfung“ = Permission-Key aus `05` Anhang B und Kurzform der Ziel-Prüfung (`WS(A,M)` = Workspace-Rolle Admin/Member, `PRJ(A,M,G)` = Projektrolle, `AUTH` = angemeldet, `SELF` = eigener Datensatz, `INST` = Instanz-Admin, `BOARD` = veröffentlichtes Board); „Status Orig→Ziel“ = Erfolgsstatus (bei nicht registrierten Zeilen der Ziel-Status 404/405); „Abw./DT“ = Abweichungs-IDs aus `05` (`SEC-`, `HARM-`, `DEV-`) und DT-Zeilen (§3.13); „Ink.“ = Inkrement; „CE-IDs“ = getragene Features. Nicht registrierte Zeilen zeigen in „Ziel“ den Grund. Methoden-Nebenprodukte (Matrix-Zeilen ohne Analyse-Gegenstück) stehen gesammelt in §4.25.
 
-### 4.1 `Plane.Identity` – Auth-Oberfläche `/auth/`, Benutzer, Session, Profil, API-Tokens
+### 4.1 `Funk.Identity` – Auth-Oberfläche `/auth/`, Benutzer, Session, Profil, API-Tokens
 
-Ablage der Endpoint-Klassen: `src/modules/Identity/Plane.Identity/Endpoints/{App,Auth}/<Klasse>.cs`. 65 Zeilen, davon 26 registriert und 39 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/Identity/Funk.Identity/Endpoints/{App,Auth}/<Klasse>.cs`. 65 Zeilen, davon 26 registriert und 39 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -738,9 +738,9 @@ Ablage der Endpoint-Klassen: `src/modules/Identity/Plane.Identity/Endpoints/{App
 | EP-0068 | A03:U-07 | `PATCH /api/users/me/email/` | `UserEndpoint.update_email` (V/user/base.py:191) | — (entfällt (ADR-008)) | – | 200→404 | DT-AUTH-01 | I1 | CE-PROF-004 |
 | EP-0069 | A03:U-06 | `POST /api/users/me/email/generate-code/` | `UserEndpoint.generate_email_verification_code` (V/user/base.py:144) | — (entfällt (ADR-008)) | – | 200→404 | DT-AUTH-01 | I1 | CE-PROF-004 |
 
-### 4.2 `Plane.Instance` – Instanz-/God-Mode-API `/api/instances/`
+### 4.2 `Funk.Instance` – Instanz-/God-Mode-API `/api/instances/`
 
-Ablage der Endpoint-Klassen: `src/modules/Instance/Plane.Instance/Endpoints/Instance/<Klasse>.cs`. 19 Zeilen, davon 14 registriert und 5 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/Instance/Funk.Instance/Endpoints/Instance/<Klasse>.cs`. 19 Zeilen, davon 14 registriert und 5 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -757,16 +757,16 @@ Ablage der Endpoint-Klassen: `src/modules/Instance/Plane.Instance/Endpoints/Inst
 | EP-0080 | A05:I-16 | `GET {I}/workspace-slug-check/` | `InstanceWorkSpaceAvailabilityCheckEndpoint.get` (license/V1V/workspace.py:22) | `InstanceWorkspaceEndpoints` → `CheckWorkspaceSlugQuery` | `instance.workspace.read` · `INST` | 200 | DT-WS-09 | I6 | CE-INST-029 |
 | EP-0081 | A05:I-17 | `GET {I}/workspaces/` | `InstanceWorkSpaceEndpoint.get` (license/V1V/workspace.py:40) | `InstanceWorkspaceEndpoints` → `ListInstanceWorkspacesQuery` | `instance.workspace.read` · `INST` | 200 | – | I6 | CE-INST-027 |
 | EP-0082 | A05:I-18 | `POST {I}/workspaces/` | `InstanceWorkSpaceEndpoint.post` (license/V1V/workspace.py:71) | `InstanceWorkspaceEndpoints` → `CreateWorkspaceCommand` | `instance.workspace.create` · `INST` | 201 | DT-INST-05, DT-WS-09 | I6 | CE-INST-029 |
-| EP-0083 | A05:I-10 | `POST {I}/admins/sign-out/` | `InstanceAdminSignOutEndpoint.post` (license/V1V/admin.py:433) | `Plane.Identity` · `OidcBffEndpoints` → `OidcBffEndpoints.SignOut(app=admin)` | `—` · `**entfällt**` | 302 | DT-AUTH-02 | I0 | CE-INST-008 |
+| EP-0083 | A05:I-10 | `POST {I}/admins/sign-out/` | `InstanceAdminSignOutEndpoint.post` (license/V1V/admin.py:433) | `Funk.Identity` · `OidcBffEndpoints` → `OidcBffEndpoints.SignOut(app=admin)` | `—` · `**entfällt**` | 302 | DT-AUTH-02 | I0 | CE-INST-008 |
 | EP-0084 | A05:I-04 | `POST {I}/admins/` | `InstanceAdminEndpoint.post` (license/V1V/admin.py:51) | — (entfällt (ADR-008)) | – | 201→405 | DT-AUTH-01, DT-INST-04 | I0 | CE-INST-004 |
 | EP-0086 | A05:I-08 | `POST {I}/admins/sign-in/` | `InstanceAdminSignInEndpoint.post` (license/V1V/admin.py:275) | — (entfällt (ADR-008)) | – | 302→404 | DT-AUTH-01 | I0 | CE-INST-007 |
 | EP-0087 | A05:I-11 | `POST {I}/admins/sign-up-screen-visited/` | `SignUpScreenVisitedEndpoint.post` (license/V1V/instance.py:176) | — (entfällt (ADR-008)) | – | 204→404 | DT-AUTH-01, DT-INST-03 | I0 | CE-INST-006 |
 | EP-0088 | A05:I-09 | `POST {I}/admins/sign-up/` | `InstanceAdminSignUpEndpoint.post` (license/V1V/admin.py:96) | — (ersetzt durch N-13) | – | 302→404 | DT-INST-03 | I0 | CE-INST-006 |
 | EP-0091 | A05:I-05 | `DELETE {I}/admins/{pk}/` | `InstanceAdminEndpoint.delete` (license/V1V/admin.py:85) | — (entfällt (ADR-008)) | – | 204→404 | DT-AUTH-01, DT-INST-04 | I0 | CE-INST-004 |
 
-### 4.3 `Plane.Workspaces` – Workspaces, Mitglieder, Einladungen, Favoriten, Präferenzen, Mitglieder-Profile
+### 4.3 `Funk.Workspaces` – Workspaces, Mitglieder, Einladungen, Favoriten, Präferenzen, Mitglieder-Profile
 
-Ablage der Endpoint-Klassen: `src/modules/Workspaces/Plane.Workspaces/Endpoints/App/<Klasse>.cs`. 70 Zeilen, davon 64 registriert und 6 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/Workspaces/Funk.Workspaces/Endpoints/App/<Klasse>.cs`. 70 Zeilen, davon 64 registriert und 6 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -841,9 +841,9 @@ Ablage der Endpoint-Klassen: `src/modules/Workspaces/Plane.Workspaces/Endpoints/
 | EP-0162 | A04:W14 | `GET {P}/user-favorite-views/` | `IssueViewFavoriteViewSet.list` (V/view/base.py) | — (nicht registriert (DT-GEN-15)) | – | 500→405 | DT-GEN-15 | I3 | CE-LV-050 |
 | EP-0163 | A03:P-27 | `GET {W}/user-favorite-projects/` | `ProjectFavoritesViewSet.list` (V/project/base.py) | — (entfällt (SEC-11)) | – | 500→405 | SEC-11, DT-WS-05 | I1 | CE-WS-023, CE-PRJ-012 |
 
-### 4.4 `Plane.Projects` – Projekte, Mitglieder, Einladungen, States, Labels, Estimates, Präferenzen
+### 4.4 `Funk.Projects` – Projekte, Mitglieder, Einladungen, States, Labels, Estimates, Präferenzen
 
-Ablage der Endpoint-Klassen: `src/modules/Projects/Plane.Projects/Endpoints/App/<Klasse>.cs`. 56 Zeilen, davon 54 registriert und 2 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/Projects/Funk.Projects/Endpoints/App/<Klasse>.cs`. 56 Zeilen, davon 54 registriert und 2 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -904,9 +904,9 @@ Ablage der Endpoint-Klassen: `src/modules/Projects/Plane.Projects/Endpoints/App/
 | EP-0222 | A03:P-05 | `PUT {W}/projects/{pk}/` | `ProjectViewSet.update` (V/project/base.py) | — (entfällt (SEC-01)) | – | 200→405 | SEC-01, DT-GEN-01 | I1 | CE-PRJ-018, CE-PRJ-019, CE-PRJ-022, CE-PRJ-039, CE-PRJ-040 |
 | EP-0223 | A04:L4 | `PUT {P}/issue-labels/{pk}/` | `LabelViewSet.update` (V/issue/label.py) | — (entfällt (ABG-043)) | – | 200→405 | DT-GEN-01 | I1 | CE-PRJ-029, CE-PRJ-030, CE-PRJ-031 |
 
-### 4.5 `Plane.WorkItems` – Work Items, Kommentare, Reaktionen, Links, Anhänge, Relationen, Abos, Versionen, Drafts
+### 4.5 `Funk.WorkItems` – Work Items, Kommentare, Reaktionen, Links, Anhänge, Relationen, Abos, Versionen, Drafts
 
-Ablage der Endpoint-Klassen: `src/modules/WorkItems/Plane.WorkItems/Endpoints/App/<Klasse>.cs`. 69 Zeilen, davon 65 registriert und 4 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/WorkItems/Funk.WorkItems/Endpoints/App/<Klasse>.cs`. 69 Zeilen, davon 65 registriert und 4 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -980,9 +980,9 @@ Ablage der Endpoint-Klassen: `src/modules/WorkItems/Plane.WorkItems/Endpoints/Ap
 | EP-0296 | A04:K4 | `PUT {P}/issues/{issue_id}/issue-links/{pk}/` | `IssueLinkViewSet.update` (V/issue/link.py) | — (nicht registriert (DT-GEN-01)) | – | 200→405 | DT-GEN-01 | I2 | CE-WI-035 |
 | EP-0297 | A04:I7 | `PUT {P}/issues/{pk}/` | `IssueViewSet.update` (V/issue/base.py) | — (entfällt (SEC-01)) | – | 200→405 | SEC-01, DT-GEN-01 | I2 | CE-WI-003, CE-WI-004, CE-WI-005, CE-WI-020 |
 
-### 4.6 `Plane.Views` – Projekt- und Workspace-Views
+### 4.6 `Funk.Views` – Projekt- und Workspace-Views
 
-Ablage der Endpoint-Klassen: `src/modules/Views/Plane.Views/Endpoints/App/<Klasse>.cs`. 13 Zeilen, davon 11 registriert und 2 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/Views/Funk.Views/Endpoints/App/<Klasse>.cs`. 13 Zeilen, davon 11 registriert und 2 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1000,9 +1000,9 @@ Ablage der Endpoint-Klassen: `src/modules/Views/Plane.Views/Endpoints/App/<Klass
 | EP-0309 | A04:W4 | `PUT {P}/views/{pk}/` | `IssueViewViewSet.update` (V/view/base.py) | — (entfällt (SEC-01)) | – | 200→405 | SEC-01, DT-GEN-01 | I3 | CE-LV-048, CE-LV-011 |
 | EP-0310 | A04:W10 | `PUT {W}/views/{pk}/` | `WorkspaceViewViewSet.update` (V/view/base.py) | — (entfällt (SEC-01)) | – | 200→405 | SEC-01, DT-GEN-01 | I3 | CE-LV-053, CE-LV-011 |
 
-### 4.7 `Plane.Cycles` – Cycles
+### 4.7 `Funk.Cycles` – Cycles
 
-Ablage der Endpoint-Klassen: `src/modules/Cycles/Plane.Cycles/Endpoints/App/<Klasse>.cs`. 23 Zeilen, davon 17 registriert und 6 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/Cycles/Funk.Cycles/Endpoints/App/<Klasse>.cs`. 23 Zeilen, davon 17 registriert und 6 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1030,9 +1030,9 @@ Ablage der Endpoint-Klassen: `src/modules/Cycles/Plane.Cycles/Endpoints/App/<Kla
 | EP-0335 | A04:Y9 | `PUT {P}/cycles/{cycle_id}/cycle-issues/{issue_id}/` | `CycleIssueViewSet.update` (V/cycle/issue.py) | — (entfällt (SEC-02)) | – | 500→405 | SEC-02, DT-GEN-02 | I3 | CE-CYC-010 |
 | EP-0336 | A04:Y4 | `PUT {P}/cycles/{pk}/` | `CycleViewSet.update` (V/cycle/base.py) | — (entfällt (SEC-01)) | – | 200→405 | SEC-01, DT-GEN-01 | I3 | CE-CYC-005 |
 
-### 4.8 `Plane.ProjectModules` – Modules (Fachobjekt)
+### 4.8 `Funk.ProjectModules` – Modules (Fachobjekt)
 
-Ablage der Endpoint-Klassen: `src/modules/ProjectModules/Plane.ProjectModules/Endpoints/App/<Klasse>.cs`. 23 Zeilen, davon 18 registriert und 5 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/ProjectModules/Funk.ProjectModules/Endpoints/App/<Klasse>.cs`. 23 Zeilen, davon 18 registriert und 5 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1060,9 +1060,9 @@ Ablage der Endpoint-Klassen: `src/modules/ProjectModules/Plane.ProjectModules/En
 | EP-0363 | A04:M14 | `PUT {P}/modules/{module_id}/module-links/{pk}/` | `ModuleLinkViewSet.update` (V/module/base.py) | — (nicht registriert (DT-GEN-01)) | – | 200→405 | DT-GEN-01 | I3 | CE-MOD-005 |
 | EP-0364 | A04:M4 | `PUT {P}/modules/{pk}/` | `ModuleViewSet.update` (V/module/base.py) | — (entfällt (SEC-01)) | – | 200→405 | SEC-01, DT-GEN-01 | I3 | CE-MOD-003, CE-MOD-004 |
 
-### 4.9 `Plane.Intake` – Intake (App und öffentliche Einreichung)
+### 4.9 `Funk.Intake` – Intake (App und öffentliche Einreichung)
 
-Ablage der Endpoint-Klassen: `src/modules/Intake/Plane.Intake/Endpoints/{App,Space}/<Klasse>.cs`. 29 Zeilen, davon 27 registriert und 2 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/Intake/Funk.Intake/Endpoints/{App,Space}/<Klasse>.cs`. 29 Zeilen, davon 27 registriert und 2 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1096,9 +1096,9 @@ Ablage der Endpoint-Klassen: `src/modules/Intake/Plane.Intake/Endpoints/{App,Spa
 | EP-0392 | A05:S-29 | `PATCH {SP}/intakes/{intake_id}/intake-issues/{pk}/` | `IntakeIssuePublicViewSet.partial_update` (SPV/intake.py:189) | `PublicIntakeEndpoints` → `UpdatePublicIntakeWorkItemCommand` | `public.intake.update` · `AUTH+BOARD` | 200 | – | I6 | CE-SPACE-006 |
 | EP-0393 | A05:S-30 | `DELETE {SP}/intakes/{intake_id}/intake-issues/{pk}/` | `IntakeIssuePublicViewSet.destroy` (SPV/intake.py:272) | `PublicIntakeEndpoints` → `DeletePublicIntakeWorkItemCommand` | `public.intake.delete` · `AUTH+BOARD` | 204 | – | I6 | CE-SPACE-006 |
 
-### 4.10 `Plane.Pages` – Pages
+### 4.10 `Funk.Pages` – Pages
 
-Ablage der Endpoint-Klassen: `src/modules/Pages/Plane.Pages/Endpoints/App/<Klasse>.cs`. 16 Zeilen, davon 16 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/Pages/Funk.Pages/Endpoints/App/<Klasse>.cs`. 16 Zeilen, davon 16 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1119,9 +1119,9 @@ Ablage der Endpoint-Klassen: `src/modules/Pages/Plane.Pages/Endpoints/App/<Klass
 | EP-0408 | A04:G16 | `GET {P}/pages/{page_id}/versions/` | `PageVersionEndpoint.get` (V/page/version.py:19) | `PageVersionEndpoints` → `ListPageVersionsQuery` | `project.page_version.read` · `PRJ(A,M,G)+PAGE` | 200 | DT-PAGE-01 | I4 | CE-PAGE-019 |
 | EP-0409 | A04:G17 | `GET {P}/pages/{page_id}/versions/{pk}/` | `PageVersionEndpoint.get` (V/page/version.py:19) | `PageVersionEndpoints` → `GetPageVersionQuery` | `project.page_version.read` · `PRJ(A,M,G)+PAGE` | 200 | DT-PAGE-01 | I4 | CE-PAGE-019 |
 
-### 4.11 `Plane.Collaboration` – Live-Endpunkte `/live/` (Host `Plane.Realtime`)
+### 4.11 `Funk.Collaboration` – Live-Endpunkte `/live/` (Host `Funk.Realtime`)
 
-Ablage der Endpoint-Klassen: `src/modules/Collaboration/Plane.Collaboration/Endpoints/Live/<Klasse>.cs`. 4 Zeilen, davon 3 registriert und 1 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/Collaboration/Funk.Collaboration/Endpoints/Live/<Klasse>.cs`. 4 Zeilen, davon 3 registriert und 1 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1130,17 +1130,17 @@ Ablage der Endpoint-Klassen: `src/modules/Collaboration/Plane.Collaboration/Endp
 | EP-0412 | A12:§2.26.2-PDF | `POST /live/pdf-export/` | `pdf-export.controller.ts` | `PdfExportEndpoint` → `Post` | project.page.read | 200 | DT-RT-03 | I4 | CE-PAGE-011 |
 | EP-0413 | A12:§2.26.2-HEALTH | `GET /live/health/` | `health.controller.ts` | `RealtimeHealthEndpoint` → `Get` | (anonym) | 200 | – | I0 | CE-RT-009 |
 
-### 4.12 `Plane.RealtimeEvents` – Live-Events-Hub (🧱 H6, Host `Plane.Realtime`)
+### 4.12 `Funk.RealtimeEvents` – Live-Events-Hub (🧱 H6, Host `Funk.Realtime`)
 
-Ablage der Endpoint-Klassen: `src/modules/RealtimeEvents/Plane.RealtimeEvents/Hubs/<Klasse>.cs`. 1 Zeilen, davon 1 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/RealtimeEvents/Funk.RealtimeEvents/Hubs/<Klasse>.cs`. 1 Zeilen, davon 1 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
 | EP-0414 | neu: H6 / ADR-023 | `GET /live/events/` | – (H6 / ADR-023) | `LiveEventsHub` → `LiveEventsHub (SignalR, nur WebSockets)` | (Session-Cookie) | 101 | – | I0 | CE-NOTIF-004 |
 
-### 4.13 `Plane.Assets` – Datei-Assets (App, Space, Auslieferung)
+### 4.13 `Funk.Assets` – Datei-Assets (App, Space, Auslieferung)
 
-Ablage der Endpoint-Klassen: `src/modules/Assets/Plane.Assets/Endpoints/{App,Space}/<Klasse>.cs`. 33 Zeilen, davon 26 registriert und 7 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/Assets/Funk.Assets/Endpoints/{App,Space}/<Klasse>.cs`. 33 Zeilen, davon 26 registriert und 7 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1178,9 +1178,9 @@ Ablage der Endpoint-Klassen: `src/modules/Assets/Plane.Assets/Endpoints/{App,Spa
 | EP-0463 | A05:S-33 | `PATCH /api/public/assets/v2/anchor/{anchor}/{pk}/` | `EntityAssetEndpoint.patch` (SPV/asset.py:177) | `PublicAssetEndpoints` → `ConfirmPublicAssetUploadCommand` | `public.asset.update` · `AUTH+BOARD+OWN` | 204 | SEC-19, DT-AST-04 | I6 | CE-SPACE-007 |
 | EP-0464 | A05:S-34 | `DELETE /api/public/assets/v2/anchor/{anchor}/{pk}/` | `EntityAssetEndpoint.delete` (SPV/asset.py:198) | `PublicAssetEndpoints` → `DeletePublicAssetCommand` | `public.asset.delete` · `AUTH+BOARD+OWN` | 204 | SEC-19, DT-AST-04 | I6 | CE-SPACE-007 |
 
-### 4.14 `Plane.Analytics` – Analytics
+### 4.14 `Funk.Analytics` – Analytics
 
-Ablage der Endpoint-Klassen: `src/modules/Analytics/Plane.Analytics/Endpoints/App/<Klasse>.cs`. 16 Zeilen, davon 16 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/Analytics/Funk.Analytics/Endpoints/App/<Klasse>.cs`. 16 Zeilen, davon 16 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1201,9 +1201,9 @@ Ablage der Endpoint-Klassen: `src/modules/Analytics/Plane.Analytics/Endpoints/Ap
 | EP-0483 | A03:AN-14 | `GET {P}/advance-analytics/` | `ProjectAdvanceAnalyticsEndpoint.get` (V/analytic/project_analytics.py:85) | `AnalyticsEndpoints` → `GetProjectAdvanceAnalyticsQuery` | `project.analytics.read` · `PRJ(A,M)` | 200 | – | I5 | CE-ANA-008 |
 | EP-0484 | A03:AN-07 | `GET {W}/saved-analytic-view/{analytic_id}/` | `SavedAnalyticEndpoint.get` (V/analytic/base.py:198) | `AnalyticsEndpoints` → `GetSavedAnalyticsQuery` | `workspace.analytics.read` · `WS(A,M)` | 200 | – | I5 | CE-ANA-009 |
 
-### 4.15 `Plane.Home` – Home, Quick Links, Recents, Stickies
+### 4.15 `Funk.Home` – Home, Quick Links, Recents, Stickies
 
-Ablage der Endpoint-Klassen: `src/modules/Home/Plane.Home/Endpoints/App/<Klasse>.cs`. 11 Zeilen, davon 11 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/Home/Funk.Home/Endpoints/App/<Klasse>.cs`. 11 Zeilen, davon 11 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1219,9 +1219,9 @@ Ablage der Endpoint-Klassen: `src/modules/Home/Plane.Home/Endpoints/App/<Klasse>
 | EP-0494 | A03:W-65 | `PATCH {W}/stickies/{pk}/` | `WorkspaceStickyViewSet.partial_update` (V/workspace/sticky.py:55) | `StickyEndpoints` → `UpdateStickyCommand` | `workspace.sticky.update` · `WS(A,M,G)+C:Sticky` | 200 | – | I5 | CE-HOME-010 |
 | EP-0495 | A03:W-66 | `DELETE {W}/stickies/{pk}/` | `WorkspaceStickyViewSet.destroy` (V/workspace/sticky.py:59) | `StickyEndpoints` → `DeleteStickyCommand` | `workspace.sticky.delete` · `WS(A,M,G)+C:Sticky` | 204 | – | I5 | CE-HOME-010 |
 
-### 4.16 `Plane.Notifications` – Benachrichtigungen
+### 4.16 `Funk.Notifications` – Benachrichtigungen
 
-Ablage der Endpoint-Klassen: `src/modules/Notifications/Plane.Notifications/Endpoints/App/<Klasse>.cs`. 12 Zeilen, davon 12 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/Notifications/Funk.Notifications/Endpoints/App/<Klasse>.cs`. 12 Zeilen, davon 12 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1238,18 +1238,18 @@ Ablage der Endpoint-Klassen: `src/modules/Notifications/Plane.Notifications/Endp
 | EP-0506 | A03:N-11 | `GET /api/users/me/notification-preferences/` | `UserNotificationPreferenceEndpoint.get` (V/notification/base.py:301) | `NotificationPreferenceEndpoints` → `GetNotificationPreferencesQuery` | `user.notification_preference.read` · `AUTH+SELF` | 200 | – | I5 | CE-NOTIF-009 |
 | EP-0507 | A03:N-12 | `PATCH /api/users/me/notification-preferences/` | `UserNotificationPreferenceEndpoint.patch` (V/notification/base.py:307) | `NotificationPreferenceEndpoints` → `UpdateNotificationPreferencesCommand` | `user.notification_preference.update` · `AUTH+SELF` | 200 | – | I5 | CE-NOTIF-009 |
 
-### 4.17 `Plane.Search` – Suche
+### 4.17 `Funk.Search` – Suche
 
-Ablage der Endpoint-Klassen: `src/modules/Search/Plane.Search/Endpoints/App/<Klasse>.cs`. 2 Zeilen, davon 2 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/Search/Funk.Search/Endpoints/App/<Klasse>.cs`. 2 Zeilen, davon 2 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
 | EP-0508 | A03:SR-03 | `GET {W}/entity-search/` | `SearchEndpoint.get` (V/search/base.py:332) | `SearchEndpoints` → `SearchEntitiesQuery` | `workspace.search.read` · `WS(A,M,G)+VIS` | 200 | DT-SRCH-01 | I5 | CE-SRCH-002, CE-WI-044 |
 | EP-0509 | A03:SR-01 | `GET {W}/search/` | `GlobalSearchEndpoint.get` (V/search/base.py:295) | `SearchEndpoints` → `GlobalSearchQuery` | `workspace.search.read` · `WS(A,M,G)+VIS` | 200 | DT-SRCH-01 | I5 | CE-SRCH-001, CE-SRCH-004 |
 
-### 4.18 `Plane.PublicSpace` – Veröffentlichung (App) und Space-API `/api/public/`
+### 4.18 `Funk.PublicSpace` – Veröffentlichung (App) und Space-API `/api/public/`
 
-Ablage der Endpoint-Klassen: `src/modules/PublicSpace/Plane.PublicSpace/Endpoints/{App,Space}/<Klasse>.cs`. 30 Zeilen, davon 29 registriert und 1 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/PublicSpace/Funk.PublicSpace/Endpoints/{App,Space}/<Klasse>.cs`. 30 Zeilen, davon 29 registriert und 1 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1284,9 +1284,9 @@ Ablage der Endpoint-Klassen: `src/modules/PublicSpace/Plane.PublicSpace/Endpoint
 | EP-0538 | A05:S-20 | `DELETE {SP}/issues/{issue_id}/votes/` | `IssueVotePublicViewSet.destroy` (SPV/issue.py:665) | `PublicVoteEndpoints` → `RemoveVoteCommand` | `public.vote.delete` · `AUTH+BOARD` | 204 | DT-SPACE-05 | I6 | CE-SPACE-028 |
 | EP-0539 | A05:S-04 | `GET /api/public/workspaces/{slug}/project-boards/` | `WorkspaceProjectDeployBoardEndpoint.get` (SPV/project.py:31) | — (nicht registriert (DT-SPACE-01)) | – | 500→404 | DT-SPACE-01 | I6 | CE-SPACE-002 |
 
-### 4.19 `Plane.PublicApi` – Public API v1 `/api/v1/` und OpenAPI
+### 4.19 `Funk.PublicApi` – Public API v1 `/api/v1/` und OpenAPI
 
-Ablage der Endpoint-Klassen: `src/modules/PublicApi/Plane.PublicApi/Endpoints/V1/<Klasse>.cs` (OpenAPI: `Endpoints/OpenApi/OpenApiEndpoints.cs`). 140 Zeilen, davon 137 registriert und 3 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/PublicApi/Funk.PublicApi/Endpoints/V1/<Klasse>.cs` (OpenAPI: `Endpoints/OpenApi/OpenApiEndpoints.cs`). 140 Zeilen, davon 137 registriert und 3 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1426,14 +1426,14 @@ Ablage der Endpoint-Klassen: `src/modules/PublicApi/Plane.PublicApi/Endpoints/V1
 | EP-0679 | A05:V-RTR-01 | `GET {V1W}/` | DRF `APIRootView` (DefaultRouter) | — (nicht registriert (Router-Nebenprodukt)) | – | 401→404 | DT-V1-03 | I6 | CE-API-001 |
 | EP-0683 | A05:V-INV-05 | `PUT {V1W}/invitations/{pk}/` | `WorkspaceInvitationsViewset.update` (V1V/invite.py, geerbt) | — (entfällt (PUT-Duplikat)) | – | 200→405 | DT-GEN-01 | I6 | CE-API-013 |
 | EP-0710 | A05:V-STK-05 | `PUT {V1W}/stickies/{pk}/` | `StickyViewSet.update` (V1V/sticky.py, geerbt) | — (entfällt (PUT-Duplikat)) | – | 200→405 | DT-GEN-01 | I6 | CE-API-014 |
-| EP-0711 | A05:W-03 | `GET /api/schema/` | drf-spectacular (`ENABLE_DRF_SPECTACULAR=1`) | `OpenApiEndpoints` → `OpenApiDocumentEndpoint(v1)` | (anonym, nur mit Plane:OpenApi:Enabled) | 200 | DT-V1-04 | I6 | CE-API-004 |
-| EP-0712 | A05:W-05 | `GET /api/schema/redoc/` | drf-spectacular (`ENABLE_DRF_SPECTACULAR=1`) | `OpenApiEndpoints` → `ScalarUi` | (anonym, nur mit Plane:OpenApi:Enabled) | 200 | DT-V1-04 | I6 | CE-API-004 |
-| EP-0713 | A05:W-04 | `GET /api/schema/swagger-ui/` | drf-spectacular (`ENABLE_DRF_SPECTACULAR=1`) | `OpenApiEndpoints` → `ScalarUi` | (anonym, nur mit Plane:OpenApi:Enabled) | 200 | DT-V1-04 | I6 | CE-API-004 |
+| EP-0711 | A05:W-03 | `GET /api/schema/` | drf-spectacular (`ENABLE_DRF_SPECTACULAR=1`) | `OpenApiEndpoints` → `OpenApiDocumentEndpoint(v1)` | (anonym, nur mit Funk:OpenApi:Enabled) | 200 | DT-V1-04 | I6 | CE-API-004 |
+| EP-0712 | A05:W-05 | `GET /api/schema/redoc/` | drf-spectacular (`ENABLE_DRF_SPECTACULAR=1`) | `OpenApiEndpoints` → `ScalarUi` | (anonym, nur mit Funk:OpenApi:Enabled) | 200 | DT-V1-04 | I6 | CE-API-004 |
+| EP-0713 | A05:W-04 | `GET /api/schema/swagger-ui/` | drf-spectacular (`ENABLE_DRF_SPECTACULAR=1`) | `OpenApiEndpoints` → `ScalarUi` | (anonym, nur mit Funk:OpenApi:Enabled) | 200 | DT-V1-04 | I6 | CE-API-004 |
 | EP-0732 | neu: D04-ADR-14 | `GET /api/schema/internal/` | – (neu) | `OpenApiEndpoints` → `OpenApiDocumentEndpoint(internal)` | (anonym, nur Development/Test) | 200 | – | I0 | CE-API-004 |
 
-### 4.20 `Plane.Webhooks` – Webhook-Verwaltung
+### 4.20 `Funk.Webhooks` – Webhook-Verwaltung
 
-Ablage der Endpoint-Klassen: `src/modules/Webhooks/Plane.Webhooks/Endpoints/App/<Klasse>.cs`. 7 Zeilen, davon 7 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/Webhooks/Funk.Webhooks/Endpoints/App/<Klasse>.cs`. 7 Zeilen, davon 7 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1445,18 +1445,18 @@ Ablage der Endpoint-Klassen: `src/modules/Webhooks/Plane.Webhooks/Endpoints/App/
 | EP-0719 | A03:WH-05 | `DELETE {W}/webhooks/{pk}/` | `WebhookEndpoint.delete` (V/webhook/base.py:108) | `WebhookEndpoints` → `DeleteWebhookCommand` | `workspace.webhook.delete` · `WS(A)` | 204 | – | I6 | CE-WH-006 |
 | EP-0720 | A03:WH-06 | `POST {W}/webhooks/{pk}/regenerate/` | `WebhookSecretRegenerateEndpoint.post` (V/webhook/base.py:116) | `WebhookEndpoints` → `RegenerateWebhookSecretCommand` | `workspace.webhook.create` · `WS(A)` | 200 | – | I6 | CE-WH-004 |
 
-### 4.21 `Plane.Exports` – Exporte
+### 4.21 `Funk.Exports` – Exporte
 
-Ablage der Endpoint-Klassen: `src/modules/Exports/Plane.Exports/Endpoints/App/<Klasse>.cs`. 2 Zeilen, davon 2 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/Exports/Funk.Exports/Endpoints/App/<Klasse>.cs`. 2 Zeilen, davon 2 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
 | EP-0724 | A03:X-02 | `GET {W}/export-issues/` | `ExportIssuesEndpoint.get` (V/exporter/base.py:69) | `ExportEndpoints` → `ListExportsQuery` | `workspace.export.read` · `WS(A,M)` | 200 | – | I6 | CE-EXP-001, CE-EXP-002 |
 | EP-0725 | A03:X-01 | `POST {W}/export-issues/` | `ExportIssuesEndpoint.post` (V/exporter/base.py:24) | `ExportEndpoints` → `CreateWorkItemExportCommand` | `workspace.export.create` · `WS(A,M)+VIS` | 200 | – | I6 | CE-EXP-001, CE-EXP-002 |
 
-### 4.22 `Plane.Assistant` – KI-Assistent, Unsplash
+### 4.22 `Funk.Assistant` – KI-Assistent, Unsplash
 
-Ablage der Endpoint-Klassen: `src/modules/Assistant/Plane.Assistant/Endpoints/App/<Klasse>.cs`. 3 Zeilen, davon 3 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/modules/Assistant/Funk.Assistant/Endpoints/App/<Klasse>.cs`. 3 Zeilen, davon 3 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1464,17 +1464,17 @@ Ablage der Endpoint-Klassen: `src/modules/Assistant/Plane.Assistant/Endpoints/Ap
 | EP-0727 | A03:EXT-02 | `POST {P}/ai-assistant/` | `GPTIntegrationEndpoint.post` (V/external/base.py:150) | `AiAssistantEndpoints` → `RunProjectAiAssistantCommand` | `project.ai_assistant.use` · `PRJ(A,M)` | 200 | DT-AI-01 | I6 | CE-AI-001 |
 | EP-0728 | A03:EXT-01 | `GET /api/unsplash/` | `UnsplashEndpoint.get` (V/external/base.py:216) | `UnsplashImageEndpoints` → `SearchUnsplashQuery` | `user.unsplash.read` · `AUTH+SELF` | 200 | DT-AI-01 | I6 | CE-AI-002 |
 
-### 4.23 `Plane.BuildingBlocks.Web` – Integrations-Oberfläche `/api/integrations/` (🧱 F1)
+### 4.23 `Funk.BuildingBlocks.Web` – Integrations-Oberfläche `/api/integrations/` (🧱 F1)
 
-Ablage der Endpoint-Klassen: `src/building-blocks/Plane.BuildingBlocks.Web/Integrations/<Klasse>.cs`. 1 Zeilen, davon 1 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/building-blocks/Funk.BuildingBlocks.Web/Integrations/<Klasse>.cs`. 1 Zeilen, davon 1 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
 | EP-0729 | neu: F1 / D16-ADR-09 | `POST /api/integrations/{provider}/webhooks/{connection_id}/` | – (F1 / D16-ADR-09) | `IntegrationWebhookEndpoints` → `IntegrationWebhookEndpoint → IWebhookIngress` | (Signatur, IWebhookSignatureVerifier) | 202 | – | I0 | CE-OPS-018 |
 
-### 4.24 `Plane.BuildingBlocks.Web` – Root-Oberfläche `/`
+### 4.24 `Funk.BuildingBlocks.Web` – Root-Oberfläche `/`
 
-Ablage der Endpoint-Klassen: `src/building-blocks/Plane.BuildingBlocks.Web/Surfaces/RootEndpoints.cs<Klasse>.cs`. 2 Zeilen, davon 2 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
+Ablage der Endpoint-Klassen: `src/building-blocks/Funk.BuildingBlocks.Web/Surfaces/RootEndpoints.cs<Klasse>.cs`. 2 Zeilen, davon 2 registriert und 0 nicht registriert (Entscheidung in Spalte „Abw./DT“).
 
 | EP | Original-ID | Methode · Pfad (Original) | Original-View (Datei) | Ziel: Klasse → Handler | Permission · Ziel-Prüfung | Status Orig→Ziel | Abw./DT | Ink. | CE-IDs |
 |---|---|---|---|---|---|---|---|---|---|
@@ -1589,7 +1589,7 @@ Kombinationen Methode × Pfad, die das Original technisch beantwortet (Django-`A
 | `InstanceService.getChangelog` (`packages/services/src/instance/instance.service.ts:54`) | `GET /api/instances/changelog/` | nicht bauen | 404 | DT-GEN-16 | – |
 | `FileService.restoreOldEditorAsset` (`apps/web/services/file.service.ts:261`, `packages/services/src/file/file.service.ts:68`) | `POST /api/workspaces/file-assets/{workspace_id}/{asset_key}/restore/` | nicht portieren | 404 | DT-AST-01 | Legacy-Assets; Altdaten-Migration statt Legacy-Endpunkt |
 
-Die Liste ist zugleich `frontend/tools/contract-check/allowed-missing.json` (§3.15) und die Datenquelle von `DeadFrontendCallsTests` (`tests/Plane.AppHost.Tests/Routing/`). Die zugehörigen Service-Methoden werden 1:1 portiert (`08` R-D08-01), aber von keinem Store aufgerufen.
+Die Liste ist zugleich `frontend/tools/contract-check/allowed-missing.json` (§3.15) und die Datenquelle von `DeadFrontendCallsTests` (`tests/Funk.AppHost.Tests/Routing/`). Die zugehörigen Service-Methoden werden 1:1 portiert (`08` R-D08-01), aber von keinem Store aufgerufen.
 
 ### 4.27 Webhook-Ausgang: Ereignisse → auslösende Endpunkte
 
@@ -1597,29 +1597,29 @@ Grundlage `06` §3.14.2 (`WebhookTriggerMap`). Spalte „`old_value`-Quelle“ b
 
 | Integration-Event | `X-Plane-Event` / `action` | auslösende Endpunkte App | auslösende Endpunkte V1 | `old_value`-Quelle (before-Form) | Original-Stellen (A07) |
 |---|---|---|---|---|---|
-| `plane.project.created.v1` | `project` / `created` | EP-0187 | EP-0600 | – (`activity.field = null`) | W11, W21 |
-| `plane.project.updated.v1` | `project` / `updated` | EP-0190 | EP-0602 | App: `ProjectSerializer`-Form vor dem Update; V1: v1-`ProjectSerializer` | W12, W22 |
-| `plane.project.deleted.v1` | `project` / `deleted` | EP-0191 | EP-0603 | – (`data = {"id"}`) | WD1, WD2 |
-| `plane.work_item.created.v1` | `issue` / `created` | EP-0261 | EP-0649, EP-0654 | – | W3, W15 (W5 `put_create` entfällt, DT-V1-02) |
-| `plane.work_item.updated.v1` | `issue` / `updated` | EP-0267 | EP-0651, EP-0656 | App: `IssueDetailSerializer`-Form (`current_instance`); V1: v1-`IssueSerializer` | W6, W16 (W4 `put` entfällt, DT-V1-02) |
-| `plane.cycle.created.v1` | `cycle` / `created` | EP-0315 | EP-0545 | – | W1, W13 |
-| `plane.cycle.updated.v1` | `cycle` / `updated` | EP-0322 | EP-0548 | App: `CycleSerializer`-Form; V1: v1-`CycleSerializer` | W2, W14 |
-| `plane.module.created.v1` | `module` / `created` | EP-0340 | EP-0590 | – | W9, W19 |
-| `plane.module.updated.v1` | `module` / `updated` | EP-0344 | EP-0592 | App: `ModuleWriteSerializer`-Form; V1: v1-`ModuleSerializer` | W10, W20 |
-| `plane.work_item_comment.created.v1` | `issue_comment` / `created` | EP-0250 | EP-0638, EP-0643 | – | W7, W17 |
-| `plane.work_item_comment.updated.v1` | `issue_comment` / `updated` | EP-0252 | EP-0640, EP-0645 | App: `IssueCommentSerializer`-Form; V1: v1-`IssueCommentSerializer` | W8, W18 |
-| `plane.work_item.deleted.v1` | `issue` / `deleted` | EP-0268, EP-0256 (je Element) | EP-0652, EP-0657 | – (`data = {"id"}`) | **neu** (DT-WH-07, `DEV-API-64`) |
-| `plane.work_item.cycle_changed.v1` | `issue` / `updated` (`activity.field = "cycles"`) | EP-0325, EP-0326 | EP-0551, EP-0553 | `old_value`/`new_value` = Cycle-ID (vorher/nachher, `null` bei erster Zuordnung bzw. Entfernung) | **neu** (DT-WH-07) |
-| `plane.work_item.module_changed.v1` | `issue` / `updated` (`activity.field = "modules"`) | EP-0351, EP-0353, EP-0354 | EP-0596, EP-0597 | `old_value`/`new_value` = Modul-ID (je hinzugefügtem/entferntem Modul ein Change) | **neu** (DT-WH-07) |
-| `plane.cycle.deleted.v1` | `cycle` / `deleted` | EP-0323 | EP-0549 | – (`data = {"id"}`) | **neu** (DT-WH-07) |
-| `plane.module.deleted.v1` | `module` / `deleted` | EP-0345 | EP-0593 | – (`data = {"id"}`) | **neu** (DT-WH-07) |
-| `plane.work_item_comment.deleted.v1` | `issue_comment` / `deleted` | EP-0253 | EP-0641, EP-0646 | – (`data = {"id"}`) | **neu** (DT-WH-07) |
+| `funk.project.created.v1` | `project` / `created` | EP-0187 | EP-0600 | – (`activity.field = null`) | W11, W21 |
+| `funk.project.updated.v1` | `project` / `updated` | EP-0190 | EP-0602 | App: `ProjectSerializer`-Form vor dem Update; V1: v1-`ProjectSerializer` | W12, W22 |
+| `funk.project.deleted.v1` | `project` / `deleted` | EP-0191 | EP-0603 | – (`data = {"id"}`) | WD1, WD2 |
+| `funk.work_item.created.v1` | `issue` / `created` | EP-0261 | EP-0649, EP-0654 | – | W3, W15 (W5 `put_create` entfällt, DT-V1-02) |
+| `funk.work_item.updated.v1` | `issue` / `updated` | EP-0267 | EP-0651, EP-0656 | App: `IssueDetailSerializer`-Form (`current_instance`); V1: v1-`IssueSerializer` | W6, W16 (W4 `put` entfällt, DT-V1-02) |
+| `funk.cycle.created.v1` | `cycle` / `created` | EP-0315 | EP-0545 | – | W1, W13 |
+| `funk.cycle.updated.v1` | `cycle` / `updated` | EP-0322 | EP-0548 | App: `CycleSerializer`-Form; V1: v1-`CycleSerializer` | W2, W14 |
+| `funk.module.created.v1` | `module` / `created` | EP-0340 | EP-0590 | – | W9, W19 |
+| `funk.module.updated.v1` | `module` / `updated` | EP-0344 | EP-0592 | App: `ModuleWriteSerializer`-Form; V1: v1-`ModuleSerializer` | W10, W20 |
+| `funk.work_item_comment.created.v1` | `issue_comment` / `created` | EP-0250 | EP-0638, EP-0643 | – | W7, W17 |
+| `funk.work_item_comment.updated.v1` | `issue_comment` / `updated` | EP-0252 | EP-0640, EP-0645 | App: `IssueCommentSerializer`-Form; V1: v1-`IssueCommentSerializer` | W8, W18 |
+| `funk.work_item.deleted.v1` | `issue` / `deleted` | EP-0268, EP-0256 (je Element) | EP-0652, EP-0657 | – (`data = {"id"}`) | **neu** (DT-WH-07, `DEV-API-64`) |
+| `funk.work_item.cycle_changed.v1` | `issue` / `updated` (`activity.field = "cycles"`) | EP-0325, EP-0326 | EP-0551, EP-0553 | `old_value`/`new_value` = Cycle-ID (vorher/nachher, `null` bei erster Zuordnung bzw. Entfernung) | **neu** (DT-WH-07) |
+| `funk.work_item.module_changed.v1` | `issue` / `updated` (`activity.field = "modules"`) | EP-0351, EP-0353, EP-0354 | EP-0596, EP-0597 | `old_value`/`new_value` = Modul-ID (je hinzugefügtem/entferntem Modul ein Change) | **neu** (DT-WH-07) |
+| `funk.cycle.deleted.v1` | `cycle` / `deleted` | EP-0323 | EP-0549 | – (`data = {"id"}`) | **neu** (DT-WH-07) |
+| `funk.module.deleted.v1` | `module` / `deleted` | EP-0345 | EP-0593 | – (`data = {"id"}`) | **neu** (DT-WH-07) |
+| `funk.work_item_comment.deleted.v1` | `issue_comment` / `deleted` | EP-0253 | EP-0641, EP-0646 | – (`data = {"id"}`) | **neu** (DT-WH-07) |
 
 Die Upsert-Variante `put`/`put_create` des Originals (`IssueDetailAPIEndpoint.put`) ist nicht geroutet (DT-V1-02); `UpsertWorkItemCommand` existiert daher in der CE nicht, die Operationswerte `put`/`put_create` der Trigger-Tabelle in `06` bleiben ohne Auslöser (Rückmeldung an `06`, §9). Die sechs **neu**-Zeilen erweitern `WebhookTriggerMap` (`06` §3.14.2) um 6 Trigger (Rückmeldung an `06`, §9); die Integration-Events existieren bereits im Katalog `06-event-catalog.json`. Keine Webhook-Auslösung (1:1) durch Archiv-, Bulk-Archiv-, Bulk-Datums-, Intake-, Link-, Anhang-, Reaktions- und Vote-Endpunkte.
 
 ### 4.28 CE-IDs ohne eigene Endpunktzeile
 
-Von 507 CE-IDs tragen 301 mindestens eine Katalogzeile (Spalte „CE-IDs“ in §4.1–§4.25). 124 IDs sind reine Darstellungs-/Frontend-Features, deren Daten über die Endpunkte ihres Bereichs kommen (Feature-Katalog-Bereiche CE-WS-013, -014, -016…020, CE-PRJ-011…015, -017, -020, CE-LV-001…004, -007…009, -012, -013, -017…032, -034…046, CE-PAGE-013…018, -020…040, CE-SRCH-004…009, CE-I18N-001…026, CE-UIX-001…013); 5 davon tragen zusätzlich eine Katalogzeile, 119 nicht. Die übrigen 87 IDs haben keine eigene Endpunktzeile, weil sie Querschnitt, Job, Live, Gateway, Betrieb, ein reines Frontend-Element außerhalb dieser Bereiche oder durch ADR-008 entfallen sind; sie stehen mit Träger und Bezug in der folgenden Tabelle (301 + 119 + 87 = 507). `CeCoverageTests` (`tests/Plane.AppHost.Tests/Catalog/`) prüft diese Summe gegen `features/_data/ce-features.json`.
+Von 507 CE-IDs tragen 301 mindestens eine Katalogzeile (Spalte „CE-IDs“ in §4.1–§4.25). 124 IDs sind reine Darstellungs-/Frontend-Features, deren Daten über die Endpunkte ihres Bereichs kommen (Feature-Katalog-Bereiche CE-WS-013, -014, -016…020, CE-PRJ-011…015, -017, -020, CE-LV-001…004, -007…009, -012, -013, -017…032, -034…046, CE-PAGE-013…018, -020…040, CE-SRCH-004…009, CE-I18N-001…026, CE-UIX-001…013); 5 davon tragen zusätzlich eine Katalogzeile, 119 nicht. Die übrigen 87 IDs haben keine eigene Endpunktzeile, weil sie Querschnitt, Job, Live, Gateway, Betrieb, ein reines Frontend-Element außerhalb dieser Bereiche oder durch ADR-008 entfallen sind; sie stehen mit Träger und Bezug in der folgenden Tabelle (301 + 119 + 87 = 507). `CeCoverageTests` (`tests/Funk.AppHost.Tests/Catalog/`) prüft diese Summe gegen `features/_data/ce-features.json`.
 
 | CE-ID | Name | Träger | Bezug |
 |---|---|---|---|
@@ -1777,7 +1777,7 @@ Von 507 CE-IDs tragen 301 mindestens eine Katalogzeile (Spalte „CE-IDs“ in �
 | `DEV-API-62` | DT-WH-01 | `created`-Events, deren Task vor dem Commit läuft, werden still verworfen (`ObjectDoesNotExist`) |
 | `DEV-API-63` | DT-WS-09 | Reservierte Workspace-Slugs zwischen Backend und Frontend uneinheitlich; `login`/`register` fehlen |
 | `DEV-API-64` | DT-WH-07 | Webhooks für Löschen von Work Items/Cycles/Modulen/Kommentaren und für Cycle-/Modul-Zuordnungen, die die Original-UI verspricht, aber das Original-Backend nie auslöst (Review) |
-| `DEV-API-65` | DT-INST-07 | God-Mode-Secrets standardmäßig maskiert (`********`), Klartext nur mit `Plane:Security:MaskInstanceSecrets=false` (Review) |
+| `DEV-API-65` | DT-INST-07 | God-Mode-Secrets standardmäßig maskiert (`********`), Klartext nur mit `Funk:Security:MaskInstanceSecrets=false` (Review) |
 
 ---
 
@@ -1785,10 +1785,10 @@ Von 507 CE-IDs tragen 301 mindestens eine Katalogzeile (Spalte „CE-IDs“ in �
 
 Die Skelette ergänzen `02` §5 (Modul-Schablone, `LabelEndpoints`) um die in diesem Dokument festgelegten Bausteine. Namen sind verbindlich, Implementierungsdetails (Methodenrümpfe) Beispiel.
 
-### 5.1 Endpunkt-Metadaten – `src/building-blocks/Plane.BuildingBlocks.Web/Endpoints/CatalogMetadata.cs`
+### 5.1 Endpunkt-Metadaten – `src/building-blocks/Funk.BuildingBlocks.Web/Endpoints/CatalogMetadata.cs`
 
 ```csharp
-namespace Plane.BuildingBlocks.Web.Endpoints;
+namespace Funk.BuildingBlocks.Web.Endpoints;
 
 public enum PaginationMode { None, Cursor, CursorGrouped, WhenRequested, Required, Global }
 
@@ -1800,7 +1800,7 @@ public sealed record CacheControlMetadata(string Value);
 
 public static class CatalogEndpointConventions
 {
-    // D04-ADR-05: Original-ID im Format <Dok>:<ID>; Analyzer PLANE0005 erzwingt das Format (Regex ^(A0[3-9]|A1[0-2]|neu):.+$)
+    // D04-ADR-05: Original-ID im Format <Dok>:<ID>; Analyzer FUNK0005 erzwingt das Format (Regex ^(A0[3-9]|A1[0-2]|neu):.+$)
     public static TBuilder WithOriginalContract<TBuilder>(this TBuilder b, string originalId) where TBuilder : IEndpointConventionBuilder
         => b.WithMetadata(new OriginalContractMetadata(originalId));
 
@@ -1822,12 +1822,12 @@ public static class CatalogEndpointConventions
 }
 ```
 
-### 5.2 App-Endpunkt mit Katalog-Metadaten – `src/modules/WorkItems/Plane.WorkItems/Endpoints/App/WorkItemEndpoints.cs` (Auszug)
+### 5.2 App-Endpunkt mit Katalog-Metadaten – `src/modules/WorkItems/Funk.WorkItems/Endpoints/App/WorkItemEndpoints.cs` (Auszug)
 
 ```csharp
 internal static class WorkItemEndpoints
 {
-    public static void Map(PlaneEndpointRouteBuilder e)
+    public static void Map(FunkEndpointRouteBuilder e)
     {
         var p = e.App("workspaces/{slug}/projects/{project_id:guid}").WithTags("Work Items");
 
@@ -1862,29 +1862,29 @@ internal static class WorkItemEndpoints
 }
 ```
 
-Die Original-ID `A04:I8` für `PATCH {P}/issues/{pk}/` und alle übrigen IDs stehen in §4; der Analyzer `PLANE0006` (Erweiterung von `02` §3.17) meldet Routen ohne `WithName("EP-…")`/`WithOriginalContract`.
+Die Original-ID `A04:I8` für `PATCH {P}/issues/{pk}/` und alle übrigen IDs stehen in §4; der Analyzer `FUNK0006` (Erweiterung von `02` §3.17) meldet Routen ohne `WithName("EP-…")`/`WithOriginalContract`.
 
 ### 5.3 v1-Adapter mit Contract-Command (D04-ADR-04)
 
 ```csharp
-// src/modules/Projects/Plane.Projects.Contracts/Commands/CreateLabelCommand.cs  – öffentlich, nur BCL-/Contracts-Typen (R2)
+// src/modules/Projects/Funk.Projects.Contracts/Commands/CreateLabelCommand.cs  – öffentlich, nur BCL-/Contracts-Typen (R2)
 public sealed record CreateLabelCommand(ProjectRef Project, CreateLabelInput Input, Origin Origin)
     : ICommand<Result<LabelDto>>;
 public sealed record CreateLabelInput(string Name, string? Color, Guid? Parent, string? Description,
                                       double? SortOrder, string? ExternalId, string? ExternalSource);
 
-// src/modules/Projects/Plane.Projects.Contracts/Queries/FindLabelByExternalIdQuery.cs
+// src/modules/Projects/Funk.Projects.Contracts/Queries/FindLabelByExternalIdQuery.cs
 public sealed record FindLabelByExternalIdQuery(ProjectRef Project, string ExternalId, string ExternalSource)
     : IQuery<Guid?>;
 
-// src/modules/Projects/Plane.Projects/Labels/CreateLabelHandler.cs – Handler bleibt internal (R6)
+// src/modules/Projects/Funk.Projects/Labels/CreateLabelHandler.cs – Handler bleibt internal (R6)
 internal sealed class CreateLabelHandler(ProjectsDbContext db, IUniqueViolationMap map)
     : ICommandHandler<CreateLabelCommand, Result<LabelDto>> { /* App- und v1-Logik identisch */ }
 
-// src/modules/PublicApi/Plane.PublicApi/Endpoints/V1/V1LabelEndpoints.cs
+// src/modules/PublicApi/Funk.PublicApi/Endpoints/V1/V1LabelEndpoints.cs
 internal static class V1LabelEndpoints
 {
-    public static void Map(PlaneEndpointRouteBuilder e)
+    public static void Map(FunkEndpointRouteBuilder e)
     {
         var g = e.V1("workspaces/{slug}/projects/{project_id:guid}/labels").WithTags("Labels");
         g.MapPost("", Create).WithName("EP-0569").WithOriginalContract("A05:V-LBL-02")
@@ -1897,7 +1897,7 @@ internal static class V1LabelEndpoints
         // v1-Vorprüfung per Query (A05 V-LBL-02): Duplikat external_id/external_source → 409 mit id
         if (body.ExternalId is { Length: > 0 } && body.ExternalSource is { Length: > 0 }
             && await sender.Send(new FindLabelByExternalIdQuery(scope.Project, body.ExternalId, body.ExternalSource), ct) is { } existing)
-            return PlaneErrors.PlainWith(409, V1ErrorTexts.LabelExternalIdExists, new Dictionary<string, object?> { ["id"] = existing })
+            return FunkErrors.PlainWith(409, V1ErrorTexts.LabelExternalIdExists, new Dictionary<string, object?> { ["id"] = existing })
                               .ToResult();
 
         var result = await sender.Send(new CreateLabelCommand(scope.Project, V1LabelMapper.ToInput(body), Origin.V1), ct);
@@ -1907,12 +1907,12 @@ internal static class V1LabelEndpoints
 }
 ```
 
-EP-Nummer und Original-ID entsprechen §4.19 (EP-0569 = `POST {V1P}/labels/`, `A05:V-LBL-02`). Prüfpunkt Spike S0: Der Mediator-Source-Generator (Abschnitt `02` §3.6) erzeugt Dispatch-Code für `CreateLabelCommand` aus `Plane.Projects.Contracts`, obwohl der Handler `internal` in `Plane.Projects` liegt (Generator läuft im Host-Projekt, das beide referenziert; Sichtbarkeit über `InternalsVisibleTo("Plane.Api")` laut `02`). Fällt S0 negativ aus, gilt die Rückfalloption aus §8 (R-D04-01).
+EP-Nummer und Original-ID entsprechen §4.19 (EP-0569 = `POST {V1P}/labels/`, `A05:V-LBL-02`). Prüfpunkt Spike S0: Der Mediator-Source-Generator (Abschnitt `02` §3.6) erzeugt Dispatch-Code für `CreateLabelCommand` aus `Funk.Projects.Contracts`, obwohl der Handler `internal` in `Funk.Projects` liegt (Generator läuft im Host-Projekt, das beide referenziert; Sichtbarkeit über `InternalsVisibleTo("Funk.Api")` laut `02`). Fällt S0 negativ aus, gilt die Rückfalloption aus §8 (R-D04-01).
 
-### 5.4 Route-Inventar-Test – `tests/Plane.AppHost.Tests/Routing/RouteInventoryTests.cs`
+### 5.4 Route-Inventar-Test – `tests/Funk.AppHost.Tests/Routing/RouteInventoryTests.cs`
 
 ```csharp
-public sealed class RouteInventoryTests(PlaneApiFactory factory) : IClassFixture<PlaneApiFactory>
+public sealed class RouteInventoryTests(FunkApiFactory factory) : IClassFixture<FunkApiFactory>
 {
     static readonly Catalog Catalog = Catalog.Load("docs/plan/architecture/_data/endpoints.json");   // Spiegel von migration/…
 
@@ -1948,9 +1948,9 @@ public sealed class RouteInventoryTests(PlaneApiFactory factory) : IClassFixture
 }
 ```
 
-`Plane.Realtime` hat einen gleichartigen `RealtimeRouteInventoryTests` (Oberfläche Live). `CatalogRow.SamplePath()` setzt Seed-IDs aus `tests/seed/parity-seed.yaml` in die Platzhalter ein.
+`Funk.Realtime` hat einen gleichartigen `RealtimeRouteInventoryTests` (Oberfläche Live). `CatalogRow.SamplePath()` setzt Seed-IDs aus `tests/seed/parity-seed.yaml` in die Platzhalter ein.
 
-### 5.5 OpenAPI-Registrierung – `src/modules/PublicApi/Plane.PublicApi/OpenApi/OpenApiRegistration.cs`
+### 5.5 OpenAPI-Registrierung – `src/modules/PublicApi/Funk.PublicApi/OpenApi/OpenApiRegistration.cs`
 
 ```csharp
 public static class OpenApiRegistration
@@ -1974,10 +1974,10 @@ public static class OpenApiRegistration
     }
 }
 
-// src/modules/PublicApi/Plane.PublicApi/Endpoints/OpenApi/OpenApiEndpoints.cs – EP-0711…0713, EP-0732
+// src/modules/PublicApi/Funk.PublicApi/Endpoints/OpenApi/OpenApiEndpoints.cs – EP-0711…0713, EP-0732
 internal static class OpenApiEndpoints
 {
-    public static void Map(PlaneEndpointRouteBuilder e, IHostEnvironment env, IOptions<PlaneOpenApiOptions> opt)
+    public static void Map(FunkEndpointRouteBuilder e, IHostEnvironment env, IOptions<FunkOpenApiOptions> opt)
     {
         if (opt.Value.Enabled)
         {
@@ -1998,13 +1998,13 @@ internal static class OpenApiEndpoints
 ### 5.6 Erweiterungs-Interfaces an der API-Oberfläche
 
 ```csharp
-// src/modules/WorkItems/Plane.WorkItems.Contracts/Query/IExpandProvider.cs (Signatur aus 16 §5.3, E-07)
+// src/modules/WorkItems/Funk.WorkItems.Contracts/Query/IExpandProvider.cs (Signatur aus 16 §5.3, E-07)
 public interface IExpandProvider { string Key { get; } ValueTask ExpandAsync(IReadOnlyList<Guid> ids, IDictionary<Guid, JsonObject> payloads, CancellationToken ct); }
 
-// src/modules/WorkItems/Plane.WorkItems.Contracts/Query/IExpandAllowlistContributor.cs – Pakete ergänzen erlaubte Schlüssel je EP
+// src/modules/WorkItems/Funk.WorkItems.Contracts/Query/IExpandAllowlistContributor.cs – Pakete ergänzen erlaubte Schlüssel je EP
 public interface IExpandAllowlistContributor { IEnumerable<(string EndpointName, string Key)> Contribute(); }
 
-// src/modules/WorkItems/Plane.WorkItems.Contracts/PublicApi/IV1PayloadExtension.cs (E-07) – ergänzt v1-Antworten additiv
+// src/modules/WorkItems/Funk.WorkItems.Contracts/PublicApi/IV1PayloadExtension.cs (E-07) – ergänzt v1-Antworten additiv
 public enum V1Resource { Project, State, Label, WorkItem, WorkItemComment, WorkItemLink, WorkItemActivity, Cycle, Module, Intake, Member }
 public interface IV1PayloadExtension
 {
@@ -2012,11 +2012,11 @@ public interface IV1PayloadExtension
     ValueTask ExtendAsync(IReadOnlyList<Guid> ids, IDictionary<Guid, JsonObject> payloads, CancellationToken ct);  // nur neue Felder
 }
 
-// src/modules/WorkItems/Plane.WorkItems.Contracts/Query/IV1FilterParameterBinding.cs (16 §5.5, E-19) – CE: keine Implementierung
+// src/modules/WorkItems/Funk.WorkItems.Contracts/Query/IV1FilterParameterBinding.cs (16 §5.5, E-19) – CE: keine Implementierung
 public interface IV1FilterParameterBinding { string QueryParameter { get; } string ParserName { get; } }
 ```
 
-Regel für alle Erweiterungs-Interfaces: Die CE registriert für `IV1PayloadExtension` und `IV1FilterParameterBinding` **keine** Implementierung (Antworten 1:1 Original); `ExtensionNoopTests` (`tests/Plane.PublicApi.Tests/`) prüft, dass v1-Goldens ohne Paket unverändert bleiben (`16` AK-16-xx).
+Regel für alle Erweiterungs-Interfaces: Die CE registriert für `IV1PayloadExtension` und `IV1FilterParameterBinding` **keine** Implementierung (Antworten 1:1 Original); `ExtensionNoopTests` (`tests/Funk.PublicApi.Tests/`) prüft, dass v1-Goldens ohne Paket unverändert bleiben (`16` AK-16-xx).
 
 ### 5.7 Parity-Szenario und Abweichungseintrag
 
@@ -2064,7 +2064,7 @@ Der Erfolgsstatus 200 von `POST {P}/invitations/` (EP-0196, Spalte „Status Ori
 
 ```ts
 import type { paths } from '../generated/internal';
-import type { IIssueLabel } from '@plane/types';            // Pfad-Alias auf frontend/libs/shared/types
+import type { IIssueLabel } from '@funk/types';            // Pfad-Alias auf frontend/libs/shared/types
 import type { AssertAssignable, ResponseOf, RequestOf } from '../lib/assert';
 
 // EP-0178 GET {P}/issue-labels/
@@ -2092,7 +2092,7 @@ Kein Fachdesign; nur die **API-seitigen** Andockstellen der strukturell relevant
 | **A17** Workspace-Governance States/Labels | CE registriert `GET {W}/states/` und `GET {W}/labels/` nur lesend; schreibende Methoden unter diesen Pfaden sind reserviert (ergeben in der CE 405) | Lese-Zeilen in §4.3/§4.4 | Lese-Antworten |
 | **B1** Teamspaces | Query-Parameter `teamspace_id` an Views/Pages/Favoriten wird in der CE **ignoriert** (nicht abgelehnt), damit Paket-Frontends ohne Versionsweiche aufrufen können; Scope-Auflösung über `IScopeAncestorContributor`; Route `{W}/teamspaces/` | Views §4.6, Pages §4.10, Favoriten §4.3 | Antworten ohne `teamspace_id` |
 | **B6** Erweiterte Filter, PQL | App: Rich-Filter-Parser-Registry (`IFilterParser`), neue Operatoren additiv; V1: `IV1FilterParameterBinding` hebt die Original-400 für `pql`/`filters` auf (`16` §5.5); Routen `{W}/pql/`, `{W}/advanced-search/` | EP-0260, EP-0298, EP-0324, EP-0352 (Rich-Filter), EP-0648/EP-0653 (v1) | Fehlercodes der Rich-Filter-Validierung |
-| **C1** Workflows | alle State-Wechsel aller Endpunkte (App, V1, Intake, Cycle-Transfer, Bulk) laufen über `IWorkItemStateChanger`; ein `IStateTransitionGuard` liefert Ablehnungen als `PlaneErrors.Coded` mit neuem Code im reservierten Bereich; Route `{P}/workflows/` | EP-0267, EP-0255, EP-0651/EP-0656, Intake-Statuswechsel §4.9, Cycle-Transfer §4.7 | CE-Statuswechsel ohne Guard |
+| **C1** Workflows | alle State-Wechsel aller Endpunkte (App, V1, Intake, Cycle-Transfer, Bulk) laufen über `IWorkItemStateChanger`; ein `IStateTransitionGuard` liefert Ablehnungen als `FunkErrors.Coded` mit neuem Code im reservierten Bereich; Route `{P}/workflows/` | EP-0267, EP-0255, EP-0651/EP-0656, Intake-Statuswechsel §4.9, Cycle-Transfer §4.7 | CE-Statuswechsel ohne Guard |
 | **C3** Automation-Engine | konsumiert Integration-Events (`16` §3.2.4); API-seitig nur Routen `{W}/automations/`, `{P}/automations/`; automatisch ausgelöste Änderungen tragen `Origin.Automation` (Activity, Webhook-`actor`) | – | Webhook-Payloads der CE-Ereignisse |
 | **D1** Wiki & Collections | Page-DTOs enthalten `workspace`-Bezug wie Original; Workspace-Pages-Routen `{W}/pages/`, `{W}/wiki/`, `{W}/collections/` reserviert; Page-Zugriff über `PageAccessRule` (`05`) | Pages §4.10 | Projekt-Page-Verträge |
 | **D2** Nested Pages | Feld `parent_id` an Page-DTOs bleibt wie Original (CE setzt es, DT-PAGE-07 validiert es); Route `…/pages/{page_id}/move/` reserviert | EP-0395 ff. (§4.10) | – |
@@ -2101,7 +2101,7 @@ Kein Fachdesign; nur die **API-seitigen** Andockstellen der strukturell relevant
 | **F1** Integrations-Framework | Oberfläche `Integrations` und Route EP-0729 ab I0 (ohne Provider 404 `{"error": "Page not found."}`), `IWebhookIngress`/`IWebhookSignatureVerifier`, Rate-Limit `integration_webhook`, Inbox-Idempotenz; Work-Item-Detail-Feld für externe Links über `IIntegrationLinkProvider` (CE `[]`, nicht im CE-DTO) | EP-0729 | – |
 | **F2** Forgejo | Provider `forgejo` auf EP-0729 (`/api/integrations/forgejo/webhooks/{connection_id}/`), Verwaltungsrouten `{W}/integrations/forgejo/…` | EP-0729 | – |
 | **G1** AI-Basis | CE-Endpunkte EP-0726/EP-0727 (`ai-assistant`) bleiben Original-Vertrag; Such-Provider-Austausch über `ISearchProvider` ohne Vertragsänderung an EP-0509/EP-0508/EP-0272/EP-0671/EP-0672; Route `{W}/ai/` reserviert | §4.17, §4.22 | Antwortformen der Suche |
-| **H1** OAuth-App-Plattform | Bearer-Schema an V1 (`Plane:Auth:Bearer:Enabled`), `Permission.ApiScope` je V1-Zeile ergänzbar (Spalte Permission), Security-Schema `OAuth2` im `v1`-OpenAPI-Dokument additiv; Routen `{W}/apps/`, `/api/users/me/app-authorizations/`, `/api/marketplace/` | alle V1-Zeilen | API-Key-Vertrag |
+| **H1** OAuth-App-Plattform | Bearer-Schema an V1 (`Funk:Auth:Bearer:Enabled`), `Permission.ApiScope` je V1-Zeile ergänzbar (Spalte Permission), Security-Schema `OAuth2` im `v1`-OpenAPI-Dokument additiv; Routen `{W}/apps/`, `/api/users/me/app-authorizations/`, `/api/marketplace/` | alle V1-Zeilen | API-Key-Vertrag |
 | **H6** Realtime-Event-Server | EP-0414 `/live/events/` ab I0 registriert (SignalR, nur WebSockets, Gruppen-Autorisierung per `IPermissionEvaluator`); REST-Antworten bleiben unverändert (Events sind zusätzliche Kanäle, keine Ersatz-Antworten) | EP-0414 | alle REST-Verträge |
 
 **Nicht in der CE:** `Idempotency-Key`-Semantik und `/api/v2/` (H3, `16` §4), GraphQL, MCP (H4). Die CE-Pipeline ignoriert `Idempotency-Key` (D04-ADR-11); H3 aktiviert ihn nur auf der eigenen Oberfläche `V2`.
@@ -2112,26 +2112,26 @@ Kein Fachdesign; nur die **API-seitigen** Andockstellen der strukturell relevant
 
 | ID | Kriterium (messbar) | Test (Projekt / Klasse) | Ink. |
 |---|---|---|---|
-| AK-D04-01 | Jede Zeile von `endpoints.json` mit `registered = true` und `increment ≤ CURRENT_INCREMENT` existiert als Route mit Methode, Route-Template und Name `EP-nnnn`; keine Route ohne Katalogzeile (0 Abweichungen) | `tests/Plane.AppHost.Tests/Routing/RouteInventoryTests.Every_registered_row_exists_and_no_route_is_uncatalogued`; `tests/Plane.Realtime.Tests/Routing/RealtimeRouteInventoryTests` | I0 ff. |
+| AK-D04-01 | Jede Zeile von `endpoints.json` mit `registered = true` und `increment ≤ CURRENT_INCREMENT` existiert als Route mit Methode, Route-Template und Name `EP-nnnn`; keine Route ohne Katalogzeile (0 Abweichungen) | `tests/Funk.AppHost.Tests/Routing/RouteInventoryTests.Every_registered_row_exists_and_no_route_is_uncatalogued`; `tests/Funk.Realtime.Tests/Routing/RealtimeRouteInventoryTests` | I0 ff. |
 | AK-D04-02 | Jede Zeile mit `registered = false` liefert `target_status` (404/405) mit exakt dem Körper aus §3.5; die 85 Nebenprodukte aus §4.25 eingeschlossen | `RouteInventoryTests.Unregistered_row_answers_404_or_405` | I0 ff. |
 | AK-D04-03 | Metadaten je Route (Permission-Key, Pagination-Modus + Default, `UseReadReplica` bei den 79 Read-Replica-Zeilen, Rate-Limit-Policy, `Cache-Control` an den 6 Zeilen aus §3.4 (Feld `cache_control`), `WithOriginalContract`) stimmen mit `endpoints.json` überein | `RouteInventoryTests.Metadata_matches_catalog` | I0 ff. |
-| AK-D04-04 | Parity-Harness: 100 % der registrierten Zeilen bis `CURRENT_INCREMENT` haben ≥ 1 Szenario; Replay ohne nicht genehmigte Abweichung | `Plane.Tools.ParityHarness coverage --fail-under 100` (ab I7 Gate; davor Report), `replay` je Modul | I0 (5 EP), I1–I7 |
-| AK-D04-05 | Jede DT-Zeile mit Abweichungs-ID und Vertragswirkung hat ≥ 1 `deviations.yaml`-Eintrag mit `decision: "04#<DT-ID>"`; kein Eintrag ohne DT-Zeile oder ADR | `DeviationCatalogTests` (`tests/Plane.Tools.ParityHarness.Tests/`) gegen `_data/04-decisions.json` | I0 ff. |
+| AK-D04-04 | Parity-Harness: 100 % der registrierten Zeilen bis `CURRENT_INCREMENT` haben ≥ 1 Szenario; Replay ohne nicht genehmigte Abweichung | `Funk.Tools.ParityHarness coverage --fail-under 100` (ab I7 Gate; davor Report), `replay` je Modul | I0 (5 EP), I1–I7 |
+| AK-D04-05 | Jede DT-Zeile mit Abweichungs-ID und Vertragswirkung hat ≥ 1 `deviations.yaml`-Eintrag mit `decision: "04#<DT-ID>"`; kein Eintrag ohne DT-Zeile oder ADR | `DeviationCatalogTests` (`tests/Funk.Tools.ParityHarness.Tests/`) gegen `_data/04-decisions.json` | I0 ff. |
 | AK-D04-06 | Jede DT-Zeile der Kategorie S hat einen Test, der den Angriffsfall (fremder Workspace/Projekt, Gast, anonym) mit dem Ziel-Status prüft (Testname in Spalte „Test“) | Tests laut DT-Tabelle; `SecurityRegressionSuite` (Trait `Category=Security`) | je Ink. der DT-Zeile |
-| AK-D04-07 | Fehlertexte: jeder Text aus `documented_bodies` registrierter Zeilen existiert als Konstante in `<M>ErrorTexts` (Ausnahmen nur über `replaced-texts.txt` mit DT-Verweis); kein String-Literal in `PlaneErrors.*`-Aufrufen | `ErrorTextCatalogTests` je Modul; Analyzer `PLANE0004` | I1 ff. |
-| AK-D04-08 | Pagination: alle Zeilen mit `pagination ≠ null` liefern das Envelope gemäß Modus; `cursor-when-requested` liefert ohne beide Parameter ein Array; `cursor-required` liefert ohne beide Parameter 400; `global` mit `cursor=0:0:0` → 400 `{"detail": "Invalid cursor parameter."}` (DT-GEN-11) | `PaginationModeTests` (`tests/Plane.BuildingBlocks.Tests/Pagination/`) + Szenarien | I1/I2 |
+| AK-D04-07 | Fehlertexte: jeder Text aus `documented_bodies` registrierter Zeilen existiert als Konstante in `<M>ErrorTexts` (Ausnahmen nur über `replaced-texts.txt` mit DT-Verweis); kein String-Literal in `FunkErrors.*`-Aufrufen | `ErrorTextCatalogTests` je Modul; Analyzer `FUNK0004` | I1 ff. |
+| AK-D04-08 | Pagination: alle Zeilen mit `pagination ≠ null` liefern das Envelope gemäß Modus; `cursor-when-requested` liefert ohne beide Parameter ein Array; `cursor-required` liefert ohne beide Parameter 400; `global` mit `cursor=0:0:0` → 400 `{"detail": "Invalid cursor parameter."}` (DT-GEN-11) | `PaginationModeTests` (`tests/Funk.BuildingBlocks.Tests/Pagination/`) + Szenarien | I1/I2 |
 | AK-D04-09 | `expand`: nur die Werte aus §3.9 wirken; unbekannte Werte werden ignoriert; v1-`fields` reduziert Felder an den 25 Zeilen aus §3.9 und wirkt an keiner anderen v1-Zeile | `ExpandAllowlistTests`, `V1FieldSelectionTests` | I2/I6 |
 | AK-D04-10 | Rate-Limits je Zeile = Feld `rate_limit` in `endpoints.json`: `anon` 30/min (nur anonym), `authentication` 10/min genau an EP-0017, EP-0018, EP-0079 (11. Request derselben IP innerhalb 60 s → bei EP-0017/EP-0018 302 mit `error_code=5900`, bei EP-0079 429), kein Limit an EP-0002, EP-0023, EP-0040, EP-0083, `api_key` 60/min an allen V1-Zeilen mit `X-RateLimit-Remaining`/`X-RateLimit-Reset`, `asset_duplicate` 5/min je `asset_id` an EP-0430, `integration_webhook` 600/min je `connection_id` an EP-0729; 429-Körper coded 5900 + `Retry-After` | `RateLimitTests` (`02` AK-15) mit Katalog-Datenquelle | I0/I1/I6 |
-| AK-D04-11 | API-Keys: Header-Name case-insensitiv; ohne Header 401, ungültig 403 `{"detail": "Given API token is not valid"}`; Token nur in der Anlage-Antwort; `token_hash` gespeichert, kein Klartext in DB (Prüfung per SQL auf `api_tokens`) | `ApiKeyAuthenticationTests` (`tests/Plane.Identity.Tests/`) | I6 (Schema I0) |
-| AK-D04-12 | OpenAPI `v1`: (Pfad, Methode)-Menge = Original-Golden minus DT-V1-01/-02/-03; `operationId`, Tags (14) und Parameternamen gleich; `info.title` = „The funk. REST API“; Build-Artefakt ohne Drift | `OpenApiDocumentTests` (`tests/Plane.PublicApi.Tests/OpenApi/`), CI-Schritt `git diff --exit-code src/hosts/Plane.Api/openapi/` | I6 (internal: I0) |
+| AK-D04-11 | API-Keys: Header-Name case-insensitiv; ohne Header 401, ungültig 403 `{"detail": "Given API token is not valid"}`; Token nur in der Anlage-Antwort; `token_hash` gespeichert, kein Klartext in DB (Prüfung per SQL auf `api_tokens`) | `ApiKeyAuthenticationTests` (`tests/Funk.Identity.Tests/`) | I6 (Schema I0) |
+| AK-D04-12 | OpenAPI `v1`: (Pfad, Methode)-Menge = Original-Golden minus DT-V1-01/-02/-03; `operationId`, Tags (14) und Parameternamen gleich; `info.title` = „The funk. REST API“; Build-Artefakt ohne Drift | `OpenApiDocumentTests` (`tests/Funk.PublicApi.Tests/OpenApi/`), CI-Schritt `git diff --exit-code src/hosts/Funk.Api/openapi/` | I6 (internal: I0) |
 | AK-D04-13 | TS-Verträge: `contract-check` erzeugt Typen aus beiden Dokumenten, alle `*.check.ts` kompilieren; jeder Frontend-Aufruf aus `generated/frontend-calls.json` trifft eine registrierte Zeile oder steht in §4.26 | `pnpm --filter contract-check test` (CI-Job `frontend`) | I0 ff. |
-| AK-D04-14 | Webhook-Ausgang: je Ereignis aus §4.27 (11 Original-Ereignisse + 6 **neu**-Zeilen aus DT-WH-07) löst jeder genannte App- und V1-Endpunkt genau die dort genannte Zustellung aus (`deleted` mit `data = {"id"}`); nicht genannte Endpunkte lösen keine aus; Header/Body/Signatur wie §3.17 | `WebhookContractTests` (`tests/Plane.Webhooks.Tests/Contract/`), `WebhookTriggerCoverageTests` | I6 |
+| AK-D04-14 | Webhook-Ausgang: je Ereignis aus §4.27 (11 Original-Ereignisse + 6 **neu**-Zeilen aus DT-WH-07) löst jeder genannte App- und V1-Endpunkt genau die dort genannte Zustellung aus (`deleted` mit `data = {"id"}`); nicht genannte Endpunkte lösen keine aus; Header/Body/Signatur wie §3.17 | `WebhookContractTests` (`tests/Funk.Webhooks.Tests/Contract/`), `WebhookTriggerCoverageTests` | I6 |
 | AK-D04-15 | Branding: kein `\bPlane\b` in `openapi/v1.json`, `*ErrorTexts.cs` und Mail-Betreffs außer Protokollbezeichnern (§3.20) | `BrandingTests.ApiTexts` | I0 ff. |
-| AK-D04-16 | CE-Abdeckung: 301 + 119 + 87 = 507 (§4.28); jede CE-ID aus `ce-features.json` ist einer Katalogzeile, der Frontend-Bereichsliste oder einer Zeile in §4.28 zugeordnet | `CeCoverageTests` (`tests/Plane.AppHost.Tests/Catalog/`) | I0 |
+| AK-D04-16 | CE-Abdeckung: 301 + 119 + 87 = 507 (§4.28); jede CE-ID aus `ce-features.json` ist einer Katalogzeile, der Frontend-Bereichsliste oder einer Zeile in §4.28 zugeordnet | `CeCoverageTests` (`tests/Funk.AppHost.Tests/Catalog/`) | I0 |
 | AK-D04-17 | Reservierte Präfixe (`16` §3.2.2) enthalten keine CE-Route; Requests dorthin → 404 | `RouteReservationTests` (`16`) mit `endpoints.json` als zweiter Quelle | I0 |
 | AK-D04-18 | Tote Frontend-Aufrufe (§4.26, außer `active-cycles`) liefern 404 `{"error": "Page not found."}` | `DeadFrontendCallsTests` | I1–I6 |
 
-**Testprojekte (neu oder ergänzt durch dieses Dokument):** `tests/Plane.AppHost.Tests` (Ordner `Routing/`, `Catalog/`), `tests/Plane.Realtime.Tests/Routing/`, `tests/Plane.PublicApi.Tests` (`OpenApi/`, `V1/`), `tests/Plane.Webhooks.Tests/Contract/`, `tests/Plane.<M>.Tests/Errors/` je Modul, `tests/Plane.Tools.ParityHarness.Tests/`, `frontend/tools/contract-check/` (Vitest + `tsc`). Testdaten: `tests/contracts/scenarios/**`, `tests/contracts/deviations.yaml`, `tests/contracts/openapi/v1.original.json`, `tests/contracts/reserved-slugs.json`.
+**Testprojekte (neu oder ergänzt durch dieses Dokument):** `tests/Funk.AppHost.Tests` (Ordner `Routing/`, `Catalog/`), `tests/Funk.Realtime.Tests/Routing/`, `tests/Funk.PublicApi.Tests` (`OpenApi/`, `V1/`), `tests/Funk.Webhooks.Tests/Contract/`, `tests/Plane.<M>.Tests/Errors/` je Modul, `tests/Funk.Tools.ParityHarness.Tests/`, `frontend/tools/contract-check/` (Vitest + `tsc`). Testdaten: `tests/contracts/scenarios/**`, `tests/contracts/deviations.yaml`, `tests/contracts/openapi/v1.original.json`, `tests/contracts/reserved-slugs.json`.
 
 ---
 
@@ -2156,8 +2156,8 @@ Kein Fachdesign; nur die **API-seitigen** Andockstellen der strukturell relevant
 | ID | Frage | Empfehlung | Entscheider | bis |
 |---|---|---|---|---|
 | O-D04-01 | Ergebnis Spike S0 zum Contract-Command-Dispatch (R-D04-01) | Variante Contract-Commands; Rückfall `<M>CommandDispatch` | Architektur | Ende S0 |
-| O-D04-02 | Umbenennung der Protokollbezeichner `X-Plane-*`, `plane_api_`, `plane_wh_` im Zuge von ADR-009B | **nicht** umbenennen (Bestandsintegrationen); bis zur Entscheidung gilt 17 BR-02 Nr. 4 | Auftraggeber (17 Z-110) | vor I6 |
-| O-D04-03 | Soll `GET /api/schema/` ohne `Plane:OpenApi:Enabled` 404 liefern (Original-Default) oder in `funk.` standardmäßig an sein | Original-Default (aus) beibehalten | Auftraggeber | vor I6 |
+| O-D04-02 | Umbenennung der Protokollbezeichner `X-Funk-*`, `funk_api_`, `funk_wh_` im Zuge von ADR-009B | **nicht** umbenennen (Bestandsintegrationen); bis zur Entscheidung gilt 17 BR-02 Nr. 4 | Auftraggeber (17 Z-110) | vor I6 |
+| O-D04-03 | Soll `GET /api/schema/` ohne `Funk:OpenApi:Enabled` 404 liefern (Original-Default) oder in `funk.` standardmäßig an sein | Original-Default (aus) beibehalten | Auftraggeber | vor I6 |
 | O-D04-04 | Gruppensummen-Quirk `DEV-GRP-001` (0→1) korrigieren (Z-12) | korrigieren (Empfehlung an `02` O-D02-04) | Auftraggeber über `02` | vor I2 |
 | O-D04-05 | Status nach Reparatur von `POST {P}/invitations/` (200 wie Workspace-Pendant oder 201) | 200 (Frontend erwartet keine 201-Unterscheidung) | Architektur | vor I1 |
 | O-D04-06 | Ziel-Goldens für im Original fehlschlagende Routen (Mechanik im Harness) | `golden_source: target` als Szenario-Feld (`15`) | Test-Architektur | vor I1 |
@@ -2171,10 +2171,10 @@ Kein Fachdesign; nur die **API-seitigen** Andockstellen der strukturell relevant
 
 | Dokument | Richtung | was dieses Dokument nutzt | was dieses Dokument liefert / Rückmeldung |
 |---|---|---|---|
-| `02-backend-solution-und-konventionen.md` | nutzt + liefert | Oberflächen, `PlaneEndpointRouteBuilder`, Pipeline, `PlaneErrors`, Paginator, Query-Engine, Rate-Limit-Policies, Analyzer | Katalog je Endpunkt; **Rückmeldungen:** (1) `.WithOriginalContract` im Format `<Dok>:<ID>` (02-Beispiel `"L1"` → `"A04:L1"`), Analyzer `PLANE0005`/`PLANE0006`; (2) `PaginationMode` um `CursorGrouped`, `Required`, `Global` ergänzen und `.WithPagination(...)`/`.WithExpand(...)`/`.WithOriginalOperationId(...)` in `Plane.BuildingBlocks.Web/Endpoints/CatalogMetadata.cs` aufnehmen (§5.1); (3) v1-Adapter über öffentliche Contract-Commands (D04-ADR-04) in die Modul-Schablone übernehmen; (4) Handler-Namen laut Katalog (z. B. `ListLabelsQuery` statt `ListProjectLabelsQuery` im 02-Beispiel); (5) `DEV-GRP-001` (0→1) korrigieren (O-D02-04); (6) Header-Schreibweise `X-API-Key` wie Original-OpenAPI (02 nennt `X-Api-Key`, funktional gleich); **Review-Nachträge:** (7) §3.3.1 Regel 4: Constraint `work_item_identifier` streichen – `issue_identifier` ohne Constraint, Parsen im Handler (Original 400 `Invalid issue identifier`, §3.1.2 Nr. 3); (8) §3.3.1 Regel 8: `GET /api/instances/` (`private, max-age=12`) ergänzen; (9) §3.13: Pfad der Policy `asset_duplicate` ist `POST /api/assets/v2/workspaces/{slug}/duplicate-assets/{asset_id}/` (EP-0430), nicht `{W}/assets/v2/duplicate/…`; (10) §3.13/§3.3.1: Auth-Default `authentication` mit den Ausnahmen aus §3.12 (Sign-out und Backchannel ohne Limit, EP-0001/EP-0019 `anon`) – Zuordnung nach `05` §3.17.6; (11) Analyzer `PLANE0004`–`PLANE0006` und Projekt `Plane.Analyzers` in die Analyzer-Liste aufnehmen; (12) §3.18: `GET /api/schema/` liefert wie drf-spectacular standardmäßig YAML (`?format=json` → JSON), nicht JSON; (13) Regel 6 präzisieren: nicht registrierte Routen antworten 405 nur bei existierendem Pfad mit anderer Methode, sonst 404 (D04-ADR-03) |
+| `02-backend-solution-und-konventionen.md` | nutzt + liefert | Oberflächen, `FunkEndpointRouteBuilder`, Pipeline, `FunkErrors`, Paginator, Query-Engine, Rate-Limit-Policies, Analyzer | Katalog je Endpunkt; **Rückmeldungen:** (1) `.WithOriginalContract` im Format `<Dok>:<ID>` (02-Beispiel `"L1"` → `"A04:L1"`), Analyzer `FUNK0005`/`FUNK0006`; (2) `PaginationMode` um `CursorGrouped`, `Required`, `Global` ergänzen und `.WithPagination(...)`/`.WithExpand(...)`/`.WithOriginalOperationId(...)` in `Funk.BuildingBlocks.Web/Endpoints/CatalogMetadata.cs` aufnehmen (§5.1); (3) v1-Adapter über öffentliche Contract-Commands (D04-ADR-04) in die Modul-Schablone übernehmen; (4) Handler-Namen laut Katalog (z. B. `ListLabelsQuery` statt `ListProjectLabelsQuery` im 02-Beispiel); (5) `DEV-GRP-001` (0→1) korrigieren (O-D02-04); (6) Header-Schreibweise `X-API-Key` wie Original-OpenAPI (02 nennt `X-Api-Key`, funktional gleich); **Review-Nachträge:** (7) §3.3.1 Regel 4: Constraint `work_item_identifier` streichen – `issue_identifier` ohne Constraint, Parsen im Handler (Original 400 `Invalid issue identifier`, §3.1.2 Nr. 3); (8) §3.3.1 Regel 8: `GET /api/instances/` (`private, max-age=12`) ergänzen; (9) §3.13: Pfad der Policy `asset_duplicate` ist `POST /api/assets/v2/workspaces/{slug}/duplicate-assets/{asset_id}/` (EP-0430), nicht `{W}/assets/v2/duplicate/…`; (10) §3.13/§3.3.1: Auth-Default `authentication` mit den Ausnahmen aus §3.12 (Sign-out und Backchannel ohne Limit, EP-0001/EP-0019 `anon`) – Zuordnung nach `05` §3.17.6; (11) Analyzer `FUNK0004`–`FUNK0006` und Projekt `Funk.Analyzers` in die Analyzer-Liste aufnehmen; (12) §3.18: `GET /api/schema/` liefert wie drf-spectacular standardmäßig YAML (`?format=json` → JSON), nicht JSON; (13) Regel 6 präzisieren: nicht registrierte Routen antworten 405 nur bei existierendem Pfad mit anderer Methode, sonst 404 (D04-ADR-03) |
 | `03-datenmodell-efcore.md` | liefert an | Tabellen-/Spaltennamen für DTO-Projektionen | `api_tokens.token_hash` + `token_prefix` (D05-ADR-16), `webhook_logs` mit JSON-Spalten (DEV-WH-002), `reserved`-Slug-Liste ist Code, keine Tabelle; Antwort auf A02a-#22: `WorkspaceProjectDeployBoardEndpoint` (DT-SPACE-01) wird nicht registriert |
 | `05-auth-sicherheit-berechtigungen.md` | nutzt + liefert | Permission-Keys und Ziel-Prüfung je Endpunkt (Anhang B), SEC-/HARM-Korrekturen, Auth-Endpunkte N-01…N-14, API-Key-Prüfung | **Rückmeldungen:** (1) Anhang B führt 8 v1-Estimate-Zeilen, die im Original nicht geroutet sind (DT-V1-01) – als „entfällt“ markieren; (2) als „entfällt“ markieren: `project.intake.create` (`A04:N2`, DT-INT-01), `project.cycle/module/view.read_favorites` (`Y12`/`M15`/`W14`, DT-GEN-15), Anhang-Detail-GET `K9` (DT-WI-10), Modul-Link-PUT `M14` (DT-GEN-01), alle Nebenprodukt-Zeilen §4.25; (3) Header-Schreibweise `X-API-Key`; **Review-Nachträge:** (4) ebenfalls als „entfällt“/„nicht registriert“ markieren: `GET /api/workspaces/` (DT-WS-01), `PUT {P}/issue-labels/{pk}/` und `PUT …/issue-links/{pk}/` (DT-GEN-01), Legacy-Asset-Routen `/api/users/file-assets/…`, `/api/workspaces/file-assets/…`, `{W}/file-assets/` (DT-AST-01), `GET /api/public/workspaces/{slug}/project-boards/` (DT-SPACE-01), v1-`PUT {V1P}/issues|work-items/{pk}/` und v1-`GET …/module-issues/{issue_id}/` (DT-V1-02); (5) SEC-58/O-D05-03: Default `MaskInstanceSecrets=true` (DT-INST-07, Regel S) statt „bewusst beibehalten“ – deckt sich mit `02` §3.15; (6) §3.17.6: `integration_webhook` ab **I0** (ABG-051), Pfad `asset_duplicate` wie 02-Nachtrag (9) – **(1), (2), (4) umgesetzt in 05 Anhang B als `registered: false` (17 ABG-146), (5) umgesetzt (ABG-143), (6) umgesetzt (ABG-144)** |
-| `06-hintergrundjobs-events-benachrichtigungen.md` | nutzt + liefert | Trigger-Tabelle Webhooks, Zustellung, Mail-Jobs, Recents/Activity | auslösende Endpunkte je Webhook-Ereignis + before-Form (§4.27, beantwortet O-D06-07); **Rückmeldungen:** (1) Mail-Job T33 (Projekt-Einladung) erhält mit der Reparatur DT-PRJ-01 einen Auslöser; (2) Operationswerte `put`/`put_create` (`UpsertWorkItemCommand`) haben in der CE keinen Auslöser (DT-V1-02); (3) **Review:** `WebhookTriggerMap` §3.14.2 um die 6 Trigger aus DT-WH-07 erweitern (`plane.work_item.deleted.v1`, `plane.cycle.deleted.v1`, `plane.module.deleted.v1`, `plane.work_item_comment.deleted.v1` → `deleted` mit `{"id"}`; `plane.work_item.cycle_changed.v1`/`module_changed.v1` → `issue`/`updated`, Feld `cycles`/`modules`), D06-ADR-15 „genau 24 Auslösestellen“ entsprechend anpassen – **umgesetzt in `06`** (17 ABG-137) |
+| `06-hintergrundjobs-events-benachrichtigungen.md` | nutzt + liefert | Trigger-Tabelle Webhooks, Zustellung, Mail-Jobs, Recents/Activity | auslösende Endpunkte je Webhook-Ereignis + before-Form (§4.27, beantwortet O-D06-07); **Rückmeldungen:** (1) Mail-Job T33 (Projekt-Einladung) erhält mit der Reparatur DT-PRJ-01 einen Auslöser; (2) Operationswerte `put`/`put_create` (`UpsertWorkItemCommand`) haben in der CE keinen Auslöser (DT-V1-02); (3) **Review:** `WebhookTriggerMap` §3.14.2 um die 6 Trigger aus DT-WH-07 erweitern (`funk.work_item.deleted.v1`, `funk.cycle.deleted.v1`, `funk.module.deleted.v1`, `funk.work_item_comment.deleted.v1` → `deleted` mit `{"id"}`; `funk.work_item.cycle_changed.v1`/`module_changed.v1` → `issue`/`updated`, Feld `cycles`/`modules`), D06-ADR-15 „genau 24 Auslösestellen“ entsprechend anpassen – **umgesetzt in `06`** (17 ABG-137) |
 | `07-realtime-kollaboration-dokumente.md` | nutzt | Live-Endpunkte, Management-Port, Page-Dokumentverhalten | Katalogzeilen §4.10–§4.12, DT-RT-01…03 |
 | `08-frontend-angular-architektur.md` | nutzt + liefert | Service-Port, `contract-check`, AK-D08-16 | **Rückmeldungen:** (1) `contract-check` erzeugt zusätzlich `generated/frontend-calls.json` und prüft gegen `endpoints.json` (§3.15); (2) FE-E4 serverseitig umgesetzt als DT-WS-09 (eine Slug-Liste, Golden `tests/contracts/reserved-slugs.json`); (3) `GET {P}/issues/{issue_id}/meta/` (Legacy-Redirect) ist EP-0263 |
 | `09-ui-paritaet-designsystem.md` | liefert an | – | Profil-/Theme-Endpunkte (§4.1), `GET /api/instances/` (EP-0077), Asset-URLs (§3.4 Nr. 4) |
@@ -2205,9 +2205,9 @@ Kein Fachdesign; nur die **API-seitigen** Andockstellen der strukturell relevant
 | RV-07 | AK-D04-03 prüft Rate-Limit-Policy und Cache-Control „gegen `endpoints.json`“, die Datei enthielt diese Felder nicht | Felder `rate_limit` und `cache_control` (mit Legende) in `endpoints.json` ergänzt |
 | RV-08 | §3.1.2 Nr. 3: Verhältnis zum Constraint `work_item_identifier` aus `02` und Aussage zu negativen Identifiern unklar | präzisiert (Split am letzten `-` in Django und ASP.NET Core identisch, Parsen im Handler, 400 wie Original); Rückmeldung an `02` |
 | RV-09 | Falscher Middleware-Name `RequestBodySizeLimitMiddleware` (02: `RequestBodyLimitMiddleware`); widersprüchliche Zeitstempel-Regel („`Z`-lose Offset-Form“ mit `Z`-Beispiel); Verweis auf „`TimezoneMiddleware`“, die es in `02` nicht gibt | Name korrigiert; Datumsregel nach `02` §3.9 (`DrfDateTimeOffsetConverter`, 0-µs-Fall); `IRequestTimeZone`/D02-ADR-21 |
-| RV-10 | Analyzer `PLANE0004`–`PLANE0006` wurden `02` §3.17 zugeschrieben (dort: Health-Endpunkte); kein Analyzer-Projekt in `01`/`02` | als neue Analyzer dieses Dokuments mit Projekt `src/building-blocks/Plane.Analyzers` festgelegt; Rückmeldung an `02` |
+| RV-10 | Analyzer `FUNK0004`–`FUNK0006` wurden `02` §3.17 zugeschrieben (dort: Health-Endpunkte); kein Analyzer-Projekt in `01`/`02` | als neue Analyzer dieses Dokuments mit Projekt `src/building-blocks/Funk.Analyzers` festgelegt; Rückmeldung an `02` |
 | RV-11 | `RouteInventoryTests`-Skelett nutzte FluentAssertions-Syntax (`.Should()`), ab v8 kommerziell und in `01` §2.3 gemieden | auf Shouldly (`ShouldBeEmpty`, `ShouldBe`) umgestellt |
-| RV-12 | §3.14.1: `IOpenApiDocumentProvider` mit „⚠ in S0 bestätigen“; Build-Zeit-Dateinamen falsch (das Werkzeug erzeugt `Plane.Api.json`/`Plane.Api_internal.json`); Start der App im Build-Prozess nicht berücksichtigt | API belegt (Microsoft Learn, .NET 10, keyed Service); Umbenennungs-Target `PlaneRenameOpenApiDocuments`; `GetDocument.Insider`-Weiche in `Program.cs`; `servers` per Transformer |
+| RV-12 | §3.14.1: `IOpenApiDocumentProvider` mit „⚠ in S0 bestätigen“; Build-Zeit-Dateinamen falsch (das Werkzeug erzeugt `Funk.Api.json`/`Funk.Api_internal.json`); Start der App im Build-Prozess nicht berücksichtigt | API belegt (Microsoft Learn, .NET 10, keyed Service); Umbenennungs-Target `FunkRenameOpenApiDocuments`; `GetDocument.Insider`-Weiche in `Program.cs`; `servers` per Transformer |
 | RV-13 | DT-V1-01 und EP-0694…EP-0701 trugen CE-API-009 („States verwalten“) für die nicht gerouteten v1-Estimates | CE-ID entfernt („kein CE-Feature“); CE-Abdeckung bleibt 301 + 119 + 87 = 507 (CE-API-009 hängt an EP-0607…EP-0611) |
 | RV-14 | `A05:V-DEAD-09/-10` und `V-RTR-02` nicht als `original_ids` referenziert; Quellenzählung 180/175 statt eindeutiger IDs | `original_ids` an EP-0702/EP-0705/EP-0709 nachgetragen; V-RTR-02 in DT-V1-03 mit 5 Prüfpfaden; Quellenzeile präzisiert |
 | RV-15 | DT-AUTH-01 führte CE-PROF-004 als „entfällt“, `05` D05-ADR-08 als „angepasst“; §1.5/§4.29 schrieben DEV-API-04 dem Dokument `05` zu (vergeben in `02` §7.3) | CE-PROF-004 als „angepasst“ ausgewiesen; ID-Herkunft korrigiert (01–03 `05` §8.2, 04 `02` §7.3, 05–65 hier) |
@@ -2226,6 +2226,6 @@ Umsetzung der verbindlichen Entscheidungen aus `17-abgleich-dokumentuebergreifen
 | ABG-ID | Thema | Umgesetzt in diesem Dokument |
 |---|---|---|
 | ABG-137 umgesetzt | Webhook-Auslöser: 24 Original-Stellen + 6 korrigierte | O-D04-09 als entschieden markiert (ABG-137, Teil-1-Entscheidung Z-12); „Verbleibend“-Absatz im Review-Protokoll und §9 Zeile `06` (Rückmeldung (3) in `06` §3.14.2 umgesetzt). DT-WH-07, §4.27, `DEV-API-64` und AK-D04-14 entsprachen der Entscheidung bereits |
-| ABG-149 umgesetzt | Betriebs-CLI | Befehlsbeispiele `plane-cli` → `funk-cli` (§4.28 CE-OPS-001 „Self-Hosting-CLI“, CE-OPS-024 `funk-cli create-dummy-data`); Projektname `Plane.Cli` bleibt |
+| ABG-149 umgesetzt | Betriebs-CLI | Befehlsbeispiele `plane-cli` → `funk-cli` (§4.28 CE-OPS-001 „Self-Hosting-CLI“, CE-OPS-024 `funk-cli create-dummy-data`); Projektname `Funk.Cli` bleibt |
 
 **Branding-Durchgang (ADR-009B, ABG-148, BR-01 … BR-14):** Das Dokument legt die nach außen sichtbaren API-Texte bereits über D04-ADR-17 und `BRAND-API-01 … -05` auf „funk.“ fest (OpenAPI-`info`, Scalar-Titel, Fehler-/Erfolgstexte, Mail-Betreffs, Default-`instance_name`); ergänzt wurden die Zielangaben in §4.28 (CE-SPACE-032 Badge „Powered by funk. Publish“, CE-INST-015 Instanz-URLs) und DT-AUTH-08 („wirkt in funk.“). Unverändert bleiben nach BR-02 Original-Verweise und Analysetitel, interne Bezeichner (`Plane.*`, `Plane:`-Schlüssel) sowie die Protokollbezeichner `X-Plane-*`, `plane_api_`, `plane_wh_`, `User-Agent: Autopilot` bis zur Entscheidung Z-110 (O-D04-02).

@@ -3,7 +3,7 @@
 > **Status:** Entwurf zur Abnahme (D14). Detailliert ADR-033, ADR-035, ADR-036, ADR-052 und §3 aus `01-zielarchitektur-und-tech-stack.md`.
 > **Rangfolge:** `00-grundsatzentscheidungen.md` (ADR-000 … ADR-009) > `01-zielarchitektur-und-tech-stack.md` (ADR-010 … ADR-052) > **dieses Dokument (D14-ADR-01 ff.)** > eigene Präferenzen. Bei Widerspruch gilt 01; die bewussten Präzisierungen gegenüber 01 sind in §2 mit „Präzisiert 01 …“ gekennzeichnet.
 > **Stand:** 23.10.2026. Angaben mit „⚠“ werden in Spike S0 (Toolchain) bzw. S7 (Keycloak) gegen Paket-Metadaten und laufende Container verifiziert und dann gepinnt.
-> **Zielrepository:** `funk.` (ADR-009). Alle Pfade für Zielcode sind **relativ zur Wurzel von `funk.`** (z. B. `src/hosts/Plane.AppHost/Program.cs`). Der Verzeichnisbaum in 01 §5.1 ist auf `funk./` angeglichen (früherer Arbeitstitel `plane-net/`, ABG-018 g). Pfade des Originals sind relativ zu `/home/user/plane` (Kürzel `API/` = `apps/api/plane/`, `DEP/` = `deployments/`, `A01` = `migration/analysis/01-gesamtarchitektur-infrastruktur.md`).
+> **Zielrepository:** `funk.` (ADR-009). Alle Pfade für Zielcode sind **relativ zur Wurzel von `funk.`** (z. B. `src/hosts/Funk.AppHost/Program.cs`). Der Verzeichnisbaum in 01 §5.1 ist auf `funk./` angeglichen (früherer Arbeitstitel `plane-net/`, ABG-018 g). Pfade des Originals sind relativ zu `/home/user/plane` (Kürzel `API/` = `apps/api/plane/`, `DEP/` = `deployments/`, `A01` = `migration/analysis/01-gesamtarchitektur-infrastruktur.md`).
 > **Zuständigkeitsgrenze zu D05/D02/D15 (nach Review verbindlich):** Den **Inhalt** des Keycloak-Realms (Clients, Client-Scopes, Mapper, Rollen, Gruppen, Flows, Testbenutzer, Platzhalternamen) und des Login-Themes legt `05-auth-sicherheit-berechtigungen.md` §3.15/§3.16 fest; D14 legt nur Container, Packaging, Anwendung (Import/Abgleich) und Betrieb fest. Options-Klassen und ihre Schlüssel definiert `02-backend-solution-und-konventionen.md` §3.15/§4.9; §4.7 dieses Dokuments ist die **Betreiber-Sicht** (vollständige Klassifikation aller Original-Variablen inkl. Compose-/Deployment-Variablen) und verwendet dieselben Zielschlüssel. Das Profil `test` folgt den Vorgaben aus `15-teststrategie-qualitaet-paritaet.md` §3.4.1.
 > **Sprache:** Fließtext Deutsch, Bezeichner Englisch.
 
@@ -18,7 +18,7 @@
    - 3.4 Forgejo (ADR-007): Container, SSO, OAuth2-App, Test-Repositories
    - 3.5 Angular-Apps: Dev-Server über Aspire.Hosting.JavaScript, Produktion als statische Assets im Gateway
    - 3.6 ServiceDefaults (OpenTelemetry, Resilience, Health, Service Discovery, Probe-Modus)
-   - 3.7 Reverse Proxy `Plane.Gateway` (Routing, Uploads, Host-Header, Limits, Header, Runtime-Config)
+   - 3.7 Reverse Proxy `Funk.Gateway` (Routing, Uploads, Host-Header, Limits, Header, Runtime-Config)
    - 3.8 TLS und Zertifikate
    - 3.9 Konfiguration, ENV-Aliasse und Secrets
    - 3.10 Container-Images
@@ -56,7 +56,7 @@ Dieses Dokument legt fest, **wie die Zielplattform gebaut, gestartet, ausgeliefe
 | Bereich | Inhalt | CE-IDs (Feature-Katalog `features/10-ce-feature-katalog.md`) | ab Inkrement |
 |---|---|---|---|
 | Aspire-AppHost | alle Ressourcen, Profile `dev`/`test`/`prodlike`, Publish-Modus, Parameter/Secrets, `WithReference`/`WaitFor`-Kette, Volumes, Health-Checks | CE-OPS-021 (lokale Entwicklung), CE-OPS-022 (Test-Stack) | I0 |
-| Keycloak-Infrastruktur | Container, Realm-Import Dev/Test bzw. Realm-Abgleich Prod (Clients `plane-web`, `plane-admin`, `plane-space`, `plane-backend`, `plane-api`, `plane-forgejo` – Inhalt D05 §3.15.3), Testbenutzer (D05 §3.15.7, D15 §3.14.2), Login-Theme-Packaging (Inhalt D05 §3.16), Pfad `/idp/` in Produktion | CE-AUTH-001/-022/-024/-025 (infrastruktureller Teil, fachlich D05), CE-INST-004/-006 (angepasst) | I0 |
+| Keycloak-Infrastruktur | Container, Realm-Import Dev/Test bzw. Realm-Abgleich Prod (Clients `funk-web`, `funk-admin`, `funk-space`, `funk-backend`, `funk-api`, `funk-forgejo` – Inhalt D05 §3.15.3), Testbenutzer (D05 §3.15.7, D15 §3.14.2), Login-Theme-Packaging (Inhalt D05 §3.16), Pfad `/idp/` in Produktion | CE-AUTH-001/-022/-024/-025 (infrastruktureller Teil, fachlich D05), CE-INST-004/-006 (angepasst) | I0 |
 | Forgejo-Infrastruktur | Container, DB, SSO über Keycloak, Bootstrap (Admin, Auth-Source), Init (OAuth2-App, Test-Org/-Repos) | – (W1-Vorleistung, ADR-007, 01 §1.4 F2 „ab I0“) | I0 |
 | ServiceDefaults | OpenTelemetry, Resilience, Health, Service Discovery, Probe-Modus | CE-OPS-008, CE-OPS-019 | I0 |
 | Gateway | Pfadregeln 1:1 zum Caddy-Proxy, Uploads, Host-Header für Presigned URLs, Body-Limit/413, Security-Header, statische Auslieferung, SPA-Fallback, Runtime-Config, `robots.txt`, Static-Rate-Limit | CE-OPS-005, CE-OPS-006, CE-OPS-007, CE-OPS-008, CE-OPS-009, CE-OPS-012 (Proxy-Route), CE-SPACE-017 (OG-Meta-Auslieferung) | I0 (Kern), I1 (Uploads), I6 (OG-Meta) |
@@ -89,8 +89,8 @@ Dieses Dokument legt fest, **wie die Zielplattform gebaut, gestartet, ausgeliefe
 | RabbitMQ (`plane-mq`), `AMQP_URL`, `RABBITMQ_*` | ADR-020 (PostgreSQL-Queue) | – (Variablen werden mit Warnung ignoriert) |
 | MinIO/silo (`plane-minio`) als Pflichtdienst | 01 §2.3 (MinIO-Distribution eingeschränkt) | SeaweedFS (Dev/Test, optional Prod), Betreiber-S3, Dateisystem |
 | Telemetrie-Push an `telemetry.plane.so`, GitHub-Release-Check, Changelog-iframe-Default | ADR-004 | lokale Versionsanzeige; OTLP nur an Betreiber-Collector |
-| Caddy als Pflicht-Proxy, Caddy-Container in web/admin, Node-SSR für space | ADR-002, ADR-033 | `Plane.Gateway` (YARP) |
-| supervisord-AIO | ADR-052 | `Plane.AllInOne` (ein .NET-Prozess, §3.13) |
+| Caddy als Pflicht-Proxy, Caddy-Container in web/admin, Node-SSR für space | ADR-002, ADR-033 | `Funk.Gateway` (YARP) |
+| supervisord-AIO | ADR-052 | `Funk.AllInOne` (ein .NET-Prozess, §3.13) |
 | `SECRET_KEY`-basierte Fernet-Verschlüsselung | ADR-036 | Data-Protection-Key-Ring + Schlüsselverschlüsselung per Zertifikat (D14-ADR-09) |
 | Passwort-/OAuth-Provider-Variablen (`GOOGLE_*`, `GITHUB_*`, `GITLAB_*`, `GITEA_*`, `ENABLE_*_SYNC`, `IS_*_ENABLED`, `ENABLE_EMAIL_PASSWORD`, `ENABLE_MAGIC_LINK_LOGIN`, `ADMIN_SESSION_COOKIE_AGE`) | ADR-008 | Keycloak-Konfiguration (Realm) |
 | GitHub-App-/Slack-Variablen (`GITHUB_APP_NAME`, `SLACK_CLIENT_ID`) | ADR-007, F5 nicht gewählt | Forgejo-Konfiguration (W1) |
@@ -102,28 +102,28 @@ Dieses Dokument legt fest, **wie die Zielplattform gebaut, gestartet, ausgeliefe
 
 | ADR | Belang | Entscheidung | Alternativen (verworfen) | Begründung | ab |
 |---|---|---|---|---|---|
-| **D14-ADR-01** | Laufzeitprofile | Ein AppHost mit **vier Betriebsarten**: `dev` (Default, Angular-Dev-Server, Mailpit, SeaweedFS, Forgejo), `test` (wie dev, aber Gateway liefert gebaute Assets, ephemere Volumes, feste Seeds; für `Aspire.Hosting.Testing` und E2E), `prodlike` (lokaler Nachbau der Produktion: Keycloak auf PostgreSQL, Images wie in Prod, Forgejo nur per `Plane:Forgejo:Bundled=true`) und **Publish-Modus** (`aspire publish`, erzeugt Compose-Artefakte; Stellvertreter-Container nur über Compose-Profile). Auswahl über `Plane:Profile` bzw. `ExecutionContext.IsPublishMode`. | getrennte AppHosts je Umgebung; Compose-Dateien von Hand | Ein Abhängigkeitsgraph für alle Umgebungen verhindert Drift (Original-Edge-Cases E-01 bis E-03); Profile entsprechen 01 §3.3 | I0 |
-| **D14-ADR-02** | Erreichbarkeit von Keycloak | **Dev/Test:** Keycloak direkt auf festem Port `8180` (Issuer `http://localhost:8180/realms/plane`, wie 01 §3.3). **Produktion:** Keycloak **hinter dem Gateway unter `/idp/`** (`KC_HTTP_RELATIVE_PATH=/idp`, Issuer `https://<host>/idp/realms/plane`), damit eine Domain und ein Zertifikat genügen; Admin-Konsole (`/idp/admin/`) ist am Gateway standardmäßig **gesperrt** (Freigabe per IP-Allowlist). Alternative „eigene Subdomain“ ist per `Plane__Urls__Idp` konfigurierbar. | `/auth/` (kollidiert mit Plane-`/auth/*` aus dem Original-Routing); immer eigene Subdomain | Airgapped-Installationen haben oft nur einen DNS-Namen und ein Zertifikat; `/idp/` kollidiert mit keiner Original-Route (A01 §2.8.1) | I0 (Dev), I7 (Prod-Pfad) |
-| **D14-ADR-03** | Realm-Verwaltung | **Realm als Code** in `deploy/keycloak/` mit den Dateien aus D05 §3.15.1: `realms/plane-realm.json` (Profil `dev`: vollständiger Realm inkl. Testbenutzer D05 §3.15.7), `realms/plane-realm.test.json` (Profil `test`: **generiert** und eingecheckt, nie von Hand editiert – `Plane.Tools.ParityHarness keycloak-test-realm` aus `plane-realm.json` ⊕ `tests/seed/keycloak/test-overrides.json` ⊕ `tests/seed/keycloak/parity-users.json`; D05-Benutzer + Parity-Seed-Benutzer aus dem Generator, verkürzte Token-Laufzeiten; ABG-001) und `config/00-plane-realm.json`, `config/10-plane-bootstrap-admin.json`, `config/20-forgejo-client.json` (Prod/`prodlike`, ohne Testbenutzer). **Dev/Test:** Import per `--import-realm` (Aspire `WithRealmImport`, je Profil genau **eine** Datei), Keycloak **ohne** Datenvolume (jeder Start importiert frisch; präzisiert 01 §3.4: `WithDataVolume` entfällt in dev/test). **Prod/`prodlike`:** Erstanlage **und** jeder spätere Abgleich (Upgrade) über den Einmal-Container **`keycloak-config`** (`adorsys/keycloak-config-cli`, Apache-2.0, Tag an die Keycloak-Major gekoppelt ⚠ S0) mit `IMPORT_VARSUBSTITUTION_ENABLED=true`, `IMPORT_MANAGED_CLIENT=no-delete`, `IMPORT_MANAGED_GROUP=no-delete`, `IMPORT_MANAGED_REQUIRED_ACTION=no-delete`, `IMPORT_REMOTE_STATE_ENABLED=true` – verwaltet nur die in `config/*.json` deklarierten Objekte, **nie** Benutzer (außer optional Bootstrap-Admin) oder Betreiber-Einstellungen (LDAP, IdP-Brokering, 2FA-Policies außerhalb der funk.-Flows). | eigener .NET-Abgleich `funk-cli idp sync` über die Admin-REST-API (ursprünglicher D14-Entwurf; verworfen zugunsten D05 – weniger Eigencode); Terraform-Provider; nur `--import-realm` (Keycloak überspringt vorhandene Realms → keine Upgrades möglich) | Ein Werkzeug für Erstanlage und Upgrade, deklarativ, idempotent, mit Variablen-Substitution; airgap-tauglich (ein zusätzliches Image in §3.14.2); deckt sich mit D05 §3.15.1 | I0 (Dev/Test-Import), I0 `prodlike` (config-cli), I7 (Upgrade-Nachweis) |
-| **D14-ADR-04** | Login-Theme-Packaging | FreeMarker-Login-Themes nach D05 §3.16.1: `deploy/keycloak/themes/plane/` (web **und** God-Mode-Variante per `client.clientId == "plane-admin"`, plus `email/`) und `deploy/keycloak/themes/plane-space/` (`parent=plane`). Build-Werkzeuge unter `tools/keycloak-theme/` (Repo-Wurzel; `gen-messages.mjs`, `build-css.mjs` mit `libs/shared/tailwind-config`, `build-js.mjs`; Node nur im Build), Schriften (Inter) gebündelt. Zuordnung je Client über das Client-Attribut `login_theme`. **Produktion:** eigenes Image `funk-keycloak` (Name nach dem Schema aller funk.-Images `funk-<dienst>`, ABG-149: `${PLANE_REGISTRY}/funk-keycloak:${PLANE_VERSION}`, Basis `quay.io/keycloak/keycloak:26.x`; gleichlautend in D05 §3.15.1, ABG-002) = `FROM quay.io/keycloak/keycloak:<pin>`, Themes kopiert, `kc.sh build` mit `KC_DB=postgres`, `KC_HEALTH_ENABLED=true`, `KC_METRICS_ENABLED=true`, `KC_HTTP_RELATIVE_PATH=/idp`, Start `start --optimized`. **Dev:** Bind-Mount `deploy/keycloak/themes` → `/opt/keycloak/themes` mit abgeschaltetem Theme-Cache. | Theme als JAR-Provider; Keycloakify als Standard (S7-Fallback) | Ein Image mit eingebautem Theme ist airgap- und startzeitfreundlich; Bind-Mount erlaubt Live-Bearbeitung; Inhalt/Optik bestimmt D05 (Visual-Diff S7) | I0 |
-| **D14-ADR-05** | Forgejo-Einrichtung | Drei Schritte: (1) Container `forgejo-bootstrap` (gleiches Image, eigener Entrypoint-Skript `deploy/forgejo/bootstrap/forgejo-bootstrap.sh`) führt **vor** dem Serverstart `forgejo migrate`, Admin-Anlage und Auth-Source `keycloak` (OIDC-Discovery) per Forgejo-CLI idempotent aus; (2) Container `forgejo` startet erst nach erfolgreichem Bootstrap (`WaitForCompletion`); (3) .NET-Werkzeug `Plane.Tools.ForgejoInit` legt per REST-API (`/api/v1`) Benutzer-Verknüpfungen, OAuth2-App für funk. (Name `funk. (dev)`), Test-Org/-Repos/-Issues/-PRs an und schreibt `artifacts/dev/forgejo.json`. | Alles per REST (Forgejo hat keine API für Auth-Sources); `docker exec` aus der Init-App (nicht portabel); Forgejo-Helm-Chart lokal | CLI-Schritte vor dem Serverstart vermeiden das Nachladen-Problem von Auth-Sources; REST-Schritte sind typisiert und testbar; alles idempotent | I0 |
-| **D14-ADR-06** | Same-Origin in allen Profilen | **Ein Einstiegspunkt** `Plane.Gateway` (Dev: `http://localhost:3000`, Prod: `https://<host>`), auch in Dev vor den Angular-Dev-Servern. Hosts lauschen **in Containern** auf **8080** (App) und **8081** (Management: Health, keine Weiterleitung durch das Gateway); in `dev`/`test` (Hosts als Prozesse auf dem Entwicklerrechner) vergibt Aspire beide Ports dynamisch und übergibt sie über `HTTP_PORTS` bzw. `Plane__Management__Port`. | Angular-Dev-Server mit Proxy-Konfiguration; Health unter App-Pfaden | Cookie-Vertrag (`session-id`, SameSite=Lax), WebSocket-Auth (ADR-022) und Presigned-URLs funktionieren nur same-origin identisch; getrennter Management-Port verhindert Kollision von `/health/*` mit SPA-Routen | I0 |
-| **D14-ADR-07** | Statische Frontend-Auslieferung | Angular-Builds (`frontend/dist/{web,admin,space}/browser`) werden beim `dotnet publish` von `Plane.Gateway` in `wwwroot/{web,admin,space}` übernommen (MSBuild-Target `IncludeFrontendDist`, bricht ohne Dist ab). Auslieferung per `MapStaticAssets` (Fingerprinting, vorkomprimiert br/gzip, ETag) ⚠ S0, Fallback `UseStaticFiles` mit vorkomprimierten Dateien aus dem Angular-Build. Cache-Regeln: gehashte Dateien `public, max-age=31536000, immutable`; `index.html`, `runtime-config.json`, `manifest.json`, `site.webmanifest.json` `no-cache` (kein `sw.js`/Workbox, 08 E19, ABG-025). | eigener nginx-Container; Assets im API-Image | ein Image weniger, gleiche Regeln wie Original-Caddy (`try_files`), Node nur im Build | I0 |
-| **D14-ADR-08** | ENV-Kompatibilität | **Alle Original-Variablen** (A01 §2.11) sind klassifiziert (§4.7): (a) **Alias** – wird über `LegacyEnvironmentConfigurationSource` (Tabelle `LegacyEnvironmentMap`) auf `Plane__…` abgebildet (inkl. Konverter für `DATABASE_URL`, `REDIS_URL`, `n/period`-Raten); (b) **Seed** – initialer Wert einer Instanz-Konfiguration (Migrator, nur bei Neuanlage, E-06 wie Original); (c) **entfällt** – beim Start einmalig als Warnung `plane.config` mit Grund geloggt. Native Schlüssel `Plane__…` haben Vorrang vor Aliassen. | nur neue Namen; vollständige 1:1-Übernahme inkl. toter Variablen | Betreiber können ihre `plane.env` weiterverwenden (01 ADR-036); tote Variablen erzeugen keine stille Fehlkonfiguration | I0 (Gerüst), I1 |
-| **D14-ADR-09** | Secrets & Schlüssel | Geheimnisse **nie** im Image oder in `appsettings*.json` (außer ausdrücklich dev-only in `src/hosts/Plane.AppHost/appsettings.Development.json`). Quellen: Aspire-Parameter (Dev: User-Secrets/Defaults), Compose `.env` (von `funk-cli init` mit Zufallswerten erzeugt), Kubernetes-Secrets (kompatibel zu External-Secrets-Operator), optional Datei-Secrets (`/run/secrets/*` über `KeyPerFile`). Der **Data-Protection-Key-Ring** liegt in PostgreSQL (01 ADR-036) und wird in Produktion **mit einem X.509-Zertifikat verschlüsselt** (`ProtectKeysWithCertificate`, Datei-Secret `dataprotection.pfx`); ohne Zertifikat startet ein Production-Host nur mit `Plane__DataProtection__AllowUnencryptedKeys=true` (Warnung). Zusätzlich ein Pflicht-Secret **`Plane__Security__SigningKey`** (Base64, ≥ 32 Byte, Aspire-Parameter `signing-key`) **ausschließlich** für HMAC-signierte Upload-Tokens und signierte Dateisystem-URLs (Dateisystem-/Proxy-Modus, §3.7.6) – nicht für Verschlüsselung und nicht für API-Key-Kennungen (`api_activity_logs.token_identifier` = `token_hash`, D05-ADR-16). `SECRET_KEY` ist **kein** Alias: er wird nicht gelesen; ist er gesetzt, Startwarnung, bei bekannten Platzhalterwerten (A01 §2.11.7) zusätzlich Level Critical (05 §4.4). `PlaneSecurityOptions` (D02 §3.15) führt das Feld `SigningKey`; ein Feld `ApiLogHmacKey` existiert nicht (ABG-012). | Key-Ring unverschlüsselt (DB-Dump enthielte entschlüsselbare SMTP-/LLM-Secrets); eigenes AES-Schema (Eigenbau-Krypto) | Framework-Mechanismus statt Eigenbau; Backup trennt Daten (DB) und Schlüssel (Zertifikat) | I0 (Dev), I7 (Prod-Pflicht) |
-| **D14-ADR-10** | Image-Bau | Alle .NET-Hosts per **SDK-Container-Build** (`dotnet publish -t:PublishContainer`, keine Dockerfiles); Basis `mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra` für **alle** Plane-Hosts inkl. `Plane.Migrator` (ICU + tzdata nötig für Zeitzonen/Kulturen; `aspnet` statt `runtime` auch für den Migrator, weil er über `Plane.Hosting`/Data Protection das ASP.NET-Core-Shared-Framework referenziert – das SDK leitet die Basis aus der `FrameworkReference` ab), Nutzer `app` (UID 1654), schreibgeschütztes Root-FS-tauglich. **Präzisiert 01 ADR-052** (dort `noble-chiseled` ohne `-extra`). `Plane.Realtime` nutzt dieselbe Basis, falls S1/S3 (YDotNet-`libyrs`, SkiaSharp-`NoDependencies`) darauf grün sind, sonst `10.0-noble`. Dockerfiles nur für Images mit Zusatzinhalt: `deploy/keycloak/Dockerfile` (`funk-keycloak`) und `deploy/cli/Dockerfile` (`funk-cli` = `aspnet:10.0-noble` + `postgresql-client-17`, `zstd`). Multi-Arch `linux/amd64` + `linux/arm64`. | Dockerfile je Host; Alpine-Basis (musl-Risiken für native Libs) | Aspire-nativ, reproduzierbar, kleinste Angriffsfläche; Chiseled hat keine Shell → Health per Probe-Modus (D14-ADR-12) | I0 |
+| **D14-ADR-01** | Laufzeitprofile | Ein AppHost mit **vier Betriebsarten**: `dev` (Default, Angular-Dev-Server, Mailpit, SeaweedFS, Forgejo), `test` (wie dev, aber Gateway liefert gebaute Assets, ephemere Volumes, feste Seeds; für `Aspire.Hosting.Testing` und E2E), `prodlike` (lokaler Nachbau der Produktion: Keycloak auf PostgreSQL, Images wie in Prod, Forgejo nur per `Funk:Forgejo:Bundled=true`) und **Publish-Modus** (`aspire publish`, erzeugt Compose-Artefakte; Stellvertreter-Container nur über Compose-Profile). Auswahl über `Funk:Profile` bzw. `ExecutionContext.IsPublishMode`. | getrennte AppHosts je Umgebung; Compose-Dateien von Hand | Ein Abhängigkeitsgraph für alle Umgebungen verhindert Drift (Original-Edge-Cases E-01 bis E-03); Profile entsprechen 01 §3.3 | I0 |
+| **D14-ADR-02** | Erreichbarkeit von Keycloak | **Dev/Test:** Keycloak direkt auf festem Port `8180` (Issuer `http://localhost:8180/realms/plane`, wie 01 §3.3). **Produktion:** Keycloak **hinter dem Gateway unter `/idp/`** (`KC_HTTP_RELATIVE_PATH=/idp`, Issuer `https://<host>/idp/realms/plane`), damit eine Domain und ein Zertifikat genügen; Admin-Konsole (`/idp/admin/`) ist am Gateway standardmäßig **gesperrt** (Freigabe per IP-Allowlist). Alternative „eigene Subdomain“ ist per `Funk__Urls__Idp` konfigurierbar. | `/auth/` (kollidiert mit Plane-`/auth/*` aus dem Original-Routing); immer eigene Subdomain | Airgapped-Installationen haben oft nur einen DNS-Namen und ein Zertifikat; `/idp/` kollidiert mit keiner Original-Route (A01 §2.8.1) | I0 (Dev), I7 (Prod-Pfad) |
+| **D14-ADR-03** | Realm-Verwaltung | **Realm als Code** in `deploy/keycloak/` mit den Dateien aus D05 §3.15.1: `realms/plane-realm.json` (Profil `dev`: vollständiger Realm inkl. Testbenutzer D05 §3.15.7), `realms/plane-realm.test.json` (Profil `test`: **generiert** und eingecheckt, nie von Hand editiert – `Funk.Tools.ParityHarness keycloak-test-realm` aus `plane-realm.json` ⊕ `tests/seed/keycloak/test-overrides.json` ⊕ `tests/seed/keycloak/parity-users.json`; D05-Benutzer + Parity-Seed-Benutzer aus dem Generator, verkürzte Token-Laufzeiten; ABG-001) und `config/00-plane-realm.json`, `config/10-plane-bootstrap-admin.json`, `config/20-forgejo-client.json` (Prod/`prodlike`, ohne Testbenutzer). **Dev/Test:** Import per `--import-realm` (Aspire `WithRealmImport`, je Profil genau **eine** Datei), Keycloak **ohne** Datenvolume (jeder Start importiert frisch; präzisiert 01 §3.4: `WithDataVolume` entfällt in dev/test). **Prod/`prodlike`:** Erstanlage **und** jeder spätere Abgleich (Upgrade) über den Einmal-Container **`keycloak-config`** (`adorsys/keycloak-config-cli`, Apache-2.0, Tag an die Keycloak-Major gekoppelt ⚠ S0) mit `IMPORT_VARSUBSTITUTION_ENABLED=true`, `IMPORT_MANAGED_CLIENT=no-delete`, `IMPORT_MANAGED_GROUP=no-delete`, `IMPORT_MANAGED_REQUIRED_ACTION=no-delete`, `IMPORT_REMOTE_STATE_ENABLED=true` – verwaltet nur die in `config/*.json` deklarierten Objekte, **nie** Benutzer (außer optional Bootstrap-Admin) oder Betreiber-Einstellungen (LDAP, IdP-Brokering, 2FA-Policies außerhalb der funk.-Flows). | eigener .NET-Abgleich `funk-cli idp sync` über die Admin-REST-API (ursprünglicher D14-Entwurf; verworfen zugunsten D05 – weniger Eigencode); Terraform-Provider; nur `--import-realm` (Keycloak überspringt vorhandene Realms → keine Upgrades möglich) | Ein Werkzeug für Erstanlage und Upgrade, deklarativ, idempotent, mit Variablen-Substitution; airgap-tauglich (ein zusätzliches Image in §3.14.2); deckt sich mit D05 §3.15.1 | I0 (Dev/Test-Import), I0 `prodlike` (config-cli), I7 (Upgrade-Nachweis) |
+| **D14-ADR-04** | Login-Theme-Packaging | FreeMarker-Login-Themes nach D05 §3.16.1: `deploy/keycloak/themes/plane/` (web **und** God-Mode-Variante per `client.clientId == "funk-admin"`, plus `email/`) und `deploy/keycloak/themes/plane-space/` (`parent=plane`). Build-Werkzeuge unter `tools/keycloak-theme/` (Repo-Wurzel; `gen-messages.mjs`, `build-css.mjs` mit `libs/shared/tailwind-config`, `build-js.mjs`; Node nur im Build), Schriften (Inter) gebündelt. Zuordnung je Client über das Client-Attribut `login_theme`. **Produktion:** eigenes Image `funk-keycloak` (Name nach dem Schema aller funk.-Images `funk-<dienst>`, ABG-149: `${FUNK_REGISTRY}/funk-keycloak:${FUNK_VERSION}`, Basis `quay.io/keycloak/keycloak:26.x`; gleichlautend in D05 §3.15.1, ABG-002) = `FROM quay.io/keycloak/keycloak:<pin>`, Themes kopiert, `kc.sh build` mit `KC_DB=postgres`, `KC_HEALTH_ENABLED=true`, `KC_METRICS_ENABLED=true`, `KC_HTTP_RELATIVE_PATH=/idp`, Start `start --optimized`. **Dev:** Bind-Mount `deploy/keycloak/themes` → `/opt/keycloak/themes` mit abgeschaltetem Theme-Cache. | Theme als JAR-Provider; Keycloakify als Standard (S7-Fallback) | Ein Image mit eingebautem Theme ist airgap- und startzeitfreundlich; Bind-Mount erlaubt Live-Bearbeitung; Inhalt/Optik bestimmt D05 (Visual-Diff S7) | I0 |
+| **D14-ADR-05** | Forgejo-Einrichtung | Drei Schritte: (1) Container `forgejo-bootstrap` (gleiches Image, eigener Entrypoint-Skript `deploy/forgejo/bootstrap/forgejo-bootstrap.sh`) führt **vor** dem Serverstart `forgejo migrate`, Admin-Anlage und Auth-Source `keycloak` (OIDC-Discovery) per Forgejo-CLI idempotent aus; (2) Container `forgejo` startet erst nach erfolgreichem Bootstrap (`WaitForCompletion`); (3) .NET-Werkzeug `Funk.Tools.ForgejoInit` legt per REST-API (`/api/v1`) Benutzer-Verknüpfungen, OAuth2-App für funk. (Name `funk. (dev)`), Test-Org/-Repos/-Issues/-PRs an und schreibt `artifacts/dev/forgejo.json`. | Alles per REST (Forgejo hat keine API für Auth-Sources); `docker exec` aus der Init-App (nicht portabel); Forgejo-Helm-Chart lokal | CLI-Schritte vor dem Serverstart vermeiden das Nachladen-Problem von Auth-Sources; REST-Schritte sind typisiert und testbar; alles idempotent | I0 |
+| **D14-ADR-06** | Same-Origin in allen Profilen | **Ein Einstiegspunkt** `Funk.Gateway` (Dev: `http://localhost:3000`, Prod: `https://<host>`), auch in Dev vor den Angular-Dev-Servern. Hosts lauschen **in Containern** auf **8080** (App) und **8081** (Management: Health, keine Weiterleitung durch das Gateway); in `dev`/`test` (Hosts als Prozesse auf dem Entwicklerrechner) vergibt Aspire beide Ports dynamisch und übergibt sie über `HTTP_PORTS` bzw. `Funk__Management__Port`. | Angular-Dev-Server mit Proxy-Konfiguration; Health unter App-Pfaden | Cookie-Vertrag (`funk-session`, SameSite=Lax), WebSocket-Auth (ADR-022) und Presigned-URLs funktionieren nur same-origin identisch; getrennter Management-Port verhindert Kollision von `/health/*` mit SPA-Routen | I0 |
+| **D14-ADR-07** | Statische Frontend-Auslieferung | Angular-Builds (`frontend/dist/{web,admin,space}/browser`) werden beim `dotnet publish` von `Funk.Gateway` in `wwwroot/{web,admin,space}` übernommen (MSBuild-Target `IncludeFrontendDist`, bricht ohne Dist ab). Auslieferung per `MapStaticAssets` (Fingerprinting, vorkomprimiert br/gzip, ETag) ⚠ S0, Fallback `UseStaticFiles` mit vorkomprimierten Dateien aus dem Angular-Build. Cache-Regeln: gehashte Dateien `public, max-age=31536000, immutable`; `index.html`, `runtime-config.json`, `manifest.json`, `site.webmanifest.json` `no-cache` (kein `sw.js`/Workbox, 08 E19, ABG-025). | eigener nginx-Container; Assets im API-Image | ein Image weniger, gleiche Regeln wie Original-Caddy (`try_files`), Node nur im Build | I0 |
+| **D14-ADR-08** | ENV-Kompatibilität | **Alle Original-Variablen** (A01 §2.11) sind klassifiziert (§4.7): (a) **Alias** – wird über `LegacyEnvironmentConfigurationSource` (Tabelle `LegacyEnvironmentMap`) auf `Funk__…` abgebildet (inkl. Konverter für `DATABASE_URL`, `REDIS_URL`, `n/period`-Raten); (b) **Seed** – initialer Wert einer Instanz-Konfiguration (Migrator, nur bei Neuanlage, E-06 wie Original); (c) **entfällt** – beim Start einmalig als Warnung `plane.config` mit Grund geloggt. Native Schlüssel `Funk__…` haben Vorrang vor Aliassen. | nur neue Namen; vollständige 1:1-Übernahme inkl. toter Variablen | Betreiber können ihre `plane.env` weiterverwenden (01 ADR-036); tote Variablen erzeugen keine stille Fehlkonfiguration | I0 (Gerüst), I1 |
+| **D14-ADR-09** | Secrets & Schlüssel | Geheimnisse **nie** im Image oder in `appsettings*.json` (außer ausdrücklich dev-only in `src/hosts/Funk.AppHost/appsettings.Development.json`). Quellen: Aspire-Parameter (Dev: User-Secrets/Defaults), Compose `.env` (von `funk-cli init` mit Zufallswerten erzeugt), Kubernetes-Secrets (kompatibel zu External-Secrets-Operator), optional Datei-Secrets (`/run/secrets/*` über `KeyPerFile`). Der **Data-Protection-Key-Ring** liegt in PostgreSQL (01 ADR-036) und wird in Produktion **mit einem X.509-Zertifikat verschlüsselt** (`ProtectKeysWithCertificate`, Datei-Secret `dataprotection.pfx`); ohne Zertifikat startet ein Production-Host nur mit `Funk__DataProtection__AllowUnencryptedKeys=true` (Warnung). Zusätzlich ein Pflicht-Secret **`Funk__Security__SigningKey`** (Base64, ≥ 32 Byte, Aspire-Parameter `signing-key`) **ausschließlich** für HMAC-signierte Upload-Tokens und signierte Dateisystem-URLs (Dateisystem-/Proxy-Modus, §3.7.6) – nicht für Verschlüsselung und nicht für API-Key-Kennungen (`api_activity_logs.token_identifier` = `token_hash`, D05-ADR-16). `SECRET_KEY` ist **kein** Alias: er wird nicht gelesen; ist er gesetzt, Startwarnung, bei bekannten Platzhalterwerten (A01 §2.11.7) zusätzlich Level Critical (05 §4.4). `FunkSecurityOptions` (D02 §3.15) führt das Feld `SigningKey`; ein Feld `ApiLogHmacKey` existiert nicht (ABG-012). | Key-Ring unverschlüsselt (DB-Dump enthielte entschlüsselbare SMTP-/LLM-Secrets); eigenes AES-Schema (Eigenbau-Krypto) | Framework-Mechanismus statt Eigenbau; Backup trennt Daten (DB) und Schlüssel (Zertifikat) | I0 (Dev), I7 (Prod-Pflicht) |
+| **D14-ADR-10** | Image-Bau | Alle .NET-Hosts per **SDK-Container-Build** (`dotnet publish -t:PublishContainer`, keine Dockerfiles); Basis `mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra` für **alle** Plane-Hosts inkl. `Funk.Migrator` (ICU + tzdata nötig für Zeitzonen/Kulturen; `aspnet` statt `runtime` auch für den Migrator, weil er über `Funk.Hosting`/Data Protection das ASP.NET-Core-Shared-Framework referenziert – das SDK leitet die Basis aus der `FrameworkReference` ab), Nutzer `app` (UID 1654), schreibgeschütztes Root-FS-tauglich. **Präzisiert 01 ADR-052** (dort `noble-chiseled` ohne `-extra`). `Funk.Realtime` nutzt dieselbe Basis, falls S1/S3 (YDotNet-`libyrs`, SkiaSharp-`NoDependencies`) darauf grün sind, sonst `10.0-noble`. Dockerfiles nur für Images mit Zusatzinhalt: `deploy/keycloak/Dockerfile` (`funk-keycloak`) und `deploy/cli/Dockerfile` (`funk-cli` = `aspnet:10.0-noble` + `postgresql-client-17`, `zstd`). Multi-Arch `linux/amd64` + `linux/arm64`. | Dockerfile je Host; Alpine-Basis (musl-Risiken für native Libs) | Aspire-nativ, reproduzierbar, kleinste Angriffsfläche; Chiseled hat keine Shell → Health per Probe-Modus (D14-ADR-12) | I0 |
 | **D14-ADR-11** | Compose als Standard-Deployment | `aspire publish` erzeugt `deploy/compose/docker-compose.yaml` + `.env`; Anpassungen (Image-Namen, Healthchecks, `restart`, `depends_on`-Bedingungen, Profile, Ports) **ausschließlich im AppHost** über `PublishAsDockerComposeService(...)`/`ConfigureComposeFile(...)` ⚠ S0. Die generierte Datei wird **eingecheckt**; CI vergleicht sie mit einer frischen Publikation (Drift-Gate). Optionale Dienste über Compose-`profiles`: `bundled-s3`, `forgejo`, `valkey`, `acme`, `observability`, `tools`. **Profilregel (verbindlich):** Kern-Dienste haben **kein** `depends_on` auf Profil-Dienste (bzw. nur mit `required: false`, Compose ≥ 2.20); Verbindungswerte zu optionalen Diensten kommen ausschließlich aus `.env`-Variablen mit leerem Default (`PLANE_VALKEY_CONNECTION=${PLANE_VALKEY_CONNECTION:-}`, `PLANE_S3_INTERNAL_ENDPOINT`, `PLANE_S3_PUBLIC_ENDPOINT`, `PLANE_GATEWAY_OBJECTSTORE_MODE`), die `funk-cli init --profiles …` passend setzt; leerer Valkey-Wert = In-Memory-Modus (D14-ADR-21). | handgepflegte Compose-Datei; Kompose | Ein Graph (D14-ADR-01), überprüfbare Ausgabe; Profile ersetzen die Kommentar-Anleitung des Originals („Comment this if …“, A01 §2.6.3) | I0 |
-| **D14-ADR-12** | Health-Checks ohne Shell | Jeder Host unterstützt den **Probe-Modus** `--probe live|ready|startup` (prüft `http://127.0.0.1:8081/health/<kind>` und beendet sich mit 0/1, ohne den Host zu starten). Compose-`healthcheck` und Kubernetes-`exec`-Proben sind nicht nötig; Kubernetes nutzt `httpGet` auf Port 8081, Compose `CMD ["/app/Plane.Api","--probe","ready"]`. | `curl` ins Image; Sidecar | Chiseled-Images bleiben shell-frei | I0 |
+| **D14-ADR-12** | Health-Checks ohne Shell | Jeder Host unterstützt den **Probe-Modus** `--probe live|ready|startup` (prüft `http://127.0.0.1:8081/health/<kind>` und beendet sich mit 0/1, ohne den Host zu starten). Compose-`healthcheck` und Kubernetes-`exec`-Proben sind nicht nötig; Kubernetes nutzt `httpGet` auf Port 8081, Compose `CMD ["/app/Funk.Api","--probe","ready"]`. | `curl` ins Image; Sidecar | Chiseled-Images bleiben shell-frei | I0 |
 | **D14-ADR-13** | Helm-Chart | **Handgepflegtes Chart `deploy/helm/funk`** (Aspire-Kubernetes-Publisher nur als Vorlage, da Preview, 01 ADR-052); Abhängigkeiten **nicht** als Fremd-Charts eingebettet; PostgreSQL extern (Empfehlung CloudNativePG, Apache-2.0) oder eingebautes Minimal-StatefulSet (`postgresql.bundled=true`, Einzelknoten); Keycloak als eigenes Deployment mit `funk-keycloak`-Image (Empfehlung für HA: Keycloak-Operator); Migrator als **regulärer Job je Release-Revision** (`plane-migrator-r{{ .Release.Revision }}`, `ttlSecondsAfterFinished: 86400`) – **kein** `pre-install`-Hook, weil Hooks vor Secrets/ConfigMap und vor dem gebündelten PostgreSQL laufen würden; die korrekte Reihenfolge erzwingt das Schema-Gate (D14-ADR-16: neue Pods werden erst nach abgeschlossener Migration `ready`, alte Pods laufen dank Expand/Contract weiter). Realm-Abgleich `keycloak-config` als `post-install,post-upgrade`-Hook-Job mit Warteschleife auf Keycloak-Readiness. Keine Bitnami-Charts/-Images. | Bitnami-Abhängigkeiten (Image-Katalog seit 2025 eingeschränkt); generiertes Chart unverändert; Migrator als `pre-install`-Hook (scheitert bei Erstinstallation mit gebündelter DB) | volle Kontrolle über Airgap-Images, Sicherheitskontexte und Upgrade-Reihenfolge | I7 |
-| **D14-ADR-14** | AIO | **`Plane.AllInOne`**: ein .NET-Prozess, der Gateway-, Api-, Realtime- und Worker-Komposition in **einer** Kestrel-Instanz vereint (gleiche Routen, kein internes Proxying) und Migrationen beim Start ausführt; Image `funk-aio`; benötigt extern PostgreSQL und Keycloak; Valkey entfällt (Einzelinstanz), Speicher per Dateisystem oder S3. Kompositionslogik je Host liegt in der Bibliothek `src/hosts/Plane.Hosting/` (`ApiComposition`, `RealtimeComposition`, `WorkerComposition`, `GatewayComposition`), die auch die Einzel-Hosts verwenden. **Präzisiert 01:** `Plane.Hosting` und `Plane.AllInOne` sind neue Projekte unter `src/hosts/` (Nachtrag in 01 §5.1 nötig); 01 ADR-052 spricht von AIO „als Compose-Profil“ – umgesetzt als eigene, ebenfalls generierte Datei `docker-compose.aio.yaml`, weil AIO die Kern-Dienste `api`/`worker`/`realtime`/`gateway` ersetzt und Compose-Profile Dienste nur hinzufügen, nicht abschalten können. | supervisord mit fünf Prozessen (wie Original); kein AIO | Kein Prozessmanager, ein Healthcheck, identisches Verhalten durch gemeinsame Kompositionsbibliothek; erfüllt CE-OPS-004 | I7 |
+| **D14-ADR-14** | AIO | **`Funk.AllInOne`**: ein .NET-Prozess, der Gateway-, Api-, Realtime- und Worker-Komposition in **einer** Kestrel-Instanz vereint (gleiche Routen, kein internes Proxying) und Migrationen beim Start ausführt; Image `funk-aio`; benötigt extern PostgreSQL und Keycloak; Valkey entfällt (Einzelinstanz), Speicher per Dateisystem oder S3. Kompositionslogik je Host liegt in der Bibliothek `src/hosts/Funk.Hosting/` (`ApiComposition`, `RealtimeComposition`, `WorkerComposition`, `GatewayComposition`), die auch die Einzel-Hosts verwenden. **Präzisiert 01:** `Funk.Hosting` und `Funk.AllInOne` sind neue Projekte unter `src/hosts/` (Nachtrag in 01 §5.1 nötig); 01 ADR-052 spricht von AIO „als Compose-Profil“ – umgesetzt als eigene, ebenfalls generierte Datei `docker-compose.aio.yaml`, weil AIO die Kern-Dienste `api`/`worker`/`realtime`/`gateway` ersetzt und Compose-Profile Dienste nur hinzufügen, nicht abschalten können. | supervisord mit fünf Prozessen (wie Original); kein AIO | Kein Prozessmanager, ein Healthcheck, identisches Verhalten durch gemeinsame Kompositionsbibliothek; erfüllt CE-OPS-004 | I7 |
 | **D14-ADR-15** | Airgapped-Bundle | Release-Artefakt `funk-airgap-<version>-<arch>.tar.zst` mit allen Images als **OCI-Archive** (Digest-gepinnt, `skopeo copy`), Compose-Dateien, Helm-Chart (`.tgz`), SBOMs, `SHA256SUMS`, Cosign-Signaturen und öffentlichem Schlüssel, Installationsskript `install-airgapped.sh` (lädt in lokale Docker-Engine **oder** spiegelt in eine private Registry). Optional enthaltene Offline-Registry (`registry:3`, CNCF Distribution, Apache-2.0). | `docker save` eines Gesamt-Tarballs; Pull-Through-Cache | Prüfbar (Checksummen, Signaturen ohne Internet), registry-agnostisch | I7 |
-| **D14-ADR-16** | Migrationen beim Deployment | `Plane.Migrator` ist der **einzige** Schreiber des Schemas: `pg_advisory_lock(7356001)` → `MigrateAsync()` → Extensions-Check → Seeds → Instanz-Init → Bucket → Ende mit Exit-Code 0. Api/Worker/Realtime prüfen beim Start (**Schema-Gate**), ob alle im Assembly bekannten Migrationen angewandt sind, und melden sonst `ready=false` (kein Selbst-Migrieren). Migrationen folgen **Expand/Contract** über mindestens eine Minor-Version, damit Rolling-Updates gegen das neue Schema mit alten Replikaten laufen. | Migrieren beim API-Start (Race bei mehreren Replikaten); EF-Bundle-Datei | Ersetzt `wait_for_db`/`wait_for_migrations` (E-04) deterministisch; ein Ort für Seeds | I0 |
+| **D14-ADR-16** | Migrationen beim Deployment | `Funk.Migrator` ist der **einzige** Schreiber des Schemas: `pg_advisory_lock(7356001)` → `MigrateAsync()` → Extensions-Check → Seeds → Instanz-Init → Bucket → Ende mit Exit-Code 0. Api/Worker/Realtime prüfen beim Start (**Schema-Gate**), ob alle im Assembly bekannten Migrationen angewandt sind, und melden sonst `ready=false` (kein Selbst-Migrieren). Migrationen folgen **Expand/Contract** über mindestens eine Minor-Version, damit Rolling-Updates gegen das neue Schema mit alten Replikaten laufen. | Migrieren beim API-Start (Race bei mehreren Replikaten); EF-Bundle-Datei | Ersetzt `wait_for_db`/`wait_for_migrations` (E-04) deterministisch; ein Ort für Seeds | I0 |
 | **D14-ADR-17** | Backup | Logisches Backup: `pg_dump -Fc` je Datenbank (`plane`, `keycloak`, `forgejo` falls gebündelt) **zuerst**, danach Objekt-Speicher (S3-Bucket bzw. Dateisystem) als Tar, dann Forgejo-Repositories (`/data`-Volume, falls gebündelt), Manifest mit Versionen/Checksummen; **Valkey wird nicht gesichert** (nur flüchtige Daten). Schlüsselmaterial (`dataprotection.pfx`, `.env`-Secrets) wird **separat** exportiert (`funk-cli backup --include-secrets` explizit). PITR (WAL-Archivierung) ist Betreiberaufgabe (dokumentiert, z. B. CloudNativePG/pgBackRest). | Volume-Tarballs laufender Container (Original, inkonsistent); Snapshots | Versionsunabhängig, konsistent je DB, restore-fähig über Hosts hinweg | I7 |
-| **D14-ADR-18** | Observability | OpenTelemetry über `Plane.ServiceDefaults`; Export **nur** wenn `OTEL_EXPORTER_OTLP_ENDPOINT` gesetzt (Dev: Aspire-Dashboard automatisch). Optionales Compose-Profil `observability` mit Aspire-Dashboard-Container (MIT). Kein Prometheus-Scrape-Endpunkt in der CE (Exporter-Paket nicht stabil ⚠); Betreiber nutzen einen OTel-Collector. JSON-Console-Logs (`Microsoft.Extensions.Logging.Console` JSON-Formatter). | Serilog; Prometheus-Exporter als Pflicht | ADR-004/-035; keine Abhängigkeit von Vorabversionen | I0 |
-| **D14-ADR-19** | CI/CD-Plattform | **GitHub Actions** im Repository `funk.`; alle Actions per **Commit-SHA gepinnt**, minimale `permissions`; Images nach GHCR (`${PLANE_REGISTRY}`, konfigurierbar); SBOM (SPDX-JSON + CycloneDX) mit Syft, Schwachstellen-Scan mit Trivy (Gate: `CRITICAL`/`HIGH` mit verfügbarem Fix), Signatur mit Cosign **Schlüsselpaar** (offline prüfbar: Blobs mit `cosign sign-blob --key … --bundle <datei>.sigstore.json --tlog-upload=false`, Prüfung `cosign verify-blob --key cosign.pub --bundle … --insecure-ignore-tlog=true`; Images in der Registry zusätzlich `cosign sign --key …`, im Airgap-Bundle deckt die signierte `SHA256SUMS` die OCI-Archive ab ⚠ Flag-Namen gegen die gepinnte Cosign-Version prüfen); Dependabot für Actions/NuGet/npm/Docker (Lizenz-Gate prüft jede Änderung). | Renovate (AGPL-Werkzeug, Self-Hosting nötig); keyless-only Signatur (Verifikation braucht Online-Transparenzlog) | Airgap-Kunden können Signaturen ohne Internet prüfen; SHA-Pinning gegen Lieferketten-Angriffe | I0 (CI, Images, SBOM, Trivy), I7 (Signatur, Release) |
-| **D14-ADR-20** | Betriebs-CLI | **`funk-cli`** = Image `funk-cli` (.NET-Konsolen-App `Plane.Cli` + `pg_dump`/`pg_restore` 17) plus dünner Wrapper `deploy/compose/funk.sh` (ersetzt `install.sh`-Menü: `install`, `start`, `stop`, `restart`, `upgrade`, `logs`, `backup`, `restore`, `status`, `idp-sync` (= `docker compose run --rm keycloak-config`), `cli <befehl>`). Fachliche Wartungsbefehle (ehem. `manage.py`-Commands) sind Unterbefehle von `Plane.Cli`. | Bash-Skripte wie Original; CLI im API-Image | Chiseled-Images ohne Werkzeuge; ein versioniertes Werkzeug für Compose und Kubernetes (`kubectl run`/Job) | I1 (Kern), I7 (Backup/Upgrade) |
-| **D14-ADR-21** | Valkey | Optional bei **genau einer** Replika je Host (In-Memory-Backplane/-Cache/-Rate-Limit), **Pflicht** sobald `api`, `realtime` oder `worker` > 1 Replika (Helm-Template schlägt fehl, Hosts melden `ready=false` bei `Plane__Scale__ExpectMultipleInstances=true` ohne Valkey). Valkey ohne Persistenz (`--save "" --appendonly no`). | immer Pflicht (wie Original-Live) | Kleinstinstallationen sparen einen Dienst (01 O-05); Daten sind flüchtig | I1 |
-| **D14-ADR-22** | Forwarded Headers | Gateway vertraut vorgelagerten Proxys **nur** aus `Plane__ForwardedHeaders__KnownNetworks` (Default leer = direkte Clients); Hosts hinter dem Gateway vertrauen nur dem Gateway-Netz (Default: private Bereiche RFC 1918/4193 im Container-Netz). Gateway setzt `X-Forwarded-For`, `-Proto`, `-Host`, `-Prefix` neu (überschreibt Client-Werte). | Original `trusted_proxies 0.0.0.0/0` (E-11, Rate-Limit-Umgehung) | Sicherheitskorrektur nach 01 §7.20; Rate-Limits/Client-IP korrekt | I0 |
+| **D14-ADR-18** | Observability | OpenTelemetry über `Funk.ServiceDefaults`; Export **nur** wenn `OTEL_EXPORTER_OTLP_ENDPOINT` gesetzt (Dev: Aspire-Dashboard automatisch). Optionales Compose-Profil `observability` mit Aspire-Dashboard-Container (MIT). Kein Prometheus-Scrape-Endpunkt in der CE (Exporter-Paket nicht stabil ⚠); Betreiber nutzen einen OTel-Collector. JSON-Console-Logs (`Microsoft.Extensions.Logging.Console` JSON-Formatter). | Serilog; Prometheus-Exporter als Pflicht | ADR-004/-035; keine Abhängigkeit von Vorabversionen | I0 |
+| **D14-ADR-19** | CI/CD-Plattform | **GitHub Actions** im Repository `funk.`; alle Actions per **Commit-SHA gepinnt**, minimale `permissions`; Images nach GHCR (`${FUNK_REGISTRY}`, konfigurierbar); SBOM (SPDX-JSON + CycloneDX) mit Syft, Schwachstellen-Scan mit Trivy (Gate: `CRITICAL`/`HIGH` mit verfügbarem Fix), Signatur mit Cosign **Schlüsselpaar** (offline prüfbar: Blobs mit `cosign sign-blob --key … --bundle <datei>.sigstore.json --tlog-upload=false`, Prüfung `cosign verify-blob --key cosign.pub --bundle … --insecure-ignore-tlog=true`; Images in der Registry zusätzlich `cosign sign --key …`, im Airgap-Bundle deckt die signierte `SHA256SUMS` die OCI-Archive ab ⚠ Flag-Namen gegen die gepinnte Cosign-Version prüfen); Dependabot für Actions/NuGet/npm/Docker (Lizenz-Gate prüft jede Änderung). | Renovate (AGPL-Werkzeug, Self-Hosting nötig); keyless-only Signatur (Verifikation braucht Online-Transparenzlog) | Airgap-Kunden können Signaturen ohne Internet prüfen; SHA-Pinning gegen Lieferketten-Angriffe | I0 (CI, Images, SBOM, Trivy), I7 (Signatur, Release) |
+| **D14-ADR-20** | Betriebs-CLI | **`funk-cli`** = Image `funk-cli` (.NET-Konsolen-App `Funk.Cli` + `pg_dump`/`pg_restore` 17) plus dünner Wrapper `deploy/compose/funk.sh` (ersetzt `install.sh`-Menü: `install`, `start`, `stop`, `restart`, `upgrade`, `logs`, `backup`, `restore`, `status`, `idp-sync` (= `docker compose run --rm keycloak-config`), `cli <befehl>`). Fachliche Wartungsbefehle (ehem. `manage.py`-Commands) sind Unterbefehle von `Funk.Cli`. | Bash-Skripte wie Original; CLI im API-Image | Chiseled-Images ohne Werkzeuge; ein versioniertes Werkzeug für Compose und Kubernetes (`kubectl run`/Job) | I1 (Kern), I7 (Backup/Upgrade) |
+| **D14-ADR-21** | Valkey | Optional bei **genau einer** Replika je Host (In-Memory-Backplane/-Cache/-Rate-Limit), **Pflicht** sobald `api`, `realtime` oder `worker` > 1 Replika (Helm-Template schlägt fehl, Hosts melden `ready=false` bei `Funk__Scale__ExpectMultipleInstances=true` ohne Valkey). Valkey ohne Persistenz (`--save "" --appendonly no`). | immer Pflicht (wie Original-Live) | Kleinstinstallationen sparen einen Dienst (01 O-05); Daten sind flüchtig | I1 |
+| **D14-ADR-22** | Forwarded Headers | Gateway vertraut vorgelagerten Proxys **nur** aus `Funk__ForwardedHeaders__KnownNetworks` (Default leer = direkte Clients); Hosts hinter dem Gateway vertrauen nur dem Gateway-Netz (Default: private Bereiche RFC 1918/4193 im Container-Netz). Gateway setzt `X-Forwarded-For`, `-Proto`, `-Host`, `-Prefix` neu (überschreibt Client-Werte). | Original `trusted_proxies 0.0.0.0/0` (E-11, Rate-Limit-Umgehung) | Sicherheitskorrektur nach 01 §7.20; Rate-Limits/Client-IP korrekt | I0 |
 
 ---
 ## 3. Detaildesign
@@ -139,24 +139,24 @@ Legende: ● = immer, ○ = optional (Schalter/Compose-Profil), – = nicht vorh
 | `postgres` (pgvector-Image) | ● | ● (ohne Volume) | ● | ● | ○ (`postgresql.bundled`) | extern | – |
 | DB `plane` | ● | ● | ● | ● | ● | ● | – |
 | DB `keycloak` | – (Keycloak `start-dev` mit H2) | – | ● | ● | ● | ● (extern) | – |
-| DB `forgejo` | ● | ● | ○ | ○ (Profil `forgejo`) | ○ | – | `Plane:Forgejo:Bundled` |
-| `valkey` | ● | ● | ● | ○ (Profil `valkey`) | ○ (Pflicht bei Replikas > 1) | – | `Plane:Valkey:Enabled` |
-| `objectstore` (SeaweedFS) | ● | ● | ● | ○ (Profil `bundled-s3`) | ○ | – | `Plane:Storage:Bundled` |
+| DB `forgejo` | ● | ● | ○ | ○ (Profil `forgejo`) | ○ | – | `Funk:Forgejo:Bundled` |
+| `valkey` | ● | ● | ● | ○ (Profil `valkey`) | ○ (Pflicht bei Replikas > 1) | – | `Funk:Valkey:Enabled` |
+| `objectstore` (SeaweedFS) | ● | ● | ● | ○ (Profil `bundled-s3`) | ○ | – | `Funk:Storage:Bundled` |
 | `mailpit` | ● | ● | ● | – | – | – | – |
 | `keycloak` | ● (Aspire-Keycloak, Port 8180, Realm `plane-realm.json`) | ● (Port 8180, Realm `plane-realm.test.json`) | ● (`funk-keycloak`-Image) | ● | ● | extern | – |
 | `keycloak-config` (keycloak-config-cli, Einmal-Job) | – | – | ● | ● | ● (Hook-Job) | – (Betreiber führt `funk.sh idp-sync` aus) | – |
-| `forgejo-bootstrap`, `forgejo` | ● | ● | ○ | ○ (Profil `forgejo`) | ○ | – | `Plane:Forgejo:Bundled` |
+| `forgejo-bootstrap`, `forgejo` | ● | ● | ○ | ○ (Profil `forgejo`) | ○ | – | `Funk:Forgejo:Bundled` |
 | `forgejo-init` | ● | ● | – | – | – | – | – |
 | `migrator` | ● | ● | ● | ● | ● (Hook-Job) | im Prozess | – |
 | `api`, `worker`, `realtime` | ● (Projekte) | ● | ● | ● | ● | im Prozess | – |
 | `gateway` | ● (Port 3000) | ● (Port 3000) | ● (Port 3000) | ● (80/443 → 8080/8443) | ● (Service + Ingress optional) | im Prozess | – |
 | `web`, `admin`, `space` (Angular-Dev-Server) | ● | – | – | – | – | – | – |
-| Komponenten-Galerie `gallery` (statisch unter `/__gallery/`, D08 §3.1, D15 §3.4.1) | – | ● | – | – | – | – | `Plane:Gateway:Gallery:Enabled` (nur `test`) |
+| Komponenten-Galerie `gallery` (statisch unter `/__gallery/`, D08 §3.1, D15 §3.4.1) | – | ● | – | – | – | – | `Funk:Gateway:Gallery:Enabled` (nur `test`) |
 | `caddy` (ACME-Front) | – | – | – | ○ (Profil `acme`) | – (Ingress/cert-manager) | ○ | – |
 | `dashboard` (Aspire-Dashboard) | ● (eingebaut) | ● (eingebaut) | ● (eingebaut) | ○ (Profil `observability`) | ○ | ○ | – |
 | `funk-cli` | – | – | – | ○ (Profil `tools`, `docker compose run`) | Job-Vorlage | – | – |
 
-**Profil `test` – verbindliche Abweichungen von `dev` (aus D15 §3.4.1):** keine Angular-Dev-Server (Gateway liefert `frontend/dist/{web,admin,space,gallery}`), Realm `plane-realm.test.json` (generiert, §3.3.3, ABG-001; Access-Token 60 s, Back-Channel-Logout auf den Gateway-Endpunkt), PostgreSQL ohne Volume auf `tmpfs` (`/var/lib/postgresql/data`), Forgejo + `forgejo-init` aktiv, feste Ports nur Gateway 3000 und Keycloak 8180 – verschiebbar um `Plane__Testing__PortOffset` (Gateway `3000+N`, Keycloak `8180+N`, Redirect-URIs über `PLANE_PUBLIC_URL` mitgeführt), Images optional aus `Plane__Testing__ImageRegistry` (Spiegel für Airgap-CI), `Plane__Testing__FixedUtcNow` nur hier zulässig.
+**Profil `test` – verbindliche Abweichungen von `dev` (aus D15 §3.4.1):** keine Angular-Dev-Server (Gateway liefert `frontend/dist/{web,admin,space,gallery}`), Realm `plane-realm.test.json` (generiert, §3.3.3, ABG-001; Access-Token 60 s, Back-Channel-Logout auf den Gateway-Endpunkt), PostgreSQL ohne Volume auf `tmpfs` (`/var/lib/postgresql/data`), Forgejo + `forgejo-init` aktiv, feste Ports nur Gateway 3000 und Keycloak 8180 – verschiebbar um `Funk__Testing__PortOffset` (Gateway `3000+N`, Keycloak `8180+N`, Redirect-URIs über `FUNK_PUBLIC_URL` mitgeführt), Images optional aus `Funk__Testing__ImageRegistry` (Spiegel für Airgap-CI), `Funk__Testing__FixedUtcNow` nur hier zulässig.
 
 #### 3.1.2 Welcher Teil dieses Dokuments wird in welchem Inkrement gebraucht
 
@@ -188,29 +188,29 @@ Legende: ● = immer, ○ = optional (Schalter/Compose-Profil), – = nicht vorh
 
 ### 3.2 Aspire-AppHost vollständig
 
-**Ort:** `src/hosts/Plane.AppHost/` mit `Program.cs` (Graph), `PlaneProfile.cs` (Profilauflösung), `Resources/KeycloakResources.cs`, `Resources/ForgejoResources.cs`, `Resources/StorageResources.cs`, `Resources/FrontendResources.cs`, `Resources/ComposePublishing.cs`, `appsettings.json` (keine Secrets), `appsettings.Development.json` (nur Dev-Defaults, Kommentar `DEV ONLY` in jedem Wert). Vollständiges Skelett in §5.1.
+**Ort:** `src/hosts/Funk.AppHost/` mit `Program.cs` (Graph), `FunkProfile.cs` (Profilauflösung), `Resources/KeycloakResources.cs`, `Resources/ForgejoResources.cs`, `Resources/StorageResources.cs`, `Resources/FrontendResources.cs`, `Resources/ComposePublishing.cs`, `appsettings.json` (keine Secrets), `appsettings.Development.json` (nur Dev-Defaults, Kommentar `DEV ONLY` in jedem Wert). Vollständiges Skelett in §5.1.
 
 #### 3.2.1 Parameter (Aspire `AddParameter`)
 
 | Parameter | secret | Dev-Quelle | Publish (`.env`-Variable) | verwendet von |
 |---|---|---|---|---|
 | `postgres-password` | ja | automatisch generiert (Aspire, in User-Secrets persistiert) | `POSTGRES_PASSWORD` | postgres (Superuser); in `dev`/`test` auch Connection-String aller Hosts (Aspire-Standard) |
-| `plane-db-password` | ja | – (dev/test nutzen den Superuser) | `PLANE_DB_PASSWORD` | postgres-Init (Rolle `plane`), Connection-String der Hosts in `prodlike`/Publish |
+| `plane-db-password` | ja | – (dev/test nutzen den Superuser) | `FUNK_DB_PASSWORD` | postgres-Init (Rolle `plane`), Connection-String der Hosts in `prodlike`/Publish |
 | `keycloak-db-password` | ja | – (dev nutzt Dev-Datei-DB) | `KEYCLOAK_DB_PASSWORD` | postgres-Init (Rolle `keycloak`), keycloak (prodlike/Publish) |
 | `forgejo-db-password` | ja | automatisch | `FORGEJO_DB_PASSWORD` | postgres-Init (Rolle `forgejo`), forgejo, forgejo-bootstrap |
 | `keycloak-admin-password` | ja | automatisch | `KEYCLOAK_ADMIN_PASSWORD` | keycloak (Bootstrap-Admin `KC_BOOTSTRAP_ADMIN_PASSWORD`), `keycloak-config` (`KEYCLOAK_PASSWORD`) |
-| `oidc-web-secret` | ja | automatisch | `PLANE_WEB_CLIENT_SECRET` | keycloak (Realm-Platzhalter, D05 §3.15.1), api |
-| `oidc-admin-secret` | ja | automatisch | `PLANE_ADMIN_CLIENT_SECRET` | keycloak, api |
-| `oidc-space-secret` | ja | automatisch | `PLANE_SPACE_CLIENT_SECRET` | keycloak, api |
-| `oidc-backend-secret` | ja | automatisch | `PLANE_BACKEND_CLIENT_SECRET` | keycloak, api/worker (Service-Account `plane-backend`, D05 §3.15.3) |
-| `forgejo-client-secret` | ja | automatisch | `FORGEJO_CLIENT_SECRET` | keycloak (Client `plane-forgejo`), forgejo-bootstrap |
+| `oidc-web-secret` | ja | automatisch | `FUNK_WEB_CLIENT_SECRET` | keycloak (Realm-Platzhalter, D05 §3.15.1), api |
+| `oidc-admin-secret` | ja | automatisch | `FUNK_ADMIN_CLIENT_SECRET` | keycloak, api |
+| `oidc-space-secret` | ja | automatisch | `FUNK_SPACE_CLIENT_SECRET` | keycloak, api |
+| `oidc-backend-secret` | ja | automatisch | `FUNK_BACKEND_CLIENT_SECRET` | keycloak, api/worker (Service-Account `funk-backend`, D05 §3.15.3) |
+| `forgejo-client-secret` | ja | automatisch | `FORGEJO_CLIENT_SECRET` | keycloak (Client `funk-forgejo`), forgejo-bootstrap |
 | `forgejo-admin-password` | ja | automatisch | `FORGEJO_ADMIN_PASSWORD` | forgejo-bootstrap, forgejo-init |
 | `s3-access-key` / `s3-secret-key` | ja | automatisch | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` (Original-Namen) | objectstore (`s3.json`), migrator, api, worker, realtime |
-| `signing-key` | ja | automatisch (32 Byte) | `PLANE_SIGNING_KEY` | alle Plane-Hosts |
-| `dev-user-password` | ja | automatisch (in User-Secrets; CI setzt es als Secret) | – | keycloak (`PLANE_DEV_USER_PASSWORD`, nur `plane-realm.json`/`plane-realm.test.json`), E2E-Tests |
-| `bootstrap-admin-email` / `bootstrap-admin-password` | nein / ja | – | `PLANE_BOOTSTRAP_ADMIN_EMAIL`, `PLANE_BOOTSTRAP_ADMIN_PASSWORD` | `keycloak-config` (`config/10-plane-bootstrap-admin.json`, nur wenn gesetzt, D05 §3.15.1) |
+| `signing-key` | ja | automatisch (32 Byte) | `FUNK_SIGNING_KEY` | alle Plane-Hosts |
+| `dev-user-password` | ja | automatisch (in User-Secrets; CI setzt es als Secret) | – | keycloak (`FUNK_DEV_USER_PASSWORD`, nur `plane-realm.json`/`plane-realm.test.json`), E2E-Tests |
+| `bootstrap-admin-email` / `bootstrap-admin-password` | nein / ja | – | `FUNK_BOOTSTRAP_ADMIN_EMAIL`, `FUNK_BOOTSTRAP_ADMIN_PASSWORD` | `keycloak-config` (`config/10-plane-bootstrap-admin.json`, nur wenn gesetzt, D05 §3.15.1) |
 | `public-url` | nein | `http://localhost:3000` | `WEB_URL` (Original-Name) | Hosts, Keycloak-Realm (`PLANE_PUBLIC_URL`), Gateway |
-| `plane-registry` / `plane-version` | nein | – | `PLANE_REGISTRY`, `PLANE_VERSION` | Image-Referenzen im Publish |
+| `plane-registry` / `plane-version` | nein | – | `FUNK_REGISTRY`, `FUNK_VERSION` | Image-Referenzen im Publish |
 
 Alle Secret-Parameter ohne Dev-Default werden von Aspire generiert (`AddParameter(name, secret: true)` mit `ParameterDefault`-Generator ⚠ S0) und in den User-Secrets des AppHosts persistiert, damit Datenvolumes (Postgres-Rollen, Forgejo) bei erneutem Start gültig bleiben. Es gibt **keine** festen Dev-Passwörter im Repository (präzisiert den ursprünglichen Entwurf; konsistent mit D05 §3.15.7). Das Testbenutzer-Passwort zeigt `aspire run` als Parameter im Dashboard an.
 
@@ -218,7 +218,7 @@ Alle Secret-Parameter ohne Dev-Default werden von Aspire generiert (`AddParamete
 
 | Ressource | Aspire-API | Referenzen (`WithReference`) | Wartet auf | Volumes / Bind-Mounts | Health-Check |
 |---|---|---|---|---|---|
-| `postgres` | `AddPostgres("postgres", password: pgPassword).WithImage("pgvector/pgvector").WithImageTag("<pin>-pg17")`; Umgebungsvariablen `PLANE_DB_PASSWORD`, `KEYCLOAK_DB_PASSWORD`, `FORGEJO_DB_PASSWORD` für das Init-Skript | – | – | Volume `plane-pgdata` (dev/prodlike), in `test` `tmpfs`; Bind-Mount `deploy/postgres/init/` → `/docker-entrypoint-initdb.d/` | Aspire-Standard (Npgsql-Connect) |
+| `postgres` | `AddPostgres("postgres", password: pgPassword).WithImage("pgvector/pgvector").WithImageTag("<pin>-pg17")`; Umgebungsvariablen `FUNK_DB_PASSWORD`, `KEYCLOAK_DB_PASSWORD`, `FORGEJO_DB_PASSWORD` für das Init-Skript | – | – | Volume `plane-pgdata` (dev/prodlike), in `test` `tmpfs`; Bind-Mount `deploy/postgres/init/` → `/docker-entrypoint-initdb.d/` | Aspire-Standard (Npgsql-Connect) |
 | `plane` | `postgres.AddDatabase("plane")` | – | `postgres` | – | DB erreichbar |
 | `keycloakdb` | `postgres.AddDatabase("keycloakdb", "keycloak")` (nur prodlike) | – | `postgres` | – | – |
 | `forgejodb` | `postgres.AddDatabase("forgejodb", "forgejo")` | – | `postgres` | – | – |
@@ -227,8 +227,8 @@ Alle Secret-Parameter ohne Dev-Default werden von Aspire generiert (`AddParamete
 | `mailpit` | `AddContainer("mailpit","axllent/mailpit","<pin>")` | – | – | – | `WithHttpHealthCheck("/livez", endpointName: "ui")` |
 | `keycloak` | dev/test: `AddKeycloak("keycloak", 8180, adminPassword: p.KeycloakAdminPassword).WithRealmImport(<eine Datei je Profil>)`; prodlike: `AddDockerfile("keycloak", "../../../deploy/keycloak")` (`funk-keycloak` lokal gebaut); Publish: `AddContainer("keycloak", "funk-keycloak")` | – | prodlike: `keycloakdb` | dev: Bind-Mount `deploy/keycloak/themes`; prodlike: – | Management-Port 9000 `/health/ready` (dev/test) bzw. `/idp/health/ready` (prodlike/Publish; Management-Pfad erbt `KC_HTTP_RELATIVE_PATH`, solange `KC_HTTP_MANAGEMENT_RELATIVE_PATH` nicht gesetzt ist) |
 | `keycloak-config` | `AddContainer("keycloak-config", "adorsys/keycloak-config-cli", Versions.KeycloakConfigCliTag)` (nur prodlike/Publish) mit `KEYCLOAK_URL` (interner Keycloak-Endpoint inkl. `/idp`), `KEYCLOAK_USER=admin`, `KEYCLOAK_PASSWORD`, `KEYCLOAK_AVAILABILITYCHECK_ENABLED=true`, `IMPORT_FILES_LOCATIONS=/config/*.json` + Settings aus D14-ADR-03 + alle Realm-Platzhalter | – | `keycloak` | Bind-Mount `deploy/keycloak/config` → `/config` (ro) | Exit-Code 0 |
-| `forgejo-bootstrap` | `AddContainer(..., forgejo image).WithEntrypoint("/bin/sh").WithArgs("/bootstrap/forgejo-bootstrap.sh")` | – | `forgejodb` | Volume `plane-forgejo` → `/data`; Bind-Mount `deploy/forgejo/bootstrap/` → `/bootstrap` | Exit-Code 0 |
-| `forgejo` | `AddContainer("forgejo","codeberg.org/forgejo/forgejo","15")` ⚠ Patch-Pin | – | `WaitForCompletion(forgejo-bootstrap)`, `keycloak` | Volume `plane-forgejo` → `/data` | `WithHttpHealthCheck("/api/healthz")` |
+| `forgejo-bootstrap` | `AddContainer(..., forgejo image).WithEntrypoint("/bin/sh").WithArgs("/bootstrap/forgejo-bootstrap.sh")` | – | `forgejodb` | Volume `funk-forgejo` → `/data`; Bind-Mount `deploy/forgejo/bootstrap/` → `/bootstrap` | Exit-Code 0 |
+| `forgejo` | `AddContainer("forgejo","codeberg.org/forgejo/forgejo","15")` ⚠ Patch-Pin | – | `WaitForCompletion(forgejo-bootstrap)`, `keycloak` | Volume `funk-forgejo` → `/data` | `WithHttpHealthCheck("/api/healthz")` |
 | `forgejo-init` | `AddProject<Projects.Plane_Tools_ForgejoInit>` | `forgejo` (Endpoint) | `forgejo` | schreibt `artifacts/dev/forgejo.json` | Exit-Code 0 |
 | `migrator` | `AddProject<Projects.Plane_Migrator>` | `plane` | `plane`, `objectstore` (falls gebündelt) | – | Exit-Code 0 |
 | `api` | `AddProject<Projects.Plane_Api>` | `plane`, `valkey` | `WaitForCompletion(migrator)`, `keycloak` (prodlike zusätzlich `WaitForCompletion(keycloak-config)`), `mailpit` (dev/test) | – | `WithHttpHealthCheck("/health/ready", endpointName: "management")` |
@@ -237,7 +237,7 @@ Alle Secret-Parameter ohne Dev-Default werden von Aspire generiert (`AddParamete
 | `web`/`admin`/`space` | `AddJavaScriptApp(name, "../../../frontend", "start:<app>").WithPnpm().WithHttpEndpoint(port: 420x, env: "PORT")` | – | – | – | HTTP 200 auf `/` bzw. Base-Pfad |
 | `gateway` | `AddProject<Projects.Plane_Gateway>` | `api`, `realtime`, dev: `web`/`admin`/`space`; prodlike: `keycloak` (Cluster für `/idp/`) | `api`, `realtime` | – | `WithHttpHealthCheck("/health/ready", endpointName: "management")` |
 
-**PostgreSQL-Init (`deploy/postgres/init/`, läuft nur bei leerem Datenverzeichnis):** `10-roles-and-databases.sh` legt – jeweils nur, wenn die zugehörige Passwort-Variable gesetzt ist – die Rollen `plane`, `keycloak`, `forgejo` (`LOGIN`, kein Superuser) und die gleichnamigen Datenbanken mit diesem Eigentümer an (`CREATE DATABASE … OWNER …` nur, wenn `SELECT 1 FROM pg_database WHERE datname=…` leer ist; damit kollidiert es nicht mit der Datenbankanlage durch Aspire-`AddDatabase` im Run-Modus). `20-extensions.sql` führt in `plane` als Superuser `CREATE EXTENSION IF NOT EXISTS vector; … pg_trgm; … unaccent;` aus (pgvector ist nicht als „trusted“ zu unterstellen, darum Superuser). Im **Publish**-Modus legt Aspire keine Datenbanken an; dort ist das Init-Skript die einzige Quelle. `dev`/`test` verbinden die Hosts mit dem Superuser (Aspire-Standard), `prodlike`/Publish mit der Rolle `plane` (`ConnectionStrings__plane` aus `PLANE_DB_PASSWORD`).
+**PostgreSQL-Init (`deploy/postgres/init/`, läuft nur bei leerem Datenverzeichnis):** `10-roles-and-databases.sh` legt – jeweils nur, wenn die zugehörige Passwort-Variable gesetzt ist – die Rollen `plane`, `keycloak`, `forgejo` (`LOGIN`, kein Superuser) und die gleichnamigen Datenbanken mit diesem Eigentümer an (`CREATE DATABASE … OWNER …` nur, wenn `SELECT 1 FROM pg_database WHERE datname=…` leer ist; damit kollidiert es nicht mit der Datenbankanlage durch Aspire-`AddDatabase` im Run-Modus). `20-extensions.sql` führt in `plane` als Superuser `CREATE EXTENSION IF NOT EXISTS vector; … pg_trgm; … unaccent;` aus (pgvector ist nicht als „trusted“ zu unterstellen, darum Superuser). Im **Publish**-Modus legt Aspire keine Datenbanken an; dort ist das Init-Skript die einzige Quelle. `dev`/`test` verbinden die Hosts mit dem Superuser (Aspire-Standard), `prodlike`/Publish mit der Rolle `plane` (`ConnectionStrings__plane` aus `FUNK_DB_PASSWORD`).
 
 ```mermaid
 flowchart LR
@@ -266,21 +266,21 @@ flowchart LR
 |---|---|---|
 | `ConnectionStrings__plane` | von Aspire | `WithReference(planeDb)` |
 | `ConnectionStrings__valkey` | von Aspire | `WithReference(valkey)` |
-| `Plane__Urls__Web` | `http://localhost:3000` | Parameter `public-url` |
-| `Plane__Urls__AdminPath`, `Plane__Urls__SpacePath`, `Plane__Urls__LivePath` | `/god-mode/`, `/spaces/`, `/live/` | Konstanten |
-| `Plane__Auth__Oidc__Authority` | `http://localhost:8180/realms/plane` | Keycloak-Endpoint |
-| `Plane__Auth__Oidc__MetadataAddress` | `http://localhost:8180/realms/plane/.well-known/openid-configuration` (Prod: interne Adresse `http://keycloak:8080/idp/realms/plane/...`) | Keycloak-Endpoint |
-| `Plane__Auth__Clients__Web__ClientSecret` (analog `Admin`, `Space`; Client-IDs `plane-web`/`plane-admin`/`plane-space`) und `Plane__Auth__Backend__ClientSecret` (`plane-backend`) | Parameter `oidc-*-secret` | Parameter; Schlüsselstruktur `PlaneAuthOptions.Clients` final (05 §3.4.3, ABG-035) |
-| `Plane__Auth__Oidc__RequireHttpsMetadata` | `false` (dev/test/prodlike), `true` (Publish mit TLS) | Profil (D05 §3.3.3) |
-| `Plane__Storage__Provider` | `S3` | Konstante |
-| `Plane__Storage__InternalEndpoint` | SeaweedFS-Endpoint `s3` | `objectStore.GetEndpoint("s3")` |
-| `Plane__Storage__PublicEndpoint` | `http://localhost:3000` | Parameter `public-url` (Pfad-Stil über Gateway `/uploads`) |
-| `Plane__Storage__Bucket` | `uploads` | Konstante (Original-Default) |
-| `Plane__Storage__AccessKey`/`SecretKey` | Parameter | Parameter |
-| `Plane__Storage__UploadMode` | `Direct` (S8 entscheidet, sonst `Proxy`) | Konstante |
-| `Plane__Mail__DevSmtp__Host`/`Port` | Mailpit `smtp` | nur dev/test: überschreibt Instanz-SMTP (Seed `EMAIL_HOST`, `EMAIL_PORT`, `ENABLE_SMTP=1`) |
-| `Plane__Security__SigningKey` | Parameter | Parameter |
-| `Plane__DataProtection__ApplicationName` | `plane` | Konstante (gleich in allen Hosts → geteilter Key-Ring) |
+| `Funk__Urls__Web` | `http://localhost:3000` | Parameter `public-url` |
+| `Funk__Urls__AdminPath`, `Funk__Urls__SpacePath`, `Funk__Urls__LivePath` | `/god-mode/`, `/spaces/`, `/live/` | Konstanten |
+| `Funk__Auth__Oidc__Authority` | `http://localhost:8180/realms/plane` | Keycloak-Endpoint |
+| `Funk__Auth__Oidc__MetadataAddress` | `http://localhost:8180/realms/plane/.well-known/openid-configuration` (Prod: interne Adresse `http://keycloak:8080/idp/realms/plane/...`) | Keycloak-Endpoint |
+| `Funk__Auth__Clients__Web__ClientSecret` (analog `Admin`, `Space`; Client-IDs `funk-web`/`funk-admin`/`funk-space`) und `Funk__Auth__Backend__ClientSecret` (`funk-backend`) | Parameter `oidc-*-secret` | Parameter; Schlüsselstruktur `FunkAuthOptions.Clients` final (05 §3.4.3, ABG-035) |
+| `Funk__Auth__Oidc__RequireHttpsMetadata` | `false` (dev/test/prodlike), `true` (Publish mit TLS) | Profil (D05 §3.3.3) |
+| `Funk__Storage__Provider` | `S3` | Konstante |
+| `Funk__Storage__InternalEndpoint` | SeaweedFS-Endpoint `s3` | `objectStore.GetEndpoint("s3")` |
+| `Funk__Storage__PublicEndpoint` | `http://localhost:3000` | Parameter `public-url` (Pfad-Stil über Gateway `/uploads`) |
+| `Funk__Storage__Bucket` | `uploads` | Konstante (Original-Default) |
+| `Funk__Storage__AccessKey`/`SecretKey` | Parameter | Parameter |
+| `Funk__Storage__UploadMode` | `Direct` (S8 entscheidet, sonst `Proxy`) | Konstante |
+| `Funk__Mail__DevSmtp__Host`/`Port` | Mailpit `smtp` | nur dev/test: überschreibt Instanz-SMTP (Seed `EMAIL_HOST`, `EMAIL_PORT`, `ENABLE_SMTP=1`) |
+| `Funk__Security__SigningKey` | Parameter | Parameter |
+| `Funk__DataProtection__ApplicationName` | `plane` | Konstante (gleich in allen Hosts → geteilter Key-Ring) |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | Aspire-Dashboard | Aspire automatisch |
 | `ASPNETCORE_ENVIRONMENT` | `Development` (dev/test), `Production` (prodlike/Publish) | Profil |
 
@@ -291,7 +291,7 @@ flowchart LR
 | Einstellung | Dev/Test | Produktion (`funk-keycloak`) | Zweck |
 |---|---|---|---|
 | Start | `start-dev --import-realm` (Aspire-Default) | `start --optimized` (Realm-Anlage und -Abgleich ausschließlich über `keycloak-config`, D14-ADR-03) | Dev: frischer Import je Start |
-| Image | Aspire-Default-Keycloak-Image der Integration (Tag ⚠ gleich Prod-Major) | `${PLANE_REGISTRY}/funk-keycloak:${PLANE_VERSION}` (Basis `quay.io/keycloak/keycloak:26.x` ⚠) | – |
+| Image | Aspire-Default-Keycloak-Image der Integration (Tag ⚠ gleich Prod-Major) | `${FUNK_REGISTRY}/funk-keycloak:${FUNK_VERSION}` (Basis `quay.io/keycloak/keycloak:26.x` ⚠) | – |
 | DB | H2 im Container (ephemer) | `KC_DB=postgres`, `KC_DB_URL=jdbc:postgresql://postgres:5432/keycloak`, `KC_DB_USERNAME=keycloak`, `KC_DB_PASSWORD` | – |
 | Hostname | `KC_HOSTNAME=http://localhost:8180` | `KC_HOSTNAME=${WEB_URL}/idp` | stabiler Issuer |
 | Backchannel | `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true` | `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true` | Container (Forgejo, Api in Prod) sprechen Keycloak intern an, Issuer bleibt öffentlich |
@@ -300,10 +300,10 @@ flowchart LR
 | Health/Metrics | `KC_HEALTH_ENABLED=true` | in `kc.sh build` aktiviert, Port 9000 | Readiness |
 | Bootstrap-Admin | `KC_BOOTSTRAP_ADMIN_USERNAME=admin`, `KC_BOOTSTRAP_ADMIN_PASSWORD` (Aspire setzt) | dto. aus `.env`; nach Ersteinrichtung soll der Betreiber einen persönlichen Admin anlegen (Runbook) | – |
 | Theme-Cache | aus (`KC_SPI_THEME_CACHE_THEMES=false`, `KC_SPI_THEME_CACHE_TEMPLATES=false`, `KC_SPI_THEME_STATIC_MAX_AGE=-1`) ⚠ Optionsnamen (Keycloak 26 SPI-Syntax) in S7 prüfen | an | Live-Bearbeitung |
-| Realm-Platzhalter (Namen verbindlich aus D05 §3.15.1) | `PLANE_PUBLIC_URL`, `PLANE_BACKCHANNEL_BASE_URL`, `PLANE_WEB_CLIENT_SECRET`, `PLANE_ADMIN_CLIENT_SECRET`, `PLANE_SPACE_CLIENT_SECRET`, `PLANE_BACKEND_CLIENT_SECRET`, `FORGEJO_PUBLIC_URL`, `FORGEJO_CLIENT_SECRET`, `PLANE_DEV_USER_PASSWORD`, `PLANE_SMTP_*` (leer) | dto. ohne `PLANE_DEV_USER_PASSWORD`, zusätzlich `KEYCLOAK_PUBLIC_URL` (= `${WEB_URL}/idp`), `PLANE_BOOTSTRAP_ADMIN_EMAIL`/`_PASSWORD`; in Prod setzt sie der Container `keycloak-config` (Variablen-Substitution), nicht Keycloak selbst | Werte im Realm-JSON als `${NAME}` |
+| Realm-Platzhalter (Namen verbindlich aus D05 §3.15.1) | `FUNK_PUBLIC_URL`, `FUNK_BACKCHANNEL_BASE_URL`, `FUNK_WEB_CLIENT_SECRET`, `FUNK_ADMIN_CLIENT_SECRET`, `FUNK_SPACE_CLIENT_SECRET`, `FUNK_BACKEND_CLIENT_SECRET`, `FORGEJO_PUBLIC_URL`, `FORGEJO_CLIENT_SECRET`, `FUNK_DEV_USER_PASSWORD`, `FUNK_SMTP_*` (leer) | dto. ohne `FUNK_DEV_USER_PASSWORD`, zusätzlich `KEYCLOAK_PUBLIC_URL` (= `${WEB_URL}/idp`), `FUNK_BOOTSTRAP_ADMIN_EMAIL`/`_PASSWORD`; in Prod setzt sie der Container `keycloak-config` (Variablen-Substitution), nicht Keycloak selbst | Werte im Realm-JSON als `${NAME}` |
 | Speicher | – | `JAVA_OPTS_KC_HEAP=-XX:MaxRAMPercentage=70` ⚠, Container-Limit 1 GiB | – |
 
-Back-Channel-Logout-Ziel: Keycloak muss die funk.-API erreichen; der Realm bildet die URL als `${PLANE_BACKCHANNEL_BASE_URL}/auth/oidc/backchannel-logout/` (D05 §3.15.3). Dev/Test: `PLANE_BACKCHANNEL_BASE_URL` = **Endpoint-Referenz** `gateway.GetEndpoint("public")` – Aspire übersetzt sie im Container-Kontext in eine vom Keycloak-Container erreichbare Host-Adresse (z. B. `http://host.docker.internal:3000`) ⚠ S7, unter Linux ggf. `--add-host=host.docker.internal:host-gateway`. Produktion: `PLANE_BACKCHANNEL_BASE_URL=http://api:8080` (intern, nicht über das öffentliche Gateway; G-08 sperrt den Pfad von außen).
+Back-Channel-Logout-Ziel: Keycloak muss die funk.-API erreichen; der Realm bildet die URL als `${FUNK_BACKCHANNEL_BASE_URL}/auth/oidc/backchannel-logout/` (D05 §3.15.3). Dev/Test: `FUNK_BACKCHANNEL_BASE_URL` = **Endpoint-Referenz** `gateway.GetEndpoint("public")` – Aspire übersetzt sie im Container-Kontext in eine vom Keycloak-Container erreichbare Host-Adresse (z. B. `http://host.docker.internal:3000`) ⚠ S7, unter Linux ggf. `--add-host=host.docker.internal:host-gateway`. Produktion: `FUNK_BACKCHANNEL_BASE_URL=http://api:8080` (intern, nicht über das öffentliche Gateway; G-08 sperrt den Pfad von außen).
 
 #### 3.3.2 Realm-Inhalt – infrastrukturrelevante Festlegungen (Inhalt verbindlich in D05 §3.15)
 
@@ -311,21 +311,21 @@ D14 dupliziert das Realm-Inventar **nicht**; maßgeblich sind D05 §3.15.2 (Real
 
 | Element | Wert (aus D05) | Infrastruktur-Bezug in D14 |
 |---|---|---|
-| Realm | `plane`; `sslRequired` `external` (Dev/Test) bzw. `all` (Prod-Template); `attributes.frontendUrl=${KEYCLOAK_PUBLIC_URL}` (Prod) | Issuer `http://localhost:8180/realms/plane` (Dev/Test) bzw. `${WEB_URL}/idp/realms/plane` (Prod, D14-ADR-02) |
-| Clients | `plane-web`, `plane-admin`, `plane-space` (confidential, Code + PKCE S256, Redirect `${PLANE_PUBLIC_URL}/auth/oidc/callback/`, Post-Logout `${PLANE_PUBLIC_URL}/auth/oidc/signed-out/`, `webOrigins: ["-"]`, Back-Channel `${PLANE_BACKCHANNEL_BASE_URL}/auth/oidc/backchannel-logout/`); `plane-backend` (nur Service-Account); `plane-api` (Resource-Server/Audience, H1); `plane-forgejo` (confidential, Secret `${FORGEJO_CLIENT_SECRET}`, Redirect `${FORGEJO_PUBLIC_URL}/user/oauth2/keycloak/callback`, ohne Back-Channel; ABG-003) | Secrets = Parameter §3.2.1 (Aspire-Parameter bleibt `forgejo-client-secret`); `plane-forgejo` nur, wenn Forgejo gebündelt (`config/20-forgejo-client.json`); Back-Channel intern (§3.3.1) |
+| Realm | `funk`; `sslRequired` `external` (Dev/Test) bzw. `all` (Prod-Template); `attributes.frontendUrl=${KEYCLOAK_PUBLIC_URL}` (Prod) | Issuer `http://localhost:8180/realms/plane` (Dev/Test) bzw. `${WEB_URL}/idp/realms/plane` (Prod, D14-ADR-02) |
+| Clients | `funk-web`, `funk-admin`, `funk-space` (confidential, Code + PKCE S256, Redirect `${FUNK_PUBLIC_URL}/auth/oidc/callback/`, Post-Logout `${FUNK_PUBLIC_URL}/auth/oidc/signed-out/`, `webOrigins: ["-"]`, Back-Channel `${FUNK_BACKCHANNEL_BASE_URL}/auth/oidc/backchannel-logout/`); `funk-backend` (nur Service-Account); `funk-api` (Resource-Server/Audience, H1); `funk-forgejo` (confidential, Secret `${FORGEJO_CLIENT_SECRET}`, Redirect `${FORGEJO_PUBLIC_URL}/user/oauth2/keycloak/callback`, ohne Back-Channel; ABG-003) | Secrets = Parameter §3.2.1 (Aspire-Parameter bleibt `forgejo-client-secret`); `funk-forgejo` nur, wenn Forgejo gebündelt (`config/20-forgejo-client.json`); Back-Channel intern (§3.3.1) |
 | Client-Scopes | Standard `profile`/`email` (+ Mapper `picture`), `plane-roles` (Claim `roles`), `plane-groups` (Claim `groups`, `full.path=true` → Werte wie `/plane-instance-admins`), `plane-api-audience` | E3-/H1-Andockstellen §6 |
-| Rollen/Gruppen | Realm-Rolle `plane-instance-admin`, optional `plane-user`; Gruppen `/plane-instance-admins`, `/plane` | Hinweis in `funk.sh install` (CE-INST-006) |
+| Rollen/Gruppen | Realm-Rolle `funk-instance-admin`, optional `plane-user`; Gruppen `/plane-instance-admins`, `/plane` | Hinweis in `funk.sh install` (CE-INST-006) |
 | Schutz | `bruteForceProtected=true`, `failureFactor=10`, `passwordPolicy` nach D05 | Testbenutzer-Passwort muss die Policy erfüllen (generierter Parameter: 20 Zeichen, je ≥ 1 Groß-/Kleinbuchstabe/Ziffer/Sonderzeichen) |
 | Sitzungen | `ssoSessionIdleTimeout`/`ssoSessionMaxLifespan` 604800, `accessTokenLifespan` 300 (Test-Realm 60) | – |
-| Keycloak-Mail | `smtpServer` aus `PLANE_SMTP_*` (leer erlaubt) | Dev/Test: Mailpit-Endpunkt (`PLANE_SMTP_HOST`/`_PORT` = Mailpit `smtp`) |
+| Keycloak-Mail | `smtpServer` aus `FUNK_SMTP_*` (leer erlaubt) | Dev/Test: Mailpit-Endpunkt (`FUNK_SMTP_HOST`/`_PORT` = Mailpit `smtp`) |
 | Events | `eventsEnabled`, `adminEventsEnabled`, 30 Tage | Keycloak-DB-Wachstum im Backup (§3.16) |
 
 #### 3.3.3 Realm-Dateien und Testbenutzer je Profil
 
 | Profil | Datei | Anwendung | Benutzer |
 |---|---|---|---|
-| `dev` | `deploy/keycloak/realms/plane-realm.json` | `WithRealmImport` (nur diese Datei) | Testbenutzer aus D05 §3.15.7: `admin@plane.local` (`00000000-0000-7000-8000-000000000001`, Gruppe `/plane-instance-admins`), `member@plane.local` (`…0002`), `guest@plane.local` (`…0003`), `second@plane.local` (`…0004`), `unverified@plane.local` (`…0005`, `emailVerified=false`), `disabled@plane.local` (`…0006`, `enabled=false`), `otp@plane.local` (`…0007`, TOTP) – Passwort `${PLANE_DEV_USER_PASSWORD}` |
-| `test` | `deploy/keycloak/realms/plane-realm.test.json` – **generiert** (eingecheckt, nie von Hand editiert) durch `Plane.Tools.ParityHarness keycloak-test-realm --out deploy/keycloak/realms/plane-realm.test.json` aus `plane-realm.json` (Clients, Scopes, Mapper, Flows **und** die sieben D05-Testbenutzer §3.15.7) ⊕ `tests/seed/keycloak/test-overrides.json` (Access-Token 60 s, Brute-Force-Testschwellen, Back-Channel-URL) ⊕ `tests/seed/keycloak/parity-users.json`; Aktualität prüft `--check` in `KeycloakRealmConfigTests.TestRealm_IsUpToDate` (ABG-001) | `WithRealmImport` (nur diese Datei; **keine** AppHost-Ressource `keycloak-test-users`, **kein** Partial Import) | D05-Benutzer + Parity-Seed-Benutzer aus dem Generator: die sieben Benutzer aus D05 §3.15.7 (gleiche IDs, damit AK-14-03/-09 und D05-Tests in beiden Profilen laufen) und die Parity-Seed-Benutzer aus `tests/seed/keycloak/parity-users.json` (D15 §3.14.2, UUIDv5-IDs = funk.-UUID, `owner@acme` mit `plane-instance-admin`, `unverified@acme`), Gruppen `team-a`/`team-b`, Test-Client `plane-test-app` |
+| `dev` | `deploy/keycloak/realms/plane-realm.json` | `WithRealmImport` (nur diese Datei) | Testbenutzer aus D05 §3.15.7: `admin@plane.local` (`00000000-0000-7000-8000-000000000001`, Gruppe `/plane-instance-admins`), `member@plane.local` (`…0002`), `guest@plane.local` (`…0003`), `second@plane.local` (`…0004`), `unverified@plane.local` (`…0005`, `emailVerified=false`), `disabled@plane.local` (`…0006`, `enabled=false`), `otp@plane.local` (`…0007`, TOTP) – Passwort `${FUNK_DEV_USER_PASSWORD}` |
+| `test` | `deploy/keycloak/realms/plane-realm.test.json` – **generiert** (eingecheckt, nie von Hand editiert) durch `Funk.Tools.ParityHarness keycloak-test-realm --out deploy/keycloak/realms/plane-realm.test.json` aus `plane-realm.json` (Clients, Scopes, Mapper, Flows **und** die sieben D05-Testbenutzer §3.15.7) ⊕ `tests/seed/keycloak/test-overrides.json` (Access-Token 60 s, Brute-Force-Testschwellen, Back-Channel-URL) ⊕ `tests/seed/keycloak/parity-users.json`; Aktualität prüft `--check` in `KeycloakRealmConfigTests.TestRealm_IsUpToDate` (ABG-001) | `WithRealmImport` (nur diese Datei; **keine** AppHost-Ressource `keycloak-test-users`, **kein** Partial Import) | D05-Benutzer + Parity-Seed-Benutzer aus dem Generator: die sieben Benutzer aus D05 §3.15.7 (gleiche IDs, damit AK-14-03/-09 und D05-Tests in beiden Profilen laufen) und die Parity-Seed-Benutzer aus `tests/seed/keycloak/parity-users.json` (D15 §3.14.2, UUIDv5-IDs = funk.-UUID, `owner@acme` mit `funk-instance-admin`, `unverified@acme`), Gruppen `team-a`/`team-b`, Test-Client `plane-test-app` |
 | `prodlike`, Publish, Helm | `deploy/keycloak/config/00-plane-realm.json`, `10-plane-bootstrap-admin.json` (optional), `20-forgejo-client.json` (optional) | `keycloak-config` | keine Testbenutzer; optional Bootstrap-Admin |
 
 Feste `id`-Werte machen `sub` deterministisch; `forgejo-init` verknüpft die Forgejo-Konten vorab über diese IDs (§3.4.3). Registrierung bleibt in allen Profilen aus (`registrationAllowed=false`); Dev-/Test-Konten entstehen ausschließlich über den Import.
@@ -345,13 +345,13 @@ deploy/keycloak/
 │   ├── 10-plane-bootstrap-admin.json
 │   └── 20-forgejo-client.json
 └── themes/
-    ├── plane/{login,email}/            # web + God-Mode-Variante (clientId == "plane-admin")
-    └── plane-space/login/              # parent=plane
+    ├── plane/{login,email}/            # web + God-Mode-Variante (clientId == "funk-admin")
+    └── funk-space/login/              # parent=plane
 tools/keycloak-theme/                   # Build (Node nur im Build): gen-messages.mjs, build-css.mjs, build-js.mjs,
                                         # locale-map.json, visual.spec.ts → schreibt nach deploy/keycloak/themes/**/resources
 ```
 
-Branding (ADR-009B, BR-09): Die Theme-Ordner heißen weiter `plane`/`plane-space` (BR-02); sichtbar sind nur funk.-Texte (`messages_<locale>.properties` aus den Original-Auth-Strings mit der BR-10-Ersetzung), funk.-Logo/-Favicon aus `assets/funk_logo.svg` und „Powered by funk. Publish“ im Space-Theme (Inhalt 05 §3.16, `BRAND-KC-*`). Aufruf: `pnpm -C tools/keycloak-theme build` (CI-Job `keycloak-theme`, vor `docker buildx build deploy/keycloak`), `pnpm -C tools/keycloak-theme watch` (Dev, Keycloak lädt bei abgeschaltetem Cache ohne Neustart). D14 garantiert: Fonts/Bilder liegen im Theme (keine externen URLs), CSS/JS/Messages werden reproduzierbar gebaut, das Theme ist im Image `funk-keycloak` enthalten; Visual-Diff ≤ 1 % gegen die Original-Sign-in-Seite prüft D05 §3.16.3 (S7).
+Branding (ADR-009B, BR-09): Die Theme-Ordner heißen weiter `plane`/`funk-space` (BR-02); sichtbar sind nur funk.-Texte (`messages_<locale>.properties` aus den Original-Auth-Strings mit der BR-10-Ersetzung), funk.-Logo/-Favicon aus `assets/funk_logo.svg` und „Powered by funk. Publish“ im Space-Theme (Inhalt 05 §3.16, `BRAND-KC-*`). Aufruf: `pnpm -C tools/keycloak-theme build` (CI-Job `keycloak-theme`, vor `docker buildx build deploy/keycloak`), `pnpm -C tools/keycloak-theme watch` (Dev, Keycloak lädt bei abgeschaltetem Cache ohne Neustart). D14 garantiert: Fonts/Bilder liegen im Theme (keine externen URLs), CSS/JS/Messages werden reproduzierbar gebaut, das Theme ist im Image `funk-keycloak` enthalten; Visual-Diff ≤ 1 % gegen die Original-Sign-in-Seite prüft D05 §3.16.3 (S7).
 
 ### 3.4 Forgejo (ADR-007)
 
@@ -383,22 +383,22 @@ Branding (ADR-009B, BR-09): Die Theme-Ordner heißen weiter `plane`/`plane-space
 Reihenfolge (idempotent, läuft als Benutzer `git`):
 1. `environment-to-ini` aus den `FORGEJO__*`-Variablen nach `/data/gitea/conf/app.ini` (Pfad und Werkzeugname im Forgejo-15-Image ⚠ S0).
 2. `forgejo migrate` (legt Schema an bzw. migriert).
-3. Admin `plane-admin` anlegen, falls `forgejo admin user list --admin` ihn nicht enthält (`--must-change-password=false`, E-Mail `forgejo-admin@plane.local`).
-4. Auth-Source `keycloak`: existiert sie (`forgejo admin auth list`), dann `update-oauth --id <id> …`, sonst `add-oauth --name keycloak --provider openidConnect --key plane-forgejo --secret "$FORGEJO_CLIENT_SECRET" --auto-discover-url "$KEYCLOAK_DISCOVERY_URL" --scopes "openid email profile groups"`; `KEYCLOAK_DISCOVERY_URL` zeigt intern auf `http://keycloak:8080/realms/plane/.well-known/openid-configuration` (Prod: `…/idp/realms/plane/…`).
+3. Admin `funk-admin` anlegen, falls `forgejo admin user list --admin` ihn nicht enthält (`--must-change-password=false`, E-Mail `forgejo-admin@plane.local`).
+4. Auth-Source `keycloak`: existiert sie (`forgejo admin auth list`), dann `update-oauth --id <id> …`, sonst `add-oauth --name keycloak --provider openidConnect --key funk-forgejo --secret "$FORGEJO_CLIENT_SECRET" --auto-discover-url "$KEYCLOAK_DISCOVERY_URL" --scopes "openid email profile groups"`; `KEYCLOAK_DISCOVERY_URL` zeigt intern auf `http://keycloak:8080/realms/plane/.well-known/openid-configuration` (Prod: `…/idp/realms/plane/…`).
 5. Exit 0.
 
-#### 3.4.3 Init (`src/tools/Plane.Tools.ForgejoInit/`, Dev/Test)
+#### 3.4.3 Init (`src/tools/Funk.Tools.ForgejoInit/`, Dev/Test)
 
-| Schritt | REST-Aufruf (`/api/v1`, Basic-Auth `plane-admin`) | Ergebnis |
+| Schritt | REST-Aufruf (`/api/v1`, Basic-Auth `funk-admin`) | Ergebnis |
 |---|---|---|
 | 1 | `POST /users/plane-admin/tokens` (Name `plane-dev-<timestamp>`, Scopes `all`) | Admin-Token (nur in `artifacts/dev/forgejo.json`) |
 | 2 | `POST /admin/users` je aktivem, verifiziertem Testbenutzer aus §3.3.3 (Profil `dev`: `admin`, `member`, `guest`, `second`; Profil `test` zusätzlich die Seed-Benutzer) mit `source_id` = Auth-Source `keycloak`, `login_name` = Keycloak-`sub`, `username` = Teil vor `@`, `must_change_password=false` ⚠ S0: prüfen, dass Forgejo bei `source_id` einer OAuth2-Quelle kein Passwort verlangt und der erste SSO-Login über `login_name` (= `sub`) zuordnet; Fallback: Konto beim ersten SSO-Login automatisch anlegen lassen (`ENABLE_AUTO_REGISTRATION`) und erst danach Org-Mitgliedschaften setzen | vorab verknüpfte Konten (gleiche Identität) |
-| 3 | `POST /orgs` `plane-dev` (Owner `plane-admin`, Mitglieder `admin`, `member`) | Test-Organisation |
+| 3 | `POST /orgs` `plane-dev` (Owner `funk-admin`, Mitglieder `admin`, `member`) | Test-Organisation |
 | 4 | `POST /orgs/plane-dev/repos` `alpha` (`auto_init: true`, `default_branch: main`), `beta` (leer), `importer-fixture` | Test-Repositories |
 | 5 | Labels (`bug`, `feature`, `docs`), Milestones (`v1.0`, `v1.1`), 3 Issues in `alpha` (eines mit Sub-Issue-Referenz), 20 Issues mit Kommentaren/Labels/Milestones in `importer-fixture` | Daten für Sync-/Importer-Tests (W1) |
 | 6 | Branch `feature/PLANE-1-sample` + Commit „Fixes PLANE-1“ + PR „PLANE-1: sample“ in `alpha`; Commit-Status `success` (Kontext `ci/forgejo-actions`) | PR-Automation-/Status-Tests (W1) |
 | 7 | `POST /user/repos` als `member` (per Sudo-Header) `personal` | persönliches Repo |
-| 8 | `POST /user/applications/oauth2` (als `plane-admin`): Name `funk. (dev)` (auf dem Forgejo-Zustimmungsdialog sichtbar, BR-01), `redirect_uris: ["http://localhost:3000/api/integrations/forgejo/oauth/callback/", "http://localhost:3000/api/integrations/forgejo/oauth/user-callback/"]` (`<WEB_URL>/api/integrations/forgejo/oauth/callback/` = Workspace-Verbindung, `…/oauth/user-callback/` = persönliches Konto; ABG-049), `confidential_client: true` | `client_id`, `client_secret` |
+| 8 | `POST /user/applications/oauth2` (als `funk-admin`): Name `funk. (dev)` (auf dem Forgejo-Zustimmungsdialog sichtbar, BR-01), `redirect_uris: ["http://localhost:3000/api/integrations/forgejo/oauth/callback/", "http://localhost:3000/api/integrations/forgejo/oauth/user-callback/"]` (`<WEB_URL>/api/integrations/forgejo/oauth/callback/` = Workspace-Verbindung, `…/oauth/user-callback/` = persönliches Konto; ABG-049), `confidential_client: true` | `client_id`, `client_secret` |
 | 9 | Datei `artifacts/dev/forgejo.json` (`.gitignore`) schreiben: `base_url`, `admin_token`, `oauth_client_id`, `oauth_client_secret`, `org`, `repos[]`, `users[]` | Eingabe für W1-Tests (`ForgejoDevFixture`) |
 
 Idempotenz: Jeder Schritt prüft per `GET` die Existenz. Für Schritt 8 wird die App gelöscht und neu angelegt, wenn `forgejo.json` fehlt (Secret ist nicht erneut lesbar). Laufzeit < 30 s (AK-14-08).
@@ -419,40 +419,40 @@ Idempotenz: Jeder Schritt prüft per `GET` die Existenz. Für Schritt 8 wird die
 }
 ```
 
-Das Gateway leitet im Modus `Plane__Gateway__FrontendMode=DevServer` `/` → `web`, `/god-mode/` → `admin`, `/spaces/` → `space` weiter, **inklusive** der HMR-WebSockets der Dev-Server (YARP leitet WebSockets transparent). Die Runtime-Config (`/runtime-config.json` usw.) beantwortet das Gateway in beiden Modi selbst, damit Dev und Prod dieselbe Konfiguration sehen.
+Das Gateway leitet im Modus `Funk__Gateway__FrontendMode=DevServer` `/` → `web`, `/god-mode/` → `admin`, `/spaces/` → `space` weiter, **inklusive** der HMR-WebSockets der Dev-Server (YARP leitet WebSockets transparent). Die Runtime-Config (`/runtime-config.json` usw.) beantwortet das Gateway in beiden Modi selbst, damit Dev und Prod dieselbe Konfiguration sehen.
 
-**Test/Prodlike/Publish:** `Plane__Gateway__FrontendMode=Static`; Auslieferung aus `wwwroot/{web,admin,space}` (D14-ADR-07). Build-Ausgabe: `frontend/dist/web/browser`, `frontend/dist/admin/browser`, `frontend/dist/space/browser` (Angular-Standard `@angular/build:application`). Im `test`-Profil baut der AppHost die Frontends **nicht** selbst; das Testskript (`tools/ci/build-frontend.sh`) baut vorher, der Gateway-Start bricht mit klarer Meldung ab, wenn `wwwroot/web/index.html` fehlt.
+**Test/Prodlike/Publish:** `Funk__Gateway__FrontendMode=Static`; Auslieferung aus `wwwroot/{web,admin,space}` (D14-ADR-07). Build-Ausgabe: `frontend/dist/web/browser`, `frontend/dist/admin/browser`, `frontend/dist/space/browser` (Angular-Standard `@angular/build:application`). Im `test`-Profil baut der AppHost die Frontends **nicht** selbst; das Testskript (`tools/ci/build-frontend.sh`) baut vorher, der Gateway-Start bricht mit klarer Meldung ab, wenn `wwwroot/web/index.html` fehlt.
 
-### 3.6 ServiceDefaults (`src/hosts/Plane.ServiceDefaults/`)
+### 3.6 ServiceDefaults (`src/hosts/Funk.ServiceDefaults/`)
 
-Jeder Host ruft als erstes `PlaneProbe.RunIfRequested(args)` und dann `builder.AddPlaneServiceDefaults()` auf; Web-Hosts zusätzlich `app.MapPlaneDefaultEndpoints()`. Skelett in §5.2.
+Jeder Host ruft als erstes `FunkProbe.RunIfRequested(args)` und dann `builder.AddPlaneServiceDefaults()` auf; Web-Hosts zusätzlich `app.MapPlaneDefaultEndpoints()`. Skelett in §5.2.
 
 | Baustein | Festlegung | Datei |
 |---|---|---|
-| OpenTelemetry Traces | Quellen: ASP.NET Core, HttpClient, Npgsql (`Npgsql.OpenTelemetry`), StackExchange.Redis (Instrumentation ⚠ Paketreife S0), eigene `ActivitySource`s `Plane.Api`, `Plane.Worker`, `Plane.Realtime`, `Plane.Messaging`, `Plane.Gateway`; Sampling `ParentBased(TraceIdRatio)` mit `Plane__Telemetry__TraceSampleRatio` (Default 1.0 in Dev, 0.1 in Prod); Health-Requests und statische Dateien werden **nicht** getract | `Telemetry/TracingSetup.cs` |
+| OpenTelemetry Traces | Quellen: ASP.NET Core, HttpClient, Npgsql (`Npgsql.OpenTelemetry`), StackExchange.Redis (Instrumentation ⚠ Paketreife S0), eigene `ActivitySource`s `Funk.Api`, `Funk.Worker`, `Funk.Realtime`, `Funk.Messaging`, `Funk.Gateway`; Sampling `ParentBased(TraceIdRatio)` mit `Funk__Telemetry__TraceSampleRatio` (Default 1.0 in Dev, 0.1 in Prod); Health-Requests und statische Dateien werden **nicht** getract | `Telemetry/TracingSetup.cs` |
 | OpenTelemetry Metriken | Runtime, ASP.NET Core, HttpClient, Npgsql + eigene Meter (§3.19.2) | `Telemetry/MetricsSetup.cs` |
 | OpenTelemetry Logs | `ILogger` → OTLP, zusätzlich JSON-Console; Kategorien 01 §7.16 | `Telemetry/LoggingSetup.cs` |
 | Exporter | OTLP nur, wenn `OTEL_EXPORTER_OTLP_ENDPOINT` gesetzt; sonst **kein** Exporter (Test AK-14-11 prüft: keine ausgehende Verbindung) | `Telemetry/ExporterSetup.cs` |
-| Resource-Attribute | `service.name` = Host-Name (`plane-api`, …), `service.version` = `PLANE_VERSION`, `service.instance.id` = Hostname, `deployment.environment` = Profil | `Telemetry/ResourceSetup.cs` |
-| Resilience | `ConfigureHttpClientDefaults(b => b.AddStandardResilienceHandler())` für alle **internen/Infrastruktur**-Clients (Named Client `keycloak` mit Timeout 10 s nach D05 §3.3.3, Objektspeicher); **ausgenommen** alle SSRF-geschützten Clients an Nutzer-/Betreiber-URLs (`AddSsrfSafeHttpClient` mit `SsrfSafeHttpHandler` aus `Plane.Platform.Security`, D05-ADR-24, **ohne** `AddStandardResilienceHandler`; ABG-040): `webhooks`, `link-preview`, `avatar-import`, `unsplash`, `llm` (mit Allowlist für interne LLM-Hosts), `integrations`, `forgejo` – Retries nur über die Job-Queue wie im Original (01 ADR-020); diese entfernen den Standard-Handler (`RemoveAllResilienceHandlers()`, `Microsoft.Extensions.Http.Resilience` ≥ 9.x ⚠ Paketversion S0) | `Http/ResilienceSetup.cs` |
+| Resource-Attribute | `service.name` = Host-Name (`funk-api`, …), `service.version` = `FUNK_VERSION`, `service.instance.id` = Hostname, `deployment.environment` = Profil | `Telemetry/ResourceSetup.cs` |
+| Resilience | `ConfigureHttpClientDefaults(b => b.AddStandardResilienceHandler())` für alle **internen/Infrastruktur**-Clients (Named Client `keycloak` mit Timeout 10 s nach D05 §3.3.3, Objektspeicher); **ausgenommen** alle SSRF-geschützten Clients an Nutzer-/Betreiber-URLs (`AddSsrfSafeHttpClient` mit `SsrfSafeHttpHandler` aus `Funk.Platform.Security`, D05-ADR-24, **ohne** `AddStandardResilienceHandler`; ABG-040): `webhooks`, `link-preview`, `avatar-import`, `unsplash`, `llm` (mit Allowlist für interne LLM-Hosts), `integrations`, `forgejo` – Retries nur über die Job-Queue wie im Original (01 ADR-020); diese entfernen den Standard-Handler (`RemoveAllResilienceHandlers()`, `Microsoft.Extensions.Http.Resilience` ≥ 9.x ⚠ Paketversion S0) | `Http/ResilienceSetup.cs` |
 | Service Discovery | `Microsoft.Extensions.ServiceDiscovery` (+ `.Yarp` im Gateway); Namen `api`, `realtime`, `keycloak` lösen in Aspire über `services__*`-Variablen, in Compose/Kubernetes über DNS auf | `Discovery/DiscoverySetup.cs` |
 | Health | Endpunkte **nur auf dem Management-Port 8081**: `/health/live` (Prozess lebt, keine Abhängigkeiten), `/health/ready` (Tags `ready`: PostgreSQL erreichbar, **Schema-Gate** (D14-ADR-16), Data-Protection-Key-Ring ladbar, Valkey erreichbar falls konfiguriert, Keycloak-Metadaten geladen (nur Api), Objektspeicher erreichbar (Warnung, nicht blockierend)), `/health/startup` (Tag `startup`: Migrationen/Initialisierung abgeschlossen). Antwortformat `application/json`: `{"status": "Healthy|Degraded|Unhealthy", "checks": {"<name>": "Healthy|Degraded|Unhealthy"}}` ohne interne Details (keine Connection-Strings); HTTP 200 bei Healthy/Degraded, 503 bei Unhealthy; kein ProblemDetails (ABG-014). | `Health/HealthSetup.cs`, `Health/SchemaGateHealthCheck.cs` |
-| Original-Health | `GET /` auf dem App-Port der Api → `{"status":"OK"}` (CE-OPS-008, nicht geloggt); `GET /live/health/` auf Realtime → `{"status":"OK","timestamp":…,"version":…}` (CE-RT-009) – beide in der jeweiligen Host-Komposition, nicht in ServiceDefaults | `Plane.Hosting/ApiComposition.cs`, `RealtimeComposition.cs` |
-| Probe-Modus | `--probe live|ready|startup` → HTTP-GET gegen `127.0.0.1:${Plane__Management__Port:-8081}`, Timeout 3 s, Exit 0/1 (D14-ADR-12) | `Probe/PlaneProbe.cs` |
-| Kestrel | App-Port aus `HTTP_PORTS` (Container-Default 8080), Management-Port aus `Plane__Management__Port` (Default 8081), optional HTTPS-Port aus `Plane__Tls__HttpsPort` (Default 8443, nur Gateway/AIO); in Dev setzt Aspire die Werte (dynamische Ports, nur Gateway fest 3000); `AddServerHeader=false`; Limits aus Optionen (`MaxRequestBodySize` je Endpunkt, Gateway global) | `Hosting/KestrelSetup.cs` |
-| Forwarded Headers | `ForwardedHeadersOptions` mit `KnownIPNetworks` (`System.Net.IPNetwork`, Parsen per `IPNetwork.Parse`) aus `Plane__ForwardedHeaders__KnownNetworks` (D14-ADR-22; veraltete Eigenschaft `KnownNetworks` und `Microsoft.AspNetCore.HttpOverrides.IPNetwork` verboten, `ASPDEPR005` als Fehler – ABG-039), `ForwardLimit` aus `Plane__ForwardedHeaders__ForwardLimit` (Alias `NUM_PROXIES`) | `Hosting/ForwardedHeadersSetup.cs` |
-| Konfiguration | `AddPlaneConfiguration()` registriert Reihenfolge: `appsettings.json` → `appsettings.{Env}.json` → **Legacy-ENV-Aliasse** → ENV (`Plane__…`) → Datei-Secrets `/run/secrets` (KeyPerFile) → Kommandozeile; `ValidateOnStart` für alle `Plane*Options` | `Configuration/PlaneConfigurationSetup.cs`, `Configuration/LegacyEnvironmentConfigurationSource.cs` |
-| Data Protection | `AddDataProtection().SetApplicationName("plane").PersistKeysToDbContext<PlaneDataProtectionDbContext>()` + `ProtectKeysWithCertificate(...)` (D14-ADR-09); Key-Lebensdauer 90 Tage. Implementierung in `Plane.Platform.Security/DataProtection/DataProtectionSetup.cs` (Ort laut 01 §5.1); ServiceDefaults ruft nur `builder.AddPlaneDataProtection()` auf | `Plane.Platform.Security` (Aufruf aus ServiceDefaults) |
+| Original-Health | `GET /` auf dem App-Port der Api → `{"status":"OK"}` (CE-OPS-008, nicht geloggt); `GET /live/health/` auf Realtime → `{"status":"OK","timestamp":…,"version":…}` (CE-RT-009) – beide in der jeweiligen Host-Komposition, nicht in ServiceDefaults | `Funk.Hosting/ApiComposition.cs`, `RealtimeComposition.cs` |
+| Probe-Modus | `--probe live|ready|startup` → HTTP-GET gegen `127.0.0.1:${Funk__Management__Port:-8081}`, Timeout 3 s, Exit 0/1 (D14-ADR-12) | `Probe/FunkProbe.cs` |
+| Kestrel | App-Port aus `HTTP_PORTS` (Container-Default 8080), Management-Port aus `Funk__Management__Port` (Default 8081), optional HTTPS-Port aus `Funk__Tls__HttpsPort` (Default 8443, nur Gateway/AIO); in Dev setzt Aspire die Werte (dynamische Ports, nur Gateway fest 3000); `AddServerHeader=false`; Limits aus Optionen (`MaxRequestBodySize` je Endpunkt, Gateway global) | `Hosting/KestrelSetup.cs` |
+| Forwarded Headers | `ForwardedHeadersOptions` mit `KnownIPNetworks` (`System.Net.IPNetwork`, Parsen per `IPNetwork.Parse`) aus `Funk__ForwardedHeaders__KnownNetworks` (D14-ADR-22; veraltete Eigenschaft `KnownNetworks` und `Microsoft.AspNetCore.HttpOverrides.IPNetwork` verboten, `ASPDEPR005` als Fehler – ABG-039), `ForwardLimit` aus `Funk__ForwardedHeaders__ForwardLimit` (Alias `NUM_PROXIES`) | `Hosting/ForwardedHeadersSetup.cs` |
+| Konfiguration | `AddPlaneConfiguration()` registriert Reihenfolge: `appsettings.json` → `appsettings.{Env}.json` → **Legacy-ENV-Aliasse** → ENV (`Funk__…`) → Datei-Secrets `/run/secrets` (KeyPerFile) → Kommandozeile; `ValidateOnStart` für alle `Plane*Options` | `Configuration/FunkConfigurationSetup.cs`, `Configuration/LegacyEnvironmentConfigurationSource.cs` |
+| Data Protection | `AddDataProtection().SetApplicationName("plane").PersistKeysToDbContext<FunkDataProtectionDbContext>()` + `ProtectKeysWithCertificate(...)` (D14-ADR-09); Key-Lebensdauer 90 Tage. Implementierung in `Funk.Platform.Security/DataProtection/DataProtectionSetup.cs` (Ort laut 01 §5.1); ServiceDefaults ruft nur `builder.AddPlaneDataProtection()` auf | `Funk.Platform.Security` (Aufruf aus ServiceDefaults) |
 
-### 3.7 Reverse Proxy `Plane.Gateway`
+### 3.7 Reverse Proxy `Funk.Gateway`
 
 #### 3.7.1 Routing-Tabelle (verbindlich, Reihenfolge = Priorität)
 
-YARP-Routen werden **im Code** definiert (`src/hosts/Plane.Gateway/Routing/PlaneRouteTable.cs`, kein JSON), damit `Plane.Gateway.Tests` sie direkt prüfen können. Spalte „Original“ verweist auf die Zeile in A01 §2.8.1.
+YARP-Routen werden **im Code** definiert (`src/hosts/Funk.Gateway/Routing/FunkRouteTable.cs`, kein JSON), damit `Funk.Gateway.Tests` sie direkt prüfen können. Spalte „Original“ verweist auf die Zeile in A01 §2.8.1.
 
 | # | Match | Methode | Ziel | Transformationen / Besonderheiten | Original | ab |
 |---|---|---|---|---|---|---|
-| G-01 | alle | alle | – | Body-Limit `FILE_SIZE_LIMIT + Plane__Gateway__BodyLimitBufferBytes` (Default + 1 MiB für Multipart-Overhead, E-24) → 413 `{"error":"REQUEST_BODY_TOO_LARGE","detail":"The size of the request body exceeds the maximum allowed size."}` (Körper 1:1 aus `API/middleware/request_body_size.py`); gilt auch für G-09/G-10; Ausnahmen: G-07 (WebSocket, kein Body-Limit, Nachrichtengröße begrenzt Realtime selbst), G-15 (eigenes Limit) | #1 | I0 |
+| G-01 | alle | alle | – | Body-Limit `FILE_SIZE_LIMIT + Funk__Gateway__BodyLimitBufferBytes` (Default + 1 MiB für Multipart-Overhead, E-24) → 413 `{"error":"REQUEST_BODY_TOO_LARGE","detail":"The size of the request body exceeds the maximum allowed size."}` (Körper 1:1 aus `API/middleware/request_body_size.py`); gilt auch für G-09/G-10; Ausnahmen: G-07 (WebSocket, kein Body-Limit, Nachrichtengröße begrenzt Realtime selbst), G-15 (eigenes Limit) | #1 | I0 |
 | G-02 | exakt `/spaces` | GET/HEAD | – | 301 → `/spaces/` (Query bleibt) | #2 | I0 |
 | G-03 | `/spaces/{**}` | GET/HEAD | Static `wwwroot/space` bzw. Dev-Server `space` | SPA-Fallback `/spaces/index.html`; `/spaces/issues/{anchor}` (Regex `^[a-zA-Z0-9_-]+$`) über `OgMetaMiddleware` (I6, §3.7.5) | #3 | I0 |
 | G-04 | exakt `/god-mode` | GET/HEAD | – | 301 → `/god-mode/` | #4 | I0 |
@@ -460,14 +460,14 @@ YARP-Routen werden **im Code** definiert (`src/hosts/Plane.Gateway/Routing/Plane
 | G-06 | `/live/{**}` (ohne `collaboration`, `events`) | alle | Cluster `realtime` | `X-Forwarded-*` neu | #6 | I0 |
 | G-07 | `/live/collaboration{**}`, `/live/events/{**}` | WebSocket-Upgrade (SignalR-Client nutzt `skipNegotiation` + nur WebSockets, D08 §3.12; Negotiate-`POST` wird trotzdem durchgelassen) | Cluster `realtime-ws` (gleiche Ziele wie `realtime`, eigener `HttpRequest.ActivityTimeout`) | `ActivityTimeout` 120 s (YARP wendet ihn auch auf WebSockets an; Server-Ping alle 30 s, D07), kein Body-Limit, Cookie wird durchgereicht | #6 | I0 (Route), I4/I5 (Nutzung) |
 | G-08 | `/api/{**}`, `/auth/{**}` | alle | Cluster `api` | `X-Forwarded-*` neu; `/auth/oidc/backchannel-logout/` von außen **gesperrt** (403) – Keycloak ruft intern (§3.3.1) | #7, #8 | I0 |
-| G-09 | `/{bucket}/{**}` (Default `/uploads/{**}`) | GET/HEAD/PUT | Cluster `objectstore` (nur `Plane__Gateway__ObjectStore__Mode=Proxy`) | **`RequestHeaderOriginalHost: true`** (SigV4-Signatur enthält den öffentlichen Host, A01 F-01), Pfad unverändert, keine Cookie-Weitergabe (`RequestHeaderRemove: Cookie`), Antwort-Header unverändert (`Content-Disposition`/`Content-Type` gepinnt durch Presign) | #10 | I1 |
+| G-09 | `/{bucket}/{**}` (Default `/uploads/{**}`) | GET/HEAD/PUT | Cluster `objectstore` (nur `Funk__Gateway__ObjectStore__Mode=Proxy`) | **`RequestHeaderOriginalHost: true`** (SigV4-Signatur enthält den öffentlichen Host, A01 F-01), Pfad unverändert, keine Cookie-Weitergabe (`RequestHeaderRemove: Cookie`), Antwort-Header unverändert (`Content-Disposition`/`Content-Type` gepinnt durch Presign) | #10 | I1 |
 | G-10 | exakt `/{bucket}` | POST | Cluster `objectstore` | wie G-09 (Presigned-POST an Bucket-Root) | #11 | I1 |
 | G-11 | `/static/{**}` | GET/HEAD | Static `wwwroot/static` | Inhalt = `apps/api/plane/static/**` (u. a. `logos/*.png` für E-Mail-Templates, `humans.txt`); `Cache-Control: public, max-age=86400` | #9 | I1 |
 | G-12 | exakt `/robots.txt` | GET | Gateway-intern | `text/plain`, Inhalt `User-agent: *\nDisallow: /` (Inhalt der API-View `API/web/views.py`; im Original landete der Pfad durch das Caddy-Routing bei web → bewusste Korrektur zu E-15, CE-OPS-008) | – (E-15) | I0 |
 | G-13 | `/runtime-config.json`, `/god-mode/runtime-config.json`, `/spaces/runtime-config.json` | GET | Gateway-intern | 01 §7.12; `Cache-Control: no-cache` | neu | I0 |
-| G-14 | `/idp/{**}` | alle | Cluster `keycloak` (nur wenn `Plane__Gateway__Idp__Enabled=true`, Prod-Default) | `X-Forwarded-*` neu; **`/idp/admin/{**}`** nur für `Plane__Gateway__Idp__AdminAllowedNetworks` (Default leer = gesperrt, 403) | neu (D14-ADR-02) | I7 (I0 in prodlike) |
-| G-15 | Host = `Plane__Gateway__Forgejo__Host` | alle | Cluster `forgejo` (nur Profil `forgejo`) | Host-Route, eigene Body-Limits (`Plane__Gateway__Forgejo__MaxBodyBytes`, Default 512 MiB für Git-HTTP-Push) | neu (ADR-007) | I7 |
-| G-17 | `/__gallery/{**}` | GET/HEAD | Static aus `Plane__Gateway__Gallery__Root` (PhysicalFileProvider auf `frontend/dist/gallery/browser`; nur wenn `Plane__Gateway__Gallery__Enabled=true`, ausschließlich Profil `test`; die Galerie ist nie Teil eines Images) | SPA-Fallback `/__gallery/index.html` | neu (D08 §3.1, D15 §3.4.1) | I0 |
+| G-14 | `/idp/{**}` | alle | Cluster `keycloak` (nur wenn `Funk__Gateway__Idp__Enabled=true`, Prod-Default) | `X-Forwarded-*` neu; **`/idp/admin/{**}`** nur für `Funk__Gateway__Idp__AdminAllowedNetworks` (Default leer = gesperrt, 403) | neu (D14-ADR-02) | I7 (I0 in prodlike) |
+| G-15 | Host = `Funk__Gateway__Forgejo__Host` | alle | Cluster `forgejo` (nur Profil `forgejo`) | Host-Route, eigene Body-Limits (`Funk__Gateway__Forgejo__MaxBodyBytes`, Default 512 MiB für Git-HTTP-Push) | neu (ADR-007) | I7 |
+| G-17 | `/__gallery/{**}` | GET/HEAD | Static aus `Funk__Gateway__Gallery__Root` (PhysicalFileProvider auf `frontend/dist/gallery/browser`; nur wenn `Funk__Gateway__Gallery__Enabled=true`, ausschließlich Profil `test`; die Galerie ist nie Teil eines Images) | SPA-Fallback `/__gallery/index.html` | neu (D08 §3.1, D15 §3.4.1) | I0 |
 | G-16 | `/{**}` (Rest) | GET/HEAD | Static `wwwroot/web` bzw. Dev-Server `web` | SPA-Fallback `/index.html` (nicht für Pfade mit Dateiendung außer `.html` → 404, damit fehlende Chunks nicht als HTML ausgeliefert werden; Stale-Chunk-Recovery D08 §3.14); andere Methoden → 405 | #12 | I0 |
 
 Weitere Regeln: (a) Mit und ohne abschließenden Slash wird **nicht** umgeleitet (außer G-02/G-04, 01 §7.11). (b) `X-Forwarded-Prefix` wird nicht gesetzt (Pfade bleiben absolut). (c) `max_header_size 25MB` des Originals → Kestrel `MaxRequestHeadersTotalSize = 32 KiB`, `MaxRequestHeaderCount = 100` (bewusste Abweichung, 25 MB Header sind ein DoS-Risiko; Cookies und Presigned-URLs passen deutlich unter 32 KiB – AK-14-05 prüft mit größtem Original-Cookie).
@@ -479,7 +479,7 @@ Weitere Regeln: (a) Mit und ohne abschließenden Slash wird **nicht** umgeleitet
 | `api` | `http://api` (Endpoint `http`; Container-Port 8080) | passiv (Fehlerquote) + aktiv über den Endpoint `management` (`http://_management.api/health/ready`, Service-Discovery-Syntax ⚠ S0) alle 10 s | `PowerOfTwoChoices` |
 | `realtime` | `http://realtime` | aktiv `http://_management.realtime/health/ready` | `PowerOfTwoChoices` (keine Sticky-Session nötig, D14-ADR-21 + Valkey-Fan-out) |
 | `realtime-ws` | `http://realtime` | wie `realtime` | dto.; `HttpRequest.ActivityTimeout = 00:02:00` |
-| `objectstore` | `Plane__Storage__InternalEndpoint` | – | – |
+| `objectstore` | `Funk__Storage__InternalEndpoint` | – | – |
 | `keycloak` | `http://keycloak:8080` | aktiv `http://keycloak:9000/idp/health/ready` ⚠ Pfad mit `KC_HTTP_RELATIVE_PATH` | `PowerOfTwoChoices` (Keycloak-Cluster teilt Sessions via Infinispan) |
 | `forgejo` | `http://forgejo:3000` | aktiv `/api/healthz` | – |
 | `web`/`admin`/`space` (nur Dev) | Angular-Dev-Server | – | – |
@@ -491,15 +491,15 @@ Weitere Regeln: (a) Mit und ohne abschließenden Slash wird **nicht** umgeleitet
 | `X-Frame-Options` | `DENY`; Space-Startseite/Auth `SAMEORIGIN`, Space-Boards `/spaces/issues/*` nicht gesetzt (Werte je App verbindlich in D05 §3.17.7) | alle Antworten (Original: Caddy web/admin + Django; Space `SAMEORIGIN`) |
 | `X-Content-Type-Options` | `nosniff` | alle |
 | `X-XSS-Protection` | `1; mode=block` | statische Frontends (Parität) |
-| `Strict-Transport-Security` | Web/Admin/API `max-age=31536000`; Space `max-age=31536000; includeSubDomains; preload` (Space-Original), abschaltbar `Plane__Gateway__Hsts__IncludeSubDomains=false` (D05 §3.17.7) | nur bei HTTPS (TLS-Modus `Certificate` oder `X-Forwarded-Proto=https` vom vertrauten Proxy) |
+| `Strict-Transport-Security` | Web/Admin/API `max-age=31536000`; Space `max-age=31536000; includeSubDomains; preload` (Space-Original), abschaltbar `Funk__Gateway__Hsts__IncludeSubDomains=false` (D05 §3.17.7) | nur bei HTTPS (TLS-Modus `Certificate` oder `X-Forwarded-Proto=https` vom vertrauten Proxy) |
 | `Referrer-Policy` | `same-origin`; Space `origin-when-cross-origin` (D05 §3.17.7) | alle (A06-Empfehlung; Abweichung gering) |
-| `Content-Security-Policy-Report-Only` (ab I0) bzw. `Content-Security-Policy` (ab I7) | Richtlinie nach D05-ADR-23 / 05 §3.17 (Original setzt keine; Härtung): Schalter `Plane__Gateway__Csp__Mode` = `ReportOnly` (Default ab I0) │ `Enforce` (Default ab I7) │ `Off`; Verstöße an `POST /csp-report`; Theme-Inline-Script per Hash aus `theme-script.sha256`; `frame-ancestors 'none'` für Web/Admin, Space-Boards einbettbar, Space-Startseite `SAMEORIGIN` (ABG-016) | HTML-Antworten der Frontends (Web, Admin, Space) |
+| `Content-Security-Policy-Report-Only` (ab I0) bzw. `Content-Security-Policy` (ab I7) | Richtlinie nach D05-ADR-23 / 05 §3.17 (Original setzt keine; Härtung): Schalter `Funk__Gateway__Csp__Mode` = `ReportOnly` (Default ab I0) │ `Enforce` (Default ab I7) │ `Off`; Verstöße an `POST /csp-report`; Theme-Inline-Script per Hash aus `theme-script.sha256`; `frame-ancestors 'none'` für Web/Admin, Space-Boards einbettbar, Space-Startseite `SAMEORIGIN` (ABG-016) | HTML-Antworten der Frontends (Web, Admin, Space) |
 | `Cache-Control` | siehe D14-ADR-07 | statische Dateien |
 | `Server` | entfernt | alle |
 
 #### 3.7.4 Rate-Limit für statische Auslieferung
 
-`300` Anfragen pro Minute und Client-IP (`FixedWindow`, Schlüssel = `RemoteIpAddress` nach Forwarded-Headers) für G-03, G-05, G-11, G-16 (CE-OPS-006). Antwort 429 mit leerem Body (Caddy-Verhalten). API-Rate-Limits (01 ADR-034) bleiben in `Plane.Api`, nicht im Gateway.
+`300` Anfragen pro Minute und Client-IP (`FixedWindow`, Schlüssel = `RemoteIpAddress` nach Forwarded-Headers) für G-03, G-05, G-11, G-16 (CE-OPS-006). Antwort 429 mit leerem Body (Caddy-Verhalten). API-Rate-Limits (01 ADR-034) bleiben in `Funk.Api`, nicht im Gateway.
 
 #### 3.7.5 OG-Meta für Space (I6, CE-SPACE-017)
 
@@ -507,21 +507,21 @@ Weitere Regeln: (a) Mit und ohne abschließenden Slash wird **nicht** umgeleitet
 
 #### 3.7.6 Upload-Pfade und Host-Header für Presigned URLs
 
-| Speicher-Setup | `Plane__Storage__PublicEndpoint` | Gateway-Modus `Plane__Gateway__ObjectStore__Mode` | Browser lädt an | Signatur-Host |
+| Speicher-Setup | `Funk__Storage__PublicEndpoint` | Gateway-Modus `Funk__Gateway__ObjectStore__Mode` | Browser lädt an | Signatur-Host |
 |---|---|---|---|---|
 | gebündeltes SeaweedFS (Dev, Profil `bundled-s3`) | `${WEB_URL}` (Pfad-Stil `/{bucket}/{key}`) | `Proxy` | `https://<host>/uploads` (G-09/G-10) | `<host>` (Gateway reicht Original-Host durch) |
 | Betreiber-S3 öffentlich erreichbar (z. B. Ceph-RGW unter `s3.intern`) | `https://s3.intern` | `None` | direkt S3 | `s3.intern` |
 | Betreiber-S3 nur intern erreichbar | `${WEB_URL}` | `Proxy` | über Gateway | `<host>`; **Voraussetzung:** S3-Dienst akzeptiert beliebigen Host-Header bzw. ist auf `<host>` als virtuellen Host konfiguriert (S8-Matrix) |
-| Dateisystem (`Plane__Storage__Provider=FileSystem`) | `${WEB_URL}` | `None` (Api bedient `/api/assets/v2/upload/{token}/` und `/api/assets/v2/files/{token}`, ADR-026 Proxy-Modus) | über G-08 | HMAC mit `Plane__Security__SigningKey` |
+| Dateisystem (`Funk__Storage__Provider=FileSystem`) | `${WEB_URL}` | `None` (Api bedient `/api/assets/v2/upload/{token}/` und `/api/assets/v2/files/{token}`, ADR-026 Proxy-Modus) | über G-08 | HMAC mit `Funk__Security__SigningKey` |
 
 Regel: Der Presign-Endpunkt wird **immer** mit `PublicEndpoint` berechnet (nie mit dem Request-Host wie `USE_MINIO`), serverseitige Aufrufe (Head/Copy/Delete im Worker) **immer** mit `InternalEndpoint` (behebt E-02/E-03).
 
 ### 3.8 TLS und Zertifikate
 
-| Modus (`Plane__Tls__Mode`) | Verhalten | Zielgruppe |
+| Modus (`Funk__Tls__Mode`) | Verhalten | Zielgruppe |
 |---|---|---|
 | `None` (Default) | Gateway spricht nur HTTP auf 8080; HSTS nur, wenn ein vertrauter vorgelagerter Proxy `X-Forwarded-Proto=https` setzt; Cookies `Secure` nach Original-Regel (A01 §2.16: `WEB_URL` beginnt mit `https://` bzw. alle CORS-Origins ohne `http:`) | Betrieb hinter Ingress/Load-Balancer, lokale Tests |
-| `Certificate` | Kestrel bedient 8443 mit PEM-Zertifikat `Plane__Tls__CertificatePath` + `Plane__Tls__KeyPath` (oder PFX + Passwort); 8080 leitet mit 308 auf HTTPS um (außer `/.well-known/acme-challenge/`); **Zertifikats-Reload** bei Dateiänderung (`FileSystemWatcher` + `ServerCertificateSelector`) ohne Neustart; TLS 1.2+1.3, Cipher-Suites = .NET-Defaults | Airgapped mit Betreiber-PKI |
+| `Certificate` | Kestrel bedient 8443 mit PEM-Zertifikat `Funk__Tls__CertificatePath` + `Funk__Tls__KeyPath` (oder PFX + Passwort); 8080 leitet mit 308 auf HTTPS um (außer `/.well-known/acme-challenge/`); **Zertifikats-Reload** bei Dateiänderung (`FileSystemWatcher` + `ServerCertificateSelector`) ohne Neustart; TLS 1.2+1.3, Cipher-Suites = .NET-Defaults | Airgapped mit Betreiber-PKI |
 | `Acme` (Compose-Profil `acme`) | vorgeschalteter `caddy`-Container (`caddy:2-alpine` gepinnt, Apache-2.0) mit `deploy/compose/acme/Caddyfile` (`{$SITE_ADDRESS} { reverse_proxy gateway:8080 }`, Globals `email {$CERT_EMAIL}`, `acme_ca {$CERT_ACME_CA}`), Gateway im Modus `None` mit `KnownNetworks` = Compose-Netz | Internet-Installationen (CE-OPS-005) |
 
 Interne TLS-Verbindungen (optional, Default aus im Container-Netz): PostgreSQL `sslmode=verify-full` über Connection-String, Valkey `rediss://` (CE-OPS-011), externes S3 `https`. **Eigene CA:** Dateien unter `/etc/plane/ca/*.crt` (Volume/Secret) werden über `SSL_CERT_DIR=/etc/ssl/certs:/etc/plane/ca` von OpenSSL/.NET gelesen ⚠ (Chiseled-Image hat kein `update-ca-certificates`; Test AK-14-26); Keycloak und Forgejo erhalten dieselbe CA per Mount (`/opt/keycloak/conf/truststores/`, `KC_TRUSTSTORE_PATHS`; Forgejo `SSL_CERT_DIR`).
@@ -532,42 +532,42 @@ Interne TLS-Verbindungen (optional, Default aus im Container-Netz): PostgreSQL `
 
 | Klasse | Sektion | Wichtigste Felder (Default) | Validierung |
 |---|---|---|---|
-| `PlaneUrlsOptions` | `Plane:Urls` | `Web` (Pflicht; Fallback `App`), `App` (Alias `APP_BASE_URL`), `Admin` (= `Web`), `AdminPath` (`/god-mode/`), `Space` (= `Web`), `SpacePath` (`/spaces/`), `Live` (= `Web`), `LivePath` (`/live/`), `Api` (= `Web`), `ApiPath` (`""`), `Idp` (= `Web` + `/idp`; neu, Nachtrag in D02) | absolute URL; Pfade normalisiert mit führendem/abschließendem `/` (E-35) |
-| `PlaneStorageOptions` | `Plane:Storage` | `Provider` (`S3`/`FileSystem`), `InternalEndpoint`, `PublicEndpoint`, `Bucket` (`uploads`), `Region` (`""`), `AccessKey`, `SecretKey`, `ForcePathStyle` (`true`), `PresignExpirySeconds` (`3600`), `UploadMode` (`Direct`/`Proxy`), `FileSystemRoot` (`/var/lib/plane/files`) | S3: Endpoints Pflicht; Production: `SecretKey != "secret-key"` |
-| `PlaneUploadsOptions` | `Plane:Uploads` | `MaxFileSizeBytes` (`5242880`) | > 0 |
-| `PlaneGatewayOptions` | `Plane:Gateway` | `FrontendMode` (`Static`/`DevServer`), `ObjectStore:Mode` (`Proxy`/`None`), `Idp:Enabled`, `Idp:AdminAllowedNetworks`, `Forgejo:Host`, `Forgejo:MaxBodyBytes`, `StaticRateLimitPerMinute` (`300`), `Csp:Mode` (`ReportOnly` ab I0, `Enforce` ab I7, `Off`; 05 §3.17, ABG-016), `SpaceFrameAncestors` (`*`, CSP `frame-ancestors` der Space-Boards, 05 §3.17.7), `Hsts:IncludeSubDomains` (`true`, nur Space, 05 §3.17.7), `BodyLimitBufferBytes` (`1048576`) | – |
-| `PlaneTlsOptions` | `Plane:Tls` | `Mode`, `CertificatePath`, `KeyPath`, `PfxPath`, `PfxPassword`, `HstsMaxAgeSeconds` | Dateien existieren |
-| `PlaneForwardedHeadersOptions` | `Plane:ForwardedHeaders` | `KnownNetworks` (Liste CIDR), `ForwardLimit` (`1`) | CIDR gültig, `ForwardLimit` 1–999 (wie `NUM_PROXIES`-Regel) |
-| `PlaneDatabaseOptions` | `Plane:Database` | `ReadReplicaEnabled` (`false`, D02), `CommandTimeoutSeconds` (`30`), `MaxPoolSize` je Host (Api 50, Worker 20, Realtime 30, Migrator 5; neu, Nachtrag in D02 – alternativ `Maximum Pool Size` im Connection-String) | – |
-| `PlaneValkeyOptions` | `Plane:Valkey` | `Enabled` (abgeleitet aus `ConnectionStrings:valkey`), `CaCertificatePath`, `SslCertificateValidation` (`required`/`none`, D02 §4.9), `KeyPrefix` (`plane:`) | `none` → Warnung |
-| `PlaneScaleOptions` | `Plane:Scale` | `ExpectMultipleInstances` (`false`) | mit `true` ist Valkey Pflicht (D14-ADR-21) |
-| `PlaneSecurityOptions` | `Plane:Security` | `SigningKey` (Pflicht, Base64 ≥ 32 Byte; nur Upload-Tokens/signierte Dateisystem-URLs; D14-ADR-09, ABG-012), `SsrfBlockPrivateNetworks` (`true`, D02) | Production: kein Bekannt-Default |
-| `PlaneDataProtectionOptions` | `Plane:DataProtection` | `ApplicationName` (`plane`, Konstante), `KeyLifetimeDays` (`90`, 05 §3.17.5), `CertificatePath`, `CertificatePassword`, `PreviousCertificatePaths` (Rotation), `AllowUnencryptedKeys` (`false`) | Production ohne Zertifikat und ohne Erlaubnis → Abbruch |
-| `PlaneTelemetryOptions` | `Plane:Telemetry` | `TraceSampleRatio`, `LogFormat` (`json`/`simple`) | 0–1 |
-| `PlaneInstanceOptions` (D02) | `Plane:Instance` | `ConfigurationSource` (`Database`/`Environment`, Alias `SKIP_ENV_VAR`), `DefaultName` (Default `"funk."`, ABG-104), `ChangelogUrl`, `AppVersion` (Alias `APP_VERSION`, Default Assembly-/Image-Version `PLANE_VERSION`), `IsTest` | – |
-| `PlaneCorsOptions` | `Plane:Cors` | `AllowedOrigins` (Default: nur eigene Origins aus `Plane:Urls`, E-10) | – |
+| `FunkUrlsOptions` | `Funk:Urls` | `Web` (Pflicht; Fallback `App`), `App` (Alias `APP_BASE_URL`), `Admin` (= `Web`), `AdminPath` (`/god-mode/`), `Space` (= `Web`), `SpacePath` (`/spaces/`), `Live` (= `Web`), `LivePath` (`/live/`), `Api` (= `Web`), `ApiPath` (`""`), `Idp` (= `Web` + `/idp`; neu, Nachtrag in D02) | absolute URL; Pfade normalisiert mit führendem/abschließendem `/` (E-35) |
+| `FunkStorageOptions` | `Funk:Storage` | `Provider` (`S3`/`FileSystem`), `InternalEndpoint`, `PublicEndpoint`, `Bucket` (`uploads`), `Region` (`""`), `AccessKey`, `SecretKey`, `ForcePathStyle` (`true`), `PresignExpirySeconds` (`3600`), `UploadMode` (`Direct`/`Proxy`), `FileSystemRoot` (`/var/lib/plane/files`) | S3: Endpoints Pflicht; Production: `SecretKey != "secret-key"` |
+| `FunkUploadsOptions` | `Funk:Uploads` | `MaxFileSizeBytes` (`5242880`) | > 0 |
+| `FunkGatewayOptions` | `Funk:Gateway` | `FrontendMode` (`Static`/`DevServer`), `ObjectStore:Mode` (`Proxy`/`None`), `Idp:Enabled`, `Idp:AdminAllowedNetworks`, `Forgejo:Host`, `Forgejo:MaxBodyBytes`, `StaticRateLimitPerMinute` (`300`), `Csp:Mode` (`ReportOnly` ab I0, `Enforce` ab I7, `Off`; 05 §3.17, ABG-016), `SpaceFrameAncestors` (`*`, CSP `frame-ancestors` der Space-Boards, 05 §3.17.7), `Hsts:IncludeSubDomains` (`true`, nur Space, 05 §3.17.7), `BodyLimitBufferBytes` (`1048576`) | – |
+| `FunkTlsOptions` | `Funk:Tls` | `Mode`, `CertificatePath`, `KeyPath`, `PfxPath`, `PfxPassword`, `HstsMaxAgeSeconds` | Dateien existieren |
+| `FunkForwardedHeadersOptions` | `Funk:ForwardedHeaders` | `KnownNetworks` (Liste CIDR), `ForwardLimit` (`1`) | CIDR gültig, `ForwardLimit` 1–999 (wie `NUM_PROXIES`-Regel) |
+| `FunkDatabaseOptions` | `Funk:Database` | `ReadReplicaEnabled` (`false`, D02), `CommandTimeoutSeconds` (`30`), `MaxPoolSize` je Host (Api 50, Worker 20, Realtime 30, Migrator 5; neu, Nachtrag in D02 – alternativ `Maximum Pool Size` im Connection-String) | – |
+| `FunkValkeyOptions` | `Funk:Valkey` | `Enabled` (abgeleitet aus `ConnectionStrings:valkey`), `CaCertificatePath`, `SslCertificateValidation` (`required`/`none`, D02 §4.9), `KeyPrefix` (`plane:`) | `none` → Warnung |
+| `FunkScaleOptions` | `Funk:Scale` | `ExpectMultipleInstances` (`false`) | mit `true` ist Valkey Pflicht (D14-ADR-21) |
+| `FunkSecurityOptions` | `Funk:Security` | `SigningKey` (Pflicht, Base64 ≥ 32 Byte; nur Upload-Tokens/signierte Dateisystem-URLs; D14-ADR-09, ABG-012), `SsrfBlockPrivateNetworks` (`true`, D02) | Production: kein Bekannt-Default |
+| `FunkDataProtectionOptions` | `Funk:DataProtection` | `ApplicationName` (`plane`, Konstante), `KeyLifetimeDays` (`90`, 05 §3.17.5), `CertificatePath`, `CertificatePassword`, `PreviousCertificatePaths` (Rotation), `AllowUnencryptedKeys` (`false`) | Production ohne Zertifikat und ohne Erlaubnis → Abbruch |
+| `FunkTelemetryOptions` | `Funk:Telemetry` | `TraceSampleRatio`, `LogFormat` (`json`/`simple`) | 0–1 |
+| `FunkInstanceOptions` (D02) | `Funk:Instance` | `ConfigurationSource` (`Database`/`Environment`, Alias `SKIP_ENV_VAR`), `DefaultName` (Default `"funk."`, ABG-104), `ChangelogUrl`, `AppVersion` (Alias `APP_VERSION`, Default Assembly-/Image-Version `FUNK_VERSION`), `IsTest` | – |
+| `FunkCorsOptions` | `Funk:Cors` | `AllowedOrigins` (Default: nur eigene Origins aus `Funk:Urls`, E-10) | – |
 
 #### 3.9.2 Legacy-Aliasse (Mechanik)
 
-`LegacyEnvironmentConfigurationSource` mit der Tabelle `LegacyEnvironmentMap` (Datei `src/hosts/Plane.ServiceDefaults/Configuration/LegacyEnvironmentConfigurationSource.cs`, Namen wie D02 §5.1.10) liest beim Start **nur** die in §4.7 als „Alias“ markierten Original-Variablen und erzeugt daraus `Plane:*`-Schlüssel. Regeln:
-1. Ist der native Schlüssel (`Plane__…` bzw. `ConnectionStrings__…`) gesetzt, wird der Alias ignoriert (Log `Debug`).
-2. Konverter: `DATABASE_URL`/`POSTGRES_*` → Npgsql-Connection-String (`postgresql://u:p@h:port/db?sslmode=…`), `DATABASE_READ_REPLICA_URL`/`POSTGRES_READ_REPLICA_*` → `ConnectionStrings:plane-replica`, `REDIS_URL` → StackExchange.Redis-Konfiguration (`rediss://` → `ssl=true`, `ssl_cert_reqs=none` → `SslCertificateValidation=none`), Raten `n/period` (`second|minute|hour|day`) → `PermitLimit` + `Window`, Kommalisten → Arrays, `0/1` → bool, `*_BASE_URL` + `*_BASE_PATH` → `Plane:Urls:*`.
+`LegacyEnvironmentConfigurationSource` mit der Tabelle `LegacyEnvironmentMap` (Datei `src/hosts/Funk.ServiceDefaults/Configuration/LegacyEnvironmentConfigurationSource.cs`, Namen wie D02 §5.1.10) liest beim Start **nur** die in §4.7 als „Alias“ markierten Original-Variablen und erzeugt daraus `Plane:*`-Schlüssel. Regeln:
+1. Ist der native Schlüssel (`Funk__…` bzw. `ConnectionStrings__…`) gesetzt, wird der Alias ignoriert (Log `Debug`).
+2. Konverter: `DATABASE_URL`/`POSTGRES_*` → Npgsql-Connection-String (`postgresql://u:p@h:port/db?sslmode=…`), `DATABASE_READ_REPLICA_URL`/`POSTGRES_READ_REPLICA_*` → `ConnectionStrings:plane-replica`, `REDIS_URL` → StackExchange.Redis-Konfiguration (`rediss://` → `ssl=true`, `ssl_cert_reqs=none` → `SslCertificateValidation=none`), Raten `n/period` (`second|minute|hour|day`) → `PermitLimit` + `Window`, Kommalisten → Arrays, `0/1` → bool, `*_BASE_URL` + `*_BASE_PATH` → `Funk:Urls:*`.
 3. Variablen der Klasse „entfällt“ werden geprüft: ist eine gesetzt, schreibt der Host **einmal** `Warning` in Kategorie `plane.config` („`AMQP_URL` is ignored: RabbitMQ is not used (ADR-020)“).
 4. Unbekannte, nicht klassifizierte Variablen werden nicht betrachtet.
 5. Der Migrator wertet zusätzlich die Klasse „Seed“ aus (Instanz-Konfiguration, §3.15).
 
-Test: `LegacyEnvironmentMapTests` ist **tabellengetrieben aus derselben Map** (jede Zeile → erwarteter Schlüssel/Wert), plus Vollständigkeitstest gegen die Liste aller Original-Variablen (`tests/Plane.ServiceDefaults.Tests/Data/original-env-vars.txt`, aus A01 §2.11 extrahiert, 100 % klassifiziert – AK-14-13).
+Test: `LegacyEnvironmentMapTests` ist **tabellengetrieben aus derselben Map** (jede Zeile → erwarteter Schlüssel/Wert), plus Vollständigkeitstest gegen die Liste aller Original-Variablen (`tests/Funk.ServiceDefaults.Tests/Data/original-env-vars.txt`, aus A01 §2.11 extrahiert, 100 % klassifiziert – AK-14-13).
 
 #### 3.9.3 Secrets je Deployment-Ziel
 
 | Secret | Compose (`deploy/compose/.env`, Rechte `0600`) | Kubernetes (Secret `plane-secrets`) | erzeugt von |
 |---|---|---|---|
-| `POSTGRES_PASSWORD`, `PLANE_DB_PASSWORD`, `KEYCLOAK_DB_PASSWORD`, `FORGEJO_DB_PASSWORD` | ja | `postgres-*`-Keys | `funk-cli init` (32 Zeichen, Alphabet `[A-Za-z0-9]`) |
+| `POSTGRES_PASSWORD`, `FUNK_DB_PASSWORD`, `KEYCLOAK_DB_PASSWORD`, `FORGEJO_DB_PASSWORD` | ja | `postgres-*`-Keys | `funk-cli init` (32 Zeichen, Alphabet `[A-Za-z0-9]`) |
 | `KEYCLOAK_ADMIN_PASSWORD` | ja | `keycloak-admin-password` | dto. |
-| `PLANE_WEB_CLIENT_SECRET`, `PLANE_ADMIN_CLIENT_SECRET`, `PLANE_SPACE_CLIENT_SECRET`, `PLANE_BACKEND_CLIENT_SECRET`, `FORGEJO_CLIENT_SECRET` | ja | `oidc-*` | dto. |
+| `FUNK_WEB_CLIENT_SECRET`, `FUNK_ADMIN_CLIENT_SECRET`, `FUNK_SPACE_CLIENT_SECRET`, `FUNK_BACKEND_CLIENT_SECRET`, `FORGEJO_CLIENT_SECRET` | ja | `oidc-*` | dto. |
 | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | ja | `s3-*` | dto. (gebündeltes S3) bzw. Betreiber |
-| `PLANE_SIGNING_KEY` | ja | `signing-key` | dto. (32 Byte Base64) |
-| Data-Protection-Zertifikat | Datei `deploy/compose/secrets/dataprotection.pfx` (Mount `/run/secrets/dataprotection.pfx`), Passwort `PLANE_DATAPROTECTION_CERT_PASSWORD` | Secret `plane-dataprotection` (Datei) | `funk-cli init` (RSA 3072, selbstsigniert, 10 Jahre) |
+| `FUNK_SIGNING_KEY` | ja | `signing-key` | dto. (32 Byte Base64) |
+| Data-Protection-Zertifikat | Datei `deploy/compose/secrets/dataprotection.pfx` (Mount `/run/secrets/dataprotection.pfx`), Passwort `FUNK_DATAPROTECTION_CERT_PASSWORD` | Secret `plane-dataprotection` (Datei) | `funk-cli init` (RSA 3072, selbstsigniert, 10 Jahre) |
 | TLS-Zertifikat/Schlüssel | Dateien `deploy/compose/secrets/tls.crt`, `tls.key` | Secret `plane-tls` (Typ `kubernetes.io/tls`) | Betreiber |
 
 `funk-cli init` verweigert das Überschreiben vorhandener Werte (Option `--rotate <name>` für gezielte Rotation; OIDC-Rotation erfordert anschließend `funk.sh idp-sync` und einen Neustart von `api`).
@@ -576,14 +576,14 @@ Test: `LegacyEnvironmentMapTests` ist **tabellengetrieben aus derselben Map** (j
 
 | Image | Inhalt | Basis | Entrypoint | Ports | Größe (Ziel) | Bau |
 |---|---|---|---|---|---|---|
-| `funk-gateway` | `Plane.Gateway` + `wwwroot/{web,admin,space,static}` | `aspnet:10.0-noble-chiseled-extra` | `/app/Plane.Gateway` | 8080, 8443, 8081 | < 180 MB | `dotnet publish src/hosts/Plane.Gateway -t:PublishContainer` (nach Frontend-Build) |
-| `funk-api` | `Plane.Api` | dto. | `/app/Plane.Api` | 8080, 8081 | < 160 MB | dto. |
-| `funk-worker` | `Plane.Worker` | dto. | `/app/Plane.Worker` | 8081 | < 160 MB | dto. |
-| `funk-realtime` | `Plane.Realtime` (+ `libyrs`, SkiaSharp-Native) | dto. bzw. `aspnet:10.0-noble` (S1/S3) | `/app/Plane.Realtime` | 8080, 8081 | < 220 MB | dto. |
-| `funk-migrator` | `Plane.Migrator` | `aspnet:10.0-noble-chiseled-extra` (ASP.NET-Shared-Framework über `Plane.Hosting`/Data Protection, D14-ADR-10) | `/app/Plane.Migrator` | – | < 160 MB | dto. |
-| `funk-aio` | `Plane.AllInOne` + `wwwroot` | `aspnet:10.0-noble-chiseled-extra` (bzw. `noble`) | `/app/Plane.AllInOne` | 8080, 8443, 8081 | < 260 MB | dto. (I7) |
-| `funk-cli` | `Plane.Cli` + `postgresql-client-17` + `tar`/`zstd` | `aspnet:10.0-noble` (Unterbefehl `migrate` nutzt dieselbe Komposition wie der Migrator) | `/app/Plane.Cli` | – | < 270 MB | `deploy/cli/Dockerfile` |
-| `funk-keycloak` | Keycloak + Login-Themes `plane`/`plane-space` (funk.-Branding nach 17 BR-09, 05 `BRAND-KC-*`), optimierter Build | `quay.io/keycloak/keycloak:26.x` ⚠ | `/opt/keycloak/bin/kc.sh start --optimized` | 8080, 9000 | ~ 500 MB | `deploy/keycloak/Dockerfile` |
+| `funk-gateway` | `Funk.Gateway` + `wwwroot/{web,admin,space,static}` | `aspnet:10.0-noble-chiseled-extra` | `/app/Funk.Gateway` | 8080, 8443, 8081 | < 180 MB | `dotnet publish src/hosts/Funk.Gateway -t:PublishContainer` (nach Frontend-Build) |
+| `funk-api` | `Funk.Api` | dto. | `/app/Funk.Api` | 8080, 8081 | < 160 MB | dto. |
+| `funk-worker` | `Funk.Worker` | dto. | `/app/Funk.Worker` | 8081 | < 160 MB | dto. |
+| `funk-realtime` | `Funk.Realtime` (+ `libyrs`, SkiaSharp-Native) | dto. bzw. `aspnet:10.0-noble` (S1/S3) | `/app/Funk.Realtime` | 8080, 8081 | < 220 MB | dto. |
+| `funk-migrator` | `Funk.Migrator` | `aspnet:10.0-noble-chiseled-extra` (ASP.NET-Shared-Framework über `Funk.Hosting`/Data Protection, D14-ADR-10) | `/app/Funk.Migrator` | – | < 160 MB | dto. |
+| `funk-aio` | `Funk.AllInOne` + `wwwroot` | `aspnet:10.0-noble-chiseled-extra` (bzw. `noble`) | `/app/Funk.AllInOne` | 8080, 8443, 8081 | < 260 MB | dto. (I7) |
+| `funk-cli` | `Funk.Cli` + `postgresql-client-17` + `tar`/`zstd` | `aspnet:10.0-noble` (Unterbefehl `migrate` nutzt dieselbe Komposition wie der Migrator) | `/app/Funk.Cli` | – | < 270 MB | `deploy/cli/Dockerfile` |
+| `funk-keycloak` | Keycloak + Login-Themes `plane`/`funk-space` (funk.-Branding nach 17 BR-09, 05 `BRAND-KC-*`), optimierter Build | `quay.io/keycloak/keycloak:26.x` ⚠ | `/opt/keycloak/bin/kc.sh start --optimized` | 8080, 9000 | ~ 500 MB | `deploy/keycloak/Dockerfile` |
 | `adorsys/keycloak-config-cli:<ver>-<kc-major>` (Fremd-Image, unverändert) | Realm-Abgleich (D14-ADR-03) | – | Image-Default | – | ~ 300 MB | Digest-Pin in `deploy/airgap/images.yaml` |
 
 Gemeinsame Regeln: Image-Namen `funk-<dienst>` (ABG-149, `BRAND-OPS-01`); OCI-Labels `org.opencontainers.image.{source,version,revision,licenses=<SPDX-Ausdruck aus LICENSE von funk.>,title}` mit `title` = „funk. <Dienst>“ (z. B. „funk. Gateway“, „funk. API“, „funk. Worker“, „funk. Realtime“, „funk. Migrator“, „funk. All-in-One“, „funk. CLI“, „funk. Keycloak“; G-BRAND prüft die Labels, 15) (AGPL-3.0, Variante „-only“/„-or-later“ siehe 01 O-09); Benutzer non-root (`app`/1654; Keycloak 1000); keine Paketmanager/Shell in Chiseled-Images; `DOTNET_gcServer=1` für Api/Realtime (Web-SDK-Default, explizit gesetzt), `DOTNET_GCHeapHardLimitPercent=0x4B` (= 75 %; GC-Umgebungsvariablen sind **hexadezimal**, ein Wert `75` würde als 117 % gelesen – Microsoft Learn „Runtime configuration options for garbage collection“); Zeitzone UTC; `tools/ci/assert-no-node.sh` prüft jedes funk.-Image (keine Datei `*/node`, keine `node_modules`, P5).
@@ -595,8 +595,8 @@ Gemeinsame Regeln: Image-Namen `funk-<dienst>` (ABG-149, `BRAND-OPS-01`); OCI-La
 ```text
 deploy/compose/
 ├── docker-compose.yaml          # GENERIERT von `aspire publish` (eingecheckt, CI-Drift-Gate), nicht von Hand ändern
-├── .env.example                 # GENERIERT (Variablenliste) + Kommentare aus src/hosts/Plane.AppHost/Publishing/env-comments.yaml
-├── docker-compose.aio.yaml      # GENERIERT aus Publish-Variante `--Plane:Publish:Variant=aio` (§3.13)
+├── .env.example                 # GENERIERT (Variablenliste) + Kommentare aus src/hosts/Funk.AppHost/Publishing/env-comments.yaml
+├── docker-compose.aio.yaml      # GENERIERT aus Publish-Variante `--Funk:Publish:Variant=aio` (§3.13)
 ├── acme/Caddyfile               # Profil acme
 ├── keycloak/config/             # Kopie von deploy/keycloak/config (keycloak-config-cli), beim Publish übernommen
 ├── postgres/init/               # Kopie von deploy/postgres/init (Rollen, Datenbanken, Extensions)
@@ -607,7 +607,7 @@ deploy/compose/
 └── README.md                    # Betreiber-Kurzanleitung (Installation, Profile, Upgrade, Backup)
 ```
 
-Befehl (CI und lokal): `aspire publish --project src/hosts/Plane.AppHost -o deploy/compose` (Publish-Modus; der AppHost fügt `AddDockerComposeEnvironment("compose")` hinzu; der Dashboard-Container wird mit `.WithDashboard(false)` aus der Standardausgabe entfernt und stattdessen als eigener Dienst im Profil `observability` beschrieben ⚠ API-Name S0, Muster wie bei den übrigen Aspire-Compute-Environments). Im Publish-Modus erzeugt Aspire **keine** Datenbanken; das übernimmt das Postgres-Init-Skript (§3.2.2).
+Befehl (CI und lokal): `aspire publish --project src/hosts/Funk.AppHost -o deploy/compose` (Publish-Modus; der AppHost fügt `AddDockerComposeEnvironment("compose")` hinzu; der Dashboard-Container wird mit `.WithDashboard(false)` aus der Standardausgabe entfernt und stattdessen als eigener Dienst im Profil `observability` beschrieben ⚠ API-Name S0, Muster wie bei den übrigen Aspire-Compute-Environments). Im Publish-Modus erzeugt Aspire **keine** Datenbanken; das übernimmt das Postgres-Init-Skript (§3.2.2).
 
 #### 3.11.2 Dienste der generierten Compose-Datei
 
@@ -616,20 +616,20 @@ Befehl (CI und lokal): `aspire publish --project src/hosts/Plane.AppHost -o depl
 | `postgres` | `pgvector/pgvector:<pin>-pg17@sha256:…` | – | – | `unless-stopped` | `pg_isready -U postgres` | `pgdata:/var/lib/postgresql/data`, `./postgres/init:/docker-entrypoint-initdb.d:ro` | – |
 | `valkey` | `valkey/valkey:8.<pin>-alpine@sha256:…` | `valkey` | – | `unless-stopped` | `valkey-cli ping` | – | – |
 | `objectstore` | `chrislusf/seaweedfs:<pin>@sha256:…` | `bundled-s3` | – | `unless-stopped` | `wget -qO- http://127.0.0.1:8333/status` ⚠ | `objects:/data`, `./seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro` | – |
-| `keycloak` | `${PLANE_REGISTRY}/funk-keycloak:${PLANE_VERSION}` | – | `postgres` (healthy) | `unless-stopped` | Bash-`/dev/tcp`-Probe auf `:9000/idp/health/ready` (Image enthält `bash`, kein `curl`) | – (kein Realm-Import; Dev-/Test-Realms werden **nicht** ausgeliefert) | – |
+| `keycloak` | `${FUNK_REGISTRY}/funk-keycloak:${FUNK_VERSION}` | – | `postgres` (healthy) | `unless-stopped` | Bash-`/dev/tcp`-Probe auf `:9000/idp/health/ready` (Image enthält `bash`, kein `curl`) | – (kein Realm-Import; Dev-/Test-Realms werden **nicht** ausgeliefert) | – |
 | `keycloak-config` | `adorsys/keycloak-config-cli:<ver>-<kc>@sha256:…` | – | `keycloak` (healthy) | `on-failure` (max. 5) | – | `./keycloak/config:/config:ro` | – |
-| `migrator` | `${PLANE_REGISTRY}/funk-migrator:${PLANE_VERSION}` | – | `postgres` (healthy) | `on-failure` (max. 5) | – | `./secrets:/run/secrets:ro` | – |
-| `api` | `…/funk-api:${PLANE_VERSION}` | – | `migrator` (completed_successfully), `keycloak` (healthy), `keycloak-config` (completed_successfully) | `unless-stopped` | `["CMD","/app/Plane.Api","--probe","ready"]` | `./secrets:/run/secrets:ro`, `files:/var/lib/plane/files` (nur Provider FileSystem) | – |
-| `worker` | `…/funk-worker:${PLANE_VERSION}` | – | `migrator` (completed_successfully) | `unless-stopped` | Probe `ready` | dto. | – |
-| `realtime` | `…/funk-realtime:${PLANE_VERSION}` | – | `migrator` (completed_successfully) | `unless-stopped` | Probe `ready` | `./secrets:/run/secrets:ro` | – |
-| `gateway` | `…/funk-gateway:${PLANE_VERSION}` | – | `api` (healthy), `realtime` (healthy) | `unless-stopped` | Probe `ready` | `./secrets:/run/secrets:ro` | `${LISTEN_HTTP_PORT:-80}:8080`, `${LISTEN_HTTPS_PORT:-443}:8443` |
+| `migrator` | `${FUNK_REGISTRY}/funk-migrator:${FUNK_VERSION}` | – | `postgres` (healthy) | `on-failure` (max. 5) | – | `./secrets:/run/secrets:ro` | – |
+| `api` | `…/funk-api:${FUNK_VERSION}` | – | `migrator` (completed_successfully), `keycloak` (healthy), `keycloak-config` (completed_successfully) | `unless-stopped` | `["CMD","/app/Funk.Api","--probe","ready"]` | `./secrets:/run/secrets:ro`, `files:/var/lib/plane/files` (nur Provider FileSystem) | – |
+| `worker` | `…/funk-worker:${FUNK_VERSION}` | – | `migrator` (completed_successfully) | `unless-stopped` | Probe `ready` | dto. | – |
+| `realtime` | `…/funk-realtime:${FUNK_VERSION}` | – | `migrator` (completed_successfully) | `unless-stopped` | Probe `ready` | `./secrets:/run/secrets:ro` | – |
+| `gateway` | `…/funk-gateway:${FUNK_VERSION}` | – | `api` (healthy), `realtime` (healthy) | `unless-stopped` | Probe `ready` | `./secrets:/run/secrets:ro` | `${LISTEN_HTTP_PORT:-80}:8080`, `${LISTEN_HTTPS_PORT:-443}:8443` |
 | `forgejo-bootstrap` | `codeberg.org/forgejo/forgejo:15.<pin>@sha256:…` | `forgejo` | `postgres` (healthy) | `on-failure` | – | `forgejo-data:/data`, `./forgejo/bootstrap:/bootstrap:ro` | – |
 | `forgejo` | dto. | `forgejo` | `forgejo-bootstrap` (completed_successfully), `keycloak` (healthy) | `unless-stopped` | `curl -fsS http://127.0.0.1:3000/api/healthz` | `forgejo-data:/data` | `${FORGEJO_SSH_PORT:-2222}:22` |
 | `caddy` | `caddy:2.<pin>-alpine@sha256:…` | `acme` | `gateway` (healthy) | `unless-stopped` | – | `caddy-data:/data`, `caddy-config:/config`, `./acme/Caddyfile:/etc/caddy/Caddyfile:ro` | `80:80`, `443:443` (Gateway-Ports dann nicht publiziert) |
 | `dashboard` | `mcr.microsoft.com/dotnet/aspire-dashboard:13.<pin>` | `observability` | – | `unless-stopped` | – | – | `127.0.0.1:18888:18888` |
-| `funk-cli` | `…/funk-cli:${PLANE_VERSION}` | `tools` | – | `no` | – | `./backup:/backup`, `./secrets:/run/secrets:ro`, `objects`, `forgejo-data` (ro), `files` | – |
+| `funk-cli` | `…/funk-cli:${FUNK_VERSION}` | `tools` | – | `no` | – | `./backup:/backup`, `./secrets:/run/secrets:ro`, `objects`, `forgejo-data` (ro), `files` | – |
 
-Queue-Zuordnung (ABG-106): Die Compose-Datei setzt **keine** `Plane__Worker__*`-Variablen; es gelten die Host-Defaults (02 §3.15 `PlaneWorkerOptions`): `worker` = alle Queues außer `live`, `realtime` = nur `live`, AIO = alle. Wer zusätzliche Worker-Pools definiert, listet `live` in deren `ExcludeQueues` (§6.1 C3). Helm rendert dieselben Werte aus `worker.queues`/`worker.excludeQueues`/`realtime.queues` (§5.8).
+Queue-Zuordnung (ABG-106): Die Compose-Datei setzt **keine** `Funk__Worker__*`-Variablen; es gelten die Host-Defaults (02 §3.15 `FunkWorkerOptions`): `worker` = alle Queues außer `live`, `realtime` = nur `live`, AIO = alle. Wer zusätzliche Worker-Pools definiert, listet `live` in deren `ExcludeQueues` (§6.1 C3). Helm rendert dieselben Werte aus `worker.queues`/`worker.excludeQueues`/`realtime.queues` (§5.8).
 
 Netz: ein Bridge-Netz `plane`; für den Airgap-Test zusätzlich Override `internal: true` (§7). Volumes: `pgdata`, `objects`, `files`, `forgejo-data`, `caddy-data`, `caddy-config` (Präfix = Compose-Projektname, Default `plane`).
 
@@ -647,12 +647,12 @@ Die Compose-Datei ist **Swarm-kompatibel** (CE-OPS-003): keine `container_name`,
 
 ```text
 deploy/helm/funk/
-├── Chart.yaml                    # apiVersion v2, name: funk, description „funk. – self-hosted project management“ (ABG-149), version = appVersion = PLANE_VERSION, keine dependencies
+├── Chart.yaml                    # apiVersion v2, name: funk, description „funk. – self-hosted project management“ (ABG-149), version = appVersion = FUNK_VERSION, keine dependencies
 ├── values.yaml                   # Skelett §5.8
 ├── values.schema.json            # JSON-Schema (helm lint prüft)
 ├── templates/
 │   ├── _helpers.tpl
-│   ├── configmap-plane.yaml      # nicht geheime Plane__*-Werte
+│   ├── configmap-plane.yaml      # nicht geheime Funk__*-Werte
 │   ├── secret-plane.yaml         # nur wenn secrets.create=true (sonst existingSecret / External Secrets)
 │   ├── deployment-{gateway,api,worker,realtime}.yaml
 │   ├── job-migrator.yaml         # regulärer Job plane-migrator-r{{ .Release.Revision }} (kein Hook, D14-ADR-13); backoffLimit 3; wartet selbst auf DB (DatabaseReadiness)
@@ -675,14 +675,14 @@ deploy/helm/funk/
 
 Verbindliche Inhalte: `securityContext` (`runAsNonRoot: true`, `readOnlyRootFilesystem: true`, `allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]`, `seccompProfile: RuntimeDefault`) für alle funk.-Pods; `emptyDir` für `/tmp`; Probes `httpGet` Port `management` (8081): `startupProbe` `/health/startup` (failureThreshold 30, period 5 s), `readinessProbe` `/health/ready`, `livenessProbe` `/health/live`; `terminationGracePeriodSeconds` 60 (Realtime 120: Dokumente persistieren, Verbindungen mit Close-Code schließen, D07); `topologySpreadConstraints` je Deployment. Template-Validierungen (`fail`): `api.replicas>1 || realtime.replicas>1 || worker.replicas>1` ohne `valkey.enabled` bzw. `externalValkey.url`; `keycloak.bundled=false` ohne `externalKeycloak.issuer`; `postgresql.bundled=false` ohne `externalDatabase.*`. Keine Bitnami-Abhängigkeiten (D14-ADR-13). Für HA-Keycloak wird der Keycloak-Operator (Apache-2.0) mit eigenem CR empfohlen (`keycloak.bundled=false`, README-Abschnitt).
 
-### 3.13 AIO-Variante (`Plane.AllInOne`, I7, CE-OPS-004)
+### 3.13 AIO-Variante (`Funk.AllInOne`, I7, CE-OPS-004)
 
 | Aspekt | Festlegung |
 |---|---|
-| Projekt | `src/hosts/Plane.AllInOne/` referenziert `src/hosts/Plane.Hosting/` (Kompositionsbibliothek) |
-| Prozess | ein Kestrel (8080/8443/8081): `GatewayComposition` mit **In-Process-Endpunkten** statt YARP-Clustern für `api` und `realtime` (gleiche Pfadtabelle §3.7.1, G-06/G-07/G-08 werden zu `MapGroup`-Mounts der Api-/Realtime-Komposition), Worker als `IHostedService`s im selben Prozess; verarbeitet **alle** Queues einschließlich `live` (`realtime.push` → `HubRealtimePublisher` im selben Prozess, Host-Default `Plane:Worker:Queues=["*"]`, ABG-106) |
-| Migration | beim Start `MigratorComposition.RunAsync()` (gleiche Schritte wie `Plane.Migrator`, Advisory-Lock), danach erst Ready |
-| Abhängigkeiten | extern: PostgreSQL (Pflicht), Keycloak (Pflicht), SMTP; Speicher: Dateisystem-Volume `/var/lib/plane/files` (Default) oder S3; **kein** Valkey (Einzelinstanz, `Plane__Scale__ExpectMultipleInstances=false` erzwungen) |
+| Projekt | `src/hosts/Funk.AllInOne/` referenziert `src/hosts/Funk.Hosting/` (Kompositionsbibliothek) |
+| Prozess | ein Kestrel (8080/8443/8081): `GatewayComposition` mit **In-Process-Endpunkten** statt YARP-Clustern für `api` und `realtime` (gleiche Pfadtabelle §3.7.1, G-06/G-07/G-08 werden zu `MapGroup`-Mounts der Api-/Realtime-Komposition), Worker als `IHostedService`s im selben Prozess; verarbeitet **alle** Queues einschließlich `live` (`realtime.push` → `HubRealtimePublisher` im selben Prozess, Host-Default `Funk:Worker:Queues=["*"]`, ABG-106) |
+| Migration | beim Start `MigratorComposition.RunAsync()` (gleiche Schritte wie `Funk.Migrator`, Advisory-Lock), danach erst Ready |
+| Abhängigkeiten | extern: PostgreSQL (Pflicht), Keycloak (Pflicht), SMTP; Speicher: Dateisystem-Volume `/var/lib/plane/files` (Default) oder S3; **kein** Valkey (Einzelinstanz, `Funk__Scale__ExpectMultipleInstances=false` erzwungen) |
 | Compose | `deploy/compose/docker-compose.aio.yaml` mit `postgres`, `keycloak`, `keycloak-config`, `funk-aio` (+ Profile `acme`, `forgejo`) |
 | Pflicht-Prüfungen beim Start (wie `start.sh`, A01 §2.11.7) | `WEB_URL`/`DOMAIN_NAME` gesetzt und gültig (FQDN ≤ 253 Zeichen oder IPv4), Signing-Key und Secrets kein Bekannt-Default, DB erreichbar |
 | Nicht unterstützt | horizontale Skalierung (Start-Abbruch bei `ExpectMultipleInstances=true`) |
@@ -730,7 +730,7 @@ Nicht enthalten: Mailpit (nur Dev/Test).
 |---|---|---|
 | `api.github.com/repos/makeplane/plane/releases/latest` (Versionsprüfung) | entfällt; `latest_version` = `current_version` (CE-INST-001 angepasst) | Airgap-E2E (DNS-Sink zählt 0 Anfragen) |
 | `telemetry.plane.so` | entfällt | dto. |
-| `sites.plane.so` (Changelog-iframe) | `Plane__Instance__ChangelogUrl` Default leer → Fallback-Ansicht | Visual-Test |
+| `sites.plane.so` (Changelog-iframe) | `Funk__Instance__ChangelogUrl` Default leer → Fallback-Ansicht | Visual-Test |
 | Let's Encrypt | nur im Profil `acme` | Profil inaktiv im Airgap |
 | jsDelivr (Callout-Emoji-URL, `frimousse`-Emoji-Daten) | gebündelt (D09/D10) | Airgap-E2E öffnet Emoji-Picker |
 | OAuth-Provider | entfällt (ADR-008) | – |
@@ -741,19 +741,19 @@ Nicht enthalten: Mailpit (nur Dev/Test).
 | Aspire-Dashboard | keine externen Ressourcen | DNS-Sink |
 | Fonts/Icons/i18n der Angular-Apps | gebündelt (ADR-004) | DNS-Sink + Playwright `route.abort` für Fremd-Hosts |
 
-### 3.15 Migrationen beim Deployment und Instanz-Initialisierung (`src/hosts/Plane.Migrator/`)
+### 3.15 Migrationen beim Deployment und Instanz-Initialisierung (`src/hosts/Funk.Migrator/`)
 
 | Schritt | Klasse | Verhalten | ersetzt (Original) |
 |---|---|---|---|
 | 1 | `DatabaseReadiness` | Verbindung mit Retry (max. 60 s, exponentiell), danach Abbruch Exit 2 | `wait_for_db` (E-04) |
-| 2 | `MigrationLock` | `SELECT pg_advisory_lock(7356001)` (Konstante `PlaneLocks.Migrator`); paralleler Zweitstart wartet | – |
+| 2 | `MigrationLock` | `SELECT pg_advisory_lock(7356001)` (Konstante `FunkLocks.Migrator`); paralleler Zweitstart wartet | – |
 | 3 | `ExtensionCheck` | `vector`, `pg_trgm`, `unaccent` vorhanden? sonst `CREATE EXTENSION IF NOT EXISTS` (benötigt Rechte; gebündelte DB: per `deploy/postgres/init/20-extensions.sql` vorab angelegt) – Fehler mit klarer Meldung für externe DBs | – |
-| 4 | `SchemaMigrator` | `PlaneDbContext.Database.MigrateAsync()`; prüft vorher: enthält `__EFMigrationsHistory` Migrationen, die das Assembly **nicht** kennt → Abbruch Exit 3 („Datenbank ist neuer als diese Version – Downgrade nicht unterstützt“) | `manage.py migrate` |
+| 4 | `SchemaMigrator` | `FunkDbContext.Database.MigrateAsync()`; prüft vorher: enthält `__EFMigrationsHistory` Migrationen, die das Assembly **nicht** kennt → Abbruch Exit 3 („Datenbank ist neuer als diese Version – Downgrade nicht unterstützt“) | `manage.py migrate` |
 | 5 | `DataProtectionKeyRingInit` | legt Key-Ring-Tabelle an (Teil der Migration) und erzeugt den ersten Schlüssel, falls keiner existiert (verhindert Race mehrerer Hosts) | `SECRET_KEY` (E-07/E-08) |
-| 6 | `InstanceBootstrapper` | Instanz-Datensatz anlegen/aktualisieren: `instance_name` (Original „Plane Community Edition“ → Default „funk.“ aus `Plane:Instance:DefaultName` (03 §3.14.1, ABG-104, `BRAND-DM-01`), vom Admin änderbar; vorhandene Werte werden nicht überschrieben), `instance_id` (24 Hex), `current_version` = `PLANE_VERSION`, `latest_version` = `current_version`, `is_test` (`IS_TEST`), **kein Netzaufruf** | `register_instance` (CE-INST-001 angepasst) |
-| 7 | `InstanceConfigurationSeeder` | Schlüssel der Klasse „Seed“ (§4.7.2) nur bei **Neuanlage** aus ENV übernehmen, Geheimwerte mit Data Protection verschlüsselt; Modus `Plane__Instance__ConfigurationSource=Environment` liest stattdessen zur Laufzeit aus ENV | `configure_instance` (CE-INST-002, E-06) |
+| 6 | `InstanceBootstrapper` | Instanz-Datensatz anlegen/aktualisieren: `instance_name` (Original „Plane Community Edition“ → Default „funk.“ aus `Funk:Instance:DefaultName` (03 §3.14.1, ABG-104, `BRAND-DM-01`), vom Admin änderbar; vorhandene Werte werden nicht überschrieben), `instance_id` (24 Hex), `current_version` = `PLANE_VERSION`, `latest_version` = `current_version`, `is_test` (`IS_TEST`), **kein Netzaufruf** | `register_instance` (CE-INST-001 angepasst) |
+| 7 | `InstanceConfigurationSeeder` | Schlüssel der Klasse „Seed“ (§4.7.2) nur bei **Neuanlage** aus ENV übernehmen, Geheimwerte mit Data Protection verschlüsselt; Modus `Funk__Instance__ConfigurationSource=Environment` liest stattdessen zur Laufzeit aus ENV | `configure_instance` (CE-INST-002, E-06) |
 | 8 | `SeedRunner` | idempotente Stammdaten-Seeds (D03), z. B. System-Rollen 20/15/5 (E5-Andockstelle), Relationstyp-Katalog (A9) | Django-Datenmigrationen |
-| 8a | `SearchIndexInitializer` | **Erstbefüllung Such-Index** (ABG-133, 11 §3.10.4): ist `search_documents` leer und existieren Fachdaten (mindestens ein Workspace), plant der Migrator **einen** Job `indexing.rebuild` (`SearchIndexRebuildJob(null, null, null)`, Dedupe `indexing:rebuild:::`) – idempotent (bei befülltem Index oder bereits geplantem Job keine Aktion); `Plane:Search:IndexingEnabled=false` → übersprungen | – (neu) |
+| 8a | `SearchIndexInitializer` | **Erstbefüllung Such-Index** (ABG-133, 11 §3.10.4): ist `search_documents` leer und existieren Fachdaten (mindestens ein Workspace), plant der Migrator **einen** Job `indexing.rebuild` (`SearchIndexRebuildJob(null, null, null)`, Dedupe `indexing:rebuild:::`) – idempotent (bei befülltem Index oder bereits geplantem Job keine Aktion); `Funk:Search:IndexingEnabled=false` → übersprungen | – (neu) |
 | 9 | `BucketInitializer` | S3: `HeadBucket` → 404 → `PutBucket` (privat, keine Policy, E-22); 403 → Abbruch Exit 4; Dateisystem: Verzeichnis + Schreibtest | `create_bucket` |
 | 10 | `CacheInvalidator` | löscht **nur** Schlüssel mit Präfix `plane:cfg:` und `plane:instance:` (kein `FLUSHDB`, F-10) | `clear_cache` |
 | 11 | Ende | Lock freigeben, Exit 0, Log `plane.migrations` „completed in N ms“ | – |
@@ -772,7 +772,7 @@ Schema-Gate in Api/Worker/Realtime/Gateway-AIO: `SchemaGateHealthCheck` vergleic
 | 4 | `pg_dump -Fc` Forgejo-DB (Profil `forgejo`) | `forgejo.dump` |
 | 5 | Objekte: S3 `ListObjectsV2` + Stream in `objects.tar.zst` (Pfad = Key); Dateisystem: `files.tar.zst` | `objects.tar.zst` |
 | 6 | Forgejo-Daten (`/data/git`, `/data/gitea` ohne `queues`/`sessions`) aus Volume (ro gemountet) | `forgejo-data.tar.zst` |
-| 7 | optional `--include-secrets`: `.env` (gefiltert auf Secrets), `dataprotection.pfx` – **verschlüsselt** mit Passphrase (AES-256-GCM aus `System.Security.Cryptography`, Schlüssel per PBKDF2-SHA256 mit 600 000 Iterationen; Format `PLANEBK1` + Salt + Nonce + Tag dokumentiert in `src/tools/Plane.Cli/Backup/SecretsArchive.cs`) | `secrets.enc` |
+| 7 | optional `--include-secrets`: `.env` (gefiltert auf Secrets), `dataprotection.pfx` – **verschlüsselt** mit Passphrase (AES-256-GCM aus `System.Security.Cryptography`, Schlüssel per PBKDF2-SHA256 mit 600 000 Iterationen; Format `PLANEBK1` + Salt + Nonce + Tag dokumentiert in `src/tools/Funk.Cli/Backup/SecretsArchive.cs`) | `secrets.enc` |
 | 8 | Checksummen | `SHA256SUMS` |
 
 Konsistenzregel: DB-Dumps **vor** Objekten (Objekte sind dann Obermenge; verwaiste Objekte schadet nicht, fehlende Objekte schon). Laufender Betrieb ist zulässig (pg_dump ist je DB transaktionskonsistent). Aufbewahrung: `--keep <n>` (Default 7).
@@ -808,8 +808,8 @@ Ersetzt `restore.sh` und `restore-airgapped.sh` (beide Volume-basiert; das Daten
 |---|---|---|---|---|
 | `gateway` | horizontal | zustandslos | – (Rate-Limit für Static je Replika, dokumentiert) | 100m/128Mi – 500m/256Mi |
 | `api` | horizontal | zustandslos (Session in PG, Cache L1+L2) | Valkey (HybridCache-L2-Invalidierung, verteiltes Rate-Limit, ADR-034) | 250m/512Mi – 2/1Gi |
-| `worker` | horizontal | zustandslos (`SKIP LOCKED`, Cron-Leader per Advisory-Lock); verarbeitet alle Queues außer `live` (Host-Default `Plane:Worker:ExcludeQueues=["live"]`, ABG-106), darunter `realtime` (`RealtimeFanOutConsumer`) | Valkey (Notification-Locks bzw. PG-Locks, D06) | 250m/512Mi – 1/1Gi |
-| `realtime` | horizontal | Dokumente im Speicher, Fan-out über Valkey; jede Replika verarbeitet die Job-Queue `live` (`realtime.push` → `HubRealtimePublisher`, Host-Default `Plane:Worker:Queues=["live"]`, ABG-106) | Valkey (Pflicht; CE-RT-007; ab 2 Replikas verteilt die Valkey-Backplane); keine Sticky-Session nötig, SignalR-Client nur WebSockets (`skipNegotiation`, D08) | 250m/512Mi – 2/2Gi |
+| `worker` | horizontal | zustandslos (`SKIP LOCKED`, Cron-Leader per Advisory-Lock); verarbeitet alle Queues außer `live` (Host-Default `Funk:Worker:ExcludeQueues=["live"]`, ABG-106), darunter `realtime` (`RealtimeFanOutConsumer`) | Valkey (Notification-Locks bzw. PG-Locks, D06) | 250m/512Mi – 1/1Gi |
+| `realtime` | horizontal | Dokumente im Speicher, Fan-out über Valkey; jede Replika verarbeitet die Job-Queue `live` (`realtime.push` → `HubRealtimePublisher`, Host-Default `Funk:Worker:Queues=["live"]`, ABG-106) | Valkey (Pflicht; CE-RT-007; ab 2 Replikas verteilt die Valkey-Backplane); keine Sticky-Session nötig, SignalR-Client nur WebSockets (`skipNegotiation`, D08) | 250m/512Mi – 2/2Gi |
 | `migrator` | nein (Job, Lock) | – | – | 100m/256Mi – 1/512Mi |
 | `keycloak` | horizontal (Infinispan-Cluster, Keycloak-Doku) | Sessions | Cache-Stack `kubernetes` (JGroups DNS-Ping) | 500m/1Gi – 2/2Gi |
 | `postgres` | vertikal; Read-Replica optional (CE-OPS-010, `ConnectionStrings__plane-replica`) | Daten | – | 500m/1Gi – Betreiber |
@@ -827,21 +827,21 @@ JSON-Console (`{"Timestamp","EventId","LogLevel","Category","Message","State":{�
 
 | Meter | Instrument | Typ | Attribute |
 |---|---|---|---|
-| `Plane.Messaging` | `plane.outbox.pending` | ObservableGauge | – |
+| `Funk.Messaging` | `plane.outbox.pending` | ObservableGauge | – |
 | | `plane.outbox.dispatch.duration` | Histogram (ms) | `event_type` |
 | | `plane.jobs.executed` | Counter | `queue`, `job`, `outcome` (`success`/`retry`/`dead_letter`) |
 | | `plane.jobs.duration` | Histogram (ms) | `queue`, `job` |
 | | `plane.jobs.queue_depth` | ObservableGauge | `queue` |
 | | `plane.scheduler.leader` | ObservableGauge (0/1) | `instance` |
-| `Plane.Realtime` | `plane.realtime.connections` | UpDownCounter | `channel` (`collaboration`/`events`) |
+| `Funk.Realtime` | `plane.realtime.connections` | UpDownCounter | `channel` (`collaboration`/`events`) |
 | | `plane.realtime.documents.loaded` | UpDownCounter | – |
 | | `plane.realtime.persist.duration` | Histogram (ms) | – |
 | | `plane.realtime.message.size` | Histogram (Byte) | `type` |
-| `Plane.Api` | `plane.auth.logins` | Counter | `app` (`web`/`admin`/`space`), `outcome` |
+| `Funk.Api` | `plane.auth.logins` | Counter | `app` (`web`/`admin`/`space`), `outcome` |
 | | `plane.ratelimit.rejected` | Counter | `policy` |
-| `Plane.Gateway` | `plane.gateway.upstream.errors` | Counter | `cluster` |
+| `Funk.Gateway` | `plane.gateway.upstream.errors` | Counter | `cluster` |
 | | `plane.tls.certificate.expiry_days` | ObservableGauge | `subject` |
-| `Plane.Storage` | `plane.storage.operations` | Counter | `operation`, `outcome` |
+| `Funk.Storage` | `plane.storage.operations` | Counter | `operation`, `outcome` |
 
 #### 3.19.3 Traces und Korrelation
 
@@ -860,23 +860,23 @@ Trace-Kontext wird über die Outbox (`traceparent`-Spalte, 01 §7.16) an Consume
 | Node.js | 24 LTS (Mindestversion laut `@angular/cli` 22 ⚠ S0; nur Build/Dev) | `.node-version` |
 | pnpm | über Corepack, Version aus `frontend/package.json` `packageManager` (wie Original: pnpm 11) | `corepack enable` |
 | Container-Runtime | Docker Desktop/Engine ≥ 26 oder Podman ≥ 5 | `docker info` |
-| RAM | ≥ 16 GB empfohlen (Keycloak + Forgejo + Angular-Dev-Server); 8 GB mit `--Plane:Forgejo:Bundled=false` | – |
+| RAM | ≥ 16 GB empfohlen (Keycloak + Forgejo + Angular-Dev-Server); 8 GB mit `--Funk:Forgejo:Bundled=false` | – |
 
 | Aufgabe | Befehl |
 |---|---|
 | Ersteinrichtung | `tools/dev/setup.sh` → `corepack enable`, `pnpm -C frontend install --frozen-lockfile`, `pnpm -C tools/keycloak-theme install`, `dotnet restore`, `dotnet dev-certs https --trust` (optional) |
-| Alles starten | `aspire run` (im Repo-Wurzelverzeichnis; findet `src/hosts/Plane.AppHost`) → Dashboard-URL in der Konsole; App unter `http://localhost:3000`, Login `admin@plane.local` mit dem generierten Parameter `dev-user-password` (Dashboard → Parameter bzw. `dotnet user-secrets list --project src/hosts/Plane.AppHost`) |
-| Ohne Forgejo | `aspire run -- --Plane:Forgejo:Bundled=false` (nur im `dev`-Profil wirksam) |
-| Test-Profil | `aspire run -- --Plane:Profile=test` (setzt gebaute Frontends voraus: `pnpm -C frontend build`) |
-| Prodlike | `aspire run -- --Plane:Profile=prodlike` (baut `funk-keycloak` lokal per `AddDockerfile`) |
+| Alles starten | `aspire run` (im Repo-Wurzelverzeichnis; findet `src/hosts/Funk.AppHost`) → Dashboard-URL in der Konsole; App unter `http://localhost:3000`, Login `admin@plane.local` mit dem generierten Parameter `dev-user-password` (Dashboard → Parameter bzw. `dotnet user-secrets list --project src/hosts/Funk.AppHost`) |
+| Ohne Forgejo | `aspire run -- --Funk:Forgejo:Bundled=false` (nur im `dev`-Profil wirksam) |
+| Test-Profil | `aspire run -- --Funk:Profile=test` (setzt gebaute Frontends voraus: `pnpm -C frontend build`) |
+| Prodlike | `aspire run -- --Funk:Profile=prodlike` (baut `funk-keycloak` lokal per `AddDockerfile`) |
 | Theme bearbeiten | `pnpm -C tools/keycloak-theme watch` – Keycloak lädt Templates/CSS ohne Neustart (Cache aus) |
-| Volumes zurücksetzen | `tools/dev/reset-volumes.sh` (entfernt `plane-pgdata`, `plane-objects`, `plane-forgejo` nach Rückfrage) |
+| Volumes zurücksetzen | `tools/dev/reset-volumes.sh` (entfernt `plane-pgdata`, `plane-objects`, `funk-forgejo` nach Rückfrage) |
 | Datenbank-Shell | Aspire-Dashboard → `postgres` → Connection-String; oder `tools/dev/psql.sh` |
 | E-Mails ansehen | Mailpit-UI `http://localhost:8025` |
-| Forgejo | `http://localhost:3300` (SSO über Keycloak; Admin `plane-admin`, Passwort aus Parameter) |
+| Forgejo | `http://localhost:3300` (SSO über Keycloak; Admin `funk-admin`, Passwort aus Parameter) |
 | Compose lokal prüfen | `aspire publish -o artifacts/compose && docker compose -f artifacts/compose/docker-compose.yaml --profile bundled-s3 --profile valkey up` |
 
-Original-Vergleich (Paritäts-Harness, S11; verbindlich nach ABG-006): einziger Einstieg ist `tools/parity/start-original.sh` (Repo-Wurzel `funk.`). Das Skript startet `tools/parity/compose.original.yml` (Original v1.4.2, `makeplane/*`-Images per Digest, Mount `tests/seed` → `/parity` im `api`-Container) hinter dem Proxy `http://localhost:13000` – einziger Host-Port des Originals; die Pins (Image-Digests **und** `ORIGINAL_SHA`) stehen in `tools/parity/original.env`. Option `--from-source` baut die Images aus den Original-Dockerfiles am `ORIGINAL_SHA` (Pflicht für Visual-Aufnahmen, D15 §3.10). `docker-compose-local.yml` und `tools/ci/parity/` werden nicht verwendet. Basis-URL über `ORIGINAL_BASE_URL` (Default `http://localhost:13000`). Port 13000 kollidiert mit keinem festen Ziel-Port (Gateway 3000, Keycloak 8180); parallele Ziel-Stacks verschiebt `Plane__Testing__PortOffset`; Postgres/Valkey/SeaweedFS des Ziels nutzen in Aspire dynamische Host-Ports.
+Original-Vergleich (Paritäts-Harness, S11; verbindlich nach ABG-006): einziger Einstieg ist `tools/parity/start-original.sh` (Repo-Wurzel `funk.`). Das Skript startet `tools/parity/compose.original.yml` (Original v1.4.2, `makeplane/*`-Images per Digest, Mount `tests/seed` → `/parity` im `api`-Container) hinter dem Proxy `http://localhost:13000` – einziger Host-Port des Originals; die Pins (Image-Digests **und** `ORIGINAL_SHA`) stehen in `tools/parity/original.env`. Option `--from-source` baut die Images aus den Original-Dockerfiles am `ORIGINAL_SHA` (Pflicht für Visual-Aufnahmen, D15 §3.10). `docker-compose-local.yml` und `tools/ci/parity/` werden nicht verwendet. Basis-URL über `ORIGINAL_BASE_URL` (Default `http://localhost:13000`). Port 13000 kollidiert mit keinem festen Ziel-Port (Gateway 3000, Keycloak 8180); parallele Ziel-Stacks verschiebt `Funk__Testing__PortOffset`; Postgres/Valkey/SeaweedFS des Ziels nutzen in Aspire dynamische Host-Ports.
 
 ### 3.21 CI/CD (GitHub Actions, Repository `funk.`)
 
@@ -884,10 +884,10 @@ Original-Vergleich (Paritäts-Harness, S11; verbindlich nach ABG-006): einziger 
 
 | Datei | Trigger | Jobs (Reihenfolge) | Gate | ab |
 |---|---|---|---|---|
-| `.github/workflows/ci.yml` | `pull_request`, `merge_group`, `push` auf `main` | `backend` (restore, `dotnet build -warnaserror`, Unit-Tests, Architekturtests, Integrationstests mit Testcontainers, `dotnet ef migrations has-pending-model-changes`, Coverage-Upload), `frontend` (pnpm install `--frozen-lockfile`, `ng lint`, Sheriff, Vitest, `pnpm build`, i18n-Sync-Check, Contract-Check `frontend/tools/contract-check`, Artefakt `frontend-dist`), `keycloak-theme` (Build + Lint), `license-gate` (`tools/ci/license-gate` für NuGet + npm), `license-header` (AGPL-Header-Check wie Original-`copyright-check.yml`), `apphost-smoke` (`Plane.AppHost.Tests`, Profil `test`, braucht `frontend-dist`), `compose-drift` (`aspire publish` → `git diff --exit-code deploy/compose`), `helm-lint` (ab I7: `helm lint`, `helm template | kubeconform`) | alle Pflicht für Merge (Branch-Protection) | I0 |
+| `.github/workflows/ci.yml` | `pull_request`, `merge_group`, `push` auf `main` | `backend` (restore, `dotnet build -warnaserror`, Unit-Tests, Architekturtests, Integrationstests mit Testcontainers, `dotnet ef migrations has-pending-model-changes`, Coverage-Upload), `frontend` (pnpm install `--frozen-lockfile`, `ng lint`, Sheriff, Vitest, `pnpm build`, i18n-Sync-Check, Contract-Check `frontend/tools/contract-check`, Artefakt `frontend-dist`), `keycloak-theme` (Build + Lint), `license-gate` (`tools/ci/license-gate` für NuGet + npm), `license-header` (AGPL-Header-Check wie Original-`copyright-check.yml`), `apphost-smoke` (`Funk.AppHost.Tests`, Profil `test`, braucht `frontend-dist`), `compose-drift` (`aspire publish` → `git diff --exit-code deploy/compose`), `helm-lint` (ab I7: `helm lint`, `helm template | kubeconform`) | alle Pflicht für Merge (Branch-Protection) | I0 |
 | `.github/workflows/images.yml` | `push` auf `main`, Tags `v*`, `workflow_dispatch`, `workflow_call` (aus `ci.yml`/G2, Eingabe `push: false`) | Matrix Image × Arch (`ubuntu-24.04` amd64, `ubuntu-24.04-arm` arm64): `dotnet publish -t:PublishContainer -p:ContainerRegistry=$REG -p:ContainerImageTags=sha-<sha>-<arch>` bzw. `docker buildx build` (funk-keycloak, funk-cli); `assert-no-node`; **Trivy** (`image`, `--severity CRITICAL,HIGH --ignore-unfixed --exit-code 1`, `.trivyignore` mit Ablaufdatum je Eintrag); **Syft** SBOM SPDX-JSON + CycloneDX; Push per Digest; Job `manifest` (`docker buildx imagetools create` → Tag `sha-<sha>`, auf `main` zusätzlich `edge`) ; ab I7 `cosign sign --key env://COSIGN_PRIVATE_KEY` + `cosign attest --type spdxjson` | Trivy-Gate, assert-no-node | I0 (ohne Signatur), I7 (Signatur) |
 | `.github/workflows/e2e.yml` | `pull_request` mit Label `e2e`, nightly, vor Release | Compose-Stack aus `edge`-Images (`--profile bundled-s3 --profile valkey`), Playwright E2E (`frontend/apps/e2e`), Visual-Regression gegen Referenz-Screenshots, axe; **Airgap-Variante**: Compose-Override `networks.plane.internal: true` + DNS-Sink-Container (`tools/ci/dns-sink`, protokolliert alle Anfragen) → Gate: 0 Anfragen an nicht erlaubte Domains | E2E grün, 0 externe Anfragen | I0 (Smoke-Login), I7 (voll) |
-| `.github/workflows/parity.yml` | nightly, `workflow_dispatch` | Original-Stack (Internet erlaubt; Original 1.4.2 per `tools/parity/start-original.sh` → `tools/parity/compose.original.yml`, Proxy `http://localhost:13000`, Pins aus `tools/parity/original.env` (Image-Digests + `ORIGINAL_SHA`), ABG-006) + Ziel-Stack (Profil `test`), `Plane.Tools.ParityHarness replay`, JSON-Diff-Report als Artefakt | Diff ohne neue Abweichungen ggü. `tests/contracts/deviations.yaml` | I0 |
+| `.github/workflows/parity.yml` | nightly, `workflow_dispatch` | Original-Stack (Internet erlaubt; Original 1.4.2 per `tools/parity/start-original.sh` → `tools/parity/compose.original.yml`, Proxy `http://localhost:13000`, Pins aus `tools/parity/original.env` (Image-Digests + `ORIGINAL_SHA`), ABG-006) + Ziel-Stack (Profil `test`), `Funk.Tools.ParityHarness replay`, JSON-Diff-Report als Artefakt | Diff ohne neue Abweichungen ggü. `tests/contracts/deviations.yaml` | I0 |
 | `.github/workflows/release.yml` | Tag `v*.*.*` | wartet auf `images.yml` (gleicher SHA), Re-Tag `vX.Y.Z` + `latest`/`stable`, Compose-Bundle (`deploy/compose/**` mit festen Versionen), `helm package` + Push OCI (`oci://$REG/charts/funk`), **Airgap-Bundles** je Arch (`deploy/airgap/build-bundle.sh`: `skopeo copy` aller `images.yaml`-Einträge per Digest, SBOMs, `SHA256SUMS`, `cosign sign-blob`), Release-Notes, GitHub-Release mit Assets `plane-compose-<v>.tar.gz`, `plane-<v>.tgz`, `funk-airgap-<v>-{amd64,arm64}.tar.zst`, `SHA256SUMS`, `cosign.pub` | alle vorherigen grün; Upgrade-Test vN-1 → vN (AK-14-28) | I7 |
 | `.github/workflows/codeql.yml` | `pull_request`, `push`, wöchentlich | CodeQL `csharp`, `javascript-typescript` | Befunde `high` blockieren | I0 |
 | `.github/workflows/check-version.yml` | `pull_request` auf `main` | `Directory.Build.props` `<Version>` = `frontend/package.json` `version` (Original-Gate „Version Change Before Release“) | – | I0 |
@@ -899,20 +899,20 @@ Querschnittsregeln: (1) Jede `uses:`-Zeile mit vollständigem Commit-SHA + Komme
 
 | Name | Art | Zweck |
 |---|---|---|
-| `PLANE_REGISTRY` | Variable | Ziel-Registry (Default `ghcr.io/<owner>`) |
+| `FUNK_REGISTRY` | Variable | Ziel-Registry (Default `ghcr.io/<owner>`) |
 | `GITHUB_TOKEN` | automatisch | GHCR-Push (`packages: write`) |
 | `COSIGN_PRIVATE_KEY`, `COSIGN_PASSWORD` | Secret (Environment `release`, geschützt) | Signatur Images/Blobs |
 | – (`PARITY_ORIGINAL_REF` entfällt) | – | Commit und Image-Digests des Originals stehen eingecheckt in `tools/parity/original.env` (`ORIGINAL_SHA`, ABG-006) |
 
-### 3.22 Betriebs-CLI `funk-cli` (`src/tools/Plane.Cli/`)
+### 3.22 Betriebs-CLI `funk-cli` (`src/tools/Funk.Cli/`)
 
-Implementierung mit `System.CommandLine` (MIT); jeder Befehl ist eine Klasse `<Name>Command` unter `src/tools/Plane.Cli/Commands/`. Befehls- und Image-Name `funk-cli` (ABG-149, `BRAND-OPS-02`); alle Hilfetexte (`--help`, Root-Beschreibung „funk. operations CLI“, Fehlermeldungen) nennen das Produkt „funk.“ über `Brand.ProductName` (02, BR-03) – Projekt-, Assembly- und Namespace-Namen `Plane.Cli` bleiben (BR-02). Aufruf Compose: `./funk.sh cli <befehl>` (= `docker compose run --rm funk-cli <befehl>`); Kubernetes: `kubectl -n plane run funk-cli --rm -it --image=… -- <befehl>` bzw. Job-Vorlage im Chart.
+Implementierung mit `System.CommandLine` (MIT); jeder Befehl ist eine Klasse `<Name>Command` unter `src/tools/Funk.Cli/Commands/`. Befehls- und Image-Name `funk-cli` (ABG-149, `BRAND-OPS-02`); alle Hilfetexte (`--help`, Root-Beschreibung „funk. operations CLI“, Fehlermeldungen) nennen das Produkt „funk.“ über `Brand.ProductName` (02, BR-03) – Projekt-, Assembly- und Namespace-Namen `Funk.Cli` bleiben (BR-02). Aufruf Compose: `./funk.sh cli <befehl>` (= `docker compose run --rm funk-cli <befehl>`); Kubernetes: `kubectl -n plane run funk-cli --rm -it --image=… -- <befehl>` bzw. Job-Vorlage im Chart.
 
 | Befehl | Zweck | ersetzt (Original) | ab |
 |---|---|---|---|
 | `init --domain <fqdn> [--https|--acme <mail>|--behind-proxy] [--profiles …]` | `.env` + Secrets + Data-Protection-Zertifikat erzeugen | `install.sh` (Install-Teil), `setup.sh` | I1 |
 | `config check` | Optionen validieren (gleiche Validatoren wie Hosts), Legacy-Variablen auflisten (Alias/Seed/entfällt) | – | I1 |
-| `migrate` | Migrator-Schritte ausführen (gleicher Code wie `Plane.Migrator`) | `manage.py migrate`, `wait_for_db`, `wait_for_migrations` | I1 |
+| `migrate` | Migrator-Schritte ausführen (gleicher Code wie `Funk.Migrator`) | `manage.py migrate`, `wait_for_db`, `wait_for_migrations` | I1 |
 | `seed demo` | Demo-Daten in einen bestehenden Workspace laden (Inhalt `apps/api/plane/seeds/data/*.json`); das automatische Seeding bei Workspace-Anlage (`workspace_seed`-Task, `API/app/views/workspace/base.py`) bleibt fachlich im Worker (D06) | – (Betreiberhilfe; nutzt dieselbe Seed-Logik wie `workspace_seed`) | I1 |
 | `create-dummy-data --workspace <slug> --projects n --items m` bzw. `--profile S\|M\|L\|XL` | Testdaten (Bogus, nutzt `VolumeSeeder` aus D15 §3.14.3) | `create_dummy_data` (CE-OPS-024) | I2 |
 | `search reindex [--workspace <slug>] [--project <id>] [--entity <type>] [--wait]` | Such-Index neu aufbauen: plant `SearchIndexRebuildJob` (Enqueue außerhalb einer Transaktion); `--wait` pollt die offenen Jobs der Queue `indexing` bis 0 oder Timeout 30 min (Exit 0/1) – 11 §3.10.4, ABG-133 | – (neu) | I5 |
@@ -943,14 +943,14 @@ Maßstab nach 17 Teil 2 §2.3 (BR-01 … BR-14): Was Betreiber und Instanz-Admin
 
 | ID | Gegenstand | Ziel (sichtbar) | Fundstellen |
 |---|---|---|---|
-| `BRAND-OPS-01` | Images und Helm-Chart (ABG-149) | Images `${PLANE_REGISTRY}/funk-gateway`, `funk-api`, `funk-worker`, `funk-realtime`, `funk-migrator`, `funk-aio`, `funk-cli`, `funk-keycloak` (`:${PLANE_VERSION}`), OCI-Label `title` = „funk. <Dienst>“; Chart `funk` unter `deploy/helm/funk`, Paket `funk-<version>.tgz`, OCI `oci://$REG/charts/funk` | §3.10, §3.11.2, §3.12, §3.14, §3.21.1, §4.1, §5.4, §5.8, §5.10, §5.12, D14-ADR-04/-10/-13/-14 |
+| `BRAND-OPS-01` | Images und Helm-Chart (ABG-149) | Images `${FUNK_REGISTRY}/funk-gateway`, `funk-api`, `funk-worker`, `funk-realtime`, `funk-migrator`, `funk-aio`, `funk-cli`, `funk-keycloak` (`:${FUNK_VERSION}`), OCI-Label `title` = „funk. <Dienst>“; Chart `funk` unter `deploy/helm/funk`, Paket `funk-<version>.tgz`, OCI `oci://$REG/charts/funk` | §3.10, §3.11.2, §3.12, §3.14, §3.21.1, §4.1, §5.4, §5.8, §5.10, §5.12, D14-ADR-04/-10/-13/-14 |
 | `BRAND-OPS-02` | Betriebs-CLI (ABG-149) | Befehl, Image und Compose-Dienst `funk-cli`; Hilfetexte mit „funk.“ (`Brand.ProductName`) | §3.22, alle Befehlsbeispiele |
 | `BRAND-OPS-03` | Compose-Wrapper | `deploy/compose/funk.sh` (Original `install.sh`; Menütexte und Ausgaben mit „funk.“) | D14-ADR-20, §3.11.1, §3.11.3, §3.17 |
 | `BRAND-OPS-04` | Airgap-Bundle | `funk-airgap-<version>-<arch>.tar.zst`, `funk-airgap-optional-*.tar.zst` | D14-ADR-15, §3.14.1, R-14-08 |
 | `BRAND-OPS-05` | Betriebs-Doku und Texte | `deploy/compose/README.md`, `deploy/swarm/README.md`, Helm `README.md` und `templates/NOTES.txt`, Kommentare der generierten `.env.example` (`env-comments.yaml`) und der Compose-Dateien, Ausgaben von `funk.sh install`/`upgrade`, Release-Notes, Beispielwerte (`publicUrl: https://funk.example.com`), Default-OG-Meta des Gateways (§3.7.5) – Produktname nur „funk.“, keine Links auf `plane.so` (BR-12) | §3.7.5, §3.11, §3.12, §3.17, §5.8 |
-| `BRAND-OPS-06` | Instanz-Defaults, die der Betrieb setzt | Default-`instance_name` „funk.“ (`Plane:Instance:DefaultName`, ABG-104, Eintrag `BRAND-DM-01` in 03); Mail-Absender-Fallback `funk. <noreply@<Host aus WEB_URL>>` (ABG-105, `BRAND-MAIL-*` in 06) | §3.15 Schritt 6, §4.7.1 `EMAIL_FROM` |
+| `BRAND-OPS-06` | Instanz-Defaults, die der Betrieb setzt | Default-`instance_name` „funk.“ (`Funk:Instance:DefaultName`, ABG-104, Eintrag `BRAND-DM-01` in 03); Mail-Absender-Fallback `funk. <noreply@<Host aus WEB_URL>>` (ABG-105, `BRAND-MAIL-*` in 06) | §3.15 Schritt 6, §4.7.1 `EMAIL_FROM` |
 
-**Bleiben unverändert (BR-02):** ENV-Präfixe `PLANE_*` (`PLANE_REGISTRY`, `PLANE_VERSION`, `PLANE_PUBLIC_URL`, `PLANE_DB_PASSWORD` …) und `Plane__*`; Projekt-/Assembly-Namen (`Plane.Gateway`, `Plane.Cli`, `Plane.AllInOne` …) und Entrypoints `/app/Plane.*`; Realm `plane`, Client-IDs `plane-*`, Rollen/Gruppen `plane-instance-admin(s)`; Theme-Ordner `themes/plane*` und Dateinamen `plane-login.*`; Secret-, ConfigMap- und Job-Namen im Chart (`plane-tls`, `plane-dataprotection`, `configmap-plane`, `plane-migrator-r<Revision>`); Compose-Projekt-, Netz- und Volume-Namen (`plane`, `plane-pgdata`, `plane-objects`, `plane-forgejo`), Datenbank/Rolle `plane`, Beispiel-Namespace `plane`; Dev-/Test-Hostnamen `*.plane.local`; OTel-`service.name`, Meter/ActivitySources und Log-Kategorien `plane.*`; Cache-Präfixe `plane:`.
+**Bleiben unverändert (BR-02):** ENV-Präfixe `PLANE_*` (`FUNK_REGISTRY`, `FUNK_VERSION`, `FUNK_PUBLIC_URL`, `FUNK_DB_PASSWORD` …) und `Funk__*`; Projekt-/Assembly-Namen (`Funk.Gateway`, `Funk.Cli`, `Funk.AllInOne` …) und Entrypoints `/app/Plane.*`; Realm `funk`, Client-IDs `plane-*`, Rollen/Gruppen `funk-instance-admin(s)`; Theme-Ordner `themes/plane*` und Dateinamen `plane-login.*`; Secret-, ConfigMap- und Job-Namen im Chart (`plane-tls`, `plane-dataprotection`, `configmap-plane`, `plane-migrator-r<Revision>`); Compose-Projekt-, Netz- und Volume-Namen (`plane`, `plane-pgdata`, `plane-objects`, `funk-forgejo`), Datenbank/Rolle `plane`, Beispiel-Namespace `plane`; Dev-/Test-Hostnamen `*.plane.local`; OTel-`service.name`, Meter/ActivitySources und Log-Kategorien `plane.*`; Cache-Präfixe `plane:`.
 
 ---
 ## 4. Vollständige Mapping-Tabellen Original → Ziel
@@ -983,9 +983,9 @@ Maßstab nach 17 Teil 2 §2.3 (BR-01 … BR-14): Was Betreiber und Instanz-Admin
 
 | Original (Pfad in `/home/user/plane`) | Ziel (Pfad in `funk.`) | Art | ab |
 |---|---|---|---|
-| `docker-compose.yml` (Build aus Quellcode) | `deploy/compose/docker-compose.yaml` (generiert) + `aspire run -- --Plane:Profile=prodlike` | ersetzt | I0 |
-| `docker-compose-local.yml` | `src/hosts/Plane.AppHost` Profil `dev` | ersetzt | I0 |
-| `docker-compose-test.yml` | Profil `test` + `tests/Plane.AppHost.Tests`, Testcontainers in Modul-Integrationstests | ersetzt | I0 |
+| `docker-compose.yml` (Build aus Quellcode) | `deploy/compose/docker-compose.yaml` (generiert) + `aspire run -- --Funk:Profile=prodlike` | ersetzt | I0 |
+| `docker-compose-local.yml` | `src/hosts/Funk.AppHost` Profil `dev` | ersetzt | I0 |
+| `docker-compose-test.yml` | Profil `test` + `tests/Funk.AppHost.Tests`, Testcontainers in Modul-Integrationstests | ersetzt | I0 |
 | `setup.sh` (Env-Dateien, `SECRET_KEY`, MinIO-Keys, `pnpm install`) | `tools/dev/setup.sh` (Dev), `funk-cli init` (Betrieb) | ersetzt | I0/I1 |
 | `.env.example`, `apps/api/.env.example`, `apps/live/.env.example`, `apps/{web,admin,space}/.env.example` | `deploy/compose/.env.example` (eine Datei), Dev braucht keine Env-Dateien (AppHost) | ersetzt | I0 |
 | `deployments/cli/community/docker-compose.yml` | `deploy/compose/docker-compose.yaml` | ersetzt | I0 |
@@ -997,20 +997,20 @@ Maßstab nach 17 Teil 2 §2.3 (BR-01 … BR-14): Was Betreiber und Instanz-Admin
 | `deployments/cli/community/migration-0.13-0.14.sh` | – | entfällt (Greenfield, ADR-003) | – |
 | `deployments/cli/community/README.md` | `deploy/compose/README.md` | neu geschrieben | I0 |
 | `deployments/swarm/community/swarm.sh` | `deploy/swarm/README.md` (`docker stack deploy`), keine Skript-Portierung (E-17) | ersetzt | I7 |
-| `deployments/aio/community/Dockerfile`, `start.sh`, `build.sh`, `supervisor.conf`, `variables.env`, `README.md` | `src/hosts/Plane.AllInOne/`, `deploy/compose/docker-compose.aio.yaml`, Startprüfungen in `AllInOneStartupValidator` | ersetzt | I7 |
+| `deployments/aio/community/Dockerfile`, `start.sh`, `build.sh`, `supervisor.conf`, `variables.env`, `README.md` | `src/hosts/Funk.AllInOne/`, `deploy/compose/docker-compose.aio.yaml`, Startprüfungen in `AllInOneStartupValidator` | ersetzt | I7 |
 | `deployments/kubernetes/community/README.md` (Verweis auf externes `plane-ce`-Chart) | `deploy/helm/funk/` | neu | I7 |
-| `apps/proxy/Caddyfile.ce`, `apps/proxy/Dockerfile.ce` | `src/hosts/Plane.Gateway/Routing/PlaneRouteTable.cs`, Profil `acme` (`deploy/compose/acme/Caddyfile`) | ersetzt | I0 |
-| `apps/proxy/Caddyfile.aio.ce` | `Plane.AllInOne` (gleiche Routentabelle, E-16 behoben) | ersetzt | I7 |
-| `apps/web/caddy/Caddyfile`, `apps/admin/caddy/Caddyfile` | `src/hosts/Plane.Gateway/Static/StaticFrontendMiddleware.cs`, `Static/StaticRateLimitPolicy.cs`, `Security/SecurityHeadersMiddleware.cs` | ersetzt | I0 |
+| `apps/proxy/Caddyfile.ce`, `apps/proxy/Dockerfile.ce` | `src/hosts/Funk.Gateway/Routing/FunkRouteTable.cs`, Profil `acme` (`deploy/compose/acme/Caddyfile`) | ersetzt | I0 |
+| `apps/proxy/Caddyfile.aio.ce` | `Funk.AllInOne` (gleiche Routentabelle, E-16 behoben) | ersetzt | I7 |
+| `apps/web/caddy/Caddyfile`, `apps/admin/caddy/Caddyfile` | `src/hosts/Funk.Gateway/Static/StaticFrontendMiddleware.cs`, `Static/StaticRateLimitPolicy.cs`, `Security/SecurityHeadersMiddleware.cs` | ersetzt | I0 |
 | `apps/space/nginx/nginx.conf` | – | entfällt (ungenutzt, E-26) | – |
-| `apps/api/Dockerfile.api`, `apps/api/Dockerfile.dev` | SDK-Container-Build `src/hosts/Plane.Api/Plane.Api.csproj` (`ContainerBaseImage`, `ContainerUser`) | ersetzt | I0 |
-| `apps/web/Dockerfile.web`, `apps/admin/Dockerfile.admin`, `apps/space/Dockerfile.space` (+ `Dockerfile.dev`) | `src/hosts/Plane.Gateway/Plane.Gateway.csproj` (Target `IncludeFrontendDist`) | ersetzt | I0 |
-| `apps/live/Dockerfile.live`, `apps/live/Dockerfile.dev` | `src/hosts/Plane.Realtime/Plane.Realtime.csproj` | ersetzt | I0 |
-| `apps/api/bin/docker-entrypoint-api.sh` | `Plane.Migrator` (Instanz/Config/Bucket/Cache) + `Plane.Api` (Start) | ersetzt | I0 |
+| `apps/api/Dockerfile.api`, `apps/api/Dockerfile.dev` | SDK-Container-Build `src/hosts/Funk.Api/Funk.Api.csproj` (`ContainerBaseImage`, `ContainerUser`) | ersetzt | I0 |
+| `apps/web/Dockerfile.web`, `apps/admin/Dockerfile.admin`, `apps/space/Dockerfile.space` (+ `Dockerfile.dev`) | `src/hosts/Funk.Gateway/Funk.Gateway.csproj` (Target `IncludeFrontendDist`) | ersetzt | I0 |
+| `apps/live/Dockerfile.live`, `apps/live/Dockerfile.dev` | `src/hosts/Funk.Realtime/Funk.Realtime.csproj` | ersetzt | I0 |
+| `apps/api/bin/docker-entrypoint-api.sh` | `Funk.Migrator` (Instanz/Config/Bucket/Cache) + `Funk.Api` (Start) | ersetzt | I0 |
 | `apps/api/bin/docker-entrypoint-api-local.sh` | AppHost `dev` | ersetzt | I0 |
-| `apps/api/bin/docker-entrypoint-worker.sh`, `docker-entrypoint-beat.sh` | `Plane.Worker` (Schema-Gate statt `wait_for_migrations`) | ersetzt | I0 |
-| `apps/api/bin/docker-entrypoint-migrator.sh` | `Plane.Migrator` | ersetzt | I0 |
-| `apps/api/plane/static/**` | `src/hosts/Plane.Gateway/wwwroot/static/**` (kopiert, G-11) | übernommen | I1 |
+| `apps/api/bin/docker-entrypoint-worker.sh`, `docker-entrypoint-beat.sh` | `Funk.Worker` (Schema-Gate statt `wait_for_migrations`) | ersetzt | I0 |
+| `apps/api/bin/docker-entrypoint-migrator.sh` | `Funk.Migrator` | ersetzt | I0 |
+| `apps/api/plane/static/**` | `src/hosts/Funk.Gateway/wwwroot/static/**` (kopiert, G-11) | übernommen | I1 |
 | `apps/api/plane/web/views.py` (`robots_txt`, `health_check`) | Gateway G-12, Api `GET /` | übernommen | I0 |
 | `apps/api/plane/settings/*.py` (ENV-Lesestellen) | `Plane*Options` + `LegacyEnvironmentMap` (§3.9, §4.7) | ersetzt | I0/I1 |
 | `apps/api/plane/utils/otlp_endpoints.py`, `apps/api/plane/license/bgtasks/telemetry_metrics.py` | – | entfällt (ADR-004) | – |
@@ -1035,9 +1035,9 @@ Maßstab nach 17 Teil 2 §2.3 (BR-01 … BR-14): Was Betreiber und Instanz-Admin
 | `reverse_proxy /* web:3000` | G-16 | – |
 | Global `{$CERT_EMAIL}`, `acme_ca`, `{$CERT_ACME_DNS}` | Profil `acme` (`caddy`) | DNS-Challenge-Module (Cloudflare/DigitalOcean) nicht mitgeliefert; Betreiber kann eigenes Caddy-Image nutzen |
 | Global `servers { max_header_size 25MB }` | Kestrel-Limits (§3.7.1 c) | 32 KiB (Sicherheitskorrektur) |
-| Global `client_ip_headers X-Forwarded-For X-Real-IP`, `trusted_proxies static {$TRUSTED_PROXIES:0.0.0.0/0}` | D14-ADR-22 (`Plane__ForwardedHeaders__KnownNetworks`) | Default kein Vertrauen statt `0.0.0.0/0` (E-11) |
-| `{$SITE_ADDRESS} { import plane_proxy }` | `Plane__Tls__Mode` + Ports | – |
-| AIO `handle /spaces/*` → `localhost:3002` usw. (`Caddyfile.aio.ce`) | `Plane.AllInOne` In-Process-Mounts | Redirects und `/static` vorhanden (E-16 behoben) |
+| Global `client_ip_headers X-Forwarded-For X-Real-IP`, `trusted_proxies static {$TRUSTED_PROXIES:0.0.0.0/0}` | D14-ADR-22 (`Funk__ForwardedHeaders__KnownNetworks`) | Default kein Vertrauen statt `0.0.0.0/0` (E-11) |
+| `{$SITE_ADDRESS} { import plane_proxy }` | `Funk__Tls__Mode` + Ports | – |
+| AIO `handle /spaces/*` → `localhost:3002` usw. (`Caddyfile.aio.ce`) | `Funk.AllInOne` In-Process-Mounts | Redirects und `/static` vorhanden (E-16 behoben) |
 | AIO `handle_path /god-mode*` + `try_files … /index.html` | G-05 | Fallback auf `/god-mode/index.html` |
 | web/admin-Caddy `rate_limit … 300 events / 1m` | §3.7.4 | – |
 | web/admin-Caddy Header `X-Frame-Options DENY`, `nosniff`, `X-XSS-Protection` | §3.7.3 | + `Referrer-Policy`, HSTS bei HTTPS |
@@ -1049,7 +1049,7 @@ Maßstab nach 17 Teil 2 §2.3 (BR-01 … BR-14): Was Betreiber und Instanz-Admin
 
 | # | Original | Ziel | Ort |
 |---|---|---|---|
-| 1 | Migrator: `wait_for_db` → `migrate` | Migrator Schritte 1–4 | `Plane.Migrator` |
+| 1 | Migrator: `wait_for_db` → `migrate` | Migrator Schritte 1–4 | `Funk.Migrator` |
 | 2 | `wait_for_db` (prüft faktisch nichts, E-04) | `DatabaseReadiness` mit echtem Connect + Aspire `WaitFor` / Compose `service_healthy` | Migrator |
 | 3 | `wait_for_migrations` (API/Worker/Beat, 10-s-Schleife) | Schema-Gate `/health/ready` | ServiceDefaults |
 | 4 | `register_instance` (+ GitHub-Check, `push_instance_metrics.delay()`) | `InstanceBootstrapper` ohne Netz/Telemetrie (E-27 entfällt) | Migrator |
@@ -1063,8 +1063,8 @@ Maßstab nach 17 Teil 2 §2.3 (BR-01 … BR-14): Was Betreiber und Instanz-Admin
 
 | Original | Ziel | Bemerkung |
 |---|---|---|
-| Celery-App, Broker RabbitMQ, Queue `celery` | `Plane.Worker` + Tabellen `jobs`, `outbox_messages`, `inbox_messages` | 01 ADR-020 |
-| `django_celery_beat.DatabaseScheduler` (13 Einträge) | `IRecurringJobRegistry` + Cronos, Leader per `pg_try_advisory_lock(PlaneLocks.Scheduler)` | `delete_old_s3_link` nur einmal (E-14), Telemetrie-Eintrag entfällt |
+| Celery-App, Broker RabbitMQ, Queue `celery` | `Funk.Worker` + Tabellen `jobs`, `outbox_messages`, `inbox_messages` | 01 ADR-020 |
+| `django_celery_beat.DatabaseScheduler` (13 Einträge) | `IRecurringJobRegistry` + Cronos, Leader per `pg_try_advisory_lock(FunkLocks.Scheduler)` | `delete_old_s3_link` nur einmal (E-14), Telemetrie-Eintrag entfällt |
 | `CELERY_TIMEZONE=UTC` | Cron-Ausdrücke in UTC (`IRecurringJobRegistry.Register(name, cronUtc)`) | – |
 | Retry `webhook_send_task` (5×, Backoff 600 s, Jitter) | Job-Retry-Policy (D06) | – |
 | Logging-Fixup (JSON-Handler, E-31) | Kategorie `plane.worker` | – |
@@ -1079,7 +1079,7 @@ Maßstab nach 17 Teil 2 §2.3 (BR-01 … BR-14): Was Betreiber und Instanz-Admin
 | `copyright-check.yml` (`addlicense`) | `ci.yml` Job `license-header` | gleiche Header-Pflicht; zusätzlich `license-gate` (Abhängigkeiten) |
 | `feature-deployment.yml` (Plane-intern, E-19) | – | entfällt |
 | `i18n-sync-check.yml` | `ci.yml` Job `frontend` (Schritt i18n-Sync) | – |
-| `migration-check.yml` (`makemigrations --check`, Schutz gemergter Migrationen) | `ci.yml` Job `backend` (`has-pending-model-changes`) + Job `migration-guard` (`git diff --diff-filter=MDR` auf `src/data/Plane.Data/Migrations/*.cs`, Override-Label `migration-history-override`; bis zum ersten CE-Release erlaubt 01 §7.14 Squash je Inkrement → Guard ab I7 scharf) | – |
+| `migration-check.yml` (`makemigrations --check`, Schutz gemergter Migrationen) | `ci.yml` Job `backend` (`has-pending-model-changes`) + Job `migration-guard` (`git diff --diff-filter=MDR` auf `src/data/Funk.Data/Migrations/*.cs`, Override-Label `migration-history-override`; bis zum ersten CE-Release erlaubt 01 §7.14 Squash je Inkrement → Guard ab I7 scharf) | – |
 | `pull-request-build-lint-api.yml` (ruff) | `ci.yml` Job `backend` (`dotnet build -warnaserror`, Analyzer, `dotnet format --verify-no-changes`) | – |
 | `pull-request-build-lint-web-apps.yml` (format/build/lint/types, Turbo `--affected`) | `ci.yml` Job `frontend` | Affected-Optimierung über Pfadfilter statt Turbo |
 | `react-doctor.yml` | – | entfällt (React); Ersatz: angular-eslint + Sheriff |
@@ -1087,64 +1087,64 @@ Maßstab nach 17 Teil 2 §2.3 (BR-01 … BR-14): Was Betreiber und Instanz-Admin
 
 ### 4.7 ENV-Mapping aller Original-Variablen (A01 §2.11)
 
-Klassen: **A** = Alias (wird auf den Ziel-Schlüssel abgebildet), **S** = Seed (Initialwert der Instanz-Konfiguration beim ersten Migrator-Lauf; bei `Plane__Instance__ConfigurationSource=Environment` Laufzeitwert), **C** = Compose-/Deployment-Variable (nur in `.env`/`funk.sh`/Helm), **E** = entfällt (Warnung bei gesetztem Wert). Alle Ziel-Schlüssel sind in ENV-Schreibweise (`__`) angegeben.
+Klassen: **A** = Alias (wird auf den Ziel-Schlüssel abgebildet), **S** = Seed (Initialwert der Instanz-Konfiguration beim ersten Migrator-Lauf; bei `Funk__Instance__ConfigurationSource=Environment` Laufzeitwert), **C** = Compose-/Deployment-Variable (nur in `.env`/`funk.sh`/Helm), **E** = entfällt (Warnung bei gesetztem Wert). Alle Ziel-Schlüssel sind in ENV-Schreibweise (`__`) angegeben.
 
 #### 4.7.1 API-Server (A01 §2.11.1)
 
 | Original | Kl. | Ziel-Schlüssel | Ziel-Default | Bemerkung |
 |---|---|---|---|---|
 | `DJANGO_SETTINGS_MODULE` | E | – (`ASPNETCORE_ENVIRONMENT`) | `Production` | Django-spezifisch |
-| `SECRET_KEY` | E (ignoriert, Warnung; bekannter Platzhalter → Critical) | – | – | kein Alias (ABG-012): wird nicht gelesen; ist er gesetzt, Startwarnung `"SECRET_KEY is ignored; ASP.NET Core Data Protection is used."`, bei bekannten Platzhalterwerten (`60gp0byfz2…`, `htbqvBJAgpm9…`, `change-this-key-on-deployment`) zusätzlich Level Critical (05 §4.4); Verschlüsselung über Data Protection, HMAC-Zwecke über den eigenen Pflicht-Parameter `Plane__Security__SigningKey` (D14-ADR-09) |
+| `SECRET_KEY` | E (ignoriert, Warnung; bekannter Platzhalter → Critical) | – | – | kein Alias (ABG-012): wird nicht gelesen; ist er gesetzt, Startwarnung `"SECRET_KEY is ignored; ASP.NET Core Data Protection is used."`, bei bekannten Platzhalterwerten (`60gp0byfz2…`, `htbqvBJAgpm9…`, `change-this-key-on-deployment`) zusätzlich Level Critical (05 §4.4); Verschlüsselung über Data Protection, HMAC-Zwecke über den eigenen Pflicht-Parameter `Funk__Security__SigningKey` (D14-ADR-09) |
 | `DEBUG` | E | – (`ASPNETCORE_ENVIRONMENT=Development` bzw. `Logging__LogLevel__Default=Debug`) | – | wie D02 §4.9: kein Alias (ein Betreiber-`DEBUG=1` darf keinen Development-Modus mit Detailfehlern in Produktion auslösen); gesetzt → Warnung mit Hinweis auf `Logging__LogLevel__*` |
 | `ALLOWED_HOSTS` | A | `AllowedHosts` | `*` | ASP.NET-Host-Filter |
-| `WEBHOOK_ALLOWED_IPS` | A | `Plane__Webhooks__AllowedNetworks` | leer | CE-WH-011 |
-| `WEBHOOK_ALLOWED_HOSTS` | A | `Plane__Webhooks__AllowedHosts` | leer | CE-WH-011 |
-| `WEBHOOK_DISALLOWED_DOMAINS` | A | `Plane__Webhooks__DisallowedDomains` | leer | CE-WH-011 |
-| `NUM_PROXIES` | A | `Plane__ForwardedHeaders__ForwardLimit` | `1` | ungültig → Warnung, ignoriert (wie Original) |
-| `API_KEY_RATE_LIMIT` | A | `Plane__RateLimits__ApiKey` | `60/minute` | CE-API-002 |
-| `AUTHENTICATION_RATE_LIMIT` | A | `Plane__RateLimits__Authentication` | `10/minute` | CE-AUTH-026 |
-| `CORS_ALLOWED_ORIGINS` | A | `Plane__Cors__AllowedOrigins` | eigene Origins | E-10 korrigiert; zusätzlich Quelle der Secure-Cookie-Regel (A01 §2.16) |
+| `WEBHOOK_ALLOWED_IPS` | A | `Funk__Webhooks__AllowedNetworks` | leer | CE-WH-011 |
+| `WEBHOOK_ALLOWED_HOSTS` | A | `Funk__Webhooks__AllowedHosts` | leer | CE-WH-011 |
+| `WEBHOOK_DISALLOWED_DOMAINS` | A | `Funk__Webhooks__DisallowedDomains` | leer | CE-WH-011 |
+| `NUM_PROXIES` | A | `Funk__ForwardedHeaders__ForwardLimit` | `1` | ungültig → Warnung, ignoriert (wie Original) |
+| `API_KEY_RATE_LIMIT` | A | `Funk__RateLimits__ApiKey` | `60/minute` | CE-API-002 |
+| `AUTHENTICATION_RATE_LIMIT` | A | `Funk__RateLimits__Authentication` | `10/minute` | CE-AUTH-026 |
+| `CORS_ALLOWED_ORIGINS` | A | `Funk__Cors__AllowedOrigins` | eigene Origins | E-10 korrigiert; zusätzlich Quelle der Secure-Cookie-Regel (A01 §2.16) |
 | `DATABASE_URL` | A | `ConnectionStrings__plane` | Pflicht | URL-Konverter |
 | `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_HOST` | A | `ConnectionStrings__plane` (zusammengesetzt) | – | nur wenn `DATABASE_URL` fehlt |
 | `POSTGRES_PORT` | A | dto. | `5432` | – |
-| `ENABLE_READ_REPLICA` | A | `Plane__Database__ReadReplicaEnabled` | `false` | CE-OPS-010 |
+| `ENABLE_READ_REPLICA` | A | `Funk__Database__ReadReplicaEnabled` | `false` | CE-OPS-010 |
 | `DATABASE_READ_REPLICA_URL` | A | `ConnectionStrings__plane-replica` | – | – |
 | `POSTGRES_READ_REPLICA_DB` / `_USER` / `_PASSWORD` / `_HOST` | A | `ConnectionStrings__plane-replica` | – | – |
 | `POSTGRES_READ_REPLICA_PORT` | A | dto. | `5432` | – |
 | `REDIS_URL` | A | `ConnectionStrings__valkey` | – (optional) | `rediss://` → TLS (CE-OPS-011) |
 | `REDIS_HOST` / `REDIS_PORT` | A | `ConnectionStrings__valkey` (nur wenn `REDIS_URL` fehlt) | – / `6379` | Original-API las sie nicht; Ziel akzeptiert sie als Komfort |
-| `REDIS_SSL_CERT_REQS` | A | `Plane__Valkey__SslCertificateValidation` (`required`/`none`) | `required` | Warnung bei `none` (D02 §4.9) |
-| `REDIS_SSL_CA_CERTS` | A | `Plane__Valkey__CaCertificatePath` | – | – |
-| `USE_MINIO` | E | – (ersetzt durch `Plane__Storage__PublicEndpoint` + `Plane__Gateway__ObjectStore__Mode`) | – | Warnung mit Migrationshinweis (§3.7.6) |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | A | `Plane__Storage__AccessKey` / `Plane__Storage__SecretKey` | Pflicht bei S3 | `secret-key` → Abbruch in Production (Original: kritischer Log) |
-| `AWS_S3_BUCKET_NAME` | A | `Plane__Storage__Bucket` | `uploads` | gleichzeitig Gateway-Routen G-09/G-10 |
-| `AWS_REGION` | A | `Plane__Storage__Region` | `""` | – |
-| `AWS_S3_ENDPOINT_URL` | A | `Plane__Storage__InternalEndpoint` | – | E-02 behoben |
-| `MINIO_ENDPOINT_URL` | A | `Plane__Storage__InternalEndpoint` (Fallback) | – | – |
+| `REDIS_SSL_CERT_REQS` | A | `Funk__Valkey__SslCertificateValidation` (`required`/`none`) | `required` | Warnung bei `none` (D02 §4.9) |
+| `REDIS_SSL_CA_CERTS` | A | `Funk__Valkey__CaCertificatePath` | – | – |
+| `USE_MINIO` | E | – (ersetzt durch `Funk__Storage__PublicEndpoint` + `Funk__Gateway__ObjectStore__Mode`) | – | Warnung mit Migrationshinweis (§3.7.6) |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | A | `Funk__Storage__AccessKey` / `Funk__Storage__SecretKey` | Pflicht bei S3 | `secret-key` → Abbruch in Production (Original: kritischer Log) |
+| `AWS_S3_BUCKET_NAME` | A | `Funk__Storage__Bucket` | `uploads` | gleichzeitig Gateway-Routen G-09/G-10 |
+| `AWS_REGION` | A | `Funk__Storage__Region` | `""` | – |
+| `AWS_S3_ENDPOINT_URL` | A | `Funk__Storage__InternalEndpoint` | – | E-02 behoben |
+| `MINIO_ENDPOINT_URL` | A | `Funk__Storage__InternalEndpoint` (Fallback) | – | – |
 | `MINIO_ENDPOINT_SSL` | E | – | – | `PublicEndpoint` enthält Schema |
-| `SIGNED_URL_EXPIRATION` | A | `Plane__Storage__PresignExpirySeconds` | `3600` | CE-OPS-012 |
-| `FILE_SIZE_LIMIT` | A | `Plane__Uploads__MaxFileSizeBytes` | `5242880` | Gateway-Limit + Presign-Policy + `file_size_limit` in `/api/instances/` (CE-OPS-009) |
-| `WEB_URL` | A | `Plane__Urls__Web` | Pflicht | Redirects, E-Mails, Secure-Cookie-Regel |
-| `APP_BASE_URL` | A | `Plane__Urls__App` (zugleich Fallback für `Plane__Urls__Web`, wie Original) | – | D02 §4.9 |
+| `SIGNED_URL_EXPIRATION` | A | `Funk__Storage__PresignExpirySeconds` | `3600` | CE-OPS-012 |
+| `FILE_SIZE_LIMIT` | A | `Funk__Uploads__MaxFileSizeBytes` | `5242880` | Gateway-Limit + Presign-Policy + `file_size_limit` in `/api/instances/` (CE-OPS-009) |
+| `WEB_URL` | A | `Funk__Urls__Web` | Pflicht | Redirects, E-Mails, Secure-Cookie-Regel |
+| `APP_BASE_URL` | A | `Funk__Urls__App` (zugleich Fallback für `Funk__Urls__Web`, wie Original) | – | D02 §4.9 |
 | `APP_BASE_PATH` | E | – | – | im Original ungenutzt |
-| `ADMIN_BASE_URL` / `ADMIN_BASE_PATH` | A | `Plane__Urls__Admin` / `Plane__Urls__AdminPath` | `= Web` / `/god-mode/` | Pfadänderung erfordert **keinen** Rebuild (Runtime-Config + `<base href>`-Ersetzung durch Gateway, D08) |
-| `SPACE_BASE_URL` / `SPACE_BASE_PATH` | A | `Plane__Urls__Space` / `Plane__Urls__SpacePath` | `= Web` / `/spaces/` | dto. |
-| `LIVE_BASE_URL` / `LIVE_BASE_PATH` | A | `Plane__Urls__Live` / `Plane__Urls__LivePath` | `= Web` / `/live/` | Original: leer → Konvertierung übersprungen; Ziel: In-Process (D07) |
-| `LIVE_SERVER_SECRET_KEY` | A | `Plane__Realtime__InternalSecret` | leer | wie D02 §4.9: nur relevant, falls interne Aufrufe an `/live/` entstehen; In-Process-Persistenz (01 §3.2) macht ihn in der CE überflüssig; Bekannt-Default `change-this-key-on-deployment` → Warnung |
+| `ADMIN_BASE_URL` / `ADMIN_BASE_PATH` | A | `Funk__Urls__Admin` / `Funk__Urls__AdminPath` | `= Web` / `/god-mode/` | Pfadänderung erfordert **keinen** Rebuild (Runtime-Config + `<base href>`-Ersetzung durch Gateway, D08) |
+| `SPACE_BASE_URL` / `SPACE_BASE_PATH` | A | `Funk__Urls__Space` / `Funk__Urls__SpacePath` | `= Web` / `/spaces/` | dto. |
+| `LIVE_BASE_URL` / `LIVE_BASE_PATH` | A | `Funk__Urls__Live` / `Funk__Urls__LivePath` | `= Web` / `/live/` | Original: leer → Konvertierung übersprungen; Ziel: In-Process (D07) |
+| `LIVE_SERVER_SECRET_KEY` | A | `Funk__Realtime__InternalSecret` | leer | wie D02 §4.9: nur relevant, falls interne Aufrufe an `/live/` entstehen; In-Process-Persistenz (01 §3.2) macht ihn in der CE überflüssig; Bekannt-Default `change-this-key-on-deployment` → Warnung |
 | `RABBITMQ_HOST` / `RABBITMQ_PORT` / `RABBITMQ_USER` / `RABBITMQ_PASSWORD` / `RABBITMQ_VHOST` / `AMQP_URL` | E | – | – | ADR-020 |
-| `SESSION_COOKIE_AGE` | A | `Plane__Auth__SessionLifetimeSeconds` | `604800` | CE-AUTH-024 |
-| `SESSION_COOKIE_NAME` | A | `Plane__Auth__SessionCookieName` | `session-id` | – |
-| `COOKIE_DOMAIN` | A | `Plane__Auth__CookieDomain` | – | – |
-| `SESSION_SAVE_EVERY_REQUEST` | A | `Plane__Auth__SlidingSession` (`"1"` → `true`) | `false` | – |
-| `ADMIN_SESSION_COOKIE_AGE` | E | – | – | kein Admin-Cookie (ADR-008); Step-up über `Plane__Auth__AdminStepUpMaxAgeSeconds` (Default 0) |
-| `HARD_DELETE_AFTER_DAYS` | A | `Plane__Retention__HardDeleteDays` | `60` | CE-OPS-014 |
-| `API_ACTIVITY_LOG_RETENTION_DAYS` | A | `Plane__Retention__ApiActivityLogDays` | `14` | ungültig/negativ → Default |
-| `WEBHOOK_LOG_RETENTION_DAYS` | A | `Plane__Retention__WebhookLogDays` | `14` | – |
-| `EMAIL_LOG_RETENTION_DAYS` | A | `Plane__Retention__EmailLogDays` | `7` | – |
-| `UNUPLOADED_ASSET_DELETE_DAYS` | A | `Plane__Retention__UnuploadedAssetDays` | `7` | – |
-| `INSTANCE_CHANGELOG_URL` | A | `Plane__Instance__ChangelogUrl` | leer | Image-Default des Originals (`sites.plane.so`) entfällt (ADR-004) |
-| `ENABLE_DRF_SPECTACULAR` | A | `Plane__OpenApi__Enabled` | `false` | CE-API-004 |
-| `SKIP_ENV_VAR` | A | `Plane__Instance__ConfigurationSource` (`1` → `Database`, `0` → `Environment`) | `Database` | E-06 |
+| `SESSION_COOKIE_AGE` | A | `Funk__Auth__SessionLifetimeSeconds` | `604800` | CE-AUTH-024 |
+| `SESSION_COOKIE_NAME` | A | `Funk__Auth__SessionCookieName` | `funk-session` | – |
+| `COOKIE_DOMAIN` | A | `Funk__Auth__CookieDomain` | – | – |
+| `SESSION_SAVE_EVERY_REQUEST` | A | `Funk__Auth__SlidingSession` (`"1"` → `true`) | `false` | – |
+| `ADMIN_SESSION_COOKIE_AGE` | E | – | – | kein Admin-Cookie (ADR-008); Step-up über `Funk__Auth__AdminStepUpMaxAgeSeconds` (Default 0) |
+| `HARD_DELETE_AFTER_DAYS` | A | `Funk__Retention__HardDeleteDays` | `60` | CE-OPS-014 |
+| `API_ACTIVITY_LOG_RETENTION_DAYS` | A | `Funk__Retention__ApiActivityLogDays` | `14` | ungültig/negativ → Default |
+| `WEBHOOK_LOG_RETENTION_DAYS` | A | `Funk__Retention__WebhookLogDays` | `14` | – |
+| `EMAIL_LOG_RETENTION_DAYS` | A | `Funk__Retention__EmailLogDays` | `7` | – |
+| `UNUPLOADED_ASSET_DELETE_DAYS` | A | `Funk__Retention__UnuploadedAssetDays` | `7` | – |
+| `INSTANCE_CHANGELOG_URL` | A | `Funk__Instance__ChangelogUrl` | leer | Image-Default des Originals (`sites.plane.so`) entfällt (ADR-004) |
+| `ENABLE_DRF_SPECTACULAR` | A | `Funk__OpenApi__Enabled` | `false` | CE-API-004 |
+| `SKIP_ENV_VAR` | A | `Funk__Instance__ConfigurationSource` (`1` → `Database`, `0` → `Environment`) | `Database` | E-06 |
 | `UNSPLASH_ACCESS_KEY` | S | Instanz-Key `UNSPLASH_ACCESS_KEY` | `""` | verschlüsselt (CE-AI-002) |
 | `GITHUB_ACCESS_TOKEN` | E | – | – | ungenutzt |
 | `ANALYTICS_SECRET_KEY` / `ANALYTICS_BASE_API` | E | – | – | ungenutzt |
@@ -1153,8 +1153,8 @@ Klassen: **A** = Alias (wird auf den Ziel-Schlüssel abgebildet), **S** = Seed (
 | `GUNICORN_WORKERS` | E | – | – | E-05 |
 | `PORT` | A | `HTTP_PORTS` (nur wenn `HTTP_PORTS`/`ASPNETCORE_HTTP_PORTS` fehlt; Container-Default 8080) | – | D02 §4.9; `GUNICORN_WORKERS` bleibt „entfällt“ |
 | `MACHINE_SIGNATURE` | E | – | – | – |
-| `APP_VERSION` | A | `Plane__Instance__AppVersion` | Assembly-/Image-Version (`PLANE_VERSION`) | `current_version`; D02 §4.9 |
-| `IS_TEST` | A | `Plane__Instance__IsTest` | `false` | – |
+| `APP_VERSION` | A | `Funk__Instance__AppVersion` | Assembly-/Image-Version (`FUNK_VERSION`) | `current_version`; D02 §4.9 |
+| `IS_TEST` | A | `Funk__Instance__IsTest` | `false` | – |
 | `METRICS_PUSH_INTERVAL_MINUTES`, `OTLP_ENDPOINT`, `OTLP_METRICS_PROTOCOL`, `OTEL_EXPORTER_OTLP_METRICS_INSECURE` | E | – | – | Telemetrie-Push entfällt; Betreiber-OTLP über Standard-`OTEL_EXPORTER_OTLP_*` |
 | `SERVICE_NAME` | E | – (`OTEL_SERVICE_NAME` Standard) | – | – |
 | `LLM_API_KEY` / `LLM_PROVIDER` / `LLM_MODEL` | S | Instanz-Keys gleichen Namens | – / `openai` / `gpt-4o-mini` | Provider-Werte legt D11 fest (lokale Provider, ADR-025); Endpunkt über den neuen Instanz-Key `LLM_BASE_URL` (§4.7.9, ABG-133) |
@@ -1165,7 +1165,7 @@ Klassen: **A** = Alias (wird auf den Ziel-Schlüssel abgebildet), **S** = Seed (
 | `EMAIL_HOST_USER` / `EMAIL_HOST_PASSWORD` | S | Instanz-Keys | `""` | Passwort verschlüsselt |
 | `EMAIL_PORT` | S | Instanz-Key | `587` | – |
 | `EMAIL_USE_TLS` / `EMAIL_USE_SSL` | S | Instanz-Keys | `1` / `0` | – |
-| `EMAIL_FROM` | S | Instanz-Key | `""` (Laufzeit-Fallback = `PlaneMailOptions.DefaultFrom` = `funk. <noreply@<Host aus WEB_URL>>`, 02 §3.15, ABG-105; Original `Team Plane <team@mailer.plane.so>` entfällt, BR-08) | – |
+| `EMAIL_FROM` | S | Instanz-Key | `""` (Laufzeit-Fallback = `FunkMailOptions.DefaultFrom` = `funk. <noreply@<Host aus WEB_URL>>`, 02 §3.15, ABG-105; Original `Team Plane <team@mailer.plane.so>` entfällt, BR-08) | – |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | E | – | – | ADR-008 (CE-AUTH-008, CE-INST-021) |
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` / `GITHUB_ORGANIZATION_ID` | E | – | – | ADR-008/-007 |
 | `GITLAB_CLIENT_ID` / `GITLAB_CLIENT_SECRET` / `GITLAB_HOST` | E | – | – | ADR-008 |
@@ -1199,13 +1199,13 @@ Zählung: 36 Schlüssel = 3 (AUTH) + 1 (WS) + 4 + 5 + 5 + 5 (OAuth, zusammen 19)
 
 | Original | Kl. | Ziel | Bemerkung |
 |---|---|---|---|
-| `APP_VERSION` | A | `Plane__Instance__AppVersion` | Health-Antwort `version` |
-| `HOSTNAME` | A | `Plane__Realtime__InstanceName` (Default Maschinenname; zugleich `service.instance.id`) | D02 §4.9 |
+| `APP_VERSION` | A | `Funk__Instance__AppVersion` | Health-Antwort `version` |
+| `HOSTNAME` | A | `Funk__Realtime__InstanceName` (Default Maschinenname; zugleich `service.instance.id`) | D02 §4.9 |
 | `PORT` | E | – (8080) | – |
 | `API_BASE_URL` | E | – | In-Process (01 §3.2) |
-| `CORS_ALLOWED_ORIGINS` | A | `Plane__Cors__AllowedOrigins` (gemeinsam) | same-origin |
-| `LIVE_BASE_PATH` | A | `Plane__Urls__LivePath` | – |
-| `COMPRESSION_LEVEL` / `COMPRESSION_THRESHOLD` | A | `Plane__Realtime__CompressionLevel` / `Plane__Realtime__CompressionThresholdBytes` | HTTP-Antworten von `/live/*` (nicht WebSocket); Namen D02 |
+| `CORS_ALLOWED_ORIGINS` | A | `Funk__Cors__AllowedOrigins` (gemeinsam) | same-origin |
+| `LIVE_BASE_PATH` | A | `Funk__Urls__LivePath` | – |
+| `COMPRESSION_LEVEL` / `COMPRESSION_THRESHOLD` | A | `Funk__Realtime__CompressionLevel` / `Funk__Realtime__CompressionThresholdBytes` | HTTP-Antworten von `/live/*` (nicht WebSocket); Namen D02 |
 | `LIVE_SERVER_SECRET_KEY` | E | – | E-28 |
 | `REDIS_HOST` / `REDIS_PORT` / `REDIS_URL` | A | `ConnectionStrings__valkey` | Realtime-Fan-out |
 | `LOG_LEVEL` | A | `Logging__LogLevel__Plane` | gilt für alle Hosts |
@@ -1215,12 +1215,12 @@ Zählung: 36 Schlüssel = 3 (AUTH) + 1 (WS) + 4 + 5 + 5 + 5 (OAuth, zusammen 19)
 
 | Original | Kl. | Ziel (Runtime-Config-Feld, 01 §7.12) | Quelle im Backend |
 |---|---|---|---|
-| `VITE_API_BASE_URL` | A | `api_base_url` | `Plane__Urls__Api` |
-| `VITE_API_BASE_PATH` | A | `api_base_path` | `Plane__Urls__ApiPath` (im Original ungenutzt, Feld bleibt) |
-| `VITE_ADMIN_BASE_URL` / `VITE_ADMIN_BASE_PATH` | A | `admin_base_url` / `admin_base_path` | `Plane__Urls__Admin` / `AdminPath` |
-| `VITE_SPACE_BASE_URL` / `VITE_SPACE_BASE_PATH` | A | `space_base_url` / `space_base_path` | `Plane__Urls__Space` / `SpacePath` |
-| `VITE_LIVE_BASE_URL` / `VITE_LIVE_BASE_PATH` | A | `live_base_url` / `live_base_path` | `Plane__Urls__Live` / `LivePath` |
-| `VITE_WEB_BASE_URL` / `VITE_WEB_BASE_PATH` | A | `web_base_url` (Pfad ungenutzt) | `Plane__Urls__Web` |
+| `VITE_API_BASE_URL` | A | `api_base_url` | `Funk__Urls__Api` |
+| `VITE_API_BASE_PATH` | A | `api_base_path` | `Funk__Urls__ApiPath` (im Original ungenutzt, Feld bleibt) |
+| `VITE_ADMIN_BASE_URL` / `VITE_ADMIN_BASE_PATH` | A | `admin_base_url` / `admin_base_path` | `Funk__Urls__Admin` / `AdminPath` |
+| `VITE_SPACE_BASE_URL` / `VITE_SPACE_BASE_PATH` | A | `space_base_url` / `space_base_path` | `Funk__Urls__Space` / `SpacePath` |
+| `VITE_LIVE_BASE_URL` / `VITE_LIVE_BASE_PATH` | A | `live_base_url` / `live_base_path` | `Funk__Urls__Live` / `LivePath` |
+| `VITE_WEB_BASE_URL` / `VITE_WEB_BASE_PATH` | A | `web_base_url` (Pfad ungenutzt) | `Funk__Urls__Web` |
 | `VITE_WEBSITE_URL` | E | – | Marketing-Links → Konstante in `libs/shared/constants` (D08), Airgap: nur `href` |
 | `VITE_SUPPORT_EMAIL` | E | – | dto. |
 | `NODE_ENV` | E | – (Angular-Build-Konfiguration `production`) | – |
@@ -1231,11 +1231,11 @@ Zählung: 36 Schlüssel = 3 (AUTH) + 1 (WS) + 4 + 5 + 5 + 5 (OAuth, zusammen 19)
 
 | Original | Kl. | Ziel |
 |---|---|---|
-| `SITE_ADDRESS` | C | Profil `acme`: `SITE_ADDRESS` im `caddy`-Container; sonst `Plane__Tls__Mode` |
-| `FILE_SIZE_LIMIT` | A | `Plane__Uploads__MaxFileSizeBytes` (s. o.) |
-| `BUCKET_NAME` | A | `Plane__Storage__Bucket` |
+| `SITE_ADDRESS` | C | Profil `acme`: `SITE_ADDRESS` im `caddy`-Container; sonst `Funk__Tls__Mode` |
+| `FILE_SIZE_LIMIT` | A | `Funk__Uploads__MaxFileSizeBytes` (s. o.) |
+| `BUCKET_NAME` | A | `Funk__Storage__Bucket` |
 | `CERT_EMAIL`, `CERT_ACME_CA`, `CERT_ACME_DNS` | C | Profil `acme` (`CERT_ACME_DNS` nur mit eigenem Caddy-Build mit DNS-Modul) |
-| `TRUSTED_PROXIES` | A | `Plane__ForwardedHeaders__KnownNetworks` (`private_ranges` → RFC-1918/4193-Liste; `0.0.0.0/0` → Warnung) |
+| `TRUSTED_PROXIES` | A | `Funk__ForwardedHeaders__KnownNetworks` (`private_ranges` → RFC-1918/4193-Liste; `0.0.0.0/0` → Warnung) |
 | `LISTEN_HTTP_PORT`, `LISTEN_HTTPS_PORT` | C | Compose-Portmapping des `gateway` |
 | `APP_DOMAIN` | C | `funk-cli init --domain` → `WEB_URL` |
 
@@ -1243,7 +1243,7 @@ Zählung: 36 Schlüssel = 3 (AUTH) + 1 (WS) + 4 + 5 + 5 + 5 (OAuth, zusammen 19)
 
 | Original | Kl. | Ziel |
 |---|---|---|
-| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | C | `postgres`-Container (Superuser `postgres`, Passwort `POSTGRES_PASSWORD`); App-Rolle `plane` mit `PLANE_DB_PASSWORD` (Init-Skript) |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | C | `postgres`-Container (Superuser `postgres`, Passwort `POSTGRES_PASSWORD`); App-Rolle `plane` mit `FUNK_DB_PASSWORD` (Init-Skript) |
 | `PGDATA` | C | Image-Default |
 | `PGHOST` / `PGDATABASE` | E | – (Connection-String) |
 | `RABBITMQ_DEFAULT_USER` / `_PASS` / `_VHOST` | E | – |
@@ -1253,17 +1253,17 @@ Zählung: 36 Schlüssel = 3 (AUTH) + 1 (WS) + 4 + 5 + 5 + 5 (OAuth, zusammen 19)
 
 | Original | Kl. | Ziel |
 |---|---|---|
-| `APP_RELEASE` | C | `PLANE_VERSION` |
+| `APP_RELEASE` | C | `FUNK_VERSION` |
 | `WEB_REPLICAS`, `SPACE_REPLICAS`, `ADMIN_REPLICAS` | C | `GATEWAY_REPLICAS` (alle drei Frontends im Gateway; Aliasse: Maximum der drei) |
 | `API_REPLICAS`, `WORKER_REPLICAS` | C | gleichnamig |
 | `BEAT_WORKER_REPLICAS` | E | – (Scheduler im Worker, Leader-Wahl) |
 | `LIVE_REPLICAS` | C | `REALTIME_REPLICAS` (Alias) |
-| `DOCKERHUB_USER` | C | `PLANE_REGISTRY` |
-| `PULL_POLICY` | C | `PLANE_PULL_POLICY` (`missing` Default, Airgap: `never`) |
+| `DOCKERHUB_USER` | C | `FUNK_REGISTRY` |
+| `PULL_POLICY` | C | `FUNK_PULL_POLICY` (`missing` Default, Airgap: `never`) |
 | `CUSTOM_BUILD` | E | – (`tools/build/build-images.sh` für lokale Images) |
 | `DOCKER_PLATFORM` | E | – (Multi-Arch-Images) |
 | `BRANCH`, `GH_REPO`, `RELEASE_DOWNLOAD_URL`, `FALLBACK_DOWNLOAD_URL` | E | – (Bundle/Release-Assets) |
-| `DOMAIN_NAME` | A | `Plane__Urls__Web` (AIO, zusammen mit `APP_PROTOCOL`) |
+| `DOMAIN_NAME` | A | `Funk__Urls__Web` (AIO, zusammen mit `APP_PROTOCOL`) |
 | `APP_PROTOCOL` | A | dto. |
 | AIO-Pflicht (`DATABASE_URL`, `REDIS_URL`, `AMQP_URL`, `AWS_*`, Secrets) | A/E | wie oben; `REDIS_URL`/`AMQP_URL` im AIO nicht nötig |
 | `APP_RELEASE_VERSION`, `IMAGE_NAME`, `DIST_DIR` | E | – (CI) |
@@ -1281,18 +1281,18 @@ Zählung: 36 Schlüssel = 3 (AUTH) + 1 (WS) + 4 + 5 + 5 + 5 (OAuth, zusammen 19)
 
 | Variable | Zweck | Default |
 |---|---|---|
-| `PLANE_VERSION`, `PLANE_REGISTRY`, `PLANE_PULL_POLICY` | Images (`${PLANE_REGISTRY}/funk-<dienst>:${PLANE_VERSION}`, ABG-149; ENV-Präfix bleibt, BR-02) | – |
-| `LLM_BASE_URL` | neue Instanz-Variable (Kategorie AI, unverschlüsselt, Seed aus ENV bei Neuanlage wie die übrigen AI-Keys; God-Mode-Feld „Base URL“) – Basis-URL eines OpenAI-kompatiblen Servers (Ollama, vLLM, LocalAI); leer = OpenAI (11 D11-ADR-10, ABG-133). Für interne Hosts zusätzlich `Plane__Ai__AllowedInternalHosts__<n>` setzen (11 §3.14) | `""` |
-| `PLANE_SIGNING_KEY` | HMAC (D14-ADR-09) | generiert |
-| `PLANE_DATAPROTECTION_CERT_PASSWORD` (+ Datei) | Key-Ring-Schutz | generiert |
-| `PLANE_DB_PASSWORD`, `KEYCLOAK_DB_PASSWORD`, `FORGEJO_DB_PASSWORD`, `KEYCLOAK_ADMIN_PASSWORD` | Dienst-Konten | generiert |
-| `PLANE_WEB_CLIENT_SECRET`, `PLANE_ADMIN_CLIENT_SECRET`, `PLANE_SPACE_CLIENT_SECRET`, `PLANE_BACKEND_CLIENT_SECRET`, `FORGEJO_CLIENT_SECRET` | Keycloak-Clients (D05 §3.15.1) | generiert |
-| `Plane__Auth__Oidc__Authority`, `Plane__Auth__Oidc__MetadataAddress`, `Plane__Auth__Oidc__RequireHttpsMetadata`, `Plane__Auth__Clients__{Web,Admin,Space}__ClientId`/`__ClientSecret`, `Plane__Auth__Backend__ClientSecret` | OIDC (D05 §3.3.3, D02 `PlaneAuthOptions`) | Authority aus `WEB_URL` + `/idp/realms/plane`; MetadataAddress intern `http://keycloak:8080/idp/realms/plane/.well-known/openid-configuration` |
-| `Plane__Testing__PortOffset`, `Plane__Testing__ImageRegistry`, `Plane__Testing__FixedUtcNow` | nur Profil `test` (D15 §3.4.1) | `0` / leer / leer |
-| `Plane__Gateway__Gallery__Enabled` | Komponenten-Galerie G-17 (nur `test`) | `false` |
-| `Plane__Auth__InstanceAdminRole` | God-Mode-Rolle | `plane-instance-admin` |
-| `Plane__Auth__AdminStepUpMaxAgeSeconds` | Step-up (ADR-009) | `0` |
-| `Plane__Tls__*`, `Plane__Gateway__*`, `Plane__Scale__ExpectMultipleInstances`, `Plane__DataProtection__*`, `Plane__Telemetry__*` | §3.9.1 | – |
+| `FUNK_VERSION`, `FUNK_REGISTRY`, `FUNK_PULL_POLICY` | Images (`${FUNK_REGISTRY}/funk-<dienst>:${FUNK_VERSION}`, ABG-149; ENV-Präfix bleibt, BR-02) | – |
+| `LLM_BASE_URL` | neue Instanz-Variable (Kategorie AI, unverschlüsselt, Seed aus ENV bei Neuanlage wie die übrigen AI-Keys; God-Mode-Feld „Base URL“) – Basis-URL eines OpenAI-kompatiblen Servers (Ollama, vLLM, LocalAI); leer = OpenAI (11 D11-ADR-10, ABG-133). Für interne Hosts zusätzlich `Funk__Ai__AllowedInternalHosts__<n>` setzen (11 §3.14) | `""` |
+| `FUNK_SIGNING_KEY` | HMAC (D14-ADR-09) | generiert |
+| `FUNK_DATAPROTECTION_CERT_PASSWORD` (+ Datei) | Key-Ring-Schutz | generiert |
+| `FUNK_DB_PASSWORD`, `KEYCLOAK_DB_PASSWORD`, `FORGEJO_DB_PASSWORD`, `KEYCLOAK_ADMIN_PASSWORD` | Dienst-Konten | generiert |
+| `FUNK_WEB_CLIENT_SECRET`, `FUNK_ADMIN_CLIENT_SECRET`, `FUNK_SPACE_CLIENT_SECRET`, `FUNK_BACKEND_CLIENT_SECRET`, `FORGEJO_CLIENT_SECRET` | Keycloak-Clients (D05 §3.15.1) | generiert |
+| `Funk__Auth__Oidc__Authority`, `Funk__Auth__Oidc__MetadataAddress`, `Funk__Auth__Oidc__RequireHttpsMetadata`, `Funk__Auth__Clients__{Web,Admin,Space}__ClientId`/`__ClientSecret`, `Funk__Auth__Backend__ClientSecret` | OIDC (D05 §3.3.3, D02 `FunkAuthOptions`) | Authority aus `WEB_URL` + `/idp/realms/plane`; MetadataAddress intern `http://keycloak:8080/idp/realms/plane/.well-known/openid-configuration` |
+| `Funk__Testing__PortOffset`, `Funk__Testing__ImageRegistry`, `Funk__Testing__FixedUtcNow` | nur Profil `test` (D15 §3.4.1) | `0` / leer / leer |
+| `Funk__Gateway__Gallery__Enabled` | Komponenten-Galerie G-17 (nur `test`) | `false` |
+| `Funk__Auth__InstanceAdminRole` | God-Mode-Rolle | `funk-instance-admin` |
+| `Funk__Auth__AdminStepUpMaxAgeSeconds` | Step-up (ADR-009) | `0` |
+| `Funk__Tls__*`, `Funk__Gateway__*`, `Funk__Scale__ExpectMultipleInstances`, `Funk__DataProtection__*`, `Funk__Telemetry__*` | §3.9.1 | – |
 | `FORGEJO_HOST`, `FORGEJO_SSH_PORT` | Profil `forgejo` | – / `2222` |
 | `GATEWAY_REPLICAS`, `REALTIME_REPLICAS` | Replikas | `1` |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_EXPORTER_OTLP_HEADERS` | OTel-Standard | leer |
@@ -1305,51 +1305,51 @@ Zählung: 36 Schlüssel = 3 (AUTH) + 1 (WS) + 4 + 5 + 5 + 5 (OAuth, zusammen 19)
 | CE-OPS-001 | Self-Hosting-CLI | `deploy/compose/funk.sh` + `funk-cli` (§3.11.3, §3.22) | angepasst (keine Downloads von GitHub zur Laufzeit; Airgap-Bundle) | I1 (Install/Start/Stop/Logs), I7 (Upgrade/Backup) |
 | CE-OPS-002 | Daten-Restore | `funk-cli restore` (§3.16.2) | angepasst (logische Dumps statt Volume-Tarballs) | I7 |
 | CE-OPS-003 | Docker-Swarm-Deployment | Swarm-kompatible Compose-Datei + `deploy/swarm/README.md` | angepasst | I7 |
-| CE-OPS-004 | All-in-One-Container | `Plane.AllInOne` / `funk-aio` (§3.13) | angepasst (ein Prozess) | I7 |
-| CE-OPS-005 | Reverse-Proxy mit automatischem HTTPS | `Plane.Gateway` + TLS-Modi + Profil `acme` (§3.7, §3.8) | angepasst | I0 (HTTP), I7 |
+| CE-OPS-004 | All-in-One-Container | `Funk.AllInOne` / `funk-aio` (§3.13) | angepasst (ein Prozess) | I7 |
+| CE-OPS-005 | Reverse-Proxy mit automatischem HTTPS | `Funk.Gateway` + TLS-Modi + Profil `acme` (§3.7, §3.8) | angepasst | I0 (HTTP), I7 |
 | CE-OPS-006 | Statische Frontend-Auslieferung | Gateway Static + Header + Rate-Limit (§3.7.3/§3.7.4) | übernommen | I0 |
-| CE-OPS-007 | Konfigurierbare Base-URLs und -Paths | `Plane__Urls__*` + Runtime-Config (kein Rebuild) | verbessert | I0 |
+| CE-OPS-007 | Konfigurierbare Base-URLs und -Paths | `Funk__Urls__*` + Runtime-Config (kein Rebuild) | verbessert | I0 |
 | CE-OPS-008 | Health-Checks und robots.txt | `GET /` (Api), `/live/health/`, `/health/*` (8081), G-12 | übernommen (+ Management-Port) | I0 |
-| CE-OPS-009 | Upload-Größenlimit mit 413-Fehler | G-01 + `Plane__Uploads__MaxFileSizeBytes` | übernommen (+ Puffer) | I0/I1 |
-| CE-OPS-010 | Read-Replica-Unterstützung | `ConnectionStrings__plane-replica` + `Plane__Database__ReadReplicaEnabled` (Routing-Regel D02) | übernommen | I7 |
+| CE-OPS-009 | Upload-Größenlimit mit 413-Fehler | G-01 + `Funk__Uploads__MaxFileSizeBytes` | übernommen (+ Puffer) | I0/I1 |
+| CE-OPS-010 | Read-Replica-Unterstützung | `ConnectionStrings__plane-replica` + `Funk__Database__ReadReplicaEnabled` (Routing-Regel D02) | übernommen | I7 |
 | CE-OPS-011 | Redis mit TLS | `ConnectionStrings__valkey` mit `rediss://`, CA-Pfad, Skip-Validation | übernommen | I1 |
 | CE-OPS-012 | Objektspeicher mit Presigned Upload/Download | Storage-Optionen, G-09/G-10, `BucketInitializer` (Fachlogik D02/Assets) | übernommen | I1 |
 | CE-OPS-013 | Datei-Assets (FileAsset) | fachlich D03/D04; Infrastruktur: Speicher-Setups §3.7.6 | – | I1 |
-| CE-OPS-014 | Soft-Delete und endgültige Löschung | fachlich D03/D06; Infrastruktur: `Plane__Retention__HardDeleteDays` | – | I1 |
-| CE-OPS-015 | Aufbewahrung und Bereinigung | fachlich D06; Infrastruktur: `Plane__Retention__*` | – | I1 |
+| CE-OPS-014 | Soft-Delete und endgültige Löschung | fachlich D03/D06; Infrastruktur: `Funk__Retention__HardDeleteDays` | – | I1 |
+| CE-OPS-015 | Aufbewahrung und Bereinigung | fachlich D06; Infrastruktur: `Funk__Retention__*` | – | I1 |
 | CE-OPS-016 | Zeitgesteuerte Jobs (Beat-Plan) | Scheduler im Worker (§4.5); Inventar D06 | angepasst (Telemetrie entfällt) | I1 |
 | CE-OPS-017 | Rich-Text-Sanitizing und Binary-Prüfung | D02/D07 (keine Infrastruktur) | – | I2 |
-| CE-OPS-018 | SSRF-sichere ausgehende Requests | D05/D06; Infrastruktur: Named Clients ohne Standard-Resilience (§3.6), `Plane__Webhooks__*`, Helm-Egress | – | I6 |
+| CE-OPS-018 | SSRF-sichere ausgehende Requests | D05/D06; Infrastruktur: Named Clients ohne Standard-Resilience (§3.6), `Funk__Webhooks__*`, Helm-Egress | – | I6 |
 | CE-OPS-019 | Strukturiertes Request-Logging | §3.19.1 (`plane.api.request`, ohne Health) | übernommen (ohne Datei-Rotation) | I0 |
 | CE-OPS-020 | Betriebs-CLI (Management-Commands) | `funk-cli` (§3.22) | angepasst (Passwort-/Admin-Befehle entfallen) | I1/I2/I7 |
 | CE-OPS-021 | Lokale Entwicklungsumgebung | Aspire-AppHost `dev` (§3.20) | ersetzt | I0 |
-| CE-OPS-022 | Isolierter Test-Stack und Testsuites | Profil `test`, Testcontainers, `Plane.AppHost.Tests` (Detail D15) | ersetzt | I0 |
+| CE-OPS-022 | Isolierter Test-Stack und Testsuites | Profil `test`, Testcontainers, `Funk.AppHost.Tests` (Detail D15) | ersetzt | I0 |
 | CE-OPS-023 | CI/CD-Pipelines | §3.21 | ersetzt (mit Test-Pflicht, SBOM, Trivy, Signatur) | I0/I7 |
 | CE-OPS-024 | Dummy-Daten-Generator | `funk-cli create-dummy-data` | übernommen | I2 |
 | CE-INST-001 | Instanz-Registrierung und Versionsprüfung | `InstanceBootstrapper` (§3.15) | angepasst (keine GitHub-Abfrage) | I0 |
 | CE-INST-002 | Instanz-Konfiguration aus ENV und DB | `InstanceConfigurationSeeder` + §4.7.2 | angepasst (22 Schlüssel entfallen, Data Protection) | I0/I1 |
-| CE-INST-003 | Instanz-Info und öffentliche Konfiguration | fachlich D04; Infrastruktur: `file_size_limit`, URL-Felder aus `Plane__Urls__*` | – | I0 |
-| CE-INST-004 | Instanz-Admins verwalten (nur API) | Infrastruktur: Realm-Rolle `plane-instance-admin`/Gruppe `/plane-instance-admins` (§3.3.2), Bootstrap-Admin per `keycloak-config` (`config/10-…`), Anzeige `funk-cli instance status`; Fachlogik D05 §3.8 | angepasst (ADR-008) | I0 |
+| CE-INST-003 | Instanz-Info und öffentliche Konfiguration | fachlich D04; Infrastruktur: `file_size_limit`, URL-Felder aus `Funk__Urls__*` | – | I0 |
+| CE-INST-004 | Instanz-Admins verwalten (nur API) | Infrastruktur: Realm-Rolle `funk-instance-admin`/Gruppe `/plane-instance-admins` (§3.3.2), Bootstrap-Admin per `keycloak-config` (`config/10-…`), Anzeige `funk-cli instance status`; Fachlogik D05 §3.8 | angepasst (ADR-008) | I0 |
 | CE-INST-019 | Test-E-Mail senden | Infrastruktur: `funk-cli test-email`, Mailpit in dev/test; God-Mode-Funktion fachlich D04/D05 | übernommen | I1 |
 | CE-INST-006 | Erst-Einrichtung der Instanz | Infrastruktur: kein Admin-Konto im Setup, Instanz-Admin per Keycloak-Gruppe; Hinweis in `funk.sh install` | angepasst (ADR-008) | I0 |
 | CE-RT-007 | Horizontale Skalierung | Valkey-Pflicht ab 2 Replikas (D14-ADR-21), Helm-Validierung | übernommen | I4 |
 | CE-RT-009 | Health-Endpunkt des Live-Servers | `/live/health/` + `/health/*` | übernommen | I0 |
-| CE-API-004 | OpenAPI-Dokumentation | Schalter `Plane__OpenApi__Enabled`, offline gebündelte UI (01 ADR-051) | übernommen | I6 |
-| CE-AUTH-024 | Sessions und Cookies | Infrastrukturteil: Secure-Regel aus `Plane__Urls__Web`/CORS, Forwarded-Headers; Fachlogik D05 | angepasst | I0 |
+| CE-API-004 | OpenAPI-Dokumentation | Schalter `Funk__OpenApi__Enabled`, offline gebündelte UI (01 ADR-051) | übernommen | I6 |
+| CE-AUTH-024 | Sessions und Cookies | Infrastrukturteil: Secure-Regel aus `Funk__Urls__Web`/CORS, Forwarded-Headers; Fachlogik D05 | angepasst | I0 |
 | CE-AUTH-026 | Rate-Limits gegen Brute-Force | Infrastrukturteil: Client-IP-Ermittlung (D14-ADR-22), Keycloak-Brute-Force-Schutz im Realm | angepasst | I1 |
 | CE-SPACE-017 | Öffentliches Projekt-Board mit Social-Meta | `OgMetaMiddleware` (§3.7.5) | angepasst (kein Node-SSR; anders als im Original-Docker-Image, E-29, tatsächlich wirksam) | I6 |
-| CE-WH-011 | SSRF-Schutz und Ziel-Allowlists | Konfiguration `Plane__Webhooks__*` (§4.7.1); Logik D06 | übernommen | I6 |
+| CE-WH-011 | SSRF-Schutz und Ziel-Allowlists | Konfiguration `Funk__Webhooks__*` (§4.7.1); Logik D06 | übernommen | I6 |
 
 ### 4.9 Logging/Telemetrie (A01 §2.23) → Ziel
 
 | Original | Ziel |
 |---|---|
-| Logger `plane.api.request`, `plane.api`, `plane.worker`, `plane.exception`, `plane.external`, `plane.authentication`, `plane.migrations` | gleichnamige Kategorien (Logger-Namen in `PlaneLogCategories`) |
+| Logger `plane.api.request`, `plane.api`, `plane.worker`, `plane.exception`, `plane.external`, `plane.authentication`, `plane.migrations` | gleichnamige Kategorien (Logger-Namen in `FunkLogCategories`) |
 | JSON-Formatter (python-json-logger) | `JsonConsoleFormatter` |
 | Datei-Handler `plane-error.log` (Rotation 1 MiB × 5) | entfällt (stdout); optional Betreiber-Collector |
 | gunicorn Access-Log | `plane.api.request` (ohne Health) |
 | winston (Live) | Kategorie `plane.realtime` |
-| Caddy-Logs (`format console`) | `plane.gateway` (Zugriffslog per `Plane__Gateway__AccessLog=true`, Default aus; YARP-Fehler immer) |
+| Caddy-Logs (`format console`) | `plane.gateway` (Zugriffslog per `Funk__Gateway__AccessLog=true`, Default aus; YARP-Fehler immer) |
 | Instanz-Telemetrie (OTel-Metriken an `telemetry.plane.so`, Flag `is_telemetry_enabled`) | entfällt; Flag im Datenmodell nur, wenn D03 es für API-Parität braucht (immer `false`) |
 | Scout APM | entfällt |
 
@@ -1358,20 +1358,20 @@ Zählung: 36 Schlüssel = 3 (AUTH) + 1 (WS) + 4 + 5 + 5 + 5 (OAuth, zusammen 19)
 
 Die Skelette legen **Struktur, Namen und Reihenfolge** verbindlich fest. Exakte Signaturen von Preview-/neuen APIs (markiert ⚠) bestätigt Spike S0 und passt sie ohne Strukturänderung an.
 
-### 5.1 `src/hosts/Plane.AppHost/Program.cs`
+### 5.1 `src/hosts/Funk.AppHost/Program.cs`
 
 ```csharp
-// src/hosts/Plane.AppHost/Program.cs
-using Plane.AppHost;
-using Plane.AppHost.Resources;
+// src/hosts/Funk.AppHost/Program.cs
+using Funk.AppHost;
+using Funk.AppHost.Resources;
 
 var builder = DistributedApplication.CreateBuilder(args);
-var profile = PlaneProfile.Resolve(builder);          // Dev | Test | ProdLike | Publish
-var forgejoBundled = profile.IsDevOrTest || builder.Configuration.GetValue<bool>("Plane:Forgejo:Bundled");
-var storageBundled = !profile.IsPublish || builder.Configuration.GetValue("Plane:Storage:Bundled", true);
+var profile = FunkProfile.Resolve(builder);          // Dev | Test | ProdLike | Publish
+var forgejoBundled = profile.IsDevOrTest || builder.Configuration.GetValue<bool>("Funk:Forgejo:Bundled");
+var storageBundled = !profile.IsPublish || builder.Configuration.GetValue("Funk:Storage:Bundled", true);
 
 // ---------- Parameter (§3.2.1) ----------
-var p = PlaneParameters.Add(builder, profile);   // §3.2.1: PostgresPassword, PlaneDbPassword, KeycloakDbPassword, ForgejoDbPassword,
+var p = FunkParameters.Add(builder, profile);   // §3.2.1: PostgresPassword, FunkDbPassword, KeycloakDbPassword, ForgejoDbPassword,
                                                  // KeycloakAdminPassword, OidcWeb/Admin/Space/BackendSecret, ForgejoClientSecret,
                                                  // ForgejoAdminPassword, S3AccessKey, S3SecretKey, SigningKey, DevUserPassword,
                                                  // BootstrapAdminEmail/Password, PublicUrl, Registry, Version (Secrets generiert, User-Secrets)
@@ -1386,7 +1386,7 @@ if (profile.IsPublish)
 var postgres = builder.AddPostgres("postgres", password: p.PostgresPassword)
     .WithImage("pgvector/pgvector").WithImageTag(Versions.PgVectorTag)   // z. B. "0.8.1-pg17" ⚠ Pin
     .WithBindMount("../../../deploy/postgres/init", "/docker-entrypoint-initdb.d", isReadOnly: true)
-    .WithEnvironment("PLANE_DB_PASSWORD", p.PlaneDbPassword)          // Init-Skript 10-roles-and-databases.sh (§3.2.2)
+    .WithEnvironment("FUNK_DB_PASSWORD", p.FunkDbPassword)          // Init-Skript 10-roles-and-databases.sh (§3.2.2)
     .WithEnvironment("KEYCLOAK_DB_PASSWORD", p.KeycloakDbPassword)
     .WithEnvironment("FORGEJO_DB_PASSWORD", p.ForgejoDbPassword)
     .WithArgs("-c", "max_connections=400");
@@ -1422,61 +1422,61 @@ ForgejoResources? forgejo = forgejoBundled
 // ---------- Migrator ----------
 var migrator = builder.AddProject<Projects.Plane_Migrator>("migrator")
     .WithReference(planeDb).WaitFor(planeDb)
-    .WithPlaneCommonEnvironment(p, profile, objectStore);             // Plane__Storage__*, Plane__Security__SigningKey, PLANE_VERSION …
+    .WithPlaneCommonEnvironment(p, profile, objectStore);             // Funk__Storage__*, Funk__Security__SigningKey, FUNK_VERSION …
 if (objectStore is not null) migrator.WaitFor(objectStore);
 
 // ---------- Plane-Hosts ----------
-IResourceBuilder<ProjectResource> PlaneHost(IResourceBuilder<ProjectResource> r) => r
+IResourceBuilder<ProjectResource> FunkHost(IResourceBuilder<ProjectResource> r) => r
     .WithReference(planeDb)
     .WithReference(valkey)
     .WithPlaneCommonEnvironment(p, profile, objectStore)
     .WithPlaneOidcEnvironment(p, keycloak, profile)                   // Authority, MetadataAddress, Client-Secrets
-    .WithHttpEndpoint(name: "management", env: "Plane__Management__Port")   // §3.6: Dev dynamisch, Container 8081 ⚠
+    .WithHttpEndpoint(name: "management", env: "Funk__Management__Port")   // §3.6: Dev dynamisch, Container 8081 ⚠
     .WithHttpHealthCheck("/health/ready", endpointName: "management")
     .WaitForCompletion(migrator);
 
-var api      = PlaneHost(builder.AddProject<Projects.Plane_Api>("api")).WaitFor(keycloak.Resource);
+var api      = FunkHost(builder.AddProject<Projects.Plane_Api>("api")).WaitFor(keycloak.Resource);
 if (keycloak.Config is not null) api.WaitForCompletion(keycloak.Config);   // prodlike/Publish: Realm erst abgleichen
-var worker   = PlaneHost(builder.AddProject<Projects.Plane_Worker>("worker"));
-var realtime = PlaneHost(builder.AddProject<Projects.Plane_Realtime>("realtime"));
+var worker   = FunkHost(builder.AddProject<Projects.Plane_Worker>("worker"));
+var realtime = FunkHost(builder.AddProject<Projects.Plane_Realtime>("realtime"));
 
 if (mailpit is not null)
 {
-    api.WithDevSmtp(mailpit).WaitFor(mailpit);                        // Plane__Mail__DevSmtp__Host/Port
+    api.WithDevSmtp(mailpit).WaitFor(mailpit);                        // Funk__Mail__DevSmtp__Host/Port
     worker.WithDevSmtp(mailpit).WaitFor(mailpit);
 }
 if (forgejo is not null)
 {
-    worker.WithEnvironment("Plane__Forgejo__DevInstanceUrl", forgejo.Server.GetEndpoint("http"));
+    worker.WithEnvironment("Funk__Forgejo__DevInstanceUrl", forgejo.Server.GetEndpoint("http"));
 }
 
 // ---------- Gateway (einziger externer Einstieg) ----------
 var gateway = builder.AddProject<Projects.Plane_Gateway>("gateway", launchProfileName: null)   // Endpunkte nur aus dem AppHost
     .WithReference(api).WithReference(realtime)
     .WithPlaneCommonEnvironment(p, profile, objectStore)
-    .WithEnvironment("Plane__Gateway__ObjectStore__Mode", objectStore is null ? "None" : "Proxy")
-    .WithEnvironment("Plane__Gateway__Idp__Enabled", profile.IsPublish || profile.IsProdLike ? "true" : "false")
-    .WithHttpEndpoint(port: profile.IsPublish ? null : 3000 + p.PortOffset, name: "public", env: "HTTP_PORTS")   // Dev/Test: fester Einstieg 3000 (+ Plane:Testing:PortOffset)
-    .WithHttpEndpoint(name: "management", env: "Plane__Management__Port")
+    .WithEnvironment("Funk__Gateway__ObjectStore__Mode", objectStore is null ? "None" : "Proxy")
+    .WithEnvironment("Funk__Gateway__Idp__Enabled", profile.IsPublish || profile.IsProdLike ? "true" : "false")
+    .WithHttpEndpoint(port: profile.IsPublish ? null : 3000 + p.PortOffset, name: "public", env: "HTTP_PORTS")   // Dev/Test: fester Einstieg 3000 (+ Funk:Testing:PortOffset)
+    .WithHttpEndpoint(name: "management", env: "Funk__Management__Port")
     .WithHttpHealthCheck("/health/ready", endpointName: "management")
     .WithExternalHttpEndpoints()
     .WaitFor(api).WaitFor(realtime);
-if (objectStore is not null) gateway.WithEnvironment("Plane__Storage__InternalEndpoint", objectStore.GetEndpoint("s3"));
+if (objectStore is not null) gateway.WithEnvironment("Funk__Storage__InternalEndpoint", objectStore.GetEndpoint("s3"));
 if (profile.IsProdLike || profile.IsPublish) gateway.WithReference(keycloak.Endpoint);   // Cluster "keycloak" für /idp/
-if (profile.IsTest) gateway.WithEnvironment("Plane__Gateway__Gallery__Enabled", "true")      // G-17
-                          .WithEnvironment("Plane__Gateway__Gallery__Root", Path.GetFullPath("../../../frontend/dist/gallery/browser", builder.AppHostDirectory));
-keycloak.SetBackchannelBase(gateway.GetEndpoint("public"));                                   // dev/test: PLANE_BACKCHANNEL_BASE_URL (§3.3.1)
+if (profile.IsTest) gateway.WithEnvironment("Funk__Gateway__Gallery__Enabled", "true")      // G-17
+                          .WithEnvironment("Funk__Gateway__Gallery__Root", Path.GetFullPath("../../../frontend/dist/gallery/browser", builder.AppHostDirectory));
+keycloak.SetBackchannelBase(gateway.GetEndpoint("public"));                                   // dev/test: FUNK_BACKCHANNEL_BASE_URL (§3.3.1)
 
 // ---------- Angular-Dev-Server (nur dev) ----------
 if (profile.IsDev)
 {
     var fe = FrontendResources.AddDevServers(builder);               // web:4200, admin:4201, space:4202 (AddJavaScriptApp + WithPnpm)
     gateway.WithReference(fe.Web).WithReference(fe.Admin).WithReference(fe.Space)
-           .WithEnvironment("Plane__Gateway__FrontendMode", "DevServer");
+           .WithEnvironment("Funk__Gateway__FrontendMode", "DevServer");
 }
 else
 {
-    gateway.WithEnvironment("Plane__Gateway__FrontendMode", "Static");
+    gateway.WithEnvironment("Funk__Gateway__FrontendMode", "Static");
 }
 
 // ---------- Publish-Anpassungen (Compose) ----------
@@ -1486,7 +1486,7 @@ if (profile.IsPublish)
     {
         Migrator = migrator, Api = api, Worker = worker, Realtime = realtime, Gateway = gateway,
         Keycloak = keycloak.Resource, Postgres = postgres, Valkey = valkey, ObjectStore = objectStore, Forgejo = forgejo,
-    });   // Image-Namen ${PLANE_REGISTRY}/plane-*:${PLANE_VERSION}, Healthchecks (Probe), restart, depends_on-Bedingungen,
+    });   // Image-Namen ${FUNK_REGISTRY}/plane-*:${FUNK_VERSION}, Healthchecks (Probe), restart, depends_on-Bedingungen,
           // Profile (valkey, bundled-s3, forgejo, acme, observability, tools), Ports 80/443, Volumes, Secrets-Mount
 }
 
@@ -1494,26 +1494,26 @@ builder.Build().Run();
 ```
 
 ```csharp
-// src/hosts/Plane.AppHost/PlaneProfile.cs
-public sealed record PlaneProfile(string Name, bool IsPublish)
+// src/hosts/Funk.AppHost/FunkProfile.cs
+public sealed record FunkProfile(string Name, bool IsPublish)
 {
     public bool IsDev => Name == "dev" && !IsPublish;
     public bool IsTest => Name == "test" && !IsPublish;
     public bool IsProdLike => Name == "prodlike" && !IsPublish;
     public bool IsDevOrTest => IsDev || IsTest;
 
-    public static PlaneProfile Resolve(IDistributedApplicationBuilder b)
+    public static FunkProfile Resolve(IDistributedApplicationBuilder b)
     {
-        var name = b.Configuration["Plane:Profile"] ?? "dev";
+        var name = b.Configuration["Funk:Profile"] ?? "dev";
         if (name is not ("dev" or "test" or "prodlike"))
-            throw new InvalidOperationException($"Unknown Plane:Profile '{name}' (allowed: dev, test, prodlike).");
-        return new PlaneProfile(name, b.ExecutionContext.IsPublishMode);
+            throw new InvalidOperationException($"Unknown Funk:Profile '{name}' (allowed: dev, test, prodlike).");
+        return new FunkProfile(name, b.ExecutionContext.IsPublishMode);
     }
 }
 ```
 
 ```csharp
-// src/hosts/Plane.AppHost/Resources/KeycloakResources.cs (Auszug)
+// src/hosts/Funk.AppHost/Resources/KeycloakResources.cs (Auszug)
 public sealed class KeycloakHandle(IResourceBuilder<IResourceWithEndpoints> resource, EndpointReference endpoint,
                                    string issuerForHosts, IResourceBuilder<ContainerResource>? config)
 {
@@ -1525,23 +1525,23 @@ public sealed class KeycloakHandle(IResourceBuilder<IResourceWithEndpoints> reso
     /// dev/test: Back-Channel-Ziel = Gateway-Endpoint aus Container-Sicht; prodlike/Publish: intern http://api:8080 (bereits gesetzt)
     public void SetBackchannelBase(EndpointReference gatewayPublic)
     {
-        if (Config is null) ((IResourceBuilder<ContainerResource>)Resource).WithEnvironment("PLANE_BACKCHANNEL_BASE_URL", gatewayPublic);
+        if (Config is null) ((IResourceBuilder<ContainerResource>)Resource).WithEnvironment("FUNK_BACKCHANNEL_BASE_URL", gatewayPublic);
     }
 }
 
 public static class KeycloakResources
 {
     // Platzhalternamen verbindlich aus D05 §3.15.1
-    static IResourceBuilder<T> WithRealmPlaceholders<T>(this IResourceBuilder<T> r, PlaneParameters p) where T : IResourceWithEnvironment => r
-        .WithEnvironment("PLANE_PUBLIC_URL", p.PublicUrl)
-        .WithEnvironment("PLANE_WEB_CLIENT_SECRET", p.OidcWebSecret)
-        .WithEnvironment("PLANE_ADMIN_CLIENT_SECRET", p.OidcAdminSecret)
-        .WithEnvironment("PLANE_SPACE_CLIENT_SECRET", p.OidcSpaceSecret)
-        .WithEnvironment("PLANE_BACKEND_CLIENT_SECRET", p.OidcBackendSecret)
+    static IResourceBuilder<T> WithRealmPlaceholders<T>(this IResourceBuilder<T> r, FunkParameters p) where T : IResourceWithEnvironment => r
+        .WithEnvironment("FUNK_PUBLIC_URL", p.PublicUrl)
+        .WithEnvironment("FUNK_WEB_CLIENT_SECRET", p.OidcWebSecret)
+        .WithEnvironment("FUNK_ADMIN_CLIENT_SECRET", p.OidcAdminSecret)
+        .WithEnvironment("FUNK_SPACE_CLIENT_SECRET", p.OidcSpaceSecret)
+        .WithEnvironment("FUNK_BACKEND_CLIENT_SECRET", p.OidcBackendSecret)
         .WithEnvironment("FORGEJO_PUBLIC_URL", p.ForgejoPublicUrl)                    // dev/test http://localhost:3300
         .WithEnvironment("FORGEJO_CLIENT_SECRET", p.ForgejoClientSecret);
 
-    public static KeycloakHandle Add(IDistributedApplicationBuilder b, PlaneProfile profile, PlaneParameters p,
+    public static KeycloakHandle Add(IDistributedApplicationBuilder b, FunkProfile profile, FunkParameters p,
                                      IResourceBuilder<PostgresServerResource> postgres, IResourceBuilder<ContainerResource>? mailpit)
     {
         if (profile.IsDevOrTest)
@@ -1554,11 +1554,11 @@ public static class KeycloakResources
                 .WithEnvironment("KC_HOSTNAME_BACKCHANNEL_DYNAMIC", "true")
                 .WithEnvironment("KC_SPI_THEME_CACHE_THEMES", "false")                  // ⚠ S7 (SPI-Syntax KC 26)
                 .WithEnvironment("KC_SPI_THEME_CACHE_TEMPLATES", "false")
-                .WithEnvironment("PLANE_DEV_USER_PASSWORD", p.DevUserPassword)
+                .WithEnvironment("FUNK_DEV_USER_PASSWORD", p.DevUserPassword)
                 .WithRealmPlaceholders(p);
             if (mailpit is not null)
-                kc.WithEnvironment("PLANE_SMTP_HOST", mailpit.Resource.Name)            // Container-Netz: Ressourcenname
-                  .WithEnvironment("PLANE_SMTP_PORT", "1025");
+                kc.WithEnvironment("FUNK_SMTP_HOST", mailpit.Resource.Name)            // Container-Netz: Ressourcenname
+                  .WithEnvironment("FUNK_SMTP_PORT", "1025");
             return new(kc, kc.GetEndpoint("http"), $"http://localhost:{8180 + p.PortOffset}/realms/plane", config: null);
         }
 
@@ -1598,9 +1598,9 @@ public static class KeycloakResources
             .WithEnvironment("IMPORT_MANAGED_REQUIRED_ACTION", "no-delete")
             .WithEnvironment("IMPORT_REMOTE_STATE_ENABLED", "true")
             .WithEnvironment("KEYCLOAK_PUBLIC_URL", ReferenceExpression.Create($"{p.PublicUrl}/idp"))
-            .WithEnvironment("PLANE_BACKCHANNEL_BASE_URL", "http://api:8080")                // intern; prodlike: Endpoint-Referenz auf api
-            .WithEnvironment("PLANE_BOOTSTRAP_ADMIN_EMAIL", p.BootstrapAdminEmail)
-            .WithEnvironment("PLANE_BOOTSTRAP_ADMIN_PASSWORD", p.BootstrapAdminPassword)
+            .WithEnvironment("FUNK_BACKCHANNEL_BASE_URL", "http://api:8080")                // intern; prodlike: Endpoint-Referenz auf api
+            .WithEnvironment("FUNK_BOOTSTRAP_ADMIN_EMAIL", p.BootstrapAdminEmail)
+            .WithEnvironment("FUNK_BOOTSTRAP_ADMIN_PASSWORD", p.BootstrapAdminPassword)
             .WithRealmPlaceholders(p)
             .WaitFor(image);
         return new(image, image.GetEndpoint("http"), "${WEB_URL}/idp/realms/plane", config);
@@ -1608,19 +1608,19 @@ public static class KeycloakResources
 }
 ```
 
-### 5.2 `src/hosts/Plane.ServiceDefaults/PlaneServiceDefaults.cs`
+### 5.2 `src/hosts/Funk.ServiceDefaults/FunkServiceDefaults.cs`
 
 ```csharp
 namespace Microsoft.Extensions.Hosting;
 
-public static class PlaneServiceDefaults
+public static class FunkServiceDefaults
 {
     public const int DefaultAppPort = 8080;
     public const int DefaultManagementPort = 8081;
     public static int ManagementPort =>
-        int.TryParse(Environment.GetEnvironmentVariable("Plane__Management__Port"), out var p) ? p : DefaultManagementPort;
+        int.TryParse(Environment.GetEnvironmentVariable("Funk__Management__Port"), out var p) ? p : DefaultManagementPort;
 
-    public static TBuilder AddPlaneServiceDefaults<TBuilder>(this TBuilder builder, PlaneHostKind kind)
+    public static TBuilder AddPlaneServiceDefaults<TBuilder>(this TBuilder builder, FunkHostKind kind)
         where TBuilder : IHostApplicationBuilder
     {
         builder.AddPlaneConfiguration();                       // Legacy-ENV-Aliasse, KeyPerFile (/run/secrets), ValidateOnStart
@@ -1645,20 +1645,20 @@ public static class PlaneServiceDefaults
     {
         var mgmt = $"*:{ManagementPort}";
         app.MapHealthChecks("/health/live",    new() { Predicate = _ => false }).RequireHost(mgmt);
-        app.MapHealthChecks("/health/ready",   new() { Predicate = r => r.Tags.Contains("ready"),   ResponseWriter = PlaneHealthWriter.WriteAsync }).RequireHost(mgmt);
-        app.MapHealthChecks("/health/startup", new() { Predicate = r => r.Tags.Contains("startup"), ResponseWriter = PlaneHealthWriter.WriteAsync }).RequireHost(mgmt);
+        app.MapHealthChecks("/health/ready",   new() { Predicate = r => r.Tags.Contains("ready"),   ResponseWriter = FunkHealthWriter.WriteAsync }).RequireHost(mgmt);
+        app.MapHealthChecks("/health/startup", new() { Predicate = r => r.Tags.Contains("startup"), ResponseWriter = FunkHealthWriter.WriteAsync }).RequireHost(mgmt);
         return app;
     }
 }
 
-public enum PlaneHostKind { Api, Worker, Realtime, Gateway, Migrator, AllInOne, Cli }
+public enum FunkHostKind { Api, Worker, Realtime, Gateway, Migrator, AllInOne, Cli }
 ```
 
 ```csharp
-// src/hosts/Plane.ServiceDefaults/Probe/PlaneProbe.cs  (D14-ADR-12)
-public static class PlaneProbe
+// src/hosts/Funk.ServiceDefaults/Probe/FunkProbe.cs  (D14-ADR-12)
+public static class FunkProbe
 {
-    /// <summary>Aufruf als erste Zeile in jedem Program.cs: `if (PlaneProbe.RunIfRequested(args, out var code)) return code;`</summary>
+    /// <summary>Aufruf als erste Zeile in jedem Program.cs: `if (FunkProbe.RunIfRequested(args, out var code)) return code;`</summary>
     public static bool RunIfRequested(string[] args, out int exitCode)
     {
         exitCode = 0;
@@ -1667,7 +1667,7 @@ public static class PlaneProbe
         using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(3) };
         try
         {
-            var res = http.GetAsync($"http://127.0.0.1:{PlaneServiceDefaults.ManagementPort}/health/{kind}").GetAwaiter().GetResult();
+            var res = http.GetAsync($"http://127.0.0.1:{FunkServiceDefaults.ManagementPort}/health/{kind}").GetAwaiter().GetResult();
             exitCode = res.IsSuccessStatusCode ? 0 : 1;
         }
         catch { exitCode = 1; }
@@ -1676,15 +1676,15 @@ public static class PlaneProbe
 }
 ```
 
-### 5.3 `src/hosts/Plane.Gateway/` (Program und Routentabelle)
+### 5.3 `src/hosts/Funk.Gateway/` (Program und Routentabelle)
 
 ```csharp
-// src/hosts/Plane.Gateway/Program.cs
-if (PlaneProbe.RunIfRequested(args, out var probeExit)) return probeExit;
+// src/hosts/Funk.Gateway/Program.cs
+if (FunkProbe.RunIfRequested(args, out var probeExit)) return probeExit;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.AddPlaneServiceDefaults(PlaneHostKind.Gateway);
-GatewayComposition.AddServices(builder);   // aus Plane.Hosting: Options, YARP (LoadFromMemory(PlaneRouteTable…)),
+builder.AddPlaneServiceDefaults(FunkHostKind.Gateway);
+GatewayComposition.AddServices(builder);   // aus Funk.Hosting: Options, YARP (LoadFromMemory(FunkRouteTable…)),
                                            // StaticFrontend, RuntimeConfig, OgMeta, SecurityHeaders, Static-RateLimit, TLS
 var app = builder.Build();
 GatewayComposition.MapPipeline(app);       // Reihenfolge s. u.
@@ -1694,7 +1694,7 @@ return 0;
 ```
 
 ```csharp
-// src/hosts/Plane.Hosting/GatewayComposition.cs (Pipeline-Reihenfolge verbindlich)
+// src/hosts/Funk.Hosting/GatewayComposition.cs (Pipeline-Reihenfolge verbindlich)
 public static void MapPipeline(WebApplication app)
 {
     app.UseForwardedHeaders();                       // D14-ADR-22
@@ -1715,10 +1715,10 @@ public static void MapPipeline(WebApplication app)
 ```
 
 ```csharp
-// src/hosts/Plane.Gateway/Routing/PlaneRouteTable.cs (Auszug)
-public static class PlaneRouteTable
+// src/hosts/Funk.Gateway/Routing/FunkRouteTable.cs (Auszug)
+public static class FunkRouteTable
 {
-    public static IReadOnlyList<RouteConfig> Routes(PlaneGatewayOptions o, PlaneStorageOptions s) =>
+    public static IReadOnlyList<RouteConfig> Routes(FunkGatewayOptions o, FunkStorageOptions s) =>
     [
         Route("live-ws",   "/live/collaboration/{**rest}", "realtime-ws", order: 9),   // G-07 (Cluster mit ActivityTimeout 120 s)
         Route("live-events", "/live/events/{**rest}",      "realtime-ws", order: 9),   // G-07
@@ -1757,7 +1757,7 @@ public static class PlaneRouteTable
 }
 ```
 
-### 5.4 `src/hosts/Plane.Gateway/Plane.Gateway.csproj` (Container und Frontend-Dist)
+### 5.4 `src/hosts/Funk.Gateway/Funk.Gateway.csproj` (Container und Frontend-Dist)
 
 ```xml
 <Project Sdk="Microsoft.NET.Sdk.Web">
@@ -1787,12 +1787,12 @@ public static class PlaneRouteTable
       <Content Include="$(FrontendDist)/space/browser/**" Link="wwwroot/space/%(RecursiveDir)%(Filename)%(Extension)" CopyToPublishDirectory="PreserveNewest" />
     </ItemGroup>
     <!-- G-17: Die Komponenten-Galerie wird NIE in wwwroot übernommen; im Profil test liefert das Gateway sie über
-         PhysicalFileProvider aus Plane:Gateway:Gallery:Root (= frontend/dist/gallery/browser, vom AppHost gesetzt). -->
+         PhysicalFileProvider aus Funk:Gateway:Gallery:Root (= frontend/dist/gallery/browser, vom AppHost gesetzt). -->
   </Target>
 </Project>
 ```
 
-### 5.5 `src/hosts/Plane.ServiceDefaults/Configuration/LegacyEnvironmentConfigurationSource.cs` (Auszug, Ergänzung zu D02 §5.1.10)
+### 5.5 `src/hosts/Funk.ServiceDefaults/Configuration/LegacyEnvironmentConfigurationSource.cs` (Auszug, Ergänzung zu D02 §5.1.10)
 
 ```csharp
 public enum LegacyKind { Alias, Seed, Compose, Dropped }
@@ -1805,14 +1805,14 @@ public static class LegacyEnvironmentMap   // D02 §5.1.10 (dort internal); D14 
     [
         new("DATABASE_URL",            LegacyKind.Alias,   "ConnectionStrings:plane", Converters.PostgresUrl("ConnectionStrings:plane")),
         new("REDIS_URL",               LegacyKind.Alias,   "ConnectionStrings:valkey", Converters.RedisUrl),
-        new("FILE_SIZE_LIMIT",         LegacyKind.Alias,   "Plane:Uploads:MaxFileSizeBytes"),
-        new("API_KEY_RATE_LIMIT",      LegacyKind.Alias,   "Plane:RateLimits:ApiKey", Converters.Rate("Plane:RateLimits:ApiKey")),
-        new("TRUSTED_PROXIES",         LegacyKind.Alias,   "Plane:ForwardedHeaders:KnownNetworks", Converters.TrustedProxies),
-        new("SKIP_ENV_VAR",            LegacyKind.Alias,   "Plane:Instance:ConfigurationSource", v => [new("Plane:Instance:ConfigurationSource", v == "0" ? "Environment" : "Database")]),
+        new("FILE_SIZE_LIMIT",         LegacyKind.Alias,   "Funk:Uploads:MaxFileSizeBytes"),
+        new("API_KEY_RATE_LIMIT",      LegacyKind.Alias,   "Funk:RateLimits:ApiKey", Converters.Rate("Funk:RateLimits:ApiKey")),
+        new("TRUSTED_PROXIES",         LegacyKind.Alias,   "Funk:ForwardedHeaders:KnownNetworks", Converters.TrustedProxies),
+        new("SKIP_ENV_VAR",            LegacyKind.Alias,   "Funk:Instance:ConfigurationSource", v => [new("Funk:Instance:ConfigurationSource", v == "0" ? "Environment" : "Database")]),
         new("EMAIL_HOST",              LegacyKind.Seed,    "EMAIL_HOST"),
         new("LLM_API_KEY",             LegacyKind.Seed,    "LLM_API_KEY"),
         new("AMQP_URL",                LegacyKind.Dropped, null, Reason: "RabbitMQ is not used (ADR-020)."),
-        new("USE_MINIO",               LegacyKind.Dropped, null, Reason: "Use Plane__Storage__PublicEndpoint and Plane__Gateway__ObjectStore__Mode (see D14 §3.7.6)."),
+        new("USE_MINIO",               LegacyKind.Dropped, null, Reason: "Use Funk__Storage__PublicEndpoint and Funk__Gateway__ObjectStore__Mode (see D14 §3.7.6)."),
         new("GOOGLE_CLIENT_ID",        LegacyKind.Dropped, null, Reason: "Login is handled exclusively by Keycloak (ADR-008)."),
         new("SECRET_KEY",              LegacyKind.Dropped, null, Reason: "SECRET_KEY is ignored; ASP.NET Core Data Protection is used."), // ABG-012; bekannte Platzhalter → Critical (05 §4.4)
         // … vollständige Liste = Tabelle §4.7 (Test LegacyEnvironmentMapCompletenessTests erzwingt 1:1-Abdeckung)
@@ -1834,19 +1834,19 @@ mkdir -p "$(dirname "$CONF")" && chown -R git:git /data
 su-exec git environment-to-ini --config "$CONF"               # ⚠ Werkzeugname/Pfad (S0)
 run migrate
 
-if ! run admin user list --admin | awk '{print $2}' | grep -qx plane-admin; then
-  run admin user create --admin --username plane-admin --email forgejo-admin@plane.local \
+if ! run admin user list --admin | awk '{print $2}' | grep -qx funk-admin; then
+  run admin user create --admin --username funk-admin --email forgejo-admin@plane.local \
       --password "$FORGEJO_ADMIN_PASSWORD" --must-change-password=false
 fi
 
 ID="$(run admin auth list | awk '$2=="keycloak"{print $1}')"
-set -- --name keycloak --provider openidConnect --key plane-forgejo --secret "$FORGEJO_CLIENT_SECRET" \
+set -- --name keycloak --provider openidConnect --key funk-forgejo --secret "$FORGEJO_CLIENT_SECRET" \
        --auto-discover-url "$KEYCLOAK_DISCOVERY_URL" --scopes "openid email profile groups"
 if [ -n "$ID" ]; then run admin auth update-oauth --id "$ID" "$@"; else run admin auth add-oauth "$@"; fi
 echo "forgejo-bootstrap: done"
 ```
 
-### 5.7 `src/tools/Plane.Tools.ForgejoInit/Program.cs` (Auszug)
+### 5.7 `src/tools/Funk.Tools.ForgejoInit/Program.cs` (Auszug)
 
 ```csharp
 var cfg = ForgejoInitOptions.FromEnvironment();          // Forgejo__BaseUrl, Forgejo__AdminUser, Forgejo__AdminPassword, Keycloak test users (sub/email)
@@ -1866,7 +1866,7 @@ return 0;
 
 ```yaml
 global:
-  registry: ghcr.io/OWNER            # PLANE_REGISTRY
+  registry: ghcr.io/OWNER            # FUNK_REGISTRY
   version: ""                         # Default .Chart.AppVersion
   imagePullPolicy: IfNotPresent
   imagePullSecrets: []
@@ -1883,7 +1883,7 @@ ingress:
   annotations: {}                     # z. B. cert-manager.io/cluster-issuer
 gateway:   { replicas: 2, resources: {}, staticRateLimitPerMinute: 300 }
 api:       { replicas: 2, resources: {}, maxPoolSize: 50 }
-worker:    { replicas: 1, resources: {}, maxPoolSize: 20, queues: ["*"], excludeQueues: ["live"] }   # Host-Default Worker (ABG-106); → Plane__Worker__Queues__<n>/ExcludeQueues__<n>
+worker:    { replicas: 1, resources: {}, maxPoolSize: 20, queues: ["*"], excludeQueues: ["live"] }   # Host-Default Worker (ABG-106); → Funk__Worker__Queues__<n>/ExcludeQueues__<n>
 realtime:  { replicas: 2, resources: {}, maxPoolSize: 30, queues: ["live"] }                       # Host-Default Realtime: nur Queue live (Job realtime.push, ABG-106)
 migrator:  { backoffLimit: 3, activeDeadlineSeconds: 900, ttlSecondsAfterFinished: 86400 }   # regulärer Job je Revision, kein Hook
 uploads:   { maxFileSizeBytes: 5242880 }
@@ -1925,7 +1925,7 @@ podSecurityContext: { runAsNonRoot: true, seccompProfile: { type: RuntimeDefault
 
 ### 5.9 Realm-Dateien und Dienst `keycloak-config` (Compose-Ausschnitt)
 
-Die verbindliche JSON-Form des Realms steht in D05 §3.15.8 und wird hier **nicht** wiederholt (Single Source). `config/00-plane-realm.json` ist dieselbe Realm-Representation ohne `users` und mit `sslRequired: all`, `attributes.frontendUrl: "${KEYCLOAK_PUBLIC_URL}"`; `config/20-forgejo-client.json` enthält nur `{ "realm": "plane", "clients": [ { "clientId": "plane-forgejo", … } ] }`. Ein CI-Test (`tools/ci/realm-consistency`) prüft, dass `realms/plane-realm.json`, `realms/plane-realm.test.json` und `config/*.json` dieselben Clients, Client-Scopes, Rollen, Gruppen und Flows enthalten (Abweichungen nur in `users`, Token-Laufzeiten und `sslRequired` sowie in den Test-Overrides des generierten Test-Realms: Brute-Force-Testschwellen, Back-Channel-URL, Test-Client `plane-test-app` – ABG-001). Härtungsprüfungen des Prod-Templates (D15-SEC-11) laufen gegen `config/00-plane-realm.json`.
+Die verbindliche JSON-Form des Realms steht in D05 §3.15.8 und wird hier **nicht** wiederholt (Single Source). `config/00-plane-realm.json` ist dieselbe Realm-Representation ohne `users` und mit `sslRequired: all`, `attributes.frontendUrl: "${KEYCLOAK_PUBLIC_URL}"`; `config/20-forgejo-client.json` enthält nur `{ "realm": "plane", "clients": [ { "clientId": "funk-forgejo", … } ] }`. Ein CI-Test (`tools/ci/realm-consistency`) prüft, dass `realms/plane-realm.json`, `realms/plane-realm.test.json` und `config/*.json` dieselben Clients, Client-Scopes, Rollen, Gruppen und Flows enthalten (Abweichungen nur in `users`, Token-Laufzeiten und `sslRequired` sowie in den Test-Overrides des generierten Test-Realms: Brute-Force-Testschwellen, Back-Channel-URL, Test-Client `plane-test-app` – ABG-001). Härtungsprüfungen des Prod-Templates (D15-SEC-11) laufen gegen `config/00-plane-realm.json`.
 
 ```yaml
 # Ausschnitt der generierten deploy/compose/docker-compose.yaml (erzeugt über ComposePublishing.Apply, nicht von Hand)
@@ -1946,18 +1946,18 @@ Die verbindliche JSON-Form des Realms steht in D05 §3.15.8 und wird hier **nich
       IMPORT_MANAGED_GROUP: no-delete
       IMPORT_MANAGED_REQUIRED_ACTION: no-delete
       IMPORT_REMOTE_STATE_ENABLED: "true"
-      PLANE_PUBLIC_URL: ${WEB_URL}
+      FUNK_PUBLIC_URL: ${WEB_URL}
       KEYCLOAK_PUBLIC_URL: ${WEB_URL}/idp
-      PLANE_BACKCHANNEL_BASE_URL: http://api:8080
-      PLANE_WEB_CLIENT_SECRET: ${PLANE_WEB_CLIENT_SECRET}
-      PLANE_ADMIN_CLIENT_SECRET: ${PLANE_ADMIN_CLIENT_SECRET}
-      PLANE_SPACE_CLIENT_SECRET: ${PLANE_SPACE_CLIENT_SECRET}
-      PLANE_BACKEND_CLIENT_SECRET: ${PLANE_BACKEND_CLIENT_SECRET}
+      FUNK_BACKCHANNEL_BASE_URL: http://api:8080
+      FUNK_WEB_CLIENT_SECRET: ${FUNK_WEB_CLIENT_SECRET}
+      FUNK_ADMIN_CLIENT_SECRET: ${FUNK_ADMIN_CLIENT_SECRET}
+      FUNK_SPACE_CLIENT_SECRET: ${FUNK_SPACE_CLIENT_SECRET}
+      FUNK_BACKEND_CLIENT_SECRET: ${FUNK_BACKEND_CLIENT_SECRET}
       FORGEJO_PUBLIC_URL: https://${FORGEJO_HOST:-forgejo.invalid}
       FORGEJO_CLIENT_SECRET: ${FORGEJO_CLIENT_SECRET:-}
-      PLANE_BOOTSTRAP_ADMIN_EMAIL: ${PLANE_BOOTSTRAP_ADMIN_EMAIL:-}
-      PLANE_BOOTSTRAP_ADMIN_PASSWORD: ${PLANE_BOOTSTRAP_ADMIN_PASSWORD:-}
-      PLANE_SMTP_HOST: ${PLANE_SMTP_HOST:-}
+      FUNK_BOOTSTRAP_ADMIN_EMAIL: ${FUNK_BOOTSTRAP_ADMIN_EMAIL:-}
+      FUNK_BOOTSTRAP_ADMIN_PASSWORD: ${FUNK_BOOTSTRAP_ADMIN_PASSWORD:-}
+      FUNK_SMTP_HOST: ${FUNK_SMTP_HOST:-}
 ```
 
 Hinweis: `config/10-plane-bootstrap-admin.json` und `config/20-forgejo-client.json` werden nur angewandt, wenn `funk-cli init` sie nach `./keycloak/config/` kopiert (Bootstrap-Admin gesetzt bzw. Profil `forgejo` aktiv); keycloak-config-cli kennt keine bedingten Dateien.
@@ -1979,14 +1979,14 @@ ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
 CMD ["start", "--optimized"]                     # Realm-Anlage/-Abgleich über keycloak-config (D14-ADR-03)
 ```
 
-### 5.11 `src/hosts/Plane.Migrator/Program.cs`
+### 5.11 `src/hosts/Funk.Migrator/Program.cs`
 
 ```csharp
-if (PlaneProbe.RunIfRequested(args, out var probeExit)) return probeExit;
+if (FunkProbe.RunIfRequested(args, out var probeExit)) return probeExit;
 
 var builder = Host.CreateApplicationBuilder(args);
-builder.AddPlaneServiceDefaults(PlaneHostKind.Migrator);
-MigratorComposition.AddServices(builder);   // PlaneDbContext (Pool 5), Storage, HybridCache-Invalidator, Steps
+builder.AddPlaneServiceDefaults(FunkHostKind.Migrator);
+MigratorComposition.AddServices(builder);   // FunkDbContext (Pool 5), Storage, HybridCache-Invalidator, Steps
 using var host = builder.Build();
 
 var steps = host.Services.GetRequiredService<MigratorPipeline>();
@@ -2032,18 +2032,18 @@ jobs:
         with: { name: frontend-dist, path: frontend/dist }
       - uses: actions/setup-dotnet@<sha> # v5
         with: { global-json-file: global.json }
-      - run: tools/ci/build-image.sh "${{ matrix.image }}" "${{ matrix.arch }}" "${{ vars.PLANE_REGISTRY }}" "sha-${{ github.sha }}-${{ matrix.arch }}"
-      - run: tools/ci/assert-no-node.sh "${{ vars.PLANE_REGISTRY }}/${{ matrix.image }}:sha-${{ github.sha }}-${{ matrix.arch }}"
+      - run: tools/ci/build-image.sh "${{ matrix.image }}" "${{ matrix.arch }}" "${{ vars.FUNK_REGISTRY }}" "sha-${{ github.sha }}-${{ matrix.arch }}"
+      - run: tools/ci/assert-no-node.sh "${{ vars.FUNK_REGISTRY }}/${{ matrix.image }}:sha-${{ github.sha }}-${{ matrix.arch }}"
       - uses: aquasecurity/trivy-action@<sha> # pinned
-        with: { image-ref: "${{ vars.PLANE_REGISTRY }}/${{ matrix.image }}:sha-${{ github.sha }}-${{ matrix.arch }}", severity: "CRITICAL,HIGH", ignore-unfixed: true, exit-code: "1", trivyignores: .trivyignore }
+        with: { image-ref: "${{ vars.FUNK_REGISTRY }}/${{ matrix.image }}:sha-${{ github.sha }}-${{ matrix.arch }}", severity: "CRITICAL,HIGH", ignore-unfixed: true, exit-code: "1", trivyignores: .trivyignore }
       - uses: anchore/sbom-action@<sha> # pinned (Syft)
-        with: { image: "${{ vars.PLANE_REGISTRY }}/${{ matrix.image }}:sha-${{ github.sha }}-${{ matrix.arch }}", format: spdx-json, output-file: "sbom-${{ matrix.image }}-${{ matrix.arch }}.spdx.json" }
+        with: { image: "${{ vars.FUNK_REGISTRY }}/${{ matrix.image }}:sha-${{ github.sha }}-${{ matrix.arch }}", format: spdx-json, output-file: "sbom-${{ matrix.image }}-${{ matrix.arch }}.spdx.json" }
   manifest:
     needs: build
     runs-on: ubuntu-24.04
     permissions: { contents: read, packages: write }
     steps:
-      - run: tools/ci/merge-manifests.sh "${{ vars.PLANE_REGISTRY }}" "sha-${{ github.sha }}"   # docker buildx imagetools create
+      - run: tools/ci/merge-manifests.sh "${{ vars.FUNK_REGISTRY }}" "sha-${{ github.sha }}"   # docker buildx imagetools create
 ```
 
 ---
@@ -2062,23 +2062,23 @@ Kein Fachdesign. Die Tabelle nennt nur, **welche Infrastruktur-Stelle** ein stru
 | **B1** Teamspaces (W5) | keiner | – | – |
 | **B6** Erweiterte Filter/PQL (W5) | ggf. Lastprofil der Suche | Extensions `pg_trgm`/`unaccent` im Postgres-Init und `ExtensionCheck` (§3.15 Schritt 3); Metriken-Gerüst | Extension-Check-Test |
 | **C1** Workflows (nicht gewählt) | keiner | – | – |
-| **C3** Automation-Engine (nicht gewählt) | zusätzliche Worker-Last, eigene Queue(s), ggf. eigener Worker-Pool | Worker horizontal skalierbar (§3.18), Queue-Metriken `plane.jobs.*` mit Attribut `queue` (§3.19.2), Helm `worker.replicas`; Option für **benannte Worker-Pools** (`Plane__Worker__Queues=[…]` – jede Worker-Replika verarbeitet nur die gelisteten Queues; CE-Default Worker: `Queues=["*"]` mit `ExcludeQueues=["live"]`). Queue-Zuordnung nach ABG-106: die Consumer-Queue `realtime` (`RealtimeFanOutConsumer`) läuft im **Worker**; der Job `realtime.push` liegt auf der Queue **`live`** und wird nur vom Host `Plane.Realtime` (Host-Default `Queues=["live"]`) bzw. von `Plane.AllInOne` (`["*"]`) verarbeitet, der ihn über `HubRealtimePublisher` an den Hub gibt. Options-Klasse `PlaneWorkerOptions` (`Plane:Worker`: `Queues`, `ExcludeQueues`, `Concurrency`, `Scheduler:Enabled`, `Outbox:Enabled` u. a.; Felder und Host-Defaults verbindlich in 06 §3.5.5/§3.5.6, gelistet in 02 §3.15). Beispiel-Pool: `worker` mit `Plane__Worker__ExcludeQueues__0=live`, `Plane__Worker__ExcludeQueues__1=webhooks` (eine eigene `ExcludeQueues`-Liste ersetzt den Default, `live` muss deshalb immer mitgelistet werden), `worker-webhooks` mit `Plane__Worker__Queues=webhooks`, `Plane__Worker__Scheduler__Enabled=false`, `Plane__Worker__Outbox__Enabled=false` | Worker-Queue-Filter-Test (2 Pools, keine Fremdverarbeitung) |
+| **C3** Automation-Engine (nicht gewählt) | zusätzliche Worker-Last, eigene Queue(s), ggf. eigener Worker-Pool | Worker horizontal skalierbar (§3.18), Queue-Metriken `plane.jobs.*` mit Attribut `queue` (§3.19.2), Helm `worker.replicas`; Option für **benannte Worker-Pools** (`Funk__Worker__Queues=[…]` – jede Worker-Replika verarbeitet nur die gelisteten Queues; CE-Default Worker: `Queues=["*"]` mit `ExcludeQueues=["live"]`). Queue-Zuordnung nach ABG-106: die Consumer-Queue `realtime` (`RealtimeFanOutConsumer`) läuft im **Worker**; der Job `realtime.push` liegt auf der Queue **`live`** und wird nur vom Host `Funk.Realtime` (Host-Default `Queues=["live"]`) bzw. von `Funk.AllInOne` (`["*"]`) verarbeitet, der ihn über `HubRealtimePublisher` an den Hub gibt. Options-Klasse `FunkWorkerOptions` (`Funk:Worker`: `Queues`, `ExcludeQueues`, `Concurrency`, `Scheduler:Enabled`, `Outbox:Enabled` u. a.; Felder und Host-Defaults verbindlich in 06 §3.5.5/§3.5.6, gelistet in 02 §3.15). Beispiel-Pool: `worker` mit `Funk__Worker__ExcludeQueues__0=live`, `Funk__Worker__ExcludeQueues__1=webhooks` (eine eigene `ExcludeQueues`-Liste ersetzt den Default, `live` muss deshalb immer mitgelistet werden), `worker-webhooks` mit `Funk__Worker__Queues=webhooks`, `Funk__Worker__Scheduler__Enabled=false`, `Funk__Worker__Outbox__Enabled=false` | Worker-Queue-Filter-Test (2 Pools, keine Fremdverarbeitung) |
 | **D1** Wiki & Collections (W3) | keiner | – | – |
 | **D2** Nested Pages (W3) | keiner | – | – |
-| **E3** IdP Group Sync (W4) | Keycloak liefert Gruppen; optional SCIM-Endpunkt unter `/api/` | Client-Scope `plane-groups` mit Claim `groups` (`full.path=true`) in allen funk.-Clients (D05 §3.15.5), Service-Account-Client `plane-backend` mit `realm-management/view-users` für Offline-Abgleich, Elterngruppe `/plane`, Realm-Abgleich `keycloak-config` nimmt spätere Mapper/Gruppen ohne Umbau auf (D14-ADR-03); SCIM-Endpunkt läge unter `/api/` (G-08, kein Gateway-Umbau) | Realm-Test: ID-Token des Testbenutzers `admin@plane.local` enthält `groups: ["/plane-instance-admins"]`; `plane-backend` erhält per Client-Credentials ein Token |
+| **E3** IdP Group Sync (W4) | Keycloak liefert Gruppen; optional SCIM-Endpunkt unter `/api/` | Client-Scope `plane-groups` mit Claim `groups` (`full.path=true`) in allen funk.-Clients (D05 §3.15.5), Service-Account-Client `funk-backend` mit `realm-management/view-users` für Offline-Abgleich, Elterngruppe `/plane`, Realm-Abgleich `keycloak-config` nimmt spätere Mapper/Gruppen ohne Umbau auf (D14-ADR-03); SCIM-Endpunkt läge unter `/api/` (G-08, kein Gateway-Umbau) | Realm-Test: ID-Token des Testbenutzers `admin@plane.local` enthält `groups: ["/plane-instance-admins"]`; `funk-backend` erhält per Client-Credentials ein Token |
 | **E5** Rollenmodell (W4) | keiner | System-Rollen-Seed (§3.15 Schritt 8) | Seed-Test |
 | **F1** Integrations-Framework (W1) | öffentliche Webhook-Empfangsroute, Body-Limit, Rate-Limit, Egress zu Integrationszielen, Secrets für Verbindungen | Route `/api/integrations/{provider}/webhooks/{connection_id}/` liegt in G-08 (kein Gateway-Umbau), Body-Limit G-01, Egress-Allowlist (Helm `egress.allow`), Data-Protection für Verbindungs-Secrets (D14-ADR-09), Named-Client-Muster ohne Standard-Resilience für ausgehende Integrationsaufrufe mit eigener Retry-Policy (§3.6) | Gateway-Test: POST auf die Route erreicht `api` ohne Session-Cookie; 413 bei Überschreitung |
-| **F2** Forgejo (W1) | Forgejo als Dienst (Dev/Test immer, Prod optional), SSO, OAuth2-App, Webhooks Forgejo → funk., Test-Repos, Host-Route, SSH-Port | Container `forgejo`/`forgejo-bootstrap`/`forgejo-init` (§3.4), Keycloak-Client `plane-forgejo`, `artifacts/dev/forgejo.json` für Tests, Compose-Profil `forgejo`, Helm `forgejo.bundled`, G-15, `FORGEJO__webhook__ALLOWED_HOST_LIST`, Backup der Forgejo-DB/-Daten (§3.16) | AK-14-08/-09 (SSO-Smoke, Init-Idempotenz) |
+| **F2** Forgejo (W1) | Forgejo als Dienst (Dev/Test immer, Prod optional), SSO, OAuth2-App, Webhooks Forgejo → funk., Test-Repos, Host-Route, SSH-Port | Container `forgejo`/`forgejo-bootstrap`/`forgejo-init` (§3.4), Keycloak-Client `funk-forgejo`, `artifacts/dev/forgejo.json` für Tests, Compose-Profil `forgejo`, Helm `forgejo.bundled`, G-15, `FORGEJO__webhook__ALLOWED_HOST_LIST`, Backup der Forgejo-DB/-Daten (§3.16) | AK-14-08/-09 (SSO-Smoke, Init-Idempotenz) |
 | **G1** AI-Basis (nicht gewählt) | Vektor-Extension, optional lokaler LLM-Dienst (z. B. Ollama/vLLM) | `pgvector`-Image + `CREATE EXTENSION vector` (§3.15), Egress-Allowlist für LLM-Endpunkte, Seed `LLM_*` | Extension-Check-Test |
-| **H1** OAuth-App-Plattform (W1) | Keycloak als Autorisierungsserver für App-Tokens (Client-Credentials, Consent), Bearer-Validierung in Api | Client `plane-api` als Audience + Client-Scope `plane-api-audience` (D05 §3.15.3/§3.15.5, in der CE keinem Client zugewiesen), interne `MetadataAddress` für JWKS-Abruf ohne Umweg über das öffentliche Gateway (§3.2.3), `/idp/` erreichbar für externe App-Clients (G-14), `keycloak-config` für spätere App-Clients (eigene Datei `config/30-*.json` je Paket) | Realm-Test: Client `plane-api` existiert; Api erreicht JWKS intern |
+| **H1** OAuth-App-Plattform (W1) | Keycloak als Autorisierungsserver für App-Tokens (Client-Credentials, Consent), Bearer-Validierung in Api | Client `funk-api` als Audience + Client-Scope `plane-api-audience` (D05 §3.15.3/§3.15.5, in der CE keinem Client zugewiesen), interne `MetadataAddress` für JWKS-Abruf ohne Umweg über das öffentliche Gateway (§3.2.3), `/idp/` erreichbar für externe App-Clients (G-14), `keycloak-config` für spätere App-Clients (eigene Datei `config/30-*.json` je Paket) | Realm-Test: Client `funk-api` existiert; Api erreicht JWKS intern |
 | **H6** Realtime-Event-Server (W1) | WebSocket-Route, horizontale Skalierung mit Backplane | G-07 `/live/events/` mit WebSocket-Timeouts, Valkey-Pflicht ab 2 Replikas (D14-ADR-21), Metrik `plane.realtime.connections{channel="events"}` | AK-14-18 |
 
 ### 6.2 Infrastruktur-Konventionen, die alle späteren Pakete einhalten
 
-1. Neue Hosts (z. B. `Plane.Mcp` für H4) folgen dem Schema „Projekt in `src/hosts/`, Komposition in `Plane.Hosting`, Ports 8080/8081, Probe-Modus, eigenes Image, Eintrag in `deploy/airgap/images.yaml`, Route in `PlaneRouteTable`“.
+1. Neue Hosts (z. B. `Funk.Mcp` für H4) folgen dem Schema „Projekt in `src/hosts/`, Komposition in `Funk.Hosting`, Ports 8080/8081, Probe-Modus, eigenes Image, Eintrag in `deploy/airgap/images.yaml`, Route in `FunkRouteTable`“.
 2. Neue optionale Fremddienste kommen als **Compose-Profil** + Helm-Schalter + AppHost-Schalter (`Plane:<Dienst>:Bundled`) und werden in §3.14.2 nachgetragen; Lizenz-Gate prüft Image-Lizenz manuell (Eintrag in `images.yaml` mit SPDX).
 3. Neue ausgehende Ziele werden ausschließlich über konfigurierbare Endpunkte angebunden und im Airgap-Test (DNS-Sink) als erlaubte Ausnahme oder „nur wenn konfiguriert“ geführt.
-4. Neue Konfiguration folgt `Plane__<Bereich>__…`; Original-Variablen der EE (z. B. aus dem Commercial-Helm-Chart) werden nur bei Bedarf als Alias in `LegacyEnvironmentMap` aufgenommen.
+4. Neue Konfiguration folgt `Funk__<Bereich>__…`; Original-Variablen der EE (z. B. aus dem Commercial-Helm-Chart) werden nur bei Bedarf als Alias in `LegacyEnvironmentMap` aufgenommen.
 
 ### 6.3 Merkposten (gewählte, nicht strukturrelevante Pakete mit Infrastrukturbezug – kein Design)
 
@@ -2089,7 +2089,7 @@ Kein Fachdesign. Die Tabelle nennt nur, **welche Infrastruktur-Stelle** ein stru
 | D9 Editor-Blöcke (W8) | optionaler Draw.io-Container hinter `/drawio/` (01 §4.2) |
 | E8 PII-Scanner (W9) | Worker-Last, ggf. Modell-Dateien im Image |
 | F6 Sentry (W9) | Egress zu Sentry/Self-hosted-Sentry |
-| H3/H4/H7 (W9) | H4: Host `Plane.Mcp`; H7: FIPS-Images, External Secrets, separater API-Pool (Gateway-Route `/api/v1/` auf eigenen Cluster), HA-Anleitungen – baut auf §3.12/§3.18 auf |
+| H3/H4/H7 (W9) | H4: Host `Funk.Mcp`; H7: FIPS-Images, External Secrets, separater API-Pool (Gateway-Route `/api/v1/` auf eigenen Cluster), HA-Anleitungen – baut auf §3.12/§3.18 auf |
 
 ---
 
@@ -2099,54 +2099,54 @@ Kein Fachdesign. Die Tabelle nennt nur, **welche Infrastruktur-Stelle** ein stru
 
 | ID | Kriterium | Messung / Test | Inkrement |
 |---|---|---|---|
-| AK-14-01 | `aspire run` startet auf einem frischen Rechner (Images vorgeladen) alle Ressourcen des `dev`-Profils grün in **< 5 min**; ohne Netzwerkzugang identisch | `tests/Plane.AppHost.Tests/DevProfileStartupTests` (Timer), manueller Offline-Lauf im Abnahmeprotokoll | I0 |
-| AK-14-02 | `Plane.AppHost.Tests` startet Profil `test`, alle Ressourcen `Healthy` < 180 s in CI; Gateway liefert `200` für `/`, `/god-mode/`, `/spaces/`, `/runtime-config.json`, `/__gallery/` (nur `test`) | `AppHostSmokeTests` (= `ResourceHealthTests` in D15 §3.4.2) | I0 |
-| AK-14-03 | Login über Keycloak als `admin@plane.local` (web, admin, space) endet eingeloggt mit Cookie `session-id` (HttpOnly) auf `localhost:3000`; `unverified@plane.local` wird abgewiesen; `disabled@plane.local` kann sich nicht anmelden | Playwright `e2e/auth/keycloak-login.spec.ts` | I0 |
-| AK-14-04 | Routing-Tabelle: jede Regel G-01…G-16 hat einen Test (Ziel-Cluster/Static, Redirect 301 für `/spaces` und `/god-mode`, 413-Körper exakt, `robots.txt`-Inhalt, Back-Channel-Logout extern 403, `/idp/admin/` ohne Allowlist 403) | `tests/Plane.Gateway.Tests/RouteTableTests` (YARP-In-Memory + Test-Backends) | I0 (I1/I6/I7 für ihre Regeln) |
-| AK-14-05 | Header-Grenzen: Anfrage mit 30 KiB Cookies wird verarbeitet; > 32 KiB → 431 | `Plane.Gateway.Tests/HeaderLimitTests` | I0 |
+| AK-14-01 | `aspire run` startet auf einem frischen Rechner (Images vorgeladen) alle Ressourcen des `dev`-Profils grün in **< 5 min**; ohne Netzwerkzugang identisch | `tests/Funk.AppHost.Tests/DevProfileStartupTests` (Timer), manueller Offline-Lauf im Abnahmeprotokoll | I0 |
+| AK-14-02 | `Funk.AppHost.Tests` startet Profil `test`, alle Ressourcen `Healthy` < 180 s in CI; Gateway liefert `200` für `/`, `/god-mode/`, `/spaces/`, `/runtime-config.json`, `/__gallery/` (nur `test`) | `AppHostSmokeTests` (= `ResourceHealthTests` in D15 §3.4.2) | I0 |
+| AK-14-03 | Login über Keycloak als `admin@plane.local` (web, admin, space) endet eingeloggt mit Cookie `funk-session` (HttpOnly) auf `localhost:3000`; `unverified@plane.local` wird abgewiesen; `disabled@plane.local` kann sich nicht anmelden | Playwright `e2e/auth/keycloak-login.spec.ts` | I0 |
+| AK-14-04 | Routing-Tabelle: jede Regel G-01…G-16 hat einen Test (Ziel-Cluster/Static, Redirect 301 für `/spaces` und `/god-mode`, 413-Körper exakt, `robots.txt`-Inhalt, Back-Channel-Logout extern 403, `/idp/admin/` ohne Allowlist 403) | `tests/Funk.Gateway.Tests/RouteTableTests` (YARP-In-Memory + Test-Backends) | I0 (I1/I6/I7 für ihre Regeln) |
+| AK-14-05 | Header-Grenzen: Anfrage mit 30 KiB Cookies wird verarbeitet; > 32 KiB → 431 | `Funk.Gateway.Tests/HeaderLimitTests` | I0 |
 | AK-14-06 | Security-Header aus §3.7.3 auf allen Static-Antworten; HSTS nur bei HTTPS; kein `Server`-Header | `SecurityHeadersTests` | I0 |
 | AK-14-07 | Cache-Header: gehashte Assets `immutable`, `index.html`/`runtime-config.json`/`manifest.json`/`site.webmanifest.json` `no-cache` (kein `sw.js`, ABG-025); SPA-Fallback für tiefe Links aller drei Apps | `StaticFrontendTests` | I0 |
-| AK-14-08 | `forgejo-init` läuft **zweimal hintereinander** fehlerfrei (Idempotenz), Laufzeit je < 30 s, `artifacts/dev/forgejo.json` enthält `client_id`/`client_secret` einer OAuth-App, die `GET /api/v1/user/applications/oauth2` listet | `tests/Plane.Tools.ForgejoInit.Tests` (gegen Container) | I0 |
+| AK-14-08 | `forgejo-init` läuft **zweimal hintereinander** fehlerfrei (Idempotenz), Laufzeit je < 30 s, `artifacts/dev/forgejo.json` enthält `client_id`/`client_secret` einer OAuth-App, die `GET /api/v1/user/applications/oauth2` listet | `tests/Funk.Tools.ForgejoInit.Tests` (gegen Container) | I0 |
 | AK-14-09 | Forgejo-SSO: Login in Forgejo über „keycloak“ mit `member@plane.local` landet im vorab verknüpften Konto `member` (gleiche Identität) | Playwright `e2e/forgejo/sso.spec.ts` | I0 |
 | AK-14-10 | `aspire publish` erzeugt `deploy/compose/docker-compose.yaml` **ohne Diff** zur eingecheckten Datei; `docker compose config` ist gültig; alle Profile aus §3.11.2 vorhanden | CI-Job `compose-drift` | I0 |
 | AK-14-11 | Ohne `OTEL_EXPORTER_OTLP_ENDPOINT` baut kein Host ausgehende Verbindungen für Telemetrie auf | Test mit `HttpClient`-Interception + Airgap-E2E (DNS-Sink) | I0 |
-| AK-14-12 | Migrator: leere DB → Exit 0; zweiter Lauf Exit 0 ohne Änderung; DB mit unbekannter Migration → Exit 3; zwei parallele Migrator-Prozesse → genau einer migriert (Lock) | `tests/Plane.Migrator.Tests` | I0 |
+| AK-14-12 | Migrator: leere DB → Exit 0; zweiter Lauf Exit 0 ohne Änderung; DB mit unbekannter Migration → Exit 3; zwei parallele Migrator-Prozesse → genau einer migriert (Lock) | `tests/Funk.Migrator.Tests` | I0 |
 | AK-14-13 | 100 % der Original-Variablen aus A01 §2.11 (Liste `original-env-vars.txt`) sind in `LegacyEnvironmentMap` klassifiziert; jeder Alias liefert den erwarteten Ziel-Wert; jede „entfällt“-Variable erzeugt genau eine Warnung | `LegacyEnvironmentMapTests`, `LegacyEnvironmentMapCompletenessTests` | I1 |
-| AK-14-14 | Presigned-Upload über Gateway (`/uploads`, Modus Proxy) mit SeaweedFS: POST mit gültiger Policy → 204/201, Überschreitung `content-length-range` → 400 von S3, Download mit gepinntem `Content-Disposition` | `Plane.Platform.Tests/Storage/GatewayPresignTests` (S8-Matrix) | I1 |
-| AK-14-15 | Dateisystem-Provider + Proxy-Upload besteht dieselben Contract-Tests wie S3 | `Plane.Platform.Tests/Storage/*` | I1 |
-| AK-14-16 | `funk-cli init` erzeugt `.env` mit allen Pflicht-Secrets (Zufall ≥ 32 Zeichen), verweigert Überschreiben; `funk-cli config check` meldet ungültige Konfiguration mit Exit ≠ 0 | `tests/Plane.Cli.Tests` | I1 |
+| AK-14-14 | Presigned-Upload über Gateway (`/uploads`, Modus Proxy) mit SeaweedFS: POST mit gültiger Policy → 204/201, Überschreitung `content-length-range` → 400 von S3, Download mit gepinntem `Content-Disposition` | `Funk.Platform.Tests/Storage/GatewayPresignTests` (S8-Matrix) | I1 |
+| AK-14-15 | Dateisystem-Provider + Proxy-Upload besteht dieselben Contract-Tests wie S3 | `Funk.Platform.Tests/Storage/*` | I1 |
+| AK-14-16 | `funk-cli init` erzeugt `.env` mit allen Pflicht-Secrets (Zufall ≥ 32 Zeichen), verweigert Überschreiben; `funk-cli config check` meldet ungültige Konfiguration mit Exit ≠ 0 | `tests/Funk.Cli.Tests` | I1 |
 | AK-14-17 | Zwei `realtime`-Replikas mit Valkey: zwei Browser auf unterschiedlichen Replikas editieren dasselbe Dokument und konvergieren (< 1 s) | `e2e/realtime/multi-instance.spec.ts` (Compose, `REALTIME_REPLICAS=2`) | I4 |
 | AK-14-18 | SignalR `/live/events/` über Gateway mit 2 Replikas: Ereignis aus der Outbox erreicht Client unabhängig von der Replika | `e2e/live-events/fan-out.spec.ts` | I5 |
-| AK-14-19 | OG-Meta: Crawler-Anfrage (`User-Agent: facebookexternalhit`) auf `/spaces/issues/{anchor}` liefert `og:title` des Work Items; API-Ausfall → Default-Meta in < 2,5 s | `Plane.Gateway.Tests/OgMetaTests` | I6 |
-| AK-14-20 | `Plane__OpenApi__Enabled=false` → `/api/schema/` 404; `true` → Scalar-UI ohne externe Ressourcen | `tests/modules/Plane.PublicApi.Tests` (`OpenApiDocumentTests`, 02 AK-22) + DNS-Sink | I6 |
-| AK-14-21 | TLS-Modus `Certificate`: HTTPS mit Betreiberzertifikat, HTTP → 308, Zertifikatstausch ohne Neustart wirksam < 30 s | `Plane.Gateway.Tests/TlsReloadTests` | I7 |
+| AK-14-19 | OG-Meta: Crawler-Anfrage (`User-Agent: facebookexternalhit`) auf `/spaces/issues/{anchor}` liefert `og:title` des Work Items; API-Ausfall → Default-Meta in < 2,5 s | `Funk.Gateway.Tests/OgMetaTests` | I6 |
+| AK-14-20 | `Funk__OpenApi__Enabled=false` → `/api/schema/` 404; `true` → Scalar-UI ohne externe Ressourcen | `tests/modules/Funk.PublicApi.Tests` (`OpenApiDocumentTests`, 02 AK-22) + DNS-Sink | I6 |
+| AK-14-21 | TLS-Modus `Certificate`: HTTPS mit Betreiberzertifikat, HTTP → 308, Zertifikatstausch ohne Neustart wirksam < 30 s | `Funk.Gateway.Tests/TlsReloadTests` | I7 |
 | AK-14-22 | Helm: `helm lint`, `kubeconform` grün; **Erstinstallation** in `kind` mit `postgresql.bundled=true` (Airgap-Simulation: nur lokale Registry) → Migrator-Job erfolgreich ohne manuelles Eingreifen, `keycloak-config` erfolgreich, `helm test` grün < 10 min; `helm upgrade` auf dieselbe Version erzeugt einen neuen Migrator-Job `-r2` mit Exit 0; Validierungsfehler bei `api.replicas=2` ohne Valkey | CI-Job `helm-e2e` (I7) | I7 |
 | AK-14-23 | AIO: `docker-compose.aio.yaml` (postgres, keycloak, funk-aio) startet, Login + Workspace anlegen funktioniert; `ExpectMultipleInstances=true` → Startabbruch | `e2e/aio/smoke.spec.ts` | I7 |
 | AK-14-24 | Airgap-Bundle: `verify.sh` prüft Checksummen und Signaturen offline; `install-airgapped.sh --load` auf Host ohne Netz → Stack läuft; DNS-Sink zählt **0** Anfragen an nicht konfigurierte Ziele während eines vollständigen E2E-Laufs | `e2e.yml` Airgap-Variante + Release-Abnahme | I7 |
 | AK-14-25 | Image-Hygiene: kein funk.-Image enthält Node (`assert-no-node`), alle laufen non-root, Trivy ohne `CRITICAL`/`HIGH` mit Fix, SBOM je Image (SPDX + CycloneDX) vorhanden; `docker inspect` zeigt `DOTNET_GCHeapHardLimitPercent=0x4B` und Basis `aspnet:10.0-noble-chiseled-extra` für alle Hosts inkl. Migrator | `images.yml` | I0 |
-| AK-14-26 | Eigene CA: mit CA aus `/etc/plane/ca` erreicht Api einen S3-Endpunkt mit von dieser CA signiertem Zertifikat; ohne CA → Fehler | `Plane.Platform.Tests/CustomCaTests` (Testcontainers + selbstsignierte CA) | I7 |
+| AK-14-26 | Eigene CA: mit CA aus `/etc/plane/ca` erreicht Api einen S3-Endpunkt mit von dieser CA signiertem Zertifikat; ohne CA → Fehler | `Funk.Platform.Tests/CustomCaTests` (Testcontainers + selbstsignierte CA) | I7 |
 | AK-14-27 | Backup/Restore-Roundtrip: Seed-Daten (Workspace, 100 Work Items, 20 Anhänge, Page mit Yjs-Binary, Forgejo-Repo) → `backup` → Volumes löschen → `restore` → Contract-Vergleich aller Seed-Endpunkte identisch, Anhänge byte-gleich | `tests/deploy/backup-restore.sh` (CI nightly) | I7 |
 | AK-14-28 | Upgrade vN-1 → vN (Compose und Helm) ohne Datenverlust; Rolling-Update ohne 5xx während des Updates (Lastgenerator 20 req/s) | `tests/deploy/upgrade.sh` (ab zweitem Release) | I7 |
 | AK-14-29 | Swarm: `docker stack deploy` mit der publizierten Compose-Datei startet alle Kern-Dienste healthy | manueller Nachweis + Skript `tests/deploy/swarm-smoke.sh` | I7 |
 | AK-14-30 | Observability: mit `observability`-Profil erscheinen Traces einer Work-Item-Erstellung durchgängig Gateway → Api → Outbox → Worker (ein Trace) im Dashboard | `tests/deploy/trace-propagation.sh` | I7 |
 | AK-14-31 | Kapazität: Einzelknoten 2 vCPU/4 GB ohne Forgejo bewältigt 50 gleichzeitige Nutzer (Lastskript D15) mit p95 < 500 ms für Listen-Endpunkte; Speicher stabil 1 h | Lasttest D15 | I7 |
-| AK-14-32 | `keycloak-config` (keycloak-config-cli mit den Settings aus D14-ADR-03) auf einem Realm mit Betreiber-Änderungen (zusätzlicher LDAP-Provider, zusätzlicher Client, zusätzlicher Benutzer) ändert nur die in `config/*.json` deklarierten Objekte; Betreiber-Objekte bleiben unverändert; zweiter Lauf ohne Änderungen (Remote-State-Hash gleich) | `tests/Plane.Cli.Tests/IdpSyncTests` (Testcontainers.Keycloak) | I7 |
+| AK-14-32 | `keycloak-config` (keycloak-config-cli mit den Settings aus D14-ADR-03) auf einem Realm mit Betreiber-Änderungen (zusätzlicher LDAP-Provider, zusätzlicher Client, zusätzlicher Benutzer) ändert nur die in `config/*.json` deklarierten Objekte; Betreiber-Objekte bleiben unverändert; zweiter Lauf ohne Änderungen (Remote-State-Hash gleich) | `tests/Funk.Cli.Tests/IdpSyncTests` (Testcontainers.Keycloak) | I7 |
 | AK-14-34 | Publish-Compose auf leerem Volume: `10-roles-and-databases.sh` legt Rollen/Datenbanken `plane`, `keycloak`, `forgejo` an; `api`/`worker`/`realtime` verbinden sich als Rolle `plane` (kein Superuser, `SELECT rolsuper` = false); Extensions `vector`, `pg_trgm`, `unaccent` vorhanden; Compose ohne Profil `valkey`/`bundled-s3` startet ohne `depends_on`-Fehler | `tests/deploy/compose-fresh.sh` | I0 |
-| AK-14-35 | Realm-Konsistenz: `realms/plane-realm.json`, `realms/plane-realm.test.json` und `config/*.json` deklarieren identische Clients/Scopes/Rollen/Gruppen/Flows (Test-Realm zusätzlich Test-Client `plane-test-app`, ABG-001); `plane-realm.test.json` ist aktuell (`--check`, `KeycloakRealmConfigTests.TestRealm_IsUpToDate`); in `prodlike` legt `keycloak-config` den Realm auf leerer Keycloak-DB an und Login `admin` über Bootstrap-Admin funktioniert | `tools/ci/realm-consistency` + `Plane.AppHost.Tests/ProdLikeKeycloakTests` | I0 |
-| AK-14-33 | Production-Start ohne Data-Protection-Zertifikat bricht ab (außer `AllowUnencryptedKeys=true` mit Warnung); Signing-Key/S3-Secret mit Bekannt-Default bricht ab | `Plane.ServiceDefaults.Tests/ProductionGuardTests` | I7 |
-| AK-14-36 | Branding der Betriebsartefakte (§3.23): alle eigenen Images heißen `funk-<dienst>` mit OCI-Label `title` = „funk. <Dienst>“; Chart `funk` (`helm lint deploy/helm/funk`); `funk-cli --help`, `funk.sh`-Ausgaben, `deploy/compose/README.md`, Helm-`README.md`/`NOTES.txt` und `.env.example`-Kommentare ohne „Plane“/`plane.so` außerhalb der Allowlist (BR-02-Bezeichner wie `PLANE_*`); Migrator-Neuanlage setzt `instance_name` = „funk.“ (ABG-104) | G-BRAND (15, BR-14) auf Images/Doku, `tests/Plane.Cli.Tests` (Hilfetexte), `MigratorTests` | I0 (Images/CLI), I7 (Chart/Bundle) |
+| AK-14-35 | Realm-Konsistenz: `realms/plane-realm.json`, `realms/plane-realm.test.json` und `config/*.json` deklarieren identische Clients/Scopes/Rollen/Gruppen/Flows (Test-Realm zusätzlich Test-Client `plane-test-app`, ABG-001); `plane-realm.test.json` ist aktuell (`--check`, `KeycloakRealmConfigTests.TestRealm_IsUpToDate`); in `prodlike` legt `keycloak-config` den Realm auf leerer Keycloak-DB an und Login `admin` über Bootstrap-Admin funktioniert | `tools/ci/realm-consistency` + `Funk.AppHost.Tests/ProdLikeKeycloakTests` | I0 |
+| AK-14-33 | Production-Start ohne Data-Protection-Zertifikat bricht ab (außer `AllowUnencryptedKeys=true` mit Warnung); Signing-Key/S3-Secret mit Bekannt-Default bricht ab | `Funk.ServiceDefaults.Tests/ProductionGuardTests` | I7 |
+| AK-14-36 | Branding der Betriebsartefakte (§3.23): alle eigenen Images heißen `funk-<dienst>` mit OCI-Label `title` = „funk. <Dienst>“; Chart `funk` (`helm lint deploy/helm/funk`); `funk-cli --help`, `funk.sh`-Ausgaben, `deploy/compose/README.md`, Helm-`README.md`/`NOTES.txt` und `.env.example`-Kommentare ohne „Plane“/`plane.so` außerhalb der Allowlist (BR-02-Bezeichner wie `PLANE_*`); Migrator-Neuanlage setzt `instance_name` = „funk.“ (ABG-104) | G-BRAND (15, BR-14) auf Images/Doku, `tests/Funk.Cli.Tests` (Hilfetexte), `MigratorTests` | I0 (Images/CLI), I7 (Chart/Bundle) |
 
 ### 7.2 Testprojekte (Zuordnung)
 
 | Projekt | Inhalt | Laufzeit-Abhängigkeiten |
 |---|---|---|
-| `tests/Plane.AppHost.Tests` | Profil-Starts, Health aller Ressourcen, Abhängigkeitsreihenfolge (Migrator vor Hosts), Keycloak-Login-Roundtrip per HTTP (ohne Browser) | `Aspire.Hosting.Testing`, Container-Runtime |
-| `tests/Plane.Gateway.Tests` | AK-14-04 … -07, -19, -21 | In-Memory-Backends (`WebApplicationFactory` + YARP), keine Container |
-| `tests/Plane.Migrator.Tests` | AK-14-12, Seed-Idempotenz, Extension-Check | Testcontainers.PostgreSql (pgvector-Image) |
-| `tests/Plane.ServiceDefaults.Tests` | Legacy-ENV, Options-Validierung, Probe-Modus, Telemetrie ohne Exporter, Production-Guards | – |
-| `tests/Plane.Platform.Tests` | Storage-Matrix, Custom-CA | Testcontainers (SeaweedFS, Garage optional) |
-| `tests/Plane.Tools.ForgejoInit.Tests` | AK-14-08 | Forgejo- + Keycloak-Container |
-| `tests/Plane.Cli.Tests` | init, config check, backup-Format, Secrets-Archiv | Testcontainers (PostgreSQL) |
+| `tests/Funk.AppHost.Tests` | Profil-Starts, Health aller Ressourcen, Abhängigkeitsreihenfolge (Migrator vor Hosts), Keycloak-Login-Roundtrip per HTTP (ohne Browser) | `Aspire.Hosting.Testing`, Container-Runtime |
+| `tests/Funk.Gateway.Tests` | AK-14-04 … -07, -19, -21 | In-Memory-Backends (`WebApplicationFactory` + YARP), keine Container |
+| `tests/Funk.Migrator.Tests` | AK-14-12, Seed-Idempotenz, Extension-Check | Testcontainers.PostgreSql (pgvector-Image) |
+| `tests/Funk.ServiceDefaults.Tests` | Legacy-ENV, Options-Validierung, Probe-Modus, Telemetrie ohne Exporter, Production-Guards | – |
+| `tests/Funk.Platform.Tests` | Storage-Matrix, Custom-CA | Testcontainers (SeaweedFS, Garage optional) |
+| `tests/Funk.Tools.ForgejoInit.Tests` | AK-14-08 | Forgejo- + Keycloak-Container |
+| `tests/Funk.Cli.Tests` | init, config check, backup-Format, Secrets-Archiv | Testcontainers (PostgreSQL) |
 | `tests/deploy/keycloak-config.sh` | AK-14-32 (Realm-Abgleich mit Betreiber-Änderungen) | Keycloak- + keycloak-config-cli-Container |
 | `tests/deploy/*.sh` | Compose-/Swarm-/Upgrade-/Backup-Szenarien | Docker im CI-Runner |
 | `frontend/apps/e2e/{auth,forgejo,realtime,live-events,aio}` | Browser-Szenarien | Compose-Stack |
@@ -2183,17 +2183,17 @@ Kein Fachdesign. Die Tabelle nennt nur, **welche Infrastruktur-Stelle** ein stru
 | O-14-02 | Forgejo in Produktion: eigene Subdomain (Host-Route G-15) oder Pfad `/git/` | eigene Subdomain (Forgejo empfiehlt Wurzelpfad; Git-HTTP/SSH einfacher) | Start W1 |
 | O-14-03 | Ziel-Registry/Namensraum der Images (`ghcr.io/<owner>`) | GHCR der Organisation von `funk.`; Name festlegen | Start I0 |
 | O-14-04 | Node-Version für den Frontend-Build (Original 22.22; Angular 22 Mindestanforderung) | Node 24 LTS, falls von `@angular/cli` 22 unterstützt, sonst 22 LTS | Ende S0 |
-| O-14-05 | **Entschieden (ABG-017).** Verhalten von `ENABLE_SIGNUP` unter Keycloak: dürfen Keycloak-Nutzer ohne Einladung per JIT ein funk.-Konto erhalten? | D05-ADR-12: `ENABLE_SIGNUP` bleibt Instanz-Konfiguration, Default `"1"`; bei `"0"` Abweisung neuer Benutzer ohne offene Einladung mit 5015 `SIGNUP_DISABLED` (Instanz-Admins ausgenommen); optional `Plane:Auth:RequiredRole` | entschieden |
+| O-14-05 | **Entschieden (ABG-017).** Verhalten von `ENABLE_SIGNUP` unter Keycloak: dürfen Keycloak-Nutzer ohne Einladung per JIT ein funk.-Konto erhalten? | D05-ADR-12: `ENABLE_SIGNUP` bleibt Instanz-Konfiguration, Default `"1"`; bei `"0"` Abweisung neuer Benutzer ohne offene Einladung mit 5015 `SIGNUP_DISABLED` (Instanz-Admins ausgenommen); optional `Funk:Auth:RequiredRole` | entschieden |
 | O-14-06 | PostgreSQL 17 (01) oder 18 als Start-Major | 17 (01 verbindlich); 18 nach I7 per Dump/Restore-Pfad prüfen | I7 |
 | O-14-07 | **Erledigt (ABG-018 g).** 01 §5.1 nannte das Repository `plane-net/` | 01 auf `funk.` angeglichen (redaktionell) | erledigt |
 | O-14-08 | Keycloak-HA in Kubernetes: eigenes Deployment (Chart) oder Keycloak-Operator als Empfehlung | Chart-Deployment für Einzelknoten, Operator für HA (README) | I7 |
 | O-14-09 | Prometheus-Endpunkt zusätzlich zu OTLP | nicht in der CE (Collector-Beispiel genügt); bei stabilem Exporter-Paket erneut prüfen | I7 |
 | O-14-10 | Optionsnamen für Keycloak-Theme-Cache (SPI-Syntax Keycloak 26) und Health-Pfad mit `KC_HTTP_RELATIVE_PATH` | in S7 gegen das gepinnte Image verifizieren | Ende S7 |
 | O-14-11 | Webhook-Ziel Forgejo → funk. in Dev (`host.docker.internal` unter Linux) | Aspire-Verhalten in S0 prüfen; sonst `extra_hosts`/`--add-host=host.docker.internal:host-gateway` | Ende S0 |
-| O-14-12 | **Entschieden (ABG-012).** `SECRET_KEY`: Alias auf `Plane__Security__SigningKey` (D14) oder „entfällt“ (D02 §4.9) | kein Alias: `SECRET_KEY` wird ignoriert (Warnung, bekannter Platzhalter → Critical); `ApiLogHmacKey` entfällt (`token_identifier` = `token_hash`); `Plane__Security__SigningKey` bleibt Pflicht-Secret nur für Upload-Tokens/signierte Dateisystem-URLs (D14-ADR-09, §4.7.1) | entschieden |
+| O-14-12 | **Entschieden (ABG-012).** `SECRET_KEY`: Alias auf `Funk__Security__SigningKey` (D14) oder „entfällt“ (D02 §4.9) | kein Alias: `SECRET_KEY` wird ignoriert (Warnung, bekannter Platzhalter → Critical); `ApiLogHmacKey` entfällt (`token_identifier` = `token_hash`); `Funk__Security__SigningKey` bleibt Pflicht-Secret nur für Upload-Tokens/signierte Dateisystem-URLs (D14-ADR-09, §4.7.1) | entschieden |
 | O-14-13 | **Erledigt (ABG-015).** Dev-Ports der Angular-Dev-Server: D08 §3.1.2 nannte 3000/3001/3002, 01 §3.3 und D14 4200/4201/4202 (Gateway belegt 3000) | verbindlich `web` 4200, `admin` 4201 (`--serve-path /god-mode/`), `space` 4202 (`--serve-path /spaces/`), nur `127.0.0.1`, nur Profil `dev`; Port 3000 ausschließlich Gateway; D08 angeglichen | erledigt |
-| O-14-14 | **Erledigt (ABG-001).** Test-Realm `plane-realm.test.json` (D15) enthielt nur Parity-Seed-Benutzer; D14/D05-Tests brauchen die sieben D05-Testbenutzer auch im Profil `test` | umgesetzt: Datei wird generiert (`Plane.Tools.ParityHarness keycloak-test-realm`) aus `plane-realm.json` (inkl. D05-Benutzer) ⊕ `tests/seed/keycloak/test-overrides.json` ⊕ `tests/seed/keycloak/parity-users.json` (§3.3.3) | erledigt |
-| O-14-15 | **Erledigt (ABG-002).** Image-Name Keycloak: `plane-keycloak` (D14, Stand vor ABG-149) vs. `funk/keycloak` (D05 §3.15.1) | verbindlich `${PLANE_REGISTRY}/funk-keycloak:${PLANE_VERSION}` (ABG-002 mit dem Namen nach ABG-149) (Basis `quay.io/keycloak/keycloak:26.x`, Themes + `kc.sh build`); D05 angeglichen | erledigt |
+| O-14-14 | **Erledigt (ABG-001).** Test-Realm `plane-realm.test.json` (D15) enthielt nur Parity-Seed-Benutzer; D14/D05-Tests brauchen die sieben D05-Testbenutzer auch im Profil `test` | umgesetzt: Datei wird generiert (`Funk.Tools.ParityHarness keycloak-test-realm`) aus `plane-realm.json` (inkl. D05-Benutzer) ⊕ `tests/seed/keycloak/test-overrides.json` ⊕ `tests/seed/keycloak/parity-users.json` (§3.3.3) | erledigt |
+| O-14-15 | **Erledigt (ABG-002).** Image-Name Keycloak: `plane-keycloak` (D14, Stand vor ABG-149) vs. `funk/keycloak` (D05 §3.15.1) | verbindlich `${FUNK_REGISTRY}/funk-keycloak:${FUNK_VERSION}` (ABG-002 mit dem Namen nach ABG-149) (Basis `quay.io/keycloak/keycloak:26.x`, Themes + `kc.sh build`); D05 angeglichen | erledigt |
 
 ---
 
@@ -2201,7 +2201,7 @@ Kein Fachdesign. Die Tabelle nennt nur, **welche Infrastruktur-Stelle** ein stru
 
 | Dokument | D14 liefert an | D14 braucht von |
 |---|---|---|
-| `02-backend-solution-und-konventionen.md` | `Plane.ServiceDefaults`, `Plane.Hosting`-Kompositionsmuster, Options-Klassen der Infrastruktur, Ports, Probe-Modus | Request-Pipeline der Api (Reihenfolge nach Forwarded-Headers), Read-Replica-Routing-Regel, **alle Options-Klassen und Zielschlüssel** (§3.15/§4.9 maßgeblich); Nachträge aus D14 – **erledigt (ABG-013)**, in D02 umgesetzt und verbindlich: `PlaneUrlsOptions.Idp`, `PlaneDatabaseOptions.MaxPoolSize`, `PlaneSecurityOptions.SigningKey` (ABG-012), `PlaneScaleOptions`, `PlaneDataProtectionOptions`, `PlaneTelemetryOptions`; `PlaneGatewayOptions`/`PlaneTlsOptions` in D02 nur referenziert, Felder in D14 §3.9.1 |
+| `02-backend-solution-und-konventionen.md` | `Funk.ServiceDefaults`, `Funk.Hosting`-Kompositionsmuster, Options-Klassen der Infrastruktur, Ports, Probe-Modus | Request-Pipeline der Api (Reihenfolge nach Forwarded-Headers), Read-Replica-Routing-Regel, **alle Options-Klassen und Zielschlüssel** (§3.15/§4.9 maßgeblich); Nachträge aus D14 – **erledigt (ABG-013)**, in D02 umgesetzt und verbindlich: `FunkUrlsOptions.Idp`, `FunkDatabaseOptions.MaxPoolSize`, `FunkSecurityOptions.SigningKey` (ABG-012), `FunkScaleOptions`, `FunkDataProtectionOptions`, `FunkTelemetryOptions`; `FunkGatewayOptions`/`FunkTlsOptions` in D02 nur referenziert, Felder in D14 §3.9.1 |
 | `03-datenmodell-efcore.md` | Migrator-Schritte, Schema-Gate, Expand/Contract-Regel, Extensions, Seeds-Ausführung | Migrationsnamen, Seed-Inhalte, Tabelle des Data-Protection-Key-Rings, Instanz-Tabellen |
 | `04-api-design-und-endpunktkatalog.md` | Gateway-Routen (`/api`, `/auth`), Body-Limits, 413-Format, OpenAPI-Schalter | Liste öffentlicher Endpunkte, die das Gateway speziell behandeln muss (OG-Meta-Endpunkt, Webhook-Empfang) |
 | `05-auth-sicherheit-berechtigungen.md` | Keycloak-Container, Realm-Packaging, Clients/Scopes/Mapper-Inventar, Testbenutzer, Theme-Packaging (`funk-keycloak`), Anwendung per `--import-realm` (dev/test) bzw. `keycloak-config` (Prod), Back-Channel-Basis-URL je Profil, Forwarded-Headers | **Realm-Inhalt** (§3.15: Clients, Scopes, Mapper, Rollen, Gruppen, Flow, Testbenutzer, Platzhalternamen, Dateiliste `realms/`, `config/`), Login-Theme-Inhalt und -Build (`tools/keycloak-theme`, §3.16), BFF-Endpunkte, Session-Lebensdauer, Entscheidung O-14-05 (getroffen: D05-ADR-12, ABG-017), Step-up, CLI-Befehle `identities …`, `instance …`, `users …` |
@@ -2232,13 +2232,13 @@ Kein Fachdesign. Die Tabelle nennt nur, **welche Infrastruktur-Stelle** ein stru
 
 | # | Fundstelle | Befund | Korrektur |
 |---|---|---|---|
-| 1 | §3.3.2–§3.3.4, §3.2.1, §5.1, §5.9 | Realm-Inhalt widersprach D05 (Owner laut D05 §1.3): Platzhalter (`PLANE_OIDC_*` statt `PLANE_*_CLIENT_SECRET`, `PLANE_BACKCHANNEL_LOGOUT_URL` statt `…_BASE_URL`, `FORGEJO_ROOT_URL` statt `FORGEJO_PUBLIC_URL`), Client-ID `plane-forgejo` statt `forgejo`, fehlender Client `plane-backend`, Post-Logout `/` statt `/auth/oidc/signed-out/`, `webOrigins "+"` statt `"-"`, eigener Scope `plane-profile`, `groups` mit `full.path=false`, abweichende Testbenutzer-IDs (z. B. `unverified` …0006 statt …0005) | Realm-Inventar durch Verweis auf D05 §3.15 ersetzt, nur infrastrukturrelevante Werte übernommen; alle Namen/IDs an D05 angeglichen; doppeltes Realm-JSON (§5.9) entfernt, Konsistenztest AK-14-35 ergänzt |
+| 1 | §3.3.2–§3.3.4, §3.2.1, §5.1, §5.9 | Realm-Inhalt widersprach D05 (Owner laut D05 §1.3): Platzhalter (`FUNK_OIDC_*` statt `PLANE_*_CLIENT_SECRET`, `FUNK_BACKCHANNEL_LOGOUT_URL` statt `…_BASE_URL`, `FORGEJO_ROOT_URL` statt `FORGEJO_PUBLIC_URL`), Client-ID `funk-forgejo` statt `forgejo`, fehlender Client `funk-backend`, Post-Logout `/` statt `/auth/oidc/signed-out/`, `webOrigins "+"` statt `"-"`, eigener Scope `plane-profile`, `groups` mit `full.path=false`, abweichende Testbenutzer-IDs (z. B. `unverified` …0006 statt …0005) | Realm-Inventar durch Verweis auf D05 §3.15 ersetzt, nur infrastrukturrelevante Werte übernommen; alle Namen/IDs an D05 angeglichen; doppeltes Realm-JSON (§5.9) entfernt, Konsistenztest AK-14-35 ergänzt |
 | 2 | D14-ADR-03, §3.11.2, §3.12, §3.17, §3.22, AK-14-32 | Eigener .NET-Realm-Abgleich `funk-cli idp sync` widersprach D05 (keycloak-config-cli); `--import-realm` in Produktion kann Upgrades nicht abbilden | Mechanismus auf `keycloak-config` (adorsys/keycloak-config-cli, Apache-2.0) umgestellt: Compose-Dienst, Helm-Hook-Job, AppHost-Ressource (prodlike), `funk.sh idp-sync`; Image in §3.10/§3.14.2 aufgenommen; `funk-keycloak` startet ohne `--import-realm` |
 | 3 | §3.11.2 (`keycloak`-Volume) | Compose mountete `./keycloak/realms` (enthielt Dev-Realm mit Testbenutzern) als Import-Verzeichnis → nichtdeterministischer Import, Testkonten in Produktion möglich | Mount entfernt; nur `keycloak/config` für `keycloak-config` |
-| 4 | §3.2.2, §5.1 | Rollen/Datenbanken `plane`, `keycloak`, `forgejo` wurden nirgends angelegt (Init-Skript ohne Inhalt, `PLANE_DB_PASSWORD` ohne Parameter); Aspire legt im Publish-Modus keine Datenbanken an | Init-Skript `10-roles-and-databases.sh`/`20-extensions.sql` spezifiziert (idempotent, kollisionsfrei mit `AddDatabase`), Parameter `plane-db-password` ergänzt, AK-14-34 |
+| 4 | §3.2.2, §5.1 | Rollen/Datenbanken `plane`, `keycloak`, `forgejo` wurden nirgends angelegt (Init-Skript ohne Inhalt, `FUNK_DB_PASSWORD` ohne Parameter); Aspire legt im Publish-Modus keine Datenbanken an | Init-Skript `10-roles-and-databases.sh`/`20-extensions.sql` spezifiziert (idempotent, kollisionsfrei mit `AddDatabase`), Parameter `plane-db-password` ergänzt, AK-14-34 |
 | 5 | D14-ADR-13, §3.12, §5.8 | Migrator als `pre-install`-Hook: läuft vor Secret/ConfigMap und vor gebündeltem PostgreSQL → Erstinstallation scheitert | regulärer Job je Revision + Schema-Gate; AK-14-22 prüft Erstinstallation mit gebündelter DB |
 | 6 | §3.10 | `DOTNET_GCHeapHardLimitPercent=75` wird hexadezimal gelesen (= 117 %) | `0x4B`; Prüfung in AK-14-25 |
-| 7 | §3.10, D14-ADR-10 | `funk-migrator` auf `runtime`-Basis, `funk-cli` auf `runtime:10.0-noble`, obwohl beide das ASP.NET-Shared-Framework brauchen (`Plane.Hosting`, Data Protection) | beide auf `aspnet`; Abweichung zu 01 ADR-052 (`-extra`) als Präzisierung markiert |
+| 7 | §3.10, D14-ADR-10 | `funk-migrator` auf `runtime`-Basis, `funk-cli` auf `runtime:10.0-noble`, obwohl beide das ASP.NET-Shared-Framework brauchen (`Funk.Hosting`, Data Protection) | beide auf `aspnet`; Abweichung zu 01 ADR-052 (`-extra`) als Präzisierung markiert |
 | 8 | D14-ADR-11, §3.11 | Compose-Profile `valkey`/`bundled-s3`: Kern-Dienste mit `depends_on`/festen Verbindungswerten auf Profil-Dienste → Startfehler ohne Profil | Profilregel (keine harten `depends_on`, Verbindungswerte aus `.env` mit leerem Default, gesetzt von `funk-cli init`) |
 | 9 | §3.1.1, §3.2.2, §5.1 | Profil `test` widersprach D15 §3.4.1 (Realm-Datei, tmpfs, PortOffset, ImageRegistry, Galerie) | Abweichungen von `dev` verbindlich übernommen; Route G-17 `/__gallery/` (nur test, PhysicalFileProvider, nie im Image) |
 | 10 | §3.7.1, §5.3 | `ActivityTimeout` per Routen-Metadaten ist kein YARP-Mechanismus (gilt je Cluster) | eigener Cluster `realtime-ws` mit `HttpRequest.ActivityTimeout` 120 s; Routen getrennt |
@@ -2251,8 +2251,8 @@ Kein Fachdesign. Die Tabelle nennt nur, **welche Infrastruktur-Stelle** ein stru
 | 17 | §3.20, §3.21 | Paritäts-Original mit Produktions-Images auf Port 13000 widersprach D15 (`docker-compose-local.yml`, `tools/ci/parity/start-original.sh`); Portkonflikt-Begründung falsch (Compose-Local publiziert nur 5432/6379/8000/9000/9090) | an D15 angeglichen; Gate-Zuordnung G1–G6 zu Workflows, `merge_group`-Trigger ergänzt. **Nachtrag ABG-006 (Dokument 17):** die D15-Variante (`docker-compose-local.yml`, `tools/ci/parity/`) ist verworfen; verbindlich ist `tools/parity/start-original.sh` mit `tools/parity/compose.original.yml`, Proxy `:13000`, `tools/parity/original.env` (§3.20, §3.21.1) |
 | 18 | §3.22 | CLI-Namen abweichend von 01/D05/D15 (`dummy-data`, `user activate`), D05-Befehle fehlten | `create-dummy-data`, `users …`, `identities …`, `instance …`; `seed demo` gegen `workspace_seed`-Task (fachlich D06) abgegrenzt |
 | 19 | §3.4.3 | Vorab-Verknüpfung Forgejo-Konten über Admin-API ungeprüft | ⚠ S0 mit Fallback (Auto-Registrierung beim ersten SSO-Login) |
-| 20 | §6.1 E3/H1 | Werte passten nicht zu D05 (`groups` ohne Pfad, kein `plane-backend`, kein `plane-api-audience`) | angeglichen, Tests präzisiert |
-| 21 | D14-ADR-14 | `Plane.Hosting`/`Plane.AllInOne` fehlen in 01 §5.1; AIO als „Compose-Profil“ (01) nicht umsetzbar | als Präzisierung von 01 markiert und begründet |
+| 20 | §6.1 E3/H1 | Werte passten nicht zu D05 (`groups` ohne Pfad, kein `funk-backend`, kein `plane-api-audience`) | angeglichen, Tests präzisiert |
+| 21 | D14-ADR-14 | `Funk.Hosting`/`Funk.AllInOne` fehlen in 01 §5.1; AIO als „Compose-Profil“ (01) nicht umsetzbar | als Präzisierung von 01 markiert und begründet |
 
 ### Verbleibende Punkte (außerhalb dieses Dokuments zu lösen)
 
@@ -2268,19 +2268,19 @@ Umsetzung der verbindlichen Abgleich-Entscheidungen aus `17-abgleich-dokumentueb
 
 | ABG-ID | Thema | Umgesetzt in diesem Dokument |
 |---|---|---|
-| ABG-001 | Test-Realm `plane-realm.test.json` generiert | D14-ADR-03, §3.1.1 (Profil `test`), §3.3.3 Zeile `test` (Generator `Plane.Tools.ParityHarness keycloak-test-realm`, Quelldateien, `--check`, keine Ressource `keycloak-test-users`, kein Partial Import, Benutzer „D05-Benutzer + Parity-Seed-Benutzer aus dem Generator“, Marker „⚠ Abgleich mit D15“ entfernt), §3.3.4-Baum, §5.1 (`KeycloakResources`-Kommentar), §5.9 (Konsistenztest, D15-SEC-11 gegen `config/00-plane-realm.json`), AK-14-35; O-14-14 erledigt |
-| ABG-002 | Keycloak-Image `${PLANE_REGISTRY}/funk-keycloak:${PLANE_VERSION}` (Name nach ABG-149; vorher `plane-keycloak`) | D14-ADR-04 (Hinweis auf `funk/keycloak` ersetzt); O-14-15 erledigt |
-| ABG-003 | Keycloak-Client `plane-forgejo` | §1.2, §3.2.1 (`forgejo-client-secret` → Client `plane-forgejo`), §3.3.2 Clients-Zelle, §3.4.2 Schritt 4 und Skelett §5.6 (`--key plane-forgejo`), §5.9 (`"clientId": "plane-forgejo"`); Aspire-Parameter `forgejo-client-secret` und Auth-Source-Name `keycloak` unverändert. Hinweis: Review-Korrektur Nr. 1 (Umstellung auf `forgejo`) ist durch ABG-003 überholt |
+| ABG-001 | Test-Realm `plane-realm.test.json` generiert | D14-ADR-03, §3.1.1 (Profil `test`), §3.3.3 Zeile `test` (Generator `Funk.Tools.ParityHarness keycloak-test-realm`, Quelldateien, `--check`, keine Ressource `keycloak-test-users`, kein Partial Import, Benutzer „D05-Benutzer + Parity-Seed-Benutzer aus dem Generator“, Marker „⚠ Abgleich mit D15“ entfernt), §3.3.4-Baum, §5.1 (`KeycloakResources`-Kommentar), §5.9 (Konsistenztest, D15-SEC-11 gegen `config/00-plane-realm.json`), AK-14-35; O-14-14 erledigt |
+| ABG-002 | Keycloak-Image `${FUNK_REGISTRY}/funk-keycloak:${FUNK_VERSION}` (Name nach ABG-149; vorher `plane-keycloak`) | D14-ADR-04 (Hinweis auf `funk/keycloak` ersetzt); O-14-15 erledigt |
+| ABG-003 | Keycloak-Client `funk-forgejo` | §1.2, §3.2.1 (`forgejo-client-secret` → Client `funk-forgejo`), §3.3.2 Clients-Zelle, §3.4.2 Schritt 4 und Skelett §5.6 (`--key funk-forgejo`), §5.9 (`"clientId": "funk-forgejo"`); Aspire-Parameter `forgejo-client-secret` und Auth-Source-Name `keycloak` unverändert. Hinweis: Review-Korrektur Nr. 1 (Umstellung auf `forgejo`) ist durch ABG-003 überholt |
 | ABG-006 | Start des Paritäts-Originals | §3.20 (`tools/parity/start-original.sh`, `tools/parity/compose.original.yml`, Proxy `:13000`, `tools/parity/original.env`, `--from-source`), §3.21.1 `parity.yml`, §3.21.2 (`PARITY_ORIGINAL_REF` entfällt), §9 Zeile 15, Review-Korrektur Nr. 17 (Nachtrag) |
-| ABG-012 | `SigningKey`, kein `ApiLogHmacKey`, `SECRET_KEY` kein Alias | D14-ADR-09, §3.9.1 `PlaneSecurityOptions`, §4.7.1 `SECRET_KEY` (Kategorie E, ohne Zielschlüssel), §5.5 Skelett (`SECRET_KEY` als `Dropped`); O-14-12 entschieden |
+| ABG-012 | `SigningKey`, kein `ApiLogHmacKey`, `SECRET_KEY` kein Alias | D14-ADR-09, §3.9.1 `FunkSecurityOptions`, §4.7.1 `SECRET_KEY` (Kategorie E, ohne Zielschlüssel), §5.5 Skelett (`SECRET_KEY` als `Dropped`); O-14-12 entschieden |
 | ABG-013 | D14-Nachträge in D02 | §9 Zeile 02 als erledigt markiert |
 | ABG-014 | Health-Antwortformat | §3.6 Zeile Health (JSON-Format, 200/503, kein ProblemDetails); Verbleibende Punkte: Health-Format erledigt |
 | ABG-015 | Dev-Ports 4200/4201/4202 | O-14-13 erledigt; §9 Zeile 08 |
-| ABG-016 | CSP im Gateway | §3.7.3 Zeile CSP (Report-Only ab I0, Enforce ab I7, `Plane__Gateway__Csp__Mode`, `POST /csp-report`, Theme-Hash, `frame-ancestors`), §3.9.1 `PlaneGatewayOptions` (`Csp:Mode` statt `ContentSecurityPolicy`) |
+| ABG-016 | CSP im Gateway | §3.7.3 Zeile CSP (Report-Only ab I0, Enforce ab I7, `Funk__Gateway__Csp__Mode`, `POST /csp-report`, Theme-Hash, `frame-ancestors`), §3.9.1 `FunkGatewayOptions` (`Csp:Mode` statt `ContentSecurityPolicy`) |
 | ABG-017 | `ENABLE_SIGNUP` | §4.7.1 Zeile `ENABLE_SIGNUP` (D05-ADR-12, Default `1`, 5015 ohne Einladung); O-14-05 entschieden; §9 Zeile 05 |
 | ABG-025 | kein `sw.js` | D14-ADR-07 (Cache-Regeln), AK-14-07, §9 Zeile 08 („Service-Worker-Header“ gestrichen) |
-| ABG-035 | Auth-Optionsnamen | §3.2.3 (`Plane__Auth__Clients__Web__ClientSecret`, „final (05 §3.4.3, ABG-035)“), §4.7.9 (`{Web,Admin,Space}`) |
-| ABG-039 | `KnownIPNetworks` | §3.6 Zeile Forwarded Headers (Konfigurationsschlüssel `Plane__ForwardedHeaders__KnownNetworks` unverändert) |
+| ABG-035 | Auth-Optionsnamen | §3.2.3 (`Funk__Auth__Clients__Web__ClientSecret`, „final (05 §3.4.3, ABG-035)“), §4.7.9 (`{Web,Admin,Space}`) |
+| ABG-039 | `KnownIPNetworks` | §3.6 Zeile Forwarded Headers (Konfigurationsschlüssel `Funk__ForwardedHeaders__KnownNetworks` unverändert) |
 | ABG-040 | SSRF-geschützte Clients | §3.6 Zeile Resilience (`link-preview`, `avatar-import`, `integrations`, `forgejo` ergänzt bzw. umbenannt; „Forgejo-API“ aus den internen Clients gestrichen) |
 | ABG-049 | Forgejo-OAuth-Callbacks | §3.4.3 Schritt 8 (zweite Redirect-URI `…/oauth/user-callback/`, „⚠ Pfad legt F1/W1 fest“ entfernt) |
 
@@ -2288,11 +2288,11 @@ Umsetzung der verbindlichen Abgleich-Entscheidungen aus `17-abgleich-dokumentueb
 
 | ABG-ID | Thema | Umgesetzt in diesem Dokument |
 |---|---|---|
-| ABG-104 | Default-`instance_name` „funk.“ | §3.15 Schritt 6 („Plane Community Edition“ → Default „funk.“ aus `Plane:Instance:DefaultName`, 03 §3.14.1, `BRAND-DM-01`); §3.23 `BRAND-OPS-06`; AK-14-36 |
-| ABG-105 | Mail-Absender-Default | §4.7.1 `EMAIL_FROM`: Laufzeit-Fallback `funk. <noreply@<Host aus WEB_URL>>` (`PlaneMailOptions.DefaultFrom`), Marker „⚠ D06“ entfernt; §3.23 `BRAND-OPS-06` |
-| ABG-106 | Queue `live` / Realtime-Transport | §3.11.2 (Absatz Queue-Zuordnung, keine `Plane__Worker__*`-Overrides in Compose), §3.13 (AIO verarbeitet alle Queues inkl. `live`), §3.18 Zeilen `worker`/`realtime`, §5.8 (`worker.queues`/`excludeQueues`, `realtime.queues`), §6.1 C3 (Host-Defaults Worker `["*"]` + `ExcludeQueues ["live"]`, Realtime `["live"]`; Beispiel-Pool listet `live` in `ExcludeQueues`) |
+| ABG-104 | Default-`instance_name` „funk.“ | §3.15 Schritt 6 („Plane Community Edition“ → Default „funk.“ aus `Funk:Instance:DefaultName`, 03 §3.14.1, `BRAND-DM-01`); §3.23 `BRAND-OPS-06`; AK-14-36 |
+| ABG-105 | Mail-Absender-Default | §4.7.1 `EMAIL_FROM`: Laufzeit-Fallback `funk. <noreply@<Host aus WEB_URL>>` (`FunkMailOptions.DefaultFrom`), Marker „⚠ D06“ entfernt; §3.23 `BRAND-OPS-06` |
+| ABG-106 | Queue `live` / Realtime-Transport | §3.11.2 (Absatz Queue-Zuordnung, keine `Funk__Worker__*`-Overrides in Compose), §3.13 (AIO verarbeitet alle Queues inkl. `live`), §3.18 Zeilen `worker`/`realtime`, §5.8 (`worker.queues`/`excludeQueues`, `realtime.queues`), §6.1 C3 (Host-Defaults Worker `["*"]` + `ExcludeQueues ["live"]`, Realtime `["live"]`; Beispiel-Pool listet `live` in `ExcludeQueues`) |
 | ABG-133 | `GPT_ENGINE`, `LLM_BASE_URL`, Such-CLI, Erstbefüllung | §4.7.1 (`LLM_*`-Zeile), §4.7.2 `GPT_ENGINE` → entfällt (Zählung präzisiert), §4.7.8 (`GPT_ENGINE` Klasse E, `OPENAI_API_*` → `LLM_BASE_URL`), §4.7.9 neue Zeile `LLM_BASE_URL`; §3.22 Befehle `search reindex`/`search status`; §3.15 Schritt 8a „Erstbefüllung Such-Index“ nach den Seeds (Nummerierung 1–11 bleibt wegen der Verweise aus 03 stabil) |
 | ABG-148 | Branding-Durchgang | neues §3.23 (Register `BRAND-OPS-01` … `-06`, Liste der unveränderten internen Bezeichner), §3.3.4 (Theme-Branding), §3.4.3/D14-ADR-05 (Forgejo-OAuth-App `funk. (dev)`), §3.7.5 (Default-OG-Meta nach BR-05), §3.10 (OCI-`title`), §3.22 (Hilfetexte), §5.4/§5.10 (Labels), §5.8 (Beispielwert `funk.example.com`), Prosa „funk.-Images/-Release/-Version/-Konto/-Pods“ → „funk.-…“, AK-14-36 |
-| ABG-149 | Artefaktnamen `funk-<dienst>` | §3.10 Image-Tabelle, §3.11/§3.12 (Compose-Dienste/Images, Chart `deploy/helm/funk`), §3.13, §3.14 (Bundle `funk-airgap-…`, `helm/funk-<version>.tgz`, Image-Liste), §3.21.1 (`oci://$REG/charts/funk`), §3.22 Überschrift und alle Befehlsbeispiele `plane-cli` → `funk-cli`, Wrapper `plane.sh` → `funk.sh`, §4.1/§4.2/§4.6/§4.8, §5.1 (AppHost-Keycloak-Image), §5.4, §5.10, §5.12 (Build-Matrix), D14-ADR-04/-10/-13/-14/-15/-17/-20; `BRAND-OPS-01` (Images/Chart), `BRAND-OPS-02` (CLI), `-03` (Wrapper), `-04` (Bundle); O-14-15/ABG-002 mit dem Namen `funk-keycloak` nachgezogen. Unverändert: Keycloak-Client-IDs `plane-*` (inkl. `plane-api`), OTel-`service.name`, Job-Name `plane-migrator-r<Revision>`, ENV-Präfix `PLANE_*` |
+| ABG-149 | Artefaktnamen `funk-<dienst>` | §3.10 Image-Tabelle, §3.11/§3.12 (Compose-Dienste/Images, Chart `deploy/helm/funk`), §3.13, §3.14 (Bundle `funk-airgap-…`, `helm/funk-<version>.tgz`, Image-Liste), §3.21.1 (`oci://$REG/charts/funk`), §3.22 Überschrift und alle Befehlsbeispiele `plane-cli` → `funk-cli`, Wrapper `plane.sh` → `funk.sh`, §4.1/§4.2/§4.6/§4.8, §5.1 (AppHost-Keycloak-Image), §5.4, §5.10, §5.12 (Build-Matrix), D14-ADR-04/-10/-13/-14/-15/-17/-20; `BRAND-OPS-01` (Images/Chart), `BRAND-OPS-02` (CLI), `-03` (Wrapper), `-04` (Bundle); O-14-15/ABG-002 mit dem Namen `funk-keycloak` nachgezogen. Unverändert: Keycloak-Client-IDs `plane-*` (inkl. `funk-api`), OTel-`service.name`, Job-Name `plane-migrator-r<Revision>`, ENV-Präfix `PLANE_*` |
 
-**Branding-Durchgang (ADR-009B, BR-01 … BR-14):** Alle Stellen, an denen dieses Dokument nach außen sichtbare Namen der Zielplattform festlegt (Images, Image-Titel, Chart, CLI, Wrapper-Skript, Airgap-Bundle, Betriebs-Doku, Hilfetexte, Installer-Ausgaben, Beispielwerte, Forgejo-OAuth-App, Default-OG-Meta, Instanzname, Mail-Absender), zeigen jetzt „funk.“ (§3.23); Verweise auf das Original (`makeplane/plane-*`-Images, `plane-aio-community`, Original-Pfade und -Variablen) und interne Bezeichner (`Plane.*`-Projekte, `Plane__*`/`PLANE_*`, Realm/Clients `plane*`, Theme-Ordner, Volume-/Secret-Namen) bleiben unverändert (BR-02).
+**Branding-Durchgang (ADR-009B, BR-01 … BR-14):** Alle Stellen, an denen dieses Dokument nach außen sichtbare Namen der Zielplattform festlegt (Images, Image-Titel, Chart, CLI, Wrapper-Skript, Airgap-Bundle, Betriebs-Doku, Hilfetexte, Installer-Ausgaben, Beispielwerte, Forgejo-OAuth-App, Default-OG-Meta, Instanzname, Mail-Absender), zeigen jetzt „funk.“ (§3.23); Verweise auf das Original (`makeplane/plane-*`-Images, `plane-aio-community`, Original-Pfade und -Variablen) und interne Bezeichner (`Plane.*`-Projekte, `Funk__*`/`PLANE_*`, Realm/Clients `plane*`, Theme-Ordner, Volume-/Secret-Namen) bleiben unverändert (BR-02).

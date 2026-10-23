@@ -34,19 +34,19 @@
  {
   "doc": "architecture/14-infrastruktur-deployment-betrieb.md",
   "conflicts": [
-   "D05 §3.15/§3.16 vs. original D14: realm placeholders, client IDs (`forgejo` vs. `plane-forgejo`, missing `plane-backend`), post-logout URL, webOrigins, scopes, test-user IDs, theme layout (`themes/plane`, `plane-space`, `tools/keycloak-theme`) and realm mechanism (keycloak-config-cli vs. `plane-cli idp sync`). D14 was aligned to D05. Still open: image name `funk/keycloak` (D05) vs. `plane-keycloak` (D14); recommend `plane-keycloak` and updating D05 (O-14-15).",
-   "D02 §4.9/§3.15 vs. D14: `SECRET_KEY` is 'entfällt' in D02 but an alias to `Plane:Security:SigningKey` in D14. D02's `ApiLogHmacKey` derived from a Data-Protection purpose is not stable over time because keys rotate every 90 days; recommend deriving it from the SigningKey (O-14-12). D02 should also add `PlaneUrlsOptions.Idp`, `PlaneDatabaseOptions.MaxPoolSize`, `PlaneSecurityOptions.SigningKey` and the infra option classes.",
+   "D05 §3.15/§3.16 vs. original D14: realm placeholders, client IDs (`forgejo` vs. `funk-forgejo`, missing `funk-backend`), post-logout URL, webOrigins, scopes, test-user IDs, theme layout (`themes/plane`, `funk-space`, `tools/keycloak-theme`) and realm mechanism (keycloak-config-cli vs. `plane-cli idp sync`). D14 was aligned to D05. Still open: image name `funk/keycloak` (D05) vs. `plane-keycloak` (D14); recommend `plane-keycloak` and updating D05 (O-14-15).",
+   "D02 §4.9/§3.15 vs. D14: `SECRET_KEY` is 'entfällt' in D02 but an alias to `Funk:Security:SigningKey` in D14. D02's `ApiLogHmacKey` derived from a Data-Protection purpose is not stable over time because keys rotate every 90 days; recommend deriving it from the SigningKey (O-14-12). D02 should also add `FunkUrlsOptions.Idp`, `FunkDatabaseOptions.MaxPoolSize`, `FunkSecurityOptions.SigningKey` and the infra option classes.",
    "D02 §3.17 vs. D14 §3.6: `/health/ready` response format (ProblemDetails vs. JSON per check); the management port 8081 is missing from D02.",
    "D08 §3.1.2 vs. 01 §3.3/D14: Angular dev-server ports 3000/3001/3002 (D08) vs. 4200/4201/4202. The gateway occupies 3000, so D08 must change (O-14-13).",
    "D08 §3.1.2 says 'Gateway setzt CSP' (justification for `subresourceIntegrity: false`), but D14 §3.7.3 sets no CSP by default, matching the original.",
    "D09 says the gallery base href is `/gallery/`, but D08 and D15 say `/__gallery/`; D14 follows D08/D15 (G-17).",
    "D15 §3.14.2: `plane-realm.test.json` contains only parity-seed users, but D14 and D05 tests need the seven D05 test users in the `test` profile too (O-14-14).",
-   "01 §3.3/§3.4: Keycloak data volume in dev, Valkey volume `plane-valkey`, Forgejo DB user `postgres`, a single `oidc-client-secret`, `deploy/keycloak/realms/plane-realm.json` as a combined dev/prod file, and `--import-realm` from the directory all contradict the refinements in D14/D05. 01 §5.1 also lacks `src/hosts/Plane.Hosting` and `src/hosts/Plane.AllInOne` and still uses the repo name `plane-net/` (O-14-07).",
+   "01 §3.3/§3.4: Keycloak data volume in dev, Valkey volume `plane-valkey`, Forgejo DB user `postgres`, a single `oidc-client-secret`, `deploy/keycloak/realms/plane-realm.json` as a combined dev/prod file, and `--import-realm` from the directory all contradict the refinements in D14/D05. 01 §5.1 also lacks `src/hosts/Funk.Hosting` and `src/hosts/Funk.AllInOne` and still uses the repo name `plane-net/` (O-14-07).",
    "01 ADR-052 describes AIO as a Compose profile; D14 uses a separate generated `docker-compose.aio.yaml`, since Compose profiles cannot switch core services off."
   ],
   "remaining": [
    "⚠ items still to be checked against the pinned versions in S0/S7: Aspire Preview APIs (`AddKeycloak`, `WithDashboard(false)` on the Compose environment, `WithContainerRuntimeArgs` for tmpfs, generated-parameter API); Keycloak 26 theme-cache option names; Forgejo image internals (`environment-to-ini`, `su-exec`, app.ini path, `oauth2_client.USERNAME=preferred_username`); the keycloak-config-cli tag for the chosen Keycloak major; Cosign flag names; SeaweedFS health path.",
-   "In the prodlike profile, `PLANE_BACKCHANNEL_BASE_URL` for `keycloak-config` is hard-coded to `http://api:8080`. There `api` runs as a host process, so the AppHost implementation must use an endpoint reference to `api` (noted as a comment in the skeleton).",
+   "In the prodlike profile, `FUNK_BACKCHANNEL_BASE_URL` for `keycloak-config` is hard-coded to `http://api:8080`. There `api` runs as a host process, so the AppHost implementation must use an endpoint reference to `api` (noted as a comment in the skeleton).",
    "Health response format (ProblemDetails in D02 vs. JSON per check in D14) still needs to be unified before I0."
   ],
   "open": []
@@ -57,7 +57,7 @@
    "05 §3.13.8 (line ~675) names functional guards (`authGuard`, `workspaceAccessGuard`, `projectAccessGuard`). D08-ADR-12 specifies wrapper components with in-place states (O-D08-04); 05 must be aligned.",
    "05 D05-ADR-11 and N-01 require `max_age=<n>` for admin step-up but give the frontend no source for `n`. The 401 body only contains `error_code`/`error_message` (O-D08-14).",
    "05 line 167 places `AuthLandingComponent` in three scope folders but does not define a shared display base. D08 now places it in `libs/shared/blocks/auth`; 05 should take this over.",
-   "01 §6.4 lists only `libs/web/extensions`. Admin/space registries (`ADMIN_SETTINGS_PAGES` for E3/E5/E7, `SPACE_ROUTE_EXTENSIONS` for B5) need `libs/admin/extensions` and `libs/space/extensions`, and `@plane/cdk/extensions` for the shared mechanics; these must be added to 01 §6.1/§6.4.",
+   "01 §6.4 lists only `libs/web/extensions`. Admin/space registries (`ADMIN_SETTINGS_PAGES` for E3/E5/E7, `SPACE_ROUTE_EXTENSIONS` for B5) need `libs/admin/extensions` and `libs/space/extensions`, and `@funk/cdk/extensions` for the shared mechanics; these must be added to 01 §6.1/§6.4.",
    "D16 X12 names only `FE/libs/web/extensions/src/` as the location of the frontend registries. Since D16 itself docks E3 (`FE/libs/admin/group-sync`) and E7 (`ADMIN_SETTINGS_PAGES`) onto the admin app, D16 must add the admin and space token libs.",
    "D15 assigns `admin/admin-shell.spec.ts` (CE-INST-008…-016) and `admin/admin-settings.spec.ts` (CE-INST-017) to I6, while D08 §1.3/§4.2 builds the admin entry, dashboard layout and `general` in I0 (O-D08-15).",
    "D14 AK-14-07 contains a header rule for `sw.js`. D08 (E19) does not ship `sw.js`, so that rule has nothing to apply to (already noted in §9)."
@@ -118,16 +118,16 @@
  {
   "doc": "architecture/05-auth-sicherheit-berechtigungen.md",
   "conflicts": [
-   "01 §3.4 (AppHost skeleton) sets a single 'Plane__Auth__Oidc__ClientSecret'. Binding names per D05 §3.4.3: Plane__Auth__Clients__{Web,Admin,Space}__ClientSecret and Plane__Auth__Backend__ClientSecret.",
+   "01 §3.4 (AppHost skeleton) sets a single 'Funk__Auth__Oidc__ClientSecret'. Binding names per D05 §3.4.3: Funk__Auth__Clients__{Web,Admin,Space}__ClientSecret and Funk__Auth__Backend__ClientSecret.",
    "02 §3.6.1/§3.6.3 apply the WorkspaceAdminOverride rule only to some templates. D05-ADR-18/HARM-00 requires it as the default of PermissionDescriptor.Project(...). The PermissionRule list in 02 also needs Own, Self, GuestVisibility, PageAccess, Board, WorkspaceAdminOrProjectAdmin and ProjectMemberOfBody.",
-   "02 (E5 row) uses 'Plane:Auth:BearerEnabled'. Binding name: 'Plane:Auth:Bearer:Enabled' (D05 §3.4.3, matches 16).",
+   "02 (E5 row) uses 'Funk:Auth:BearerEnabled'. Binding name: 'Funk:Auth:Bearer:Enabled' (D05 §3.4.3, matches 16).",
    "02 §3.4.1 step 1 uses KnownNetworks. In .NET 10 this must be KnownIPNetworks (ASPDEPR005).",
-   "02 ApiActivityLogMiddleware: token_identifier = token_hash replaces the HMAC with Plane:Security:ApiLogHmacKey (already noted in D05 §9).",
-   "14 §3.2.1 (parameter table, 'Client `forgejo`'), §3.3.2 and the 15 §3.14.2 table row for plane-realm.json name the Forgejo client 'forgejo'. Binding: 'plane-forgejo', per 01 §4.1 and 16.",
+   "02 ApiActivityLogMiddleware: token_identifier = token_hash replaces the HMAC with Funk:Security:ApiLogHmacKey (already noted in D05 §9).",
+   "14 §3.2.1 (parameter table, 'Client `forgejo`'), §3.3.2 and the 15 §3.14.2 table row for plane-realm.json name the Forgejo client 'forgejo'. Binding: 'funk-forgejo', per 01 §4.1 and 16.",
    "14 §3.6 (ResilienceSetup) names the SSRF clients 'link-crawler' and 'avatar-download'. D05 §3.17.2 names them 'link-preview' and 'avatar-import'.",
-   "14 §3.2.2 marks the OIDC option names as 'endgültige Feldnamen legt D05 fest'. D05 now fixes them as Plane:Auth:Clients:*, Plane:Auth:Backend:* and Plane:Auth:Oidc:MetadataAddress, which matches 14 except that Authority/MetadataAddress sit under Oidc.",
+   "14 §3.2.2 marks the OIDC option names as 'endgültige Feldnamen legt D05 fest'. D05 now fixes them as Funk:Auth:Clients:*, Funk:Auth:Backend:* and Funk:Auth:Oidc:MetadataAddress, which matches 14 except that Authority/MetadataAddress sit under Oidc.",
    "14 §3.7.3 'CSP nicht gesetzt' contradicts D05-ADR-23 (CSP report-only from I0, enforced from I7). 14 O-14-05 is decided by D05-ADR-12.",
-   "15 §6 (H1 row) uses 'Plane__Auth__BearerEnabled'. Binding: 'Plane__Auth__Bearer__Enabled'.",
+   "15 §6 (H1 row) uses 'Funk__Auth__BearerEnabled'. Binding: 'Funk__Auth__Bearer__Enabled'.",
    "16 line 1103 defines RoleDefinition(Id, Namespace, Slug, Name, Level, IsSystem, Grants). This differs from 02 §3.6.1 RoleDefinition(Id, Name, ScopeLevel Scope, int LegacyValue, IsSystem, PermissionKeys), which D05 now uses."
   ],
   "remaining": [
@@ -145,7 +145,7 @@
    "O-D05-04: Passwordless login as a replacement for magic codes (only passkeys as an option; no email OTP in the CE).",
    "O-D05-05: No auto-redirect for the Space start page (recommendation).",
    "O-D05-06: Rate limit on the OIDC callback if endpoint metadata does not take effect (S7).",
-   "O-D05-07: Required name alignment in 14 (client 'forgejo' not 'plane-forgejo'; themes plane/plane-space; CSP; O-14-05 decided by D05-ADR-12), in 15 (test IDs SEC-xx collide with D05 → D15-SEC-xx; test realm file; S-14 note) and in 09 (W-025 security tab). Also required: change ApiActivityLog/ApiLogHmacKey in 02 to token_hash and add endpoint-level rules / .WithDenyStyle to the PermissionDescriptor."
+   "O-D05-07: Required name alignment in 14 (client 'forgejo' not 'funk-forgejo'; themes plane/plane-space; CSP; O-14-05 decided by D05-ADR-12), in 15 (test IDs SEC-xx collide with D05 → D15-SEC-xx; test realm file; S-14 note) and in 09 (W-025 security tab). Also required: change ApiActivityLog/ApiLogHmacKey in 02 to token_hash and add endpoint-level rules / .WithDenyStyle to the PermissionDescriptor."
   ]
  },
  {
@@ -155,23 +155,23 @@
    "05 Anhang A: Vorbedingungs-Keys (workspace.project_base.read/create, project.project_base.write, project.project_entity.*, project.project_member.*, workspace.workspace_entity.*) fehlen bzw. sind nicht als intern/reserviert geführt; 05-Architekturtest 'keine toten Keys' würde sie bemängeln.",
    "05 Anhang B listet PUT {P}/issue-labels/{pk}/ mit project.label.update; 02/A04 §5.1 registrieren die tote Route nicht – Zeile in 05 als 'entfällt' markieren.",
    "05 §3.13.4/D05-ADR-18: WS-Admin-Override hängt an ws.level==20 ohne Grant-Key – Grenze für E5-Custom-Roles; ggf. Key workspace.admin_override reservieren.",
-   "05 §4.4 vs. 02 §4.9 und 14 §3.9.1: SKIP_ENV_VAR (05: entfällt; 02/14: Plane:Instance:ConfigurationSource), FILE_SIZE_LIMIT (05: Plane:Storage:FileSizeLimit; 02/14: Plane:Uploads:MaxFileSizeBytes), WEBHOOK_* (05: Plane:Webhooks:Ssrf:*; 02: Plane:Webhooks:AllowedNetworks/AllowedHosts/DisallowedDomains). 14 erklärt 02 für maßgeblich → 05 nachziehen.",
-   "14 §3.9.1: PlaneSecurityOptions.ApiLogHmacKey 'abgeleitet aus SigningKey' – entfällt nach 05 (token_identifier = token_hash); Zweck von SigningKey in 14 klären.",
+   "05 §4.4 vs. 02 §4.9 und 14 §3.9.1: SKIP_ENV_VAR (05: entfällt; 02/14: Funk:Instance:ConfigurationSource), FILE_SIZE_LIMIT (05: Funk:Storage:FileSizeLimit; 02/14: Funk:Uploads:MaxFileSizeBytes), WEBHOOK_* (05: Funk:Webhooks:Ssrf:*; 02: Funk:Webhooks:AllowedNetworks/AllowedHosts/DisallowedDomains). 14 erklärt 02 für maßgeblich → 05 nachziehen.",
+   "14 §3.9.1: FunkSecurityOptions.ApiLogHmacKey 'abgeleitet aus SigningKey' – entfällt nach 05 (token_identifier = token_hash); Zweck von SigningKey in 14 klären.",
    "05 §3.18 nutzt tests/parity/exceptions.yaml als Ausnahmeliste; 02, 14 und 15 nutzen tests/contracts/deviations.yaml (15 ist für Test-Orte maßgeblich).",
    "01 §5.3/§5.5: Skelett mit ProjectScope-Parameter, IModule.Permissions als IEnumerable<Permission> und Konstanten LabelsRead/LabelsWrite – muss auf IRequestScope, IEnumerable<PermissionDescriptor> und generierte ProjectLabel*-Konstanten umgestellt werden (O-D02-02).",
    "01 §5.2 R9 (alle Typen internal außer <M>Module) kollidiert mit dem Mediator-Source-Generator im Host – InternalsVisibleTo als Ausnahme aufnehmen oder Fallback 'Handler public' (O-D02-09).",
    "01 ADR-037 ('Read-Replica als zweiter DbContext-Pool', Aspire.Npgsql.EntityFrameworkCore.PostgreSQL) legt DbContext-Pooling nahe; 02 D02-ADR-26 verbietet Pooling wegen Tenant-Filter – 01 umformulieren.",
    "16 D16-ADR-09: OAuth-Callbacks unter /api/integrations/forgejo/oauth/… benötigen Session-Auth, die Oberfläche Integrations war rein signaturbasiert – 02 ergänzt .WithSessionAuthentication(); 16 §3.4 sollte darauf verweisen.",
-   "15 §9.2 erklärte die Test-Bezeichner in 02 für überholt (PlaneAppFactory, PostgresFixture, FakeClock, ContractTest) – in 02 jetzt angeglichen; 15 §9.3-Rückmeldung an 02 ist damit erledigt."
+   "15 §9.2 erklärte die Test-Bezeichner in 02 für überholt (FunkAppFactory, PostgresFixture, FakeClock, ContractTest) – in 02 jetzt angeglichen; 15 §9.3-Rückmeldung an 02 ist damit erledigt."
   ],
   "remaining": [
    "Spike S0 muss nachweisen, dass Mediator 3.0 internal Handler aus Modul-Assemblies via InternalsVisibleTo im Host registriert (sonst Fallback O-D02-09, Änderung an 01 R9)",
    "Entscheidung in S0: Execution-Strategy-Kapselung vs. DisableRetry für die Aspire-Npgsql-EF-Integration",
    "Zeitzonen-Ausgabe der Datum-Zeit-Felder (O-D02-01, Befund B-02) bleibt bis Ende S11 offen",
-   "DEV-JSON-002 (JSON-Parse-/Content-Type-Fehler vor 403) muss im Paritäts-Harness bestätigt werden; ggf. PlaneBody<T> nachrüsten",
+   "DEV-JSON-002 (JSON-Parse-/Content-Type-Fehler vor 403) muss im Paritäts-Harness bestätigt werden; ggf. FunkBody<T> nachrüsten",
    "X-RateLimit-Remaining im verteilten Profil (RedisRateLimiting) nur näherungsweise; Contract-Test prüft Existenz/Monotonie",
    "Inhalt des Permission-Generators (05 §5.8) muss Prerequisite-Regel für alle '∧'-Zeilen erzeugen – Abhängigkeit von 05-Nacharbeit",
-   "Felder von PlaneGatewayOptions/PlaneTlsOptions nur referenziert (14 §3.9.1), nicht dupliziert",
+   "Felder von FunkGatewayOptions/FunkTlsOptions nur referenziert (14 §3.9.1), nicht dupliziert",
    "Rich-Filter-Codes (20) und DrfMessages-Vollständigkeit bleiben per Contract-Test zu verifizieren (R-D02-07)"
   ],
   "open": []
@@ -181,17 +181,17 @@
   "conflicts": [
    "D02 (02-backend-solution-und-konventionen.md) D02-ADR-17 / §6 F1: says the rate-limit policy `integration_webhook` comes 'ab W1'. The CE webhook route uses `RequireRateLimiting` from I0, so the policy must be registered from I0 (D16 O-16-10).",
    "D02 §3.2.2 No. 5 (OutboxInterceptor): `outbox_messages` has only type, payload, traceparent and occurred_at. It has no columns for EventContext (actor_id, actor_kind, origin, workspace_id, project_id, correlation_id, causation_depth), which C3/E6/F2 require (D16 §5.11, O-16-12).",
-   "D02 §6 E5: says the WS admin override in the CE depends on `Level = 20`. D05 §3.13.4 makes it grant-based via `workspace.admin_override` and analyzer PLANE0001 (an internal D02/D05 contradiction, noticed in passing).",
+   "D02 §6 E5: says the WS admin override in the CE depends on `Level = 20`. D05 §3.13.4 makes it grant-based via `workspace.admin_override` and analyzer FUNK0001 (an internal D02/D05 contradiction, noticed in passing).",
    "D05 (05-auth-sicherheit-berechtigungen.md) §6.1 `ReservedPermissionKeys`: has only 10 prefixes plus `project.work_item.read_all`. D16 §3.2.1 reserves 95 prefixes plus 1 key; D05 must take over the complete list (O-16-11).",
    "D05 §5.x PermissionService skeleton: `PermissionEvaluatorFn` with field `roles`. D08 §6.5 `PermissionCheck` uses `allowed` plus workspaceSlug/projectId. D16 follows D08.",
-   "D14 (14-infrastruktur-deployment-betrieb.md) §3.3.2 (line 313) and §3.2.1: the Keycloak client is still named `forgejo`. 01 §4.1, D05 and D16 use `plane-forgejo` (already reported by D05, still open).",
+   "D14 (14-infrastruktur-deployment-betrieb.md) §3.3.2 (line 313) and §3.2.1: the Keycloak client is still named `forgejo`. 01 §4.1, D05 and D16 use `funk-forgejo` (already reported by D05, still open).",
    "D14 §3.4.3 forgejo-init step 8: `redirect_uris` contains only `/api/integrations/forgejo/oauth/callback/`. Per D16-ADR-09 it must also include `/api/integrations/forgejo/oauth/user-callback/`.",
    "D15 (15-teststrategie-qualitaet-paritaet.md) EP-T08: frontend fakes are `provideTestExtensions({...})` in `frontend/libs/shared/testing/extensions/`. D08 AK-D08-36 (and D16) use `provideFakeExtensions()` in `libs/web/extensions/testing/` (O-16-13).",
    "D15 §6.2 C1 `StateChangeOriginTests`: lists Auto-Archive as a path through the state changer. In the original, `archive_old_issues` makes no state change, so that test cannot pass.",
-   "D15 §6.2 H1: option `Plane__Auth__BearerEnabled`. D05/D02/D16 use `Plane:Auth:Bearer:Enabled` (`Plane__Auth__Bearer__Enabled`; already reported by D05).",
+   "D15 §6.2 H1: option `Funk__Auth__BearerEnabled`. D05/D02/D16 use `Funk:Auth:Bearer:Enabled` (`Funk__Auth__Bearer__Enabled`; already reported by D05).",
    "D15 §6.2 F1: the status for an invalid signature is 'set in W1'. D16 §3.4.3/AK-16-07 sets it at I0: 401 `{\"error\": \"Invalid signature\"}`, 200 `duplicate`, 202 `accepted`.",
    "D08 (08-frontend-angular-architektur.md) §6.1 `DUPLICATE_DETECTION`: abbreviated signature `(title, projectId)`. The original hook takes workspaceSlug, workspaceId, projectId and formData{name, description_html, issueId}; D16 §5.16 ports it faithfully.",
-   "01 (01-zielarchitektur-und-tech-stack.md) §1.4 H6: names the hub location `Plane.Realtime` (host) while the 'Ort' column says `Plane.RealtimeEvents`. §5.1 places the hub module in `Plane.RealtimeEvents` (internal inconsistency in 01). 01 §1.4 B1 says 'ab I1', while D16/D02/D15 build parts (ScopeRef, RouterStore) from I0."
+   "01 (01-zielarchitektur-und-tech-stack.md) §1.4 H6: names the hub location `Funk.Realtime` (host) while the 'Ort' column says `Funk.RealtimeEvents`. §5.1 places the hub module in `Funk.RealtimeEvents` (internal inconsistency in 01). 01 §1.4 B1 says 'ab I1', while D16/D02/D15 build parts (ScopeRef, RouterStore) from I0."
   ],
   "remaining": [
    "Forgejo-specific facts have only indirect evidence: the `X-Forgejo-Signature` header, hook type `forgejo`, the `status` event and `actions/tasks` support in Forgejo 15. codeberg.org and forgejo.org were blocked by the proxy. Spike S-F2-1 against the pinned Forgejo 15 container remains a W1 start condition (O-16-01, O-16-02).",

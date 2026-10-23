@@ -61,8 +61,8 @@ Dieses Dokument legt fest, wie die Suche und die KI-Funktionen der Community Edi
 | Querschnitt Textsuche in Listen (`?search=`, `query=`) | Helfer für CE-WS-005, CE-WS-009, CE-PRJ-021, CE-PAGE-002 (Backend-Anteil), CE-WI (IssueViewSet-Liste), CE-HOME-009, CE-API-014, CE-INST-027 | DRF-`SearchFilter` (`search_fields`), `description_stripped__icontains`, `name__icontains` |
 | KI-Assistent | CE-AI-001 | EXT-03 `POST /api/workspaces/{slug}/ai-assistant/` (EXT-02 Projektvariante: D11-ADR-16) |
 | Unsplash-Bildsuche | CE-AI-002, CE-UIX-009 (Unsplash-Tab) | EXT-01 `GET /api/unsplash/` |
-| God-Mode-Einstellungen AI/Bilder | CE-INST-025, CE-INST-026 (Formulare; Speicherung über `Plane.Instance`) | `PATCH /api/instances/configurations/` (Eigentümer `Plane.Instance`) |
-| Instanz-Flags | CE-INST-003 (Felder `has_llm_configured`, `has_unsplash_configured`) | `GET /api/instances/` (Eigentümer `Plane.Instance`) |
+| God-Mode-Einstellungen AI/Bilder | CE-INST-025, CE-INST-026 (Formulare; Speicherung über `Funk.Instance`) | `PATCH /api/instances/configurations/` (Eigentümer `Funk.Instance`) |
+| Instanz-Flags | CE-INST-003 (Felder `has_llm_configured`, `has_unsplash_configured`) | `GET /api/instances/` (Eigentümer `Funk.Instance`) |
 | Andockstellen | B6, G1 (🧱) sowie berührte 🧱-Pakete A1, A2, B1, D1, D2, E5, F1/F2, H1 | – |
 
 ### 1.3 Nicht im Scope
@@ -77,17 +77,17 @@ Dieses Dokument legt fest, wie die Suche und die KI-Funktionen der Community Edi
 
 | Inkrement | Bausteine aus diesem Dokument | CE-IDs | Abnahme-Nachweis |
 |---|---|---|---|
-| **I0 Walking Skeleton** | Extensions `pg_trgm`, `unaccent`, `vector` im Postgres-Image und `ExtensionCheck` (14 §3.15); Spike-S0-Teil `PgvectorSmokeTests` (EF 10 + `Pgvector.EntityFrameworkCore`, HNSW, `CosineDistance`); Projekte `Plane.Platform.Search` und `Plane.Platform.Ai` als leere Gerüste mit Architekturtest; Instanz-Key `LLM_BASE_URL` im Seed-Katalog; Routen-Reservierungen §6.4 in `Reservations.cs` | – | `PgvectorSmokeTests`, `ExtensionCheckTests`, `RouteReservationTests` grün |
+| **I0 Walking Skeleton** | Extensions `pg_trgm`, `unaccent`, `vector` im Postgres-Image und `ExtensionCheck` (14 §3.15); Spike-S0-Teil `PgvectorSmokeTests` (EF 10 + `Pgvector.EntityFrameworkCore`, HNSW, `CosineDistance`); Projekte `Funk.Platform.Search` und `Funk.Platform.Ai` als leere Gerüste mit Architekturtest; Instanz-Key `LLM_BASE_URL` im Seed-Katalog; Routen-Reservierungen §6.4 in `Reservations.cs` | – | `PgvectorSmokeTests`, `ExtensionCheckTests`, `RouteReservationTests` grün |
 | **I1 Workspace/Projekte/Konto** | `LikePattern`, `DrfSearchFilter` (Port DRF-`SearchFilter`), Trigramm-Indizes `workspaces.name`, `projects.name`, `projects.identifier` (03 §3.10.1, ABG-123; rein performance-relevant, kein Abnahmekriterium vor I5) | CE-WS-005, CE-WS-009, CE-PRJ-021 (je Suchparameter) | `DrfSearchFilterTests` (Golden aus DRF 3.17.2), Contract-Szenarien der Mitgliederlisten mit `?search=` |
-| **I2 Work Items & Layouts** | Modul `Plane.Search` (Gerüst), SR-03 mit Typen `user_mention`, `project`, `issue`; SR-02 mit Ausschlussparametern `parent`, `issue_relation`, `sub_issue`, `target_date`; `ParitySearchProvider` mit Quellen `UserMention`, `Project`, `WorkItem`; `SearchVisibilityFilter` für Work Items; Trigramm-Indizes `work_items.name` und `users.{display_name,first_name,last_name}` (Mentions, ABG-123); Frontend `searchEntity`/`projectIssuesSearch` 1:1, Mentions im Lite- und Rich-Editor (einziger CE-Mention-Typ `user_mention`), Parent-/Relation-/Sub-Issue-Picker, Bulk-Delete-Dialog | CE-SRCH-002 (Teil), CE-SRCH-003 (Teil), CE-WI-008, CE-WI-031, CE-WI-044, CE-WI-048 | `SearchContractTests` (Szenarien `search.entity-*`, `search.picker-*`), `SearchGuestScopeAppTests` (A-051, Teil Work Items) |
+| **I2 Work Items & Layouts** | Modul `Funk.Search` (Gerüst), SR-03 mit Typen `user_mention`, `project`, `issue`; SR-02 mit Ausschlussparametern `parent`, `issue_relation`, `sub_issue`, `target_date`; `ParitySearchProvider` mit Quellen `UserMention`, `Project`, `WorkItem`; `SearchVisibilityFilter` für Work Items; Trigramm-Indizes `work_items.name` und `users.{display_name,first_name,last_name}` (Mentions, ABG-123); Frontend `searchEntity`/`projectIssuesSearch` 1:1, Mentions im Lite- und Rich-Editor (einziger CE-Mention-Typ `user_mention`), Parent-/Relation-/Sub-Issue-Picker, Bulk-Delete-Dialog | CE-SRCH-002 (Teil), CE-SRCH-003 (Teil), CE-WI-008, CE-WI-031, CE-WI-044, CE-WI-048 | `SearchContractTests` (Szenarien `search.entity-*`, `search.picker-*`), `SearchGuestScopeAppTests` (A-051, Teil Work Items) |
 | **I3 Planung** | SR-02-Parameter `cycle`, `module`; SR-03-Typen `cycle`, `module`; Quellen `Cycle`, `Module`, `View`, `Intake`; Indizes `cycles.name`, `modules.name`, `views.name`; Intake-Duplikat-Picker | CE-SRCH-002 (Teil), CE-SRCH-003 (Rest), Picker in Cycle/Module-Leerzuständen und Gruppenköpfen | Contract-Szenarien SR-02/SR-03 je Parameter |
 | **I4 Pages & Realtime** | SR-03-Typ `page` (Vertragsparität; **kein CE-Aufrufer**, weil `EDITOR_MENTION_TYPES` in der CE nur `user_mention` enthält – Nutzer erst D6/H1); Quelle `Page`; Index `pages.name`; Mentions im Document-Editor (Typ `user_mention`, Endpunkt aus I2) | CE-PAGE-034, CE-SRCH-002 (Rest) | `SearchContractTests` (Szenario `search.entity-page`) |
 | **I5 Überblick** | SR-01 vollständig; Power-K-Suchseite; `SEARCH_RESULT_RENDERERS`; Indexierungs-Pipeline (`search_documents`, Consumer `search.indexing`, Queue `indexing`, Jobs `indexing.*`, CLI `funk-cli search reindex`); `IIndexDocumentEnricher`; `NullEmbeddingGenerator` registriert; Index `stickies.description_stripped` (Home-Modul nutzt `LikePattern`); Lasttest LT-09 | CE-SRCH-001, CE-SRCH-004 (Suchanteil), CE-HOME-009 (Suchparameter) | `SearchContractTests` (Szenarien `search.global-*`), `IndexingPipelineTests`, `web/search/search.spec.ts`, `web/search/power-k.spec.ts` (Suchteil), LT-09 p95 < 300 ms |
-| **I6 Außenwirkung & Administration** | Public-API-Suche (Adapter in `Plane.PublicApi`), `Plane.Assistant` (EXT-03, EXT-01), `Plane.Platform.Ai` vollständig (`LlmSettingsResolver`, `DynamicChatClient`, SSRF-Client `llm`), God-Mode-Formular AI mit Feld „Base URL“, Bild-Formular, `has_llm_configured`/`has_unsplash_configured` | CE-API-019, CE-API-014 (Suchparameter), CE-AI-001, CE-AI-002, CE-INST-025, CE-INST-026, CE-INST-027 (Suchparameter) | `PublicApiContractTests` (Szenario `public-api.work-item-search`), `AssistantEndpointTests` (WireMock „OpenAI-kompatibel“), `UnsplashEndpointTests`, `web/ai/ai-unsplash.spec.ts`, `admin/admin-settings.spec.ts` |
+| **I6 Außenwirkung & Administration** | Public-API-Suche (Adapter in `Funk.PublicApi`), `Funk.Assistant` (EXT-03, EXT-01), `Funk.Platform.Ai` vollständig (`LlmSettingsResolver`, `DynamicChatClient`, SSRF-Client `llm`), God-Mode-Formular AI mit Feld „Base URL“, Bild-Formular, `has_llm_configured`/`has_unsplash_configured` | CE-API-019, CE-API-014 (Suchparameter), CE-AI-001, CE-AI-002, CE-INST-025, CE-INST-026, CE-INST-027 (Suchparameter) | `PublicApiContractTests` (Szenario `public-api.work-item-search`), `AssistantEndpointTests` (WireMock „OpenAI-kompatibel“), `UnsplashEndpointTests`, `web/ai/ai-unsplash.spec.ts`, `admin/admin-settings.spec.ts` |
 | **I7 Härtung** | Airgap-E2E mit lokalem LLM-Stub (WireMock im Profil `test`) und gesperrtem Egress; Index-Reconcile im Lasttest LT-08 | – | Airgap-Lauf grün, kein Egress außer Allowlist |
 | **W5 (B6)** | dockt an §6.1 an | – | – |
 
-> **Präzisierung zu 01 §5.4:** Das Modul `Plane.Search` entsteht bereits in **I2** (Work-Item-Picker und Mentions sind Teil der vertikalen Schnitte von I2), nicht erst in I5; die Spalte „ab“ in 01 §5.4 lautet damit „I2/I5“ (Änderungsauftrag §9.2). Dasselbe gilt für 15 Anhang (CE-SRCH-002/-003 dort „I5“): Backend-Contract-Szenarien für SR-02/SR-03 laufen ab I2, die E2E-Spec `web/search/search.spec.ts` bleibt I5 (Änderungsauftrag §9.2).
+> **Präzisierung zu 01 §5.4:** Das Modul `Funk.Search` entsteht bereits in **I2** (Work-Item-Picker und Mentions sind Teil der vertikalen Schnitte von I2), nicht erst in I5; die Spalte „ab“ in 01 §5.4 lautet damit „I2/I5“ (Änderungsauftrag §9.2). Dasselbe gilt für 15 Anhang (CE-SRCH-002/-003 dort „I5“): Backend-Contract-Szenarien für SR-02/SR-03 laufen ab I2, die E2E-Spec `web/search/search.spec.ts` bleibt I5 (Änderungsauftrag §9.2).
 
 ---
 
@@ -95,24 +95,24 @@ Dieses Dokument legt fest, wie die Suche und die KI-Funktionen der Community Edi
 
 | ADR | Belang | Entscheidung | Alternativen (verworfen) | Begründung | ab |
 |---|---|---|---|---|---|
-| **D11-ADR-01** | Projektschnitt | Abstraktionen und datenbankunabhängige Helfer in `Plane.Platform.Search` (`ISearchProvider`, `SearchQuery`, `SearchResult`, `IIndexingPipeline`, `IndexDocument`, `IIndexDocumentEnricher`, `LikePattern`, `SequenceIdExtractor`, `DrfSearchFilter`, `SearchText`); **Implementierungen mit Fachdatenbezug** (`ParitySearchProvider`, Such-Quellen, `IndexingPipeline`, `search_documents`-Schreiber) im Modul `Plane.Search`. `Plane.Platform.Ai` enthält Provider-Auflösung, `DynamicChatClient`, `NullEmbeddingGenerator`; `Plane.Assistant` die Endpunkte EXT-01/EXT-03. Der in 01 §5.1 unter `Plane.Platform.Search` genannte `PostgresSearchProvider` heißt `ParitySearchProvider` und liegt in `Plane.Search` (Präzisierung) | Provider in `Plane.Platform.Search` mit Roh-SQL auf Fachtabellen; eigener Such-Dienst | Regel R7 (01 §5.2): `platform/*` kennt keine Fachmodule und kein `Plane.Data`; die Suche braucht aber Joins über Work Items, Projekte, Mitgliedschaften und die Sichtbarkeitsfilter aus `Plane.Authorization` | I0/I2 |
+| **D11-ADR-01** | Projektschnitt | Abstraktionen und datenbankunabhängige Helfer in `Funk.Platform.Search` (`ISearchProvider`, `SearchQuery`, `SearchResult`, `IIndexingPipeline`, `IndexDocument`, `IIndexDocumentEnricher`, `LikePattern`, `SequenceIdExtractor`, `DrfSearchFilter`, `SearchText`); **Implementierungen mit Fachdatenbezug** (`ParitySearchProvider`, Such-Quellen, `IndexingPipeline`, `search_documents`-Schreiber) im Modul `Funk.Search`. `Funk.Platform.Ai` enthält Provider-Auflösung, `DynamicChatClient`, `NullEmbeddingGenerator`; `Funk.Assistant` die Endpunkte EXT-01/EXT-03. Der in 01 §5.1 unter `Funk.Platform.Search` genannte `PostgresSearchProvider` heißt `ParitySearchProvider` und liegt in `Funk.Search` (Präzisierung) | Provider in `Funk.Platform.Search` mit Roh-SQL auf Fachtabellen; eigener Such-Dienst | Regel R7 (01 §5.2): `platform/*` kennt keine Fachmodule und kein `Funk.Data`; die Suche braucht aber Joins über Work Items, Projekte, Mitgliedschaften und die Sichtbarkeitsfilter aus `Funk.Authorization` | I0/I2 |
 | **D11-ADR-02** | Trefferlogik der CE-Endpunkte | **Original-Semantik**: `icontains` → `ILIKE '%' || escape(q) || '%'` (Escape `\`, `%`, `_` wie Django), Sequenznummern als exakte Ganzzahlvergleiche; Abfrage direkt auf den Fachtabellen mit **`pg_trgm`-GIN-Indizes** (`gin_trgm_ops`); die CE-Endpunkte lesen **nicht** aus `search_documents` | Volltextsuche (`tsvector @@ tsquery`) für die CE-Endpunkte; Lesen aus `search_documents` | `tsquery` findet Wortpräfixe, aber keine Teilstrings mitten im Wort („plan“ in „Replanning“) – Paritätsbruch; Sichtbarkeit hängt am aktuellen Mitgliedschaftsstand und wird ohnehin über Fachtabellen geprüft | I1/I2 |
 | **D11-ADR-03** | Reihenfolge und Ranking | Wo das Original sortiert (`-created_at`), wird identisch sortiert (+ Tiebreaker `id DESC`, D02-ADR-13). Wo das Original **keine** Reihenfolge festlegt (SR-01 `issue`, SR-02, v1-Suche), gilt eine **deterministische Relevanzreihenfolge**: (1) exakter Sequenztreffer, (2) `similarity(name, q)` absteigend (`pg_trgm`), (3) `created_at DESC`, (4) `id DESC`; ohne Suchtext nur (3), (4). Präzisierung von ADR-024: das dort genannte `tsvector`-Ranking gilt für Index-basierte Provider (B6/G1), in der CE ersetzt Trigramm-Ähnlichkeit das Ranking, weil die Treffermenge Teilstring-basiert ist | `ts_rank` über `search_documents`; DB-Reihenfolge wie Original | Undefinierte Reihenfolge + `LIMIT 100` macht schon die Treffermenge nicht reproduzierbar (Contract-Tests, Nutzer sieht wechselnde Ergebnisse); `ts_rank` wäre für Teilstring-Treffer häufig 0 | I2 |
-| **D11-ADR-04** | Such-Abstraktion | `ISearchProvider` bleibt **unverändert** (01 §5.5: `SearchAsync(SearchQuery)`); Auswahl je **Suchprofil** (`SearchProfile`: `Global`, `Entity`, `WorkItemPicker`, `PublicApiWorkItems`) über Keyed Services und Option `Plane:Search:Routing` (Default für alle Profile `parity`). Zwei Phasen: der Provider liefert nur `(entityType, id, score)`-Treffer; die Antwortform erzeugt der profilabhängige **Hydrator** im Modul `Plane.Search` (Original-Projektionen). B6 registriert einen weiteren Provider (`advanced`) und ein neues Profil, ohne CE-Code zu ändern | Ein Provider-Interface je Endpunkt; Provider liefert fertige DTOs | Provider-Tausch (Postgres-FTS, OpenSearch-ähnlich, Hybrid mit Embeddings) darf die Antwortverträge nicht berühren; Hydrator wendet die Sichtbarkeit ein zweites Mal an (Defense in Depth) | I2 |
-| **D11-ADR-05** | Sichtbarkeit | Jede Kandidatenabfrage **und** jede Hydrierung wendet die `IVisibilityFilter<T>` aus `Plane.Authorization/Visibility/` an (05 §3.14 `SearchVisibilityFilter`: Work Items, Intake, Pages, Views); Mitgliedschaften immer `is_active = true` **und** `deleted_at IS NULL` (02 `DEV-PERM-001`); Korrekturen SEC-56 (Q-35, Q-36) und Gastregel auch in der v1-Suche | Sichtbarkeit nur im Provider | Ein getauschter Provider (B6/G1) könnte sonst unsichtbare Inhalte liefern (05 §6, G1-Zeile) | I2 |
+| **D11-ADR-04** | Such-Abstraktion | `ISearchProvider` bleibt **unverändert** (01 §5.5: `SearchAsync(SearchQuery)`); Auswahl je **Suchprofil** (`SearchProfile`: `Global`, `Entity`, `WorkItemPicker`, `PublicApiWorkItems`) über Keyed Services und Option `Funk:Search:Routing` (Default für alle Profile `parity`). Zwei Phasen: der Provider liefert nur `(entityType, id, score)`-Treffer; die Antwortform erzeugt der profilabhängige **Hydrator** im Modul `Funk.Search` (Original-Projektionen). B6 registriert einen weiteren Provider (`advanced`) und ein neues Profil, ohne CE-Code zu ändern | Ein Provider-Interface je Endpunkt; Provider liefert fertige DTOs | Provider-Tausch (Postgres-FTS, OpenSearch-ähnlich, Hybrid mit Embeddings) darf die Antwortverträge nicht berühren; Hydrator wendet die Sichtbarkeit ein zweites Mal an (Defense in Depth) | I2 |
+| **D11-ADR-05** | Sichtbarkeit | Jede Kandidatenabfrage **und** jede Hydrierung wendet die `IVisibilityFilter<T>` aus `Funk.Authorization/Visibility/` an (05 §3.14 `SearchVisibilityFilter`: Work Items, Intake, Pages, Views); Mitgliedschaften immer `is_active = true` **und** `deleted_at IS NULL` (02 `DEV-PERM-001`); Korrekturen SEC-56 (Q-35, Q-36) und Gastregel auch in der v1-Suche | Sichtbarkeit nur im Provider | Ein getauschter Provider (B6/G1) könnte sonst unsichtbare Inhalte liefern (05 §6, G1-Zeile) | I2 |
 | **D11-ADR-06** | Indexierungs-Pipeline | **In der CE aktiv** (16 X14): `SearchIndexingConsumer` (Consumer-Name `search.indexing`, Queue `indexing`, 06 §3.8; `IEventConsumer` für die Work-Item-, Kommentar-, Page-, Projekt-, Cycle-, Modul-, View-, Intake- und Workspace-Events aus 06 §3.8 / 16 §3.2.4) plant `IndexEntityJob` in Queue `indexing` mit Dedupe-Schlüssel und Entprellung; der Job lädt den **aktuellen** Zustand, baut ein `IndexDocument`, ruft die `IIndexDocumentEnricher` und schreibt per Upsert in `search_documents` (`tsvector` als generierte Spalte, Konfiguration `simple` über `plane_unaccent`). Nachtjob `indexing.reconcile`, CLI `funk-cli search reindex`. Die CE-Endpunkte lesen den Index nicht (D11-ADR-02) | Index erst mit B6/G1 bauen; Trigger in PostgreSQL | Pakete B6/G1 starten ohne Backfill-Projekt und ohne CE-Umbau; Events sind ohnehin Pflicht (C3/H6); Trigger würden Modulgrenzen und Text-Extraktion (HTML) in SQL verlagern | I5 |
-| **D11-ADR-07** | Embeddings | In der CE: `CREATE EXTENSION vector` (I0), `IEmbeddingGenerator<string, Embedding<float>>` = `NullEmbeddingGenerator`, **keine** Embedding-Tabelle (16 G1-Zeile). Das Schema für G1 ist hier **reserviert und festgelegt** (§6.2): Tabelle `search_embeddings` (FK `search_document_id → search_documents(id)` ON DELETE CASCADE, 03 §3.4.18.8, ABG-122) mit **dimensionsloser** Spalte `embedding vector`, Spalten `model_key`, `dimensions`; je aktivem Modell ein **partieller Ausdrucks-HNSW-Index** `((embedding::vector(n)) vector_cosine_ops) WHERE model_key = '<key>'` – Dimension damit zur Laufzeit konfigurierbar (`Plane:Ai:EmbeddingDimensions`, Default 1536) | `vector(1536)` fest in einer CE-Migration; separate Vektor-DB | Modellwechsel (andere Dimension) ohne Tabellenmigration; HNSW verlangt feste Dimension je Index, was der partielle Ausdrucksindex erfüllt (pgvector-Doku „Can I store vectors with different dimensions in the same column?“) | I0 (Extension), G1 |
+| **D11-ADR-07** | Embeddings | In der CE: `CREATE EXTENSION vector` (I0), `IEmbeddingGenerator<string, Embedding<float>>` = `NullEmbeddingGenerator`, **keine** Embedding-Tabelle (16 G1-Zeile). Das Schema für G1 ist hier **reserviert und festgelegt** (§6.2): Tabelle `search_embeddings` (FK `search_document_id → search_documents(id)` ON DELETE CASCADE, 03 §3.4.18.8, ABG-122) mit **dimensionsloser** Spalte `embedding vector`, Spalten `model_key`, `dimensions`; je aktivem Modell ein **partieller Ausdrucks-HNSW-Index** `((embedding::vector(n)) vector_cosine_ops) WHERE model_key = '<key>'` – Dimension damit zur Laufzeit konfigurierbar (`Funk:Ai:EmbeddingDimensions`, Default 1536) | `vector(1536)` fest in einer CE-Migration; separate Vektor-DB | Modellwechsel (andere Dimension) ohne Tabellenmigration; HNSW verlangt feste Dimension je Index, was der partielle Ausdrucksindex erfüllt (pgvector-Doku „Can I store vectors with different dimensions in the same column?“) | I0 (Extension), G1 |
 | **D11-ADR-08** | Querschnitt `?search=` | Port des DRF-`SearchFilter` (DRF 3.17.2) als `DrfSearchFilter.Apply(query, search, fields…)`: Begriffe per `search_smart_split` (Leerzeichen/Komma, Anführungszeichen-Phrasen), **jeder** Begriff muss in **irgendeinem** Feld per `icontains` treffen, NUL-Zeichen entfernt, `DISTINCT` bei Mehrfach-Joins; Pflicht für alle Original-Views mit `search_fields` | Eigene Ad-hoc-Implementierungen je Modul | Gleiche Semantik an sechs Stellen, ein Golden-Test | I1 |
 | **D11-ADR-09** | AI-Abstraktion und Transport | **`Microsoft.Extensions.AI`** (`IChatClient`, `IEmbeddingGenerator`) mit **`Microsoft.Extensions.AI.OpenAI`** über das offizielle OpenAI-.NET-SDK; **ein** Transport für alle Provider: Chat-Completions-Protokoll gegen eine konfigurierbare Basis-URL (OpenAI, OpenAI-kompatibel lokal, Anthropic- und Gemini-Kompatibilitätsendpunkte) | Semantic Kernel; `Microsoft.Extensions.AI.Ollama` (Preview, eingestellt); eigene HTTP-Clients je Provider | Provider-neutral (ADR-025), lokal betreibbar (ADR-004), ein Codepfad, MIT-lizenziert | I6 |
 | **D11-ADR-10** | AI-Konfiguration | Instanz-Keys `LLM_API_KEY` (verschlüsselt), `LLM_PROVIDER` (`openai` Default, `openai-compatible`, `anthropic`, `gemini`), `LLM_MODEL`, **neu `LLM_BASE_URL`** (Kategorie `AI`, unverschlüsselt, Seed `""`, ENV `LLM_BASE_URL`); Modell-Whitelist des Originals entfällt; API-Key optional, wenn `LLM_BASE_URL` gesetzt ist; für `anthropic`/`gemini` gibt es **keinen** Default-Modellnamen mehr (die Original-Defaults `claude-3-sonnet-20240229`/`gemini-pro` sind beim Anbieter abgeschaltet – funktionaler Fehler, 17 Z-12), `LLM_MODEL` ist dort Pflicht; `GPT_ENGINE` entfällt (02 §4.10). `has_llm_configured` = Auflösung ergibt eine nutzbare Konfiguration | Provider-Konfiguration nur per ENV; Whitelist beibehalten | Q-28 (A03): Anthropic/Gemini funktionierten im Original nie, Whitelist ist veraltet; lokale Server brauchen keinen Key | I0 (Seed), I6 |
-| **D11-ADR-11** | Ausgehende LLM-/Unsplash-Aufrufe | Das OpenAI-SDK läuft über den **SSRF-geschützten Named Client `llm`** (05 §3.17.2: 120 s, 0 Redirects, 8 MiB, Allowlist `Plane:Ai:AllowedInternalHosts`) via `HttpClientPipelineTransport`; SDK-eigene Wiederholungen aus (`ClientRetryPolicy(maxRetries: 0)`), Netzwerk-Timeout 120 s. Unsplash über Named Client `unsplash` (10 s, 5 Redirects, 2 MiB) | SDK-Standard-HttpClient; Standard-Resilience | Kein Aufruf an Nutzer-/Betreiber-URLs ohne SSRF-Schutz (D05-ADR-24, ABG-040); keine automatischen Wiederholungen | I6 |
+| **D11-ADR-11** | Ausgehende LLM-/Unsplash-Aufrufe | Das OpenAI-SDK läuft über den **SSRF-geschützten Named Client `llm`** (05 §3.17.2: 120 s, 0 Redirects, 8 MiB, Allowlist `Funk:Ai:AllowedInternalHosts`) via `HttpClientPipelineTransport`; SDK-eigene Wiederholungen aus (`ClientRetryPolicy(maxRetries: 0)`), Netzwerk-Timeout 120 s. Unsplash über Named Client `unsplash` (10 s, 5 Redirects, 2 MiB) | SDK-Standard-HttpClient; Standard-Resilience | Kein Aufruf an Nutzer-/Betreiber-URLs ohne SSRF-Schutz (D05-ADR-24, ABG-040); keine automatischen Wiederholungen | I6 |
 | **D11-ADR-12** | Laufzeitwechsel der Konfiguration | `DynamicChatClient : IChatClient` liest bei jedem Aufruf die aufgelösten Einstellungen (`ILlmSettingsSource`, gecacht über den Instanz-Konfigurations-Cache `plane:instance:config`) und verwendet einen pro Einstellungs-Fingerabdruck gecachten inneren Client; Änderungen im God Mode wirken ohne Neustart | Singleton-Client beim Start | God-Mode-Änderung soll sofort greifen (Original liest je Request) | I6 |
 | **D11-ADR-13** | KI-Assistent-Vertrag | Prompt = `task + "\n" + prompt` als **eine** `user`-Nachricht (1:1), keine weiteren Chat-Optionen; Antworten `{"response", "response_html"}` 1:1; Korrekturen: fehlender/falsy `prompt` → `""` (Original 500), `null`-Inhalt der LLM-Antwort → `""` (Original 500; ein leerer String lieferte schon im Original 200 mit `""`), `response_html` = HTML-kodierter Text mit `\n` → `<br/>` (Original ohne Kodierung) | Systemprompt ergänzen; Markdown-Rendering | Parität des Verhaltens; Kodierung verhindert, dass Modellausgaben als HTML in den Editor gelangen (Sicherheitskorrektur ohne sichtbare Änderung bei Klartext-Antworten) | I6 |
 | **D11-ADR-14** | Unsplash-Proxy | Durchreichen von Status und JSON (1:1); Korrekturen Q-27: `page` ohne `$`, Query URL-kodiert, Access-Key im Header `Authorization: Client-ID <key>` statt in der URL, Timeout 10 s, 2 MiB | 1:1 inklusive Fehler | Funktionale Fehler korrigieren (Auftraggeber, 17 Z-12); Key nicht in URLs/Logs | I6 |
 | **D11-ADR-15** | God-Mode-Formular AI | Formular `/god-mode/ai` 1:1 plus **ein** zusätzliches Feld „Base URL“ (`LLM_BASE_URL`) als drittes Feld im bestehenden 3-Spalten-Raster; der Hinweis-Kasten „If you have a preferred AI models vendor, please get in touch with us.“ (Link `https://plane.so/contact`) entfällt (ADR-001 Kontakt-CTA, ADR-009B externe Plane-Links). `LLM_PROVIDER` bleibt wie im Original nur per ENV/API setzbar | Provider-Auswahlfeld zusätzlich; Formular unverändert | Minimale sichtbare Abweichung, die ADR-004 erzwingt (`UI-DEV-016`, `UI-DEV-017` in 09 §7.4; Kontakt-Hinweis = Upsell-Eintrag U23 in 09 §4.12, ABG-134) | I6 |
 | **D11-ADR-16** | Nicht registrierte Original-Routen | `POST {P}/ai-assistant/` (EXT-02) hat keinen Client-Aufrufer → nach 02 §3.3.1 Regel 6 **nicht registriert** (405, `DEV-AI-008`); Permission `project.ai_assistant.use` bleibt im Katalog (generiert, 05), ohne Endpunkt. `POST {W}/rephrase-grammar/` existiert in der CE nicht (404 wie Original); das Editor-KI-Menü bleibt über `EDITOR_FLAGS` (`ai` deaktiviert) unsichtbar | Beide Routen bauen | Parität und Regel 6; Editor-KI gehört zu G3 (nicht gewählt) | I6 |
 | **D11-ADR-17** | Frontend-Port Suche | Power-K-Suchseite, Ergebnisgruppen und Services **1:1** (Debounce 500 ms, Gruppen-Map → Registry `SEARCH_RESULT_RENDERERS`, Client-Filter der Palette `includes` auf dem Item-`value`); Korrektur: veraltete Antworten werden verworfen (laufende Anfrage wird bei neuem Suchbegriff abgebrochen), Original-Darstellungsfehler (Page-Identifier) bleibt optisch 1:1 | eigene Ergebnisdarstellung | ADR-005; Race-Condition ist funktionaler Fehler ohne optische Wirkung | I5 |
-| **D11-ADR-18** | Unbegrenzte Ergebnislisten | SR-01 liefert für `workspace`, `project`, `cycle`, `module`, `issue_view`, `page` im Original **alle** Treffer; Ziel: Obergrenze `Plane:Search:MaxUnboundedResults` = 1000 je Entitätstyp (0 = unbegrenzt) | 1:1 unbegrenzt | Schutz vor Antworten mit Zehntausenden Einträgen bei Ein-Zeichen-Suchen; UI zeigt ohnehin Listen dieser Größe nicht sinnvoll (`DEV-SRCH-002`) | I5 |
+| **D11-ADR-18** | Unbegrenzte Ergebnislisten | SR-01 liefert für `workspace`, `project`, `cycle`, `module`, `issue_view`, `page` im Original **alle** Treffer; Ziel: Obergrenze `Funk:Search:MaxUnboundedResults` = 1000 je Entitätstyp (0 = unbegrenzt) | 1:1 unbegrenzt | Schutz vor Antworten mit Zehntausenden Einträgen bei Ein-Zeichen-Suchen; UI zeigt ohnehin Listen dieser Größe nicht sinnvoll (`DEV-SRCH-002`) | I5 |
 
 ---
 
@@ -130,22 +130,22 @@ flowchart LR
     FS[libs/web/core/services<br/>FileService.getUnsplashImages]
     ADM[apps/admin ai/image Formulare]
   end
-  subgraph API[Plane.Api]
-    SE[Plane.Search<br/>Endpoints/App: SR-01, SR-02, SR-03]
-    PA[Plane.PublicApi<br/>V1/Search]
-    AS[Plane.Assistant<br/>Endpoints/App: EXT-01, EXT-03]
-    INS[Plane.Instance<br/>configurations, has_llm_configured]
+  subgraph API[Funk.Api]
+    SE[Funk.Search<br/>Endpoints/App: SR-01, SR-02, SR-03]
+    PA[Funk.PublicApi<br/>V1/Search]
+    AS[Funk.Assistant<br/>Endpoints/App: EXT-01, EXT-03]
+    INS[Funk.Instance<br/>configurations, has_llm_configured]
   end
   subgraph PLAT[platform]
-    PSR[Plane.Platform.Search<br/>ISearchProvider, IIndexingPipeline,<br/>LikePattern, DrfSearchFilter]
-    PAI[Plane.Platform.Ai<br/>LlmSettingsResolver, DynamicChatClient,<br/>NullEmbeddingGenerator]
-    SEC[Plane.Platform.Security<br/>SSRF-Clients llm, unsplash]
+    PSR[Funk.Platform.Search<br/>ISearchProvider, IIndexingPipeline,<br/>LikePattern, DrfSearchFilter]
+    PAI[Funk.Platform.Ai<br/>LlmSettingsResolver, DynamicChatClient,<br/>NullEmbeddingGenerator]
+    SEC[Funk.Platform.Security<br/>SSRF-Clients llm, unsplash]
   end
-  subgraph AUTHZ[Plane.Authorization]
+  subgraph AUTHZ[Funk.Authorization]
     VIS[IVisibilityFilter&lt;T&gt;<br/>SearchVisibilityFilter]
   end
-  subgraph W[Plane.Worker]
-    IDX[Plane.Search<br/>SearchIndexingConsumer → IndexEntityJob<br/>Queue indexing]
+  subgraph W[Funk.Worker]
+    IDX[Funk.Search<br/>SearchIndexingConsumer → IndexEntityJob<br/>Queue indexing]
   end
   DB[(PostgreSQL<br/>Fachtabellen + pg_trgm<br/>search_documents tsvector<br/>vector-Extension)]
   LLM[(OpenAI-kompatibler Endpunkt<br/>lokal: Ollama/vLLM/LocalAI)]
@@ -170,25 +170,25 @@ flowchart LR
 
 | Projekt / Ordner | Inhalt | Abhängigkeiten (Regeln 01 §5.2) | ab |
 |---|---|---|---|
-| `BE/platform/Plane.Platform.Search/` | `Abstractions/ISearchProvider.cs`, `Abstractions/SearchQuery.cs`, `Abstractions/SearchResult.cs`, `Abstractions/SearchProfile.cs`, `Abstractions/SearchProviderKeys.cs`, `Indexing/IIndexingPipeline.cs`, `Indexing/IndexDocument.cs`, `Indexing/IIndexDocumentEnricher.cs`, `Indexing/IndexEntityTypes.cs`, `Text/LikePattern.cs`, `Text/SequenceIdExtractor.cs`, `Text/SearchText.cs`, `Text/DrfSearchFilter.cs`, `Text/DrfSearchTerms.cs`, `Sql/TrigramFunctions.cs`, `PlaneSearchOptions.cs`, `SearchServiceCollectionExtensions.cs` | `Plane.BuildingBlocks`, `Microsoft.EntityFrameworkCore` (nur `EF.Functions`/`IQueryable`-Erweiterungen), `Npgsql.EntityFrameworkCore.PostgreSQL` 10.x (inkl. Trigramm-Funktionen, kein Plugin, ABG-126) – **kein** `Plane.Data`, kein Fachmodul (R7) | I0 (Gerüst), I1 (Text), I2 (Abstractions), I5 (Indexing) |
-| `BE/platform/Plane.Platform.Ai/` | `Configuration/LlmProviderKind.cs`, `Configuration/LlmRawSettings.cs`, `Configuration/LlmSettings.cs`, `Configuration/LlmSettingsResolver.cs`, `Configuration/ILlmSettingsSource.cs`, `Chat/DynamicChatClient.cs`, `Chat/OpenAiCompatibleChatClientFactory.cs`, `Chat/IChatClientFactory.cs`, `Embeddings/NullEmbeddingGenerator.cs`, `PlaneAiOptions.cs`, `AiServiceCollectionExtensions.cs` (`AddPlaneAi`) | `Plane.BuildingBlocks`, `Plane.Platform.Security` (Named-Client-Registrierung `llm`), `Microsoft.Extensions.AI` 10.x, `Microsoft.Extensions.AI.OpenAI` 10.x, `OpenAI` (transitiv) | I0 (Gerüst), I5 (`NullEmbeddingGenerator`), I6 |
-| `BE/modules/Search/Plane.Search.Contracts/` | `Permissions/SearchPermissions.cs` (generiert, 05: `WorkspaceSearchRead`), `Services/IWorkItemSearchService.cs` (für `Plane.PublicApi`, R6), `Dtos/*` (Antwortformen §3.4–§3.7) | `Plane.BuildingBlocks` (R2) | I2 |
-| `BE/modules/Search/Plane.Search/` | `SearchModule.cs`; `Endpoints/App/GlobalSearchEndpoints.cs` (SR-01), `Endpoints/App/EntitySearchEndpoints.cs` (SR-03), `Endpoints/App/WorkItemPickerSearchEndpoints.cs` (SR-02); `Application/Queries/GlobalSearch/GlobalSearchQuery.cs`, `…/EntitySearch/EntitySearchQuery.cs`, `…/WorkItemPickerSearch/WorkItemPickerSearchQuery.cs`, `…/PublicApiWorkItemSearch/PublicApiWorkItemSearchQuery.cs`; `Application/Services/ParitySearchProvider.cs`, `Application/Services/SearchProviderSelector.cs`, `Application/Services/WorkItemSearchService.cs` (implementiert `IWorkItemSearchService`); `Application/Sources/{WorkspaceSearchSource,ProjectSearchSource,WorkItemSearchSource,IntakeSearchSource,CycleSearchSource,ModuleSearchSource,ViewSearchSource,PageSearchSource,UserMentionSearchSource}.cs` (je `ISearchEntitySource`); `Application/Hydration/{GlobalSearchHydrator,EntitySearchHydrator,WorkItemPickerHydrator,PublicApiWorkItemHydrator}.cs`; `Application/Consumers/SearchIndexingConsumer.cs`; `Application/Jobs/{IndexEntityJob,RemoveIndexEntryJob,RemoveIndexEntriesByScopeJob,SearchIndexReconcileJob,SearchIndexRebuildJob}.cs`; `Indexing/IndexingPipeline.cs` (implementiert `IIndexingPipeline`), `Indexing/IndexFacets.cs` (Aufteilung `identifier`/JSON-Facetten), `Application/Sources/WorkItemBaseSetQuery.cs` (wendet `WorkItemBaseSetPredicates` **und** alle registrierten `IWorkItemBaseSetFilter` (16 E-04) an), `Indexing/IIndexDocumentBuilder.cs` (`string EntityType { get; }`, `ValueTask<IndexDocument?> BuildAsync(Guid entityId, CancellationToken ct)` – `null` = Quelle fehlt oder ist soft-gelöscht –, `ValueTask<DateTimeOffset?> GetSourceUpdatedAtAsync(Guid entityId, CancellationToken ct)` für den Nachlauf §3.10.4), `Indexing/Builders/{WorkItem,WorkItemComment,Page,Project,Cycle,Module,View}IndexDocumentBuilder.cs`; `Domain/CycleSearchStatus.cs`, `Domain/WorkItemPickerExclusions.cs` | `Plane.Search.Contracts`, `Plane.Data`, `Plane.Platform.Search`, `Plane.Documents` (Text-Extraktion `HtmlTextExtractor`, 07), `Plane.Authorization.Contracts`, `Plane.BuildingBlocks` (Messaging-Contracts, 06 §5.1), Contracts von WorkItems (Events, `IWorkItemBaseSetFilter`), Projects, Cycles, ProjectModules, Views, Pages, Intake, Workspaces (Events) | I2 (SR-02/-03), I5 (SR-01, Indexing) |
-| `BE/modules/Assistant/Plane.Assistant.Contracts/` | `Permissions/AssistantPermissions.cs` (generiert: `WorkspaceAiAssistantUse`, `ProjectAiAssistantUse`, `UserUnsplashRead`), `Dtos/AiAssistantResponseDto.cs`, `Requests/AiAssistantRequest.cs` | `Plane.BuildingBlocks` | I6 |
-| `BE/modules/Assistant/Plane.Assistant/` | `AssistantModule.cs`; `Endpoints/App/AiAssistantEndpoints.cs` (EXT-03), `Endpoints/App/UnsplashEndpoints.cs` (EXT-01); `Application/Queries/GenerateAiAssistantResponse/GenerateAiAssistantResponseQuery.cs` (bewusst **Query**, nicht Command: kein DB-Schreibzugriff, daher keine `TransactionBehavior`-Transaktion und keine Wiederholung durch die Npgsql-Execution-Strategy während eines bis zu 120 s langen LLM-Aufrufs, 02 D02-ADR-24); `Application/Queries/SearchUnsplash/SearchUnsplashQuery.cs`; `Application/Services/InstanceLlmSettingsSource.cs` (implementiert `ILlmSettingsSource`), `Application/Services/UnsplashClient.cs`, `Domain/AiResponseFormatter.cs`, `Domain/PythonTruthiness.cs` (`IsTruthy(JsonNode?)`: `null`, `false`, `0`, `""`, `[]`, `{}` → falsch; `AsText(JsonNode)`: String unverändert, sonst invariante JSON-Textdarstellung) | `Plane.Assistant.Contracts`, `Plane.Platform.Ai`, `Plane.Platform.Security`, `Plane.Instance.Contracts` (`IInstanceConfigurationStore`) | I6 |
-| `BE/modules/PublicApi/Plane.PublicApi/V1/Search/WorkItemSearchV1Endpoints.cs` | Adapter v1 (`issues/search`, `work-items/search`) → `IWorkItemSearchService` | `Plane.Search.Contracts` (R6) | I6 |
-| `BE/data/Plane.Data/Entities/Search/SearchDocument.cs`, `Configurations/Search/SearchDocumentConfiguration.cs` | Entität `[OwnedBy("Search")]`, Tabelle `search_documents` | – | I5 |
-| `BE/data/Plane.Data/Querying/WorkItems/WorkItemBaseSetPredicates.cs` | gemeinsame Ausdrucks-Prädikate der Basismengen `IssueObjects`, `AllObjects` (Definition 02 §3.11.4) als `Expression<Func<WorkItem,bool>>`; `WorkItemBaseSets` in `Plane.WorkItems` und die Such-Quellen nutzen **dieselben** Ausdrücke (Ort `Plane.Data/Querying/WorkItems/` wie die EF-gebundenen Übersetzer aus 02 §3.11, 16 X7) | – (Änderungsauftrag an 02 §3.11.4: Prädikate dort ablegen, damit `Plane.Search` sie ohne R1-Verstoß nutzt) | I2 |
-| `BE/modules/Authorization/Plane.Authorization/Visibility/SearchVisibilityFilter.cs` | Eigentum 05; Implementierungen `IVisibilityFilter<WorkItem>`, `<IntakeWorkItem>`, `<Page>`, `<View>`, `<SearchDocument>` (§3.8; Entitätsnamen nach 03) | 05 | I2/I5 |
-| `BE/tools/Plane.Cli/Commands/SearchReindexCommand.cs`, `…/SearchStatusCommand.cs` | `funk-cli search reindex [--workspace <slug>] [--project <id>] [--entity <type>] [--wait]`, `funk-cli search status` (§3.10.4; Ergänzung der CLI-Tabelle 14 §3.22) | `System.CommandLine` (14 §3.22) | I5 |
+| `BE/platform/Funk.Platform.Search/` | `Abstractions/ISearchProvider.cs`, `Abstractions/SearchQuery.cs`, `Abstractions/SearchResult.cs`, `Abstractions/SearchProfile.cs`, `Abstractions/SearchProviderKeys.cs`, `Indexing/IIndexingPipeline.cs`, `Indexing/IndexDocument.cs`, `Indexing/IIndexDocumentEnricher.cs`, `Indexing/IndexEntityTypes.cs`, `Text/LikePattern.cs`, `Text/SequenceIdExtractor.cs`, `Text/SearchText.cs`, `Text/DrfSearchFilter.cs`, `Text/DrfSearchTerms.cs`, `Sql/TrigramFunctions.cs`, `FunkSearchOptions.cs`, `SearchServiceCollectionExtensions.cs` | `Funk.BuildingBlocks`, `Microsoft.EntityFrameworkCore` (nur `EF.Functions`/`IQueryable`-Erweiterungen), `Npgsql.EntityFrameworkCore.PostgreSQL` 10.x (inkl. Trigramm-Funktionen, kein Plugin, ABG-126) – **kein** `Funk.Data`, kein Fachmodul (R7) | I0 (Gerüst), I1 (Text), I2 (Abstractions), I5 (Indexing) |
+| `BE/platform/Funk.Platform.Ai/` | `Configuration/LlmProviderKind.cs`, `Configuration/LlmRawSettings.cs`, `Configuration/LlmSettings.cs`, `Configuration/LlmSettingsResolver.cs`, `Configuration/ILlmSettingsSource.cs`, `Chat/DynamicChatClient.cs`, `Chat/OpenAiCompatibleChatClientFactory.cs`, `Chat/IChatClientFactory.cs`, `Embeddings/NullEmbeddingGenerator.cs`, `FunkAiOptions.cs`, `AiServiceCollectionExtensions.cs` (`AddPlaneAi`) | `Funk.BuildingBlocks`, `Funk.Platform.Security` (Named-Client-Registrierung `llm`), `Microsoft.Extensions.AI` 10.x, `Microsoft.Extensions.AI.OpenAI` 10.x, `OpenAI` (transitiv) | I0 (Gerüst), I5 (`NullEmbeddingGenerator`), I6 |
+| `BE/modules/Search/Funk.Search.Contracts/` | `Permissions/SearchPermissions.cs` (generiert, 05: `WorkspaceSearchRead`), `Services/IWorkItemSearchService.cs` (für `Funk.PublicApi`, R6), `Dtos/*` (Antwortformen §3.4–§3.7) | `Funk.BuildingBlocks` (R2) | I2 |
+| `BE/modules/Search/Funk.Search/` | `SearchModule.cs`; `Endpoints/App/GlobalSearchEndpoints.cs` (SR-01), `Endpoints/App/EntitySearchEndpoints.cs` (SR-03), `Endpoints/App/WorkItemPickerSearchEndpoints.cs` (SR-02); `Application/Queries/GlobalSearch/GlobalSearchQuery.cs`, `…/EntitySearch/EntitySearchQuery.cs`, `…/WorkItemPickerSearch/WorkItemPickerSearchQuery.cs`, `…/PublicApiWorkItemSearch/PublicApiWorkItemSearchQuery.cs`; `Application/Services/ParitySearchProvider.cs`, `Application/Services/SearchProviderSelector.cs`, `Application/Services/WorkItemSearchService.cs` (implementiert `IWorkItemSearchService`); `Application/Sources/{WorkspaceSearchSource,ProjectSearchSource,WorkItemSearchSource,IntakeSearchSource,CycleSearchSource,ModuleSearchSource,ViewSearchSource,PageSearchSource,UserMentionSearchSource}.cs` (je `ISearchEntitySource`); `Application/Hydration/{GlobalSearchHydrator,EntitySearchHydrator,WorkItemPickerHydrator,PublicApiWorkItemHydrator}.cs`; `Application/Consumers/SearchIndexingConsumer.cs`; `Application/Jobs/{IndexEntityJob,RemoveIndexEntryJob,RemoveIndexEntriesByScopeJob,SearchIndexReconcileJob,SearchIndexRebuildJob}.cs`; `Indexing/IndexingPipeline.cs` (implementiert `IIndexingPipeline`), `Indexing/IndexFacets.cs` (Aufteilung `identifier`/JSON-Facetten), `Application/Sources/WorkItemBaseSetQuery.cs` (wendet `WorkItemBaseSetPredicates` **und** alle registrierten `IWorkItemBaseSetFilter` (16 E-04) an), `Indexing/IIndexDocumentBuilder.cs` (`string EntityType { get; }`, `ValueTask<IndexDocument?> BuildAsync(Guid entityId, CancellationToken ct)` – `null` = Quelle fehlt oder ist soft-gelöscht –, `ValueTask<DateTimeOffset?> GetSourceUpdatedAtAsync(Guid entityId, CancellationToken ct)` für den Nachlauf §3.10.4), `Indexing/Builders/{WorkItem,WorkItemComment,Page,Project,Cycle,Module,View}IndexDocumentBuilder.cs`; `Domain/CycleSearchStatus.cs`, `Domain/WorkItemPickerExclusions.cs` | `Funk.Search.Contracts`, `Funk.Data`, `Funk.Platform.Search`, `Funk.Documents` (Text-Extraktion `HtmlTextExtractor`, 07), `Funk.Authorization.Contracts`, `Funk.BuildingBlocks` (Messaging-Contracts, 06 §5.1), Contracts von WorkItems (Events, `IWorkItemBaseSetFilter`), Projects, Cycles, ProjectModules, Views, Pages, Intake, Workspaces (Events) | I2 (SR-02/-03), I5 (SR-01, Indexing) |
+| `BE/modules/Assistant/Funk.Assistant.Contracts/` | `Permissions/AssistantPermissions.cs` (generiert: `WorkspaceAiAssistantUse`, `ProjectAiAssistantUse`, `UserUnsplashRead`), `Dtos/AiAssistantResponseDto.cs`, `Requests/AiAssistantRequest.cs` | `Funk.BuildingBlocks` | I6 |
+| `BE/modules/Assistant/Funk.Assistant/` | `AssistantModule.cs`; `Endpoints/App/AiAssistantEndpoints.cs` (EXT-03), `Endpoints/App/UnsplashEndpoints.cs` (EXT-01); `Application/Queries/GenerateAiAssistantResponse/GenerateAiAssistantResponseQuery.cs` (bewusst **Query**, nicht Command: kein DB-Schreibzugriff, daher keine `TransactionBehavior`-Transaktion und keine Wiederholung durch die Npgsql-Execution-Strategy während eines bis zu 120 s langen LLM-Aufrufs, 02 D02-ADR-24); `Application/Queries/SearchUnsplash/SearchUnsplashQuery.cs`; `Application/Services/InstanceLlmSettingsSource.cs` (implementiert `ILlmSettingsSource`), `Application/Services/UnsplashClient.cs`, `Domain/AiResponseFormatter.cs`, `Domain/PythonTruthiness.cs` (`IsTruthy(JsonNode?)`: `null`, `false`, `0`, `""`, `[]`, `{}` → falsch; `AsText(JsonNode)`: String unverändert, sonst invariante JSON-Textdarstellung) | `Funk.Assistant.Contracts`, `Funk.Platform.Ai`, `Funk.Platform.Security`, `Funk.Instance.Contracts` (`IInstanceConfigurationStore`) | I6 |
+| `BE/modules/PublicApi/Funk.PublicApi/V1/Search/WorkItemSearchV1Endpoints.cs` | Adapter v1 (`issues/search`, `work-items/search`) → `IWorkItemSearchService` | `Funk.Search.Contracts` (R6) | I6 |
+| `BE/data/Funk.Data/Entities/Search/SearchDocument.cs`, `Configurations/Search/SearchDocumentConfiguration.cs` | Entität `[OwnedBy("Search")]`, Tabelle `search_documents` | – | I5 |
+| `BE/data/Funk.Data/Querying/WorkItems/WorkItemBaseSetPredicates.cs` | gemeinsame Ausdrucks-Prädikate der Basismengen `IssueObjects`, `AllObjects` (Definition 02 §3.11.4) als `Expression<Func<WorkItem,bool>>`; `WorkItemBaseSets` in `Funk.WorkItems` und die Such-Quellen nutzen **dieselben** Ausdrücke (Ort `Funk.Data/Querying/WorkItems/` wie die EF-gebundenen Übersetzer aus 02 §3.11, 16 X7) | – (Änderungsauftrag an 02 §3.11.4: Prädikate dort ablegen, damit `Funk.Search` sie ohne R1-Verstoß nutzt) | I2 |
+| `BE/modules/Authorization/Funk.Authorization/Visibility/SearchVisibilityFilter.cs` | Eigentum 05; Implementierungen `IVisibilityFilter<WorkItem>`, `<IntakeWorkItem>`, `<Page>`, `<View>`, `<SearchDocument>` (§3.8; Entitätsnamen nach 03) | 05 | I2/I5 |
+| `BE/tools/Funk.Cli/Commands/SearchReindexCommand.cs`, `…/SearchStatusCommand.cs` | `funk-cli search reindex [--workspace <slug>] [--project <id>] [--entity <type>] [--wait]`, `funk-cli search status` (§3.10.4; Ergänzung der CLI-Tabelle 14 §3.22) | `System.CommandLine` (14 §3.22) | I5 |
 
 #### 3.1.2 Registrierung im Host
 
 | Host | Registrierung |
 |---|---|
-| `Plane.Api` | `services.AddPlaneSearch(configuration)` (Optionen, `DrfSearchFilter`-Abhängigkeiten, Keyed-Provider `parity`), `SearchModule`, `AssistantModule`, `services.AddPlaneAi(configuration)` |
-| `Plane.Worker` | `SearchModule` (nur `RegisterMessaging`: Consumer, Jobs, Cron), `services.AddPlaneSearch(configuration)` |
-| `Plane.Realtime`, `Plane.Gateway`, `Plane.Migrator` | – (Migrator führt nur Migrationen/Extensions aus) |
+| `Funk.Api` | `services.AddPlaneSearch(configuration)` (Optionen, `DrfSearchFilter`-Abhängigkeiten, Keyed-Provider `parity`), `SearchModule`, `AssistantModule`, `services.AddPlaneAi(configuration)` |
+| `Funk.Worker` | `SearchModule` (nur `RegisterMessaging`: Consumer, Jobs, Cron), `services.AddPlaneSearch(configuration)` |
+| `Funk.Realtime`, `Funk.Gateway`, `Funk.Migrator` | – (Migrator führt nur Migrationen/Extensions aus) |
 
 ### 3.2 Textabgleich-Semantik
 
@@ -220,23 +220,23 @@ flowchart LR
 `DrfSearchFilter.Apply<T>(IQueryable<T> source, string? search, params Expression<Func<T, string?>>[] fields)` bildet `rest_framework.filters.SearchFilter.filter_queryset` (DRF 3.17.2) nach:
 
 1. Parameter `search` fehlt oder ist leer → Quelle unverändert.
-2. **NUL-Prüfung 1:1:** DRF validiert den Wert mit `CharField(trim_whitespace=False, allow_blank=True).run_validation` (`ProhibitNullCharactersValidator`); enthält `search` ein `\0`, antwortet das Original **400** mit dem DRF-Listenkörper `["Null characters are not allowed."]` (über `auth_exception_handler` → DRF-`exception_handler`). `DrfSearchTerms.TrySplit` liefert dann `false`; der aufrufende Handler gibt `PlaneErrors.DrfList(400, DrfMessages.NullCharacters)` zurück (Mechanik 02 §3.8; Text als Konstante in `DrfMessages` ergänzen, Änderungsauftrag §9.2). Kein Entfernen der NUL-Zeichen (anders als bei den SR-Endpunkten, §3.2.1).
+2. **NUL-Prüfung 1:1:** DRF validiert den Wert mit `CharField(trim_whitespace=False, allow_blank=True).run_validation` (`ProhibitNullCharactersValidator`); enthält `search` ein `\0`, antwortet das Original **400** mit dem DRF-Listenkörper `["Null characters are not allowed."]` (über `auth_exception_handler` → DRF-`exception_handler`). `DrfSearchTerms.TrySplit` liefert dann `false`; der aufrufende Handler gibt `FunkErrors.DrfList(400, DrfMessages.NullCharacters)` zurück (Mechanik 02 §3.8; Text als Konstante in `DrfMessages` ergänzen, Änderungsauftrag §9.2). Kein Entfernen der NUL-Zeichen (anders als bei den SR-Endpunkten, §3.2.1).
 3. `DrfSearchTerms.TrySplit(search, out terms)` = Port von `search_smart_split` (DRF 3.17.2, `rest_framework/filters.py` Z. 20–34) auf Basis von Djangos `smart_split`: (a) Zerlegung an Leerraum, wobei in `"…"` **oder** `'…'` eingeschlossene Teile (mit `\`-Escapes) zusammenbleiben – auch mitten in einem Token (`a"b c"d` ist **ein** Token); (b) je Token führende/abschließende Kommas entfernen; (c) beginnt das Token mit `"` oder `'` und endet es mit demselben Zeichen → **ein** Begriff, Anführungszeichen entfernt und `\"`/`\'`/`\\` entkommen (`unescape_string_literal`) – auch eine leere Phrase `""` ergibt einen (leeren) Begriff, der alles trifft (1:1); (d) sonst Zerlegung an Kommas, leere Teile verworfen, Teile getrimmt; Anführungszeichen innerhalb solcher Tokens bleiben erhalten.
 4. Für **jeden** Begriff: `OR` über alle Felder mit `ILIKE '%term%'` (`LikePattern.Contains`); Begriffe untereinander `AND`.
 5. Mehrfach-Beziehungen: DRF dedupliziert nur bei m:n-Pfaden (`must_call_distinct`) über `EXISTS`; keiner der CE-Verwender (§4.6) hat einen m:n-Pfad (`member__*` ist n:1), daher `requiresDistinct: false` an allen CE-Stellen; der Parameter bleibt für Pakete.
-6. Golden-Datei `T/Plane.Platform.Tests/Search/drf-search-terms.golden.json` wird mit `tools/golden/generate.mjs drf-search` aus der Original-Umgebung (Python, `rest_framework.filters.search_smart_split` aus DRF 3.17.2) erzeugt: 40 Eingaben (Leerzeichen, Kommas, `"`- und `'`-Phrasen, Escapes, leere Phrase, Anführungszeichen mitten im Token, Unicode) → Begriffslisten; zusätzlich ein Fall mit NUL → erwarteter Fehler.
+6. Golden-Datei `T/Funk.Platform.Tests/Search/drf-search-terms.golden.json` wird mit `tools/golden/generate.mjs drf-search` aus der Original-Umgebung (Python, `rest_framework.filters.search_smart_split` aus DRF 3.17.2) erzeugt: 40 Eingaben (Leerzeichen, Kommas, `"`- und `'`-Phrasen, Escapes, leere Phrase, Anführungszeichen mitten im Token, Unicode) → Begriffslisten; zusätzlich ein Fall mit NUL → erwarteter Fehler.
 
 Verwender (vollständig, Original → Zielmodul): Tabelle §4.6.
 
 ### 3.3 Such-Abstraktion
 
-#### 3.3.1 Typen (`Plane.Platform.Search/Abstractions/`)
+#### 3.3.1 Typen (`Funk.Platform.Search/Abstractions/`)
 
 | Typ | Definition |
 |---|---|
 | `SearchProfile` | `enum SearchProfile { Global = 1, Entity = 2, WorkItemPicker = 3, PublicApiWorkItems = 4 }`; Werte ≥ 100 reserviert für Pakete (B6: `AdvancedWorkItems = 100`, G1: `Semantic = 110`) |
 | `SearchEntityTypes` | Konstanten `workspace`, `project`, `issue`, `cycle`, `module`, `issue_view`, `page`, `intake`, `user_mention` (Wire-Namen des Originals); Reihenfolge `GlobalOrder` = `workspace, project, issue, cycle, module, issue_view, page, intake` (Reihenfolge der `MODELS_MAPPER`-Einträge, bestimmt die Gruppenreihenfolge in Power-K, §3.11) |
-| `SearchQuery` | `record SearchQuery(SearchProfile Profile, PlanePrincipal Principal, Guid WorkspaceId, string? Text, IReadOnlyList<string> EntityTypes, Guid? ProjectId, bool WorkspaceWide, int? Limit, IReadOnlyDictionary<string, string> Options, SearchFilter? Filter = null)` – `Options` trägt profilabhängige Parameter (SR-02: `parent`, `issue_relation`, `sub_issue`, `cycle`, `module`, `target_date`, `issue_id`); `Filter` ist in der CE immer `null` |
+| `SearchQuery` | `record SearchQuery(SearchProfile Profile, FunkPrincipal Principal, Guid WorkspaceId, string? Text, IReadOnlyList<string> EntityTypes, Guid? ProjectId, bool WorkspaceWide, int? Limit, IReadOnlyDictionary<string, string> Options, SearchFilter? Filter = null)` – `Options` trägt profilabhängige Parameter (SR-02: `parent`, `issue_relation`, `sub_issue`, `cycle`, `module`, `target_date`, `issue_id`); `Filter` ist in der CE immer `null` |
 | `SearchFilter` | `record SearchFilter(string ParserName, string Expression)` – Andockstelle B6 (`IFilterParser.Name` aus 16 §5.5, z. B. `pql`) |
 | `SearchHit` | `readonly record struct SearchHit(string EntityType, Guid Id, double Score, Guid? RowKey = null)` – `RowKey` unterscheidet mehrere Ergebniszeilen desselben Objekts (einziger CE-Fall: SR-03 `page` ohne `project_id`, `RowKey` = `projects__id`); sonst `null` |
 | `SearchResult` | `sealed record SearchResult(IReadOnlyDictionary<string, IReadOnlyList<SearchHit>> Hits, IReadOnlySet<string> Truncated)` – `Hits` in der Reihenfolge von `EntityTypes`; `Truncated` nennt Typen, deren Liste durch `Limit`/`MaxUnboundedResults` gekappt wurde (nur Telemetrie, nicht im Vertrag) |
@@ -247,7 +247,7 @@ Verwender (vollständig, Original → Zielmodul): Tabelle §4.6.
 
 ```mermaid
 sequenceDiagram
-  participant E as Endpoint (Plane.Search)
+  participant E as Endpoint (Funk.Search)
   participant Q as Query-Handler
   participant S as SearchProviderSelector
   participant P as ISearchProvider (keyed "parity")
@@ -256,7 +256,7 @@ sequenceDiagram
   participant H as Hydrator (Profil)
   E->>Q: GlobalSearchQuery(scope, params)
   Q->>S: Resolve(profile)
-  S-->>Q: Provider (Option Plane:Search:Routing:<Profile>, Default parity)
+  S-->>Q: Provider (Option Funk:Search:Routing:<Profile>, Default parity)
   Q->>P: SearchAsync(SearchQuery)
   P->>SRC: SelectAsync(query) je Entitätstyp (sequenziell, gleicher DbContext)
   SRC->>V: Apply(candidates, principal, scope)
@@ -271,7 +271,7 @@ sequenceDiagram
 Regeln:
 
 1. **Ein DbContext je Request**, Quellen laufen **sequenziell** (EF Core erlaubt keine parallelen Abfragen auf demselben Kontext); Leseabfragen mit `AsNoTracking()` und – wo das Original `use_read_replica = True` setzt (v1-Suche) – `.UseReadReplica()` (02 D02-ADR-22).
-2. `ISearchEntitySource` (intern in `Plane.Search`): `string EntityType { get; }`, `bool Supports(SearchProfile profile)`, `ValueTask<IReadOnlyList<SearchHit>> SelectAsync(SearchQuery q, int? limit, CancellationToken ct)`, `ValueTask<IReadOnlyList<JsonObject>> HydrateAsync(SearchProfile profile, IReadOnlyList<SearchHit> hits, SearchQuery q, CancellationToken ct)` (Hits statt IDs, damit `RowKey` die Zeile bestimmt). Eine Quelle kapselt Kandidatenprädikat, Sichtbarkeit, Ordnung und die Projektionen je Profil.
+2. `ISearchEntitySource` (intern in `Funk.Search`): `string EntityType { get; }`, `bool Supports(SearchProfile profile)`, `ValueTask<IReadOnlyList<SearchHit>> SelectAsync(SearchQuery q, int? limit, CancellationToken ct)`, `ValueTask<IReadOnlyList<JsonObject>> HydrateAsync(SearchProfile profile, IReadOnlyList<SearchHit> hits, SearchQuery q, CancellationToken ct)` (Hits statt IDs, damit `RowKey` die Zeile bestimmt). Eine Quelle kapselt Kandidatenprädikat, Sichtbarkeit, Ordnung und die Projektionen je Profil.
 3. **Kappung:** Profil `Global`: `issue`/`intake` 100 (Original), übrige `MaxUnboundedResults` (D11-ADR-18); `Entity`: `count`; `WorkItemPicker`: 100; `PublicApiWorkItems`: `limit`.
 4. **Hydrierung erhält die Reihenfolge** der Treffer (`ORDER BY array_position(@ids, id)` bzw. Sortierung im Speicher nach Index).
 5. **Mehrfachzeilen:** Wo das Original durch `.values()` über eine m:n-Beziehung **mehrere Zeilen pro Objekt** liefert (SR-03 `page` ohne `project_id`: eine Zeile je verknüpftem Projekt, das die Mitgliedschaftsbedingung erfüllt – Django verwendet für `values("projects__id")` nach `filter()` dieselbe Join-Instanz), wählt die Quelle **Paare** `(page.id, project.id)` aus und liefert je Paar einen `SearchHit` mit `RowKey = project.id`; die Kappung zählt damit Zeilen (wie `[:count]` auf `.values()`), der Hydrator projiziert je Paar genau eine Zeile.
@@ -279,7 +279,7 @@ Regeln:
 
 #### 3.3.3 Provider-Auswahl
 
-`SearchProviderSelector.Resolve(SearchProfile profile)` liest `PlaneSearchOptions.Routing` (Dictionary `Profil → Provider-Key`, Default leer = alle `parity`) und löst `[FromKeyedServices(key)] ISearchProvider` auf. Unbekannter Key → Startfehler (`ValidateOnStart`, `PlaneSearchOptionsValidator`). B6 registriert `services.AddKeyedScoped<ISearchProvider, AdvancedSearchProvider>(SearchProviderKeys.Advanced)` und setzt in seiner Modul-Registrierung `Routing[AdvancedWorkItems] = advanced`; die CE-Profile bleiben auf `parity`, bis ein Betreiber sie umstellt (z. B. `Plane__Search__Routing__Global=hybrid` mit G1).
+`SearchProviderSelector.Resolve(SearchProfile profile)` liest `FunkSearchOptions.Routing` (Dictionary `Profil → Provider-Key`, Default leer = alle `parity`) und löst `[FromKeyedServices(key)] ISearchProvider` auf. Unbekannter Key → Startfehler (`ValidateOnStart`, `FunkSearchOptionsValidator`). B6 registriert `services.AddKeyedScoped<ISearchProvider, AdvancedSearchProvider>(SearchProviderKeys.Advanced)` und setzt in seiner Modul-Registrierung `Routing[AdvancedWorkItems] = advanced`; die CE-Profile bleiben auf `parity`, bis ein Betreiber sie umstellt (z. B. `Funk__Search__Routing__Global=hybrid` mit G1).
 
 ### 3.4 Globale Suche SR-01 (CE-SRCH-001)
 
@@ -361,7 +361,7 @@ Ungültige UUID in `issue_id` (bei gesetztem Schalter) → 400 `{"error": "Pleas
 
 ### 3.7 Public-API-Suche v1 (CE-API-019)
 
-**Endpunkte:** `GET /api/v1/workspaces/{slug}/issues/search/` und `GET /api/v1/workspaces/{slug}/work-items/search/` (gleicher Handler), Adapter `Plane.PublicApi/V1/Search/WorkItemSearchV1Endpoints.cs` → `IWorkItemSearchService.SearchAsync(...)` (Profil `PublicApiWorkItems`), `.RequirePermission(SearchPermissions.WorkspaceSearchRead)` (05 Anhang B), `.UseReadReplica()` (Original `use_read_replica = True`), OpenAPI `operationId: search_work_items`, Tag `Work Items`.
+**Endpunkte:** `GET /api/v1/workspaces/{slug}/issues/search/` und `GET /api/v1/workspaces/{slug}/work-items/search/` (gleicher Handler), Adapter `Funk.PublicApi/V1/Search/WorkItemSearchV1Endpoints.cs` → `IWorkItemSearchService.SearchAsync(...)` (Profil `PublicApiWorkItems`), `.RequirePermission(SearchPermissions.WorkspaceSearchRead)` (05 Anhang B), `.UseReadReplica()` (Original `use_read_replica = True`), OpenAPI `operationId: search_work_items`, Tag `Work Items`.
 
 | Parameter | Auswertung |
 |---|---|
@@ -388,20 +388,20 @@ Ungültige UUID in `issue_id` (bei gesetztem Schalter) → 400 `{"error": "Pleas
 
 #### 3.8.2 Prädikate (Eigentum 05 §3.14, hier die von der Suche verlangten Implementierungen)
 
-| Filter (`Plane.Authorization/Visibility/`) | Entität | Prädikat (Pseudo-SQL, `u` = Anfragender) |
+| Filter (`Funk.Authorization/Visibility/`) | Entität | Prädikat (Pseudo-SQL, `u` = Anfragender) |
 |---|---|---|
 | `WorkItemVisibilityFilter` | `WorkItem` (auch Intake-Basis) | `EXISTS(pm: pm.project_id = wi.project_id AND pm.member_id = u AND pm.is_active AND pm.deleted_at IS NULL AND (pm.role > 5 OR p.guest_view_all_features OR wi.created_by_id = u))` |
 | `ViewVisibilityFilter` | `View` (Projekt-View, Tabelle `views`) | `EXISTS(pm …) AND (pm.role > 5 OR p.guest_view_all_features OR v.owned_by_id = u)`; die Suche ergänzt `(v.owned_by_id = u OR v.access = 1)` |
 | `PageVisibilityFilter` | `Page` | `EXISTS(pp ∈ project_pages(page), pm ∈ project_members(pp.project_id, u) aktiv, nicht gelöscht, Projekt nicht archiviert, (pm.role > 5 OR p.guest_view_all_features OR page.owned_by_id = u))`; die Suche ergänzt `(page.owned_by_id = u OR page.access = 0)` |
 | `SearchVisibilityFilter` | Fassade, die je Entitätstyp den passenden Filter liefert (`IVisibilityFilter<T> For<T>()`), plus Implementierung für `SearchDocument` (B6/G1, §3.10.5) | für `SearchDocument`: Typ `work_item`/`page`/`issue_view` → Prädikate oben über `entity_id`; `project`/`cycle`/`module` → aktive Mitgliedschaft; `work_item_comment` → Sichtbarkeit des Work Items |
 
-Signatur verbindlich nach 01 §5.5 (ABG-128; Skelett und `IVisibilityFilter<SearchDocument>` in 05 §3.14): `IQueryable<TEntity> Apply(IQueryable<TEntity> query, PlanePrincipal principal, ScopeRef scope)` in `Plane.Authorization.Contracts` (nur BCL-`IQueryable`, R2-konform).
+Signatur verbindlich nach 01 §5.5 (ABG-128; Skelett und `IVisibilityFilter<SearchDocument>` in 05 §3.14): `IQueryable<TEntity> Apply(IQueryable<TEntity> query, FunkPrincipal principal, ScopeRef scope)` in `Funk.Authorization.Contracts` (nur BCL-`IQueryable`, R2-konform).
 
-Regeln: (1) Der Vergleich `pm.role > 5` steht ausschließlich in `Plane.Authorization/Visibility/*` (Analyzer `PLANE0001`, 02 §3.6.5). (2) Alle Mitgliedschafts-Existenzprüfungen nutzen **ein** `Any(...)` je Projekt (gleiche Join-Instanz wie Django innerhalb eines `filter()`-Aufrufs). (3) Architekturtest `SearchSourcesApplyVisibility` (Plane.ArchitectureTests): jede `ISearchEntitySource`-Implementierung für `issue`, `intake`, `issue_view`, `page` ruft in `SelectAsync` und `HydrateAsync` `IVisibilityFilter<T>.Apply` auf (Prüfung über einen Roslyn-Analyzer-Test oder Laufzeittest mit `RecordingVisibilityFilter`).
+Regeln: (1) Der Vergleich `pm.role > 5` steht ausschließlich in `Funk.Authorization/Visibility/*` (Analyzer `FUNK0001`, 02 §3.6.5). (2) Alle Mitgliedschafts-Existenzprüfungen nutzen **ein** `Any(...)` je Projekt (gleiche Join-Instanz wie Django innerhalb eines `filter()`-Aufrufs). (3) Architekturtest `SearchSourcesApplyVisibility` (Funk.ArchitectureTests): jede `ISearchEntitySource`-Implementierung für `issue`, `intake`, `issue_view`, `page` ruft in `SelectAsync` und `HydrateAsync` `IVisibilityFilter<T>.Apply` auf (Prüfung über einen Roslyn-Analyzer-Test oder Laufzeittest mit `RecordingVisibilityFilter`).
 
 ### 3.9 Trigramm-Indizes und SQL-Pläne
 
-Alle Indizes werden in der EF-Konfiguration des **Eigentümer-Moduls** der Tabelle angelegt (R3), aber von diesem Dokument verlangt. Konvention: Helfer `TrigramIndexExtensions.HasTrigramIndex(...)` aus 03 (`Plane.Data/Conventions/`) = `HasIndex(x => x.Name).HasMethod("gin").HasOperators("gin_trgm_ops").HasDatabaseName("ix_<tabelle>_<spalte>_trgm")`. Extension `pg_trgm` wird in der I0-Migration `…_Platform_Extensions` angelegt und im Modell per `HasPostgresExtension("pg_trgm")` deklariert (03 §3.10.2, `ExtensionCheck` 14 §3.15). `EF.Functions.TrigramsSimilarity`/`TrigramsWordSimilarity` (Ranking, D11-ADR-03) sind Funktionen aus `Npgsql.EntityFrameworkCore.PostgreSQL` 10.x (seit Npgsql EF 6 im Provider enthalten): **kein** Plugin-Paket `…PostgreSQL.Trigrams`, **kein** `UseTrigrams()` (ABG-126); Indizes per `HasMethod("gin").HasOperators("gin_trgm_ops")`. Fallback-Mapping `[DbFunction("similarity")]` in `TrigramFunctions` nur, falls S0 einen Namensunterschied zeigt. Tabellen- und Konfigurationsnamen nach 03 §3.4. Spalte „ab“ = Inkrement der ersten Nutzung; 03 §3.10.1 führt dieselben Termine (entschieden 17 ABG-123).
+Alle Indizes werden in der EF-Konfiguration des **Eigentümer-Moduls** der Tabelle angelegt (R3), aber von diesem Dokument verlangt. Konvention: Helfer `TrigramIndexExtensions.HasTrigramIndex(...)` aus 03 (`Funk.Data/Conventions/`) = `HasIndex(x => x.Name).HasMethod("gin").HasOperators("gin_trgm_ops").HasDatabaseName("ix_<tabelle>_<spalte>_trgm")`. Extension `pg_trgm` wird in der I0-Migration `…_Platform_Extensions` angelegt und im Modell per `HasPostgresExtension("pg_trgm")` deklariert (03 §3.10.2, `ExtensionCheck` 14 §3.15). `EF.Functions.TrigramsSimilarity`/`TrigramsWordSimilarity` (Ranking, D11-ADR-03) sind Funktionen aus `Npgsql.EntityFrameworkCore.PostgreSQL` 10.x (seit Npgsql EF 6 im Provider enthalten): **kein** Plugin-Paket `…PostgreSQL.Trigrams`, **kein** `UseTrigrams()` (ABG-126); Indizes per `HasMethod("gin").HasOperators("gin_trgm_ops")`. Fallback-Mapping `[DbFunction("similarity")]` in `TrigramFunctions` nur, falls S0 einen Namensunterschied zeigt. Tabellen- und Konfigurationsnamen nach 03 §3.4. Spalte „ab“ = Inkrement der ersten Nutzung; 03 §3.10.1 führt dieselben Termine (entschieden 17 ABG-123).
 
 | Tabelle.Spalte (Arbeitsname) | Eigentümer-Modul / EF-Konfiguration | genutzt von | ab |
 |---|---|---|---|
@@ -418,13 +418,13 @@ Alle Indizes werden in der EF-Konfiguration des **Eigentümer-Moduls** der Tabel
 
 **Ergänzende B-Tree-Indizes** (für die Mitgliedschafts-Joins, Eigentümer Projects/Workspaces, verlangt hier): `project_members (member_id, project_id) WHERE deleted_at IS NULL AND is_active`, `workspace_members (member_id, workspace_id) WHERE deleted_at IS NULL AND is_active`, `work_items (project_id, sequence_id)` (existiert als `ux_work_items_project_sequence_id`, 03 §3.4), `project_pages (page_id, project_id)`.
 
-**Plan-Assertions** (`T/modules/Plane.Search.Tests/Performance/SearchPlanTests.cs`, Volumenprofil L aus 15 §3.14.3, `EXPLAIN (ANALYZE, BUFFERS)`): (1) SR-01 `issue` mit `search` ≥ 3 Zeichen nutzt `ix_work_items_name_trgm` (Bitmap Index Scan) oder einen Index-Scan über die Mitgliedschaft – kein Seq-Scan auf `work_items`; (2) SR-02 mit `workspace_search=false` nutzt den Projekt-Index; (3) SR-03 `user_mention` ohne Projekt nutzt `workspace_members`-Index. Lasttest LT-09 (15): Profil XL, 30 VU, p95 < 300 ms.
+**Plan-Assertions** (`T/modules/Funk.Search.Tests/Performance/SearchPlanTests.cs`, Volumenprofil L aus 15 §3.14.3, `EXPLAIN (ANALYZE, BUFFERS)`): (1) SR-01 `issue` mit `search` ≥ 3 Zeichen nutzt `ix_work_items_name_trgm` (Bitmap Index Scan) oder einen Index-Scan über die Mitgliedschaft – kein Seq-Scan auf `work_items`; (2) SR-02 mit `workspace_search=false` nutzt den Projekt-Index; (3) SR-03 `user_mention` ohne Projekt nutzt `workspace_members`-Index. Lasttest LT-09 (15): Profil XL, 30 VU, p95 < 300 ms.
 
 ### 3.10 Indexierungs-Pipeline (`search_documents`)
 
 #### 3.10.1 Schema (Migration `…_Search_Documents`, I5; Eigentümer `Search`; Basis 03 §3.4.18.8)
 
-Verbindlich ist die Form aus 03 §3.4.18.8 (ABG-122): Surrogat-PK `id uuid` (UUIDv7, `IIdGenerator`), Upsert-Ziel `uq_search_documents_entity` UNIQUE (`entity_type`, `entity_id`), `project_id` mit Scope-FK `(project_id, workspace_id) → projects` ON DELETE CASCADE (Spike-Vorbehalt Z-107), Spalte `source_updated_at` (statt `updated_at`), `entity_type varchar(32)`, Indexnamen wie 03. Die fachlichen Spalten dieses Dokuments (`identifier`, `content_hash`, `body` ≤ `Plane:Search:BodyMaxChars` = 100 000, Gewichtung A/B im `search_vector`) und die Indizes `project`/`facets` sind in 03 übernommen. Die Funktion `plane_unaccent` entsteht bereits in der I0-Migration `…_Platform_Extensions` (03 §3.10.2) und wird hier nur genutzt.
+Verbindlich ist die Form aus 03 §3.4.18.8 (ABG-122): Surrogat-PK `id uuid` (UUIDv7, `IIdGenerator`), Upsert-Ziel `uq_search_documents_entity` UNIQUE (`entity_type`, `entity_id`), `project_id` mit Scope-FK `(project_id, workspace_id) → projects` ON DELETE CASCADE (Spike-Vorbehalt Z-107), Spalte `source_updated_at` (statt `updated_at`), `entity_type varchar(32)`, Indexnamen wie 03. Die fachlichen Spalten dieses Dokuments (`identifier`, `content_hash`, `body` ≤ `Funk:Search:BodyMaxChars` = 100 000, Gewichtung A/B im `search_vector`) und die Indizes `project`/`facets` sind in 03 übernommen. Die Funktion `plane_unaccent` entsteht bereits in der I0-Migration `…_Platform_Extensions` (03 §3.10.2) und wird hier nur genutzt.
 
 ```sql
 -- Voraussetzung (03 §3.10.2, Migration …_Platform_Extensions, I0):
@@ -438,7 +438,7 @@ CREATE TABLE search_documents (
   entity_type        varchar(32)  NOT NULL,                          -- IndexEntityTypes (§5.1)
   entity_id          uuid         NOT NULL,                          -- polymorph, ohne FK
   title              text         NOT NULL,
-  body               text         NULL,                              -- Klartext, gekürzt auf Plane:Search:BodyMaxChars (100 000)
+  body               text         NULL,                              -- Klartext, gekürzt auf Funk:Search:BodyMaxChars (100 000)
   identifier         varchar(64)  NULL,                              -- "WEB-123" bzw. Projekt-Identifier
   facets             jsonb        NOT NULL DEFAULT '{}'::jsonb,
   content_hash       bytea        NOT NULL,                          -- SHA-256 über title|body|identifier|facets
@@ -459,7 +459,7 @@ CREATE INDEX ix_search_documents_project        ON search_documents (project_id)
 CREATE INDEX ix_search_documents_facets         ON search_documents USING gin (facets jsonb_path_ops);
 ```
 
-EF-Abbildung: `SearchDocumentConfiguration` mit `HasKey(x => x.Id)` und `HasIndex(x => new { x.EntityType, x.EntityId }).IsUnique()` (Name `uq_search_documents_entity`), Scope-FK über `ScopeForeignKeyConvention` (03), `HasComputedColumnSql("<Ausdruck>", stored: true)` für `search_vector` (Typ `NpgsqlTsVector`), `Facets` als `JsonObject` mit `JsonNodeValueConverter` (03 D03-ADR-13). Kein Soft-Delete, kein Audit (technische Tabelle; 03 §3.5 führt `search_documents` in der Liste der Tabellen ohne Soft-Delete; Entität erbt **nicht** von `AuditableEntity`, Architekturtest-Ausnahme über die Liste aus 03). Zugriffe laufen nur über `Plane.Search` bzw. Paket-Provider (§3.10.5). Größengrenze: ein `tsvector` darf 1 MB nicht überschreiten – deshalb `BodyMaxChars` = 100 000 Zeichen (in 03 §3.4.18.8 übernommen, ABG-122). Upsert: `INSERT … ON CONFLICT (entity_type, entity_id) DO UPDATE` (§3.10.4, §5.6); `id` wird nur beim ersten Einfügen vergeben und bleibt danach stabil.
+EF-Abbildung: `SearchDocumentConfiguration` mit `HasKey(x => x.Id)` und `HasIndex(x => new { x.EntityType, x.EntityId }).IsUnique()` (Name `uq_search_documents_entity`), Scope-FK über `ScopeForeignKeyConvention` (03), `HasComputedColumnSql("<Ausdruck>", stored: true)` für `search_vector` (Typ `NpgsqlTsVector`), `Facets` als `JsonObject` mit `JsonNodeValueConverter` (03 D03-ADR-13). Kein Soft-Delete, kein Audit (technische Tabelle; 03 §3.5 führt `search_documents` in der Liste der Tabellen ohne Soft-Delete; Entität erbt **nicht** von `AuditableEntity`, Architekturtest-Ausnahme über die Liste aus 03). Zugriffe laufen nur über `Funk.Search` bzw. Paket-Provider (§3.10.5). Größengrenze: ein `tsvector` darf 1 MB nicht überschreiten – deshalb `BodyMaxChars` = 100 000 Zeichen (in 03 §3.4.18.8 übernommen, ABG-122). Upsert: `INSERT … ON CONFLICT (entity_type, entity_id) DO UPDATE` (§3.10.4, §5.6); `id` wird nur beim ersten Einfügen vergeben und bleibt danach stabil.
 
 #### 3.10.2 Indexierte Entitätstypen und Inhalte (CE)
 
@@ -473,11 +473,11 @@ EF-Abbildung: `SearchDocumentConfiguration` mit `HasKey(x => x.Id)` und `HasInde
 | `module` | `modules` | `name` | `description` | Projekt-Identifier | `project_id` | `status`, `lead_id`, `is_archived` |
 | `issue_view` | `views` | `name` | `description` | Projekt-Identifier | `project_id` (Workspace-Views `null`) | `access`, `owned_by_id`, `is_workspace_view` |
 
-`body` wird auf `Plane:Search:BodyMaxChars` (Default 100 000) gekürzt; leere Beschreibungen (`<p></p>`) ergeben `null`. Fehlt `description_stripped` (Altbestand ohne serverseitige Berechnung), extrahiert der Builder den Text mit `HtmlTextExtractor.Strip(description_html)` (`Plane.Documents/Text/`, 07 §3.13; dieselbe Funktion, die `description_stripped` beim Speichern erzeugt, 03 D03-ADR-17). `updated_at` der Index-Zeile = `updated_at` der Quelle; für `work_item_comment` zusätzlich `max(comment.updated_at, work_item.updated_at)`, weil Titel und Identifier vom Work Item stammen. Die Typnamen `work_item_comment` und `issue_view` folgen den Event-Namen (`plane.work_item_comment.*`) bzw. dem Wire-Namen der Suche (`issue_view`); 03 §3.4.18.8 nennt `comment`/`view` – maßgeblich sind die Konstanten `IndexEntityTypes` (§5.1), Änderungsauftrag an 03 (§9.2).
+`body` wird auf `Funk:Search:BodyMaxChars` (Default 100 000) gekürzt; leere Beschreibungen (`<p></p>`) ergeben `null`. Fehlt `description_stripped` (Altbestand ohne serverseitige Berechnung), extrahiert der Builder den Text mit `HtmlTextExtractor.Strip(description_html)` (`Funk.Documents/Text/`, 07 §3.13; dieselbe Funktion, die `description_stripped` beim Speichern erzeugt, 03 D03-ADR-17). `updated_at` der Index-Zeile = `updated_at` der Quelle; für `work_item_comment` zusätzlich `max(comment.updated_at, work_item.updated_at)`, weil Titel und Identifier vom Work Item stammen. Die Typnamen `work_item_comment` und `issue_view` folgen den Event-Namen (`plane.work_item_comment.*`) bzw. dem Wire-Namen der Suche (`issue_view`); 03 §3.4.18.8 nennt `comment`/`view` – maßgeblich sind die Konstanten `IndexEntityTypes` (§5.1), Änderungsauftrag an 03 (§9.2).
 
 #### 3.10.3 Ereignisse → Aktionen (`SearchIndexingConsumer`)
 
-Event-Namen, Klassen und Payload-Felder exakt nach dem Katalog 06 §3.8 (`_data/06-event-catalog.json`). Verbindlich ist die Abo-Liste dieses Abschnitts (ABG-124); die Consumer-Zeile `search.indexing` in 06 §3.8 wird danach nachgezogen (einschließlich `plane.workspace.deleted.v1`).
+Event-Namen, Klassen und Payload-Felder exakt nach dem Katalog 06 §3.8 (`_data/06-event-catalog.json`). Verbindlich ist die Abo-Liste dieses Abschnitts (ABG-124); die Consumer-Zeile `search.indexing` in 06 §3.8 wird danach nachgezogen (einschließlich `funk.workspace.deleted.v1`).
 
 | Integration-Event (alle `.v1`) | Klasse (06) | Aktion |
 |---|---|---|
@@ -500,7 +500,7 @@ Event-Namen, Klassen und Payload-Felder exakt nach dem Katalog 06 §3.8 (`_data/
 | `plane.view.deleted` | `ViewDeletedV1` | `RemoveIndexEntryJob(issue_view, ViewId)` |
 | `plane.workspace.deleted` | `WorkspaceDeletedV1` (06, Konsument bisher nur `home.recent_visit_cleanup`) | `RemoveIndexEntriesByScopeJob(workspaceId: WorkspaceId)` (der FK `ON DELETE CASCADE` greift erst beim Hard-Delete) |
 
-**Voraussetzungen an andere Module:** Archivieren/Entarchivieren von Projekten, Cycles, Modulen und Pages hat in 06 bereits eigene Events (`*.archived.v1`/`*.unarchived.v1`). `project_pages` ändert sich in der CE nur bei Anlage und Duplizieren (beide `plane.page.created.v1` mit `ProjectIds`); **jede künftige** Änderung der Projektverknüpfung (D1/D2) muss `plane.page.updated.v1` mit `ChangedFields ∋ "projects"` auslösen (Pflicht für Pakete, ABG-124). Der Nachtjob `indexing.reconcile` (§3.10.4) bleibt Sicherheitsnetz. Ein Work Item, dessen State-Änderung nicht über `UpdateWorkItemCommand` läuft (z. B. Intake-Annahme), löst `WorkItemStateChangedV1` aus und ist damit abgedeckt.
+**Voraussetzungen an andere Module:** Archivieren/Entarchivieren von Projekten, Cycles, Modulen und Pages hat in 06 bereits eigene Events (`*.archived.v1`/`*.unarchived.v1`). `project_pages` ändert sich in der CE nur bei Anlage und Duplizieren (beide `funk.page.created.v1` mit `ProjectIds`); **jede künftige** Änderung der Projektverknüpfung (D1/D2) muss `funk.page.updated.v1` mit `ChangedFields ∋ "projects"` auslösen (Pflicht für Pakete, ABG-124). Der Nachtjob `indexing.reconcile` (§3.10.4) bleibt Sicherheitsnetz. Ein Work Item, dessen State-Änderung nicht über `UpdateWorkItemCommand` läuft (z. B. Intake-Annahme), löst `WorkItemStateChangedV1` aus und ist damit abgedeckt.
 
 #### 3.10.4 Jobs, Queue, Cron, CLI
 
@@ -508,21 +508,21 @@ Alle Jobs folgen dem Job-Vertrag aus 06 §3.5.1/§5.1 (`IJob` mit statischem `Jo
 
 | Element | Definition |
 |---|---|
-| Consumer-Registrierung | je abonniertem Event `m.AddConsumer<TEvent, SearchIndexingConsumer>("search.indexing", PlaneQueues.Indexing)` (Inbox-Schlüssel `search.indexing`, 06 §3.4); der Consumer schreibt **nur** Jobs (keine Index-Zeilen), damit die Entprellung greift |
-| Queue | `indexing` (06 D06-ADR-05, Concurrency 4; 16 §3.2.5); eigener Worker-Pool möglich (`Plane__Worker__Queues`) |
-| `IndexEntityJob(string EntityType, Guid EntityId)` | `JobType = "indexing.index_entity"`, `Queue = indexing`, `RetryPolicy = Default`. Planung durch den Consumer mit `runAt = now + Plane:Search:IndexingDebounceMilliseconds` (Default 2 000) und `dedupeKey = "indexing:{type}:{id}"`. Dedupe-Semantik 06 §3.2: der Schlüssel ist eindeutig, solange ein Job `pending` **oder** `running` ist → mehrere Änderungen in kurzer Folge ergeben einen Job. Ausführung: Builder lädt den **aktuellen** Zustand (`AsNoTracking`); Quelle fehlt oder ist soft-gelöscht → Eintrag entfernen; sonst `IndexDocument` bauen → alle `IIndexDocumentEnricher` mit passendem `EntityType` in Registrierungsreihenfolge → `IIndexingPipeline.IndexAsync`. **Nachlauf gegen verlorene Änderungen:** Weil ein Event, das während der Ausführung (`running`) eintrifft, am Dedupe-Index scheitert, liest der Handler nach dem Schreiben `updated_at` der Quelle erneut; ist es neuer als `IndexDocument.UpdatedAt`, endet der Job mit `JobResult.Retry("source changed", after: Debounce)` (zählt als Versuch; nach `MaxAttempts` greift der Nachtjob) |
+| Consumer-Registrierung | je abonniertem Event `m.AddConsumer<TEvent, SearchIndexingConsumer>("search.indexing", FunkQueues.Indexing)` (Inbox-Schlüssel `search.indexing`, 06 §3.4); der Consumer schreibt **nur** Jobs (keine Index-Zeilen), damit die Entprellung greift |
+| Queue | `indexing` (06 D06-ADR-05, Concurrency 4; 16 §3.2.5); eigener Worker-Pool möglich (`Funk__Worker__Queues`) |
+| `IndexEntityJob(string EntityType, Guid EntityId)` | `JobType = "indexing.index_entity"`, `Queue = indexing`, `RetryPolicy = Default`. Planung durch den Consumer mit `runAt = now + Funk:Search:IndexingDebounceMilliseconds` (Default 2 000) und `dedupeKey = "indexing:{type}:{id}"`. Dedupe-Semantik 06 §3.2: der Schlüssel ist eindeutig, solange ein Job `pending` **oder** `running` ist → mehrere Änderungen in kurzer Folge ergeben einen Job. Ausführung: Builder lädt den **aktuellen** Zustand (`AsNoTracking`); Quelle fehlt oder ist soft-gelöscht → Eintrag entfernen; sonst `IndexDocument` bauen → alle `IIndexDocumentEnricher` mit passendem `EntityType` in Registrierungsreihenfolge → `IIndexingPipeline.IndexAsync`. **Nachlauf gegen verlorene Änderungen:** Weil ein Event, das während der Ausführung (`running`) eintrifft, am Dedupe-Index scheitert, liest der Handler nach dem Schreiben `updated_at` der Quelle erneut; ist es neuer als `IndexDocument.UpdatedAt`, endet der Job mit `JobResult.Retry("source changed", after: Debounce)` (zählt als Versuch; nach `MaxAttempts` greift der Nachtjob) |
 | `RemoveIndexEntryJob(string EntityType, Guid EntityId)` | `JobType = "indexing.remove_entry"`; sofort (`runAt = null`), `dedupeKey = "indexing-remove:{type}:{id}"` (eigener Präfix, damit ein noch offener `IndexEntityJob` das Entfernen nicht schluckt); `IIndexingPipeline.RemoveAsync` |
 | `RemoveIndexEntriesByScopeJob(Guid? WorkspaceId, Guid? ProjectId, string? EntityType, string? FacetKey, string? FacetValue)` | `JobType = "indexing.remove_scope"`; ein `DELETE … WHERE` mit den gesetzten Bedingungen (Workspace, Projekt inkl. Projekt-Zeile selbst, Facette `facets->>key = value`); Dedupe `indexing-remove-scope:{ws}:{project}:{type}:{facetKey}:{facetValue}` (deterministisch, prozessunabhängig) |
 | `IndexingPipeline.IndexAsync` | `content_hash` berechnen; `INSERT … ON CONFLICT (entity_type, entity_id) DO UPDATE SET … WHERE search_documents.content_hash <> EXCLUDED.content_hash OR search_documents.source_updated_at < EXCLUDED.source_updated_at` (Konfliktziel `uq_search_documents_entity`; `id` aus `IIdGenerator` nur für neue Zeilen, ABG-122); Metriken `plane.search.index.writes`, `plane.search.index.unchanged` |
-| `SearchIndexReconcileJob` (parameterlos, `new()`-Pflicht von `IRecurringJobRegistry.Register`) | `JobType = "indexing.reconcile"`, `RetryPolicy = Maintenance`; Cron `m.Recurring.Register<SearchIndexReconcileJob>("indexing.reconcile", options.ReconcileCron)` mit Default `23 3 * * *` UTC (Eintrag im Cron-Plan 06 §4.2, Änderungsauftrag §9.2): je Entitätstyp Keyset-Durchlauf (`Plane:Search:ReconcileBatchSize` = 1 000) über Quelle ⟗ Index: fehlend oder `source.updated_at > search_documents.source_updated_at` → `IndexEntityJob` (ohne Debounce); Index-Zeile ohne lebende Quelle → entfernen; `JobContext.Heartbeat()` je Batch |
+| `SearchIndexReconcileJob` (parameterlos, `new()`-Pflicht von `IRecurringJobRegistry.Register`) | `JobType = "indexing.reconcile"`, `RetryPolicy = Maintenance`; Cron `m.Recurring.Register<SearchIndexReconcileJob>("indexing.reconcile", options.ReconcileCron)` mit Default `23 3 * * *` UTC (Eintrag im Cron-Plan 06 §4.2, Änderungsauftrag §9.2): je Entitätstyp Keyset-Durchlauf (`Funk:Search:ReconcileBatchSize` = 1 000) über Quelle ⟗ Index: fehlend oder `source.updated_at > search_documents.source_updated_at` → `IndexEntityJob` (ohne Debounce); Index-Zeile ohne lebende Quelle → entfernen; `JobContext.Heartbeat()` je Batch |
 | `SearchIndexRebuildJob(Guid? WorkspaceId, Guid? ProjectId, string? EntityType)` | `JobType = "indexing.rebuild"`; plant `IndexEntityJob` in Batches (`RebuildBatchSize` = 500, ohne Debounce); Dedupe `indexing:rebuild:{ws}:{project}:{type}`; Auslöser: CLI, Identifier-Änderung, Erstbefüllung (der erste `SearchIndexReconcileJob` nach dem Einspielen von `…_Search_Documents` befüllt ohnehin alles; zusätzlich plant der Migrator **einen** Rebuild-Job, wenn `search_documents` leer ist und Fachdaten existieren – Migrator-Schritt „Erstbefüllung Such-Index“ in 14 §3.15, ABG-133) |
 | CLI | `funk-cli search reindex [--workspace <slug>] [--project <id>] [--entity <type>] [--wait]` → `SearchIndexRebuildJob` (Enqueue über `IJobScheduler` außerhalb einer Transaktion); `--wait` pollt die offenen Jobs der Queue `indexing` bis 0 oder Timeout 30 min (Exit-Code 0/1); `funk-cli search status` → Anzahl je Typ, ältester `indexed_at`, offene/tote Jobs der Queue |
-| Schalter | `Plane:Search:IndexingEnabled` = `true`; `false` → Consumer plant nichts, Reconcile läuft nicht (für Kleinstinstallationen); beim Wiedereinschalten holt der nächste Reconcile nach |
+| Schalter | `Funk:Search:IndexingEnabled` = `true`; `false` → Consumer plant nichts, Reconcile läuft nicht (für Kleinstinstallationen); beim Wiedereinschalten holt der nächste Reconcile nach |
 | Fehler | Retry-Policy `Default` (06 §3.5.3: 5 Versuche, volle Jitter), danach Dead-Letter; ein fehlerhafter Datensatz blockiert keine anderen (ein Job je Entität) |
 
 #### 3.10.5 Lesen aus dem Index (nur für Pakete)
 
-Die CE stellt `IIndexReader` **nicht** bereit; B6/G1 bauen ihren Provider (`advanced`/`semantic`) in eigenen Projekten und lesen `search_documents` über den `PlaneDbContext` (Entität `SearchDocument` ist öffentlich in `Plane.Data`). Pflicht für jeden Leser: `SearchVisibilityFilter.For<SearchDocument>()` (§3.8.2) anwenden und anschließend über den CE-Hydrator des Profils hydrieren (D11-ADR-04).
+Die CE stellt `IIndexReader` **nicht** bereit; B6/G1 bauen ihren Provider (`advanced`/`semantic`) in eigenen Projekten und lesen `search_documents` über den `FunkDbContext` (Entität `SearchDocument` ist öffentlich in `Funk.Data`). Pflicht für jeden Leser: `SearchVisibilityFilter.For<SearchDocument>()` (§3.8.2) anwenden und anschließend über den CE-Hydrator des Profils hydrieren (D11-ADR-04).
 
 ### 3.11 Frontend: Power-K-Suche
 
@@ -583,7 +583,7 @@ Damit umfasst der Instanz-Katalog der CE **15 Schlüssel** (14 aus 05 §4.4 + `L
 
 #### 3.13.2 Auflösung (`LlmSettingsResolver.Resolve(LlmRawSettings raw) → LlmSettings`)
 
-Reine Funktion in `Plane.Platform.Ai` (ohne I/O), genutzt von `Plane.Assistant` (Aufruf) **und** `Plane.Instance` (`has_llm_configured`). Eingabe: getrimmte Rohwerte; Provider leer → `openai`, Vergleich case-insensitiv.
+Reine Funktion in `Funk.Platform.Ai` (ohne I/O), genutzt von `Funk.Assistant` (Aufruf) **und** `Funk.Instance` (`has_llm_configured`). Eingabe: getrimmte Rohwerte; Provider leer → `openai`, Vergleich case-insensitiv.
 
 | `LLM_PROVIDER` | `LLM_BASE_URL` leer | `LLM_BASE_URL` gesetzt | Default-Modell (wenn `LLM_MODEL` leer) | Key erforderlich |
 |---|---|---|---|---|
@@ -595,18 +595,18 @@ Reine Funktion in `Plane.Platform.Ai` (ohne I/O), genutzt von `Plane.Assistant` 
 
 Weitere Regeln: (1) Modell-Whitelist des Originals entfällt (`DEV-AI-001`); das Präfix `gemini/` (LiteLLM-Stil) entfällt. Hinweis: Weil der Instanz-Seed `LLM_MODEL = gpt-4o-mini` setzt (§3.13.1), ist das Modell bei frischer Instanz nie leer; der Default greift nur, wenn ein Admin das Feld leert. (2) `LLM_BASE_URL` muss eine absolute `http`/`https`-URL ohne Benutzerinfo, Query und Fragment sein, sonst `InvalidBaseUrl`; abschließender `/` wird entfernt. (3) Ergebnis `LlmSettings(bool IsUsable, LlmUnusableReason? Reason, Uri? Endpoint, string? Model, string? ApiKey, LlmProviderKind Provider, string Fingerprint)`; `Fingerprint` = SHA-256 über Endpunkt, Modell und `SHA-256(ApiKey)` (für den Client-Cache, enthält den Key nicht). (4) Nicht nutzbar → Log `Warning` Kategorie `plane.external`: `"LLM configuration unusable: {Reason}"` (ohne Werte), Antwort der Endpunkte 400 `{"error": "LLM provider API key and model are required"}` (Text 1:1).
 
-**`has_llm_configured`** (`GET /api/instances/`, Eigentümer `Plane.Instance`) = `LlmSettingsResolver.Resolve(raw).IsUsable` (Original: `bool(LLM_API_KEY)`, `DEV-AI-002`). **`has_unsplash_configured`** = `UNSPLASH_ACCESS_KEY` nicht leer (1:1).
+**`has_llm_configured`** (`GET /api/instances/`, Eigentümer `Funk.Instance`) = `LlmSettingsResolver.Resolve(raw).IsUsable` (Original: `bool(LLM_API_KEY)`, `DEV-AI-002`). **`has_unsplash_configured`** = `UNSPLASH_ACCESS_KEY` nicht leer (1:1).
 
 ### 3.14 AI-Client-Aufbau
 
 | Baustein | Festlegung |
 |---|---|
-| Registrierung (`AddPlaneAi`) | `services.AddSsrfSafeHttpClient("llm", policy => { policy.MaxRedirects = 0; policy.MaxResponseBytes = 8 MiB; })` (Signatur 05 §5.9: `Action<SsrfPolicy>` ohne `IServiceProvider`) **plus** `services.AddOptions<SsrfPolicy>("llm").Configure<IOptions<PlaneAiOptions>>((policy, ai) => { policy.Timeout = ai.RequestTimeoutSeconds s; foreach (var h in ai.AllowedInternalHosts) policy.AllowedHosts.Add(h); })` (benannte Options werden vom Handler per `IOptionsMonitor<SsrfPolicy>.Get("llm")` gelesen; `AllowedHosts` ist eine get-only-Menge); Werte laut 05 §3.17.2: Timeout 120 s, 0 Redirects, 8 MiB, Allowlist `Plane:Ai:AllowedInternalHosts` – **Voraussetzung in 05:** `SsrfGuard` überspringt die Blockregeln für Hosts in `SsrfPolicy.AllowedHosts` (Algorithmus 05 §3.17.2 Schritt 3 nennt bisher nur `AllowedNetworks`, Änderungsauftrag §9.2); IP-Literale im `LLM_BASE_URL` werden als Zeichenkette gegen `AllowedHosts` verglichen bzw. über `AllowedNetworks` erlaubt; `services.AddSingleton<IChatClientFactory, OpenAiCompatibleChatClientFactory>()`; `services.AddScoped<IChatClient, DynamicChatClient>()`; `services.AddSingleton<IEmbeddingGenerator<string, Embedding<float>>, NullEmbeddingGenerator>()`; Optionen `PlaneAiOptions` mit `ValidateOnStart` |
-| `ILlmSettingsSource` | Platform-Interface `ValueTask<LlmSettings> GetAsync(CancellationToken)`; CE-Implementierung `InstanceLlmSettingsSource` in `Plane.Assistant` liest `LLM_*` über `IInstanceConfigurationStore.GetManyAsync` (Cache `plane:instance:config`, 02 §3.12.2) und ruft den Resolver |
-| `OpenAiCompatibleChatClientFactory.GetOrCreate(LlmSettings s)` | LRU-Cache je `Fingerprint` (`lock` + `Dictionary` + `LinkedList`, damit bei Nebenläufigkeit genau **ein** Client je Fingerprint entsteht), höchstens `Plane:Ai:ClientCacheSize` = 4 Einträge; verdrängte Clients werden **nicht** entsorgt (sie können noch von laufenden Requests genutzt werden; sie halten keine nicht verwalteten Ressourcen, der `HttpClient` stammt aus der `IHttpClientFactory`); Aufbau: `OpenAIClientOptions { Endpoint = s.Endpoint, Transport = new HttpClientPipelineTransport(httpClientFactory.CreateClient("llm")), RetryPolicy = new ClientRetryPolicy(maxRetries: 0), NetworkTimeout = 120 s }` → `new OpenAIClient(new ApiKeyCredential(s.ApiKey ?? "unused"), options).GetChatClient(s.Model).AsIChatClient()` → `new ChatClientBuilder(inner).UseLogging(loggerFactory).UseOpenTelemetry(loggerFactory, sourceName: "Plane.Ai", configure: c => c.EnableSensitiveData = false).Build()` (⚠ API-Namen des OpenAI-SDK 2.x/System.ClientModel in S0 gegen die gepinnte Version prüfen) |
+| Registrierung (`AddPlaneAi`) | `services.AddSsrfSafeHttpClient("llm", policy => { policy.MaxRedirects = 0; policy.MaxResponseBytes = 8 MiB; })` (Signatur 05 §5.9: `Action<SsrfPolicy>` ohne `IServiceProvider`) **plus** `services.AddOptions<SsrfPolicy>("llm").Configure<IOptions<FunkAiOptions>>((policy, ai) => { policy.Timeout = ai.RequestTimeoutSeconds s; foreach (var h in ai.AllowedInternalHosts) policy.AllowedHosts.Add(h); })` (benannte Options werden vom Handler per `IOptionsMonitor<SsrfPolicy>.Get("llm")` gelesen; `AllowedHosts` ist eine get-only-Menge); Werte laut 05 §3.17.2: Timeout 120 s, 0 Redirects, 8 MiB, Allowlist `Funk:Ai:AllowedInternalHosts` – **Voraussetzung in 05:** `SsrfGuard` überspringt die Blockregeln für Hosts in `SsrfPolicy.AllowedHosts` (Algorithmus 05 §3.17.2 Schritt 3 nennt bisher nur `AllowedNetworks`, Änderungsauftrag §9.2); IP-Literale im `LLM_BASE_URL` werden als Zeichenkette gegen `AllowedHosts` verglichen bzw. über `AllowedNetworks` erlaubt; `services.AddSingleton<IChatClientFactory, OpenAiCompatibleChatClientFactory>()`; `services.AddScoped<IChatClient, DynamicChatClient>()`; `services.AddSingleton<IEmbeddingGenerator<string, Embedding<float>>, NullEmbeddingGenerator>()`; Optionen `FunkAiOptions` mit `ValidateOnStart` |
+| `ILlmSettingsSource` | Platform-Interface `ValueTask<LlmSettings> GetAsync(CancellationToken)`; CE-Implementierung `InstanceLlmSettingsSource` in `Funk.Assistant` liest `LLM_*` über `IInstanceConfigurationStore.GetManyAsync` (Cache `plane:instance:config`, 02 §3.12.2) und ruft den Resolver |
+| `OpenAiCompatibleChatClientFactory.GetOrCreate(LlmSettings s)` | LRU-Cache je `Fingerprint` (`lock` + `Dictionary` + `LinkedList`, damit bei Nebenläufigkeit genau **ein** Client je Fingerprint entsteht), höchstens `Funk:Ai:ClientCacheSize` = 4 Einträge; verdrängte Clients werden **nicht** entsorgt (sie können noch von laufenden Requests genutzt werden; sie halten keine nicht verwalteten Ressourcen, der `HttpClient` stammt aus der `IHttpClientFactory`); Aufbau: `OpenAIClientOptions { Endpoint = s.Endpoint, Transport = new HttpClientPipelineTransport(httpClientFactory.CreateClient("llm")), RetryPolicy = new ClientRetryPolicy(maxRetries: 0), NetworkTimeout = 120 s }` → `new OpenAIClient(new ApiKeyCredential(s.ApiKey ?? "unused"), options).GetChatClient(s.Model).AsIChatClient()` → `new ChatClientBuilder(inner).UseLogging(loggerFactory).UseOpenTelemetry(loggerFactory, sourceName: "Funk.Ai", configure: c => c.EnableSensitiveData = false).Build()` (⚠ API-Namen des OpenAI-SDK 2.x/System.ClientModel in S0 gegen die gepinnte Version prüfen) |
 | `DynamicChatClient` | implementiert `IChatClient`; jeder Aufruf: Einstellungen holen → nicht nutzbar → `LlmNotConfiguredException` → innerer Client per Factory → Aufruf weiterreichen; `GetService` liefert nur sich selbst (`typeof(DynamicChatClient)`), sonst `null` – Metadaten (`ChatClientMetadata`) kommen vom inneren Client, weil `GetService` synchron ist und die Einstellungen asynchron geladen werden |
 | Ohne Konfiguration | kein ausgehender Aufruf; Endpunkte antworten 400 (s. o.) |
-| Airgapped | Standard ist kein Egress (ADR-004): Betreiber setzt `LLM_BASE_URL` auf den internen Dienst **und** dessen Host in `Plane:Ai:AllowedInternalHosts` (ENV `Plane__Ai__AllowedInternalHosts__0=ollama`), weil der SSRF-Handler private Adressen sonst blockiert; Block-Fehler werden mit Hinweis geloggt: `"LLM endpoint host {Host} blocked by SSRF policy; add it to Plane:Ai:AllowedInternalHosts"` – Erkennung über die Ausnahmekette (`SsrfBlockedException` steckt als `InnerException` in `HttpRequestException`, die das OpenAI-SDK/System.ClientModel in eine `ClientResultException` einpackt) |
+| Airgapped | Standard ist kein Egress (ADR-004): Betreiber setzt `LLM_BASE_URL` auf den internen Dienst **und** dessen Host in `Funk:Ai:AllowedInternalHosts` (ENV `Funk__Ai__AllowedInternalHosts__0=ollama`), weil der SSRF-Handler private Adressen sonst blockiert; Block-Fehler werden mit Hinweis geloggt: `"LLM endpoint host {Host} blocked by SSRF policy; add it to Funk:Ai:AllowedInternalHosts"` – Erkennung über die Ausnahmekette (`SsrfBlockedException` steckt als `InnerException` in `HttpRequestException`, die das OpenAI-SDK/System.ClientModel in eine `ClientResultException` einpackt) |
 | Lokale Provider (getestet) | Ollama (`/v1`-Kompatibilitätsschicht), vLLM (OpenAI-Server), LocalAI; Vertrag nur `POST {endpoint}/chat/completions` mit `model` und `messages` |
 | Lizenz | `Microsoft.Extensions.AI` / `.OpenAI` MIT, `OpenAI` (.NET-SDK) MIT, `System.ClientModel` MIT |
 
@@ -623,7 +623,7 @@ Weitere Regeln: (1) Modell-Whitelist des Originals entfällt (`DEV-AI-001`); das
 | 5 | Fehler des Aufrufs (`ClientResultException`, `HttpRequestException`, `SsrfBlockedException`, Timeout) → Log `Error` Kategorie `plane.external` mit Fehlerklasse und HTTP-Status (ohne Prompt/Antwort) → 500 `{"error": "An internal error has occurred."}` (1:1); Abbruch durch den Client (`RequestAborted`) → kein Antwortkörper |
 | 6 | `text = response.Text` (Microsoft.Extensions.AI liefert für `content: null` einen leeren String; Original: `null` → 500 `AttributeError`, leerer String → 200 mit `""`; `DEV-AI-004`) |
 | 7 | 200 `{"response": text, "response_html": AiResponseFormatter.ToHtml(text)}`; `ToHtml` ersetzt `&`, `<`, `>`, `"` durch Entitäten und danach `\n` durch `<br/>` (`DEV-AI-005`) |
-| Rate-Limit | Original keins; optional `Plane:RateLimits:AiAssistant` (Format `n/period`, Default leer = aus); bei Überschreitung Standard-429 aus 02 §3.13. Hinweis 1:1-UI: Das Frontend zeigt bei 429 ohne `error`-Feld den Original-Text „You have reached the maximum number of requests of 50 requests per month per user.“ – der Text bleibt unverändert, auch wenn das konfigurierte Limit abweicht (Betreiberdoku `docs/operations/ai.md`) |
+| Rate-Limit | Original keins; optional `Funk:RateLimits:AiAssistant` (Format `n/period`, Default leer = aus); bei Überschreitung Standard-429 aus 02 §3.13. Hinweis 1:1-UI: Das Frontend zeigt bei 429 ohne `error`-Feld den Original-Text „You have reached the maximum number of requests of 50 requests per month per user.“ – der Text bleibt unverändert, auch wenn das konfigurierte Limit abweicht (Betreiberdoku `docs/operations/ai.md`) |
 
 **EXT-02** `POST /api/workspaces/{slug}/projects/{project_id}/ai-assistant/`: nicht registriert (D11-ADR-16, `DEV-AI-008`); falls ein Client sie später braucht, liefert sie dieselbe Logik plus `project_detail` (`ProjectLiteDto`) und `workspace_detail` (`WorkspaceLiteDto`) aus den Lookups der Contracts.
 
@@ -635,7 +635,7 @@ Weitere Regeln: (1) Modell-Whitelist des Originals entfällt (`DEV-AI-001`); das
 |---|---|
 | 1 | `UNSPLASH_ACCESS_KEY` leer → 200 `[]` (1:1) |
 | 2 | Parameter `query` (Default leer), `page` (Default `1`), `per_page` (Default `20`) als Strings übernommen, **URL-kodiert** (`DEV-AI-007`) |
-| 3 | `query` nicht leer → `GET {ApiBaseUrl}search/photos/?query={q}&page={page}&per_page={per_page}` (ohne das fehlerhafte `$`, Q-27); sonst `GET {ApiBaseUrl}photos/?page={page}&per_page={per_page}`; `ApiBaseUrl` = `Plane:Unsplash:ApiBaseUrl` (Default `https://api.unsplash.com/`, Tests: WireMock) |
+| 3 | `query` nicht leer → `GET {ApiBaseUrl}search/photos/?query={q}&page={page}&per_page={per_page}` (ohne das fehlerhafte `$`, Q-27); sonst `GET {ApiBaseUrl}photos/?page={page}&per_page={per_page}`; `ApiBaseUrl` = `Funk:Unsplash:ApiBaseUrl` (Default `https://api.unsplash.com/`, Tests: WireMock) |
 | 4 | Header `Authorization: Client-ID {key}` statt `client_id`-Query (Key erscheint nicht in URLs/Logs, `DEV-AI-007`); Named Client `unsplash` (05: 10 s, 5 Redirects, 2 MiB) |
 | 5 | Antwort: Statuscode **und** JSON-Körper der Unsplash-API unverändert (1:1, auch 4xx); `Content-Type: application/json` |
 | 6 | Netzwerkfehler, Timeout, Nicht-JSON, > 2 MiB → 500 `{"error": "Something went wrong please try again later"}` (entspricht dem Original-Ausnahmepfad) |
@@ -663,10 +663,10 @@ Bilder lädt der Browser direkt von `images.unsplash.com`; die CSP erlaubt das n
 
 | Klasse | Sektion | Felder (Default) | Eigentümer | ab |
 |---|---|---|---|---|
-| `PlaneSearchOptions` (neu) | `Plane:Search` | `Routing` (`Dictionary<SearchProfile, string>`, leer → `parity`), `MaxUnboundedResults` = 1000 (0 = unbegrenzt), `MaxQueryLength` = 1000, `IndexingEnabled` = true, `IndexingDebounceMilliseconds` = 2000, `BodyMaxChars` = 100000, `ReconcileCron` = `23 3 * * *`, `ReconcileBatchSize` = 1000, `RebuildBatchSize` = 500 | `Plane.Platform.Search` | I2/I5 |
-| `PlaneAiOptions` (02, erweitert) | `Plane:Ai` | `EmbeddingDimensions` = 1536 (G1), `Enabled` = false (G1-Hauptschalter für Embeddings; CE-AI hängt nur an den Instanz-Keys), **neu:** `AllowedInternalHosts` (string[] = [], 05 §3.17.2), `RequestTimeoutSeconds` = 120, `ClientCacheSize` = 4 | `Plane.Platform.Ai` | I5/I6 |
-| `PlaneUnsplashOptions` (neu) | `Plane:Unsplash` | `ApiBaseUrl` = `https://api.unsplash.com/` | `Plane.Assistant` | I6 |
-| `PlaneRateLimitOptions` (02, erweitert) | `Plane:RateLimits` | **neu** `AiAssistant` = `""` (aus) | `Plane.BuildingBlocks.Web` | I6 |
+| `FunkSearchOptions` (neu) | `Funk:Search` | `Routing` (`Dictionary<SearchProfile, string>`, leer → `parity`), `MaxUnboundedResults` = 1000 (0 = unbegrenzt), `MaxQueryLength` = 1000, `IndexingEnabled` = true, `IndexingDebounceMilliseconds` = 2000, `BodyMaxChars` = 100000, `ReconcileCron` = `23 3 * * *`, `ReconcileBatchSize` = 1000, `RebuildBatchSize` = 500 | `Funk.Platform.Search` | I2/I5 |
+| `FunkAiOptions` (02, erweitert) | `Funk:Ai` | `EmbeddingDimensions` = 1536 (G1), `Enabled` = false (G1-Hauptschalter für Embeddings; CE-AI hängt nur an den Instanz-Keys), **neu:** `AllowedInternalHosts` (string[] = [], 05 §3.17.2), `RequestTimeoutSeconds` = 120, `ClientCacheSize` = 4 | `Funk.Platform.Ai` | I5/I6 |
+| `FunkUnsplashOptions` (neu) | `Funk:Unsplash` | `ApiBaseUrl` = `https://api.unsplash.com/` | `Funk.Assistant` | I6 |
+| `FunkRateLimitOptions` (02, erweitert) | `Funk:RateLimits` | **neu** `AiAssistant` = `""` (aus) | `Funk.BuildingBlocks.Web` | I6 |
 
 ENV: `OPENAI_API_BASE`, `OPENAI_API_KEY` werden **nicht** gelesen (14 §4.7 Klasse E bestätigt); der Betreiber nutzt `LLM_BASE_URL`/`LLM_API_KEY` (Seed beim ersten Start) oder den God Mode.
 
@@ -679,7 +679,7 @@ ENV: `OPENAI_API_BASE`, `OPENAI_API_KEY` werden **nicht** gelesen (14 §4.7 Klas
 | Logs | Kategorie `plane.external` für LLM/Unsplash; **niemals** Prompt, Antwort, API-Key, Unsplash-Key, Suchtexte loggen (Log-Redaktion AK-25 in 05 deckt die Testwerte ab) |
 | Datenschutz | Prompts (Titel, Task) verlassen die Instanz nur zum konfigurierten Endpunkt; die Betreiberdoku (`funk./docs/operations/ai.md`) beschreibt lokale Provider als Airgap-Variante |
 | Ressourcen | Index: ca. 1–2 KB je Work Item (ohne Body) plus Body-Text; Indexierungslast ≈ Schreiblast der Work Items (entprellt); Reconcile nachts. Lokales LLM ist Betreiber-Sache (nicht Teil des funk.-Stacks) |
-| Dev/Test | Test-Profil: WireMock-Vorlagen `T/fixtures/wiremock/llm-openai-compatible/` (`POST /v1/chat/completions` → feste Antwort, Variante leerer Inhalt, Variante 500) und `T/fixtures/wiremock/unsplash/` (`/photos/`, `/search/photos/`); optional im Dev-Profil ein `ollama/ollama`-Container (MIT) über AppHost-Parameter `Plane:Dev:LocalLlm=true` (Änderungsauftrag 14) |
+| Dev/Test | Test-Profil: WireMock-Vorlagen `T/fixtures/wiremock/llm-openai-compatible/` (`POST /v1/chat/completions` → feste Antwort, Variante leerer Inhalt, Variante 500) und `T/fixtures/wiremock/unsplash/` (`/photos/`, `/search/photos/`); optional im Dev-Profil ein `ollama/ollama`-Container (MIT) über AppHost-Parameter `Funk:Dev:LocalLlm=true` (Änderungsauftrag 14) |
 
 ---
 
@@ -689,17 +689,17 @@ ENV: `OPENAI_API_BASE`, `OPENAI_API_KEY` werden **nicht** gelesen (14 §4.7 Klas
 
 | ID (A03/A05) | Original (Methode, Pfad, View) | Ziel (Datei, Handler) | Permission (05) | CE-IDs | Status | ab |
 |---|---|---|---|---|---|---|
-| SR-01 | `GET /api/workspaces/{slug}/search/` – `GlobalSearchEndpoint.get` (`API/app/views/search/base.py`, URL `API/app/urls/search.py` Name `global-search`) | `Plane.Search/Endpoints/App/GlobalSearchEndpoints.cs` → `GlobalSearchQuery` | `workspace.search.read` | CE-SRCH-001, CE-SRCH-004 | übernommen + `DEV-SRCH-001/-002/-004/-007/-011/-014/-015` | I5 |
-| SR-02 | `GET /api/workspaces/{slug}/projects/{project_id}/search-issues/` – `IssueSearchEndpoint.get` (`API/app/views/search/issue.py`, Name `project-issue-search`) | `Plane.Search/Endpoints/App/WorkItemPickerSearchEndpoints.cs` → `WorkItemPickerSearchQuery` | `project.work_item.search` | CE-SRCH-003, CE-WI-008, CE-WI-031, CE-WI-048 | übernommen + `DEV-SRCH-001/-003/-004/-006/-011/-014/-015` | I2 (Parameter `cycle`, `module`: I3) |
-| SR-03 | `GET /api/workspaces/{slug}/entity-search/` – `SearchEndpoint.get` (`API/app/views/search/base.py`, Name `entity-search`) | `Plane.Search/Endpoints/App/EntitySearchEndpoints.cs` → `EntitySearchQuery` | `workspace.search.read` (+ `project.work_item.search` bei `project_id`) | CE-SRCH-002, CE-PAGE-034, CE-WI-044 | übernommen + `DEV-SRCH-003/-004/-005/-008/-009/-014/-015` | I2 (`cycle`, `module`: I3; `page`: I4) |
-| v1-S1 | `GET /api/v1/workspaces/{slug}/issues/search/` – `IssueSearchEndpoint.get` (`API/api/views/issue.py` Z. 2246, URL `API/api/urls/work_item.py` Z. 26, Name `issue-search`) | `Plane.PublicApi/V1/Search/WorkItemSearchV1Endpoints.cs` → `IWorkItemSearchService` → `PublicApiWorkItemSearchQuery` | `workspace.search.read` | CE-API-019 | übernommen + `DEV-SRCH-001/-010/-013` | I6 |
+| SR-01 | `GET /api/workspaces/{slug}/search/` – `GlobalSearchEndpoint.get` (`API/app/views/search/base.py`, URL `API/app/urls/search.py` Name `global-search`) | `Funk.Search/Endpoints/App/GlobalSearchEndpoints.cs` → `GlobalSearchQuery` | `workspace.search.read` | CE-SRCH-001, CE-SRCH-004 | übernommen + `DEV-SRCH-001/-002/-004/-007/-011/-014/-015` | I5 |
+| SR-02 | `GET /api/workspaces/{slug}/projects/{project_id}/search-issues/` – `IssueSearchEndpoint.get` (`API/app/views/search/issue.py`, Name `project-issue-search`) | `Funk.Search/Endpoints/App/WorkItemPickerSearchEndpoints.cs` → `WorkItemPickerSearchQuery` | `project.work_item.search` | CE-SRCH-003, CE-WI-008, CE-WI-031, CE-WI-048 | übernommen + `DEV-SRCH-001/-003/-004/-006/-011/-014/-015` | I2 (Parameter `cycle`, `module`: I3) |
+| SR-03 | `GET /api/workspaces/{slug}/entity-search/` – `SearchEndpoint.get` (`API/app/views/search/base.py`, Name `entity-search`) | `Funk.Search/Endpoints/App/EntitySearchEndpoints.cs` → `EntitySearchQuery` | `workspace.search.read` (+ `project.work_item.search` bei `project_id`) | CE-SRCH-002, CE-PAGE-034, CE-WI-044 | übernommen + `DEV-SRCH-003/-004/-005/-008/-009/-014/-015` | I2 (`cycle`, `module`: I3; `page`: I4) |
+| v1-S1 | `GET /api/v1/workspaces/{slug}/issues/search/` – `IssueSearchEndpoint.get` (`API/api/views/issue.py` Z. 2246, URL `API/api/urls/work_item.py` Z. 26, Name `issue-search`) | `Funk.PublicApi/V1/Search/WorkItemSearchV1Endpoints.cs` → `IWorkItemSearchService` → `PublicApiWorkItemSearchQuery` | `workspace.search.read` | CE-API-019 | übernommen + `DEV-SRCH-001/-010/-013` | I6 |
 | v1-S2 | `GET /api/v1/workspaces/{slug}/work-items/search/` – dieselbe View (`API/api/urls/work_item.py` Z. 90, Name `work-item-search`) | dto. (zweite Route, gleicher Handler) | dto. | CE-API-019 | dto. | I6 |
-| EXT-01 | `GET /api/unsplash/` – `UnsplashEndpoint.get` (`API/app/views/external/base.py`, `API/app/urls/external.py` Name `unsplash`) | `Plane.Assistant/Endpoints/App/UnsplashEndpoints.cs` → `SearchUnsplashQuery` → `UnsplashClient` | `user.unsplash.read` | CE-AI-002, CE-UIX-009 | übernommen + `DEV-AI-007` | I6 |
+| EXT-01 | `GET /api/unsplash/` – `UnsplashEndpoint.get` (`API/app/views/external/base.py`, `API/app/urls/external.py` Name `unsplash`) | `Funk.Assistant/Endpoints/App/UnsplashEndpoints.cs` → `SearchUnsplashQuery` → `UnsplashClient` | `user.unsplash.read` | CE-AI-002, CE-UIX-009 | übernommen + `DEV-AI-007` | I6 |
 | EXT-02 | `POST /api/workspaces/{slug}/projects/{project_id}/ai-assistant/` – `GPTIntegrationEndpoint.post` | **nicht registriert** (405 nach 02 §3.3.1 Regel 6) | (`project.ai_assistant.use` ohne Endpunkt) | – | `DEV-AI-008` | – |
-| EXT-03 | `POST /api/workspaces/{slug}/ai-assistant/` – `WorkspaceGPTIntegrationEndpoint.post` | `Plane.Assistant/Endpoints/App/AiAssistantEndpoints.cs` → `GenerateAiAssistantResponseQuery` | `workspace.ai_assistant.use` | CE-AI-001 | übernommen + `DEV-AI-001…-006` | I6 |
+| EXT-03 | `POST /api/workspaces/{slug}/ai-assistant/` – `WorkspaceGPTIntegrationEndpoint.post` | `Funk.Assistant/Endpoints/App/AiAssistantEndpoints.cs` → `GenerateAiAssistantResponseQuery` | `workspace.ai_assistant.use` | CE-AI-001 | übernommen + `DEV-AI-001…-006` | I6 |
 | – | `POST /api/workspaces/{slug}/rephrase-grammar/` (nur Frontend-Aufruf, im CE-Backend nicht vorhanden → 404) | nicht vorhanden (404 `{"error": "Page not found."}` wie Original); Route reserviert (§6.4) | – | – | 1:1 | – |
-| INST | `GET/PATCH /api/instances/configurations/` (Keys `LLM_*`, `UNSPLASH_ACCESS_KEY`) | Eigentümer `Plane.Instance`; Katalog um `LLM_BASE_URL` ergänzt | Instanz-Admin (05) | CE-INST-025, CE-INST-026, CE-INST-002 | angepasst | I0 (Seed), I6 (Formular) |
-| INST | `GET /api/instances/` Felder `has_llm_configured`, `has_unsplash_configured` | Eigentümer `Plane.Instance`, Berechnung über `LlmSettingsResolver` | anonym (05) | CE-INST-003 | angepasst (`DEV-AI-002`) | I0 (Feld), I6 (Semantik) |
+| INST | `GET/PATCH /api/instances/configurations/` (Keys `LLM_*`, `UNSPLASH_ACCESS_KEY`) | Eigentümer `Funk.Instance`; Katalog um `LLM_BASE_URL` ergänzt | Instanz-Admin (05) | CE-INST-025, CE-INST-026, CE-INST-002 | angepasst | I0 (Seed), I6 (Formular) |
+| INST | `GET /api/instances/` Felder `has_llm_configured`, `has_unsplash_configured` | Eigentümer `Funk.Instance`, Berechnung über `LlmSettingsResolver` | anonym (05) | CE-INST-003 | angepasst (`DEV-AI-002`) | I0 (Feld), I6 (Semantik) |
 
 ### 4.2 Backend-Code (Funktion für Funktion)
 
@@ -726,21 +726,21 @@ ENV: `OPENAI_API_BASE`, `OPENAI_API_KEY` werden **nicht** gelesen (14 §4.7 Klas
 | `…exclude_issues_in_module` | `WorkItemPickerExclusions.ApplyAsync` Regel #7 | 1:1 |
 | `…filter_issues_without_target_date` | `WorkItemPickerExclusions.ApplyAsync` Regel #8 | 1:1 |
 | `…IssueSearchEndpoint.get` (Parameter, Reihenfolge, `.values()[:100]`) | `WorkItemPickerSearchQuery.cs` (UUID-Prüfung, `WorkItemPickerOptions`) + `WorkItemPickerHydrator.cs` | angepasst (Ordnung) |
-| `API/utils/issue_search.py` `search_issues` | `Plane.Platform.Search/Text/SequenceIdExtractor.cs` + `LikePattern` (in `WorkItemSearchSource`) | 1:1 (ASCII-Ziffern) |
-| `API/api/views/issue.py` `IssueSearchEndpoint` (v1) | `Plane.PublicApi/V1/Search/WorkItemSearchV1Endpoints.cs`, `Plane.Search/Application/Services/WorkItemSearchService.cs`, `PublicApiWorkItemSearchQuery.cs`, `PublicApiWorkItemHydrator.cs` | angepasst (Gast-Regel, `limit`) |
-| `API/app/views/external/base.py` `LLMProvider`, `OpenAIProvider`, `AnthropicProvider`, `GeminiProvider`, `SUPPORTED_PROVIDERS` | `Plane.Platform.Ai/Configuration/LlmProviderKind.cs` (`OpenAi`, `OpenAiCompatible`, `Anthropic`, `Gemini`) + Default-Tabelle im `LlmSettingsResolver` | angepasst (keine Whitelist) |
-| `…get_llm_config` | `Plane.Assistant/Application/Services/InstanceLlmSettingsSource.cs` + `LlmSettingsResolver.Resolve` | angepasst (`LLM_BASE_URL`) |
+| `API/utils/issue_search.py` `search_issues` | `Funk.Platform.Search/Text/SequenceIdExtractor.cs` + `LikePattern` (in `WorkItemSearchSource`) | 1:1 (ASCII-Ziffern) |
+| `API/api/views/issue.py` `IssueSearchEndpoint` (v1) | `Funk.PublicApi/V1/Search/WorkItemSearchV1Endpoints.cs`, `Funk.Search/Application/Services/WorkItemSearchService.cs`, `PublicApiWorkItemSearchQuery.cs`, `PublicApiWorkItemHydrator.cs` | angepasst (Gast-Regel, `limit`) |
+| `API/app/views/external/base.py` `LLMProvider`, `OpenAIProvider`, `AnthropicProvider`, `GeminiProvider`, `SUPPORTED_PROVIDERS` | `Funk.Platform.Ai/Configuration/LlmProviderKind.cs` (`OpenAi`, `OpenAiCompatible`, `Anthropic`, `Gemini`) + Default-Tabelle im `LlmSettingsResolver` | angepasst (keine Whitelist) |
+| `…get_llm_config` | `Funk.Assistant/Application/Services/InstanceLlmSettingsSource.cs` + `LlmSettingsResolver.Resolve` | angepasst (`LLM_BASE_URL`) |
 | `…get_llm_response` | `GenerateAiAssistantResponseQuery` (Handler) + `IChatClient` (`DynamicChatClient`) | angepasst (`DEV-AI-003/-004`) |
 | `…GPTIntegrationEndpoint` | – | entfällt (Regel 6) |
 | `…WorkspaceGPTIntegrationEndpoint` | `AiAssistantEndpoints.cs` | 1:1 + Korrekturen |
 | `…text.replace("\n", "<br/>")` | `Domain/AiResponseFormatter.ToHtml` | angepasst (`DEV-AI-005`) |
 | `…UnsplashEndpoint` | `UnsplashEndpoints.cs`, `SearchUnsplashQuery.cs`, `Application/Services/UnsplashClient.cs` | angepasst (Q-27) |
 | `API/utils/instance_config_variables/core.py` `llm_config_variables`, `unsplash_config_variables` | `InstanceConfigurationKeys` (02 §4.10) + `LLM_BASE_URL` | angepasst |
-| `API/license/api/views/instance.py` Z. 135–139 (`has_unsplash_configured`, `has_llm_configured`) | `Plane.Instance` (Instanz-Info-Projektion) mit `LlmSettingsResolver` | angepasst |
+| `API/license/api/views/instance.py` Z. 135–139 (`has_unsplash_configured`, `has_llm_configured`) | `Funk.Instance` (Instanz-Info-Projektion) mit `LlmSettingsResolver` | angepasst |
 | `API/app/urls/search.py`, `API/app/urls/external.py` | Endpunkt-Registrierungen in `SearchModule.MapEndpoints`, `AssistantModule.MapEndpoints` | 1:1 (Pfade, Trailing Slash) |
-| DRF `rest_framework.filters.SearchFilter` (über `filter_backends` in `API/app/views/base.py`; `get_search_terms` mit NUL-Prüfung, `search_smart_split`, `must_call_distinct`) | `Plane.Platform.Search/Text/DrfSearchFilter.cs`, `DrfSearchTerms.cs` | 1:1 (inkl. 400 bei NUL) |
+| DRF `rest_framework.filters.SearchFilter` (über `filter_backends` in `API/app/views/base.py`; `get_search_terms` mit NUL-Prüfung, `search_smart_split`, `must_call_distinct`) | `Funk.Platform.Search/Text/DrfSearchFilter.cs`, `DrfSearchTerms.cs` | 1:1 (inkl. 400 bei NUL) |
 | `openai==1.63.2` (Python-SDK) | `OpenAI` .NET-SDK über `Microsoft.Extensions.AI.OpenAI` | ersetzt |
-| `requests` (Unsplash) | Named Client `unsplash` (`Plane.Platform.Security`) | ersetzt |
+| `requests` (Unsplash) | Named Client `unsplash` (`Funk.Platform.Security`) | ersetzt |
 
 ### 4.3 Frontend-Dateien
 
@@ -791,7 +791,7 @@ ENV: `OPENAI_API_BASE`, `OPENAI_API_KEY` werden **nicht** gelesen (14 §4.7 Klas
 | CE-HOME-009 | `LikePattern` für `query` (Stickies App) | I5 | Contract-Golden Stickies |
 | CE-WS-005, CE-WS-009, CE-PRJ-021, CE-PAGE-002 | `DrfSearchFilter` | I1/I4 | `DrfSearchFilterTests` + Contract-Goldens mit `?search=` |
 | CE-INST-027 | `LikePattern` für `search` (God-Mode-Workspaces) | I6 | Contract-Golden |
-| CE-AI-001 | EXT-03, `Plane.Platform.Ai`, Frontend §3.17 | I6 | `AssistantEndpointTests`, `LlmSettingsResolverTests`, `web/ai/ai-unsplash.spec.ts` |
+| CE-AI-001 | EXT-03, `Funk.Platform.Ai`, Frontend §3.17 | I6 | `AssistantEndpointTests`, `LlmSettingsResolverTests`, `web/ai/ai-unsplash.spec.ts` |
 | CE-AI-002, CE-UIX-009 (Unsplash-Tab) | EXT-01, `UnsplashClient`, Bild-Picker | I6 | `UnsplashEndpointTests`, `web/ai/ai-unsplash.spec.ts` |
 | CE-INST-025 | Key `LLM_BASE_URL`, God-Mode-Formular AI | I6 | `admin/admin-settings.spec.ts`, Visual A-007 |
 | CE-INST-026 | Key `UNSPLASH_ACCESS_KEY`, Formular Bilder | I6 | `admin/admin-settings.spec.ts` |
@@ -808,23 +808,23 @@ ENV: `OPENAI_API_BASE`, `OPENAI_API_KEY` werden **nicht** gelesen (14 §4.7 Klas
 | `GPT_ENGINE` | entfällt | 02 §4.10 (14 §4.7.2 Zeile „Seed nur als Fallback“ wird angepasst, §9.2) |
 | `UNSPLASH_ACCESS_KEY` | Instanz-Key | – |
 | `OPENAI_API_BASE`, `OPENAI_API_KEY` | entfällt | 14 §4.7 Klasse E |
-| – | `Plane:Search:*`, `Plane:Ai:*`, `Plane:Unsplash:*`, `Plane:RateLimits:AiAssistant` | §3.18 |
+| – | `Funk:Search:*`, `Funk:Ai:*`, `Funk:Unsplash:*`, `Funk:RateLimits:AiAssistant` | §3.18 |
 
 ### 4.6 Textsuche in anderen Modulen (Querschnitt, vollständige Liste aus dem Original)
 
 | Original-Stelle | Mechanik | Zielmodul / Datei | Baustein | Bemerkung |
 |---|---|---|---|---|
-| `API/app/views/workspace/member.py` Z. 50 `WorkSpaceMemberViewSet.search_fields = ["member__display_name", "member__first_name"]` | DRF-`SearchFilter` über `get_queryset` → `filter_queryset` | `Plane.Workspaces` (Liste der Mitglieder, W-17) | `DrfSearchFilter` | CE-WS-009 |
+| `API/app/views/workspace/member.py` Z. 50 `WorkSpaceMemberViewSet.search_fields = ["member__display_name", "member__first_name"]` | DRF-`SearchFilter` über `get_queryset` → `filter_queryset` | `Funk.Workspaces` (Liste der Mitglieder, W-17) | `DrfSearchFilter` | CE-WS-009 |
 | `API/app/views/workspace/base.py` Z. 59 `WorkSpaceViewSet.search_fields = ["name"]` | DRF-`SearchFilter` | – | – | W-02 tot (Q-01), nicht registriert |
-| `API/app/views/workspace/base.py` Z. 177/207 `UserWorkSpacesEndpoint.search_fields = ["name"]` | `self.filter_queryset(workspace)` | `Plane.Workspaces` (U-17 `GET users/me/workspaces/`) | `DrfSearchFilter` | CE-WS-005 |
-| `API/app/views/project/member.py` Z. 31 `ProjectMemberViewSet.search_fields = ["member__display_name", "member__first_name"]` | DRF-`SearchFilter` (wo `get_queryset` genutzt wird) | `Plane.Projects` | `DrfSearchFilter` | CE-PRJ-021; Wirkung je Methode per Contract-Golden bestätigen |
-| `API/app/views/page/base.py` Z. 81 `PageViewSet.search_fields = ["name"]` | DRF-`SearchFilter` in `get_queryset` | `Plane.Pages` | `DrfSearchFilter` | CE-PAGE-002 (Frontend filtert zusätzlich clientseitig) |
-| `API/app/views/issue/base.py` Z. 212 `IssueViewSet.search_fields = ["name"]` | `self.filter_queryset(issue_queryset)` in `list` | `Plane.WorkItems` | `DrfSearchFilter` | Work-Item-Liste `?search=` |
-| `API/app/views/workspace/sticky.py` Z. 45 `description_stripped__icontains=query` | `icontains` | `Plane.Home` | `LikePattern` | CE-HOME-009 |
-| `API/api/views/sticky.py` Z. 70 `description_stripped__icontains=query` | `icontains` | `Plane.PublicApi` → `Plane.Home` | `LikePattern` | CE-API-014 |
-| `API/license/api/views/workspace.py` Z. 61 `name__icontains=search` | `icontains` | `Plane.Instance` | `LikePattern` | CE-INST-027 |
-| `API/utils/issue_filters.py` Z. 205 `name__icontains` | Legacy-Filter `name` | `Plane.WorkItems` (`LegacyFilterParser`, 02 §3.11.3) | `LikePattern` | – |
-| `API/app/views/notification/base.py` Z. 71, 102, 104, 215, 225 `sender__icontains="mentioned"` | konstanter Teilstring | `Plane.Notifications` | `LikePattern.Contains("mentioned")` | CE-NOTIF-004 |
+| `API/app/views/workspace/base.py` Z. 177/207 `UserWorkSpacesEndpoint.search_fields = ["name"]` | `self.filter_queryset(workspace)` | `Funk.Workspaces` (U-17 `GET users/me/workspaces/`) | `DrfSearchFilter` | CE-WS-005 |
+| `API/app/views/project/member.py` Z. 31 `ProjectMemberViewSet.search_fields = ["member__display_name", "member__first_name"]` | DRF-`SearchFilter` (wo `get_queryset` genutzt wird) | `Funk.Projects` | `DrfSearchFilter` | CE-PRJ-021; Wirkung je Methode per Contract-Golden bestätigen |
+| `API/app/views/page/base.py` Z. 81 `PageViewSet.search_fields = ["name"]` | DRF-`SearchFilter` in `get_queryset` | `Funk.Pages` | `DrfSearchFilter` | CE-PAGE-002 (Frontend filtert zusätzlich clientseitig) |
+| `API/app/views/issue/base.py` Z. 212 `IssueViewSet.search_fields = ["name"]` | `self.filter_queryset(issue_queryset)` in `list` | `Funk.WorkItems` | `DrfSearchFilter` | Work-Item-Liste `?search=` |
+| `API/app/views/workspace/sticky.py` Z. 45 `description_stripped__icontains=query` | `icontains` | `Funk.Home` | `LikePattern` | CE-HOME-009 |
+| `API/api/views/sticky.py` Z. 70 `description_stripped__icontains=query` | `icontains` | `Funk.PublicApi` → `Funk.Home` | `LikePattern` | CE-API-014 |
+| `API/license/api/views/workspace.py` Z. 61 `name__icontains=search` | `icontains` | `Funk.Instance` | `LikePattern` | CE-INST-027 |
+| `API/utils/issue_filters.py` Z. 205 `name__icontains` | Legacy-Filter `name` | `Funk.WorkItems` (`LegacyFilterParser`, 02 §3.11.3) | `LikePattern` | – |
+| `API/app/views/notification/base.py` Z. 71, 102, 104, 215, 225 `sender__icontains="mentioned"` | konstanter Teilstring | `Funk.Notifications` | `LikePattern.Contains("mentioned")` | CE-NOTIF-004 |
 | `API/app/views/base.py` Z. 59/158, `API/app/views/project/invite.py` Z. 43, `API/license/api/views/base.py` Z. 51, `API/space/views/base.py` Z. 73/157 (`search_fields = []`) | DRF-`SearchFilter` ohne Felder | – | – | wirkungslos, nicht portiert |
 
 ### 4.7 Abweichungskatalog (Einträge für `T/contracts/deviations.yaml`)
@@ -861,13 +861,13 @@ ENV: `OPENAI_API_BASE`, `OPENAI_API_KEY` werden **nicht** gelesen (14 §4.7 Klas
 
 ## 5. Code-Skelette
 
-> Skelette legen Namen, Signaturen und Kernlogik fest. Typen aus anderen Dokumenten (`Result<T>`, `PlaneErrors`, `IRequestScope`, `ICurrentActor`, `IVisibilityFilter<T>`, `IJobScheduler`, `IEventConsumer<T>`, `EventContext`, `IJob`, `IJobHandler<TJob>`, `JobContext`, `JobResult`, `PlaneQueues`, `FieldChange`) sind dort definiert (02, 05, 06 §5.1, 16); Entitäts- und Tabellennamen nach 03 §3.4 (`WorkItem`, `View`, `Module`, `CycleWorkItem`, `ModuleWorkItem`, `WorkItemRelation`, `SearchDocument`); Navigations-Properties (`CycleLinks`, `ModuleLinks`, `Project`, `Workspace`) sind Arbeitsnamen, maßgeblich sind die Konfigurationen aus 03.
+> Skelette legen Namen, Signaturen und Kernlogik fest. Typen aus anderen Dokumenten (`Result<T>`, `FunkErrors`, `IRequestScope`, `ICurrentActor`, `IVisibilityFilter<T>`, `IJobScheduler`, `IEventConsumer<T>`, `EventContext`, `IJob`, `IJobHandler<TJob>`, `JobContext`, `JobResult`, `FunkQueues`, `FieldChange`) sind dort definiert (02, 05, 06 §5.1, 16); Entitäts- und Tabellennamen nach 03 §3.4 (`WorkItem`, `View`, `Module`, `CycleWorkItem`, `ModuleWorkItem`, `WorkItemRelation`, `SearchDocument`); Navigations-Properties (`CycleLinks`, `ModuleLinks`, `Project`, `Workspace`) sind Arbeitsnamen, maßgeblich sind die Konfigurationen aus 03.
 
-### 5.1 `Plane.Platform.Search` – Abstraktionen
+### 5.1 `Funk.Platform.Search` – Abstraktionen
 
 ```csharp
-// BE/platform/Plane.Platform.Search/Abstractions/SearchProfile.cs
-namespace Plane.Platform.Search;
+// BE/platform/Funk.Platform.Search/Abstractions/SearchProfile.cs
+namespace Funk.Platform.Search;
 
 public enum SearchProfile
 {
@@ -899,7 +899,7 @@ public sealed record SearchFilter(string ParserName, string Expression);   // B6
 
 public sealed record SearchQuery(
     SearchProfile Profile,
-    PlanePrincipal Principal,
+    FunkPrincipal Principal,
     Guid WorkspaceId,
     string? Text,                                         // bereits normalisiert (SearchText.Normalize)
     IReadOnlyList<string> EntityTypes,
@@ -920,7 +920,7 @@ public interface ISearchProvider { ValueTask<SearchResult> SearchAsync(SearchQue
 ```
 
 ```csharp
-// BE/platform/Plane.Platform.Search/Indexing/IIndexingPipeline.cs – 01 §5.5 / 16 §5.14, unverändert
+// BE/platform/Funk.Platform.Search/Indexing/IIndexingPipeline.cs – 01 §5.5 / 16 §5.14, unverändert
 public interface IIndexingPipeline
 {
     ValueTask IndexAsync(IndexDocument doc, CancellationToken ct);
@@ -945,7 +945,7 @@ public static class IndexEntityTypes
 ### 5.2 Text-Helfer
 
 ```csharp
-// BE/platform/Plane.Platform.Search/Text/SearchText.cs
+// BE/platform/Funk.Platform.Search/Text/SearchText.cs
 public static class SearchText
 {
     /// Port von `query or None`: leer → null; NUL entfernt (DEV-SRCH-004); > maxLength gekürzt (DEV-SRCH-015). Kein Trim (1:1).
@@ -958,14 +958,14 @@ public static class SearchText
     }
 }
 
-// BE/platform/Plane.Platform.Search/Text/LikePattern.cs
+// BE/platform/Funk.Platform.Search/Text/LikePattern.cs
 public static class LikePattern
 {
     public static string Escape(string value) => value.Replace(@"\", @"\\").Replace("%", @"\%").Replace("_", @"\_");
     public static string Contains(string value) => "%" + Escape(value) + "%";   // Django icontains
 }
 
-// BE/platform/Plane.Platform.Search/Text/SequenceIdExtractor.cs
+// BE/platform/Funk.Platform.Search/Text/SequenceIdExtractor.cs
 public static partial class SequenceIdExtractor
 {
     [GeneratedRegex("(?<![0-9A-Za-z_])[0-9]+(?![0-9A-Za-z_])", RegexOptions.CultureInvariant)]
@@ -986,7 +986,7 @@ public static partial class SequenceIdExtractor
 ```
 
 ```csharp
-// BE/platform/Plane.Platform.Search/Text/DrfSearchFilter.cs – Port rest_framework.filters.SearchFilter (DRF 3.17.2)
+// BE/platform/Funk.Platform.Search/Text/DrfSearchFilter.cs – Port rest_framework.filters.SearchFilter (DRF 3.17.2)
 public static class DrfSearchFilter
 {
     /// false = Suchtext enthält NUL → Aufrufer antwortet 400 ["Null characters are not allowed."] (1:1, §3.2.3)
@@ -1017,7 +1017,7 @@ public static class DrfSearchFilter
     }
 }
 
-// BE/platform/Plane.Platform.Search/Text/DrfSearchTerms.cs – Port search_smart_split (DRF 3.17.2 filters.py Z. 20–34)
+// BE/platform/Funk.Platform.Search/Text/DrfSearchTerms.cs – Port search_smart_split (DRF 3.17.2 filters.py Z. 20–34)
 public static class DrfSearchTerms
 {
     public static bool TrySplit(string? search, out IReadOnlyList<string> terms)
@@ -1040,19 +1040,19 @@ public static class DrfSearchTerms
 }
 ```
 
-Verwendung (Beispiel `Plane.Workspaces`, W-17):
+Verwendung (Beispiel `Funk.Workspaces`, W-17):
 
 ```csharp
 if (!DrfSearchFilter.TryApply(db.WorkspaceMembers.Where(m => m.WorkspaceId == scope.Workspace.WorkspaceId),
                               search, requiresDistinct: false, out var members,
                               m => m.Member.DisplayName, m => m.Member.FirstName))
-    return PlaneErrors.DrfList(400, DrfMessages.NullCharacters);           // 02 §3.8 (Änderungsauftrag §9.2)
+    return FunkErrors.DrfList(400, DrfMessages.NullCharacters);           // 02 §3.8 (Änderungsauftrag §9.2)
 ```
 
-### 5.3 Such-Quellen und Provider (`Plane.Search`)
+### 5.3 Such-Quellen und Provider (`Funk.Search`)
 
 ```csharp
-// BE/modules/Search/Plane.Search/Application/Sources/ISearchEntitySource.cs
+// BE/modules/Search/Funk.Search/Application/Sources/ISearchEntitySource.cs
 internal interface ISearchEntitySource
 {
     string EntityType { get; }
@@ -1061,8 +1061,8 @@ internal interface ISearchEntitySource
     ValueTask<IReadOnlyList<JsonObject>> HydrateAsync(SearchProfile profile, IReadOnlyList<SearchHit> hits, SearchQuery query, CancellationToken ct);
 }
 
-// BE/modules/Search/Plane.Search/Application/Services/ParitySearchProvider.cs
-internal sealed class ParitySearchProvider(IEnumerable<ISearchEntitySource> sources, IOptions<PlaneSearchOptions> options)
+// BE/modules/Search/Funk.Search/Application/Services/ParitySearchProvider.cs
+internal sealed class ParitySearchProvider(IEnumerable<ISearchEntitySource> sources, IOptions<FunkSearchOptions> options)
     : ISearchProvider
 {
     private readonly Dictionary<(string, SearchProfile), ISearchEntitySource> _map =
@@ -1093,8 +1093,8 @@ internal sealed class ParitySearchProvider(IEnumerable<ISearchEntitySource> sour
     };
 }
 
-// BE/modules/Search/Plane.Search/Application/Services/SearchProviderSelector.cs
-internal sealed class SearchProviderSelector(IServiceProvider sp, IOptions<PlaneSearchOptions> options)
+// BE/modules/Search/Funk.Search/Application/Services/SearchProviderSelector.cs
+internal sealed class SearchProviderSelector(IServiceProvider sp, IOptions<FunkSearchOptions> options)
 {
     public ISearchProvider Resolve(SearchProfile profile)
         => sp.GetRequiredKeyedService<ISearchProvider>(
@@ -1103,8 +1103,8 @@ internal sealed class SearchProviderSelector(IServiceProvider sp, IOptions<Plane
 ```
 
 ```csharp
-// BE/modules/Search/Plane.Search/Application/Sources/WorkItemSearchSource.cs (Ausschnitt: Profil Global)
-internal sealed class WorkItemSearchSource(PlaneDbContext db, WorkItemBaseSetQuery baseSet, IVisibilityFilter<WorkItem> visibility)
+// BE/modules/Search/Funk.Search/Application/Sources/WorkItemSearchSource.cs (Ausschnitt: Profil Global)
+internal sealed class WorkItemSearchSource(FunkDbContext db, WorkItemBaseSetQuery baseSet, IVisibilityFilter<WorkItem> visibility)
     : ISearchEntitySource
 {
     public string EntityType => SearchEntityTypes.Issue;
@@ -1184,7 +1184,7 @@ internal sealed class WorkItemSearchSource(PlaneDbContext db, WorkItemBaseSetQue
 > Hinweis: Die Projektion in `JsonObject` ist hier zur Kürze gezeigt; in der Umsetzung projiziert EF auf ein anonymes Objekt bzw. einen Record und der Hydrator baut daraus die `JsonObject`-Zeilen mit **genau** der Feldreihenfolge des Originals (`.values(...)`-Reihenfolge; Golden-Vergleich ist reihenfolgeunabhängig, die Serialisierung trotzdem stabil).
 
 ```csharp
-// BE/data/Plane.Data/Querying/WorkItems/WorkItemBaseSetPredicates.cs – gemeinsame Quelle für WorkItemBaseSets (Plane.WorkItems) und Plane.Search
+// BE/data/Funk.Data/Querying/WorkItems/WorkItemBaseSetPredicates.cs – gemeinsame Quelle für WorkItemBaseSets (Funk.WorkItems) und Funk.Search
 public static class WorkItemBaseSetPredicates
 {
     // 02 §3.11.4: soft_delete (globaler Filter), state IS NULL OR state.group <> 'triage', archived_at IS NULL,
@@ -1195,13 +1195,13 @@ public static class WorkItemBaseSetPredicates
     public static readonly Expression<Func<WorkItem, bool>> AllObjects = w => true;   // nur Soft-Delete-Filter
 }
 
-// BE/modules/Search/Plane.Search/Application/Sources/WorkItemBaseSetQuery.cs
+// BE/modules/Search/Funk.Search/Application/Sources/WorkItemBaseSetQuery.cs
 internal sealed class WorkItemBaseSetQuery(IEnumerable<IWorkItemBaseSetFilter> filters)       // 16 E-04, CE: keine Registrierung
 {
     public IQueryable<WorkItem> IssueObjects(IQueryable<WorkItem> source, ScopeRef scope)
     {
         var q = source.Where(WorkItemBaseSetPredicates.IssueObjects);
-        foreach (var f in filters.Where(f => f.AppliesTo == WorkItemBaseSet.IssueObjects))   // Enum WorkItemBaseSet aus Plane.WorkItems.Contracts
+        foreach (var f in filters.Where(f => f.AppliesTo == WorkItemBaseSet.IssueObjects))   // Enum WorkItemBaseSet aus Funk.WorkItems.Contracts
             if (f.Predicate(scope) is Expression<Func<WorkItem, bool>> p) q = q.Where(p);
         return q;
     }
@@ -1209,15 +1209,15 @@ internal sealed class WorkItemBaseSetQuery(IEnumerable<IWorkItemBaseSetFilter> f
 }
 ```
 
-> `WorkItemBaseSet` (ohne Suffix) ist die Enum aus 16 E-04 (`Plane.WorkItems.Contracts/Query`); die Such-Hilfsklasse heißt deshalb `WorkItemBaseSetQuery`. Architekturtest `SearchUsesSharedBaseSets`: keine Such-Quelle formuliert die Basismengen-Bedingungen selbst.
+> `WorkItemBaseSet` (ohne Suffix) ist die Enum aus 16 E-04 (`Funk.WorkItems.Contracts/Query`); die Such-Hilfsklasse heißt deshalb `WorkItemBaseSetQuery`. Architekturtest `SearchUsesSharedBaseSets`: keine Such-Quelle formuliert die Basismengen-Bedingungen selbst.
 
 ### 5.4 Endpunkt und Query SR-01
 
 ```csharp
-// BE/modules/Search/Plane.Search/Endpoints/App/GlobalSearchEndpoints.cs
+// BE/modules/Search/Funk.Search/Endpoints/App/GlobalSearchEndpoints.cs
 internal static class GlobalSearchEndpoints
 {
-    public static void Map(PlaneEndpointRouteBuilder e)
+    public static void Map(FunkEndpointRouteBuilder e)
     {
         e.App("workspaces/{slug}/search").WithTags("Search")
          .MapGet("", Search)
@@ -1235,12 +1235,12 @@ internal static class GlobalSearchEndpoints
     }
 }
 
-// BE/modules/Search/Plane.Search/Application/Queries/GlobalSearch/GlobalSearchQuery.cs
+// BE/modules/Search/Funk.Search/Application/Queries/GlobalSearch/GlobalSearchQuery.cs
 internal sealed record GlobalSearchQuery(WorkspaceScope Scope, string? Search, string? Entities, string WorkspaceSearch, string? ProjectId)
     : IQuery<Result<GlobalSearchResponse>>;
 
 internal sealed class GlobalSearchHandler(SearchProviderSelector selector, GlobalSearchHydrator hydrator,
-                                          ICurrentActor actor, IOptions<PlaneSearchOptions> options)
+                                          ICurrentActor actor, IOptions<FunkSearchOptions> options)
     : IQueryHandler<GlobalSearchQuery, Result<GlobalSearchResponse>>
 {
     public async ValueTask<Result<GlobalSearchResponse>> Handle(GlobalSearchQuery c, CancellationToken ct)
@@ -1256,7 +1256,7 @@ internal sealed class GlobalSearchHandler(SearchProviderSelector selector, Globa
             // Original: ValidationError nur dort, wo filter(project_id=…) gebaut wird (alle Typen außer workspace/project)
             if (Guid.TryParse(c.ProjectId, out var pid)) projectId = pid;
             else if (types.Any(t => t is not (SearchEntityTypes.Workspace or SearchEntityTypes.Project)))
-                return PlaneErrors.Plain(400, "Please provide valid detail");
+                return FunkErrors.Plain(400, "Please provide valid detail");
             // ungültige UUID, aber nur workspace/project angefragt → wie Original ignoriert (projectId bleibt null)
         }
         var query = new SearchQuery(SearchProfile.Global, actor.Principal, c.Scope.WorkspaceId,
@@ -1271,10 +1271,10 @@ internal sealed class GlobalSearchHandler(SearchProviderSelector selector, Globa
 
 ### 5.5 Picker-Ausschlüsse SR-02
 
-Die UUID-Prüfung der Rohparameter (`issue_id` bei gesetztem Schalter, `module`) erfolgt **im Handler** `WorkItemPickerSearchHandler` vor dem Provider-Aufruf und liefert `PlaneErrors.Plain(400, "Please provide valid detail")` (erwarteter Fehler → `Result`, nicht `PlaneValidationException`, die laut 02 §3.8 nur Bibliotheksfehlern vorbehalten ist). Die Ausschlüsse arbeiten danach mit typisierten Werten; das Ziel-Work-Item wird – wie im Original (`.first()`) – **einmal** geladen, damit keine `NOT IN`-Subquery über eine nullable Spalte entsteht.
+Die UUID-Prüfung der Rohparameter (`issue_id` bei gesetztem Schalter, `module`) erfolgt **im Handler** `WorkItemPickerSearchHandler` vor dem Provider-Aufruf und liefert `FunkErrors.Plain(400, "Please provide valid detail")` (erwarteter Fehler → `Result`, nicht `FunkValidationException`, die laut 02 §3.8 nur Bibliotheksfehlern vorbehalten ist). Die Ausschlüsse arbeiten danach mit typisierten Werten; das Ziel-Work-Item wird – wie im Original (`.first()`) – **einmal** geladen, damit keine `NOT IN`-Subquery über eine nullable Spalte entsteht.
 
 ```csharp
-// BE/modules/Search/Plane.Search/Domain/WorkItemPickerOptions.cs
+// BE/modules/Search/Funk.Search/Domain/WorkItemPickerOptions.cs
 internal sealed record WorkItemPickerOptions(bool Parent, bool IssueRelation, bool SubIssue, bool Cycle, Guid? ModuleId,
                                              bool WithoutTargetDate, Guid? IssueId)
 {
@@ -1287,10 +1287,10 @@ internal sealed record WorkItemPickerOptions(bool Parent, bool IssueRelation, bo
     private static bool Is(IReadOnlyDictionary<string, string> o, string key) => o.TryGetValue(key, out var v) && v == "true";
 }
 
-// BE/modules/Search/Plane.Search/Domain/WorkItemPickerExclusions.cs
+// BE/modules/Search/Funk.Search/Domain/WorkItemPickerExclusions.cs
 internal static class WorkItemPickerExclusions
 {
-    public static async ValueTask<IQueryable<WorkItem>> ApplyAsync(IQueryable<WorkItem> items, WorkItemPickerOptions o, PlaneDbContext db,
+    public static async ValueTask<IQueryable<WorkItem>> ApplyAsync(IQueryable<WorkItem> items, WorkItemPickerOptions o, FunkDbContext db,
                                                                    WorkItemBaseSetQuery baseSet, ScopeRef scope, CancellationToken ct)
     {
         // Ziel einmal laden (Original: Issue.issue_objects.filter(pk=issue_id).first())
@@ -1330,7 +1330,7 @@ internal static class WorkItemPickerExclusions
 ### 5.6 `search_documents` – Entität, Konfiguration, Pipeline
 
 ```csharp
-// BE/data/Plane.Data/Entities/Search/SearchDocument.cs – technische Tabelle (03 §3.4.18.8), kein AuditableEntity, kein Soft-Delete
+// BE/data/Funk.Data/Entities/Search/SearchDocument.cs – technische Tabelle (03 §3.4.18.8), kein AuditableEntity, kein Soft-Delete
 [OwnedBy("Search")]
 public sealed class SearchDocument
 {
@@ -1349,7 +1349,7 @@ public sealed class SearchDocument
     public NpgsqlTsVector SearchVector { get; private set; } = null!;     // generiert
 }
 
-// BE/data/Plane.Data/Configurations/Search/SearchDocumentConfiguration.cs
+// BE/data/Funk.Data/Configurations/Search/SearchDocumentConfiguration.cs
 internal sealed class SearchDocumentConfiguration : IEntityTypeConfiguration<SearchDocument>
 {
     public const string VectorSql =
@@ -1378,24 +1378,24 @@ internal sealed class SearchDocumentConfiguration : IEntityTypeConfiguration<Sea
 ```
 
 ```csharp
-// BE/modules/Search/Plane.Search/SearchModule.cs (Ausschnitt RegisterMessaging, 06 §5.1 IMessagingRegistry)
+// BE/modules/Search/Funk.Search/SearchModule.cs (Ausschnitt RegisterMessaging, 06 §5.1 IMessagingRegistry)
 public void RegisterMessaging(IMessagingRegistry m, IConfiguration configuration)
 {
     const string consumer = "search.indexing";
-    m.AddConsumer<WorkItemCreatedV1, SearchIndexingConsumer>(consumer, PlaneQueues.Indexing);
-    m.AddConsumer<WorkItemUpdatedV1, SearchIndexingConsumer>(consumer, PlaneQueues.Indexing);
+    m.AddConsumer<WorkItemCreatedV1, SearchIndexingConsumer>(consumer, FunkQueues.Indexing);
+    m.AddConsumer<WorkItemUpdatedV1, SearchIndexingConsumer>(consumer, FunkQueues.Indexing);
     // … je Event aus Tabelle §3.10.3 genau eine Zeile (Architekturtest SearchConsumerCoversIndexEvents vergleicht mit IndexEventCatalog)
     m.AddJob<IndexEntityJob, IndexEntityJobHandler>();
     m.AddJob<RemoveIndexEntryJob, RemoveIndexEntryJobHandler>();
     m.AddJob<RemoveIndexEntriesByScopeJob, RemoveIndexEntriesByScopeJobHandler>();
     m.AddJob<SearchIndexRebuildJob, SearchIndexRebuildJobHandler>();
     m.AddJob<SearchIndexReconcileJob, SearchIndexReconcileJobHandler>();
-    var cron = configuration.GetValue<string>("Plane:Search:ReconcileCron") ?? "23 3 * * *";
+    var cron = configuration.GetValue<string>("Funk:Search:ReconcileCron") ?? "23 3 * * *";
     m.Recurring.Register<SearchIndexReconcileJob>("indexing.reconcile", cron);
 }
 
-// BE/modules/Search/Plane.Search/Application/Consumers/SearchIndexingConsumer.cs
-internal sealed class SearchIndexingConsumer(IJobScheduler jobs, IClock clock, IOptions<PlaneSearchOptions> options)
+// BE/modules/Search/Funk.Search/Application/Consumers/SearchIndexingConsumer.cs
+internal sealed class SearchIndexingConsumer(IJobScheduler jobs, IClock clock, IOptions<FunkSearchOptions> options)
     : IEventConsumer<WorkItemCreatedV1>, IEventConsumer<WorkItemUpdatedV1>, IEventConsumer<WorkItemStateChangedV1>,
       IEventConsumer<WorkItemArchivedV1>, IEventConsumer<WorkItemUnarchivedV1>, IEventConsumer<WorkItemRestoredV1>,
       IEventConsumer<WorkItemParentChangedV1>, IEventConsumer<WorkItemMovedV1>, IEventConsumer<WorkItemDeletedV1>,
@@ -1441,15 +1441,15 @@ internal sealed class SearchIndexingConsumer(IJobScheduler jobs, IClock clock, I
         => jobs.EnqueueAsync(job, dedupeKey: $"indexing-remove-scope:{job.WorkspaceId}:{job.ProjectId}:{job.EntityType}:{job.FacetKey}:{job.FacetValue}", ct: ct);
 }
 
-// BE/modules/Search/Plane.Search/Application/Jobs/IndexEntityJob.cs – Job-Vertrag 06 §5.1
+// BE/modules/Search/Funk.Search/Application/Jobs/IndexEntityJob.cs – Job-Vertrag 06 §5.1
 internal sealed record IndexEntityJob(string EntityType, Guid EntityId) : IJob
 {
     public static string JobType => "indexing.index_entity";
-    public static string Queue => PlaneQueues.Indexing;
+    public static string Queue => FunkQueues.Indexing;
 }
 
 internal sealed class IndexEntityJobHandler(IEnumerable<IIndexDocumentBuilder> builders, IEnumerable<IIndexDocumentEnricher> enrichers,
-                                            IIndexingPipeline pipeline, IOptions<PlaneSearchOptions> options) : IJobHandler<IndexEntityJob>
+                                            IIndexingPipeline pipeline, IOptions<FunkSearchOptions> options) : IJobHandler<IndexEntityJob>
 {
     public async ValueTask<JobResult> HandleAsync(IndexEntityJob job, JobContext ctx, CancellationToken ct)
     {
@@ -1466,8 +1466,8 @@ internal sealed class IndexEntityJobHandler(IEnumerable<IIndexDocumentBuilder> b
     }
 }
 
-// BE/modules/Search/Plane.Search/Indexing/IndexingPipeline.cs
-internal sealed class IndexingPipeline(PlaneDbContext db, IClock clock, IIdGenerator ids) : IIndexingPipeline
+// BE/modules/Search/Funk.Search/Indexing/IndexingPipeline.cs
+internal sealed class IndexingPipeline(FunkDbContext db, IClock clock, IIdGenerator ids) : IIndexingPipeline
 {
     public async ValueTask IndexAsync(IndexDocument d, CancellationToken ct)
     {
@@ -1494,10 +1494,10 @@ internal sealed class IndexingPipeline(PlaneDbContext db, IClock clock, IIdGener
 
 `IIndexDocumentBuilder` erhält dafür zusätzlich `ValueTask<DateTimeOffset?> GetSourceUpdatedAtAsync(Guid entityId, CancellationToken ct)` (ein `SELECT updated_at` ohne Soft-Delete-Treffer → `null`).
 
-### 5.7 `Plane.Platform.Ai`
+### 5.7 `Funk.Platform.Ai`
 
 ```csharp
-// BE/platform/Plane.Platform.Ai/Configuration/LlmSettingsResolver.cs
+// BE/platform/Funk.Platform.Ai/Configuration/LlmSettingsResolver.cs
 public enum LlmProviderKind { OpenAi, OpenAiCompatible, Anthropic, Gemini }
 public enum LlmUnusableReason { UnsupportedProvider, MissingApiKey, MissingModel, MissingBaseUrl, InvalidBaseUrl }
 
@@ -1555,10 +1555,10 @@ public sealed class LlmNotConfiguredException(LlmUnusableReason reason) : Except
 ```
 
 ```csharp
-// BE/platform/Plane.Platform.Ai/Chat/OpenAiCompatibleChatClientFactory.cs
+// BE/platform/Funk.Platform.Ai/Chat/OpenAiCompatibleChatClientFactory.cs
 public interface IChatClientFactory { IChatClient GetOrCreate(LlmSettings settings); }
 
-internal sealed class OpenAiCompatibleChatClientFactory(IHttpClientFactory http, ILoggerFactory loggers, IOptions<PlaneAiOptions> options)
+internal sealed class OpenAiCompatibleChatClientFactory(IHttpClientFactory http, ILoggerFactory loggers, IOptions<FunkAiOptions> options)
     : IChatClientFactory
 {
     private readonly object _gate = new();
@@ -1592,12 +1592,12 @@ internal sealed class OpenAiCompatibleChatClientFactory(IHttpClientFactory http,
             .AsIChatClient();                                                         // Microsoft.Extensions.AI.OpenAI
         return new ChatClientBuilder(inner)
             .UseLogging(loggers)
-            .UseOpenTelemetry(loggers, sourceName: "Plane.Ai", configure: c => c.EnableSensitiveData = false)
+            .UseOpenTelemetry(loggers, sourceName: "Funk.Ai", configure: c => c.EnableSensitiveData = false)
             .Build();
     }
 }
 
-// BE/platform/Plane.Platform.Ai/Chat/DynamicChatClient.cs
+// BE/platform/Funk.Platform.Ai/Chat/DynamicChatClient.cs
 internal sealed class DynamicChatClient(ILlmSettingsSource source, IChatClientFactory factory) : IChatClient
 {
     public async Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null,
@@ -1621,7 +1621,7 @@ internal sealed class DynamicChatClient(ILlmSettingsSource source, IChatClientFa
     }
 }
 
-// BE/platform/Plane.Platform.Ai/Embeddings/NullEmbeddingGenerator.cs – 16 §5.14, unverändert
+// BE/platform/Funk.Platform.Ai/Embeddings/NullEmbeddingGenerator.cs – 16 §5.14, unverändert
 internal sealed class NullEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>>
 {
     public Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(IEnumerable<string> values, EmbeddingGenerationOptions? options = null,
@@ -1631,19 +1631,19 @@ internal sealed class NullEmbeddingGenerator : IEmbeddingGenerator<string, Embed
     public void Dispose() { }
 }
 
-// BE/platform/Plane.Platform.Ai/AiServiceCollectionExtensions.cs
+// BE/platform/Funk.Platform.Ai/AiServiceCollectionExtensions.cs
 public static class AiServiceCollectionExtensions
 {
     public static IServiceCollection AddPlaneAi(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddOptions<PlaneAiOptions>().Bind(configuration.GetSection("Plane:Ai")).ValidateDataAnnotations().ValidateOnStart();
+        services.AddOptions<FunkAiOptions>().Bind(configuration.GetSection("Funk:Ai")).ValidateDataAnnotations().ValidateOnStart();
         services.AddSsrfSafeHttpClient("llm", policy =>                           // Signatur 05 §5.9: Action<SsrfPolicy>
         {
             policy.MaxRedirects = 0;
             policy.MaxResponseBytes = 8 * 1024 * 1024;
         });
         services.AddOptions<SsrfPolicy>("llm")                                      // benannte Options, vom Handler per IOptionsMonitor gelesen
-            .Configure<IOptions<PlaneAiOptions>>((policy, ai) =>
+            .Configure<IOptions<FunkAiOptions>>((policy, ai) =>
             {
                 policy.Timeout = TimeSpan.FromSeconds(ai.Value.RequestTimeoutSeconds);
                 foreach (var host in ai.Value.AllowedInternalHosts) policy.AllowedHosts.Add(host);   // AllowedHosts ist get-only
@@ -1656,13 +1656,13 @@ public static class AiServiceCollectionExtensions
 }
 ```
 
-### 5.8 `Plane.Assistant` – KI-Assistent und Unsplash
+### 5.8 `Funk.Assistant` – KI-Assistent und Unsplash
 
 ```csharp
-// BE/modules/Assistant/Plane.Assistant/Endpoints/App/AiAssistantEndpoints.cs
+// BE/modules/Assistant/Funk.Assistant/Endpoints/App/AiAssistantEndpoints.cs
 internal static class AiAssistantEndpoints
 {
-    public static void Map(PlaneEndpointRouteBuilder e)
+    public static void Map(FunkEndpointRouteBuilder e)
     {
         e.App("workspaces/{slug}/ai-assistant").WithTags("Assistant")
          .MapPost("", Run)
@@ -1673,7 +1673,7 @@ internal static class AiAssistantEndpoints
         => (await sender.Send(new GenerateAiAssistantResponseQuery(scope.Workspace, body?["task"], body?["prompt"]), ct)).ToOk();
 }
 
-// BE/modules/Assistant/Plane.Assistant/Application/Queries/GenerateAiAssistantResponse/GenerateAiAssistantResponseQuery.cs
+// BE/modules/Assistant/Funk.Assistant/Application/Queries/GenerateAiAssistantResponse/GenerateAiAssistantResponseQuery.cs
 internal sealed record GenerateAiAssistantResponseQuery(WorkspaceScope Scope, JsonNode? Task, JsonNode? Prompt)
     : IQuery<Result<AiAssistantResponseDto>>;     // Query: keine Transaktion/Execution-Strategy um den bis zu 120 s langen LLM-Aufruf (02 D02-ADR-24)
 
@@ -1686,9 +1686,9 @@ internal sealed class GenerateAiAssistantResponseHandler(ILlmSettingsSource sett
         if (!s.IsUsable)
         {
             log.LogWarning("LLM configuration unusable: {Reason}", s.Reason);
-            return PlaneErrors.Plain(400, "LLM provider API key and model are required");
+            return FunkErrors.Plain(400, "LLM provider API key and model are required");
         }
-        if (!PythonTruthiness.IsTruthy(c.Task)) return PlaneErrors.Plain(400, "Task is required");
+        if (!PythonTruthiness.IsTruthy(c.Task)) return FunkErrors.Plain(400, "Task is required");
         var task = PythonTruthiness.AsText(c.Task!);
         var prompt = PythonTruthiness.IsTruthy(c.Prompt) ? PythonTruthiness.AsText(c.Prompt!) : "";   // DEV-AI-003
 
@@ -1701,15 +1701,15 @@ internal sealed class GenerateAiAssistantResponseHandler(ILlmSettingsSource sett
         catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
         {
             if (ex.FindInner<SsrfBlockedException>() is not null)              // Hinweis für Betreiber (§3.14); FindInner: Schleife über InnerException
-                log.LogError("LLM endpoint host {Host} blocked by SSRF policy; add it to Plane:Ai:AllowedInternalHosts", s.Endpoint!.Host);
+                log.LogError("LLM endpoint host {Host} blocked by SSRF policy; add it to Funk:Ai:AllowedInternalHosts", s.Endpoint!.Host);
             else
                 log.LogError("LLM request failed: {ErrorType} {Status}", ex.GetType().Name, (ex as ClientResultException)?.Status);
-            return PlaneErrors.Plain(500, "An internal error has occurred.");
+            return FunkErrors.Plain(500, "An internal error has occurred.");
         }
     }
 }
 
-// BE/modules/Assistant/Plane.Assistant/Domain/AiResponseFormatter.cs
+// BE/modules/Assistant/Funk.Assistant/Domain/AiResponseFormatter.cs
 internal static class AiResponseFormatter
 {
     public static string ToHtml(string text)
@@ -1718,8 +1718,8 @@ internal static class AiResponseFormatter
 ```
 
 ```csharp
-// BE/modules/Assistant/Plane.Assistant/Application/Services/UnsplashClient.cs
-internal sealed class UnsplashClient(IHttpClientFactory http, IOptions<PlaneUnsplashOptions> options)
+// BE/modules/Assistant/Funk.Assistant/Application/Services/UnsplashClient.cs
+internal sealed class UnsplashClient(IHttpClientFactory http, IOptions<FunkUnsplashOptions> options)
 {
     public async ValueTask<(int Status, JsonNode? Body)> GetAsync(string accessKey, string? query, string page, string perPage, CancellationToken ct)
     {
@@ -1872,9 +1872,9 @@ compare:
 ```
 
 ```csharp
-// T/modules/Plane.Assistant.Tests/Integration/AssistantEndpointTests.cs
-public sealed class AssistantEndpointTests(PlaneApiFactory api, WireMockLlmFixture llm)
-    : IClassFixture<PlaneApiFactory>, IClassFixture<WireMockLlmFixture>
+// T/modules/Funk.Assistant.Tests/Integration/AssistantEndpointTests.cs
+public sealed class AssistantEndpointTests(FunkApiFactory api, WireMockLlmFixture llm)
+    : IClassFixture<FunkApiFactory>, IClassFixture<WireMockLlmFixture>
 {
     [Fact]
     public async Task Sends_single_user_message_and_formats_html()
@@ -1894,7 +1894,7 @@ public sealed class AssistantEndpointTests(PlaneApiFactory api, WireMockLlmFixtu
 }
 ```
 
-> `WireMockLlmFixture`, `SetInstanceConfigurationAsync` und `CreateClientAs` sind Test-Hilfen, die dieses Dokument für `Plane.BuildingBlocks.Testing` anfordert (Änderungsauftrag an 15 §9.2); Login der Seed-Benutzer nach 15 (`KeycloakHeadlessLogin` bzw. Test-Authentifizierung des `PlaneApiFactory`).
+> `WireMockLlmFixture`, `SetInstanceConfigurationAsync` und `CreateClientAs` sind Test-Hilfen, die dieses Dokument für `Funk.BuildingBlocks.Testing` anfordert (Änderungsauftrag an 15 §9.2); Login der Seed-Benutzer nach 15 (`KeycloakHeadlessLogin` bzw. Test-Authentifizierung des `FunkApiFactory`).
 
 ## 6. Erweiterungspunkte für Bezahl-Pakete
 
@@ -1904,16 +1904,16 @@ Grundsatz (01 P7, 16): Hier stehen nur **Andockstellen** – Contract, CE-Defaul
 
 | Paket | Andockstelle (CE baut) | CE-Default | Ort | ab | Test (CE) |
 |---|---|---|---|---|---|
-| **B6** Erweiterte Filter, PQL, Advanced Search | `ISearchProvider` (unverändert) + `SearchProfile` ≥ 100 + Keyed-Provider-Routing `Plane:Search:Routing` | nur `parity`, alle CE-Profile → `parity` | `Plane.Platform.Search`, `Plane.Search` (`SearchProviderSelector`) | I2 | `SearchProviderRoutingTests` |
-| B6 | `SearchQuery.Filter` (`SearchFilter(ParserName, Expression)`) → `IFilterParser` (16 §5.5) | immer `null` | `Plane.Platform.Search` | I2 | `SearchQueryContractTests` (Feld vorhanden, CE ignoriert) |
-| B6 | Zwei-Phasen-Vertrag Provider → Hydrator (Antwortformen bleiben CE-Eigentum) | CE-Hydratoren je Profil | `Plane.Search/Application/Hydration` | I2 | `HydratorAppliesVisibilityTests` |
-| B6 | Indexierungs-Pipeline (`search_documents`, `tsvector` `simple`+`unaccent`, Trigramm auf `title`, `facets` jsonb GIN) | befüllt, von CE nicht gelesen | `Plane.Search`, `Plane.Data` | I5 | `IndexingPipelineTests`, `IndexReconcileTests` |
+| **B6** Erweiterte Filter, PQL, Advanced Search | `ISearchProvider` (unverändert) + `SearchProfile` ≥ 100 + Keyed-Provider-Routing `Funk:Search:Routing` | nur `parity`, alle CE-Profile → `parity` | `Funk.Platform.Search`, `Funk.Search` (`SearchProviderSelector`) | I2 | `SearchProviderRoutingTests` |
+| B6 | `SearchQuery.Filter` (`SearchFilter(ParserName, Expression)`) → `IFilterParser` (16 §5.5) | immer `null` | `Funk.Platform.Search` | I2 | `SearchQueryContractTests` (Feld vorhanden, CE ignoriert) |
+| B6 | Zwei-Phasen-Vertrag Provider → Hydrator (Antwortformen bleiben CE-Eigentum) | CE-Hydratoren je Profil | `Funk.Search/Application/Hydration` | I2 | `HydratorAppliesVisibilityTests` |
+| B6 | Indexierungs-Pipeline (`search_documents`, `tsvector` `simple`+`unaccent`, Trigramm auf `title`, `facets` jsonb GIN) | befüllt, von CE nicht gelesen | `Funk.Search`, `Funk.Data` | I5 | `IndexingPipelineTests`, `IndexReconcileTests` |
 | B6 | Frontend `SEARCH_RESULT_RENDERERS`, `FILTER_INPUT_MODES`, `FILTER_OPERATORS` (08/16) | CE-Gruppen der globalen Suche; nur Chips | `FE/libs/web/extensions` | I2/I5 | Galerie + `provideFakeExtensions` |
 | B6 | Routen-Reservierungen §6.4 | 404 | `Reservations.cs` | I0 | `RouteReservationTests` |
-| **G1** AI-Basis | `IEmbeddingGenerator<string, Embedding<float>>` | `NullEmbeddingGenerator` (`TryAddSingleton`, G1 ersetzt per `Replace`) | `Plane.Platform.Ai` | I5 | `NullEmbeddingGeneratorTests` |
-| G1 | `IIndexDocumentEnricher` (E-24) als Einhängepunkt für Embeddings | keine Registrierung | `Plane.Platform.Search` | I5 | `IndexEnricherTests` (Test-Enricher ergänzt Facette) |
-| G1 | `vector`-Extension, reserviertes Schema `search_embeddings` (§6.2), Option `Plane:Ai:EmbeddingDimensions` (1536), `Plane:Ai:Enabled` (false) | Extension aktiv, Tabelle **nicht** angelegt | Migrator/14, `PlaneAiOptions` | I0/I5 | `PgvectorSmokeTests` (S0), `EmbeddingSchemaTemplateTests` |
-| G1 | `IChatClient` = `DynamicChatClient` mit Provider-Auflösung `LLM_*` (lokal betreibbar) | CE-AI nutzt ihn | `Plane.Platform.Ai` | I6 | `LlmSettingsResolverTests`, `AssistantEndpointTests` |
+| **G1** AI-Basis | `IEmbeddingGenerator<string, Embedding<float>>` | `NullEmbeddingGenerator` (`TryAddSingleton`, G1 ersetzt per `Replace`) | `Funk.Platform.Ai` | I5 | `NullEmbeddingGeneratorTests` |
+| G1 | `IIndexDocumentEnricher` (E-24) als Einhängepunkt für Embeddings | keine Registrierung | `Funk.Platform.Search` | I5 | `IndexEnricherTests` (Test-Enricher ergänzt Facette) |
+| G1 | `vector`-Extension, reserviertes Schema `search_embeddings` (§6.2), Option `Funk:Ai:EmbeddingDimensions` (1536), `Funk:Ai:Enabled` (false) | Extension aktiv, Tabelle **nicht** angelegt | Migrator/14, `FunkAiOptions` | I0/I5 | `PgvectorSmokeTests` (S0), `EmbeddingSchemaTemplateTests` |
+| G1 | `IChatClient` = `DynamicChatClient` mit Provider-Auflösung `LLM_*` (lokal betreibbar) | CE-AI nutzt ihn | `Funk.Platform.Ai` | I6 | `LlmSettingsResolverTests`, `AssistantEndpointTests` |
 | G1 | Reservierter Instanz-Key `LLM_EMBEDDING_MODEL`, Provider-Keys `semantic`/`hybrid`, Profil `Semantic = 110` | nicht akzeptiert / nicht registriert | `InstanceConfigurationKeys` (Reservierung), `SearchProviderKeys` | I0 | `ReservationCollisionTests` |
 | G1 | Frontend `DUPLICATE_DETECTION` (CE `[]`), `EDITOR_FLAGS` (`ai` deaktiviert), `WORKSPACE_FEATURES` (`pi`) | wie Original | `FE/libs/web/extensions` (08/16) | I2/I5 | 08 |
 | **A1** Work-Item-Types & Custom Properties | SR-03 `issue` liefert `type_id` (CE `null`); alle Such-Quellen bilden `IssueObjects` über `WorkItemBaseSetQuery` und wenden damit registrierte `IWorkItemBaseSetFilter` (16 E-04, z. B. „ohne Epics“) an; Facetten-Erweiterung über `IIndexDocumentEnricher` (Property-Werte als Facetten) | `type_id = null`, kein Basismengen-Filter, kein Enricher | `WorkItemSearchSource`, `WorkItemBaseSetQuery`, E-04, E-24 | I2/I5 | Szenario-Golden `type_id: null`; `SearchAppliesBaseSetFiltersTests` (Test-Filter schließt ein Work Item aus SR-01/SR-02/SR-03/v1 aus) |
@@ -1921,8 +1921,8 @@ Grundsatz (01 P7, 16): Hier stehen nur **Andockstellen** – Contract, CE-Defaul
 | **B1** Teamspaces | SR-03-Parameter `team_id` (vom Original-Frontend gesendet, CE ignoriert) wird als `SearchQuery.Options["team_id"]` durchgereicht; Sichtbarkeit über `IVisibilityFilter<T>` mit `ScopeRef(Teamspace)` | ignoriert | `EntitySearchQuery`, 05 | I2 | `SearchContractTests` (Szenario `search.entity-team-id-ignored`) |
 | **D1** Wiki | Page-Sichtbarkeit **nur** über `PageVisibilityFilter` (keine eigene Mitgliedschaftslogik in `PageSearchSource`), Page-Index mit `project_id = null` möglich, Power-K-Pfad `/${ws}/wiki/${id}` bereits im Renderer | CE: Pages immer mit Projekt | `PageSearchSource`, `SEARCH_RESULT_RENDERERS` | I4/I5 | `PageSearchUsesVisibilityFilterTests` |
 | **D2** Nested Pages | Facette `parent_id` im Page-Index, Ereignis `plane.page.moved` abonniert | `parent_id = null` | `PageIndexDocumentBuilder` | I5 | – |
-| **E5** Rollenmodell | Suche prüft nur Permission-Keys (`workspace.search.read`, `project.work_item.search`) und Sichtbarkeitsfilter; keine Rollenzahlen außerhalb `Plane.Authorization/Visibility` | Systemrollen | §3.8 | I2 | Analyzer `PLANE0001` |
-| **H1** OAuth-Apps | v1-Suche akzeptiert jeden `PlanePrincipal` (API-Key heute, Bearer/App/Bot später); API-Scope `workspaces.searchs:read` (05 Generator) | API-Key | `Plane.PublicApi` | I6 | – |
+| **E5** Rollenmodell | Suche prüft nur Permission-Keys (`workspace.search.read`, `project.work_item.search`) und Sichtbarkeitsfilter; keine Rollenzahlen außerhalb `Funk.Authorization/Visibility` | Systemrollen | §3.8 | I2 | Analyzer `FUNK0001` |
+| **H1** OAuth-Apps | v1-Suche akzeptiert jeden `FunkPrincipal` (API-Key heute, Bearer/App/Bot später); API-Scope `workspaces.searchs:read` (05 Generator) | API-Key | `Funk.PublicApi` | I6 | – |
 | **F1/F2** Integrationen/Forgejo | reservierter Index-Typ-Präfix `integration_` (z. B. `integration_pull_request` für verknüpfte Forgejo-PRs) | keiner | `IndexEntityTypes` (Reservierung) | I5 | `ReservationCollisionTests` |
 | **A9** Relationen | SR-02 `issue_relation=true` schließt über die Relationstabelle **alle** Relationstypen aus (Katalog `work_item_relation_types`) | 1:1 | `WorkItemPickerExclusions` | I2 | Golden mit jeder Relationsart |
 
@@ -1954,7 +1954,7 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_search_embeddings_hnsw_<modelhash>
 -- dimensions 2001…4000: Ausdruck (embedding::halfvec(<n>)) halfvec_cosine_ops
 ```
 
-Regeln für G1 (verbindlich, damit die CE nicht umgebaut werden muss): (1) Abfragen nutzen exakt den Index-Ausdruck **und** das Prädikat des partiellen Index als **SQL-Literal**: `… WHERE model_key = '<model_key>' ORDER BY embedding::vector(<n>) <=> @q LIMIT @k` – der Planer verwendet einen partiellen Index nur, wenn das Prädikat zur Planungszeit bekannt ist; ein Parameter `@m` würde bei einem generischen Plan (Npgsql-Auto-Prepare, `plan_cache_mode = auto`) den Index verfehlen. Der `model_key` stammt aus der Konfiguration (nie aus Nutzereingaben) und wird beim Start gegen `^[a-z0-9:._-]{1,150}$` geprüft; mit Workspace-/Sichtbarkeitsfilter `SET LOCAL hnsw.iterative_scan = relaxed_order` (pgvector ≥ 0.8; Image 0.8.x laut 14 §3.2) und `hnsw.ef_search` aus der Paket-Option. (2) `Plane:Ai:EmbeddingDimensions` bestimmt `<n>` des aktiven Modells; ein Wechsel erzeugt einen neuen `model_key`, einen neuen partiellen Index und einen Rebuild über `SearchIndexRebuildJob` – alte Zeilen werden nach Umschaltung gelöscht. (3) Embeddings entstehen ausschließlich im Job der Queue `indexing` über einen `IIndexDocumentEnricher` bzw. Folgejob; nie im Request. (4) Treffer laufen durch `SearchVisibilityFilter.For<SearchDocument>()` und den CE-Hydrator. (5) EF-Mapping der Spalte mit `Pgvector.EntityFrameworkCore` als `HasColumnType("vector")`; KNN-Abfragen per `FromSql`, weil EF den Cast-Ausdruck nicht bildet.
+Regeln für G1 (verbindlich, damit die CE nicht umgebaut werden muss): (1) Abfragen nutzen exakt den Index-Ausdruck **und** das Prädikat des partiellen Index als **SQL-Literal**: `… WHERE model_key = '<model_key>' ORDER BY embedding::vector(<n>) <=> @q LIMIT @k` – der Planer verwendet einen partiellen Index nur, wenn das Prädikat zur Planungszeit bekannt ist; ein Parameter `@m` würde bei einem generischen Plan (Npgsql-Auto-Prepare, `plan_cache_mode = auto`) den Index verfehlen. Der `model_key` stammt aus der Konfiguration (nie aus Nutzereingaben) und wird beim Start gegen `^[a-z0-9:._-]{1,150}$` geprüft; mit Workspace-/Sichtbarkeitsfilter `SET LOCAL hnsw.iterative_scan = relaxed_order` (pgvector ≥ 0.8; Image 0.8.x laut 14 §3.2) und `hnsw.ef_search` aus der Paket-Option. (2) `Funk:Ai:EmbeddingDimensions` bestimmt `<n>` des aktiven Modells; ein Wechsel erzeugt einen neuen `model_key`, einen neuen partiellen Index und einen Rebuild über `SearchIndexRebuildJob` – alte Zeilen werden nach Umschaltung gelöscht. (3) Embeddings entstehen ausschließlich im Job der Queue `indexing` über einen `IIndexDocumentEnricher` bzw. Folgejob; nie im Request. (4) Treffer laufen durch `SearchVisibilityFilter.For<SearchDocument>()` und den CE-Hydrator. (5) EF-Mapping der Spalte mit `Pgvector.EntityFrameworkCore` als `HasColumnType("vector")`; KNN-Abfragen per `FromSql`, weil EF den Cast-Ausdruck nicht bildet.
 
 ### 6.3 B6 – Andockfolge (Skizze, kein Fachdesign)
 
@@ -2009,33 +2009,33 @@ flowchart LR
 | AK-D11-16 | `search_vector` findet „Übersicht“ mit Suchwort „ubersicht“ (unaccent) und Identifier `WEB-12` über Gewicht A | `SearchDocumentVectorTests` | I5 |
 | AK-D11-17 | `LlmSettingsResolver`: Tabelle §3.13.2 vollständig (≥ 20 Fälle inkl. ungültiger URLs, fehlendem Key, `openai-compatible` ohne Modell); `has_llm_configured` folgt `IsUsable` | `LlmSettingsResolverTests`, `InstanceEndpointContractTests` | I6 |
 | AK-D11-18 | KI-Assistent gegen WireMock „OpenAI-kompatibel“: genau ein `POST /v1/chat/completions` mit `model` und **einer** `user`-Nachricht `task\nprompt`; Antwort `response`/`response_html` korrekt kodiert; Upstream-500 → 500 `{"error": "An internal error has occurred."}`; leerer Inhalt → `""`; nicht konfiguriert → 400 mit Original-Text; Guest → 403 | `AssistantEndpointTests` | I6 |
-| AK-D11-19 | Kein Egress: Mit `DenyExternalNetworkHandler` laufen alle Such- und AI-Tests ohne Internet; ein LLM-Endpunkt auf privater IP ohne Eintrag in `Plane:Ai:AllowedInternalHosts` wird blockiert (500 + Log-Hinweis), mit Eintrag erlaubt | `LlmSsrfPolicyTests` | I6 |
+| AK-D11-19 | Kein Egress: Mit `DenyExternalNetworkHandler` laufen alle Such- und AI-Tests ohne Internet; ein LLM-Endpunkt auf privater IP ohne Eintrag in `Funk:Ai:AllowedInternalHosts` wird blockiert (500 + Log-Hinweis), mit Eintrag erlaubt | `LlmSsrfPolicyTests` | I6 |
 | AK-D11-20 | Konfigurationswechsel im God Mode (Modell/Basis-URL) wirkt beim nächsten Aufruf ohne Neustart; höchstens `ClientCacheSize` innere Clients | `DynamicChatClientTests` | I6 |
 | AK-D11-21 | Unsplash gegen WireMock: ohne Key `[]`; mit `query` Pfad `search/photos/` mit URL-kodiertem Query, `page=1` ohne `$`, Header `Authorization: Client-ID …`, Key nicht in der URL; Status und Körper werden durchgereicht (200, 401, 403) | `UnsplashEndpointTests` | I6 |
 | AK-D11-22 | Logs enthalten nie Prompt, Antwort, API-Key, Unsplash-Key oder Suchtexte (Testwerte durchsucht) | `LogRedactionTests` (05 AK-25) | I6 |
 | AK-D11-23 | God-Mode AI: Formular zeigt drei Felder, speichert `LLM_BASE_URL`, Toast „AI Settings updated successfully“; Visual-Baseline A-007 mit `UI-DEV-016`/`UI-DEV-017` abgenommen | `admin/admin-settings.spec.ts`, Visual A-007 | I6 |
 | AK-D11-24 | E2E KI: „I'm feeling lucky“ fügt die (WireMock-)Antwort in die Beschreibung ein; GPT-Popover „Use this response“; ohne Konfiguration sind beide Schaltflächen unsichtbar; Unsplash-Tab nur mit Key | `web/ai/ai-unsplash.spec.ts` (Chromium-Gate, 17 Z-10) | I6 |
-| AK-D11-25 | Andockstellen: Test-Provider `test` per `Plane__Search__Routing__Global=test` wird genutzt **und** die Hydrierung filtert einen unsichtbaren Treffer heraus; Test-Enricher-Facette erscheint in `search_documents.facets`; reserviertes Embedding-Schema lässt sich mit Dimension 8 und 1536 anlegen, der KNN-Plan nutzt den partiellen HNSW-Index | `SearchProviderRoutingTests`, `IndexEnricherTests`, `EmbeddingSchemaTemplateTests`, `VectorSearchExtensionTests` (15) | I5 |
-| AK-D11-26 | Architektur: `Plane.Platform.Search`/`Plane.Platform.Ai` referenzieren weder `Plane.Data` noch Fachmodule; jede Such-Quelle für `issue`, `intake`, `issue_view`, `page` ruft `IVisibilityFilter<T>.Apply` in Auswahl **und** Hydrierung | `Plane.ArchitectureTests` (`PlatformSearchHasNoModuleDependencies`, `SearchSourcesApplyVisibility`) | I2 |
+| AK-D11-25 | Andockstellen: Test-Provider `test` per `Funk__Search__Routing__Global=test` wird genutzt **und** die Hydrierung filtert einen unsichtbaren Treffer heraus; Test-Enricher-Facette erscheint in `search_documents.facets`; reserviertes Embedding-Schema lässt sich mit Dimension 8 und 1536 anlegen, der KNN-Plan nutzt den partiellen HNSW-Index | `SearchProviderRoutingTests`, `IndexEnricherTests`, `EmbeddingSchemaTemplateTests`, `VectorSearchExtensionTests` (15) | I5 |
+| AK-D11-26 | Architektur: `Funk.Platform.Search`/`Funk.Platform.Ai` referenzieren weder `Funk.Data` noch Fachmodule; jede Such-Quelle für `issue`, `intake`, `issue_view`, `page` ruft `IVisibilityFilter<T>.Apply` in Auswahl **und** Hydrierung | `Funk.ArchitectureTests` (`PlatformSearchHasNoModuleDependencies`, `SearchSourcesApplyVisibility`) | I2 |
 | AK-D11-27 | Kein Verlust von Änderungen während der Indexierung: Ein Work-Item-Update, dessen Event eintrifft, während der `IndexEntityJob` desselben Items läuft (Test hält den Handler per `ControllableJobRunner` nach dem Laden an), ist spätestens nach dem automatisch eingeplanten Wiederholungslauf im Index sichtbar | `IndexingPipelineTests.Change_during_running_job_is_not_lost` | I5 |
-| AK-D11-28 | Konsumierte Events = Tabelle §3.10.3: Architekturtest vergleicht die per `IMessagingRegistry` registrierten Events des Consumers `search.indexing` mit der Tabelle (als `IndexEventCatalog` im Code) und mit `_data/06-event-catalog.json`; `plane.workspace.deleted.v1` und `plane.project.deleted.v1` entfernen alle Zeilen des Scopes | `SearchConsumerCoversIndexEvents`, `IndexingPipelineTests.Workspace_delete_purges_index` | I5 |
+| AK-D11-28 | Konsumierte Events = Tabelle §3.10.3: Architekturtest vergleicht die per `IMessagingRegistry` registrierten Events des Consumers `search.indexing` mit der Tabelle (als `IndexEventCatalog` im Code) und mit `_data/06-event-catalog.json`; `funk.workspace.deleted.v1` und `funk.project.deleted.v1` entfernen alle Zeilen des Scopes | `SearchConsumerCoversIndexEvents`, `IndexingPipelineTests.Workspace_delete_purges_index` | I5 |
 | AK-D11-29 | Basismengen-Andockstelle (A1/E-04): ein registrierter Test-`IWorkItemBaseSetFilter` für `IssueObjects` entfernt das betroffene Work Item aus SR-01, SR-02, SR-03 `issue` und der v1-Suche; ohne Registrierung sind die Treffer identisch zu den Goldens | `SearchAppliesBaseSetFiltersTests` | I2 |
 
 ### 7.2 Testinventar
 
 | Testprojekt / Datei | Ebene (15) | Inhalt | ab |
 |---|---|---|---|
-| `T/Plane.Platform.Tests/Search/PgvectorSmokeTests.cs` | L3 (S0) | `CREATE EXTENSION vector`, HNSW-Index, `CosineDistance`-Abfrage mit EF 10 + `Pgvector.EntityFrameworkCore` | I0 |
-| `T/Plane.Platform.Tests/Search/{LikePatternTests,SearchTextTests,SequenceIdExtractorTests,DrfSearchFilterTests}.cs` | L1 | Text-Helfer, Goldens `drf-search-terms.golden.json`, `sequence-ids.golden.json` | I1/I2 |
-| `T/Plane.Platform.Tests/Ai/{LlmSettingsResolverTests,DynamicChatClientTests,OpenAiCompatibleChatClientFactoryTests,NullEmbeddingGeneratorTests,LlmSsrfPolicyTests}.cs` | L1/L3 | Auflösung, Cache, SDK-Transport gegen WireMock, SSRF | I5/I6 |
-| `T/modules/Plane.Search.Tests/Contract/SearchContractTests.cs` (`ContractScenarioRunner`, 15 §3.3.3) + Szenarien `T/contracts/scenarios/search/{global,entity,picker}-*.yaml` + Goldens `T/contracts/golden/search/**` | L5 | Paritäts-Szenarien (Parity-Harness-Aufzeichnung gegen Original v1.4.2, 15 §3.6) | I2–I5 |
-| `T/modules/Plane.Search.Tests/Acceptance/Original/SearchGuestScopeAppTests.cs` | L3 | Port A-051 | I2/I5 |
-| `T/modules/Plane.Search.Tests/Integration/{SearchScopeTests,HydratorAppliesVisibilityTests,SearchProviderRoutingTests,PageSearchUsesVisibilityFilterTests}.cs` | L3 | Sichtbarkeit, Routing | I2/I5 |
-| `T/modules/Plane.Search.Tests/Integration/{IndexingPipelineTests,IndexReconcileTests,IndexEnricherTests,SearchDocumentVectorTests,EmbeddingSchemaTemplateTests}.cs` | L3 | Pipeline, Reconcile, Enricher, `tsvector`, reserviertes Schema | I5 |
-| `T/modules/Plane.Search.Tests/Performance/SearchPlanTests.cs` | L3 | `EXPLAIN`-Assertions (§3.9) | I5 |
-| `T/modules/Plane.PublicApi.Tests/Contract/PublicApiContractTests.cs` + Szenario `T/contracts/scenarios/public-api/work-item-search.yaml` | L5 | v1-Suche | I6 |
-| `T/modules/Plane.Assistant.Tests/Integration/{AssistantEndpointTests,UnsplashEndpointTests}.cs`, `T/modules/Plane.Assistant.Tests/Unit/{PythonTruthinessTests,AiResponseFormatterTests}.cs` | L3/L1 | WireMock LLM/Unsplash, Wahrheitswerte, HTML-Kodierung | I6 |
-| `T/Plane.Cli.Tests/SearchReindexCliTests.cs` (Projekt laut 15 §3.2) | L3 | CLI | I5 |
+| `T/Funk.Platform.Tests/Search/PgvectorSmokeTests.cs` | L3 (S0) | `CREATE EXTENSION vector`, HNSW-Index, `CosineDistance`-Abfrage mit EF 10 + `Pgvector.EntityFrameworkCore` | I0 |
+| `T/Funk.Platform.Tests/Search/{LikePatternTests,SearchTextTests,SequenceIdExtractorTests,DrfSearchFilterTests}.cs` | L1 | Text-Helfer, Goldens `drf-search-terms.golden.json`, `sequence-ids.golden.json` | I1/I2 |
+| `T/Funk.Platform.Tests/Ai/{LlmSettingsResolverTests,DynamicChatClientTests,OpenAiCompatibleChatClientFactoryTests,NullEmbeddingGeneratorTests,LlmSsrfPolicyTests}.cs` | L1/L3 | Auflösung, Cache, SDK-Transport gegen WireMock, SSRF | I5/I6 |
+| `T/modules/Funk.Search.Tests/Contract/SearchContractTests.cs` (`ContractScenarioRunner`, 15 §3.3.3) + Szenarien `T/contracts/scenarios/search/{global,entity,picker}-*.yaml` + Goldens `T/contracts/golden/search/**` | L5 | Paritäts-Szenarien (Parity-Harness-Aufzeichnung gegen Original v1.4.2, 15 §3.6) | I2–I5 |
+| `T/modules/Funk.Search.Tests/Acceptance/Original/SearchGuestScopeAppTests.cs` | L3 | Port A-051 | I2/I5 |
+| `T/modules/Funk.Search.Tests/Integration/{SearchScopeTests,HydratorAppliesVisibilityTests,SearchProviderRoutingTests,PageSearchUsesVisibilityFilterTests}.cs` | L3 | Sichtbarkeit, Routing | I2/I5 |
+| `T/modules/Funk.Search.Tests/Integration/{IndexingPipelineTests,IndexReconcileTests,IndexEnricherTests,SearchDocumentVectorTests,EmbeddingSchemaTemplateTests}.cs` | L3 | Pipeline, Reconcile, Enricher, `tsvector`, reserviertes Schema | I5 |
+| `T/modules/Funk.Search.Tests/Performance/SearchPlanTests.cs` | L3 | `EXPLAIN`-Assertions (§3.9) | I5 |
+| `T/modules/Funk.PublicApi.Tests/Contract/PublicApiContractTests.cs` + Szenario `T/contracts/scenarios/public-api/work-item-search.yaml` | L5 | v1-Suche | I6 |
+| `T/modules/Funk.Assistant.Tests/Integration/{AssistantEndpointTests,UnsplashEndpointTests}.cs`, `T/modules/Funk.Assistant.Tests/Unit/{PythonTruthinessTests,AiResponseFormatterTests}.cs` | L3/L1 | WireMock LLM/Unsplash, Wahrheitswerte, HTML-Kodierung | I6 |
+| `T/Funk.Cli.Tests/SearchReindexCliTests.cs` (Projekt laut 15 §3.2) | L3 | CLI | I5 |
 | `T/load/k6/search.js` | L9 | LT-09 | I5 |
 | `FE/libs/web/power-k/components/ui/modal/{search-menu,search-results,no-results-command}.component.spec.ts` | L2 | Vitest | I5 |
 | `FE/libs/shared/services/src/workspace/workspace.service.spec.ts` (Suche) | L2 | Parameter-Serialisierung (`"true"`/`"false"`, `query_type`-Join) | I2 |
@@ -2056,7 +2056,7 @@ flowchart LR
 | R-D11-05 | Fehlende Events (Archiv/Entarchiv, Page-Verknüpfung) lassen Index veralten | mittel / gering (CE liest den Index nicht) | Änderungsaufträge §9.2, nächtliches Reconcile |
 | R-D11-06 | API-Unterschiede des OpenAI-.NET-SDK (`ClientRetryPolicy`, `NetworkTimeout`, `HttpClientPipelineTransport`) zwischen Versionen | gering / mittel | Pin in `Directory.Packages.props`, `OpenAiCompatibleChatClientFactoryTests` gegen WireMock |
 | R-D11-07 | Lokale Server weichen vom Chat-Completions-Format ab (z. B. fehlendes `choices[0].message.content`) | mittel / gering | `response.Text ?? ""` (→ Toast „not informative“), WireMock-Varianten, Betreiberdoku mit getesteten Servern |
-| R-D11-08 | SSRF-Allowlist verhindert die Nutzung eines internen LLM, Admin versteht die Ursache nicht | mittel / mittel | klarer Log-Hinweis, Betreiberdoku, Compose-Vorlage setzt `Plane__Ai__AllowedInternalHosts` mit `LLM_BASE_URL` zusammen; O-D11-02 |
+| R-D11-08 | SSRF-Allowlist verhindert die Nutzung eines internen LLM, Admin versteht die Ursache nicht | mittel / mittel | klarer Log-Hinweis, Betreiberdoku, Compose-Vorlage setzt `Funk__Ai__AllowedInternalHosts` mit `LLM_BASE_URL` zusammen; O-D11-02 |
 | R-D11-09 | Abweichende Fallfaltung `ILIKE` vs. `UPPER LIKE` erzeugt Golden-Diffs bei Sonderzeichen | gering / gering | Seed ohne betroffene Zeichen, `DEV-SRCH-014` |
 | R-D11-10 | Python-Wahrheitswert-Emulation (`task`, `prompt`) unvollständig | gering / gering | `PythonTruthinessTests` mit allen JSON-Typen |
 | R-D11-11 | Dedupe-Index der Job-Queue (06: eindeutig für `pending` **und** `running`) verwirft Events, die während eines laufenden `IndexEntityJob` eintreffen → veralteter Index | mittel / gering (CE liest den Index nicht; B6/G1 schon) | Nachlauf-Prüfung `GetSourceUpdatedAtAsync` + `JobResult.Retry` (§3.10.4), AK-D11-27, nächtliches Reconcile |
@@ -2068,13 +2068,13 @@ flowchart LR
 | ID | Punkt | Empfehlung | Entscheidung durch |
 |---|---|---|---|
 | O-D11-01 | Sollen SR-01/SR-02 für Nicht-Mitglieder wirklich 403 statt leerer Listen liefern (05 Anhang B)? Das Frontend ruft beide nur in Mitglieds-Kontexten auf | 403 beibehalten (Sicherheitsnetz), Golden-Ausnahme `DEV-SRCH-011` | 05 (bestätigt die Matrix) |
-| O-D11-02 | Soll der Host aus `LLM_BASE_URL` automatisch in die SSRF-Allowlist aufgenommen werden (Instanz-Admin ist vertrauenswürdig)? | Nein in der CE (05 D05-ADR-24 bleibt streng); Compose/Helm-Vorlagen setzen die Allowlist; Neubewertung mit G1 – bleibt offen (17 Teil 2 Z-111; ABG-127 bestätigt nur die Wirkung von `Plane:Ai:AllowedInternalHosts`) | 05 + Auftraggeber |
+| O-D11-02 | Soll der Host aus `LLM_BASE_URL` automatisch in die SSRF-Allowlist aufgenommen werden (Instanz-Admin ist vertrauenswürdig)? | Nein in der CE (05 D05-ADR-24 bleibt streng); Compose/Helm-Vorlagen setzen die Allowlist; Neubewertung mit G1 – bleibt offen (17 Teil 2 Z-111; ABG-127 bestätigt nur die Wirkung von `Funk:Ai:AllowedInternalHosts`) | 05 + Auftraggeber |
 | O-D11-03 | Default-Modelle `anthropic`/`gemini` sind beim Anbieter abgeschaltet | **entschieden im Review:** kein Default mehr, `LLM_MODEL` Pflicht (`MissingModel`), `DEV-AI-001` – funktionaler Fehler wird korrigiert (17 Z-12) | erledigt |
 | O-D11-04 | Power-K zeigt bei Pages den Projekt-Identifier nicht an (Frontend liest `project__identifiers`, Antwort hat `project_identifiers`) – Korrektur wäre optisch sichtbar | optisch 1:1 belassen (Auftraggeber: „optisch 1:1“); Eintrag in die Abweichungsliste als „bekannt, nicht korrigiert“ | Auftraggeber (bei Bedarf) |
 | O-D11-05 | Soll das Editor-KI-Menü (`rephrase-grammar`) in der CE aktiviert werden, da der LLM-Client vorhanden ist? | Nein (G3 nicht gewählt, Original-CE ohne Backend); Route reserviert | Auftraggeber |
-| O-D11-06 | Optionaler Ollama-Container im Dev-AppHost | als Opt-in-Parameter `Plane:Dev:LocalLlm` aufnehmen (Image MIT, nicht in Prod-Compose) | 14 |
-| O-D11-07 | Exakte Signatur `IJob`/Job-Handler und Ausnahmetyp für `{"error": "Please provide valid detail"}` | **erledigt im Review:** Job-Vertrag aus 06 §5.1 übernommen (§3.10.4, §5.6); UUID-Fehler als `PlaneErrors.Plain(400, …)` im Handler (§5.5) | erledigt |
-| O-D11-08 | Fehlerkörper für 400 `["Null characters are not allowed."]` (DRF-Liste) existiert in 02 noch nicht | **entschieden (ABG-129):** 02 §3.8 ergänzt `PlaneErrors.DrfList(int status, params string[] messages)` (Körper = JSON-Array) und `DrfMessages.NullCharacters = "Null characters are not allowed."` | 02 |
+| O-D11-06 | Optionaler Ollama-Container im Dev-AppHost | als Opt-in-Parameter `Funk:Dev:LocalLlm` aufnehmen (Image MIT, nicht in Prod-Compose) | 14 |
+| O-D11-07 | Exakte Signatur `IJob`/Job-Handler und Ausnahmetyp für `{"error": "Please provide valid detail"}` | **erledigt im Review:** Job-Vertrag aus 06 §5.1 übernommen (§3.10.4, §5.6); UUID-Fehler als `FunkErrors.Plain(400, …)` im Handler (§5.5) | erledigt |
+| O-D11-08 | Fehlerkörper für 400 `["Null characters are not allowed."]` (DRF-Liste) existiert in 02 noch nicht | **entschieden (ABG-129):** 02 §3.8 ergänzt `FunkErrors.DrfList(int status, params string[] messages)` (Körper = JSON-Array) und `DrfMessages.NullCharacters = "Null characters are not allowed."` | 02 |
 
 ---
 
@@ -2084,13 +2084,13 @@ flowchart LR
 
 | Dokument | Richtung | Was dieses Dokument nutzt | Was dieses Dokument liefert |
 |---|---|---|---|
-| `00`/`01` | nutzt | ADR-004 (Airgap, lokaler Provider), ADR-024 (PostgreSQL-Suche, `pg_trgm`, `unaccent`), ADR-025 (Microsoft.Extensions.AI, pgvector), 01 §1.4 (B6/G1-Andockstellen), §5.1/§5.4/§5.5 (Module, Interfaces) | Präzisierungen §9.2 (Projektschnitt, `ParitySearchProvider`, `Plane.Search` ab I2, Ranking-Präzisierung ADR-024) |
-| `02-backend-solution-und-konventionen.md` | nutzt | Oberflächen/Endpunkt-Metadaten (§3.3), `IRequestScope`, Fehlerfabrik (§3.8), Filter-AST/Basismengen (§3.11), Options-Muster (§3.15), Instanz-Konfiguration (§3.16), Events/Consumer (§3.19), Abweichungskatalog (§7.3), `PlaneAiOptions` | `PlaneSearchOptions`, Erweiterung `PlaneAiOptions`, `PlaneUnsplashOptions`, `Plane:RateLimits:AiAssistant`, Key `LLM_BASE_URL`, `DrfSearchFilter`/`LikePattern`, Abweichungen `DEV-SRCH-*`, `DEV-AI-*` |
+| `00`/`01` | nutzt | ADR-004 (Airgap, lokaler Provider), ADR-024 (PostgreSQL-Suche, `pg_trgm`, `unaccent`), ADR-025 (Microsoft.Extensions.AI, pgvector), 01 §1.4 (B6/G1-Andockstellen), §5.1/§5.4/§5.5 (Module, Interfaces) | Präzisierungen §9.2 (Projektschnitt, `ParitySearchProvider`, `Funk.Search` ab I2, Ranking-Präzisierung ADR-024) |
+| `02-backend-solution-und-konventionen.md` | nutzt | Oberflächen/Endpunkt-Metadaten (§3.3), `IRequestScope`, Fehlerfabrik (§3.8), Filter-AST/Basismengen (§3.11), Options-Muster (§3.15), Instanz-Konfiguration (§3.16), Events/Consumer (§3.19), Abweichungskatalog (§7.3), `FunkAiOptions` | `FunkSearchOptions`, Erweiterung `FunkAiOptions`, `FunkUnsplashOptions`, `Funk:RateLimits:AiAssistant`, Key `LLM_BASE_URL`, `DrfSearchFilter`/`LikePattern`, Abweichungen `DEV-SRCH-*`, `DEV-AI-*` |
 | `03-datenmodell-efcore.md` | nutzt / liefert an | Tabellen- und Entitätsnamen (§3.4), `search_documents` (§3.4.18.8), `plane_unaccent` + Extensions in `…_Platform_Extensions` (§3.10.2), `TrigramIndexExtensions`, JSONB-Konvention D03-ADR-13 | Ergänzungen an `search_documents` (§3.10.1), Typnamen `IndexEntityTypes`, Index-Termine §3.9, reserviertes `search_embeddings` (§6.2) |
 | `04-api-design-und-endpunktkatalog.md` | liefert an | – | Verträge SR-01/-02/-03, v1-Suche, EXT-01/-03, nicht registrierte EXT-02, Abweichungen §4.7 |
-| `05-auth-sicherheit-berechtigungen.md` | nutzt | Permission-Keys (Anhang A/B), `SearchVisibilityFilter` und Gast-Prädikat (§3.14), SEC-56, SSRF-Clients `llm`/`unsplash` (§3.17.2), CSP für Unsplash (§3.17.7), Log-Redaktion (AK-25), Instanz-Keys (§4.4) | AI-Schlüssel (`LLM_BASE_URL`, Auftrag aus §4.4), Anforderung `IVisibilityFilter<SearchDocument>`, `Plane:Ai:AllowedInternalHosts` in `PlaneAiOptions` |
+| `05-auth-sicherheit-berechtigungen.md` | nutzt | Permission-Keys (Anhang A/B), `SearchVisibilityFilter` und Gast-Prädikat (§3.14), SEC-56, SSRF-Clients `llm`/`unsplash` (§3.17.2), CSP für Unsplash (§3.17.7), Log-Redaktion (AK-25), Instanz-Keys (§4.4) | AI-Schlüssel (`LLM_BASE_URL`, Auftrag aus §4.4), Anforderung `IVisibilityFilter<SearchDocument>`, `Funk:Ai:AllowedInternalHosts` in `FunkAiOptions` |
 | `06-hintergrundjobs-events-benachrichtigungen.md` | nutzt / liefert an | Job-Vertrag (§3.5.1, §5.1), Dedupe-Semantik (§3.2), Queue `indexing` (D06-ADR-05), Cron-Registrierung (§3.6), Event-Katalog inkl. `*.archived/unarchived.v1`, `WorkspaceDeletedV1`, `FieldChange` (§3.8, §5.1), Test-Hilfen `FixedClock`, `ControllableJobRunner` | Consumer `search.indexing` mit vollständiger Event-Liste §3.10.3, Jobs `indexing.index_entity`, `indexing.remove_entry`, `indexing.remove_scope`, `indexing.rebuild`, Cron `indexing.reconcile` |
-| `07-realtime-kollaboration-dokumente.md` | nutzt | `HtmlTextExtractor.Strip` (`Plane.Documents/Text/`, §3.13) für Pages/Work Items ohne `description_stripped`; `PageDescriptionUpdatedV1` aus `IPageDocumentStore.SaveAsync` | – |
+| `07-realtime-kollaboration-dokumente.md` | nutzt | `HtmlTextExtractor.Strip` (`Funk.Documents/Text/`, §3.13) für Pages/Work Items ohne `description_stripped`; `PageDescriptionUpdatedV1` aus `IPageDocumentStore.SaveAsync` | – |
 | `08-frontend-angular-architektur.md` | nutzt | Ablage-Regeln (§3.1.4), `pl-command` (D08-ADR-17), Power-K-Kern (§3.10), Tokens `SEARCH_RESULT_RENDERERS`, `POWER_K_COMMANDS`, `EDITOR_MENTION_TYPES`, `EDITOR_FLAGS`, `DUPLICATE_DETECTION` (§6) | Inhalt der Suchseite §3.11, CE-Einträge `SEARCH_RESULT_RENDERERS`, Such-/AI-Services §3.12/§3.17 |
 | `09-ui-paritaet-designsystem.md` | nutzt | Visual-Verfahren, Galerie A-007 `/god-mode/ai` | UI-Abweichungen `UI-DEV-016`, `UI-DEV-017`, Upsell-Eintrag U23 (ABG-134) |
 | `10-editor-angular.md` | liefert an | – | Mention-Endpunkt SR-03, `EditorMentionService`-Vertrag (10 §3.11 verweist auf „D11 §3.5“; der Vertrag steht in §3.5 und §3.12) |
@@ -2102,22 +2102,22 @@ flowchart LR
 
 | Dokument | Änderung |
 |---|---|
-| `01` §5.1 | `Plane.Platform.Search`: „`ISearchProvider`, `IIndexingPipeline`, Text-Helfer (`LikePattern`, `DrfSearchFilter`)“; `PostgresSearchProvider` → `ParitySearchProvider` in `Plane.Search` (D11-ADR-01) |
-| `01` §5.4 | Zeile `Plane.Search`: „ab I2/I5“; Frontend-Libs „`libs/web/power-k`, `libs/web/workspace`/`project` (Services), `libs/web/work-items` (Picker)“ – `libs/web/search` existiert in 08 nicht und entfällt; Zeile `Plane.Assistant`: Image-Picker `libs/web/core` statt `libs/shared/blocks` (Sheriff) |
+| `01` §5.1 | `Funk.Platform.Search`: „`ISearchProvider`, `IIndexingPipeline`, Text-Helfer (`LikePattern`, `DrfSearchFilter`)“; `PostgresSearchProvider` → `ParitySearchProvider` in `Funk.Search` (D11-ADR-01) |
+| `01` §5.4 | Zeile `Funk.Search`: „ab I2/I5“; Frontend-Libs „`libs/web/power-k`, `libs/web/workspace`/`project` (Services), `libs/web/work-items` (Picker)“ – `libs/web/search` existiert in 08 nicht und entfällt; Zeile `Funk.Assistant`: Image-Picker `libs/web/core` statt `libs/shared/blocks` (Sheriff) |
 | `01` ADR-024 | Präzisierung: Ranking der CE-Endpunkte per Trigramm-Ähnlichkeit, `tsvector`-Ranking für Index-Provider (D11-ADR-03) |
-| `02` §3.8 | Fehlerform `PlaneErrors.DrfList(int status, params string[] messages)` (JSON-Array-Körper) und `DrfMessages.NullCharacters = "Null characters are not allowed."` (§3.2.3, O-D11-08) – **entschieden (ABG-129)** |
-| `02` §3.11.4 | Basismengen-Prädikate `IssueObjects`/`AllObjects` als `Plane.Data/Querying/WorkItems/WorkItemBaseSetPredicates.cs`; `WorkItemBaseSets` nutzt dieselben Ausdrücke (für lesende Nutzung durch `Plane.Search`, R1) |
-| `02` §3.15 | `PlaneSearchOptions`, `PlaneUnsplashOptions` aufnehmen; `PlaneAiOptions` um `AllowedInternalHosts`, `RequestTimeoutSeconds`, `ClientCacheSize` ergänzen; `PlaneRateLimitOptions.AiAssistant` |
+| `02` §3.8 | Fehlerform `FunkErrors.DrfList(int status, params string[] messages)` (JSON-Array-Körper) und `DrfMessages.NullCharacters = "Null characters are not allowed."` (§3.2.3, O-D11-08) – **entschieden (ABG-129)** |
+| `02` §3.11.4 | Basismengen-Prädikate `IssueObjects`/`AllObjects` als `Funk.Data/Querying/WorkItems/WorkItemBaseSetPredicates.cs`; `WorkItemBaseSets` nutzt dieselben Ausdrücke (für lesende Nutzung durch `Funk.Search`, R1) |
+| `02` §3.15 | `FunkSearchOptions`, `FunkUnsplashOptions` aufnehmen; `FunkAiOptions` um `AllowedInternalHosts`, `RequestTimeoutSeconds`, `ClientCacheSize` ergänzen; `FunkRateLimitOptions.AiAssistant` |
 | `02` §4.10 / `05` §4.4 | Key `LLM_BASE_URL` ist festgelegt (15 Schlüssel in der CE); Provider-Wert `openai-compatible`; `anthropic`/`gemini` ohne Default-Modell |
 | `02` §7.3 | Abweichungen `DEV-SRCH-001…015`, `DEV-AI-001…008` übernehmen |
 | `03` §3.4.18.8 | `search_documents`: Spalten `identifier varchar(64) NULL`, `content_hash bytea NOT NULL` ergänzen; `search_vector` gewichtet `identifier || ' ' || title` mit `A`; `entity_type`-Werte nach `IndexEntityTypes` (`work_item`, `work_item_comment`, `page`, `project`, `cycle`, `module`, `issue_view`) statt `comment`/`view`; Indizes `ix_search_documents_project` (partiell) und `ix_search_documents_facets` (`jsonb_path_ops`); `body`-Grenze 100 000 Zeichen statt „1 MiB“ (tsvector-Limit 1 MB) – **erledigt/entschieden (ABG-122):** 03-Form mit PK `id`, `uq_search_documents_entity`, Scope-FK, `source_updated_at` ist verbindlich; Spalten und Indizes dieses Dokuments sind übernommen |
 | `03` §3.10.1 – **erledigt (17 ABG-123)** | Trigramm-Indizes früher anlegen: `workspaces.name`, `projects.name/identifier` I1, `users.*` I2, `cycles.name`, `modules.name`, `views.name` I3, `pages.name` I4 (jeweils mit der Erst-Migration der Tabelle; reine Performance, vermeidet Nach-Migrationen) |
-| `05` §3.14 | `SearchVisibilityFilter` um `IVisibilityFilter<SearchDocument>` ergänzen; Page-Sichtbarkeit vollständig im `PageVisibilityFilter` (D1); Signatur `IQueryable<T> Apply(IQueryable<T>, PlanePrincipal, ScopeRef)` als Skelett festhalten – **entschieden (ABG-128):** Signatur nach 01 §5.5, Skelett und Zeile `IVisibilityFilter<SearchDocument>` in 05 §3.14 |
-| `05` §3.17.2 / §5.9 | Client `llm`: Optionen aus `PlaneAiOptions` (`RequestTimeoutSeconds`, `AllowedInternalHosts`) über benannte `SsrfPolicy`-Options; **Algorithmus Schritt 3:** Hosts in `SsrfPolicy.AllowedHosts` sind von den Blockregeln ausgenommen (sonst wirkt `Plane:Ai:AllowedInternalHosts` nicht) – **erledigt (ABG-127)**: `Plane:Ai:AllowedInternalHosts` füllt `SsrfPolicy("llm").AllowedHosts`; für diese Hosts entfällt nur die IP-Blockprüfung (Pinning, Redirect- und Größenregeln bleiben); O-D11-02 bleibt offen (Z-111) |
-| `06` §3.8 | Consumer-Zeile `search.indexing` um die Events aus §3.10.3 erweitern (`state_changed`, `archived`, `unarchived`, `parent_changed`, `restored`, `moved` für Work Items; Intake; Page `archived/unarchived/moved`; Projekt-, Cycle-, Modul-, View-Events; `plane.workspace.deleted.v1`); Spalte „CE-Konsument“ der betroffenen Events nachziehen; Änderung der Page-Projektverknüpfung löst `PageUpdatedV1` (`ChangedFields ∋ projects`) aus – **entschieden (ABG-124):** Abo-Liste §3.10.3 verbindlich; `project_pages`-Regel siehe §3.10.3 |
+| `05` §3.14 | `SearchVisibilityFilter` um `IVisibilityFilter<SearchDocument>` ergänzen; Page-Sichtbarkeit vollständig im `PageVisibilityFilter` (D1); Signatur `IQueryable<T> Apply(IQueryable<T>, FunkPrincipal, ScopeRef)` als Skelett festhalten – **entschieden (ABG-128):** Signatur nach 01 §5.5, Skelett und Zeile `IVisibilityFilter<SearchDocument>` in 05 §3.14 |
+| `05` §3.17.2 / §5.9 | Client `llm`: Optionen aus `FunkAiOptions` (`RequestTimeoutSeconds`, `AllowedInternalHosts`) über benannte `SsrfPolicy`-Options; **Algorithmus Schritt 3:** Hosts in `SsrfPolicy.AllowedHosts` sind von den Blockregeln ausgenommen (sonst wirkt `Funk:Ai:AllowedInternalHosts` nicht) – **erledigt (ABG-127)**: `Funk:Ai:AllowedInternalHosts` füllt `SsrfPolicy("llm").AllowedHosts`; für diese Hosts entfällt nur die IP-Blockprüfung (Pinning, Redirect- und Größenregeln bleiben); O-D11-02 bleibt offen (Z-111) |
+| `06` §3.8 | Consumer-Zeile `search.indexing` um die Events aus §3.10.3 erweitern (`state_changed`, `archived`, `unarchived`, `parent_changed`, `restored`, `moved` für Work Items; Intake; Page `archived/unarchived/moved`; Projekt-, Cycle-, Modul-, View-Events; `funk.workspace.deleted.v1`); Spalte „CE-Konsument“ der betroffenen Events nachziehen; Änderung der Page-Projektverknüpfung löst `PageUpdatedV1` (`ChangedFields ∋ projects`) aus – **entschieden (ABG-124):** Abo-Liste §3.10.3 verbindlich; `project_pages`-Regel siehe §3.10.3 |
 | `06` §3.18 / §4.2 | Jobs `indexing.index_entity`, `indexing.remove_entry`, `indexing.remove_scope`, `indexing.rebuild` in die Job-Tabelle; Cron `indexing.reconcile` (`23 3 * * *`) in den Cron-Plan |
 | `09` §4.12 / Abweichungsliste | **entschieden (ABG-134):** U23 in 09 §4.12; `UI-DEV-016` (Feld „Base URL“, vormals `UI-DEV-D11-01`), `UI-DEV-017` (Kontakt-Hinweis entfällt, vormals `UI-DEV-D11-02`); Baseline A-007 neu aufnehmen |
-| `14` §4.7.2 | Zeile `GPT_ENGINE`: „entfällt (kein Leser; 02 §4.10)“ statt „Seed nur als Fallback“; §4.7.9: `LLM_BASE_URL` (Seed-Key); `OPENAI_API_BASE`/`OPENAI_API_KEY` Klasse E bestätigt; optionaler AppHost-Parameter `Plane:Dev:LocalLlm` – **entschieden (ABG-133)** |
+| `14` §4.7.2 | Zeile `GPT_ENGINE`: „entfällt (kein Leser; 02 §4.10)“ statt „Seed nur als Fallback“; §4.7.9: `LLM_BASE_URL` (Seed-Key); `OPENAI_API_BASE`/`OPENAI_API_KEY` Klasse E bestätigt; optionaler AppHost-Parameter `Funk:Dev:LocalLlm` – **entschieden (ABG-133)** |
 | `14` §3.15 / §3.22 | Migrator-Schritt „Erstbefüllung Such-Index“ (Rebuild-Job einplanen, wenn `search_documents` leer und Fachdaten vorhanden); CLI-Tabelle um `search reindex` und `search status` ergänzen – **entschieden (ABG-133)**; CLI-Befehl `funk-cli` (ABG-149) |
 | `15` §3.2 / §9.2 / Anhang | Testdateien §7.2 (`SearchContractTests` + Szenarien `search/*.yaml`, `SearchProviderRoutingTests`, `SearchAppliesBaseSetFiltersTests`, `EmbeddingSchemaTemplateTests`, `IndexReconcileTests`, `LlmSettingsResolverTests`, `UnsplashEndpointTests`); Test-Hilfen `WireMockLlmFixture`, `SetInstanceConfigurationAsync`, `CreateClientAs`; WireMock-Vorlagen-Pfade §3.19; Anhang CE-SRCH-002/-003: Contract-Ebene ab I2 |
 | `16` §3.2.2 | Reservierungen V1 `workspaces/{slug}/work-items/advanced-search/` (B6) und App `workspaces/{slug}/rephrase-grammar/` (G3); Tabelle `search_embeddings`; Index-Typ-Präfixe; Profile ≥ 100; Provider-Keys (§6.4) |
@@ -2131,7 +2131,7 @@ flowchart LR
 | Originalverhalten SR-01/SR-02/SR-03, v1-Suche, EXT-01/-02/-03 gegen Quellcode (`API/app/views/search/{base,issue}.py`, `API/utils/issue_search.py`, `API/api/views/issue.py` Z. 2246–2320, `API/app/views/external/base.py`) | Felder, Filter, Kappungen, Sortierungen, Fehlerpfade übernommen; Abweichung A03 §3.14.3 („`workspace_search != "true"`“) korrigiert: maßgeblich ist der Vergleich `== "false"` |
 | Frontend-Aufrufer (`grep` über `apps/web`, `packages`) | alle Aufrufer von `searchWorkspace`, `searchEntity`, `projectIssuesSearch`, `createGptTask`, `getUnsplashImages` in §3.11/§3.12/§3.17 erfasst; Palettenfilter (`wrapper.tsx` Z. 135–141) und Feldfehler `project__identifiers` gefunden |
 | Querschnitt `search_fields`/`icontains` (`grep` über `apps/api/plane`) | vollständige Liste §4.6 |
-| Namen aus 01, 02, 05, 08, 14, 15, 16 | `ISearchProvider`, `IIndexingPipeline`, `IndexDocument`, `IIndexDocumentEnricher`, `NullEmbeddingGenerator`, `PlaneAiOptions`, Permission-Konstanten, SSRF-Clients `llm`/`unsplash`, Queue `indexing`, Tokens `SEARCH_RESULT_RENDERERS`/`EDITOR_FLAGS`/`DUPLICATE_DETECTION`, Test-IDs A-051/LT-09 unverändert übernommen |
+| Namen aus 01, 02, 05, 08, 14, 15, 16 | `ISearchProvider`, `IIndexingPipeline`, `IndexDocument`, `IIndexDocumentEnricher`, `NullEmbeddingGenerator`, `FunkAiOptions`, Permission-Konstanten, SSRF-Clients `llm`/`unsplash`, Queue `indexing`, Tokens `SEARCH_RESULT_RENDERERS`/`EDITOR_FLAGS`/`DUPLICATE_DETECTION`, Test-IDs A-051/LT-09 unverändert übernommen |
 | Technik (Microsoft Learn) | `AsIChatClient(this OpenAI.Chat.ChatClient)` in `Microsoft.Extensions.AI.OpenAI` 10.10.1 belegt; `Microsoft.Extensions.AI.Ollama` nur Preview 9.7 → nicht verwendet; übrige SDK-Namen mit ⚠ für S0 markiert |
 | pgvector | dimensionslose `vector`-Spalte + partieller Ausdrucks-HNSW-Index und HNSW-Dimensionsgrenzen (2000 `vector`, 4000 `halfvec`) sowie `hnsw.iterative_scan` (≥ 0.8) nach pgvector-Dokumentation; in `EmbeddingSchemaTemplateTests` zu bestätigen |
 
@@ -2149,13 +2149,13 @@ flowchart LR
 | R-02 | §3.10.3, §5.6, §9.2 | Event-Tabelle nicht am Katalog 06 ausgerichtet: `ProjectUpdatedV1` hat `Changes: FieldChange[]`, kein `ChangedFields`; die als „fehlend“ gemeldeten Events `plane.page.unarchived`/`plane.project.unarchived` existieren in 06 bereits, ebenso `cycle/module.archived/unarchived` und `workspace.deleted` (nicht abonniert → Waisen bei gelöschtem Workspace) | Tabelle mit Klassen- und Feldnamen aus 06 neu; zusätzliche Abos (Archiv/Entarchiv, `moved`, `workspace.deleted`); Scope-Lösch-Job `RemoveIndexEntriesByScopeJob`; Änderungsauftrag an 06 (Consumer-Zeile `search.indexing` nennt bisher nur 10 Events) |
 | R-03 | §3.10.4, §5.6 | Job-Skelett passte nicht zum Job-Vertrag 06 §5.1 (`[JobQueue]`-Attribut und `ExecuteAsync` statt statischer `JobType`/`Queue` und `HandleAsync → JobResult`); Cron-Job ohne `new()`-fähige Signatur; Registrierung über `IMessagingRegistry` fehlte | Vertrag 06 übernommen, `JobType`-Namen `indexing.*` festgelegt, Registrierung `AddConsumer`/`AddJob`/`Recurring.Register` gezeigt; O-D11-07 geschlossen |
 | R-04 | §3.10.4, §8.1 | Race: Dedupe-Index 06 gilt für `pending` **und** `running` → ein Event während eines laufenden `IndexEntityJob` wird verworfen, Index bleibt veraltet; außerdem teilten Index- und Lösch-Job denselben Dedupe-Schlüssel | Nachlauf-Prüfung `GetSourceUpdatedAtAsync` + `JobResult.Retry`, eigener Dedupe-Präfix `indexing-remove:`; AK-D11-27, R-D11-11 |
-| R-05 | §3.2.3, §5.2 | DRF-`SearchFilter` falsch portiert: NUL führt im Original zu 400 `["Null characters are not allowed."]` (`CharField.run_validation`), nicht zum Entfernen; `smart_split` kennt `"…"` **und** `'…'`, leere Phrase `""` ist ein Begriff, Anführungszeichen mitten im Token bleiben | Regeln präzise nach DRF-Quelltext; `TryApply`/`TrySplit` mit 1:1-400; neue Fehlerform `PlaneErrors.DrfList` als Änderungsauftrag an 02 (O-D11-08) |
+| R-05 | §3.2.3, §5.2 | DRF-`SearchFilter` falsch portiert: NUL führt im Original zu 400 `["Null characters are not allowed."]` (`CharField.run_validation`), nicht zum Entfernen; `smart_split` kennt `"…"` **und** `'…'`, leere Phrase `""` ist ein Begriff, Anführungszeichen mitten im Token bleiben | Regeln präzise nach DRF-Quelltext; `TryApply`/`TrySplit` mit 1:1-400; neue Fehlerform `FunkErrors.DrfList` als Änderungsauftrag an 02 (O-D11-08) |
 | R-06 | §3.5, §3.7, §4.7 | `count=0` (SR-03) bzw. `limit=0` (v1) liefern im Original leere Listen, nicht 500 – die Abweichung „≤ 0 → Default“ war unnötig | `0` 1:1; nur nicht-ganzzahlig/negativ/> 100 abweichend (`DEV-SRCH-005`, `-013` angepasst) |
 | R-07 | §3.4, §5.4 | SR-01: ungültige `project_id` erzeugt im Original nur dann 400, wenn die Projektbeschränkung greift und ein betroffener Typ angefragt ist; `?workspace_search=` (leer) ist im Original **keine** Beschränkung; Django liest den letzten Wert eines Mehrfachparameters | Handler-Skelett und Parametertabelle korrigiert |
-| R-08 | §3.6, §5.5 | SR-02: Parent-Ausschluss im Skelett auch bei unbekanntem `issue_id` (Original: nur bei gefundenem Ziel); `NOT IN`-Subquery über nullable `parent_id` hätte bei Root-Zielen alle Treffer entfernt; Validierung per `PlaneValidationException` widerspricht 02 §3.8 („nur Bibliotheksfehler“) | Ziel einmal laden, typisierte `WorkItemPickerOptions`, UUID-Prüfung im Handler mit `PlaneErrors.Plain(400, …)`; Aufruferliste der Picker vollständig (12 einbindende Dateien per `grep`, §3.6) |
+| R-08 | §3.6, §5.5 | SR-02: Parent-Ausschluss im Skelett auch bei unbekanntem `issue_id` (Original: nur bei gefundenem Ziel); `NOT IN`-Subquery über nullable `parent_id` hätte bei Root-Zielen alle Treffer entfernt; Validierung per `FunkValidationException` widerspricht 02 §3.8 („nur Bibliotheksfehler“) | Ziel einmal laden, typisierte `WorkItemPickerOptions`, UUID-Prüfung im Handler mit `FunkErrors.Plain(400, …)`; Aufruferliste der Picker vollständig (12 einbindende Dateien per `grep`, §3.6) |
 | R-09 | §3.3.1, §3.3.2, §5.1 | Mehrfachzeilen bei SR-03 `page` ohne `project_id` waren mit `SearchHit(EntityType, Id, Score)` nicht abbildbar („eindeutig über Score-Gleichstand“) | `SearchHit.RowKey`; Quelle wählt `(page, project)`-Paare; `HydrateAsync` erhält Hits statt IDs |
-| R-10 | §3.1.1, §5.3, §6.1 | Basismengen als statische Prädikate in `Plane.Data/Queries` umgingen die 🧱-Andockstelle E-04 `IWorkItemBaseSetFilter` (A1: z. B. „ohne Epics“) | Ort `Plane.Data/Querying/WorkItems/WorkItemBaseSetPredicates.cs` (wie 02/16 X7), `WorkItemBaseSetQuery` wendet E-04-Filter an; A1-Zeile §6.1, AK-D11-29 |
-| R-11 | §3.14, §5.7 | `AddSsrfSafeHttpClient` hat laut 05 §5.9 die Signatur `Action<SsrfPolicy>` (ohne `IServiceProvider`), `SsrfPolicy.AllowedHosts` ist get-only → Skelett nicht kompilierbar; 05-Algorithmus nimmt `AllowedHosts` nicht von den Blockregeln aus | Registrierung über benannte `SsrfPolicy`-Options mit `Configure<IOptions<PlaneAiOptions>>`; Änderungsauftrag an 05 (Schritt 3) |
+| R-10 | §3.1.1, §5.3, §6.1 | Basismengen als statische Prädikate in `Funk.Data/Queries` umgingen die 🧱-Andockstelle E-04 `IWorkItemBaseSetFilter` (A1: z. B. „ohne Epics“) | Ort `Funk.Data/Querying/WorkItems/WorkItemBaseSetPredicates.cs` (wie 02/16 X7), `WorkItemBaseSetQuery` wendet E-04-Filter an; A1-Zeile §6.1, AK-D11-29 |
+| R-11 | §3.14, §5.7 | `AddSsrfSafeHttpClient` hat laut 05 §5.9 die Signatur `Action<SsrfPolicy>` (ohne `IServiceProvider`), `SsrfPolicy.AllowedHosts` ist get-only → Skelett nicht kompilierbar; 05-Algorithmus nimmt `AllowedHosts` nicht von den Blockregeln aus | Registrierung über benannte `SsrfPolicy`-Options mit `Configure<IOptions<FunkAiOptions>>`; Änderungsauftrag an 05 (Schritt 3) |
 | R-12 | §3.14, §5.7 | Client-Cache: `ConcurrentDictionary.GetOrAdd` mit mutierender Fabrik erzeugt bei Nebenläufigkeit doppelte Clients, „älteste“ war nicht bestimmbar, Dispose verdrängter Clients konnte laufende Requests treffen; `GetService` versprach Metadaten, die das Skelett nicht lieferte | LRU mit `lock`, kein Dispose verdrängter Clients; `GetService`-Beschreibung angeglichen; SSRF-Hinweis über Ausnahmekette |
 | R-13 | §3.1.1, §3.15, §5.8 | KI-Aufruf als **Command** modelliert → läuft nach 02 D02-ADR-24 in einer DB-Transaktion mit Npgsql-Execution-Strategy (Verbindung bis 120 s belegt, Wiederholung des LLM-Aufrufs bei transientem DB-Fehler) | `GenerateAiAssistantResponseQuery` (Query, keine Transaktion) |
 | R-14 | §3.13, §3.15, §4.7 | `DEV-AI-004` überzeichnet: Original liefert bei leerem String 200 mit `""`, nur `null` → 500; `prompt`-Regel und Skelett (Python-falsy) widersprachen sich; abgeschaltete Default-Modelle `claude-3-sonnet-20240229`/`gemini-pro` hätten `has_llm_configured = true` mit garantiert fehlschlagendem Aufruf ergeben | Texte präzisiert; Default-Modelle für `anthropic`/`gemini` entfernt (`MissingModel`, `DEV-AI-001`, O-D11-03 entschieden – Auftraggeber-Regel „funktionale Fehler korrigieren“, 17 Z-12) |
@@ -2190,12 +2190,12 @@ Umgesetzt sind die verbindlichen Entscheidungen aus `17-abgleich-dokumentuebergr
 | ABG-ID | Umgesetzt in | Änderung |
 |---|---|---|
 | ABG-122 | §3.10.1 (Text, DDL, EF-Abbildung), §3.10.4 (Upsert, Reconcile), §5.6 (Entität, Konfiguration, `IndexingPipeline`), D11-ADR-07, §6.2 (`search_embeddings`), §9.2 (Zeile 03), Review R-01 | `search_documents` in der 03-Form: PK `id` (UUIDv7), `uq_search_documents_entity` UNIQUE (`entity_type`, `entity_id`) als Upsert-Ziel, Scope-FK `(project_id, workspace_id) → projects` ON DELETE CASCADE, `source_updated_at`, `entity_type varchar(32)`, Indexnamen `ix_search_documents_search_vector`/`…_title_trgm`/`…_workspace`/`…_project`/`…_facets`; EF `HasKey(x => x.Id)` + `HasIndex(...).IsUnique()`; Upsert `ON CONFLICT (entity_type, entity_id)` mit `IIdGenerator` für neue Zeilen; G1-FK `search_document_id → search_documents(id)`, Unique (`search_document_id`, `model_key`, `chunk_index`) |
-| ABG-124 | §3.10.3 (Einleitung, „Voraussetzungen an andere Module“), §9.2 (Zeile 06) | Abo-Liste §3.10.3 verbindlich; Änderungsauftrag `project_pages` ersetzt durch die Regel „jede künftige Änderung der Projektverknüpfung löst `plane.page.updated.v1` mit `ChangedFields ∋ "projects"` aus“; Nachtjob bleibt Sicherheitsnetz |
-| ABG-126 | §3.1.1 (Abhängigkeiten `Plane.Platform.Search`), §3.9, Skelett §5.3 (`TrigramsSimilarity`), R-D11-02, §9.2 (Zeile `01` §8.1 gestrichen), Review R-15, Verbleibende Punkte | Trigramm-Funktionen aus `Npgsql.EntityFrameworkCore.PostgreSQL` 10.x – kein Paket `…PostgreSQL.Trigrams`, kein `UseTrigrams()`; S0 nur noch Signaturprüfung |
+| ABG-124 | §3.10.3 (Einleitung, „Voraussetzungen an andere Module“), §9.2 (Zeile 06) | Abo-Liste §3.10.3 verbindlich; Änderungsauftrag `project_pages` ersetzt durch die Regel „jede künftige Änderung der Projektverknüpfung löst `funk.page.updated.v1` mit `ChangedFields ∋ "projects"` aus“; Nachtjob bleibt Sicherheitsnetz |
+| ABG-126 | §3.1.1 (Abhängigkeiten `Funk.Platform.Search`), §3.9, Skelett §5.3 (`TrigramsSimilarity`), R-D11-02, §9.2 (Zeile `01` §8.1 gestrichen), Review R-15, Verbleibende Punkte | Trigramm-Funktionen aus `Npgsql.EntityFrameworkCore.PostgreSQL` 10.x – kein Paket `…PostgreSQL.Trigrams`, kein `UseTrigrams()`; S0 nur noch Signaturprüfung |
 | ABG-127 | §9.2 (Zeile `05` §3.17.2 / §5.9), §8.2 O-D11-02 | Änderungsauftrag als erledigt markiert; O-D11-02 bleibt offen (Z-111) |
 | ABG-128 | §3.8.2 (Signatur-Absatz), §9.2 (Zeile `05` §3.14) | „von diesem Dokument angenommen …“ → Signatur verbindlich nach 01 §5.5 |
-| ABG-129 | §8.2 O-D11-08, §9.2 (Zeile `02` §3.8) | O-D11-08 als entschieden markiert (`PlaneErrors.DrfList`, `DrfMessages.NullCharacters` in 02 §3.8) |
+| ABG-129 | §8.2 O-D11-08, §9.2 (Zeile `02` §3.8) | O-D11-08 als entschieden markiert (`FunkErrors.DrfList`, `DrfMessages.NullCharacters` in 02 §3.8) |
 | ABG-134 | D11-ADR-15, §3.17, §4.3, §4.7, §5.9, AK-D11-23, §9.1, §9.2 (Zeile 09), Review R-19 | `UI-DEV-D11-01/-02` → `UI-DEV-016`/`UI-DEV-017`; Kontakt-Hinweis = Upsell-Eintrag U23 in 09 §4.12 |
-| ABG-149 | §1.4 (I5), §3.1.1, §3.10.4 (CLI), AK-D11-15 | Befehlsbeispiele `plane-cli search …` → `funk-cli search …`; Projektdateien `Plane.Cli/Commands/*` bleiben |
+| ABG-149 | §1.4 (I5), §3.1.1, §3.10.4 (CLI), AK-D11-15 | Befehlsbeispiele `plane-cli search …` → `funk-cli search …`; Projektdateien `Funk.Cli/Commands/*` bleiben |
 
 Außerdem nachgezogen: §3.10.4 und §9.2 (Zeilen 14) verweisen für Migrator-Schritt, `GPT_ENGINE` und `LLM_BASE_URL` auf ABG-133 (Umsetzung in 14). **Branding-Durchgang (ADR-009B, BR-01 … BR-14):** Das Dokument legt nur wenige nach außen sichtbare Namen der Zielplattform fest; sie zeigen jetzt „funk.“ (Betriebs-CLI `funk-cli`, „funk.-Stack“ in §3.19); der entfallende Kontakt-Link auf `plane.so` ist als `UI-DEV-017` geführt. Original-Texte des AI-/Unsplash-Formulars enthalten kein „Plane“; Verweise auf das Original, Original-Pfade sowie interne Bezeichner (`Plane.*`-Projekte, `Plane:`-Schlüssel, `plane_unaccent`, Metriknamen `plane.search.*`) bleiben unverändert (BR-02).

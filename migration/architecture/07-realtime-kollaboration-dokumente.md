@@ -12,7 +12,7 @@
 2. [Entscheidungen (D07-ADR-01 ff.)](#2-entscheidungen-d07-adr-01-ff)
 3. [Detaildesign](#3-detaildesign)
    - 3.1 Komponenten und Projektstruktur
-   - 3.2 Host `Plane.Realtime`: Pipeline, Endpunkte, Ports
+   - 3.2 Host `Funk.Realtime`: Pipeline, Endpunkte, Ports
    - 3.3 Wire-Protokoll (Byte-Ebene, Hocuspocus 2.15.2)
    - 3.4 Verbindungsablauf und Zustandsautomaten
    - 3.5 Authentisierung und Autorisierung
@@ -22,10 +22,10 @@
    - 3.9 Awareness
    - 3.10 Horizontale Skalierung (Valkey-Backplane, PostgreSQL-Signale, Konvergenz)
    - 3.11 REST-Pfade der Pages mit Realtime-Bezug (Fallback, Versionen, Duplizieren)
-   - 3.12 `Plane.Documents`: Schema, PM-JSON, HTML, Yjs
+   - 3.12 `Funk.Documents`: Schema, PM-JSON, HTML, Yjs
    - 3.13 Node-/Mark-Inventar mit exakter HTML-Serialisierung
    - 3.14 Markdown
-   - 3.15 PDF-Export (`Plane.Documents.Pdf`, zwei Stilprofile)
+   - 3.15 PDF-Export (`Funk.Documents.Pdf`, zwei Stilprofile)
    - 3.16 Realtime-Events für weitere Objekte (SignalR, H6)
    - 3.17 Konfiguration
    - 3.18 Observability
@@ -62,8 +62,8 @@ Messbare Zielgrößen (Details §7):
 |---|---|
 | Hocuspocus-Wire-Protokoll (Server), Verbindungs-/Dokument-Lebenszyklus, Awareness, Stateless-Ereignisse, Titel-Sync, Force-Close, Admin-Kanal, Close-Codes | Angular-Editor, NodeViews, `CollaborationSession`-Service im Browser (→ `10-editor-angular.md`, `08` §3.12) |
 | Persistenz-Semantik `description_binary` inkl. HTML→Binary-Migration, Merge-on-Store, Debounce, Versionierung der Page-Inhalte, PageLog-Auslösung | Tabellen-/Spaltendefinition der Entitäten (→ `03-datenmodell-efcore.md`; hier nur die Anforderungen, §3.6.8) |
-| `Plane.Documents`: C#-Port des Server-Schemas (alle Nodes/Marks), HTML-Serialisierung und -Parsing, Yjs-Abbildung, Text-Extraktion, Markdown, Validierung | HTML-Sanitizing-Allowlist (→ `05` §3.17.3, `HtmlSanitizerProfile`) |
-| `Plane.Documents.Pdf`: PDF-Export in zwei Stilprofilen (Live- und Web-Optik) | Export-Dialog im Angular-Client (→ `08`, `10`) |
+| `Funk.Documents`: C#-Port des Server-Schemas (alle Nodes/Marks), HTML-Serialisierung und -Parsing, Yjs-Abbildung, Text-Extraktion, Markdown, Validierung | HTML-Sanitizing-Allowlist (→ `05` §3.17.3, `HtmlSanitizerProfile`) |
+| `Funk.Documents.Pdf`: PDF-Export in zwei Stilprofilen (Live- und Web-Optik) | Export-Dialog im Angular-Client (→ `08`, `10`) |
 | Skalierung: Valkey-Pub/Sub-Backplane, PostgreSQL-Signale, Graceful Shutdown | Route/Timeouts im Gateway, Replikas, Images (→ `14`; hier: Ping-Intervall, Shutdown-Verhalten, Speicherbedarf, Absicherung `/live/convert-document/`, wie in `14` §9 angefragt) |
 | SignalR-Hub `/live/events/`: Transport, Gruppen-Autorisierung, Publisher-Pfade | Katalog der Ereignisnamen/Nutzlasten je Fachobjekt (→ `06`), Frontend-Handler (→ `08` §6) |
 | Erweiterungspunkte der 🧱-Pakete in diesem Bereich (§6) | Fachdesign der Bezahl-Pakete (erst kurz vor W1/W3) |
@@ -76,7 +76,7 @@ Messbare Zielgrößen (Details §7):
 | **Dokumenttyp** (`documentType`) | Query-Parameter des WebSocket-Upgrades; CE: nur `project_page` (`LIVE/types/index.ts` `TDocumentTypes`). |
 | **Fragment** | Benanntes `Y.XmlFragment` im `Y.Doc`: `default` (Inhalt, Tiptap `Collaboration.configure({field:"default"})`) und `title` (Titel-Editor, `field:"title"`). Beide Namen sind Teil des Datenformats (`A12` §5.7 Punkt 2). |
 | **Zustand** (`state`) | `Y.encodeStateAsUpdate(doc)` (Update-Format v1) = Inhalt von `pages.description_binary`. |
-| **Sitzung** (`DocumentSession`) | Ein geladenes Dokument in einer `Plane.Realtime`-Instanz mit allen lokalen Verbindungen (entspricht Hocuspocus `Document`). |
+| **Sitzung** (`DocumentSession`) | Ein geladenes Dokument in einer `Funk.Realtime`-Instanz mit allen lokalen Verbindungen (entspricht Hocuspocus `Document`). |
 | **Verbindung** (`DocumentConnection`) | Eine Kombination aus WebSocket und Dokumentname (Hocuspocus `Connection`; ein WebSocket kann mehrere Dokumente multiplexen). |
 | **Backplane** | Instanzübergreifende Verteilung von Updates/Awareness/Stateless (Valkey-Pub/Sub). |
 | **Signal** | Leichtgewichtige PostgreSQL-`NOTIFY`-Nachricht über externe Änderungen (REST-Speichern, Zugriffsänderung) an alle Realtime-Instanzen. |
@@ -87,14 +87,14 @@ Die Inkremente folgen `01` §1.3. Jede Zeile ist ein abnehmbarer vertikaler Schn
 
 | Inkrement | Bausteine aus diesem Dokument (müssen fertig sein) | CE-IDs | Abnahme (Auszug, §7) |
 |---|---|---|---|
-| **I0 Walking Skeleton** | Host `Plane.Realtime` mit `RealtimeComposition` (Health `/live/health/` auf App-Port, `/health/*` auf Management-Port), `WebSocketOriginValidator` + `SessionTicketReader` (05), leerer SignalR-Hub `/live/events/` (H6-Gerüst, `IRealtimeGroupAuthorizer` mit CE-Präfixen), `/live/{**}`-Fallback 404 `{"message":"Not Found"}`, Gateway-Routen G-06/G-07 (14). **Spike-Track:** S1 (Protokoll/YDotNet), S2 (Konvertierung inkl. typisierter Attribute, §7.6), S3 (PDF) laufen ab Tag 3 und liefern `docs/spikes/S{1,2,3}-ergebnis.md`. | CE-RT-009 (Gerüst); Hub-Gerüst: – (Walking Skeleton I0; H6-Andockstelle, kein CE-Feature, CE-Bezug erst ab I5 über CE-NOTIF-001, 17 ABG-112) | AK-07-01, AK-07-02; `RealtimeSmokeTests` (Hub-Teil) |
-| **I1 Workspace, Projekte, Konto** | – (keine Realtime-Funktion). `Plane.Documents.Text.HtmlTextExtractor` wird für `description_stripped` von Workspaces/Projekten **noch nicht** gebraucht (Projekt-Beschreibung ist Text). | – | – |
-| **I2 Work Items & Layouts** | `Plane.Documents` Teil A: Server-Schema aller Nodes/Marks (§3.13), `HtmlSerializer`, `HtmlParser`, PM-JSON-Modell, `HtmlTextExtractor` (`description_stripped`), `YjsUpdateValidator` (05 §3.17.3; Work-Item-Beschreibungen, Kommentare, Stickies senden `description_binary` optional, der Server validiert nur) und `DocumentReferenceExtractor` (Mentions für CE-WI-044); Golden-Korpora G-SCHEMA, G-DOC (HTML↔JSON-Teil). Lite-Editor-Spike S5 (Dokument 10). | CE-WI-005, CE-WI-037, CE-OPS-017, CE-PAGE-021/-022 (Server-Teil) | AK-07-20 … AK-07-23 |
+| **I0 Walking Skeleton** | Host `Funk.Realtime` mit `RealtimeComposition` (Health `/live/health/` auf App-Port, `/health/*` auf Management-Port), `WebSocketOriginValidator` + `SessionTicketReader` (05), leerer SignalR-Hub `/live/events/` (H6-Gerüst, `IRealtimeGroupAuthorizer` mit CE-Präfixen), `/live/{**}`-Fallback 404 `{"message":"Not Found"}`, Gateway-Routen G-06/G-07 (14). **Spike-Track:** S1 (Protokoll/YDotNet), S2 (Konvertierung inkl. typisierter Attribute, §7.6), S3 (PDF) laufen ab Tag 3 und liefern `docs/spikes/S{1,2,3}-ergebnis.md`. | CE-RT-009 (Gerüst); Hub-Gerüst: – (Walking Skeleton I0; H6-Andockstelle, kein CE-Feature, CE-Bezug erst ab I5 über CE-NOTIF-001, 17 ABG-112) | AK-07-01, AK-07-02; `RealtimeSmokeTests` (Hub-Teil) |
+| **I1 Workspace, Projekte, Konto** | – (keine Realtime-Funktion). `Funk.Documents.Text.HtmlTextExtractor` wird für `description_stripped` von Workspaces/Projekten **noch nicht** gebraucht (Projekt-Beschreibung ist Text). | – | – |
+| **I2 Work Items & Layouts** | `Funk.Documents` Teil A: Server-Schema aller Nodes/Marks (§3.13), `HtmlSerializer`, `HtmlParser`, PM-JSON-Modell, `HtmlTextExtractor` (`description_stripped`), `YjsUpdateValidator` (05 §3.17.3; Work-Item-Beschreibungen, Kommentare, Stickies senden `description_binary` optional, der Server validiert nur) und `DocumentReferenceExtractor` (Mentions für CE-WI-044); Golden-Korpora G-SCHEMA, G-DOC (HTML↔JSON-Teil). Lite-Editor-Spike S5 (Dokument 10). | CE-WI-005, CE-WI-037, CE-OPS-017, CE-PAGE-021/-022 (Server-Teil) | AK-07-20 … AK-07-23 |
 | **I3 Planung** | – | – | – |
-| **I4 Pages & Realtime** | Vollständig: `Plane.Collaboration` (+ `.Protocol`, `.Contracts`), `ProjectPageDocumentType`, `IPageDocumentStore` in `Plane.Pages` mit Merge-on-Store, HTML→Binary-Migration, Titel-Sync, Versionierung (Fix CE-PAGE-019), PageLog-Event, Stateless/Force-Close/Admin-Kanal, Awareness, Valkey-Backplane + In-Memory-Backplane, PostgreSQL-Signale, REST-Fallback-Merge, Duplizieren mit Asset-Umschreibung, `Plane.Documents` Teil B (Yjs-Abbildung, `YjsUpdateWriter`, Document-Variante), `Plane.Documents.Pdf` (Profile `live` und `web`), Markdown (`HtmlToMarkdownConverter`, `MarkdownRenderer`), Management-Endpunkt `/live/convert-document/`. Lasttests LT-16 … LT-20. | CE-RT-001 … -009, CE-PAGE-005 … -013, -019, -037 (Server), CE-WI-041 (Formate) | AK-07-03 … AK-07-19, AK-07-24 … AK-07-36, AK-07-44 … AK-07-46 |
+| **I4 Pages & Realtime** | Vollständig: `Funk.Collaboration` (+ `.Protocol`, `.Contracts`), `ProjectPageDocumentType`, `IPageDocumentStore` in `Funk.Pages` mit Merge-on-Store, HTML→Binary-Migration, Titel-Sync, Versionierung (Fix CE-PAGE-019), PageLog-Event, Stateless/Force-Close/Admin-Kanal, Awareness, Valkey-Backplane + In-Memory-Backplane, PostgreSQL-Signale, REST-Fallback-Merge, Duplizieren mit Asset-Umschreibung, `Funk.Documents` Teil B (Yjs-Abbildung, `YjsUpdateWriter`, Document-Variante), `Funk.Documents.Pdf` (Profile `live` und `web`), Markdown (`HtmlToMarkdownConverter`, `MarkdownRenderer`), Management-Endpunkt `/live/convert-document/`. Lasttests LT-16 … LT-20. | CE-RT-001 … -009, CE-PAGE-005 … -013, -019, -037 (Server), CE-WI-041 (Formate) | AK-07-03 … AK-07-19, AK-07-24 … AK-07-36, AK-07-44 … AK-07-46 |
 | **I5 Überblick** | Erste Nutzung des Hubs: `IRealtimePublisher` (`HubRealtimePublisher`/`QueuedRealtimePublisher`, §3.16.4), `RealtimeFanOutConsumer` auf Queue `realtime` im **Worker**, Zustellung über Job `realtime.push` auf Queue `live` an den Realtime-Host (17 ABG-106; Notification-Zähler; Ereignisnamen aus 06), Client `LiveEventsService` (08). Text-Extraktion für Such-Index (`IIndexingPipeline`, G1-Andockstelle) nutzt `HtmlTextExtractor`. | CE-NOTIF-001 (Zähler-Push), CE-SRCH (Index-Text) | AK-07-37 … AK-07-40 |
 | **I6 Außenwirkung** | Space zeigt Beschreibungen als gespeichertes HTML (kein Realtime-Pfad); Webhook-/Public-API-Nutzlasten nutzen `description_html` aus der Persistenz. Keine neuen Bausteine. | CE-SPACE-*, CE-API-* (nur Nutzung) | – |
-| **I7 Härtung** | Soak/Last im Nightly, AIO-Variante (`Plane.AllInOne` mit In-Memory-Backplane), Airgap-Prüfung Fonts/Emoji-Font, CLI `funk-cli realtime …` (§3.8.4, 17 ABG-149), Multi-Arch-Smoke mit `libyrs`/SkiaSharp | CE-OPS-004 (AIO) | AK-07-41 … AK-07-43 |
+| **I7 Härtung** | Soak/Last im Nightly, AIO-Variante (`Funk.AllInOne` mit In-Memory-Backplane), Airgap-Prüfung Fonts/Emoji-Font, CLI `funk-cli realtime …` (§3.8.4, 17 ABG-149), Multi-Arch-Smoke mit `libyrs`/SkiaSharp | CE-OPS-004 (AIO) | AK-07-41 … AK-07-43 |
 | **W1** | H6 vollständig (Events aller Objekte über dieselben Pfade), F2-Issue-Sync nutzt `MarkdownRenderer`/`HtmlToMarkdownConverter` | EE-* (W1) | Paket-Plan |
 | **W3** | D1 (`workspace_page`), D2 (`affectedPages`, Eltern-Titel-Broadcast), D3, D4 (Presence-Flag), D5 (Export-Erweiterungen) docken an §6 an | EE-* (W3) | Paket-Plan |
 
@@ -107,8 +107,8 @@ flowchart LR
     LE[LiveEventsService]
     EX[Export-Dialog]
   end
-  GW["Plane.Gateway YARP<br/>G-06 /live/** · G-07 /live/collaboration, /live/events/"]
-  subgraph RT["Plane.Realtime (n Replikas)"]
+  GW["Funk.Gateway YARP<br/>G-06 /live/** · G-07 /live/collaboration, /live/events/"]
+  subgraph RT["Funk.Realtime (n Replikas)"]
     WS["CollaborationEndpoint<br/>/live/collaboration"]
     REG["DocumentRegistry<br/>DocumentSession (Actor je Dokument, YDotNet)"]
     HUB["LiveEventsHub<br/>/live/events/"]
@@ -116,9 +116,9 @@ flowchart LR
     MGMT["Management :8081<br/>/health/*, /live/convert-document/"]
   end
   subgraph Mods["In-Process-Module"]
-    PG["Plane.Pages<br/>IPageDocumentStore (Merge-on-Store)"]
-    DOC["Plane.Documents<br/>Schema · HTML · Yjs · Markdown"]
-    DPDF["Plane.Documents.Pdf"]
+    PG["Funk.Pages<br/>IPageDocumentStore (Merge-on-Store)"]
+    DOC["Funk.Documents<br/>Schema · HTML · Yjs · Markdown"]
+    DPDF["Funk.Documents.Pdf"]
   end
   VK[("Valkey<br/>plane:collab:doc:*, plane:collab:admin,<br/>SignalR-Backplane")]
   PGS[("PostgreSQL<br/>pages, page_versions, outbox, jobs (Queues realtime, live),<br/>NOTIFY plane_collab / plane_jobs")]
@@ -129,7 +129,7 @@ flowchart LR
   PG --> DOC
   REG <--> VK
   PGS -->|LISTEN| REG
-  WK["Plane.Worker<br/>RealtimeFanOutConsumer (Queue realtime)"]
+  WK["Funk.Worker<br/>RealtimeFanOutConsumer (Queue realtime)"]
   PGS -->|"JobRunner Queue realtime"| WK
   WK -->|"QueuedRealtimePublisher → Job realtime.push (Queue live)"| PGS
   PGS -->|"JobRunner Queue live → HubRealtimePublisher"| HUB
@@ -145,7 +145,7 @@ Spalte „ab“ = Inkrement der ersten Umsetzung. „Spike“ = Entscheidung ste
 | Nr. | Belang | Entscheidung | Alternativen (verworfen) | Begründung | ab |
 |---|---|---|---|---|---|
 | **D07-ADR-01** | Protokoll | **Server-seitiger Nachbau des Hocuspocus-2.15.2-Protokolls** (Nachrichtentypen, Reihenfolgen, Antwortpflichten, Timeouts, Close-Codes) mit dem Quelltext von `@hocuspocus/server@2.15.2` als **Verhaltensreferenz** (Dateien `ClientConnection.ts`, `Connection.ts`, `Document.ts`, `MessageReceiver.ts`, `OutgoingMessage.ts`, `Hocuspocus.ts`). Der Client bleibt der unveränderte Provider. | y-websocket-Protokoll + Provider-Tausch (Fallback 1 aus `01` §9 S1); Node-Sidecar (verletzt ADR-002) | Parität ohne Client-Änderung; das Protokoll ist klein (9 Typen) und im Quelltext vollständig sichtbar | I0 (S1), I4 |
-| **D07-ADR-02** | Codec-Ort | Kodierung/Dekodierung (lib0, Hocuspocus-Rahmen, y-protocols-Sync, Awareness-Update) in einer **eigenen, abhängigkeitsfreien Assembly `Plane.Collaboration.Protocol`** (nur BCL, `public`), genutzt von `Plane.Collaboration` **und** `Plane.LoadTests.Collaboration` (D15-ADR-14). Architekturtest `CollaborationProtocolIsPure`: keine Referenz außer `System.*`. | Codec in `Plane.Collaboration` (`internal`, R9) – Lasttest käme nicht heran; `YDotNet.Protocol` (y-websocket-orientiert, async-Stream-API, keine Hocuspocus-Rahmen) | Gleicher Codec in Server und Lasttest-Client, testbar ohne Native-Lib; Namespace `Plane.Collaboration.Protocol` wie in `15` §3.12.3 | I0 (S1) |
+| **D07-ADR-02** | Codec-Ort | Kodierung/Dekodierung (lib0, Hocuspocus-Rahmen, y-protocols-Sync, Awareness-Update) in einer **eigenen, abhängigkeitsfreien Assembly `Funk.Collaboration.Protocol`** (nur BCL, `public`), genutzt von `Funk.Collaboration` **und** `Funk.LoadTests.Collaboration` (D15-ADR-14). Architekturtest `CollaborationProtocolIsPure`: keine Referenz außer `System.*`. | Codec in `Funk.Collaboration` (`internal`, R9) – Lasttest käme nicht heran; `YDotNet.Protocol` (y-websocket-orientiert, async-Stream-API, keine Hocuspocus-Rahmen) | Gleicher Codec in Server und Lasttest-Client, testbar ohne Native-Lib; Namespace `Funk.Collaboration.Protocol` wie in `15` §3.12.3 | I0 (S1) |
 | **D07-ADR-03** | Nebenläufigkeit | **Ein Actor je geladenem Dokument** (`DocumentSession` mit `Channel<IDocumentCommand>`, eine Verarbeitungsschleife). Jeder YDotNet-Zugriff (`Doc`, Transaktionen, Beobachter) geschieht ausschließlich innerhalb dieser Schleife; Sockets schreiben über je eine eigene Sende-Queue (`Channel<ReadOnlyMemory<byte>>`, begrenzt 1 024, bei Überlauf Close 1008). | Locks pro Dokument; geteiltes `Doc` über Threads | YDotNet/yrs erlaubt nur eine schreibende Transaktion; der Actor serialisiert wie die Node-Event-Loop und macht Reihenfolgen deterministisch testbar | I4 |
 | **D07-ADR-04** | Authentisierung | **Session-Cookie aus dem Upgrade-Request** (Cookie-Schema mit `PostgresTicketStore`, 05 §3.11); das Hocuspocus-`token` (`{id, name, color}`) dient nur dem Abgleich `token.id == principal.UserId`. **Kein** Cookie aus dem Token (`token.cookie`) und **kein** Cookie aus Query-Parametern (SEC-41, E26). `Origin`-Pflicht vor dem Upgrade (D05-ADR-22, SEC-42). | Token im Query-String; HTTP-Rundreise an die API (Original `GET /api/users/me/`) | Gleiches Sicherheitsmodell wie HTTP, keine Hosts-Kopplung per HTTP (`01` §3.2) | I4 (Origin ab I0) |
 | **D07-ADR-05** | Autorisierung | **Prüfung je Verbindung** über `ICollaborationDocumentType.AuthorizeAsync` (CE: `project.page.read` + `PAGE`-Regel, `05` §3.13.5); Scope **`read-write` nur mit `project.page.update`**, sonst `readonly`. Updates einer `readonly`-Verbindung werden nicht angewendet (Antwort `SyncStatus(0)`, Hocuspocus-Semantik). Zugriffsänderungen während der Sitzung lösen eine Neuprüfung aller Verbindungen aus (Signal `access`, §3.10.4): Verlust des Leserechts → **zuerst** `Auth/PermissionDenied("permission-denied")` für diesen Dokumentnamen (Provider: `authenticationFailed` → `disconnect()`, Client-Stage `disconnected(auth-failed)`, endgültig), danach Dokumentverbindung schließen mit **4403** (falls der Client noch verbunden ist; 4403 allein ließe den Plane-Client in „reconnecting“ hängen, §3.3.5); Wechsel `read-write`→`readonly` → Close **4205** (Client verbindet neu und erhält `readonly`). | Prüfung nur beim ersten Laden (Original, E3/SEC-40) | Schließt die Lücke E3; Rechte folgen dem Permission-Katalog (E5 tauscht nur die Evaluator-Implementierung) | I4 |
@@ -154,7 +154,7 @@ Spalte „ab“ = Inkrement der ersten Umsetzung. „Spike“ = Entscheidung ste
 | **D07-ADR-08** | Abgeleitete Formate | `description_html`, `description_json`, `description_stripped` werden **immer serverseitig aus dem zusammengeführten Zustand** erzeugt – auch beim REST-PATCH `…/description/` (CE-RT-003); vom Client gesendetes HTML/JSON wird nur noch validiert (Sanitizer-/Längenprüfung wie Original), nicht übernommen. HTML durchläuft danach `HtmlSanitizerProfile` (05) wie im Original `validate_html_content`. | Client-HTML speichern (Original beim REST-Fallback) | Konsistenz zwischen Binary und HTML; kein Auseinanderlaufen durch alte Clients | I4 |
 | **D07-ADR-09** | Typisierte Yjs-Attribute | **YDotNet 0.6.0 kennt XML-Element-Attribute nur als `string`** (geprüft: `XmlElement.InsertAttribute(Transaction, string, string)`, `GetAttribute(...) : string`, Enumerator `KeyValuePair<string,string>`), während `y-prosemirror` typisierte Werte schreibt (`level: 1`, `checked: false`, `colwidth: [150]`). Daher: **Schreiben** neuer Inhalte (HTML→Yjs, Titel-Migration, Duplizieren) über einen **eigenen Update-Encoder `YjsUpdateWriter`** (Yjs-Update-Format v1, nur „frisches Dokument eines Clients“, ContentType/ContentString/ContentFormat/ContentAny), der das Ergebnis per `ApplyV1` in YDotNet lädt; **Lesen** über YDotNet mit **schema-gesteuerter Typ-Rückwandlung** (`AttributeCoercion`, §3.12.6). Text-Formatierungen (Marks) sind in YDotNet typisiert (`Input.Object`, `TextChunk.Attributes`) und brauchen keine Sonderlösung. | Attribute als Strings schreiben (bricht `checked: "false"` → wahr, `colwidth` als String → Tabellen-Resize defekt); Jint+`yjs` für alle Pfade | Einziger Weg, mit YDotNet 0.6 browsergleiche Zustände zu erzeugen; der Encoder ist eng begrenzt (Erzeugung, keine Integration) und gegen Original-`yjs` im Browser prüfbar (G-DOC) | Spike S2 (Kriterium S2-K6), I4 |
 | **D07-ADR-10** | Deterministische Server-Schreibvorgänge | Server erzeugt Yjs-Inhalte **nur** als deterministische Initial-Updates: HTML→Binary-Migration mit Client-ID `ClientIds.ContentMigration(pageId)`, Titel-Migration mit `ClientIds.TitleMigration(pageId)` (je 32-Bit aus SHA-256 von `"{pageId}:content"` bzw. `":title"`, ungleich 0), Clock ab 0. Die Migration läuft unter Zeilensperre und prüft das leere Binary erneut. | Zufällige Client-IDs (Original) | Parallele Migration in zwei Instanzen erzeugt **identische** Updates → Merge idempotent statt doppeltem Inhalt | I4 |
-| **D07-ADR-11** | Dokument-Bibliothek | **`Plane.Documents`**: C#-Port des Server-Schemas `CoreEditorExtensionsWithoutProps` (+ `DocumentEditorExtensionsWithoutProps`) mit **einer Klasse je Tiptap-Extension** (`IDocumentNodeSpec`/`IDocumentMarkSpec`, DI-Sammlung, Erweiterungspunkt E-11). HTML-Ausgabe = Port von ProseMirror `DOMSerializer` + Tiptap `mergeAttributes`/`getRenderedAttributes` + Serialisierer von `zeed-dom` 0.15.1; HTML-Eingabe = Port von ProseMirror `DOMParser` (Parse-Regeln, Prioritäten, Whitespace-Regeln) auf AngleSharp. Golden-Files aus dem Original (`tools/golden/generate.mjs`). | Allgemeiner HTML-Mapper ohne Schema; Jint als Primärweg | Byte-Parität prüfbar, keine JS-Laufzeit, erweiterbar für D9/D10 | I2 (HTML/JSON), I4 (Yjs) |
+| **D07-ADR-11** | Dokument-Bibliothek | **`Funk.Documents`**: C#-Port des Server-Schemas `CoreEditorExtensionsWithoutProps` (+ `DocumentEditorExtensionsWithoutProps`) mit **einer Klasse je Tiptap-Extension** (`IDocumentNodeSpec`/`IDocumentMarkSpec`, DI-Sammlung, Erweiterungspunkt E-11). HTML-Ausgabe = Port von ProseMirror `DOMSerializer` + Tiptap `mergeAttributes`/`getRenderedAttributes` + Serialisierer von `zeed-dom` 0.15.1; HTML-Eingabe = Port von ProseMirror `DOMParser` (Parse-Regeln, Prioritäten, Whitespace-Regeln) auf AngleSharp. Golden-Files aus dem Original (`tools/golden/generate.mjs`). | Allgemeiner HTML-Mapper ohne Schema; Jint als Primärweg | Byte-Parität prüfbar, keine JS-Laufzeit, erweiterbar für D9/D10 | I2 (HTML/JSON), I4 (Yjs) |
 | **D07-ADR-12** | Server-HTML ohne Block-IDs | Das Server-Schema enthält wie im Original **kein** `UniqueID` → serverseitig erzeugtes HTML/JSON trägt **kein** `data-id`/`id` an Blöcken (E20). Block-IDs bleiben im Yjs-Zustand erhalten. Knoten mit eigenem `id`-Attribut (`imageComponent`, `calloutComponent`, `mention`, `issue-embed-component`) rendern es weiter. | `data-id` serverseitig mitrendern (Empfehlung `A12` O6) | Golden-Parität von `description_html`/`description_json` zum Original; Deep-Links nutzen den Browser-Editor (Yjs) | I2 |
 | **D07-ADR-13** | Quirks der Serialisierung | `renderHTML`/`parseHTML` werden **1:1** übernommen, auch E16 (`customColor` matcht jedes `<span>`), E17 (`style="background-color: null; color: null;"` an `td`) und E15 (`colwidth` nur erster Wert). Funktionale Folgefehler werden **an der Nutzungsstelle** korrigiert (PDF-Renderer ignoriert `null`-Farben; Web-Profil entfernt sie wie `use-parse-editor-content.ts`). | Quirks im Serialisierer beheben | Byte-Parität des gespeicherten HTML; Z-12 (optisch 1:1, funktionale Fehler korrigieren) wird an der Wirkungsstelle erfüllt | I2 |
 | **D07-ADR-14** | Skalierung | **Valkey-Pub/Sub** mit Kanal je Dokument `plane:collab:doc:{documentName}` und Admin-Kanal `plane:collab:admin`, eigenes Binärformat (§3.10.2); Updates werden als Yjs-Update gepusht, Anti-Entropie per SyncStep1/2 beim Laden und nach Wiederverbindung. Ohne Valkey (eine Replika, D14-ADR-21) `InMemoryCollaborationBackplane`. Keine Sticky Sessions (Dokumentname steht nicht in der URL). | Hocuspocus-Redis-Format (Pull über SyncStep1 bei jeder Änderung); Sticky Routing per YARP (unmöglich, Name nur in Nachrichten); PostgreSQL `LISTEN/NOTIFY` für Updates (8-KB-Grenze) | Geringe Latenz (LT-17 p95 < 150 ms), einfacher Push; Pflicht-Valkey ab 2 Replikas ist in 14 bereits festgelegt | I4 |
@@ -162,15 +162,15 @@ Spalte „ab“ = Inkrement der ersten Umsetzung. „Spike“ = Entscheidung ste
 | **D07-ADR-16** | Stateless | Mapping Server↔Client-Namen **1:1** aus `EDITOR/constants/document-collaborative-events.ts`; JSON-Formate (`BroadcastedEvent`, `force_close`) **byte-kompatibel** zu `createRealtimeEvent`. **Neu:** Server plausibilisiert Client-Stateless gegen den Page-Zustand, bevor er rundsendet (Sicherheitskorrektur SEC-RT-01), und erzeugt `error_code: page_locked`/`page_archived`, wenn Updates wegen Sperre/Archiv abgewiesen werden (Fix E4). | Ungeprüftes Rundsenden (Original) | Verhindert vorgetäuschte „deleted“/„locked“-Meldungen durch beliebige Verbindungen; Client-Code unverändert | I4 |
 | **D07-ADR-17** | Force-Close & Shutdown | Force-Close-Ablauf 1:1 (Stateless-JSON `force_close` → 50 ms → Close mit Code/Grund → Admin-Kanal → 800 ms → Entladen); Codes 4000–4003 und Texte aus `LIVE/types/admin-commands.ts`. **Graceful Shutdown** dagegen: alle offenen Stores sofort ausführen, dann Verbindungen mit **1001 „server_shutdown“** schließen (kein 4000), damit der Client (`use-yjs-setup.ts`: 4000–4003 = „forced“, pausiert) automatisch neu verbindet. | Shutdown per Force-Close 4000 (Client bliebe getrennt); Original `closeConnections()` ohne Code | Rolling Restart ohne Nutzeraktion (LT-19) | I4 |
 | **D07-ADR-18** | Größenlimits | `MaxMessageBytes` = 10 MiB je WebSocket-Nachricht (Überschreitung → Close 1009 „Message Too Big“, Provider verbindet nicht neu); `MaxDocumentBytes` = 10 MiB für den zusammengeführten Zustand (= Limit von `validate_binary_data`, 05). Überschreitung beim Store → `error` (`content_too_large`, `should_disconnect: true`) + Force-Close 4001 `document_too_large` instanzübergreifend (CE-RT-006). | Proxy-413 als Auslöser (Original) | Explizite, testbare Grenze statt Zufall der Proxy-Konfiguration | I4 |
-| **D07-ADR-19** | Konvertierung API-seitig | Konvertierungen laufen **In-Process** über `IDocumentConverter` (`Plane.Documents`) in jedem Host. `POST /live/convert-document/` existiert nur noch auf dem **Management-Port** (Diagnose/Paritätstest, SEC-39) und korrigiert E2 (Page = `document`, Work Item = `rich`). | Öffentlicher Endpunkt (Original, E8) | Keine unauthentisierte Rechenlast über das Gateway; keine Hosts-Kopplung | I4 |
-| **D07-ADR-20** | PDF | **Ein Renderer, zwei Stilprofile** in `Plane.Documents.Pdf` (PDFsharp/MigraDoc exakt `[6.2.4]`, ADR-029): Profil **`live`** = Optik `LIVE/lib/pdf/*` (Endpunktvertrag `/live/pdf-export/`), Profil **`web`** = Optik `WEB/components/editor/pdf/document.tsx` + Vorverarbeitung aus `WEB/hooks/use-parse-editor-content.ts`. Der Angular-Export-Dialog ruft `POST /live/pdf-export/` mit `profile: "web"` (additives Feld). Bilder direkt aus `IObjectStorage` (kein HTTP-Redirect), Bildpipeline SkiaSharp (ADR-032), Mentions per Mitglieder-Lookup (Fix E27), Callout-Emoji als Zeichen mit gebündelter Schrift Noto Emoji (OFL-1.1, Fix E6). | Clientseitiges PDF im Browser beibehalten (`@react-pdf/renderer` im Angular-Bundle) – zweiter Renderer, Node-artige Bibliothek im Frontend; nur Live-Optik | ADR-029 verlangt serverseitigen Export auch für das Web; die CE-Nutzer sehen heute die Web-Optik → beide Optiken nötig | I4 (S3 in I0-Track) |
+| **D07-ADR-19** | Konvertierung API-seitig | Konvertierungen laufen **In-Process** über `IDocumentConverter` (`Funk.Documents`) in jedem Host. `POST /live/convert-document/` existiert nur noch auf dem **Management-Port** (Diagnose/Paritätstest, SEC-39) und korrigiert E2 (Page = `document`, Work Item = `rich`). | Öffentlicher Endpunkt (Original, E8) | Keine unauthentisierte Rechenlast über das Gateway; keine Hosts-Kopplung | I4 |
+| **D07-ADR-20** | PDF | **Ein Renderer, zwei Stilprofile** in `Funk.Documents.Pdf` (PDFsharp/MigraDoc exakt `[6.2.4]`, ADR-029): Profil **`live`** = Optik `LIVE/lib/pdf/*` (Endpunktvertrag `/live/pdf-export/`), Profil **`web`** = Optik `WEB/components/editor/pdf/document.tsx` + Vorverarbeitung aus `WEB/hooks/use-parse-editor-content.ts`. Der Angular-Export-Dialog ruft `POST /live/pdf-export/` mit `profile: "web"` (additives Feld). Bilder direkt aus `IObjectStorage` (kein HTTP-Redirect), Bildpipeline SkiaSharp (ADR-032), Mentions per Mitglieder-Lookup (Fix E27), Callout-Emoji als Zeichen mit gebündelter Schrift Noto Emoji (OFL-1.1, Fix E6). | Clientseitiges PDF im Browser beibehalten (`@react-pdf/renderer` im Angular-Bundle) – zweiter Renderer, Node-artige Bibliothek im Frontend; nur Live-Optik | ADR-029 verlangt serverseitigen Export auch für das Web; die CE-Nutzer sehen heute die Web-Optik → beide Optiken nötig | I4 (S3 in I0-Track) |
 | **D07-ADR-21** | Markdown | Client-Markdown (Copy as Markdown, Markdown-Export, Clipboard) bleibt **Quelltext-identisch** im Browser (`convertHTMLToMarkdown` aus `PKG/utils/src/editor/markdown-parser`). Serverseitig zwei Bausteine: `HtmlToMarkdownConverter` (Port derselben Regeln, für W1-Sync und spätere Exporte) und `MarkdownRenderer` (Markdown→HTML über **Markdig**, BSD-2-Clause; Port-Ziel von `API/utils/markdown.py`, 02 §4). | Markdown nur im Client; eigener Markdown-Parser | W1 (Forgejo-Issue-Sync, ADR-007) braucht beide Richtungen serverseitig; Markdig ist reif und permissiv | I4 (Bausteine), W1 (Nutzung) |
-| **D07-ADR-22** | Page-Versionen | Versionen werden **erzeugt** (Fix CE-PAGE-019: Original-Task greift auf nicht existierendes `page.description` zu und bricht immer ab, `A04` §2.14): synchron in `SaveAsync`, wenn sich `description_html` ändert – jüngste Version (nach `last_saved_at`) desselben Nutzers mit `now − last_saved_at ≤ 600 s` wird überschrieben (`last_saved_at` bleibt dabei unverändert → feste 10-Minuten-Fenster wie Original, `A07` §T31), sonst neue Version; > 20 Versionen → älteste weich löschen (Original-Regeln aus `API/bgtasks/page_version_task.py`). Die Grenze 20 ist `PlaneRetentionOptions.PageVersionsKeep` (`Plane:Retention:PageVersionsKeep`, Default 20, Eigentümer `02` §3.15; Review-Korrektur – vorher eigene Instanz-Einstellung `PAGE_VERSION_LIMIT`); das 600-s-Fenster ist die Konstante `PageVersionRecorder.MergeWindow` (Original-Regel, nicht konfigurierbar). Komponente `PageVersionRecorder` (Name wie `03`/`06`). | Weiterhin asynchroner Task | Gleiche Transaktion wie der Inhalt; keine Zusatzlast im Worker | I4 |
-| **D07-ADR-23** | PageLog | `page_logs` (Mentions, Bilder, Work-Item-Referenzen aus dem HTML, CE-PAGE-012) wird **synchron in derselben Transaktion** wie der Inhalt von `PageReferenceIndexer` (`Plane.Pages`, Name und Regel aus `06` T30 / D06-ADR-02) abgeglichen, sobald sich `description_html` geändert hat – an **allen** Original-Auslösepunkten (17 ABG-108; Original `page_transaction.delay` in `app/views/page/base.py` `create`, `partial_update`, `PagesDescriptionViewSet.partial_update`, `PageDuplicateEndpoint.post`, dazu das Live-Speichern): `CreatePageCommand` (mit `description_html`), `UpdatePageCommand` (PATCH mit `description_html`), `PageDocumentStore.SaveFromRestAsync` (Beschreibungs-PATCH), `PageDocumentStore.SaveAsync` (Live) und `DuplicatePageCommand`. Soll-Menge aus dem **neuen** HTML (`DocumentReferenceExtractor`), Ist-Menge aus `page_logs` der Page, Differenz einfügen/weich löschen (Löschung auf die Page beschränkt, nur UUID-`src`, `DEV-OPS-004`). Events (17 ABG-108 Nr. 4): Create/Duplicate schreiben `plane.page.created.v1`, spätere Inhaltsänderungen `plane.page.description_updated.v1` in die Outbox (Quelle für Suche/G1/B6/C3, kein PageLog-Consumer `pages.page_log_sync`); Consumer, die Inhalt brauchen (Suche), abonnieren beide (ABG-124). Review-Korrektur: die frühere Fassung (asynchroner Consumer `PageLogSyncConsumer`) widersprach `06` D06-ADR-02 | asynchroner Consumer (frühere Fassung); altes HTML im Event (Original `page_transaction`) | Konsistent mit dem Commit, eine Regel für alle Pfade (Anlegen, Page-PATCH, Store, REST-PATCH, Duplizieren); Aufwand < 1 ms für typische Pages, Zeilensperre bleibt kurz | I4 |
+| **D07-ADR-22** | Page-Versionen | Versionen werden **erzeugt** (Fix CE-PAGE-019: Original-Task greift auf nicht existierendes `page.description` zu und bricht immer ab, `A04` §2.14): synchron in `SaveAsync`, wenn sich `description_html` ändert – jüngste Version (nach `last_saved_at`) desselben Nutzers mit `now − last_saved_at ≤ 600 s` wird überschrieben (`last_saved_at` bleibt dabei unverändert → feste 10-Minuten-Fenster wie Original, `A07` §T31), sonst neue Version; > 20 Versionen → älteste weich löschen (Original-Regeln aus `API/bgtasks/page_version_task.py`). Die Grenze 20 ist `FunkRetentionOptions.PageVersionsKeep` (`Funk:Retention:PageVersionsKeep`, Default 20, Eigentümer `02` §3.15; Review-Korrektur – vorher eigene Instanz-Einstellung `PAGE_VERSION_LIMIT`); das 600-s-Fenster ist die Konstante `PageVersionRecorder.MergeWindow` (Original-Regel, nicht konfigurierbar). Komponente `PageVersionRecorder` (Name wie `03`/`06`). | Weiterhin asynchroner Task | Gleiche Transaktion wie der Inhalt; keine Zusatzlast im Worker | I4 |
+| **D07-ADR-23** | PageLog | `page_logs` (Mentions, Bilder, Work-Item-Referenzen aus dem HTML, CE-PAGE-012) wird **synchron in derselben Transaktion** wie der Inhalt von `PageReferenceIndexer` (`Funk.Pages`, Name und Regel aus `06` T30 / D06-ADR-02) abgeglichen, sobald sich `description_html` geändert hat – an **allen** Original-Auslösepunkten (17 ABG-108; Original `page_transaction.delay` in `app/views/page/base.py` `create`, `partial_update`, `PagesDescriptionViewSet.partial_update`, `PageDuplicateEndpoint.post`, dazu das Live-Speichern): `CreatePageCommand` (mit `description_html`), `UpdatePageCommand` (PATCH mit `description_html`), `PageDocumentStore.SaveFromRestAsync` (Beschreibungs-PATCH), `PageDocumentStore.SaveAsync` (Live) und `DuplicatePageCommand`. Soll-Menge aus dem **neuen** HTML (`DocumentReferenceExtractor`), Ist-Menge aus `page_logs` der Page, Differenz einfügen/weich löschen (Löschung auf die Page beschränkt, nur UUID-`src`, `DEV-OPS-004`). Events (17 ABG-108 Nr. 4): Create/Duplicate schreiben `funk.page.created.v1`, spätere Inhaltsänderungen `funk.page.description_updated.v1` in die Outbox (Quelle für Suche/G1/B6/C3, kein PageLog-Consumer `pages.page_log_sync`); Consumer, die Inhalt brauchen (Suche), abonnieren beide (ABG-124). Review-Korrektur: die frühere Fassung (asynchroner Consumer `PageLogSyncConsumer`) widersprach `06` D06-ADR-02 | asynchroner Consumer (frühere Fassung); altes HTML im Event (Original `page_transaction`) | Konsistent mit dem Commit, eine Regel für alle Pfade (Anlegen, Page-PATCH, Store, REST-PATCH, Duplizieren); Aufwand < 1 ms für typische Pages, Zeilensperre bleibt kurz | I4 |
 | **D07-ADR-24** | Duplizieren | Page duplizieren (CE-PAGE-009) erzeugt den neuen Zustand **synchron**: Binary → PM-JSON → `imageComponent.src` auf neue Asset-IDs umschreiben → `YjsUpdateWriter` (Inhalt + Titel „{name} (Copy)“) → HTML/JSON; Asset-Zeilen werden sofort angelegt, die Objektkopie läuft als Job `pages.copy_duplicated_assets` (`CopyDuplicatedAssetsJob`, Queue `default`, `06`; kopiert nur Objekte und setzt `is_uploaded`, 17 ABG-108). Variante `document` (Fix E2). | Asynchron wie Original (`copy_s3_objects_of_description_and_assets` + Live-Konvertierung; Fenster ohne Binary, Race mit HTML-Migration) | Kein Zwischenzustand; Kopie sofort kollaborativ öffenbar | I4 |
-| **D07-ADR-25** | Awareness | Eigene Implementierung der **y-protocols-Awareness-Semantik** (`Plane.Collaboration/Awareness/AwarenessRegistry`): Clock-Regeln, Entfernen (State `null`), Timeout 30 s, Zuordnung Client-ID → Verbindung, Entfernen beim Trennen, **Echo an alle Verbindungen einschließlich Sender**. | Awareness nur durchreichen (ohne Zustand); YDotNet-Awareness (existiert nicht) | Der Provider schließt die Verbindung, wenn 30 s keine Nachricht kommt (`messageReconnectTimeout` 30 000 ms); die 15-s-Erneuerung der eigenen Awareness, die der Server zurückspiegelt, hält leerlaufende Editoren verbunden | I4 |
+| **D07-ADR-25** | Awareness | Eigene Implementierung der **y-protocols-Awareness-Semantik** (`Funk.Collaboration/Awareness/AwarenessRegistry`): Clock-Regeln, Entfernen (State `null`), Timeout 30 s, Zuordnung Client-ID → Verbindung, Entfernen beim Trennen, **Echo an alle Verbindungen einschließlich Sender**. | Awareness nur durchreichen (ohne Zustand); YDotNet-Awareness (existiert nicht) | Der Provider schließt die Verbindung, wenn 30 s keine Nachricht kommt (`messageReconnectTimeout` 30 000 ms); die 15-s-Erneuerung der eigenen Awareness, die der Server zurückspiegelt, hält leerlaufende Editoren verbunden | I4 |
 | **D07-ADR-26** | Dokumenttypen | Registry `ICollaborationDocumentType` (E-10, aus `16` §5.13) mit **präzisierten Rückgabetypen** (§5.4); `documentName` ist für `project_page` eine UUID, sonst `PermissionDenied`. Unbekannter `documentType` → Fehlertext `Invalid document type {type} provided.` (Original `LIVE/services/page/handler.ts`) im Log, Client erhält `PermissionDenied("permission-denied")`. | Hart verdrahtete Page-Logik | D1/B1 registrieren weitere Typen ohne Protokolländerung | I4 |
-| **D07-ADR-27** | Live-Events (H6) | SignalR-Hub `LiveEventsHub` unter `/live/events/` **nur WebSockets** (`HttpTransportType.WebSockets`, Client `skipNegotiation: true`), Cookie-Schema, Origin-Prüfung; Client-Methoden `JoinGroup`/`LeaveGroup`, Server-Methode `event` mit `LiveEvent {event, group, payload, occurred_at}`; Gruppen-Autorisierung ausschließlich über `IRealtimeGroupAuthorizer` (E-22). **Publisher-Pfade (verbindlich nach 17 ABG-106):** `IRealtimePublisher` hat zwei Implementierungen – `HubRealtimePublisher` (nur Hosts `Plane.Realtime` und `Plane.AllInOne`, in-process `IHubContext<LiveEventsHub>`) und `QueuedRealtimePublisher` (Api/Worker: reiht einen `realtime.push`-Job transaktional auf der **Queue `live`** ein, `PlaneQueues.Live`); das ist der **einzige** Zustellweg zum Hub. Der `RealtimeFanOutConsumer` (Modul `Plane.RealtimeEvents`, Consumer `realtime.fanout`, generisch für alle katalogisierten Events, **kein** `LabelRealtimeConsumer`) läuft auf der Queue **`realtime` im Worker** (dessen Modulkatalog enthält `Notifications` für die Zähler-Abfrage, `02` §3.1.3). Nur `Plane.Realtime` (und `Plane.AllInOne`) registrieren SignalR und verarbeiten `live` – Host-Defaults `Plane:Worker:Queues`: Realtime `["live"]`, Worker `["*"]` mit `ExcludeQueues = ["live"]`, AllInOne `["*"]`; ab 2 Realtime-Replikas verteilt die Valkey-Backplane (`AddStackExchangeRedis`) an alle Verbindungen. **Entfällt:** `HubContextRealtimePublisher`, `NotifyRealtimePublisher`, `LiveEventsNotifyListener`, Kanal `plane_live_events`. | (a) `IHubContext` + Valkey aus jedem Host und `NOTIFY plane_live_events` ohne Valkey (frühere Fassung dieses Dokuments – zweiter Zustellweg, 8-KB-Grenze, widerspricht 06); (b) nur Valkey (Einzelknoten ohne Valkey hätte keine Live-Events); (c) SSE; (d) `RealtimeFanOutConsumer` auf Queue `realtime` im Realtime-Host (Vorfassung: Zähler-Abfrage dort mangels Modul `Notifications` nicht möglich, 06 K1) | Ein Zustellweg für alle Konfigurationen (Job-Queue in PostgreSQL ist immer da), transaktional mit dem Auslöser, Latenz < 2 s über `NOTIFY plane_jobs` mit zwei Job-Hops (`realtime` im Worker → `live` im Realtime-Host, Messung S12, 17 Z-104; 06 §3.12); die eigene Queue `live` verhindert, dass der Worker `realtime.push` zieht; erfüllt ADR-023 und D14-ADR-21 | I0 (Hub), I5 (Nutzung) |
+| **D07-ADR-27** | Live-Events (H6) | SignalR-Hub `LiveEventsHub` unter `/live/events/` **nur WebSockets** (`HttpTransportType.WebSockets`, Client `skipNegotiation: true`), Cookie-Schema, Origin-Prüfung; Client-Methoden `JoinGroup`/`LeaveGroup`, Server-Methode `event` mit `LiveEvent {event, group, payload, occurred_at}`; Gruppen-Autorisierung ausschließlich über `IRealtimeGroupAuthorizer` (E-22). **Publisher-Pfade (verbindlich nach 17 ABG-106):** `IRealtimePublisher` hat zwei Implementierungen – `HubRealtimePublisher` (nur Hosts `Funk.Realtime` und `Funk.AllInOne`, in-process `IHubContext<LiveEventsHub>`) und `QueuedRealtimePublisher` (Api/Worker: reiht einen `realtime.push`-Job transaktional auf der **Queue `live`** ein, `FunkQueues.Live`); das ist der **einzige** Zustellweg zum Hub. Der `RealtimeFanOutConsumer` (Modul `Funk.RealtimeEvents`, Consumer `realtime.fanout`, generisch für alle katalogisierten Events, **kein** `LabelRealtimeConsumer`) läuft auf der Queue **`realtime` im Worker** (dessen Modulkatalog enthält `Notifications` für die Zähler-Abfrage, `02` §3.1.3). Nur `Funk.Realtime` (und `Funk.AllInOne`) registrieren SignalR und verarbeiten `live` – Host-Defaults `Funk:Worker:Queues`: Realtime `["live"]`, Worker `["*"]` mit `ExcludeQueues = ["live"]`, AllInOne `["*"]`; ab 2 Realtime-Replikas verteilt die Valkey-Backplane (`AddStackExchangeRedis`) an alle Verbindungen. **Entfällt:** `HubContextRealtimePublisher`, `NotifyRealtimePublisher`, `LiveEventsNotifyListener`, Kanal `plane_live_events`. | (a) `IHubContext` + Valkey aus jedem Host und `NOTIFY plane_live_events` ohne Valkey (frühere Fassung dieses Dokuments – zweiter Zustellweg, 8-KB-Grenze, widerspricht 06); (b) nur Valkey (Einzelknoten ohne Valkey hätte keine Live-Events); (c) SSE; (d) `RealtimeFanOutConsumer` auf Queue `realtime` im Realtime-Host (Vorfassung: Zähler-Abfrage dort mangels Modul `Notifications` nicht möglich, 06 K1) | Ein Zustellweg für alle Konfigurationen (Job-Queue in PostgreSQL ist immer da), transaktional mit dem Auslöser, Latenz < 2 s über `NOTIFY plane_jobs` mit zwei Job-Hops (`realtime` im Worker → `live` im Realtime-Host, Messung S12, 17 Z-104; 06 §3.12); die eigene Queue `live` verhindert, dass der Worker `realtime.push` zieht; erfüllt ADR-023 und D14-ADR-21 | I0 (Hub), I5 (Nutzung) |
 | **D07-ADR-28** | Fehler beim Laden | Ladefehler eines Dokuments → wie Hocuspocus: Stateless-JSON `error` (`error_type: "fetch"`, Text „Unable to load the page. Please try refreshing.“) an bereits verbundene Verbindungen, dann **`PermissionDenied("permission-denied")`** an die anfragende Verbindung (Hocuspocus sendet bei Fehlern in `setUpNewConnection` PermissionDenied; Client → `auth-failed`). | Close 1011 | Client-Verhalten identisch zum Original | I4 |
 | **D07-ADR-29** | Fallback-Engine (nur bei S2-Abbruch) | **Jint 4.x** (BSD-2-Clause) mit einem zur Build-Zeit per esbuild erzeugten ES2020-IIFE-Bundle (`@tiptap/html` 2.26.2, `zeed-dom` 0.15.1, `yjs` 13.6.27, `y-prosemirror` 1.3.7, `CoreEditorExtensionsWithoutProps`), Pool von Engines (Größe = CPU-Kerne), Einsatz hinter derselben Schnittstelle `IDocumentConverter`. | Node-Sidecar | ADR-002; Schnittstelle bleibt stabil | nur nach S2-Entscheid |
 
@@ -190,21 +190,21 @@ Spalte „ab“ = Inkrement der ersten Umsetzung. „Spike“ = Entscheidung ste
 
 ### 3.1 Komponenten und Projektstruktur
 
-Ergänzt `01` §5.1 (Ordner existieren dort bereits; neu ist nur `Plane.Collaboration.Protocol`, D07-ADR-02). Alle Typen außer den als `public` markierten sind `internal` (R9).
+Ergänzt `01` §5.1 (Ordner existieren dort bereits; neu ist nur `Funk.Collaboration.Protocol`, D07-ADR-02). Alle Typen außer den als `public` markierten sind `internal` (R9).
 
 ```text
 funk./
 ├── src/
 │   ├── hosts/
-│   │   ├── Plane.Realtime/
+│   │   ├── Funk.Realtime/
 │   │   │   ├── Program.cs                         # var app = RealtimeComposition.Build(args); app.Run();
 │   │   │   └── Security/                          # (05) WebSocketOriginValidator.cs, SessionTicketReader.cs
-│   │   └── Plane.Hosting/Realtime/
+│   │   └── Funk.Hosting/Realtime/
 │   │       ├── RealtimeComposition.cs             # Pipeline §3.2, Modulkatalog (02 §3.1: Identity, Authorization, Workspaces,
 │   │       │                                       #   Projects, Pages, Collaboration, RealtimeEvents)
 │   │       └── RealtimeHealthEndpoint.cs          # GET /live/health/ (App-Port, CE-RT-009)
 │   ├── documents/
-│   │   ├── Plane.Documents/                       # public API: IDocumentConverter, DocumentVariant, PmNode/PmMark, IDocumentNodeSpec …
+│   │   ├── Funk.Documents/                       # public API: IDocumentConverter, DocumentVariant, PmNode/PmMark, IDocumentNodeSpec …
 │   │   │   ├── Schema/                            # DocumentSchema, SchemaVariant, AttributeSpec, ContentExpression(+Parser), MarkSet
 │   │   │   │   ├── Nodes/                         # je Extension eine Klasse (§3.13.1): DocNodeSpec … WorkItemEmbedNodeSpec
 │   │   │   │   ├── Marks/                         # BoldMarkSpec … CustomColorMarkSpec (§3.13.2)
@@ -221,7 +221,7 @@ funk./
 │   │   │   │                                       # MarkdownRenderer (Markdig, Port-Ziel API/utils/markdown.py)
 │   │   │   ├── References/                        # DocumentReferenceExtractor (mention-component, image-component, issue-embed)
 │   │   │   └── DocumentsServiceCollectionExtensions.cs
-│   │   └── Plane.Documents.Pdf/
+│   │   └── Funk.Documents.Pdf/
 │   │       ├── PdfExporter.cs                     # IPdfExporter : RenderAsync(PdfRenderRequest) → byte[]
 │   │       ├── Profiles/                          # PdfProfile (Live, Web), LivePdfStyles.cs (Port LIVE/lib/pdf/styles.ts),
 │   │       │                                       # WebPdfStyles.cs (Port WEB/components/editor/pdf/document.tsx), PdfColors.cs (colors.ts)
@@ -229,23 +229,23 @@ funk./
 │   │       ├── Preprocessing/                     # WebProfilePreprocessor (Port use-parse-editor-content.ts, auf PM-JSON-Ebene)
 │   │       ├── Images/                            # PdfImagePipeline (SkiaSharp: EXIF, Flatten weiß, fit 1200, JPEG 85)
 │   │       └── Fonts/                             # Inter *.ttf (18 Dateien aus WEB/app/assets/fonts/inter), NotoEmoji-Regular.ttf,
-│   │                                               # LiberationMono-{Regular,Bold}.ttf, PlaneFontResolver : IFontResolver,
+│   │                                               # LiberationMono-{Regular,Bold}.ttf, FunkFontResolver : IFontResolver,
 │   │                                               # PdfTextRunSplitter (Emoji-Segmente), fonts-manifest.json (SHA-256)
 │   └── modules/
 │       ├── Collaboration/
-│       │   ├── Plane.Collaboration.Protocol/      # public, nur BCL (D07-ADR-02)
+│       │   ├── Funk.Collaboration.Protocol/      # public, nur BCL (D07-ADR-02)
 │       │   │   ├── Lib0Reader.cs  Lib0Writer.cs   # varUint, varInt, varString, varUint8Array (lib0 0.2.114)
 │       │   │   ├── HocuspocusMessageType.cs  AuthMessageType.cs  SyncMessageType.cs
 │       │   │   ├── HocuspocusCodec.cs             # Parse(ReadOnlySpan<byte>) → IncomingFrame; Builder für alle Ausgänge
 │       │   │   ├── AwarenessUpdate.cs             # Kodierung y-protocols awareness (clientId, clock, stateJson)
-│       │   │   ├── CloseCodes.cs                  # PlaneCloseCodes (4000–4003), HocuspocusCloseCodes (1009, 4205, 4401, 4403, 4408)
+│       │   │   ├── CloseCodes.cs                  # FunkCloseCodes (4000–4003), HocuspocusCloseCodes (1009, 4205, 4401, 4403, 4408)
 │       │   │   └── ForceCloseReason.cs            # Werte + Texte (LIVE/types/admin-commands.ts)
-│       │   ├── Plane.Collaboration.Contracts/
+│       │   ├── Funk.Collaboration.Contracts/
 │       │   │   ├── Extensions/                    # ICollaborationDocumentType, CollaborationAccess, CollaborationConnectionParameters,
 │       │   │   │                                   # CollaborationDocumentLoad, CollaborationStoreResult (§5.4)
 │       │   │   ├── Services/                      # ICollaborationDocumentControl (ForceClose/Broadcast), CollaborationSignals (Kanal/Payload)
 │       │   │   └── Events/                        # BroadcastedEvent, RealtimeEventAction (Port EDITOR/types/document-collaborative-events.ts)
-│       │   └── Plane.Collaboration/
+│       │   └── Funk.Collaboration/
 │       │       ├── CollaborationModule.cs         # public sealed : IModule
 │       │       ├── Transport/                     # CollaborationEndpoint, ClientSocket, SocketSender, ConnectionQueue
 │       │       ├── Sessions/                      # DocumentRegistry, DocumentSession (Actor), DocumentConnection, IDocumentCommand-Typen,
@@ -257,37 +257,37 @@ funk./
 │       │       │                                   # BackplaneEnvelope, CollaborationSignalListener (LISTEN plane_collab)
 │       │       ├── DocumentTypes/                 # DocumentTypeRegistry, ProjectPageDocumentType
 │       │       ├── Http/                          # PdfExportEndpoint (/live/pdf-export/), ConvertDocumentEndpoint (Management-Port)
-│       │       ├── Diagnostics/                   # CollaborationMetrics (Meter "Plane.Realtime"), LogEvents
+│       │       ├── Diagnostics/                   # CollaborationMetrics (Meter "Funk.Realtime"), LogEvents
 │       │       └── Shutdown/                      # CollaborationShutdownService (IHostedLifecycleService, §3.8.5)
-│       ├── Pages/Plane.Pages/Application/Services/
+│       ├── Pages/Funk.Pages/Application/Services/
 │       │   ├── PageDocumentStore.cs               # IPageDocumentStore (Merge-on-Store, Migration, Versionen, Signale)
 │       │   ├── PageVersionRecorder.cs             # 600-s-Fenster, Limit PageVersionsKeep (D07-ADR-22)
 │       │   └── PageReferenceIndexer.cs            # page_logs-Abgleich, synchron (D07-ADR-23, 06 T30)
 │       └── RealtimeEvents/
-│           ├── Plane.RealtimeEvents.Contracts/    # IRealtimePublisher, RealtimeGroups, IRealtimeGroupAuthorizer, LiveEventDto
-│           └── Plane.RealtimeEvents/              # Hub/LiveEventsHub.cs, Group-Authorizer (ws/project/user), HubRealtimePublisher.cs (nur Realtime/AllInOne),
+│           ├── Funk.RealtimeEvents.Contracts/    # IRealtimePublisher, RealtimeGroups, IRealtimeGroupAuthorizer, LiveEventDto
+│           └── Funk.RealtimeEvents/              # Hub/LiveEventsHub.cs, Group-Authorizer (ws/project/user), HubRealtimePublisher.cs (nur Realtime/AllInOne),
 │                                                   # QueuedRealtimePublisher.cs (Api/Worker), Application/Jobs/RealtimePushJob.cs (Queue live),
 │                                                   # Application/Consumers/RealtimeFanOutConsumer.cs (Worker, Queue realtime, 17 ABG-106),
 │                                                   # RealtimeFanOutMap.cs (I5) – Ordner wie 06 §3.1
 ├── tests/
-│   ├── Plane.Collaboration.Tests/                 # Protocol/, Sessions/, Persistence/, Scaling/, Security/, Browser/, Acceptance/Original/
-│   ├── Plane.Documents.Tests/                     # Unit/, Golden/{schema,docs,markdown}/, Browser/ (Yjs-Dekodierung im Chromium)
-│   ├── Plane.Documents.Pdf.Tests/                 # Golden/{cases,pages,web}/, Acceptance/Original/PdfRenderingTests.cs
-│   ├── modules/Plane.Pages.Tests/                 # PageDocumentStoreTests, PageVersionRecorderTests, DuplicatePageTests
-│   ├── modules/Plane.RealtimeEvents.Tests/        # HubGroupAuthorizationTests, PublisherPathTests
-│   └── load/Plane.LoadTests.Collaboration/        # (15) SyntheticEditor nutzt Plane.Collaboration.Protocol
+│   ├── Funk.Collaboration.Tests/                 # Protocol/, Sessions/, Persistence/, Scaling/, Security/, Browser/, Acceptance/Original/
+│   ├── Funk.Documents.Tests/                     # Unit/, Golden/{schema,docs,markdown}/, Browser/ (Yjs-Dekodierung im Chromium)
+│   ├── Funk.Documents.Pdf.Tests/                 # Golden/{cases,pages,web}/, Acceptance/Original/PdfRenderingTests.cs
+│   ├── modules/Funk.Pages.Tests/                 # PageDocumentStoreTests, PageVersionRecorderTests, DuplicatePageTests
+│   ├── modules/Funk.RealtimeEvents.Tests/        # HubGroupAuthorizationTests, PublisherPathTests
+│   └── load/Funk.LoadTests.Collaboration/        # (15) SyntheticEditor nutzt Funk.Collaboration.Protocol
 └── tools/golden/generate.mjs                       # Subkommandos schema | docs | markdown | web-pdf | lib0-vectors (§7.5)
 ```
 
-**Abhängigkeitsregeln (zusätzlich zu `01` §5.2):** `Plane.Collaboration.Protocol` → nur BCL; `Plane.Documents` → `Plane.BuildingBlocks`, `AngleSharp`, `YDotNet`, `Markdig`; `Plane.Documents.Pdf` → `Plane.Documents`, `PDFsharp-MigraDoc`, `SkiaSharp`; `Plane.Collaboration` → `Plane.Collaboration.Protocol`, `Plane.Collaboration.Contracts`, `Plane.Pages.Contracts`, `Plane.Authorization.Contracts`, `Plane.Workspaces.Contracts`, `Plane.Documents`, `Plane.Documents.Pdf`, `Plane.Platform.Storage`, `StackExchange.Redis`. `Plane.Pages` → `Plane.Documents`, `Plane.Collaboration.Contracts` (nur `CollaborationSignals`). Architekturtests: `CollaborationProtocolIsPure`, `OnlyDocumentSessionTouchesYDotNetDoc` (Typen außerhalb `Plane.Collaboration.Sessions` und `Plane.Documents.Yjs` dürfen `YDotNet.Document.Doc` nicht referenzieren).
+**Abhängigkeitsregeln (zusätzlich zu `01` §5.2):** `Funk.Collaboration.Protocol` → nur BCL; `Funk.Documents` → `Funk.BuildingBlocks`, `AngleSharp`, `YDotNet`, `Markdig`; `Funk.Documents.Pdf` → `Funk.Documents`, `PDFsharp-MigraDoc`, `SkiaSharp`; `Funk.Collaboration` → `Funk.Collaboration.Protocol`, `Funk.Collaboration.Contracts`, `Funk.Pages.Contracts`, `Funk.Authorization.Contracts`, `Funk.Workspaces.Contracts`, `Funk.Documents`, `Funk.Documents.Pdf`, `Funk.Platform.Storage`, `StackExchange.Redis`. `Funk.Pages` → `Funk.Documents`, `Funk.Collaboration.Contracts` (nur `CollaborationSignals`). Architekturtests: `CollaborationProtocolIsPure`, `OnlyDocumentSessionTouchesYDotNetDoc` (Typen außerhalb `Funk.Collaboration.Sessions` und `Funk.Documents.Yjs` dürfen `YDotNet.Document.Doc` nicht referenzieren).
 
-### 3.2 Host `Plane.Realtime`: Pipeline, Endpunkte, Ports
+### 3.2 Host `Funk.Realtime`: Pipeline, Endpunkte, Ports
 
 **Pipeline-Reihenfolge** (`RealtimeComposition.Build`):
 
 1. `builder.AddServiceDefaults()` (OpenTelemetry, Health, Management-Port 8081, ABG-014).
 2. Data Protection mit gemeinsamem Key-Ring (Anwendungsname `plane`), Cookie-Schema `session-id` mit `PostgresTicketStore` (05 §3.11) – **ohne** OIDC-Handler; `CookieAuthenticationEvents.OnRedirectToLogin` → 403 `{"message":"Forbidden"}` für Upgrades (05 AK-20) bzw. 401 `{"message":"Authentication required"}` für `/live/pdf-export/` (Original-Text), `OnRedirectToAccessDenied` → 403 (keine 302-Weiterleitung). Policy `realtime-session` = Schema `session-id` + `PrincipalKind.User`.
-3. Module aus `Plane.Realtime/ModuleCatalog.cs` (02 §3.1): `AddServices` aller Module, `CollaborationModule`, `RealtimeEventsModule`.
+3. Module aus `Funk.Realtime/ModuleCatalog.cs` (02 §3.1): `AddServices` aller Module, `CollaborationModule`, `RealtimeEventsModule`.
 4. `AddSignalR(o => { o.EnableDetailedErrors = env.IsDevelopment(); o.MaximumReceiveMessageSize = 32 * 1024; })` + JSON-Protokoll mit `JsonNamingPolicy.SnakeCaseLower`; bei konfiguriertem Valkey `.AddStackExchangeRedis(…, o => o.Configuration.ChannelPrefix = RedisChannel.Literal("plane:signalr"))`.
 5. `app.UseForwardedHeaders()` (14 D14-ADR-22), `app.UseResponseCompression()` (nur HTTP-Antworten unter `/live/*`, `CompressionLevel`/`CompressionThresholdBytes`, nicht WebSocket).
 6. `app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = 30 s, KeepAliveTimeout = 30 s })` – PING/PONG-Strategie (.NET ≥ 9, beide Werte positiv; Microsoft Learn „WebSockets support in .NET“): Ping erst nach 30 s **ohne eingehende Daten** des Clients, Abbruch ohne Pong nach weiteren 30 s; Voraussetzung ist ein ständig ausstehendes `ReceiveAsync` (§3.4.1); funktional entspricht das der Hocuspocus-Prüfung (`Connection.check` im 30-s-Takt, Close 4408) und hält den YARP-`ActivityTimeout` von 120 s (G-07) aktiv.
@@ -346,7 +346,7 @@ Auth-Untertypen (`@hocuspocus/common/src/auth.ts`): `Token=0` (Client, `varStrin
 | 2 | `Update` | readonly: `SyncStatus(0)`, nicht anwenden; read-write: `ApplyV1` → Broadcast an alle (inkl. Sender) → danach `SyncStatus(1)` | Broadcast |
 | sonst | – | `ProtocolException` → Dokumentverbindung schließen 4403 `Forbidden` (Hocuspocus: Exception in `MessageReceiver` → `Connection.close({code, reason})`, Default Forbidden) | – |
 
-`snapshotContainsUpdate`-Äquivalent (Review-Korrektur): **nicht** über ein temporäres `Doc` mit Snapshot-Vergleich (yrs integriert Structs mit fehlenden Abhängigkeiten nicht, sie landen als „pending“ – der Snapshot bliebe gleich und das Ergebnis wäre fälschlich `true`; zudem kostet die Kopie O(Dokumentgröße)), sondern 1:1 wie `yjs` `snapshotContainsUpdateV2`: ein schlanker Leser `Plane.Documents.Yjs.YjsUpdateReader` (nur Struct-IDs, -Längen und Delete-Set, Content wird übersprungen) prüft (a) für jeden Struct `sv[client] ≥ clock + length` gegen `Transaction.StateVectorV1()` und (b) dass das Delete-Set des Updates im aktuellen Delete-Set enthalten ist (Delete-Set aus `Transaction.Snapshot()` dekodiert). `YjsUpdateReader` ist dieselbe Komponente, die `YjsUpdateValidator` und `YjsMerge.SnapshotEquals` nutzen; Kosten nur für readonly-Verbindungen.
+`snapshotContainsUpdate`-Äquivalent (Review-Korrektur): **nicht** über ein temporäres `Doc` mit Snapshot-Vergleich (yrs integriert Structs mit fehlenden Abhängigkeiten nicht, sie landen als „pending“ – der Snapshot bliebe gleich und das Ergebnis wäre fälschlich `true`; zudem kostet die Kopie O(Dokumentgröße)), sondern 1:1 wie `yjs` `snapshotContainsUpdateV2`: ein schlanker Leser `Funk.Documents.Yjs.YjsUpdateReader` (nur Struct-IDs, -Längen und Delete-Set, Content wird übersprungen) prüft (a) für jeden Struct `sv[client] ≥ clock + length` gegen `Transaction.StateVectorV1()` und (b) dass das Delete-Set des Updates im aktuellen Delete-Set enthalten ist (Delete-Set aus `Transaction.Snapshot()` dekodiert). `YjsUpdateReader` ist dieselbe Komponente, die `YjsUpdateValidator` und `YjsMerge.SnapshotEquals` nutzen; Kosten nur für readonly-Verbindungen.
 
 **Unbekannter Nachrichtentyp** (Wert > 8 oder nicht zugeordnet): ignorieren und protokollieren (`collab.protocol.unknown_type`), **kein** Schließen (Hocuspocus `MessageReceiver.apply` `default`-Zweig: nur `console.error`).
 
@@ -400,9 +400,9 @@ sequenceDiagram
   participant R as DocumentRegistry
   participant S as DocumentSession (Actor)
   participant T as ProjectPageDocumentType
-  participant P as IPageDocumentStore (Plane.Pages)
+  participant P as IPageDocumentStore (Funk.Pages)
   C->>E: GET /live/collaboration?documentType=project_page&projectId=…&workspaceSlug=… (Cookie, Origin)
-  E->>E: Origin-Allowlist, Cookie-Ticket → PlanePrincipal (sonst 403 vor Upgrade, 05 AK-20)
+  E->>E: Origin-Allowlist, Cookie-Ticket → FunkPrincipal (sonst 403 vor Upgrade, 05 AK-20)
   E-->>C: 101 Switching Protocols
   C->>E: [pageId][Auth][Token]{"id","name","color"}
   C->>E: [pageId][Sync][Step1 sv] , [pageId][Awareness]…  (werden gepuffert)
@@ -472,8 +472,8 @@ stateDiagram-v2
 
 | Schritt | Regel | Fehlerbild | Quelle/Begründung |
 |---|---|---|---|
-| Upgrade | `Origin` vorhanden und in Allowlist (`Plane:Urls:Web/Admin/Space` + `Plane:Realtime:AdditionalAllowedOrigins`) | 403 vor Upgrade | 05 D05-ADR-22, SEC-42 |
-| Upgrade | Cookie `session-id` → Ticket aus `user_sessions`, `revalidated_at` frisch (05 §3.11) | **403** vor Upgrade, Body `{"message":"Forbidden"}` (wie 05 AK-20; Review-Korrektur von 401). Das Cookie-Schema im Realtime-Host setzt `Events.OnRedirectToLogin`/`OnRedirectToAccessDenied` auf reine Statuscodes – sonst antwortet der Cookie-Handler mit 302 auf eine Login-Seite | 05 §3.11, AK-20 |
+| Upgrade | `Origin` vorhanden und in Allowlist (`Funk:Urls:Web/Admin/Space` + `Funk:Realtime:AdditionalAllowedOrigins`) | 403 vor Upgrade | 05 D05-ADR-22, SEC-42 |
+| Upgrade | Cookie `funk-session` → Ticket aus `user_sessions`, `revalidated_at` frisch (05 §3.11) | **403** vor Upgrade, Body `{"message":"Forbidden"}` (wie 05 AK-20; Review-Korrektur von 401). Das Cookie-Schema im Realtime-Host setzt `Events.OnRedirectToLogin`/`OnRedirectToAccessDenied` auf reine Statuscodes – sonst antwortet der Cookie-Handler mit 302 auf eine Login-Seite | 05 §3.11, AK-20 |
 | Upgrade | Query `documentType` vorhanden | ohne → Socket wird angenommen, Auth-Nachricht wird mit `PermissionDenied` beantwortet (Original wirft erst im Laden) | Parität |
 | Auth-Nachricht | Token ist JSON mit `id` (String); `id == principal.UserId` | `PermissionDenied("permission-denied")`; der Server schließt **nicht** zusätzlich (der Provider trennt selbst, §3.3.6; 05 §3.11 nennt hier „Close-Code 4403“ – Hocuspocus sendet keinen, siehe Review-Protokoll) | `LIVE/lib/auth.ts` (`AUTH_USER_MISMATCH`) |
 | Auth-Nachricht | `token.cookie` wird ignoriert; kein Cookie aus Query | – | SEC-41 |
@@ -482,9 +482,9 @@ stateDiagram-v2
 | Scope | `Write` nur mit `project.page.update` (+ `PAGE`) | sonst `readonly` | D07-ADR-05 |
 | Sitzung | Revoke-Nachricht `plane:session:revoked` (Valkey) bzw. Signal `session_revoked` (PostgreSQL, ohne Valkey) → alle Verbindungen der betroffenen Session-ID schließen | Close 4401 | 05 §3.6/§3.11 |
 | Sitzung | Signal `access` für eine Page → alle Verbindungen neu autorisieren | Leserecht weg: `PermissionDenied` + Close 4403; `read-write`→`readonly`: 4205 | D07-ADR-05 |
-| Sitzung | Workspace-/Projektmitgliedschaft entfernt (Event `plane.project_member.removed.v1`, `plane.workspace_member.removed.v1`; Namen nach 06-Event-Katalog) → `Plane.Projects`/`Plane.Workspaces` senden Signal `member_removed` mit `user_id` → Neuprüfung aller Verbindungen dieses Nutzers | `PermissionDenied` + 4403 | Sicherheitskorrektur SEC-RT-03 |
+| Sitzung | Workspace-/Projektmitgliedschaft entfernt (Event `funk.project_member.removed.v1`, `funk.workspace_member.removed.v1`; Namen nach 06-Event-Katalog) → `Funk.Projects`/`Funk.Workspaces` senden Signal `member_removed` mit `user_id` → Neuprüfung aller Verbindungen dieses Nutzers | `PermissionDenied` + 4403 | Sicherheitskorrektur SEC-RT-03 |
 
-`PlanePrincipal` für WebSocket-Verbindungen hat `Kind = User`; `ApiKey`, `App` und `Bot` werden in der CE abgewiesen (`PermissionDenied`) – Andockstelle H1 in §6.
+`FunkPrincipal` für WebSocket-Verbindungen hat `Kind = User`; `ApiKey`, `App` und `Bot` werden in der CE abgewiesen (`PermissionDenied`) – Andockstelle H1 in §6.
 
 ### 3.6 Dokument-Lebenszyklus (Laden, Migration, Sitzung, Speichern, Titel-Sync, Entladen)
 
@@ -547,7 +547,7 @@ ConnectionRemoved and connections == 0:
    5. `merged.Length > MaxDocumentBytes` → `TooLarge`.
    6. `formats = DocumentConverter.FromDocumentState(merged)` → `ContentJson`, `ContentHtml` (danach `HtmlSanitizerProfile.Sanitize`), `TitleText`; `description_stripped = HtmlTextExtractor.Strip(html)`.
    7. Felder setzen: `description_binary`, `description_html`, `description_json`, `description_stripped`, `description_revision = description_revision + 1`, `updated_by_id`, `updated_at`.
-   8. Wenn sich `description_html` geändert hat: `PageVersionRecorder.Track(page, user)` (D07-ADR-22), `PageReferenceIndexer.SyncAsync(page, html)` (D07-ADR-23, synchron) und Integration-Event `PageDescriptionUpdatedV1` (`plane.page.description_updated.v1`, Payload `{page_id, workspace_id, project_ids[], actor_id, revision}`) in die Outbox (D07-ADR-23). **Event-Regel (17 ABG-108 Nr. 4):** Anlegen (`CreatePageCommand`) und Duplizieren (`DuplicatePageCommand`) schreiben `plane.page.created.v1` (kein `description_updated`); jede spätere Inhaltsänderung – Live-Store, REST-PATCH `…/description/` (`SaveFromRestAsync`), `UpdatePageCommand` mit `description_html` – schreibt `plane.page.description_updated.v1`; Consumer, die Inhalt brauchen (Suche, ABG-124), abonnieren beide.
+   8. Wenn sich `description_html` geändert hat: `PageVersionRecorder.Track(page, user)` (D07-ADR-22), `PageReferenceIndexer.SyncAsync(page, html)` (D07-ADR-23, synchron) und Integration-Event `PageDescriptionUpdatedV1` (`funk.page.description_updated.v1`, Payload `{page_id, workspace_id, project_ids[], actor_id, revision}`) in die Outbox (D07-ADR-23). **Event-Regel (17 ABG-108 Nr. 4):** Anlegen (`CreatePageCommand`) und Duplizieren (`DuplicatePageCommand`) schreiben `funk.page.created.v1` (kein `description_updated`); jede spätere Inhaltsänderung – Live-Store, REST-PATCH `…/description/` (`SaveFromRestAsync`), `UpdatePageCommand` mit `description_html` – schreibt `funk.page.description_updated.v1`; Consumer, die Inhalt brauchen (Suche, ABG-124), abonnieren beide.
    9. `SELECT pg_notify('plane_collab', @payload)` mit `{"k":"stored","t":"project_page","d":"<pageId>","r":<revision>,"i":"<instanceId>"}` (wird erst beim Commit zugestellt).
    10. Commit → Ergebnis `Saved(merged, revision)`.
 4. Rückmeldung an den Actor (`StoreCompleted`):
@@ -578,7 +578,7 @@ Bedingung: 0 Verbindungen **und** kein laufender/ausstehender Store. Ablauf: `Ti
 
 | Konstante | Original | Ziel (Option, Default) |
 |---|---|---|
-| Store-Debounce | `debounce: 10000` (`LIVE/hocuspocus.ts`) | `Plane:Realtime:DebounceMilliseconds` = 10 000 |
+| Store-Debounce | `debounce: 10000` (`LIVE/hocuspocus.ts`) | `Funk:Realtime:DebounceMilliseconds` = 10 000 |
 | Store-Max-Debounce | `maxDebounce` Default 10 000 (`@hocuspocus/server` `defaultConfiguration`) | `MaxDebounceMilliseconds` = 10 000 |
 | Sofort-Store bei letzter Trennung | `unloadImmediately: true` | fest |
 | Titel-Debounce | `TitleUpdateManager(…, 5000)` | `TitleDebounceMilliseconds` = 5 000 |
@@ -622,7 +622,7 @@ Kein separates Update-Log (`page_yjs_updates`) in der CE: der Merge-on-Store-Ans
 | `restore` | `restore` | `restored` | `{deleted_page_ids?}` | nein | CE: verworfen |
 | `error` | – | `error` | `{error_message, error_type, error_code?, should_disconnect?}` | – | nur serverseitig erzeugt |
 
-Ablauf: Client-Stateless-String → `StatelessEventMap.TryGetClientName` (unbekannt → ignorieren, wie Original) → `StatelessValidator.ValidateAsync(page, key)` über `IPageDocumentStore.GetStateAsync(pageId)` (liest `is_locked`, `archived_at`, `access`, `deleted_at`; HybridCache 2 s) → bei Erfolg Sitzungsflags aktualisieren (`IsLocked`/`IsArchived`) und `Stateless(clientName)` an **alle** lokalen Verbindungen (inkl. Sender) + Backplane `Stateless`. Bei Fehlschlag: verwerfen, Log `collab.stateless.rejected` (Warnung). Die Plausibilisierung ist abschaltbar (`Plane:Realtime:ValidateStateless`, Default `true`) nur für Paritäts-Replays.
+Ablauf: Client-Stateless-String → `StatelessEventMap.TryGetClientName` (unbekannt → ignorieren, wie Original) → `StatelessValidator.ValidateAsync(page, key)` über `IPageDocumentStore.GetStateAsync(pageId)` (liest `is_locked`, `archived_at`, `access`, `deleted_at`; HybridCache 2 s) → bei Erfolg Sitzungsflags aktualisieren (`IsLocked`/`IsArchived`) und `Stateless(clientName)` an **alle** lokalen Verbindungen (inkl. Sender) + Backplane `Stateless`. Bei Fehlschlag: verwerfen, Log `collab.stateless.rejected` (Warnung). Die Plausibilisierung ist abschaltbar (`Funk:Realtime:ValidateStateless`, Default `true`) nur für Paritäts-Replays.
 
 #### 3.7.2 Server-JSON-Ereignisse (`BroadcastedEvent`)
 
@@ -647,13 +647,13 @@ Erzeuger in der CE: Lade-/Speicherfehler (§3.6), Sperr-/Archiv-Ablehnung (E4-Fi
 
 #### 3.7.3 `ICollaborationDocumentControl` (serverseitige Auslöser aus anderen Modulen)
 
-`Plane.Collaboration.Contracts/Services/ICollaborationDocumentControl` (implementiert nur im Realtime-Host; in Api/Worker als `SignalingCollaborationDocumentControl`, das ein PostgreSQL-Signal sendet):
+`Funk.Collaboration.Contracts/Services/ICollaborationDocumentControl` (implementiert nur im Realtime-Host; in Api/Worker als `SignalingCollaborationDocumentControl`, das ein PostgreSQL-Signal sendet):
 
 | Methode | Wirkung | Nutzer CE | Nutzer später |
 |---|---|---|---|
 | `BroadcastEventAsync(DocumentKey, BroadcastedEvent)` | Stateless-JSON an alle Verbindungen des Dokuments (alle Instanzen) | – | D2 (`moved`, `restored`), D8 |
 | `ForceCloseAsync(DocumentKey, ForceCloseReason, int code)` | §3.8 | CLI `funk-cli realtime force-close` | E7 (God Mode) |
-| `NotifyChangedAsync(DocumentKey, CollaborationChangeKind)` | Signal `content`/`access`/`deleted` | `Plane.Pages` (REST-PATCH, Lock, Access, Archiv, Löschen) | D1/D2/B1 |
+| `NotifyChangedAsync(DocumentKey, CollaborationChangeKind)` | Signal `content`/`access`/`deleted` | `Funk.Pages` (REST-PATCH, Lock, Access, Archiv, Löschen) | D1/D2/B1 |
 
 ### 3.8 Force-Close, Admin-Kanal, Graceful Shutdown
 
@@ -696,11 +696,11 @@ Ohne Valkey gehen Admin-Kommandos über das PostgreSQL-Signal (`{"k":"admin","c"
 
 #### 3.8.3 Speicherdruck (optional)
 
-`Plane:Realtime:MemoryPressureThresholdBytes` (Default 0 = aus). Bei aktivem Grenzwert prüft `CollaborationMemoryWatchdog` alle 10 s `GC.GetGCMemoryInfo().TotalCommittedBytes` + Native-Schätzung (Summe der Zustandsgrößen); Überschreitung → die zuletzt aktive Hälfte der Sitzungen **bleibt**, für die übrigen (älteste Aktivität zuerst) Store + Force-Close `memory_leak`/4002, bis 80 % des Grenzwerts erreicht sind. Metrik `plane.realtime.memory.evictions`.
+`Funk:Realtime:MemoryPressureThresholdBytes` (Default 0 = aus). Bei aktivem Grenzwert prüft `CollaborationMemoryWatchdog` alle 10 s `GC.GetGCMemoryInfo().TotalCommittedBytes` + Native-Schätzung (Summe der Zustandsgrößen); Überschreitung → die zuletzt aktive Hälfte der Sitzungen **bleibt**, für die übrigen (älteste Aktivität zuerst) Store + Force-Close `memory_leak`/4002, bis 80 % des Grenzwerts erreicht sind. Metrik `plane.realtime.memory.evictions`.
 
 #### 3.8.4 Betriebsbefehle (`funk-cli`, I7)
 
-Befehlsname nach 17 ABG-149 `funk-cli` (Projekt `src/tools/Plane.Cli` bleibt).
+Befehlsname nach 17 ABG-149 `funk-cli` (Projekt `src/tools/Funk.Cli` bleibt).
 
 | Befehl | Wirkung |
 |---|---|
@@ -747,7 +747,7 @@ Die CE zeigt keine fremden Cursor (`EDITOR_FLAGS` deaktiviert `collaboration-cur
 | `plane:collab:admin` | Valkey Pub/Sub (JSON UTF-8) | Admin-Kommandos (§3.8.2) | alle Realtime-Instanzen |
 | `plane:session:revoked` | Valkey Pub/Sub | Session-Widerruf (05) | alle Hosts |
 | `plane_collab` | PostgreSQL `LISTEN/NOTIFY` (JSON ≤ 512 Byte) | Signale `stored`, `content`, `access`, `deleted`, `member_removed`, `session_revoked` (nur ohne Valkey), `admin` (nur ohne Valkey) | alle Realtime-Instanzen (`CollaborationSignalListener`) |
-| Queue `live` (`jobs`-Tabelle, Weckruf `NOTIFY plane_jobs`) | PostgreSQL (06) | Job `realtime.push` (Live-Events, §3.16.4) – **kein** eigener NOTIFY-Kanal (`plane_live_events` entfällt, 17 ABG-106) | JobRunner jeder Realtime-Replika bzw. `Plane.AllInOne`; der Worker schließt `live` aus (`ExcludeQueues = ["live"]`) |
+| Queue `live` (`jobs`-Tabelle, Weckruf `NOTIFY plane_jobs`) | PostgreSQL (06) | Job `realtime.push` (Live-Events, §3.16.4) – **kein** eigener NOTIFY-Kanal (`plane_live_events` entfällt, 17 ABG-106) | JobRunner jeder Realtime-Replika bzw. `Funk.AllInOne`; der Worker schließt `live` aus (`ExcludeQueues = ["live"]`) |
 | Queue `realtime` (`jobs`-Tabelle) | PostgreSQL (06) | `RealtimeFanOutConsumer` (Consumer `realtime.fanout`) | JobRunner des Workers (17 ABG-106) |
 | `plane:signalr*` | Valkey (SignalR-Backplane) | Hub-Nachrichten ab 2 Replikas | alle Realtime-Replikas |
 
@@ -794,11 +794,11 @@ Eigene dedizierte `NpgsqlConnection` (nicht aus dem Pool), `LISTEN plane_collab`
 | `session_revoked` | `{k,s}` | Verbindungen der Session `s` schließen 4401 (nur wenn kein Valkey konfiguriert, sonst Valkey-Kanal aus 05) |
 | `admin` | `{k,c}` | wie Admin-Kanal |
 
-Sender: `Plane.Pages` (über `IDbNotificationPublisher.NotifyAsync(CollaborationSignals.Channel, payload)` in der laufenden Transaktion), `Plane.Projects`/`Plane.Workspaces` (`member_removed`), `Plane.Identity` (`session_revoked`), `funk-cli` (`admin`; Projekt `Plane.Cli`). `IDbNotificationPublisher`/`IDbNotificationListener` liegen in `Plane.BuildingBlocks.Persistence` (Änderungsauftrag an 02, §9.2).
+Sender: `Funk.Pages` (über `IDbNotificationPublisher.NotifyAsync(CollaborationSignals.Channel, payload)` in der laufenden Transaktion), `Funk.Projects`/`Funk.Workspaces` (`member_removed`), `Funk.Identity` (`session_revoked`), `funk-cli` (`admin`; Projekt `Funk.Cli`). `IDbNotificationPublisher`/`IDbNotificationListener` liegen in `Funk.BuildingBlocks.Persistence` (Änderungsauftrag an 02, §9.2).
 
 #### 3.10.5 Betrieb mit einer Replika ohne Valkey
 
-`Plane:Realtime:Backplane` = `Auto` (Default): Valkey, wenn `ConnectionStrings:valkey` gesetzt, sonst `InMemory`. Mit `Plane:Scale:ExpectMultipleInstances=true` und ohne Valkey meldet `/health/ready` `Unhealthy` (14 D14-ADR-21). AIO (`Plane.AllInOne`) nutzt `InMemory` und dieselben PostgreSQL-Signale (Api und Realtime im selben Prozess, Signale trotzdem über PostgreSQL – ein Codepfad).
+`Funk:Realtime:Backplane` = `Auto` (Default): Valkey, wenn `ConnectionStrings:valkey` gesetzt, sonst `InMemory`. Mit `Funk:Scale:ExpectMultipleInstances=true` und ohne Valkey meldet `/health/ready` `Unhealthy` (14 D14-ADR-21). AIO (`Funk.AllInOne`) nutzt `InMemory` und dieselben PostgreSQL-Signale (Api und Realtime im selben Prozess, Signale trotzdem über PostgreSQL – ein Codepfad).
 
 #### 3.10.6 Kapazität (beantwortet `14` §9 „Speicherbedarf je Dokument“)
 
@@ -806,12 +806,12 @@ Sender: `Plane.Pages` (über `IDbNotificationPublisher.NotifyAsync(Collaboration
 |---|---|
 | Speicher je geladenem Dokument | ≈ 3 × Zustandsgröße (yrs-Blockstruktur) + 8 KiB je Verbindung (Puffer) + Awareness; typische Page 20 KB → ≈ 80 KB |
 | Dokumente je Replika (1 GiB Limit) | ≥ 5 000 typische Pages oder ≥ 30 Dokumente à 10 MiB |
-| Verbindungen je Replika | ≥ 5 000 (Kestrel `MaxConcurrentUpgradedConnections` = `Plane:Realtime:MaxConnections`, Default 10 000) |
+| Verbindungen je Replika | ≥ 5 000 (Kestrel `MaxConcurrentUpgradedConnections` = `Funk:Realtime:MaxConnections`, Default 10 000) |
 | Store-Kosten | Merge + Konvertierung p95 < 50 ms für 1 MiB-Zustand |
 
 ### 3.11 REST-Pfade der Pages mit Realtime-Bezug (Fallback, Versionen, Duplizieren)
 
-Die Endpunkte gehören dem Modul `Plane.Pages` (Katalog in `04`); dieses Dokument legt ihr Dokumentverhalten fest.
+Die Endpunkte gehören dem Modul `Funk.Pages` (Katalog in `04`); dieses Dokument legt ihr Dokumentverhalten fest.
 
 | Endpunkt (Original) | Verhalten im Ziel | Abweichung | CE-ID |
 |---|---|---|---|
@@ -819,13 +819,13 @@ Die Endpunkte gehören dem Modul `Plane.Pages` (Katalog in `04`); dieses Dokumen
 | `PATCH {P}/pages/{page_id}/description/` | Validierung wie Original (`PageBinaryUpdateSerializer`: Base64, `BinaryContentValidator` + `YjsUpdateValidator`, HTML-Sanitizing nur als Prüfung); Sperre/Archiv → 400 `{"error_code":4701,"error_message":"PAGE_LOCKED"}` bzw. `4702 PAGE_ARCHIVED`; danach **Merge-on-Store** mit dem gesendeten Binary (§3.6.4 Schritte 3.1–3.10, Signal `content` statt `stored`); Antwort 200 `{"message":"Updated successfully"}` | DEV-07-02: HTML/JSON werden aus dem gemergten Zustand abgeleitet, nicht aus dem Request übernommen | CE-RT-003 |
 | `GET {P}/pages/{page_id}/versions/`, `…/versions/{pk}/` | unverändert (04); Versionen existieren jetzt (D07-ADR-22) | DEV-07-03 | CE-PAGE-019 |
 | Version wiederherstellen (Client ersetzt Editorinhalt durch Versions-HTML) | rein clientseitig wie Original (`editorRef.setEditorValue` → Yjs-Updates über die Verbindung) | – | CE-PAGE-019 |
-| `POST {P}/pages/{page_id}/duplicate/` | D07-ADR-24: neue Page mit `name = "{name} (Copy)"`, `description_binary` sofort gesetzt (umgeschriebene Asset-IDs), `description_html/json/stripped` abgeleitet; neue `FileAsset`-Zeilen (`is_uploaded = false`) + Job `pages.copy_duplicated_assets` (`CopyDuplicatedAssetsJob`, Queue `default`, 06; 17 ABG-108) kopiert **nur noch** die Objekte (`IObjectStorage.CopyAsync`, Quell-Assets aus Workspace **und** Projekt der Quell-Page, `DEV-OPS-006`) und setzt `is_uploaded = true` – das Umschreiben von `src` und die Neuberechnung von `description_json`/`description_binary` geschieht synchron im `DuplicatePageCommand` (06 angeglichen, 17 ABG-108); PageLog synchron über `PageReferenceIndexer`; Event `plane.page.created.v1` | DEV-07-04 (synchron, Variante `document` statt `rich`, E2) | CE-PAGE-009 |
-| `POST {P}/pages/` (Anlegen) | `CreatePageCommand` (Katalog `04`): enthält der Request `description_html`, gleicht `PageReferenceIndexer` `page_logs` synchron in derselben Transaktion ab (Original `PageViewSet.create` → `page_transaction.delay`); Event `plane.page.created.v1`; `description_binary` bleibt leer → HTML→Binary-Migration beim ersten Laden (§3.6.2) (17 ABG-108) | – (synchron statt Task) | CE-PAGE-012 |
-| `PATCH {P}/pages/{page_id}/` mit `description_html` | `UpdatePageCommand`: PageLog synchron über `PageReferenceIndexer` (Original `PageViewSet.partial_update` → `page_transaction.delay`), Event `plane.page.description_updated.v1` (17 ABG-108) | – (synchron statt Task) | CE-PAGE-012 |
+| `POST {P}/pages/{page_id}/duplicate/` | D07-ADR-24: neue Page mit `name = "{name} (Copy)"`, `description_binary` sofort gesetzt (umgeschriebene Asset-IDs), `description_html/json/stripped` abgeleitet; neue `FileAsset`-Zeilen (`is_uploaded = false`) + Job `pages.copy_duplicated_assets` (`CopyDuplicatedAssetsJob`, Queue `default`, 06; 17 ABG-108) kopiert **nur noch** die Objekte (`IObjectStorage.CopyAsync`, Quell-Assets aus Workspace **und** Projekt der Quell-Page, `DEV-OPS-006`) und setzt `is_uploaded = true` – das Umschreiben von `src` und die Neuberechnung von `description_json`/`description_binary` geschieht synchron im `DuplicatePageCommand` (06 angeglichen, 17 ABG-108); PageLog synchron über `PageReferenceIndexer`; Event `funk.page.created.v1` | DEV-07-04 (synchron, Variante `document` statt `rich`, E2) | CE-PAGE-009 |
+| `POST {P}/pages/` (Anlegen) | `CreatePageCommand` (Katalog `04`): enthält der Request `description_html`, gleicht `PageReferenceIndexer` `page_logs` synchron in derselben Transaktion ab (Original `PageViewSet.create` → `page_transaction.delay`); Event `funk.page.created.v1`; `description_binary` bleibt leer → HTML→Binary-Migration beim ersten Laden (§3.6.2) (17 ABG-108) | – (synchron statt Task) | CE-PAGE-012 |
+| `PATCH {P}/pages/{page_id}/` mit `description_html` | `UpdatePageCommand`: PageLog synchron über `PageReferenceIndexer` (Original `PageViewSet.partial_update` → `page_transaction.delay`), Event `funk.page.description_updated.v1` (17 ABG-108) | – (synchron statt Task) | CE-PAGE-012 |
 | `PATCH {P}/pages/{page_id}/` (`name`) | unverändert; zusätzlich Signal `content` nicht nötig (Titel-Fragment ist führend; REST-Umbenennung außerhalb des Editors ändert das Fragment nicht – Original-Verhalten, CE-Client benennt nur über den Titel-Editor um) | – | CE-PAGE-004 |
 | `POST/DELETE {P}/pages/{page_id}/lock/`, `…/archive/`, `…/access/`, `DELETE …/pages/{page_id}/` | unverändert (04); zusätzlich Signal `access` bzw. `deleted` (§3.10.4) im selben Commit | Ergänzung | CE-PAGE-005 … -008 |
 
-### 3.12 `Plane.Documents`: Schema, PM-JSON, HTML, Yjs
+### 3.12 `Funk.Documents`: Schema, PM-JSON, HTML, Yjs
 
 #### 3.12.1 Öffentliche Schnittstelle
 
@@ -883,7 +883,7 @@ public sealed record AttributeSpec(string Name, JsonNode? Default, bool Rendered
 public enum AttributeKind { Any, String, Number, Boolean, NumberArray }   // steuert AttributeCoercion (§3.12.6)
 ```
 
-Regeln, die 1:1 aus `@tiptap/core` 2.27.3 portiert werden (Quelldatei im Original-`node_modules`, Port-Datei in `Plane.Documents`):
+Regeln, die 1:1 aus `@tiptap/core` 2.27.3 portiert werden (Quelldatei im Original-`node_modules`, Port-Datei in `Funk.Documents`):
 
 | Original (`@tiptap/core/src/…`) | Port | Inhalt |
 |---|---|---|
@@ -982,9 +982,9 @@ Server-Schema = `CoreEditorExtensionsWithoutProps` (Varianten `Rich` und `Docume
 | `code` (`CodeInlineMarkSpec`) | – | `code` | `<code class="rounded-sm bg-layer-3 px-[6px] py-[1.5px] font-code font-medium text-(--extended-color-orange-600) border-[0.5px] border-subtle" spellcheck="false">` | `excludes: "_"` | `code-inline/index.tsx` |
 | `customColor` (`CustomColorMarkSpec`) | `color` (null; parse `data-text-color`), `backgroundColor` (null; parse `data-background-color`) | `span` (matcht **jedes** `span`, E16) | `<span data-text-color="gray">`; Nicht-Listenwert zusätzlich `style="color: …"`; Hintergrund analog `data-background-color`/`style="background-color: …"` | Liste = `COLORS_LIST`-Keys | `custom-color.ts` |
 
-Die exakte Rangfolge (und damit z. B. `<a><strong>` vs. `<strong><a>`) wird aus dem G-SCHEMA-Snapshot (`tests/Plane.Documents.Tests/Golden/schema/rich.schema.json` bzw. `document.schema.json`, Feld `marks` in Reihenfolge; Namen wie `10` §3.2.3) generiert; die Tabelle oben ist nicht maßgeblich für die Reihenfolge.
+Die exakte Rangfolge (und damit z. B. `<a><strong>` vs. `<strong><a>`) wird aus dem G-SCHEMA-Snapshot (`tests/Funk.Documents.Tests/Golden/schema/rich.schema.json` bzw. `document.schema.json`, Feld `marks` in Reihenfolge; Namen wie `10` §3.2.3) generiert; die Tabelle oben ist nicht maßgeblich für die Reihenfolge.
 
-#### 3.13.3 Konstanten, die in `Plane.Documents` gespiegelt werden
+#### 3.13.3 Konstanten, die in `Funk.Documents` gespiegelt werden
 
 | Konstante | Original | Ziel |
 |---|---|---|
@@ -992,7 +992,7 @@ Die exakte Rangfolge (und damit z. B. `<a><strong>` vs. `<strong><a>`) wird aus 
 | `COLORS_LIST` (8 Keys) | `EDITOR/constants/common.ts` | `Schema/EditorColors.cs` (für `customColor`-Listenprüfung, PDF-Farbauflösung) |
 | `DEFAULT_CALLOUT_BLOCK_ATTRIBUTES`, `ECalloutAttributeNames` | `EDITOR/extensions/callout/utils.ts`, `types.ts` | `Schema/Nodes/CalloutDefaults.cs` |
 | `EMentionComponentAttributeNames` | `EDITOR/extensions/mentions/types.ts` | `Schema/Nodes/MentionAttributeNames.cs` |
-| `DocumentCollaborativeEvents` | `EDITOR/constants/document-collaborative-events.ts` | `Plane.Collaboration/Stateless/StatelessEventMap.cs` |
+| `DocumentCollaborativeEvents` | `EDITOR/constants/document-collaborative-events.ts` | `Funk.Collaboration/Stateless/StatelessEventMap.cs` |
 
 ### 3.14 Markdown
 
@@ -1004,7 +1004,7 @@ Die exakte Rangfolge (und damit z. B. `<a><strong>` vs. `<strong><a>`) wird aus 
 
 Golden-Korpus `G-MD` (neu, 60 Fälle): `tools/golden/generate.mjs markdown` erzeugt aus G-DOC-HTML mit dem Original-`convertHTMLToMarkdown` die erwartete Ausgabe; `HtmlToMarkdownConverter` muss byte-gleich sein (Zeilenenden `\n`).
 
-### 3.15 PDF-Export (`Plane.Documents.Pdf`, zwei Stilprofile)
+### 3.15 PDF-Export (`Funk.Documents.Pdf`, zwei Stilprofile)
 
 #### 3.15.1 Endpunktvertrag `POST /live/pdf-export/`
 
@@ -1033,7 +1033,7 @@ Ablauf (`PdfExportEndpoint` → `PdfExportService`):
 6. Rendern mit Timeout 15 000 ms (`PdfRenderTimeout`) → 504 `{"message":"PDF generation timed out"}`.
 7. Antwort: `Content-Type: application/pdf`, `Content-Disposition: attachment; filename="<bereinigt>"; filename*=UTF-8''<encodeURIComponent(fileName)>`, `Content-Length`. Bereinigung 1:1 `pdf-export.controller.ts`: Anführungszeichen, Backslash, CR und LF entfernen, danach jedes Zeichen außerhalb `0x20–0x7E` durch `_` ersetzen; `filename*` kodiert wie JavaScript `encodeURIComponent` (unreservierte Zeichen `A–Z a–z 0–9 - _ . ! ~ * ' ( )` bleiben, also **nicht** `Uri.EscapeDataString`, das `!*'()` kodiert).
 
-**PDF-Metadaten (ADR-009B, 17 ABG-148, `BRAND-DOC-01`):** `Title` = `title` (Default Titeltext), `Author` = Request-Feld `author` (Default leer; sendet der Client einen Benutzernamen, wird dieser übernommen), `Subject` = `subject`, `Creator` und `Producer` = „funk.“ aus `Brand.ProductName` (`Plane.BuildingBlocks/Branding/Brand.cs`, BR-03) – ersetzt die Bibliotheks-Defaults (Original `@react-pdf/renderer`: „react-pdf“; PDFsharp: „PDFsharp …“). Beide Profile; einen sichtbaren Kopf-/Fußbereich mit Produktnamen gibt es wie im Original nicht. Die G-PDF-Referenzen werden nach BR-13 mit ersetztem Branding verglichen; Gate G-BRAND (15) prüft die Metadaten der G-PDF-Ausgaben auf Restvorkommen „Plane“.
+**PDF-Metadaten (ADR-009B, 17 ABG-148, `BRAND-DOC-01`):** `Title` = `title` (Default Titeltext), `Author` = Request-Feld `author` (Default leer; sendet der Client einen Benutzernamen, wird dieser übernommen), `Subject` = `subject`, `Creator` und `Producer` = „funk.“ aus `Brand.ProductName` (`Funk.BuildingBlocks/Branding/Brand.cs`, BR-03) – ersetzt die Bibliotheks-Defaults (Original `@react-pdf/renderer`: „react-pdf“; PDFsharp: „PDFsharp …“). Beide Profile; einen sichtbaren Kopf-/Fußbereich mit Produktnamen gibt es wie im Original nicht. Die G-PDF-Referenzen werden nach BR-13 mit ersetztem Branding verglichen; Gate G-BRAND (15) prüft die Metadaten der G-PDF-Ausgaben auf Restvorkommen „Plane“.
 
 Fehler → HTTP 1:1 Original: Validierung 400, Authentisierung 401, Inhalt nicht gefunden 404 (sonst Abruffehler 502), Timeout 504, Rendering 500 `{"message":"Failed to generate PDF"}`, Metadaten-/Bildfehler 502; neu: Autorisierung 403, Zustand > `MaxDocumentBytes` 413.
 
@@ -1041,7 +1041,7 @@ Retry-Semantik (Port `LIVE/services/pdf-export/effect-utils.ts`, 11 Original-Fä
 
 #### 3.15.2 Gemeinsamer Renderer
 
-`PdfDocumentBuilder` (MigraDoc) traversiert das PM-JSON mit `INodeRenderer` je Node-Typ und `MarkRenderer` für Text-Runs. Unbekannte Nodes → Kinder rendern (Original „unbekannt → View mit Kindern“). Schriften über `PlaneFontResolver` (PDFsharp `IFontResolver`, nur gebündelte Dateien, keine Systemschriften; PDFsharp 6.2 verlangt im Core-Build für **jede** Schrift – auch für die Familie „Courier“ – einen Resolver mit Font-Datei, die PDF-Basisschriften werden nicht ohne Datei unterstützt): Familie `Inter` (TTF aus `WEB/app/assets/fonts/inter/`), Familie `Courier`/`Courier-Bold` → gebündelte **Liberation Mono** Regular/Bold (OFL-1.1, metrisch kompatibel zu Courier New: gleiche Zeichenbreite 600/1000 em, damit Umbrüche denen der Original-PDF-Basisschrift Courier entsprechen; Review-Ergänzung), `Noto Emoji` (monochrom, OFL-1.1) für Emoji-Codepoints. MigraDoc hat **keinen** automatischen Glyphen-Fallback: `PdfTextRunSplitter` teilt jeden Text-Run nach Codepoints (Unicode-Eigenschaft `Extended_Pictographic`, Regional Indicators, Keycaps, ZWJ-Folgen und VS16 zusammenhängend) und setzt für Emoji-Segmente die Familie `Noto Emoji`; Zeichen außerhalb der BMP (Surrogatpaare) müssen von PDFsharp 6.2.4 korrekt gemessen/eingebettet werden – Prüfpunkt S3-K6. Seitenformate: A4, A3, A2, LETTER, LEGAL, TABLOID mit `pageOrientation`.
+`PdfDocumentBuilder` (MigraDoc) traversiert das PM-JSON mit `INodeRenderer` je Node-Typ und `MarkRenderer` für Text-Runs. Unbekannte Nodes → Kinder rendern (Original „unbekannt → View mit Kindern“). Schriften über `FunkFontResolver` (PDFsharp `IFontResolver`, nur gebündelte Dateien, keine Systemschriften; PDFsharp 6.2 verlangt im Core-Build für **jede** Schrift – auch für die Familie „Courier“ – einen Resolver mit Font-Datei, die PDF-Basisschriften werden nicht ohne Datei unterstützt): Familie `Inter` (TTF aus `WEB/app/assets/fonts/inter/`), Familie `Courier`/`Courier-Bold` → gebündelte **Liberation Mono** Regular/Bold (OFL-1.1, metrisch kompatibel zu Courier New: gleiche Zeichenbreite 600/1000 em, damit Umbrüche denen der Original-PDF-Basisschrift Courier entsprechen; Review-Ergänzung), `Noto Emoji` (monochrom, OFL-1.1) für Emoji-Codepoints. MigraDoc hat **keinen** automatischen Glyphen-Fallback: `PdfTextRunSplitter` teilt jeden Text-Run nach Codepoints (Unicode-Eigenschaft `Extended_Pictographic`, Regional Indicators, Keycaps, ZWJ-Folgen und VS16 zusammenhängend) und setzt für Emoji-Segmente die Familie `Noto Emoji`; Zeichen außerhalb der BMP (Surrogatpaare) müssen von PDFsharp 6.2.4 korrekt gemessen/eingebettet werden – Prüfpunkt S3-K6. Seitenformate: A4, A3, A2, LETTER, LEGAL, TABLOID mit `pageOrientation`.
 
 #### 3.15.3 Profil `live` (Optik `LIVE/lib/pdf/*`)
 
@@ -1123,20 +1123,20 @@ Schema `<objekt>.<ereignis>` (16 X10), Nutzlast = schlankes Objekt mit IDs und g
 
 #### 3.16.3 Erzeugung
 
-`RealtimeFanOutConsumer` (Modul `Plane.RealtimeEvents`, Consumer `realtime.fanout`, `IEventConsumer<T>` generisch für alle in `06` katalogisierten Integration-Events über `RealtimeFanOutMap` – kein eigener Consumer je Objekt wie `LabelRealtimeConsumer`; **Queue `realtime`, ausgeführt vom JobRunner im Worker**, 06 D06-ADR-12, 17 ABG-106) → `IRealtimePublisher.PublishAsync(group, eventName, payload)` (im Worker `QueuedRealtimePublisher` → Job `realtime.push` auf Queue `live`). Weitere Aufrufer in Api/Worker (z. B. latenzkritische Hinweise per `IPostCommitAction`) nutzen denselben `QueuedRealtimePublisher`; einen zweiten Zustellweg gibt es nicht. Veraltete Pushes (`OccurredAt` > 60 s) werden verworfen (06 §3.12).
+`RealtimeFanOutConsumer` (Modul `Funk.RealtimeEvents`, Consumer `realtime.fanout`, `IEventConsumer<T>` generisch für alle in `06` katalogisierten Integration-Events über `RealtimeFanOutMap` – kein eigener Consumer je Objekt wie `LabelRealtimeConsumer`; **Queue `realtime`, ausgeführt vom JobRunner im Worker**, 06 D06-ADR-12, 17 ABG-106) → `IRealtimePublisher.PublishAsync(group, eventName, payload)` (im Worker `QueuedRealtimePublisher` → Job `realtime.push` auf Queue `live`). Weitere Aufrufer in Api/Worker (z. B. latenzkritische Hinweise per `IPostCommitAction`) nutzen denselben `QueuedRealtimePublisher`; einen zweiten Zustellweg gibt es nicht. Veraltete Pushes (`OccurredAt` > 60 s) werden verworfen (06 §3.12).
 
 #### 3.16.4 Publisher-Pfade (D07-ADR-27, verbindlich nach 17 ABG-106)
 
 | Host | Implementierung `IRealtimePublisher` | Weg |
 |---|---|---|
-| `Plane.Realtime`, `Plane.AllInOne` | `HubRealtimePublisher` | `RealtimePushJobHandler` (Queue `live`) → `IHubContext<LiveEventsHub>.Clients.Group(group).SendAsync("event", dto)`; ab 2 Replikas über die Valkey-Backplane (`AddStackExchangeRedis`, Kanalpräfix `plane:signalr`) an alle Replikas; jede Replika verarbeitet die Queue `live` (Host-Default `Plane:Worker:Queues = ["live"]`, AllInOne `["*"]`) |
-| `Plane.Api`, `Plane.Worker` | `QueuedRealtimePublisher` | Job `realtime.push` (Nutzlast `{group, event, payload, occurred_at}`) transaktional auf Queue `live` (`PlaneQueues.Live`); Weckruf `pg_notify('plane_jobs', 'live')` (06) → JobRunner im Realtime-Host → `HubRealtimePublisher`. Der Worker verarbeitet `realtime` (`RealtimeFanOutConsumer`) und schließt `live` aus (`ExcludeQueues = ["live"]`) |
+| `Funk.Realtime`, `Funk.AllInOne` | `HubRealtimePublisher` | `RealtimePushJobHandler` (Queue `live`) → `IHubContext<LiveEventsHub>.Clients.Group(group).SendAsync("event", dto)`; ab 2 Replikas über die Valkey-Backplane (`AddStackExchangeRedis`, Kanalpräfix `plane:signalr`) an alle Replikas; jede Replika verarbeitet die Queue `live` (Host-Default `Funk:Worker:Queues = ["live"]`, AllInOne `["*"]`) |
+| `Funk.Api`, `Funk.Worker` | `QueuedRealtimePublisher` | Job `realtime.push` (Nutzlast `{group, event, payload, occurred_at}`) transaktional auf Queue `live` (`FunkQueues.Live`); Weckruf `pg_notify('plane_jobs', 'live')` (06) → JobRunner im Realtime-Host → `HubRealtimePublisher`. Der Worker verarbeitet `realtime` (`RealtimeFanOutConsumer`) und schließt `live` aus (`ExcludeQueues = ["live"]`) |
 
-Kein Host außer `Plane.Realtime` (und `Plane.AllInOne`) registriert SignalR; ohne Valkey (eine Replika) ist der Weg identisch. **Entfallen** (17 ABG-106): `HubContextRealtimePublisher`, `NotifyRealtimePublisher`, `LiveEventsNotifyListener`, Kanal `plane_live_events`. Latenz mit zwei Job-Hops (`realtime` im Worker → `live` im Realtime-Host) < 2 s, Messung in Spike S12 (17 Z-104). Nutzlast > 7 KiB → `{"id": …, "truncated": true}` (§3.16.2). Zustellung ist „höchstens einmal“ (Job-Erfolg = an den Hub übergeben); Clients laden bei Reconnect den betroffenen Zustand (Store-Revalidierung, 08).
+Kein Host außer `Funk.Realtime` (und `Funk.AllInOne`) registriert SignalR; ohne Valkey (eine Replika) ist der Weg identisch. **Entfallen** (17 ABG-106): `HubContextRealtimePublisher`, `NotifyRealtimePublisher`, `LiveEventsNotifyListener`, Kanal `plane_live_events`. Latenz mit zwei Job-Hops (`realtime` im Worker → `live` im Realtime-Host) < 2 s, Messung in Spike S12 (17 Z-104). Nutzlast > 7 KiB → `{"id": …, "truncated": true}` (§3.16.2). Zustellung ist „höchstens einmal“ (Job-Erfolg = an den Hub übergeben); Clients laden bei Reconnect den betroffenen Zustand (Store-Revalidierung, 08).
 
 ### 3.17 Konfiguration
 
-`PlaneRealtimeOptions` (`Plane:Realtime`, Eigentümer der Klasse: 02 §3.15; Erweiterung dieses Dokuments, Änderungsauftrag §9.2):
+`FunkRealtimeOptions` (`Funk:Realtime`, Eigentümer der Klasse: 02 §3.15; Erweiterung dieses Dokuments, Änderungsauftrag §9.2):
 
 | Schlüssel | Typ | Default | ENV-Alias (Original) | Bedeutung |
 |---|---|---|---|---|
@@ -1163,13 +1163,13 @@ Kein Host außer `Plane.Realtime` (und `Plane.AllInOne`) registriert SignalR; oh
 | `InternalSecret` | string? | – | `LIVE_SERVER_SECRET_KEY` | ungenutzt (02/14) |
 | `CompressionLevel` / `CompressionThresholdBytes` | int | 6 / 5 000 | `COMPRESSION_LEVEL` / `COMPRESSION_THRESHOLD` | HTTP-Kompression `/live/*` |
 
-`PlanePdfExportOptions` (`Plane:PdfExport`, neu): `ContentFetchTimeoutMilliseconds` 7 000, `ContentFetchRetries` 3, `ImageTimeoutMilliseconds` 8 000, `ImageRetries` 1, `ImageConcurrency` 4, `RenderTimeoutMilliseconds` 15 000, `ImageMaxDimension` 1 200, `JpegQuality` 85, `MaxImagesPerDocument` 500.
+`FunkPdfExportOptions` (`Funk:PdfExport`, neu): `ContentFetchTimeoutMilliseconds` 7 000, `ContentFetchRetries` 3, `ImageTimeoutMilliseconds` 8 000, `ImageRetries` 1, `ImageConcurrency` 4, `RenderTimeoutMilliseconds` 15 000, `ImageMaxDimension` 1 200, `JpegQuality` 85, `MaxImagesPerDocument` 500.
 
-Versionsaufbewahrung: `PlaneRetentionOptions.PageVersionsKeep` (`Plane:Retention:PageVersionsKeep`, Default 20, Eigentümer `02` §3.15); Merge-Fenster 600 s ist Konstante (Review-Korrektur, keine eigene Instanz-Einstellung).
+Versionsaufbewahrung: `FunkRetentionOptions.PageVersionsKeep` (`Funk:Retention:PageVersionsKeep`, Default 20, Eigentümer `02` §3.15); Merge-Fenster 600 s ist Konstante (Review-Korrektur, keine eigene Instanz-Einstellung).
 
 ### 3.18 Observability
 
-Logging-Kategorie `plane.realtime` (01 §7.16), Meter `Plane.Realtime`, ActivitySource `Plane.Realtime`:
+Logging-Kategorie `plane.realtime` (01 §7.16), Meter `Funk.Realtime`, ActivitySource `Funk.Realtime`:
 
 | Metrik | Typ | Tags |
 |---|---|---|
@@ -1251,37 +1251,37 @@ Spalte „Art“: **1:1** = Verhalten unverändert portiert, **angepasst** = mit
 
 | Original (`apps/live/…`) | Ziel (`funk./…`) | Art | CE-ID | ab |
 |---|---|---|---|---|
-| `src/start.ts` | `src/hosts/Plane.Realtime/Program.cs` + `CollaborationShutdownService` (SIGTERM → Graceful Shutdown §3.8.5) | ersetzt | CE-RT-001 | I0 |
-| `src/server.ts` | `src/hosts/Plane.Hosting/Realtime/RealtimeComposition.cs` (Pipeline §3.2, 404-Fallback, Kompression) | ersetzt | CE-RT-001 | I0 |
-| `src/env.ts` | `PlaneRealtimeOptions`, `PlaneUrlsOptions` mit `ValidateOnStart` (02 §3.15) | ersetzt | – | I0 |
-| `src/hocuspocus.ts` (`HocusPocusServerManager`, `debounce: 10000`, `name`) | `Plane.Collaboration/Sessions/DocumentRegistry.cs`, `StoreScheduler.cs`, `PlaneRealtimeOptions.InstanceName` | ersetzt | CE-RT-001 | I4 |
+| `src/start.ts` | `src/hosts/Funk.Realtime/Program.cs` + `CollaborationShutdownService` (SIGTERM → Graceful Shutdown §3.8.5) | ersetzt | CE-RT-001 | I0 |
+| `src/server.ts` | `src/hosts/Funk.Hosting/Realtime/RealtimeComposition.cs` (Pipeline §3.2, 404-Fallback, Kompression) | ersetzt | CE-RT-001 | I0 |
+| `src/env.ts` | `FunkRealtimeOptions`, `FunkUrlsOptions` mit `ValidateOnStart` (02 §3.15) | ersetzt | – | I0 |
+| `src/hocuspocus.ts` (`HocusPocusServerManager`, `debounce: 10000`, `name`) | `Funk.Collaboration/Sessions/DocumentRegistry.cs`, `StoreScheduler.cs`, `FunkRealtimeOptions.InstanceName` | ersetzt | CE-RT-001 | I4 |
 | `src/redis.ts` (`RedisManager`) | Aspire-Client-Integration `Aspire.StackExchange.Redis` (`IConnectionMultiplexer`), optional | ersetzt | CE-RT-007 | I4 |
 | `src/controllers/index.ts` | Endpunkt-Registrierung in `CollaborationModule.MapEndpoints` | ersetzt | – | I4 |
-| `src/controllers/collaboration.controller.ts` | `Plane.Collaboration/Transport/CollaborationEndpoint.cs`, `ClientSocket.cs` | ersetzt | CE-RT-001 | I4 |
-| `src/controllers/document.controller.ts` (`/convert-document/`) | `Plane.Collaboration/Http/ConvertDocumentEndpoint.cs` (nur Management-Port) | angepasst (SEC-39, E2) | CE-RT-008 | I4 |
-| `src/controllers/health.controller.ts` | `Plane.Hosting/Realtime/RealtimeHealthEndpoint.cs` | 1:1 | CE-RT-009 | I0 |
-| `src/controllers/pdf-export.controller.ts` | `Plane.Collaboration/Http/PdfExportEndpoint.cs` | angepasst (Autorisierung, `profile`) | CE-PAGE-011 | I4 |
+| `src/controllers/collaboration.controller.ts` | `Funk.Collaboration/Transport/CollaborationEndpoint.cs`, `ClientSocket.cs` | ersetzt | CE-RT-001 | I4 |
+| `src/controllers/document.controller.ts` (`/convert-document/`) | `Funk.Collaboration/Http/ConvertDocumentEndpoint.cs` (nur Management-Port) | angepasst (SEC-39, E2) | CE-RT-008 | I4 |
+| `src/controllers/health.controller.ts` | `Funk.Hosting/Realtime/RealtimeHealthEndpoint.cs` | 1:1 | CE-RT-009 | I0 |
+| `src/controllers/pdf-export.controller.ts` | `Funk.Collaboration/Http/PdfExportEndpoint.cs` | angepasst (Autorisierung, `profile`) | CE-PAGE-011 | I4 |
 | `src/extensions/index.ts` (`getExtensions`, Reihenfolge Logger → Database → Redis → TitleSync → ForceClose) | feste Verarbeitungsreihenfolge im `DocumentSession`-Actor | ersetzt | CE-RT-001 | I4 |
 | `src/extensions/logger.ts` | Logging-Kategorie `plane.realtime`, `LogEvents` | ersetzt | – | I4 |
-| `src/extensions/database.ts` (`fetchDocument`, `storeDocument`) | `ProjectPageDocumentType` + `Plane.Pages/…/PageDocumentStore.cs` (Laden/Migration/Merge-on-Store), Fehler-Broadcast in `DocumentSession` | angepasst (Merge, E4) | CE-RT-005, CE-RT-006 | I4 |
+| `src/extensions/database.ts` (`fetchDocument`, `storeDocument`) | `ProjectPageDocumentType` + `Funk.Pages/…/PageDocumentStore.cs` (Laden/Migration/Merge-on-Store), Fehler-Broadcast in `DocumentSession` | angepasst (Merge, E4) | CE-RT-005, CE-RT-006 | I4 |
 | `src/extensions/redis.ts` (Redis-Extension + Admin-Kanal) | `Scaling/ValkeyCollaborationBackplane.cs`, `ForceClose/AdminCommandHandlerMap.cs` | ersetzt (eigenes Format §3.10.2) | CE-RT-007 | I4 |
 | `src/extensions/title-sync.ts` | `Sessions/TitleSyncScheduler.cs`, Titel-Migration in `DocumentSession.LoadAsync` | 1:1 (DEV-07-05) | CE-RT-005 | I4 |
 | `src/extensions/title-update/debounce.ts` (`DebounceManager`) | `Sessions/TitleSyncScheduler.cs` (Trailing-Debounce, Abbruch, Retry) | 1:1 | CE-RT-005 | I4 |
 | `src/extensions/title-update/title-update-manager.ts` | `TitleSyncScheduler` + `ICollaborationDocumentType.UpdateTitleAsync` | 1:1 | CE-RT-005 | I4 |
 | `src/extensions/title-update/title-utils.ts` (ungenutzt) | – | entfällt | – | – |
 | `src/extensions/force-close-handler.ts` | `ForceClose/ForceCloseCoordinator.cs` | 1:1 | CE-RT-006 | I4 |
-| `src/lib/auth.ts` (`onAuthenticate`, `handleAuthentication`) | `Transport/ClientSocket.AuthenticateAsync` + `src/hosts/Plane.Realtime/Security/SessionTicketReader.cs` (05) | angepasst (SEC-41) | CE-RT-001 | I4 |
+| `src/lib/auth.ts` (`onAuthenticate`, `handleAuthentication`) | `Transport/ClientSocket.AuthenticateAsync` + `src/hosts/Funk.Realtime/Security/SessionTicketReader.cs` (05) | angepasst (SEC-41) | CE-RT-001 | I4 |
 | `src/lib/auth-middleware.ts` (`requireSecretKey`, ungenutzt) | – (`InternalSecret` bleibt ungenutzt) | entfällt | – | – |
 | `src/lib/errors.ts` (`AppError`) | Exceptions + Ergebnis-Typen (`CollaborationStoreResult`), `LogEvents` | ersetzt | – | I4 |
 | `src/lib/stateless.ts` (`onStateless`) | `Stateless/StatelessEventMap.cs`, `StatelessValidator.cs` | angepasst (SEC-RT-01) | CE-RT-004 | I4 |
-| `src/lib/pdf/index.ts` | `Plane.Documents.Pdf/PdfExporter.cs` | ersetzt | CE-PAGE-011 | I4 |
+| `src/lib/pdf/index.ts` | `Funk.Documents.Pdf/PdfExporter.cs` | ersetzt | CE-PAGE-011 | I4 |
 | `src/lib/pdf/plane-pdf-exporter.tsx` | `Rendering/PdfDocumentBuilder.cs` (Profil `live`) | 1:1 | CE-PAGE-011 | I4 |
 | `src/lib/pdf/node-renderers.tsx` | `Rendering/NodeRenderers/*.cs` (je Node eine Klasse: `ParagraphRenderer` …) | 1:1 (E6-Fix) | CE-PAGE-011 | I4 |
 | `src/lib/pdf/mark-renderers.ts` | `Rendering/MarkRenderers.cs` | 1:1 | CE-PAGE-011 | I4 |
 | `src/lib/pdf/styles.ts` | `Profiles/LivePdfStyles.cs` | 1:1 | CE-PAGE-011 | I4 |
 | `src/lib/pdf/colors.ts` | `Profiles/PdfColors.cs` (+ `ResolveColorForPdf`) | 1:1 | CE-PAGE-011 | I4 |
 | `src/lib/pdf/icons.tsx` | `Rendering/PdfIcons.cs` (SVG-Pfade als PDFsharp-`XGraphicsPath`) | 1:1 | CE-PAGE-011 | I4 |
-| `src/lib/pdf/types.ts` | `Plane.Documents.Pdf/PdfRenderRequest.cs`, `PdfExportOptions` | 1:1 | CE-PAGE-011 | I4 |
+| `src/lib/pdf/types.ts` | `Funk.Documents.Pdf/PdfRenderRequest.cs`, `PdfExportOptions` | 1:1 | CE-PAGE-011 | I4 |
 | `src/schema/pdf-export.ts` | `Http/PdfExportRequest.cs` + FluentValidation `PdfExportRequestValidator` | 1:1 (+ `profile`) | CE-PAGE-011 | I4 |
 | `src/services/api.service.ts` (Axios zur API) | – (In-Process-Aufrufe über Contracts) | entfällt | – | – |
 | `src/services/user.service.ts` (`GET /api/users/me/`) | – (Session-Ticket) | entfällt | – | – |
@@ -1289,16 +1289,16 @@ Spalte „Art“: **1:1** = Verhalten unverändert portiert, **angepasst** = mit
 | `src/services/page/extended.service.ts` (EE-Platzhalter) | `ICollaborationDocumentType`-Registry (E-10) | ersetzt | – | I4 |
 | `src/services/page/handler.ts` (`getPageService`) | `DocumentTypes/DocumentTypeRegistry.cs` | 1:1 (Fehlertext) | CE-RT-001 | I4 |
 | `src/services/page/project-page.service.ts` | `DocumentTypes/ProjectPageDocumentType.cs` | 1:1 | CE-RT-001 | I4 |
-| `src/services/pdf-export/index.ts`, `pdf-export.service.ts` | `Plane.Collaboration/Http/PdfExportService.cs` | angepasst (Zustand aus Sitzung, Assets direkt) | CE-PAGE-011 | I4 |
-| `src/services/pdf-export/effect-utils.ts` | `Plane.Collaboration/Http/PdfRetry.cs` (`WithTimeoutAndRetry`, `RecoverWithDefault`, `TryAsync`) | 1:1 | CE-PAGE-011 | I4 |
+| `src/services/pdf-export/index.ts`, `pdf-export.service.ts` | `Funk.Collaboration/Http/PdfExportService.cs` | angepasst (Zustand aus Sitzung, Assets direkt) | CE-PAGE-011 | I4 |
+| `src/services/pdf-export/effect-utils.ts` | `Funk.Collaboration/Http/PdfRetry.cs` (`WithTimeoutAndRetry`, `RecoverWithDefault`, `TryAsync`) | 1:1 | CE-PAGE-011 | I4 |
 | `src/services/pdf-export/types.ts` | `PdfExportErrors.cs` (Tagged Errors → HTTP) | 1:1 | CE-PAGE-011 | I4 |
-| `src/types/admin-commands.ts` | `Plane.Collaboration.Protocol/CloseCodes.cs`, `ForceCloseReason.cs`; `ForceClose/AdminCommand.cs` | 1:1 | CE-RT-006 | I4 |
+| `src/types/admin-commands.ts` | `Funk.Collaboration.Protocol/CloseCodes.cs`, `ForceCloseReason.cs`; `ForceClose/AdminCommand.cs` | 1:1 | CE-RT-006 | I4 |
 | `src/types/index.ts` (`TDocumentTypes`, Kontext, `TConvertDocumentRequestBody`) | `CollaborationConnectionParameters`, `DocumentVariant`, `ConvertDocumentRequest` | 1:1 | CE-RT-001, -008 | I4 |
 | `src/utils/broadcast-error.ts` | `Stateless/RealtimeEventFactory.CreateError` | 1:1 | CE-RT-006 | I4 |
 | `src/utils/broadcast-message.ts` | `DocumentSession.BroadcastStatelessAllInstances` | 1:1 | CE-RT-006 | I4 |
-| `tests/lib/pdf/pdf-rendering.test.ts` (21 Fälle) | `tests/Plane.Documents.Pdf.Tests/Acceptance/Original/PdfRenderingTests.cs` (A-114) | 1:1 | CE-PAGE-011 | I4 |
-| `tests/services/pdf-export/effect-utils.test.ts` (11 Fälle) | `tests/Plane.Collaboration.Tests/Acceptance/Original/PdfExportEffectUtilsTests.cs` (A-115) | 1:1 | CE-PAGE-011 | I4 |
-| `package.json`, `tsconfig.json`, `tsdown.config.ts`, `vitest.config.ts`, `.prettierignore` | `Plane.Realtime.csproj`, Testprojekte (15) | ersetzt | – | I0 |
+| `tests/lib/pdf/pdf-rendering.test.ts` (21 Fälle) | `tests/Funk.Documents.Pdf.Tests/Acceptance/Original/PdfRenderingTests.cs` (A-114) | 1:1 | CE-PAGE-011 | I4 |
+| `tests/services/pdf-export/effect-utils.test.ts` (11 Fälle) | `tests/Funk.Collaboration.Tests/Acceptance/Original/PdfExportEffectUtilsTests.cs` (A-115) | 1:1 | CE-PAGE-011 | I4 |
+| `package.json`, `tsconfig.json`, `tsdown.config.ts`, `vitest.config.ts`, `.prettierignore` | `Funk.Realtime.csproj`, Testprojekte (15) | ersetzt | – | I0 |
 | `Dockerfile.live`, `Dockerfile.dev` | SDK-Container-Build, Image `funk-realtime` (14 D14-ADR-10, 17 ABG-149) | ersetzt | – | I0 |
 | `.env.example` | `deploy/compose/.env.example` (14) | ersetzt | – | I0 |
 
@@ -1306,7 +1306,7 @@ Spalte „Art“: **1:1** = Verhalten unverändert portiert, **angepasst** = mit
 
 | Original (`packages/editor/src/…`) | Ziel | Art | ab |
 |---|---|---|---|
-| `lib.ts` (Server-Einstieg) | `Plane.Documents` (öffentliche API §3.12.1) | ersetzt | I2 |
+| `lib.ts` (Server-Einstieg) | `Funk.Documents` (öffentliche API §3.12.1) | ersetzt | I2 |
 | `extensions/core-without-props.ts` | `Schema/DocumentSchema.cs` (Registrierungsreihenfolge = Array-Reihenfolge) | 1:1 | I2 |
 | `extensions/core/without-props.ts` (`CoreEditorAdditionalExtensionsWithoutProps`, CE leer) | DI-Sammlung `IEnumerable<IDocumentNodeSpec>`/`IDocumentMarkSpec` (E-11) | ersetzt | I2 |
 | `extensions/starter-kit.ts` | `Nodes/{Doc,Paragraph,Text,Heading,BulletList,OrderedList,ListItem,HardBreak}NodeSpec.cs`, `Marks/{Bold,Italic,Strike}MarkSpec.cs` | 1:1 | I2 |
@@ -1332,7 +1332,7 @@ Spalte „Art“: **1:1** = Verhalten unverändert portiert, **angepasst** = mit
 | `helpers/asset-duplication.ts`, `paste-asset.ts` | bleiben im Browser (08/10) | – | – |
 | `helpers/get-document-server-event.ts` (`getServerEventName`) | `Stateless/StatelessEventMap.TryGetServerName` | 1:1 | I4 |
 | `constants/document-collaborative-events.ts` | `Stateless/StatelessEventMap.cs` | 1:1 | I4 |
-| `types/document-collaborative-events.ts` (`createRealtimeEvent`, `CommonRealtimeFields`) | `Plane.Collaboration.Contracts/Events/BroadcastedEvent.cs`, `RealtimeEventFactory.cs` | 1:1 | I4 |
+| `types/document-collaborative-events.ts` (`createRealtimeEvent`, `CommonRealtimeFields`) | `Funk.Collaboration.Contracts/Events/BroadcastedEvent.cs`, `RealtimeEventFactory.cs` | 1:1 | I4 |
 | `constants/extension.ts` (`CORE_EXTENSIONS`, `BLOCK_NODE_TYPES`) | `Schema/CoreExtensionNames.cs` | 1:1 | I2 |
 | `constants/common.ts` (`COLORS_LIST`) | `Schema/EditorColors.cs` | 1:1 | I2 |
 | `hooks/use-yjs-setup.ts`, `contexts/collaboration-context.tsx` | Browser: `CollaborationSession` (10, 08 §3.12) – **Gegenseite** dieses Protokolls | – | I4 |
@@ -1348,7 +1348,7 @@ Spalte „Art“: **1:1** = Verhalten unverändert portiert, **angepasst** = mit
 | `WEB/components/pages/modals/export-page-modal.tsx` | Export-Dialog (08/10) ruft `POST /live/pdf-export/` (`profile: "web"`, `pageSize`, `noAssets`, `title`, `fileName`) | §3.15 | CE-PAGE-011 |
 | `WEB/components/editor/pdf/document.tsx`, `index.ts` | entfällt im Client | `Profiles/WebPdfStyles.cs` | CE-PAGE-011 |
 | `WEB/hooks/use-parse-editor-content.ts` (`replaceCustomComponentsFromHTMLContent`) | `replaceCustomComponentsFromMarkdownContent` bleibt im Client (Markdown-Export) | HTML-Teil → `WebProfilePreprocessor` | CE-PAGE-011, -037 |
-| `WEB/app/assets/fonts/inter/*.ttf` (18) | – | `Plane.Documents.Pdf/Fonts/` (09 §4.11) | CE-PAGE-011 |
+| `WEB/app/assets/fonts/inter/*.ttf` (18) | – | `Funk.Documents.Pdf/Fonts/` (09 §4.11) | CE-PAGE-011 |
 | `PKG/constants/src/endpoints.ts` (`LIVE_BASE_URL`, `LIVE_BASE_PATH`) | Runtime-Config `live_base_url`, `live_base_path` (08) | Pfad `/live` | – |
 | `PKG/utils/src/editor/markdown-parser/*` | bleibt (Client) | Port `HtmlToMarkdownConverter` | CE-PAGE-037 |
 
@@ -1356,34 +1356,34 @@ Spalte „Art“: **1:1** = Verhalten unverändert portiert, **angepasst** = mit
 
 | Original (`apps/api/plane/…`) | Ziel | Art | CE-ID |
 |---|---|---|---|
-| `app/views/page/base.py` `PagesDescriptionViewSet.retrieve` | `Plane.Pages/Endpoints/App/PageDescriptionEndpoints.cs` (GET, Octet-Stream) | 1:1 | CE-RT-003 |
+| `app/views/page/base.py` `PagesDescriptionViewSet.retrieve` | `Funk.Pages/Endpoints/App/PageDescriptionEndpoints.cs` (GET, Octet-Stream) | 1:1 | CE-RT-003 |
 | `…PagesDescriptionViewSet.partial_update` | dto. PATCH → `IPageDocumentStore.SaveFromRestAsync` (Merge) | angepasst (DEV-07-02) | CE-RT-003 |
-| `…PageDuplicateEndpoint` | `Plane.Pages/Application/Commands/DuplicatePage/DuplicatePageCommand.cs` | angepasst (DEV-07-04) | CE-PAGE-009 |
+| `…PageDuplicateEndpoint` | `Funk.Pages/Application/Commands/DuplicatePage/DuplicatePageCommand.cs` | angepasst (DEV-07-04) | CE-PAGE-009 |
 | `app/serializers/page.py` `PageBinaryUpdateSerializer` | `PageDescriptionUpdateRequestValidator` (Base64, `BinaryContentValidator`, `YjsUpdateValidator`, HTML-Prüfung) | 1:1 | CE-RT-003, CE-OPS-017 |
-| `bgtasks/page_version_task.py` `track_page_version` | `Plane.Pages/Application/Services/PageVersionRecorder.cs` (synchron) | angepasst (Fix, DEV-07-03) | CE-PAGE-019 |
-| `bgtasks/page_transaction_task.py` `page_transaction` | `Plane.Pages/Application/Services/PageReferenceIndexer.cs` (synchron in `CreatePageCommand`, `UpdatePageCommand` (PATCH mit `description_html`), `PageDocumentStore.SaveAsync`/`SaveFromRestAsync`, `DuplicatePageCommand`; 06 T30, 17 ABG-108) | angepasst (D07-ADR-23, DEV-OPS-004) | CE-PAGE-012 |
+| `bgtasks/page_version_task.py` `track_page_version` | `Funk.Pages/Application/Services/PageVersionRecorder.cs` (synchron) | angepasst (Fix, DEV-07-03) | CE-PAGE-019 |
+| `bgtasks/page_transaction_task.py` `page_transaction` | `Funk.Pages/Application/Services/PageReferenceIndexer.cs` (synchron in `CreatePageCommand`, `UpdatePageCommand` (PATCH mit `description_html`), `PageDocumentStore.SaveAsync`/`SaveFromRestAsync`, `DuplicatePageCommand`; 06 T30, 17 ABG-108) | angepasst (D07-ADR-23, DEV-OPS-004) | CE-PAGE-012 |
 | `bgtasks/copy_s3_object.py` (`copy_s3_objects_of_description_and_assets`, `sync_with_external_service`) | `DuplicatePageCommand` + Job `CopyDuplicatedAssetsJob` (`pages.copy_duplicated_assets`, 06) + `IDocumentConverter` | angepasst (E2) | CE-PAGE-009, CE-RT-008 |
-| `utils/content_validator.py` `validate_binary_data` | `Plane.Platform.Security/BinaryContentValidator.cs` (05) + `Plane.Documents/Yjs/YjsUpdateValidator.cs` | 1:1 + Härtung | CE-OPS-017 |
+| `utils/content_validator.py` `validate_binary_data` | `Funk.Platform.Security/BinaryContentValidator.cs` (05) + `Funk.Documents/Yjs/YjsUpdateValidator.cs` | 1:1 + Härtung | CE-OPS-017 |
 | `utils/content_validator.py` `validate_html_content` | `HtmlSanitizerProfile` (05) | 1:1 | CE-OPS-017 |
-| `utils/html_processor.py` `strip_tags` | `Plane.Documents/Text/HtmlTextExtractor.Strip` | 1:1 | – |
-| `utils/markdown.py` (mistune-Instanz, ungenutzt) | `Plane.Documents/Markdown/MarkdownRenderer.cs` | ersetzt | – |
+| `utils/html_processor.py` `strip_tags` | `Funk.Documents/Text/HtmlTextExtractor.Strip` | 1:1 | – |
+| `utils/markdown.py` (mistune-Instanz, ungenutzt) | `Funk.Documents/Markdown/MarkdownRenderer.cs` | ersetzt | – |
 | `settings/common.py` `LIVE_URL` | entfällt (In-Process) | entfällt | – |
-| `utils/error_codes.py` `PAGE_LOCKED` 4701, `PAGE_ARCHIVED` 4702 | `PlaneErrorCodes` (02) | 1:1 | CE-PAGE-005, -007 |
+| `utils/error_codes.py` `PAGE_LOCKED` 4701, `PAGE_ARCHIVED` 4702 | `FunkErrorCodes` (02) | 1:1 | CE-PAGE-005, -007 |
 
 ### 4.5 Umgebungsvariablen (Live-Server)
 
 | Variable (Original) | Ziel | Bemerkung |
 |---|---|---|
-| `APP_VERSION` | `Plane:AppVersion` (14) | Health |
-| `HOSTNAME` | `Plane:Realtime:InstanceName` | `originServer` |
+| `APP_VERSION` | `Funk:AppVersion` (14) | Health |
+| `HOSTNAME` | `Funk:Realtime:InstanceName` | `originServer` |
 | `PORT` | Aspire/Kestrel-Endpunkt `http` (14) | – |
 | `API_BASE_URL` | entfällt | In-Process |
-| `CORS_ALLOWED_ORIGINS` | `Plane:Realtime:AdditionalAllowedOrigins` | Origin-Allowlist |
-| `LIVE_BASE_PATH` | `Plane:Urls:LivePath` = `/live/` (Konstante, 14) | – |
-| `COMPRESSION_LEVEL`, `COMPRESSION_THRESHOLD` | `Plane:Realtime:CompressionLevel`, `…:CompressionThresholdBytes` | 14 §4.7 |
-| `LIVE_SERVER_SECRET_KEY` | `Plane:Realtime:InternalSecret` | ungenutzt, Warnung bei Bekannt-Default (14) |
+| `CORS_ALLOWED_ORIGINS` | `Funk:Realtime:AdditionalAllowedOrigins` | Origin-Allowlist |
+| `LIVE_BASE_PATH` | `Funk:Urls:LivePath` = `/live/` (Konstante, 14) | – |
+| `COMPRESSION_LEVEL`, `COMPRESSION_THRESHOLD` | `Funk:Realtime:CompressionLevel`, `…:CompressionThresholdBytes` | 14 §4.7 |
+| `LIVE_SERVER_SECRET_KEY` | `Funk:Realtime:InternalSecret` | ungenutzt, Warnung bei Bekannt-Default (14) |
 | `REDIS_URL`, `REDIS_HOST`, `REDIS_PORT` | `ConnectionStrings:valkey` (14) | optional bei einer Replika |
-| `WEB_BASE_URL`, `LIVE_BASE_URL` (nur `.env.example`) | `Plane:Urls:*` (14) | – |
+| `WEB_BASE_URL`, `LIVE_BASE_URL` (nur `.env.example`) | `Funk:Urls:*` (14) | – |
 
 ### 4.6 Hocuspocus-Hooks → Ziel-Komponenten
 
@@ -1409,10 +1409,10 @@ Spalte „Art“: **1:1** = Verhalten unverändert portiert, **angepasst** = mit
 
 | npm (Original `apps/live`) | .NET-Ersatz | Lizenz |
 |---|---|---|
-| `@hocuspocus/server`, `@hocuspocus/extension-database`, `-logger`, `-redis`, `@hocuspocus/transformer` 2.15.2 | `Plane.Collaboration` (+ `.Protocol`) | eigen (AGPL-3.0) |
-| `yjs` 13.6.x, `y-protocols` 1.0.6, `lib0` | `YDotNet` 0.6.0 / `YDotNet.Native.Linux` 0.6.0 + `Plane.Collaboration.Protocol` + `YjsUpdateWriter` | MIT |
+| `@hocuspocus/server`, `@hocuspocus/extension-database`, `-logger`, `-redis`, `@hocuspocus/transformer` 2.15.2 | `Funk.Collaboration` (+ `.Protocol`) | eigen (AGPL-3.0) |
+| `yjs` 13.6.x, `y-protocols` 1.0.6, `lib0` | `YDotNet` 0.6.0 / `YDotNet.Native.Linux` 0.6.0 + `Funk.Collaboration.Protocol` + `YjsUpdateWriter` | MIT |
 | `y-prosemirror` 1.3.7 | `YjsProseMirrorMapper` | eigen |
-| `@tiptap/core`, `@tiptap/html`, `@tiptap/pm`, `@tiptap/starter-kit`, `@tiptap/extension-*`, `zeed-dom` | `Plane.Documents` + `AngleSharp` 1.x | MIT |
+| `@tiptap/core`, `@tiptap/html`, `@tiptap/pm`, `@tiptap/starter-kit`, `@tiptap/extension-*`, `zeed-dom` | `Funk.Documents` + `AngleSharp` 1.x | MIT |
 | `@react-pdf/renderer` ^4.8.1, `@fontsource/inter` | `PDFsharp-MigraDoc` 6.2.4 + Inter-TTF | MIT / OFL |
 | `react-pdf-html` (Web) | `WebProfilePreprocessor` + `WebPdfStyles` | eigen |
 | `sharp` | `SkiaSharp` 3.119.x | MIT |
@@ -1421,7 +1421,7 @@ Spalte „Art“: **1:1** = Verhalten unverändert portiert, **angepasst** = mit
 | `express`, `express-ws`, `ws`, `helmet`, `compression`, `cors` | ASP.NET Core (WebSockets, ResponseCompression), Gateway-Security-Header (05/14) | MIT |
 | `zod` | Options-Validierung, FluentValidation 12.x | MIT/Apache-2.0 |
 | `uuid` | `Guid`/`IIdGenerator` | – |
-| `@plane/decorators`, `@plane/logger` | Minimal APIs, `ILogger` | – |
+| `@funk/decorators`, `@funk/logger` | Minimal APIs, `ILogger` | – |
 | `mistune` (API) | `Markdig` 0.4x | BSD-2-Clause |
 | (neu) | `Jint` 4.x nur im S2-Fallback | BSD-2-Clause |
 
@@ -1447,7 +1447,7 @@ Spalte „Art“: **1:1** = Verhalten unverändert portiert, **angepasst** = mit
 | CE-PAGE-021/-022/-023 | Rich/Lite/Document-Editor | Server-Schema/Konvertierung | I2 | G-SCHEMA, G-DOC |
 | CE-PAGE-037 | Markdown-Funktionen | Client 1:1; Server-Port | I4 | G-MD |
 | CE-WI-005, CE-WI-037, CE-HOME-010 | Beschreibungen, Kommentare, Stickies | `YjsUpdateValidator`, `HtmlTextExtractor`, `ConvertHtmlToAllFormats(Rich)` | I2 / I5 | G-DOC (Rich-Fälle) |
-| CE-WI-041 | Beschreibungs-Versionen | Formate (Binary/HTML/JSON) aus `Plane.Documents` | I2 | – |
+| CE-WI-041 | Beschreibungs-Versionen | Formate (Binary/HTML/JSON) aus `Funk.Documents` | I2 | – |
 | CE-OPS-017 | Sanitizing + Binary-Prüfung | `YjsUpdateValidator` (+ 05) | I2 | G-SANITIZE, `YjsUpdateValidatorTests` |
 | – (Walking Skeleton I0) | Hinweiszeile: H6-Hub-Gerüst ist kein CE-Feature, sondern Teil des Walking Skeleton (CE-OPS-021 = „Lokale Entwicklungsumgebung“ wird hier nicht zugeordnet; CE-Bezug erst ab I5 über CE-NOTIF-001, 17 ABG-112) | §3.16 | I0 | `RealtimeSmokeTests` (Hub) |
 | CE-NOTIF-001 | Inbox-Zähler live | §3.16.3/§3.16.4 | I5 | AK-D08-35, `PublisherPathTests` |
@@ -1458,11 +1458,11 @@ Spalte „Art“: **1:1** = Verhalten unverändert portiert, **angepasst** = mit
 
 Konventionen aus `02` gelten (Datei-Header AGPL-3.0, `internal sealed`, `IClock`, `IIdGenerator`, keine statischen Zustände). Die Skelette legen Namen, Signaturen und die nicht verhandelbaren Abläufe fest; Fehlerbehandlung ist gekürzt.
 
-### 5.1 `Plane.Collaboration.Protocol` – lib0 und Rahmen
+### 5.1 `Funk.Collaboration.Protocol` – lib0 und Rahmen
 
 ```csharp
-// src/modules/Collaboration/Plane.Collaboration.Protocol/Lib0Writer.cs
-namespace Plane.Collaboration.Protocol;
+// src/modules/Collaboration/Funk.Collaboration.Protocol/Lib0Writer.cs
+namespace Funk.Collaboration.Protocol;
 
 public sealed class Lib0Writer(int initialCapacity = 256)
 {
@@ -1538,10 +1538,10 @@ public static class HocuspocusCodec
 ### 5.2 Contracts (präzisiert, Änderungsauftrag §9.2)
 
 ```csharp
-// src/modules/Pages/Plane.Pages.Contracts/Services/IPageDocumentStore.cs   (01 §5.5 präzisiert)
+// src/modules/Pages/Funk.Pages.Contracts/Services/IPageDocumentStore.cs   (01 §5.5 präzisiert)
 public interface IPageDocumentStore
 {
-    ValueTask<PageDocumentAccess> AuthorizeAsync(Guid pageId, PageDocumentScope scope, PlanePrincipal principal, CancellationToken ct);
+    ValueTask<PageDocumentAccess> AuthorizeAsync(Guid pageId, PageDocumentScope scope, FunkPrincipal principal, CancellationToken ct);
     ValueTask<PageDocumentSnapshot?> LoadAsync(Guid pageId, PageDocumentScope scope, PrincipalRef user, CancellationToken ct);   // inkl. HTML→Binary-Migration
     ValueTask<PageDocumentSaveResult> SaveAsync(Guid pageId, ReadOnlyMemory<byte> yjsState, string? title, PrincipalRef user, CancellationToken ct);
     ValueTask<PageDocumentSaveResult> SaveFromRestAsync(Guid pageId, ReadOnlyMemory<byte> yjsState, PrincipalRef user, CancellationToken ct); // PATCH …/description/
@@ -1558,11 +1558,11 @@ public sealed record PageDocumentSaveResult(PageDocumentSaveStatus Status, ReadO
 public enum PageTitleUpdateResult { Updated, Unchanged, Rejected, NotFound }
 public sealed record PageDocumentState(bool IsLocked, DateTimeOffset? ArchivedAt, int Access, bool IsDeleted);
 
-// src/modules/Collaboration/Plane.Collaboration.Contracts/Extensions/ICollaborationDocumentType.cs   (16 §5.13 präzisiert, E-10)
+// src/modules/Collaboration/Funk.Collaboration.Contracts/Extensions/ICollaborationDocumentType.cs   (16 §5.13 präzisiert, E-10)
 public interface ICollaborationDocumentType
 {
     string Name { get; }                                                               // "project_page"
-    ValueTask<CollaborationAccess> AuthorizeAsync(PlanePrincipal p, IReadOnlyDictionary<string, string> query, string documentName, CancellationToken ct);
+    ValueTask<CollaborationAccess> AuthorizeAsync(FunkPrincipal p, IReadOnlyDictionary<string, string> query, string documentName, CancellationToken ct);
     ValueTask<CollaborationDocumentLoad?> LoadAsync(string documentName, IReadOnlyDictionary<string, string> query, PrincipalRef user, CancellationToken ct);
     ValueTask<CollaborationStoreResult> SaveAsync(string documentName, ReadOnlyMemory<byte> yjsState, string? title, PrincipalRef user, CancellationToken ct);
     ValueTask UpdateTitleAsync(string documentName, string title, PrincipalRef user, CancellationToken ct);
@@ -1597,12 +1597,12 @@ public enum CollaborationChangeKind { Content, Access, Deleted }
 ### 5.3 `ProjectPageDocumentType`
 
 ```csharp
-// src/modules/Collaboration/Plane.Collaboration/DocumentTypes/ProjectPageDocumentType.cs
+// src/modules/Collaboration/Funk.Collaboration/DocumentTypes/ProjectPageDocumentType.cs
 internal sealed class ProjectPageDocumentType(IPageDocumentStore store, IWorkspaceLookup workspaces) : ICollaborationDocumentType
 {
     public string Name => "project_page";
 
-    public async ValueTask<CollaborationAccess> AuthorizeAsync(PlanePrincipal p, IReadOnlyDictionary<string, string> q, string documentName, CancellationToken ct)
+    public async ValueTask<CollaborationAccess> AuthorizeAsync(FunkPrincipal p, IReadOnlyDictionary<string, string> q, string documentName, CancellationToken ct)
     {
         if (p.Kind != PrincipalKind.User) return CollaborationAccess.None;                          // H1-Andockstelle (§6)
         if (!Guid.TryParse(documentName, out var pageId)) return CollaborationAccess.None;          // SEC-RT-02
@@ -1625,7 +1625,7 @@ internal sealed class ProjectPageDocumentType(IPageDocumentStore store, IWorkspa
 ### 5.4 Transport und Authentisierung
 
 ```csharp
-// src/modules/Collaboration/Plane.Collaboration/Transport/CollaborationEndpoint.cs
+// src/modules/Collaboration/Funk.Collaboration/Transport/CollaborationEndpoint.cs
 internal static class CollaborationEndpoint
 {
     public static void Map(IEndpointRouteBuilder app)
@@ -1634,7 +1634,7 @@ internal static class CollaborationEndpoint
         app.Map("/live/collaboration/", HandleAsync).RequireAuthorization("realtime-session");
     }
 
-    private static async Task HandleAsync(HttpContext http, ClientSocketFactory factory, IOptions<PlaneRealtimeOptions> o)
+    private static async Task HandleAsync(HttpContext http, ClientSocketFactory factory, IOptions<FunkRealtimeOptions> o)
     {
         if (!http.WebSockets.IsWebSocketRequest) { http.Response.StatusCode = 400; await http.Response.WriteAsJsonAsync(new { message = "Bad Request" }); return; }
         using var ws = await http.WebSockets.AcceptWebSocketAsync(new WebSocketAcceptContext
@@ -1643,7 +1643,7 @@ internal static class CollaborationEndpoint
             KeepAliveTimeout  = TimeSpan.FromSeconds(o.Value.KeepAliveTimeoutSeconds),
             DangerousEnableCompression = false,
         });
-        var principal = http.User.ToPlanePrincipal();                                             // Plane.Identity
+        var principal = http.User.ToPlanePrincipal();                                             // Funk.Identity
         var query = http.Request.Query.ToDictionary(k => k.Key, v => v.Value.ToString());
         await using var socket = factory.Create(ws, principal, query, http.Connection.Id, http.RequestAborted);
         await socket.RunAsync();                                                                  // Empfangsschleife, MaxMessageBytes, Auth-Timeout
@@ -1678,7 +1678,7 @@ private ValueTask DenyAsync(string doc, string metricReason)
 ### 5.5 `DocumentSession` (Actor) und `StoreScheduler`
 
 ```csharp
-// src/modules/Collaboration/Plane.Collaboration/Sessions/DocumentSession.cs
+// src/modules/Collaboration/Funk.Collaboration/Sessions/DocumentSession.cs
 internal sealed class DocumentSession : IAsyncDisposable
 {
     private readonly Channel<IDocumentCommand> _inbox = Channel.CreateUnbounded<IDocumentCommand>(new() { SingleReader = true });
@@ -1689,7 +1689,7 @@ internal sealed class DocumentSession : IAsyncDisposable
     private readonly TitleSyncScheduler _title;
     private UpdateOrigin _currentOrigin = UpdateOrigin.None;     // nur in der Schleife gesetzt
 
-    public DocumentSession(DocumentKey key, ICollaborationDocumentType type, ICollaborationBackplane backplane, IClock clock, IOptions<PlaneRealtimeOptions> o)
+    public DocumentSession(DocumentKey key, ICollaborationDocumentType type, ICollaborationBackplane backplane, IClock clock, IOptions<FunkRealtimeOptions> o)
     {
         _doc.ObserveUpdatesV1(e => OnLocalDocUpdate(e.Update));  // feuert synchron innerhalb der Transaktion der Schleife
         // …
@@ -1750,13 +1750,13 @@ internal sealed class StoreScheduler(IClock clock, ITimerFactory timers, int deb
 }
 ```
 
-### 5.6 Merge-on-Store in `Plane.Pages`
+### 5.6 Merge-on-Store in `Funk.Pages`
 
 ```csharp
-// src/modules/Pages/Plane.Pages/Application/Services/PageDocumentStore.cs
-internal sealed class PageDocumentStore(PlaneDbContext db, IDocumentConverter converter, IHtmlSanitizerProfile sanitizer,
+// src/modules/Pages/Funk.Pages/Application/Services/PageDocumentStore.cs
+internal sealed class PageDocumentStore(FunkDbContext db, IDocumentConverter converter, IHtmlSanitizerProfile sanitizer,
     PageVersionRecorder versions, PageReferenceIndexer references, IDbNotificationPublisher notify, IRealtimeInstance instance, IClock clock,
-    IOptions<PlaneRealtimeOptions> o) : IPageDocumentStore
+    IOptions<FunkRealtimeOptions> o) : IPageDocumentStore
 {
     public async ValueTask<PageDocumentSaveResult> SaveAsync(Guid pageId, ReadOnlyMemory<byte> state, string? title, PrincipalRef user, CancellationToken ct)
     {
@@ -1798,13 +1798,13 @@ internal sealed class PageDocumentStore(PlaneDbContext db, IDocumentConverter co
 //   latest = page_versions WHERE page_id ORDER BY last_saved_at DESC LIMIT 1
 //   if latest?.OwnedById == user && now - latest.LastSavedAt <= MergeWindow(600 s): Felder überschreiben (last_saved_at unverändert)
 //   else: neue Version (last_saved_at = now, sub_pages_data = {})
-//   if count(not deleted) > PlaneRetentionOptions.PageVersionsKeep (20): älteste nach last_saved_at weich löschen
+//   if count(not deleted) > FunkRetentionOptions.PageVersionsKeep (20): älteste nach last_saved_at weich löschen
 ```
 
 ### 5.7 Schema-Spezifikationen (Beispiele)
 
 ```csharp
-// src/documents/Plane.Documents/Schema/Nodes/ParagraphNodeSpec.cs
+// src/documents/Funk.Documents/Schema/Nodes/ParagraphNodeSpec.cs
 public sealed class ParagraphNodeSpec : IDocumentNodeSpec
 {
     public string Name => "paragraph";
@@ -1871,7 +1871,7 @@ public sealed class LinkMarkSpec : IDocumentMarkSpec
 ### 5.8 Yjs-Abbildung und Update-Writer
 
 ```csharp
-// src/documents/Plane.Documents/Yjs/YjsProseMirrorMapper.cs
+// src/documents/Funk.Documents/Yjs/YjsProseMirrorMapper.cs
 internal sealed class YjsProseMirrorMapper(DocumentSchema schema, AttributeCoercion coercion)
 {
     public PmNode ToPm(Doc doc, string fragment, SchemaVariant variant)
@@ -1911,7 +1911,7 @@ public static class ClientIds
 ### 5.9 Backplane
 
 ```csharp
-// src/modules/Collaboration/Plane.Collaboration/Scaling/ICollaborationBackplane.cs
+// src/modules/Collaboration/Funk.Collaboration/Scaling/ICollaborationBackplane.cs
 internal interface ICollaborationBackplane
 {
     ValueTask SubscribeAsync(DocumentKey key, Func<BackplaneEnvelope, ValueTask> onMessage, CancellationToken ct);
@@ -1937,7 +1937,7 @@ public enum BackplaneKind : byte { Update = 1, SyncStep1 = 2, SyncStep2 = 3, Awa
 ### 5.10 PDF
 
 ```csharp
-// src/documents/Plane.Documents.Pdf/PdfExporter.cs
+// src/documents/Funk.Documents.Pdf/PdfExporter.cs
 public interface IPdfExporter { ValueTask<byte[]> RenderAsync(PdfRenderRequest request, CancellationToken ct); }
 public enum PdfProfile { Live, Web }
 public enum PdfPageSize { A4, A3, A2, LETTER, LEGAL, TABLOID }
@@ -1945,7 +1945,7 @@ public sealed record PdfRenderRequest(PmNode Document, string? Title, string? Au
     bool NoAssets, PdfProfile Profile, IReadOnlyDictionary<string, string> MentionDisplayNames, IReadOnlyDictionary<string, PdfImage> Images);
 public sealed record PdfImage(byte[] Jpeg, int Width, int Height);
 
-internal sealed class PdfExporter(IEnumerable<INodeRenderer> renderers, PlaneFontResolver fonts) : IPdfExporter
+internal sealed class PdfExporter(IEnumerable<INodeRenderer> renderers, FunkFontResolver fonts) : IPdfExporter
 {
     public ValueTask<byte[]> RenderAsync(PdfRenderRequest r, CancellationToken ct)
     {
@@ -1963,7 +1963,7 @@ internal sealed class PdfExporter(IEnumerable<INodeRenderer> renderers, PlaneFon
 ### 5.11 Live-Events-Hub
 
 ```csharp
-// src/modules/RealtimeEvents/Plane.RealtimeEvents/Hubs/LiveEventsHub.cs
+// src/modules/RealtimeEvents/Funk.RealtimeEvents/Hubs/LiveEventsHub.cs
 [Authorize(Policy = "realtime-session")]
 internal sealed class LiveEventsHub(IEnumerable<IRealtimeGroupAuthorizer> authorizers, ILogger<LiveEventsHub> log) : Hub
 {
@@ -1984,8 +1984,8 @@ internal sealed class LiveEventsHub(IEnumerable<IRealtimeGroupAuthorizer> author
     public Task LeaveGroup(string group) => Groups.RemoveFromGroupAsync(Context.ConnectionId, group);
 }
 
-// Publisher – Registrierung je Host (06 §3.12, 17 ABG-106): Plane.Realtime/Plane.AllInOne → HubRealtimePublisher;
-// Plane.Api/Plane.Worker → QueuedRealtimePublisher (einziger Zustellweg zum Hub)
+// Publisher – Registrierung je Host (06 §3.12, 17 ABG-106): Funk.Realtime/Funk.AllInOne → HubRealtimePublisher;
+// Funk.Api/Funk.Worker → QueuedRealtimePublisher (einziger Zustellweg zum Hub)
 internal sealed class HubRealtimePublisher(IHubContext<LiveEventsHub> hub, IClock clock) : IRealtimePublisher
 {
     public async ValueTask PublishAsync(string group, string eventName, JsonObject payload, CancellationToken ct) =>
@@ -1997,10 +1997,10 @@ internal sealed class QueuedRealtimePublisher(IJobScheduler jobs, IClock clock) 
     public ValueTask PublishAsync(string group, string eventName, JsonObject payload, CancellationToken ct) =>
         jobs.EnqueueAsync(new RealtimePushJob(group, eventName, payload, clock.UtcNow), ct: ct);   // in offener Transaktion: Commit mit der Fachänderung
 }
-[JobType("realtime.push")]                                       // Queue PlaneQueues.Live, Handler RealtimePushJobHandler → HubRealtimePublisher (nur Realtime-Host/AllInOne)
+[JobType("realtime.push")]                                       // Queue FunkQueues.Live, Handler RealtimePushJobHandler → HubRealtimePublisher (nur Realtime-Host/AllInOne)
 public sealed record RealtimePushJob(string Group, string Event, JsonObject Payload, DateTimeOffset OccurredAt) : IJob;
 public sealed record LiveEventDto(string Event, string Group, JsonObject Payload, DateTimeOffset OccurredAt);   // snake_case: event, group, payload, occurred_at
-// RealtimeFanOutConsumer (Consumer "realtime.fanout", Queue PlaneQueues.Realtime, nur Worker): RealtimeFanOutMap → IRealtimePublisher
+// RealtimeFanOutConsumer (Consumer "realtime.fanout", Queue FunkQueues.Realtime, nur Worker): RealtimeFanOutMap → IRealtimePublisher
 // (= QueuedRealtimePublisher); Skelett und Map 06 §5 – kein LabelRealtimeConsumer (17 ABG-106)
 ```
 
@@ -2013,7 +2013,7 @@ import { prosemirrorJSONToYDoc, yXmlFragmentToProseMirrorRootNode } from "y-pros
 import * as Y from "yjs";
 import { getSchema } from "@tiptap/core";
 import { CoreEditorExtensionsWithoutProps, DocumentEditorExtensionsWithoutProps } from "<original>/packages/editor/src/lib.ts";
-for (const c of cases) {                                 // tests/Plane.Documents.Tests/Golden/docs/<nnn>-<name>/input.html
+for (const c of cases) {                                 // tests/Funk.Documents.Tests/Golden/docs/<nnn>-<name>/input.html
   const ext = c.variant === "document" ? [...CoreEditorExtensionsWithoutProps, ...DocumentEditorExtensionsWithoutProps] : CoreEditorExtensionsWithoutProps;
   const json = generateJSON(c.html, ext);
   const ydoc = prosemirrorJSONToYDoc(getSchema(ext), json, "default");
@@ -2034,25 +2034,25 @@ Kein Fachdesign der Pakete. Die Tabelle nennt für **alle 17 🧱-Pakete** (`30-
 | **A2** Workspace-Types, Hierarchie (W6) | – (keine Dokument-/Realtime-Wirkung) | – | – | – | – |
 | **A9** Relationen & Abhängigkeiten (W2) | – (Relationen werden nicht im Editor gepflegt) | – | – | – | – |
 | **A17** Workspace-Governance States/Labels (W6) | – | – | – | – | – |
-| **B1** Teamspaces (W5) | (1) Dokumenttyp `teamspace_page` über `ICollaborationDocumentType` (E-10); Query-Parameter `teamId` wird bereits angenommen und an `AuthorizeAsync` durchgereicht; (2) Realtime-Gruppe `teamspace:{id}` (reserviert, `IRealtimeGroupAuthorizer` E-22); (3) `BroadcastContext.TeamspaceId` füllt `teamspace_id` in `BroadcastedEvent` | `Plane.Collaboration.Contracts/Extensions/`, `RealtimeGroups.Teamspace` | Typ nicht registriert → `PermissionDenied`; Gruppe → `JoinGroup` = `false`; `teamspace_id` = `""` | `CollaborationDocumentTypeRegistryTests` (Fake-Typ), `HubGroupAuthorizationTests.ReservedPrefixRejected` | I4 / I0 |
-| **B6** Erweiterte Filter/PQL (W5) | Volltext der Pages für Advanced Search: `PageDescriptionUpdatedV1` + `description_stripped` als Quelle für `IIndexingPipeline` | `Plane.Pages.Contracts/Events`, `HtmlTextExtractor` | CE indexiert über G1-Gerüst (11) | `EventCatalogSnapshotTests` (15 EP-T11) | I4/I5 |
+| **B1** Teamspaces (W5) | (1) Dokumenttyp `teamspace_page` über `ICollaborationDocumentType` (E-10); Query-Parameter `teamId` wird bereits angenommen und an `AuthorizeAsync` durchgereicht; (2) Realtime-Gruppe `teamspace:{id}` (reserviert, `IRealtimeGroupAuthorizer` E-22); (3) `BroadcastContext.TeamspaceId` füllt `teamspace_id` in `BroadcastedEvent` | `Funk.Collaboration.Contracts/Extensions/`, `RealtimeGroups.Teamspace` | Typ nicht registriert → `PermissionDenied`; Gruppe → `JoinGroup` = `false`; `teamspace_id` = `""` | `CollaborationDocumentTypeRegistryTests` (Fake-Typ), `HubGroupAuthorizationTests.ReservedPrefixRejected` | I4 / I0 |
+| **B6** Erweiterte Filter/PQL (W5) | Volltext der Pages für Advanced Search: `PageDescriptionUpdatedV1` + `description_stripped` als Quelle für `IIndexingPipeline` | `Funk.Pages.Contracts/Events`, `HtmlTextExtractor` | CE indexiert über G1-Gerüst (11) | `EventCatalogSnapshotTests` (15 EP-T11) | I4/I5 |
 | **C1** Workflows (nicht gewählt) | – (State-Wechsel laufen nicht über Dokumente) | – | – | – | – |
-| **C3** Automation-Engine (nicht gewählt) | Versionierte Events des Dokumentbereichs: `plane.page.description_updated.v1` (+ Lock/Archiv/Access-Events aus `Plane.Pages`, Katalog 06) als Trigger-Quelle; keine Automations-Hooks im Protokoll | Outbox/Event-Katalog | Event wird geschrieben, ohne Automations-Consumer | `EventCatalogSnapshotTests` | I4 |
-| **D1** Wiki & Collections (W3) | (1) Dokumenttyp `workspace_page` (E-10) mit eigener `AuthorizeAsync`-Regel; (2) `IPageDocumentStore` arbeitet mit `PageDocumentScope` und ist projektunabhängig erweiterbar (Workspace-Scope, `project_pages`-Verknüpfung optional); (3) Signale/Backplane-Kanäle enthalten den Dokumenttyp (`plane:collab:doc:{type}:{name}`, Signal-Feld `t`) | `Plane.Collaboration.Contracts`, `Plane.Pages.Contracts` | nur `project_page` | `CollaborationDocumentTypeRegistryTests`, AK-16-15 | I4 |
+| **C3** Automation-Engine (nicht gewählt) | Versionierte Events des Dokumentbereichs: `funk.page.description_updated.v1` (+ Lock/Archiv/Access-Events aus `Funk.Pages`, Katalog 06) als Trigger-Quelle; keine Automations-Hooks im Protokoll | Outbox/Event-Katalog | Event wird geschrieben, ohne Automations-Consumer | `EventCatalogSnapshotTests` | I4 |
+| **D1** Wiki & Collections (W3) | (1) Dokumenttyp `workspace_page` (E-10) mit eigener `AuthorizeAsync`-Regel; (2) `IPageDocumentStore` arbeitet mit `PageDocumentScope` und ist projektunabhängig erweiterbar (Workspace-Scope, `project_pages`-Verknüpfung optional); (3) Signale/Backplane-Kanäle enthalten den Dokumenttyp (`plane:collab:doc:{type}:{name}`, Signal-Feld `t`) | `Funk.Collaboration.Contracts`, `Funk.Pages.Contracts` | nur `project_page` | `CollaborationDocumentTypeRegistryTests`, AK-16-15 | I4 |
 | **D2** Nested Pages (W3) | (1) `BroadcastedEvent.affectedPages` (`parentPage`, `descendantPages`) serverseitig erzeugbar über `ICollaborationDocumentControl.BroadcastEventAsync`; (2) Eltern-Titel-Broadcast `property_updated {name}` in `TitleSyncScheduler` über `IPageHierarchy` (CE flach → kein Broadcast); (3) Stateless `move`/`duplicate`/`restore`/`property_update` sind gemappt, aber in der CE von `ValidateStatelessAsync` verworfen; (4) Force-Close-Text „use nested pages“ unverändert | `Stateless/StatelessEventMap.cs`, `TitleSyncScheduler`, `ICollaborationDocumentControl` | kein Eltern-Bezug, Stateless verworfen | `StatelessEventMapTests` (vollständige Tabelle), `TitleSyncSchedulerTests.NoParentNoBroadcast` | I4 |
 | **E3** IdP Group Sync (W4) | – (Rechteänderungen wirken über Signal `member_removed`/`access`; keine eigene Andockstelle) | – | – | – | – |
 | **E5** Rollenmodell (W4) | Autorisierung je Verbindung ausschließlich über `IPermissionEvaluator` (`project.page.read`/`update`) → Custom Roles wirken ohne Änderung; Hub-Gruppen über `IRealtimeGroupAuthorizer` + `IPermissionEvaluator` | `ProjectPageDocumentType.AuthorizeAsync` → `IPageDocumentStore.AuthorizeAsync` | System-Rollen 20/15/5 | `CollaborationAuthorizationTests` (Matrix aus `tests/security/permission-matrix.yaml`) | I4 |
-| **F1** Integrations-Framework (W1) | Serverseitige Markdown⇄HTML-Konvertierung (`MarkdownRenderer`, `HtmlToMarkdownConverter`) und `IDocumentConverter.ConvertHtmlToAllFormats(Rich)` für eingehende Beschreibungen; `DocumentReferenceExtractor` für Verknüpfungen | `Plane.Documents/Markdown/`, `Conversion/` | Bausteine vorhanden, ohne Aufrufer | G-MD, G-DOC | I4 |
-| **F2** Forgejo (W1) | wie F1 (Issue-Sync Titel/Beschreibung/Kommentare); Link-Previews **nicht** im Editor-Schema der CE (kein Node) – Paket ergänzt ggf. eigenen Node über E-11 | `Plane.Documents` | – | – | I4 |
-| **G1** AI-Basis (nicht gewählt) | Text-Extraktion (`HtmlTextExtractor`, `TitleText`) und Event `plane.page.description_updated.v1` als Index-/Embedding-Quelle (`IIndexingPipeline`, `IEmbeddingGenerator` Null-Provider) | `Plane.Documents/Text/`, Outbox | Null-Provider | `IndexingPipelineDefaultsTests` (11) | I5 |
-| **H1** OAuth-App-Plattform (W1) | `PlanePrincipal.Kind` wird in `AuthorizeAsync` ausgewertet: CE nur `User`; Apps/Bots (Bearer-Token) könnten später serverseitig Dokumente bearbeiten über eine **Direct-Connection**-Schnittstelle `ICollaborationDocumentEditor` (Hocuspocus `DirectConnection`-Äquivalent: Update in die laufende Sitzung einspeisen, Origin `App`) – in der CE nur Interface ohne Implementierung (R10) | `Plane.Collaboration.Contracts/Extensions/ICollaborationDocumentEditor.cs` | Kind ≠ User → `None`; kein Editor registriert | `CollaborationAuthorizationTests.NonUserPrincipalDenied` | I4 |
-| **H6** Realtime-Event-Server (W1) | vollständiger Transport §3.16: Hub, Gruppen-Schema, `IRealtimeGroupAuthorizer`, `IRealtimePublisher` (`HubRealtimePublisher` im Realtime-Host, `QueuedRealtimePublisher` in Api/Worker), `RealtimeFanOutConsumer` auf Queue `realtime` im Worker, `realtime.push` auf Queue `live` (17 ABG-106); reservierte Gruppen `teamspace:`, `page:` | `Plane.RealtimeEvents(.Contracts)` | CE-Gruppen ws/project/user; erste Nutzung Notification-Zähler (I5) | `RealtimeSmokeTests`, `HubGroupAuthorizationTests`, `PublisherPathTests` | I0 / I5 |
+| **F1** Integrations-Framework (W1) | Serverseitige Markdown⇄HTML-Konvertierung (`MarkdownRenderer`, `HtmlToMarkdownConverter`) und `IDocumentConverter.ConvertHtmlToAllFormats(Rich)` für eingehende Beschreibungen; `DocumentReferenceExtractor` für Verknüpfungen | `Funk.Documents/Markdown/`, `Conversion/` | Bausteine vorhanden, ohne Aufrufer | G-MD, G-DOC | I4 |
+| **F2** Forgejo (W1) | wie F1 (Issue-Sync Titel/Beschreibung/Kommentare); Link-Previews **nicht** im Editor-Schema der CE (kein Node) – Paket ergänzt ggf. eigenen Node über E-11 | `Funk.Documents` | – | – | I4 |
+| **G1** AI-Basis (nicht gewählt) | Text-Extraktion (`HtmlTextExtractor`, `TitleText`) und Event `funk.page.description_updated.v1` als Index-/Embedding-Quelle (`IIndexingPipeline`, `IEmbeddingGenerator` Null-Provider) | `Funk.Documents/Text/`, Outbox | Null-Provider | `IndexingPipelineDefaultsTests` (11) | I5 |
+| **H1** OAuth-App-Plattform (W1) | `FunkPrincipal.Kind` wird in `AuthorizeAsync` ausgewertet: CE nur `User`; Apps/Bots (Bearer-Token) könnten später serverseitig Dokumente bearbeiten über eine **Direct-Connection**-Schnittstelle `ICollaborationDocumentEditor` (Hocuspocus `DirectConnection`-Äquivalent: Update in die laufende Sitzung einspeisen, Origin `App`) – in der CE nur Interface ohne Implementierung (R10) | `Funk.Collaboration.Contracts/Extensions/ICollaborationDocumentEditor.cs` | Kind ≠ User → `None`; kein Editor registriert | `CollaborationAuthorizationTests.NonUserPrincipalDenied` | I4 |
+| **H6** Realtime-Event-Server (W1) | vollständiger Transport §3.16: Hub, Gruppen-Schema, `IRealtimeGroupAuthorizer`, `IRealtimePublisher` (`HubRealtimePublisher` im Realtime-Host, `QueuedRealtimePublisher` in Api/Worker), `RealtimeFanOutConsumer` auf Queue `realtime` im Worker, `realtime.push` auf Queue `live` (17 ABG-106); reservierte Gruppen `teamspace:`, `page:` | `Funk.RealtimeEvents(.Contracts)` | CE-Gruppen ws/project/user; erste Nutzung Notification-Zähler (I5) | `RealtimeSmokeTests`, `HubGroupAuthorizationTests`, `PublisherPathTests` | I0 / I5 |
 
-**Nicht-🧱-Pakete mit Bezug zu diesem Dokument (nur Hinweis, keine CE-Pflicht über das Genannte hinaus):** D3 (Versionslimit über `Plane:Retention:PageVersionsKeep`, optional Update-Log `page_yjs_updates` als Erweiterung von `PageDocumentStore`), D4 (Awareness wird bereits weitergeleitet; Paket entfernt nur `collaboration-cursor` aus `EDITOR_FLAGS`), D5 (Export-Typen über `IPdfExporter`-Profile und E-16; DOCX nicht in der CE), D6/D9/D10 (neue Nodes über E-11 client- **und** serverseitig mit Golden-Files), D7 (Mark `comment` über E-11, Stateless-JSON-Ereignisse über `ICollaborationDocumentControl`), D8 (`IPageAccessExtension` wirkt über `PAGE`-Regel in `AuthorizeAsync`, Gruppe `page:{id}`).
+**Nicht-🧱-Pakete mit Bezug zu diesem Dokument (nur Hinweis, keine CE-Pflicht über das Genannte hinaus):** D3 (Versionslimit über `Funk:Retention:PageVersionsKeep`, optional Update-Log `page_yjs_updates` als Erweiterung von `PageDocumentStore`), D4 (Awareness wird bereits weitergeleitet; Paket entfernt nur `collaboration-cursor` aus `EDITOR_FLAGS`), D5 (Export-Typen über `IPdfExporter`-Profile und E-16; DOCX nicht in der CE), D6/D9/D10 (neue Nodes über E-11 client- **und** serverseitig mit Golden-Files), D7 (Mark `comment` über E-11, Stateless-JSON-Ereignisse über `ICollaborationDocumentControl`), D8 (`IPageAccessExtension` wirkt über `PAGE`-Regel in `AuthorizeAsync`, Gruppe `page:{id}`).
 
 **Regeln für Andockstellen (prüfbar):**
 
-1. Neue Dokumenttypen dürfen das Wire-Protokoll nicht ändern; sie implementieren nur `ICollaborationDocumentType` (Architekturtest: keine Typen außerhalb `Plane.Collaboration` referenzieren `Plane.Collaboration.Protocol` außer Lasttests).
+1. Neue Dokumenttypen dürfen das Wire-Protokoll nicht ändern; sie implementieren nur `ICollaborationDocumentType` (Architekturtest: keine Typen außerhalb `Funk.Collaboration` referenzieren `Funk.Collaboration.Protocol` außer Lasttests).
 2. Neue Nodes/Marks erweitern das Server-Schema nur additiv (Schema-Freeze der CE-Nodes, ADR-042); jeder neue Node bringt ≥ 3 G-DOC-Fälle mit.
 3. Stateless-Ereignisse erweitern `StatelessEventMap` nur additiv; die Original-Namen bleiben.
 4. Gruppenpräfixe sind in `RealtimeGroups` registriert; unbekannte Präfixe werden abgelehnt.
@@ -2065,9 +2065,9 @@ Kein Fachdesign der Pakete. Die Tabelle nennt für **alle 17 🧱-Pakete** (`30-
 
 | ID | Kriterium (messbar) | Nachweis | Inkr. |
 |---|---|---|---|
-| AK-07-01 | `GET /live/health/` liefert 200 mit `status`, `timestamp`, `version`; `/live/foo` → 404 `{"message":"Not Found"}`; `/health/ready` auf 8081 | `Plane.AppHost.Tests/ResourceHealthTests`, `RealtimeRoutingTests` | I0 |
+| AK-07-01 | `GET /live/health/` liefert 200 mit `status`, `timestamp`, `version`; `/live/foo` → 404 `{"message":"Not Found"}`; `/health/ready` auf 8081 | `Funk.AppHost.Tests/ResourceHealthTests`, `RealtimeRoutingTests` | I0 |
 | AK-07-02 | Hub `/live/events/` nimmt WebSocket mit Session-Cookie an (Negotiation übersprungen), ohne Cookie 403 (05 AK-20, kein 302), falscher Origin 403; `JoinGroup("teamspace:…")` → `false` | `RealtimeSmokeTests` (Hub), `WebSocketOriginTests` | I0 |
-| AK-07-03 | Original-`@hocuspocus/provider@2.15.2` im Chromium: alle Protokollfälle P-01 … P-30 (§7.3) grün | `Plane.Collaboration.Tests/Browser/ProviderConformanceTests` | I4 (S1) |
+| AK-07-03 | Original-`@hocuspocus/provider@2.15.2` im Chromium: alle Protokollfälle P-01 … P-30 (§7.3) grün | `Funk.Collaboration.Tests/Browser/ProviderConformanceTests` | I4 (S1) |
 | AK-07-04 | Token-Mismatch, fehlender `documentType`, unbekannter Typ, Nicht-UUID-Name, fehlende Rechte → jeweils `PermissionDenied("permission-denied")`; Client-Stage `disconnected(auth-failed)` | P-03, P-04, `CollaborationAuthorizationTests` | I4 |
 | AK-07-05 | Gast ohne `guest_view_all_features` → `PermissionDenied`; Member ohne Update-Recht (nur möglich mit E5-Fake-Rolle) → `Authenticated("readonly")`, Updates → `SyncStatus(0)`, Server-Zustand unverändert | `CollaborationAuthorizationTests` (Matrix) | I4 |
 | AK-07-06 | Zwei Browser auf derselben Page konvergieren (PM-JSON gleich) nach 100 zufälligen Operationen je Client | `Browser/TwoClientConvergenceTests` | I4 |
@@ -2079,22 +2079,22 @@ Kein Fachdesign der Pakete. Die Tabelle nennt für **alle 17 🧱-Pakete** (`30-
 | AK-07-12 | Gesperrte/archivierte Page: Updates werden abgewiesen, Client erhält einmal `error` mit `error_code: page_locked`/`page_archived` | P-16, `Sessions/LockGateTests` | I4 |
 | AK-07-13 | Dokument > `MaxDocumentBytes`: alle Clients aller Instanzen erhalten `error` (`content_too_large`) + `force_close`-JSON + Close 4001; Dokument nach ≤ 1 s entladen | P-18, `Scaling/ForceCloseAcrossInstancesTests` | I4 |
 | AK-07-14 | Admin-Force-Close per CLI schließt alle Verbindungen mit 4000 und Text „Connection closed by administrator. Please try again later.“ | P-19 | I4 |
-| AK-07-15 | Zwei Realtime-Instanzen (Profil `test`): Update auf A erscheint auf B p95 < 150 ms (LT-17), 500 Pages × 2 Editoren p95 < 250 ms (LT-18) | `Plane.LoadTests.Collaboration` | I4 |
+| AK-07-15 | Zwei Realtime-Instanzen (Profil `test`): Update auf A erscheint auf B p95 < 150 ms (LT-17), 500 Pages × 2 Editoren p95 < 250 ms (LT-18) | `Funk.LoadTests.Collaboration` | I4 |
 | AK-07-16 | Valkey-Ausfall während Bearbeitung: Konvergenz aller Instanzen ≤ 12 s nach letzter Änderung (über Merge-on-Store + Signal `stored`) | `Scaling/ValkeyOutageConvergenceTests` | I4 |
 | AK-07-17 | Rolling Restart einer Instanz: 200 Clients wieder `synced` < 15 s, keine verlorenen Änderungen (LT-19) | LT-19 | I4 |
 | AK-07-18 | Leerlaufender Editor bleibt 5 min verbunden (Awareness-Echo, `messageReconnectTimeout`) | P-24 | I4 |
 | AK-07-19 | Soak 1 h: Speicherwachstum < 5 %, keine nativen Abstürze, Exit-Code 0 (LT-20) | LT-20 (Nightly) | I4 |
-| AK-07-20 | G-SCHEMA: serialisiertes C#-Server-Schema (Nodes, Marks, Attribute inkl. Defaults, Content-Expressions, Gruppen, Reihenfolge) = Original-Snapshot für Varianten Rich, Document, Title | `Plane.Documents.Tests/Golden/SchemaSnapshotTests` | I2 |
+| AK-07-20 | G-SCHEMA: serialisiertes C#-Server-Schema (Nodes, Marks, Attribute inkl. Defaults, Content-Expressions, Gruppen, Reihenfolge) = Original-Snapshot für Varianten Rich, Document, Title | `Funk.Documents.Tests/Golden/SchemaSnapshotTests` | I2 |
 | AK-07-21 | G-DOC HTML↔JSON: JSON strukturgleich 100 %, HTML byte-gleich nach Normalisierung ≥ 99 % (Rest nur dokumentierte Attribut-Reihenfolge in `Golden/docs/known-differences.yaml`) | `Golden/DocsGoldenTests` | I2 |
 | AK-07-22 | `YjsUpdateValidator` lehnt abgeschnittene/zufällige Bytes ab, akzeptiert alle G-DOC-Zustände; Fehlertext `{"description_binary": ["Invalid document state."]}` | `Yjs/YjsUpdateValidatorTests` | I2 |
 | AK-07-23 | Durchsatz Konvertierung ≥ 200 Dokumente/s (Ø 20 KB) für HTML→JSON→HTML auf einem CI-Kern | `Benchmarks/ConversionBenchmarks` (BenchmarkDotNet, Nightly) | I2 |
 | AK-07-24 | G-DOC Yjs: `state.yjs.bin` (Original) mit .NET gelesen ⇒ `roundtrip.json`; .NET-erzeugter Zustand (`YjsUpdateWriter`) im Chromium mit Original-`yjs`/`y-prosemirror` dekodiert ⇒ identisches PM-JSON, inklusive typisierter Attribute (`level` Zahl, `checked` Bool, `colwidth` Array) – 100 % | `Golden/YjsGoldenTests`, `Browser/YjsDecodeInBrowserTests` | I4 (S2) |
 | AK-07-25 | REST-Fallback: PATCH `…/description/` während laufender Sitzung → Änderungen erscheinen in allen verbundenen Clients ≤ 2 s (Signal `content`) | `Persistence/RestPatchMergesWithLiveSession` | I4 |
-| AK-07-26 | Versionen: Speichern mit geändertem HTML erzeugt `page_versions`; zweiter Store desselben Nutzers innerhalb 600 s überschreibt; > 20 → älteste weich gelöscht | `Plane.Pages.Tests/PageVersionRecorderTests` | I4 |
-| AK-07-27 | PageLog nach Anlegen (`CreatePageCommand`), Page-PATCH mit `description_html` (`UpdatePageCommand`), Store, REST-PATCH `…/description/` und Duplizieren (17 ABG-108): `page_logs` der Page entsprechen im selben Commit exakt den Mentions/Bildern/Work-Item-Referenzen des neuen HTML; Rollback des Stores hinterlässt keine PageLog-Änderung | `Plane.Pages.Tests/PageReferenceIndexerTests` | I4 |
-| AK-07-28 | Duplizieren: Kopie hat sofort `description_binary`, Titel „{name} (Copy)“, neue Asset-IDs in `imageComponent.src`, öffnet kollaborativ ohne Migration | `Plane.Pages.Tests/DuplicatePageTests` | I4 |
-| AK-07-29 | PDF Profil `live`: 21 Original-Fälle (A-114) bestehen über Textextraktion; 20 Referenzseiten Pixel-Diff ≤ 2 % je Seite (150 dpi) | `Plane.Documents.Pdf.Tests` | I4 (S3) |
-| AK-07-30 | PDF Profil `web`: 20 Referenzseiten (aus `generate.mjs web-pdf`) Pixel-Diff ≤ 2 %; Formate A4 … Tabloid; „No images“ entfernt alle Bilder | `Plane.Documents.Pdf.Tests/Golden/web` | I4 (S3) |
+| AK-07-26 | Versionen: Speichern mit geändertem HTML erzeugt `page_versions`; zweiter Store desselben Nutzers innerhalb 600 s überschreibt; > 20 → älteste weich gelöscht | `Funk.Pages.Tests/PageVersionRecorderTests` | I4 |
+| AK-07-27 | PageLog nach Anlegen (`CreatePageCommand`), Page-PATCH mit `description_html` (`UpdatePageCommand`), Store, REST-PATCH `…/description/` und Duplizieren (17 ABG-108): `page_logs` der Page entsprechen im selben Commit exakt den Mentions/Bildern/Work-Item-Referenzen des neuen HTML; Rollback des Stores hinterlässt keine PageLog-Änderung | `Funk.Pages.Tests/PageReferenceIndexerTests` | I4 |
+| AK-07-28 | Duplizieren: Kopie hat sofort `description_binary`, Titel „{name} (Copy)“, neue Asset-IDs in `imageComponent.src`, öffnet kollaborativ ohne Migration | `Funk.Pages.Tests/DuplicatePageTests` | I4 |
+| AK-07-29 | PDF Profil `live`: 21 Original-Fälle (A-114) bestehen über Textextraktion; 20 Referenzseiten Pixel-Diff ≤ 2 % je Seite (150 dpi) | `Funk.Documents.Pdf.Tests` | I4 (S3) |
+| AK-07-30 | PDF Profil `web`: 20 Referenzseiten (aus `generate.mjs web-pdf`) Pixel-Diff ≤ 2 %; Formate A4 … Tabloid; „No images“ entfernt alle Bilder | `Funk.Documents.Pdf.Tests/Golden/web` | I4 (S3) |
 | AK-07-31 | PDF-Fehlerbilder: 400/401/403/404/413/502/504/500 mit `{"message"}`; `Content-Disposition` mit `filename` + `filename*` | `Http/PdfExportEndpointTests` | I4 |
 | AK-07-32 | PDF rendert 20-seitiges Dokument < 3 s; keine Netzwerkzugriffe (Airgap-Test mit gesperrtem Egress) | `PdfPerformanceTests`, Airgap-CI | I4 |
 | AK-07-33 | Markdown G-MD: `HtmlToMarkdownConverter` byte-gleich zu `convertHTMLToMarkdown` (60 Fälle); `MarkdownRenderer` erzeugt schema-gültiges HTML (Rundreise ohne Verlust für GFM-Kernelemente) | `Golden/MarkdownGoldenTests` | I4 |
@@ -2110,26 +2110,26 @@ Kein Fachdesign der Pakete. Die Tabelle nennt für **alle 17 🧱-Pakete** (`30-
 | AK-07-43 | Graceful Shutdown: ausstehende Stores werden < `ShutdownFlushTimeoutSeconds` geschrieben, Clients erhalten 1001 und verbinden neu | `Shutdown/GracefulShutdownTests` | I7 |
 | AK-07-44 | Wire-Transkripte: für 12 Szenarien (Verbindungsaufbau, Pre-Auth-Puffer, Update read-write, Update readonly, Step2 readonly enthalten/nicht enthalten, Awareness-Erneuerung mit gleichem Inhalt, Trennen mit Awareness-Entfernung, Stateless `lock`, `CLOSE`, Token-Mismatch, unbekannter Nachrichtentyp, Rahmen-Dekodierfehler) ist die Folge der Server→Client-Nachrichten (Typ, Untertyp, Reihenfolge; Yjs-Nutzlasten semantisch verglichen) identisch zum eingecheckten Transkript des Original-`@hocuspocus/server` 2.15.2 | `Protocol/WireTranscriptTests` (Golden `Golden/wire/*.jsonl`) | I4 (S1) |
 | AK-07-45 | Awareness-Vektoren: 200 Fälle aus `y-protocols` 1.0.6 (`applyAwarenessUpdate`/`removeAwarenessStates`, inkl. Clock 0, gleiche Clock + `null`, unveränderter Inhalt) ergeben in `AwarenessRegistry` dieselben `added`/`updated`/`removed`-Listen und dieselben kodierten Weiterleitungen | `Sessions/AwarenessRegistryTests` (Vektoren aus `generate.mjs awareness-vectors`) | I4 (S1) |
-| AK-07-46 | PDF-Schriften: S3-K6 grün (Emoji außerhalb der BMP über Noto Emoji, Liberation Mono statt Courier, keine Systemschrift; `FontResolverTests` schlägt fehl, wenn eine Familie ohne gebündelte Datei angefragt wird) | `Plane.Documents.Pdf.Tests/FontResolverTests`, `EmojiRunSplitterTests` | I4 (S3) |
+| AK-07-46 | PDF-Schriften: S3-K6 grün (Emoji außerhalb der BMP über Noto Emoji, Liberation Mono statt Courier, keine Systemschrift; `FontResolverTests` schlägt fehl, wenn eine Familie ohne gebündelte Datei angefragt wird) | `Funk.Documents.Pdf.Tests/FontResolverTests`, `EmojiRunSplitterTests` | I4 (S3) |
 
 ### 7.2 Testinventar (Projekte und Klassen)
 
 | Projekt | Klassen (Mindestumfang) | Ebene (15) |
 |---|---|---|
-| `tests/Plane.Collaboration.Tests/Protocol/` | `Lib0RoundtripTests`, `Lib0VectorsTests` (Vektoren aus `generate.mjs lib0-vectors`), `HocuspocusCodecTests`, `AwarenessUpdateCodecTests`, `WireTranscriptTests` (AK-07-44), `SnapshotContainsUpdateTests` (pending Structs, Delete-Set), `FuzzTests` | L1 |
+| `tests/Funk.Collaboration.Tests/Protocol/` | `Lib0RoundtripTests`, `Lib0VectorsTests` (Vektoren aus `generate.mjs lib0-vectors`), `HocuspocusCodecTests`, `AwarenessUpdateCodecTests`, `WireTranscriptTests` (AK-07-44), `SnapshotContainsUpdateTests` (pending Structs, Delete-Set), `FuzzTests` | L1 |
 | `…/Sessions/` | `StoreSchedulerTests`, `TitleSyncSchedulerTests`, `AwarenessRegistryTests`, `DocumentSessionLifecycleTests`, `LockGateTests`, `StatelessEventMapTests` | L1/L2 |
 | `…/Persistence/` | `StoreIntegrationTests`, `MergeOnStorePropertyTests`, `MigrationTests`, `RestPatchMergesWithLiveSession` | L3 |
 | `…/Scaling/` | `ValkeyBackplaneTests`, `InMemoryBackplaneTests`, `ValkeyOutageConvergenceTests`, `ForceCloseAcrossInstancesTests`, `SignalListenerReconnectTests` | L3/L6 |
 | `…/Security/` | `CollaborationAuthTests`, `CollaborationAuthorizationTests`, `StatelessSpoofingTests`, `CrossWorkspaceDocumentTests`, `MemberRemovalDisconnectsTests`, `SessionRevocationClosesSocketsTests` | L3/L7 |
-| `…/Browser/` (Microsoft.Playwright .NET, nur Chromium – Z-10) | `ProviderConformanceTests` (P-01 … P-30), `TwoClientConvergenceTests`, `YjsDecodeInBrowserTests` (gebündelte Original-Pakete aus `tests/Plane.Collaboration.Tests/Browser/fixtures/provider-bundle.js`, erzeugt mit esbuild aus `@hocuspocus/provider@2.15.2`, `yjs@13.6.27`, `y-prosemirror@1.3.7`) | L6 |
+| `…/Browser/` (Microsoft.Playwright .NET, nur Chromium – Z-10) | `ProviderConformanceTests` (P-01 … P-30), `TwoClientConvergenceTests`, `YjsDecodeInBrowserTests` (gebündelte Original-Pakete aus `tests/Funk.Collaboration.Tests/Browser/fixtures/provider-bundle.js`, erzeugt mit esbuild aus `@hocuspocus/provider@2.15.2`, `yjs@13.6.27`, `y-prosemirror@1.3.7`) | L6 |
 | `…/Acceptance/Original/` | `PdfExportEffectUtilsTests` (A-115) | L5 |
 | `…/Http/` | `PdfExportEndpointTests`, `ConvertDocumentEndpointTests` | L3 |
 | `…/Shutdown/` | `GracefulShutdownTests` | L6 |
-| `tests/Plane.Documents.Tests/` | `SchemaSnapshotTests`, `DocsGoldenTests`, `YjsGoldenTests`, `AttributeCoercionTests`, `YjsUpdateWriterTests`, `MarkdownGoldenTests`, `HtmlTextExtractorTests`, `YjsUpdateValidatorTests`, `DocumentSchemaRegistryTests` (Fake-Node), `ConversionBenchmarks` | L1/L4 |
-| `tests/Plane.Documents.Pdf.Tests/` | `Acceptance/Original/PdfRenderingTests` (A-114), `LiveProfileGoldenTests`, `WebProfileGoldenTests`, `PdfPerformanceTests`, `NoExternalFetchTests`, `FontResolverTests`, `EmojiRunSplitterTests`, `ContentDispositionTests` (Bereinigung/`encodeURIComponent`-Parität) | L4/L5 |
-| `tests/modules/Plane.Pages.Tests/` | `PageDocumentStoreTests`, `PageVersionRecorderTests`, `PageReferenceIndexerTests`, `DuplicatePageTests`, `AccessSignalTests` | L3 |
-| `tests/modules/Plane.RealtimeEvents.Tests/` | `HubGroupAuthorizationTests`, `PublisherPathTests` | L3/L6 |
-| `tests/load/Plane.LoadTests.Collaboration/` | LT-16 … LT-20 (15 §3.12.3) | L9 |
+| `tests/Funk.Documents.Tests/` | `SchemaSnapshotTests`, `DocsGoldenTests`, `YjsGoldenTests`, `AttributeCoercionTests`, `YjsUpdateWriterTests`, `MarkdownGoldenTests`, `HtmlTextExtractorTests`, `YjsUpdateValidatorTests`, `DocumentSchemaRegistryTests` (Fake-Node), `ConversionBenchmarks` | L1/L4 |
+| `tests/Funk.Documents.Pdf.Tests/` | `Acceptance/Original/PdfRenderingTests` (A-114), `LiveProfileGoldenTests`, `WebProfileGoldenTests`, `PdfPerformanceTests`, `NoExternalFetchTests`, `FontResolverTests`, `EmojiRunSplitterTests`, `ContentDispositionTests` (Bereinigung/`encodeURIComponent`-Parität) | L4/L5 |
+| `tests/modules/Funk.Pages.Tests/` | `PageDocumentStoreTests`, `PageVersionRecorderTests`, `PageReferenceIndexerTests`, `DuplicatePageTests`, `AccessSignalTests` | L3 |
+| `tests/modules/Funk.RealtimeEvents.Tests/` | `HubGroupAuthorizationTests`, `PublisherPathTests` | L3/L6 |
+| `tests/load/Funk.LoadTests.Collaboration/` | LT-16 … LT-20 (15 §3.12.3) | L9 |
 | `frontend/apps/e2e/web/realtime/collaboration.spec.ts` | Frontend-sichtbare Teile CE-RT-001 … -009 (15) | L7 |
 
 ### 7.3 Protokollfälle P-01 … P-30 (Original-Provider im Browser, S1)
@@ -2175,13 +2175,13 @@ Seed-Fragment `collaboration` (15 §3.4): Workspace `parity`, Projekt `PAR`, Nut
 
 | Kommando (`tools/golden/generate.mjs`) | Ausgabe | Quelle im Original |
 |---|---|---|
-| `schema` | `tests/Plane.Documents.Tests/Golden/schema/{rich,document,title}.schema.json` (Server-Varianten; die Browser-Varianten legt `10` unter `…/schema/browser/` ab) | `packages/editor` (`getSchema(CoreEditorExtensionsWithoutProps)` …) |
+| `schema` | `tests/Funk.Documents.Tests/Golden/schema/{rich,document,title}.schema.json` (Server-Varianten; die Browser-Varianten legt `10` unter `…/schema/browser/` ab) | `packages/editor` (`getSchema(CoreEditorExtensionsWithoutProps)` …) |
 | `docs` | `…/Golden/docs/<nnn>-<name>/{input.html,pm.json,output.html,state.yjs.bin,roundtrip.json}` | `@tiptap/html`, `y-prosemirror`, `yjs` (§5.12) |
 | `markdown` | `…/Golden/markdown/<nnn>.{html,md}` | `PKG/utils/src/editor/markdown-parser` |
-| `lib0-vectors` | `tests/Plane.Collaboration.Tests/Protocol/vectors.json` | `lib0` 0.2.114, `@hocuspocus/common` 2.15.2 |
-| `wire` | `tests/Plane.Collaboration.Tests/Golden/wire/<szenario>.jsonl` (je Zeile Richtung, Typ, Untertyp, Base64-Nutzlast) | Original-`@hocuspocus/server` 2.15.2 mit Plane-Extensions-Attrappen (In-Memory-Persistenz) + `@hocuspocus/provider` 2.15.2 in Node (nur Entwicklungszeit) |
-| `awareness-vectors` | `tests/Plane.Collaboration.Tests/Sessions/awareness-vectors.json` | `y-protocols` 1.0.6 `awareness.js` |
-| `web-pdf` | `tests/Plane.Documents.Pdf.Tests/Golden/web/<nnn>.pdf` | `WEB/components/editor/pdf/document.tsx` + `use-parse-editor-content.ts` (esbuild-Bundle, `@react-pdf/renderer` in Node) |
+| `lib0-vectors` | `tests/Funk.Collaboration.Tests/Protocol/vectors.json` | `lib0` 0.2.114, `@hocuspocus/common` 2.15.2 |
+| `wire` | `tests/Funk.Collaboration.Tests/Golden/wire/<szenario>.jsonl` (je Zeile Richtung, Typ, Untertyp, Base64-Nutzlast) | Original-`@hocuspocus/server` 2.15.2 mit Plane-Extensions-Attrappen (In-Memory-Persistenz) + `@hocuspocus/provider` 2.15.2 in Node (nur Entwicklungszeit) |
+| `awareness-vectors` | `tests/Funk.Collaboration.Tests/Sessions/awareness-vectors.json` | `y-protocols` 1.0.6 `awareness.js` |
+| `web-pdf` | `tests/Funk.Documents.Pdf.Tests/Golden/web/<nnn>.pdf` | `WEB/components/editor/pdf/document.tsx` + `use-parse-editor-content.ts` (esbuild-Bundle, `@react-pdf/renderer` in Node) |
 | (Paritäts-Setup) `POST /live/pdf-export/` am Original | `…/Golden/{cases,pages}/*.pdf` + `*.txt` | Original-Live-Server (15 G-PDF) |
 
 Alle Golden-Dateien sind eingecheckt; CI führt `generate.mjs` nicht aus (kein Node in der CI-Laufzeit der Tests, P5). `tools/golden/README.md` dokumentiert Original-SHA und Paketversionen.
@@ -2192,7 +2192,7 @@ Alle Golden-Dateien sind eingecheckt; CI führt `generate.mjs` nicht aus (kein N
 
 | Tag | Inhalt | Ergebnis |
 |---|---|---|
-| 1–2 | `Plane.Collaboration.Protocol` (lib0, Codec, Awareness-Codec) + P-30 | Vektoren grün |
+| 1–2 | `Funk.Collaboration.Protocol` (lib0, Codec, Awareness-Codec) + P-30 | Vektoren grün |
 | 3–4 | Minimaler Server (eine Instanz, In-Memory-Persistenz), P-01, P-03, P-05 … P-11, P-21 … P-24 | Original-Provider synced |
 | 5 | Persistenz mit Merge-on-Store gegen PostgreSQL (Testcontainers), Debounce, P-13 | Store-Takt 10 s |
 | 6–7 | Valkey-Backplane, 2 Instanzen, P-14, P-18, P-19, LT-17 (50 Editoren) | p95-Latenz |
@@ -2201,7 +2201,7 @@ Alle Golden-Dateien sind eingecheckt; CI führt `generate.mjs` nicht aus (kein N
 
 **Erfolgskriterien:** `01` §9 S1 vollständig, zusätzlich: P-01 … P-30 grün; Speicher je typischer Page ≤ 200 KB; keine `AccessViolationException`/SIGSEGV in 1 h Soak; YDotNet-`ObserveUpdatesV1` liefert Updates, die der Original-Client anwendet.
 **Abbruchkriterien:** nach 10 PT ein Kriterium rot; nativer Absturz/Speicherleck ohne Workaround; YDotNet-Transaktionen blockieren > 50 ms bei 1-MiB-Dokument.
-**Fallback (Reihenfolge, `01` §9):** F-S1-1: Protokoll auf y-websocket umstellen, Client `CollaborationProviderFactory` (08 R-D08-13) tauscht den Provider (eine Datei); F-S1-2: YDotNet-Fork mit aktuellem `yrs` (eigenes NuGet-Paket `Plane.YDotNet` im internen Feed, Lizenz MIT bleibt); F-S1-3: Node-Sidecar **nur** mit ADR-002-Änderung durch den Auftraggeber.
+**Fallback (Reihenfolge, `01` §9):** F-S1-1: Protokoll auf y-websocket umstellen, Client `CollaborationProviderFactory` (08 R-D08-13) tauscht den Provider (eine Datei); F-S1-2: YDotNet-Fork mit aktuellem `yrs` (eigenes NuGet-Paket `Funk.YDotNet` im internen Feed, Lizenz MIT bleibt); F-S1-3: Node-Sidecar **nur** mit ADR-002-Änderung durch den Auftraggeber.
 
 #### S2 – Konvertierung ohne Node (8 PT, gated I2 für HTML/JSON, I4 für Yjs)
 
@@ -2215,7 +2215,7 @@ Alle Golden-Dateien sind eingecheckt; CI führt `generate.mjs` nicht aus (kein N
 | S2-K6 (neu) | **Typisierte Attribute:** (a) YDotNet liest von Original-`yjs` geschriebene Attribute `level` (Zahl), `checked` (Bool), `colwidth` (Array), `aspectRatio` (Zahl), `data-emoji-unicode` (Zahl) in einer der Darstellungen aus §3.12.6 reproduzierbar; (b) `YjsUpdateWriter`-Zustände werden im Browser vom Original-`y-prosemirror` zu identischem PM-JSON dekodiert (100 % G-DOC); (c) Browser-Updates auf einen `YjsUpdateWriter`-Zustand (Tippen, Tabellenspalte ändern, Checkbox) konvergieren; (d) YDotNet-Lesewert von `data-emoji-unicode` ist für String `"128161"` und Zahl `128161` unterscheidbar (sonst §3.12.6 „Mehrdeutigkeit“) |
 
 **Abbruch:** < 95 % HTML-Gleichheit nach 8 PT **oder** S2-K6 nicht erfüllbar.
-**Fallback:** F-S2-1 (HTML/JSON-Abweichung): Jint-Engine (D07-ADR-29) für `HtmlSerializer`/`HtmlParser`, C#-Pfad bleibt für Text-Extraktion; F-S2-2 (S2-K6a rot): direkter P/Invoke-Zugriff auf die in `libyrs` vorhandenen Attribut-Funktionen mit typisierten Werten über eine eigene Interop-Schicht `Plane.Documents.Yjs.Native` (gleiche Native-Lib, Prüfung der yffi-Signaturen im Spike) – sonst Jint mit `yjs` für **Lesen** (Y→PM), Schreiben bleibt `YjsUpdateWriter`; F-S2-3 (S2-K6b rot): Jint mit `yjs` + `y-prosemirror` für Schreiben; Leistung messen, Engine-Pool.
+**Fallback:** F-S2-1 (HTML/JSON-Abweichung): Jint-Engine (D07-ADR-29) für `HtmlSerializer`/`HtmlParser`, C#-Pfad bleibt für Text-Extraktion; F-S2-2 (S2-K6a rot): direkter P/Invoke-Zugriff auf die in `libyrs` vorhandenen Attribut-Funktionen mit typisierten Werten über eine eigene Interop-Schicht `Funk.Documents.Yjs.Native` (gleiche Native-Lib, Prüfung der yffi-Signaturen im Spike) – sonst Jint mit `yjs` für **Lesen** (Y→PM), Schreiben bleibt `YjsUpdateWriter`; F-S2-3 (S2-K6b rot): Jint mit `yjs` + `y-prosemirror` für Schreiben; Leistung messen, Engine-Pool.
 
 #### S3 – PDF (5 PT, gated CE-PAGE-011 in I4)
 
@@ -2224,7 +2224,7 @@ Alle Golden-Dateien sind eingecheckt; CI führt `generate.mjs` nicht aus (kein N
 | S3-K1 | 20 Referenzseiten je Profil (`live`, `web`) Pixel-Diff ≤ 2 % (150 dpi, `Docnet.Core` + SkiaSharp) |
 | S3-K2 | 21 Original-Fälle (A-114) über Textextraktion (PdfPig) |
 | S3-K3 | 20-Seiten-Dokument < 3 s |
-| S3-K4 | Inter-TTF und Noto Emoji über `PlaneFontResolver` eingebettet (Subsetting), keine Systemschriften (Prüfung in `noble-chiseled-extra`) |
+| S3-K4 | Inter-TTF und Noto Emoji über `FunkFontResolver` eingebettet (Subsetting), keine Systemschriften (Prüfung in `noble-chiseled-extra`) |
 | S3-K5 | MigraDoc bildet Callout (Icon + Inhalt), Task-Checkbox (absolut positioniert im Web-Profil) und Tabellen mit `colwidth` ab |
 | S3-K6 (neu) | Emoji außerhalb der BMP (😄 U+1F604, 💡 U+1F4A1, ZWJ-Folge 👩‍💻, Flagge 🇩🇪) werden über `PdfTextRunSplitter` mit Noto Emoji gesetzt, sind per PdfPig als dieselben Codepoints extrahierbar und verschieben den Zeilenumbruch nicht; Courier-Ersatz Liberation Mono hält die Zeilenumbrüche der Code-Blöcke gegenüber dem Original (Textextraktion je Zeile gleich) |
 
@@ -2275,15 +2275,15 @@ Alle Golden-Dateien sind eingecheckt; CI führt `generate.mjs` nicht aus (kein N
 |---|---|---|---|
 | `00-grundsatzentscheidungen.md` | bindend | ADR-002 (YDotNet, kein Node), ADR-004 (Airgap: Fonts/Emoji gebündelt, keine externen Bilder), ADR-005 (1:1), ADR-008 (Session-Cookie aus Keycloak-BFF), ADR-009B (Marke „funk.“: PDF-Metadaten `BRAND-DOC-01`, CLI-/Image-Namen nach 17 ABG-149) | – |
 | `01-zielarchitektur-und-tech-stack.md` | bindend | ADR-022/-023/-029/-031/-032, §5.1 Projektbaum, §5.5 `IPageDocumentStore`, §9 S1/S2/S3 | Präzisierungen §9.2 |
-| `02-backend-solution-und-konventionen.md` | Nachbar (verbindlich) | Modulschablone, `ModuleCatalog` des Realtime-Hosts, `PlaneRealtimeOptions` (Eigentümer), Health-Konventionen (ABG-014), `IPostCommitAction`, Fehlerformen, `PlaneErrorCodes` 4701/4702 | Optionserweiterung, `IDbNotificationPublisher`/`IDbNotificationListener`, `Plane.Collaboration.Protocol` als dritte Assembly |
+| `02-backend-solution-und-konventionen.md` | Nachbar (verbindlich) | Modulschablone, `ModuleCatalog` des Realtime-Hosts, `FunkRealtimeOptions` (Eigentümer), Health-Konventionen (ABG-014), `IPostCommitAction`, Fehlerformen, `FunkErrorCodes` 4701/4702 | Optionserweiterung, `IDbNotificationPublisher`/`IDbNotificationListener`, `Funk.Collaboration.Protocol` als dritte Assembly |
 | `03-datenmodell-efcore.md` | Nachbar (inzwischen erstellt) | Tabellen `pages` (§3.4.10), `page_logs`, `page_versions`, Check `ck_pages_description_binary_size` (10 MiB), Soft-Delete-Kaskade | Spaltenanforderungen §3.6.8 (`description_revision` fehlt in 03), Speicherreihenfolge §3.6.4 (Änderungsauftrag §9.2) |
 | `04-api-design-und-endpunktkatalog.md` | Nachbar (inzwischen erstellt) | Endpunktkatalog der Pages | Dokumentverhalten der Page-Endpunkte §3.11, Abweichungen DEV-07-02/-03/-04, `/live/*`-Verträge §3.2 |
 | `05-auth-sicherheit-berechtigungen.md` | Nachbar (verbindlich) | §3.11 (Upgrade-Auth, Origin, 4401/4403), §3.13.5 `PAGE`-Regel, SEC-39 … SEC-42, `BinaryContentValidator`, `HtmlSanitizerProfile`, Revoke-Kanal `plane:session:revoked` | `YjsUpdateValidator`, SEC-RT-01 … -06 |
-| `06-hintergrundjobs-events-benachrichtigungen.md` | Nachbar (inzwischen erstellt) | Event-Katalog, Queues (`realtime` im Worker, `live` nur im Realtime-Host/AllInOne, D06-ADR-12, 17 ABG-106), `IJobScheduler`, `RealtimeFanOutConsumer`/`HubRealtimePublisher`/`QueuedRealtimePublisher` (§3.12), Namen `PageVersionRecorder`, `PageReferenceIndexer` (T30/T31, synchron), Job `pages.copy_duplicated_assets` (`CopyDuplicatedAssetsJob`, 17 ABG-108) | Event `plane.page.description_updated.v1`, Detailregeln für T8/T30/T31 (06 verweist auf „Detail 07“), Hub-Hosting |
+| `06-hintergrundjobs-events-benachrichtigungen.md` | Nachbar (inzwischen erstellt) | Event-Katalog, Queues (`realtime` im Worker, `live` nur im Realtime-Host/AllInOne, D06-ADR-12, 17 ABG-106), `IJobScheduler`, `RealtimeFanOutConsumer`/`HubRealtimePublisher`/`QueuedRealtimePublisher` (§3.12), Namen `PageVersionRecorder`, `PageReferenceIndexer` (T30/T31, synchron), Job `pages.copy_duplicated_assets` (`CopyDuplicatedAssetsJob`, 17 ABG-108) | Event `funk.page.description_updated.v1`, Detailregeln für T8/T30/T31 (06 verweist auf „Detail 07“), Hub-Hosting |
 | `08-frontend-angular-architektur.md` | Nachbar (verbindlich) | §3.12 (Provider unverändert, URL-Schema, Token `{id}`, `RealtimePageEventsService`, `PageFallbackService`, `LiveEventsService` nur WebSockets), R-D08-13 | Wire-Vertrag, JSON-Ereignisformat, PDF-Endpunkt mit `profile:"web"` |
-| `09-ui-paritaet-designsystem.md` | Nachbar | Inter-TTF-Ablage `src/documents/Plane.Documents.Pdf/Fonts/` (§4.11), Abweichungsliste (Z-12) | Q-07-04, DEV-07-11/-12 |
+| `09-ui-paritaet-designsystem.md` | Nachbar | Inter-TTF-Ablage `src/documents/Funk.Documents.Pdf/Fonts/` (§4.11), Abweichungsliste (Z-12) | Q-07-04, DEV-07-11/-12 |
 | `10-editor-angular.md` | Nachbar (inzwischen erstellt) | Golden-Namen `browser/` vs. Server-Varianten (§3.2.3), `CollaborationProviderFactory`, `CollaborationSession.authorizedScope` | Server-Schema als Referenz für den Schema-Freeze, G-SCHEMA (`rich`/`document`/`title`), Quelle für `authorizedScope` (§3.3.6), Close-Code-Reaktionen (§3.3.5) |
-| `11-suche-und-ai-basis.md` | Nachbar (inzwischen erstellt) | `IIndexingPipeline`, `PageIndexDocumentBuilder` | `HtmlTextExtractor` (Text-Extraktion), Event-Quelle `plane.page.description_updated.v1` |
+| `11-suche-und-ai-basis.md` | Nachbar (inzwischen erstellt) | `IIndexingPipeline`, `PageIndexDocumentBuilder` | `HtmlTextExtractor` (Text-Extraktion), Event-Quelle `funk.page.description_updated.v1` |
 | `14-infrastruktur-deployment-betrieb.md` | Nachbar (verbindlich) | G-06/G-07 (Timeouts 120 s), Valkey-Pflicht ab 2 Replikas (D14-ADR-21), Image-Basis (D14-ADR-10), `terminationGracePeriodSeconds` 120, ENV-Mapping | Ping-Intervall 30 s, Shutdown 1001 + Flush ≤ 60 s, Speicherbedarf §3.10.6, `/live/convert-document/` nur Management-Port |
 | `15-teststrategie-qualitaet-paritaet.md` | Nachbar (verbindlich) | Testprojekte, G-DOC/G-PDF/G-SCHEMA, LT-16 … LT-20, D15-ADR-14, D15-SEC-03, Ledger A-114/A-115, Chromium-only (Z-10) | P-01 … P-30, AK-07-xx, neue Korpora G-MD und G-PDF-web, Testklassen §7.2 |
 | `16-erweiterungspunkte-bezahl-features.md` | Nachbar (verbindlich) | X10, X11, X13, E-10, E-11, E-22, E-23 | Präzisierte Signaturen (§9.2), Andockstellen §6, `affectedPages`-Erzeugung |
@@ -2294,20 +2294,20 @@ Alle Golden-Dateien sind eingecheckt; CI führt `generate.mjs` nicht aus (kein N
 | Ziel | Änderung | Grund |
 |---|---|---|
 | `01` §5.5 | `IPageDocumentStore` durch die präzisierte Fassung aus §5.2 ersetzen (Rückgabe `PageDocumentSaveResult`, `AuthorizeAsync`, `SaveFromRestAsync`, `UpdateTitleAsync`, `GetStateAsync`, `LoadStateAsync`, Scope-Parameter) | Merge-on-Store braucht den zusammengeführten Zustand und Status; 05 §3.11 verlangt Autorisierung über diesen Vertrag |
-| `01` §5.1 | `src/modules/Collaboration/Plane.Collaboration.Protocol/` und Testprojekte `tests/modules/Plane.RealtimeEvents.Tests/` ergänzen | D07-ADR-02 |
+| `01` §5.1 | `src/modules/Collaboration/Funk.Collaboration.Protocol/` und Testprojekte `tests/modules/Funk.RealtimeEvents.Tests/` ergänzen | D07-ADR-02 |
 | `01` ADR-022 | „Debounce-Persistenz 10 s“ präzisieren zu „10 s Debounce, 10 s Max-Debounce (Hocuspocus 2.15.2)“; „Persistenz In-Process über `IPageDocumentStore` mit Merge-on-Store“ | D07-ADR-06/-07 |
-| `02` §3.15 | `PlaneRealtimeOptions` um die Schlüssel aus §3.17 erweitern; neue Klasse `PlanePdfExportOptions` (`Plane:PdfExport`) | §3.17 |
-| `02` §3.2 / BuildingBlocks | `IDbNotificationPublisher` (`NotifyAsync` im Transaktionskontext, `NotifyNowAsync` für CLI-Admin-Signale) und `IDbNotificationListener` (dedizierte Verbindung, Wiederverbindung) in `Plane.BuildingBlocks.Persistence` (Kanal `plane_collab`; Live-Events nutzen ihn **nicht**, §3.16.4) | §3.10.4 |
+| `02` §3.15 | `FunkRealtimeOptions` um die Schlüssel aus §3.17 erweitern; neue Klasse `FunkPdfExportOptions` (`Funk:PdfExport`) | §3.17 |
+| `02` §3.2 / BuildingBlocks | `IDbNotificationPublisher` (`NotifyAsync` im Transaktionskontext, `NotifyNowAsync` für CLI-Admin-Signale) und `IDbNotificationListener` (dedizierte Verbindung, Wiederverbindung) in `Funk.BuildingBlocks.Persistence` (Kanal `plane_collab`; Live-Events nutzen ihn **nicht**, §3.16.4) | §3.10.4 |
 | `02` §3.1 | Architekturtests `CollaborationProtocolIsPure`, `OnlyDocumentSessionTouchesYDotNetDoc`, `ServerNeverEmitsClientUnknownTypes` | §3.1, §3.3.2 |
 | `16` §5.13 / E-10 | `ICollaborationDocumentType` mit den Rückgabetypen aus §5.2 (`CollaborationDocumentLoad`, `CollaborationStoreResult`), `LoadAsync` zusätzlich mit `query` (Workspace/Projekt-Scope), neu `UpdateTitleAsync`, `ValidateStatelessAsync`; `AuthorizeAsync` und `CollaborationAccess` unverändert | §3.6, §3.7 |
 | `16` §6 (H1) | Interface `ICollaborationDocumentEditor` als reservierte Andockstelle aufnehmen | §6 |
-| `14` §4.7.1 | ENV-Zeile `CORS_ALLOWED_ORIGINS` → `Plane__Realtime__AdditionalAllowedOrigins`; Health `ready` des Realtime-Hosts prüft den Signal-Listener | §3.17, §3.10.4 |
-| `15` §3.6 / Golden-Tabelle – **erledigt (17 ABG-111)** | Korpora G-MD (60 Fälle) und G-PDF-web (20 Seiten) aufnehmen; P-01 … P-30 als Inhalt von `Plane.Collaboration.Tests/Browser/ProviderConformanceTests` | §7 |
+| `14` §4.7.1 | ENV-Zeile `CORS_ALLOWED_ORIGINS` → `Funk__Realtime__AdditionalAllowedOrigins`; Health `ready` des Realtime-Hosts prüft den Signal-Listener | §3.17, §3.10.4 |
+| `15` §3.6 / Golden-Tabelle – **erledigt (17 ABG-111)** | Korpora G-MD (60 Fälle) und G-PDF-web (20 Seiten) aufnehmen; P-01 … P-30 als Inhalt von `Funk.Collaboration.Tests/Browser/ProviderConformanceTests` | §7 |
 | `05` §3.11 – **erledigt (17 ABG-107)** | Ergänzen: Neuprüfung bei Signal `access`/`member_removed` (4205/4403), Stateless-Plausibilisierung (SEC-RT-01) | §3.5, §3.7 |
 | `05` §3.11 – **erledigt (17 ABG-107; Schnittstelle `ICollaborationDocumentType.AuthorizeAsync`)** | „Abweichung → `PermissionDenied` (Close-Code 4403)“ präzisieren: bei Token-Mismatch **nur** `PermissionDenied` (Hocuspocus schließt nicht, der Provider trennt selbst); bei Rechteentzug während der Sitzung `PermissionDenied` **und** danach 4403; „`IPageDocumentStore.LoadAsync` prüft …“ → `IPageDocumentStore.AuthorizeAsync` | §3.3.6, §3.5, D07-ADR-05 (Review) |
-| `03` §3.4.10 / §3.9.3 – **erledigt (17 ABG-102, ABG-108, ABG-109, ABG-110)** | Spalte `pages.description_revision bigint NOT NULL DEFAULT 0` ergänzen; §3.9.3 „Laden … wird **nicht** sofort gespeichert“ ersetzen durch „Migration unter Zeilensperre, Ergebnis wird gespeichert (wie Original `fetchDocument`)“; `HtmlText.StripTags` → `Plane.Documents.Text.HtmlTextExtractor.Strip` (Name aus `02`, Mapping `html_processor.py`); Aufbewahrung `Plane:Retention:PageVersions` → `Plane:Retention:PageVersionsKeep` (`02` §3.15); `page_logs`-Abgleich und `page_versions` **in derselben** Transaktion wie das `UPDATE` | §3.6.2, §3.6.4, D07-ADR-22/-23 (Review) |
+| `03` §3.4.10 / §3.9.3 – **erledigt (17 ABG-102, ABG-108, ABG-109, ABG-110)** | Spalte `pages.description_revision bigint NOT NULL DEFAULT 0` ergänzen; §3.9.3 „Laden … wird **nicht** sofort gespeichert“ ersetzen durch „Migration unter Zeilensperre, Ergebnis wird gespeichert (wie Original `fetchDocument`)“; `HtmlText.StripTags` → `Funk.Documents.Text.HtmlTextExtractor.Strip` (Name aus `02`, Mapping `html_processor.py`); Aufbewahrung `Funk:Retention:PageVersions` → `Funk:Retention:PageVersionsKeep` (`02` §3.15); `page_logs`-Abgleich und `page_versions` **in derselben** Transaktion wie das `UPDATE` | §3.6.2, §3.6.4, D07-ADR-22/-23 (Review) |
 | `06` §3.18 (Job `pages.copy_duplicated_assets`, `CopyDuplicatedAssetsJob`) / T8 – **erledigt** (17 ABG-108, ABG-106) | Job kopiert nur noch Objekte und setzt `is_uploaded`; `src`-Umschreiben und Formatneuberechnung erfolgen synchron im `DuplicatePageCommand` (D07-ADR-24); §9-Zeile „07 noch nicht erstellt“ aktualisieren; Gruppen-Autorisierung `project:` → `project.project.read`, `ws:` → `workspace.settings.read` (wie `05` §3.11, statt `project.project_entity.read`/„aktives Mitglied“) | §3.11, §3.16.1 (Review) |
-| `15` §3.12.3 / S1-Tabelle – **erledigt (17 ABG-111)** | Original-Provider-Tests liegen in `Plane.Collaboration.Tests/Browser/ProviderConformanceTests` (nicht `Protocol/*`); Lib0-/Codec-Tests in `Protocol/` | §7.2 (Review) |
+| `15` §3.12.3 / S1-Tabelle – **erledigt (17 ABG-111)** | Original-Provider-Tests liegen in `Funk.Collaboration.Tests/Browser/ProviderConformanceTests` (nicht `Protocol/*`); Lib0-/Codec-Tests in `Protocol/` | §7.2 (Review) |
 
 ---
 
@@ -2348,7 +2348,7 @@ Geprüft gegen: Quelltexte `@hocuspocus/server`/`-provider`/`-extension-redis` 2
 | R15 | PDF: „Courier = PDF-Standardschrift“; Emoji-„Fallback“ ohne Mechanismus; Live-Profil-Schrift = Web-Assets ohne Hinweis auf das Latin-Subset-WOFF des Originals; „18 Schnitte“ im Web-Profil | mittel (PDFsharp 6.2 Core verlangt Datei für jede Schrift; kein Glyphen-Fallback in MigraDoc) | §3.15.2–§3.15.5, S3-K6, AK-07-46, DEV-07-19: Liberation Mono (OFL) als Courier-Ersatz, `PdfTextRunSplitter`, Live-Profil mit echten Kursiven, Web-Profil 9 aufrechte Dateien |
 | R16 | PDF-Validierungsfehlertext unbestimmt; Dateiname „ASCII-bereinigt“ | niedrig | §3.15.1: `{"message":"Invalid request body"}`; Bereinigung und `encodeURIComponent`-Semantik exakt |
 | R17 | Live-Events: `HubContextRealtimePublisher` in allen Hosts + `NOTIFY plane_live_events` ohne Valkey; `RealtimeFanOutConsumer` im Worker | **hoch** (Widerspruch zu `06` D06-ADR-12 und `01` §1.4 H6) | D07-ADR-27, §1.4, §1.5, §3.1, §3.10.1, §3.16.3/§3.16.4, §5.11, §6 H6, AK-07-37/-40: Queue `realtime` nur im Realtime-Host, `HubRealtimePublisher`/`QueuedRealtimePublisher` – **überholt durch 17 ABG-106:** `RealtimeFanOutConsumer` im Worker (Queue `realtime`), `realtime.push` auf Queue `live` nur im Realtime-Host/AllInOne |
-| R18 | PageLog asynchron über Consumer `PageLogSyncConsumer`; Namen `PageVersionTracker`, `CopyDuplicatedAssetsJob`; Limit `PAGE_VERSION_LIMIT` | mittel (Widerspruch zu `06` D06-ADR-02/T30/T31, `03`, `02` `PlaneRetentionOptions`) | D07-ADR-22/-23, §3.6.4, §3.6.8, §3.11, §3.17, §4.4, §5.6, §7: synchron `PageReferenceIndexer`, `PageVersionRecorder`, `pages.copy_assets`/`CopyPageAssetsJob`, `Plane:Retention:PageVersionsKeep` – **Jobname überholt durch 17 ABG-108:** `pages.copy_duplicated_assets`/`CopyDuplicatedAssetsJob` |
+| R18 | PageLog asynchron über Consumer `PageLogSyncConsumer`; Namen `PageVersionTracker`, `CopyDuplicatedAssetsJob`; Limit `PAGE_VERSION_LIMIT` | mittel (Widerspruch zu `06` D06-ADR-02/T30/T31, `03`, `02` `FunkRetentionOptions`) | D07-ADR-22/-23, §3.6.4, §3.6.8, §3.11, §3.17, §4.4, §5.6, §7: synchron `PageReferenceIndexer`, `PageVersionRecorder`, `pages.copy_assets`/`CopyPageAssetsJob`, `Funk:Retention:PageVersionsKeep` – **Jobname überholt durch 17 ABG-108:** `pages.copy_duplicated_assets`/`CopyDuplicatedAssetsJob` |
 | R19 | Upgrade ohne Session → 401; Cookie-Challenge unbehandelt | niedrig (Widerspruch zu 05 AK-20; ohne Event-Konfiguration 302) | §3.2, §3.5, §3.16.1, AK-07-02, P-02: 403, Redirect-Events auf Statuscodes |
 | R20 | Hub `[Authorize(AuthenticationSchemes = "session")]` vs. Skelett `Policy = "realtime-session"`; `JoinGroup` vs. `joinGroup` (06/08) | niedrig | §3.16.1: eine Policy; Groß-/Kleinschreibung bei SignalR serverseitig irrelevant |
 | R21 | `CE-OPS-021` als „Hub-Gerüst“ bezeichnet (Katalog: „Lokale Entwicklungsumgebung“) | niedrig | §1.4, §4.8: Zuordnung klargestellt (wie 16); nach 17 ABG-112 Spalte CE „– (Walking Skeleton I0)“ (§1.4, §3.2, §4.8) |
@@ -2367,10 +2367,10 @@ Umsetzung der verbindlichen Entscheidungen aus `17-abgleich-dokumentuebergreifen
 
 | ABG-ID | Thema | Umgesetzt in diesem Dokument |
 |---|---|---|
-| ABG-106 umgesetzt | Live-Events (H6): Consumer-Ort, Publisher-Pfade | §1.4 I5, §1.5 Mermaid-Diagramm (Worker-Knoten, Queues `realtime`/`live`), D07-ADR-27 (einziger Zustellweg `QueuedRealtimePublisher` → Job `realtime.push` auf Queue `live` → `HubRealtimePublisher` nur in `Plane.Realtime`/`Plane.AllInOne`; `RealtimeFanOutConsumer` auf Queue `realtime` im **Worker**, kein `LabelRealtimeConsumer`; Host-Defaults `Plane:Worker:Queues`; Entfallen-Liste; Alternative (d)), §3.1-Projektbaum (`RealtimePushJob`, Consumer-Ort), §3.10.1 Kanaltabelle (Queue `live` + Queue `realtime`), §3.16.3, §3.16.4 (Überschrift, Tabelle, Absatz), §5.11-Skelett (`PlaneQueues.Live`, Registrierung je Host, Hinweis `RealtimeFanOutConsumer`), §6 H6, AK-07-37/-40, §9.1 Zeile `06`; R17 als „überholt durch ABG-106“ vermerkt. „Queue `realtime` nur im Realtime-Host“ ist überall ersetzt |
-| ABG-108 umgesetzt | Page-Nebenwirkungen | D07-ADR-23 (Auslösepunkte `CreatePageCommand`, `UpdatePageCommand` mit `description_html`, `SaveFromRestAsync`, `SaveAsync`, `DuplicatePageCommand`; Event-Regel), D07-ADR-24 und §3.11 (Job `pages.copy_duplicated_assets`/`CopyDuplicatedAssetsJob`, Queue `default`; neue Zeilen `POST {P}/pages/` und Page-PATCH mit `description_html`), §3.6.4 Schritt 8 Event-Regel (4) (Create/Duplicate → `plane.page.created.v1`, spätere Inhaltsänderungen → `plane.page.description_updated.v1`, Suche abonniert beide), §4.4 Mapping `page_transaction` und `copy_s3_object.py`, AK-07-27, §9.1 Zeile `06`, §9.2 Zeile `06` (erledigt); R18 als „Jobname überholt durch ABG-108“ vermerkt |
+| ABG-106 umgesetzt | Live-Events (H6): Consumer-Ort, Publisher-Pfade | §1.4 I5, §1.5 Mermaid-Diagramm (Worker-Knoten, Queues `realtime`/`live`), D07-ADR-27 (einziger Zustellweg `QueuedRealtimePublisher` → Job `realtime.push` auf Queue `live` → `HubRealtimePublisher` nur in `Funk.Realtime`/`Funk.AllInOne`; `RealtimeFanOutConsumer` auf Queue `realtime` im **Worker**, kein `LabelRealtimeConsumer`; Host-Defaults `Funk:Worker:Queues`; Entfallen-Liste; Alternative (d)), §3.1-Projektbaum (`RealtimePushJob`, Consumer-Ort), §3.10.1 Kanaltabelle (Queue `live` + Queue `realtime`), §3.16.3, §3.16.4 (Überschrift, Tabelle, Absatz), §5.11-Skelett (`FunkQueues.Live`, Registrierung je Host, Hinweis `RealtimeFanOutConsumer`), §6 H6, AK-07-37/-40, §9.1 Zeile `06`; R17 als „überholt durch ABG-106“ vermerkt. „Queue `realtime` nur im Realtime-Host“ ist überall ersetzt |
+| ABG-108 umgesetzt | Page-Nebenwirkungen | D07-ADR-23 (Auslösepunkte `CreatePageCommand`, `UpdatePageCommand` mit `description_html`, `SaveFromRestAsync`, `SaveAsync`, `DuplicatePageCommand`; Event-Regel), D07-ADR-24 und §3.11 (Job `pages.copy_duplicated_assets`/`CopyDuplicatedAssetsJob`, Queue `default`; neue Zeilen `POST {P}/pages/` und Page-PATCH mit `description_html`), §3.6.4 Schritt 8 Event-Regel (4) (Create/Duplicate → `funk.page.created.v1`, spätere Inhaltsänderungen → `funk.page.description_updated.v1`, Suche abonniert beide), §4.4 Mapping `page_transaction` und `copy_s3_object.py`, AK-07-27, §9.1 Zeile `06`, §9.2 Zeile `06` (erledigt); R18 als „Jobname überholt durch ABG-108“ vermerkt |
 | ABG-112 umgesetzt | Hub-Gerüst ist kein CE-Feature | §1.4 I0 (Spalte CE „– (Walking Skeleton I0)“, CE-Bezug ab I5 über CE-NOTIF-001), §3.2 Routentabelle `/live/events/` (Spalte CE), §4.8 als Hinweiszeile „– (Walking Skeleton I0)“ beibehalten; R21 ergänzt |
 | ABG-148 umgesetzt | Branding (PDF-Export) | §3.15.1 (Feld `author` ohne Produkt-Default; neuer Absatz PDF-Metadaten: `Creator`/`Producer` = „funk.“ aus `Brand.ProductName`, kein sichtbarer Kopf/Fuß mit Produktnamen, G-PDF nach BR-13, G-BRAND), §5.10-Skelett (`creator`/`producer`), §3.20 Abweichung `BRAND-DOC-01`, §9.1 Zeile `00` (ADR-009B) und Zeile `17` |
-| ABG-149 umgesetzt | Betriebs-CLI und Image | alle Befehlsbeispiele `plane-cli` → `funk-cli` (§1.4 I7, §3.7.3, §3.8.4 Überschrift und Tabelle, §3.10.4 Sender); §4.1 Image `funk-realtime`; Projektname `src/tools/Plane.Cli` bleibt |
+| ABG-149 umgesetzt | Betriebs-CLI und Image | alle Befehlsbeispiele `plane-cli` → `funk-cli` (§1.4 I7, §3.7.3, §3.8.4 Überschrift und Tabelle, §3.10.4 Sender); §4.1 Image `funk-realtime`; Projektname `src/tools/Funk.Cli` bleibt |
 
 **Branding-Durchgang (ADR-009B, ABG-148, BR-01 … BR-14):** Alle nach außen sichtbaren Namen, die dieses Dokument für die Zielplattform festlegt – PDF-Metadaten (`Creator`/`Producer` „funk.“, `BRAND-DOC-01`), Betriebs-CLI `funk-cli` und Image `funk-realtime` – lauten „funk.“; unverändert bleiben nach BR-02 die Verweise auf das Original (Pfade wie `LIVE/lib/pdf/plane-pdf-exporter.tsx`, Aussagen über den Original-Client „Plane-Client“/„Plane-Default“), interne Bezeichner (`Plane.*`-Namespaces, `Plane:`-Schlüssel, Data-Protection-Name und CORS-Policy `plane`, Kanäle `plane:collab:*`, `plane_collab`, `plane_jobs`, `plane:signalr`, Metriken `plane.realtime.*`, Realm-Datei `plane-realm.test.json`); sichtbare Texte des Protokolls und der Fehlermeldungen enthalten keinen Produktnamen.

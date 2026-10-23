@@ -8,7 +8,7 @@
    "ported": 10,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/ApiPermissionParityTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/ApiPermissionParityTests.cs",
    "ce": [
     "CE-API-001",
     "CE-WS-008"
@@ -23,7 +23,7 @@
    "ported": 0,
    "adapted": 2,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/AuthenticationTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/AuthenticationTests.cs",
    "ce": [
     "CE-API-001",
     "CE-AUTH-027"
@@ -38,7 +38,7 @@
    "ported": 1,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/CycleIssueProjectScopeTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/CycleIssueProjectScopeTests.cs",
    "ce": [
     "CE-API-027"
    ],
@@ -52,7 +52,7 @@
    "ported": 14,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/CyclesTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/CyclesTests.cs",
    "ce": [
     "CE-API-026",
     "CE-API-028",
@@ -68,7 +68,7 @@
    "ported": 1,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/CyclesLiteTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/CyclesLiteTests.cs",
    "ce": [
     "CE-API-026"
    ],
@@ -82,7 +82,7 @@
    "ported": 5,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/GenericAssetTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/GenericAssetTests.cs",
    "ce": [
     "CE-API-016"
    ],
@@ -96,7 +96,7 @@
    "ported": 3,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/IntakeIssueUpdateTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/IntakeIssueUpdateTests.cs",
    "ce": [
     "CE-API-025"
    ],
@@ -110,7 +110,7 @@
    "ported": 5,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/IssueAssigneeLabelValidationTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/IssueAssigneeLabelValidationTests.cs",
    "ce": [
     "CE-API-017"
    ],
@@ -124,7 +124,7 @@
    "ported": 4,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/IssueAttachmentSizeTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/IssueAttachmentSizeTests.cs",
    "ce": [
     "CE-API-023",
     "CE-OPS-009"
@@ -139,7 +139,7 @@
    "ported": 3,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/IssueNotificationsTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/IssueNotificationsTests.cs",
    "ce": [
     "CE-API-017",
     "CE-NOTIF-001"
@@ -154,7 +154,7 @@
    "ported": 2,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/IssueReadOnlyFieldsTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/IssueReadOnlyFieldsTests.cs",
    "ce": [
     "CE-API-017"
    ],
@@ -168,7 +168,7 @@
    "ported": 6,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/IssuesTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/IssuesTests.cs",
    "ce": [
     "CE-API-017",
     "CE-API-018"
@@ -183,7 +183,7 @@
    "ported": 10,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/LabelsTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/LabelsTests.cs",
    "ce": [
     "CE-API-010"
    ],
@@ -197,7 +197,7 @@
    "ported": 5,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/MembersLiteTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/MembersLiteTests.cs",
    "ce": [
     "CE-API-011",
     "CE-API-012"
@@ -212,7 +212,7 @@
    "ported": 1,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/ModulesLiteTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/ModulesLiteTests.cs",
    "ce": [
     "CE-API-030"
    ],
@@ -226,7 +226,7 @@
    "ported": 3,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/NonObjectJsonBodyTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/NonObjectJsonBodyTests.cs",
    "ce": [
     "CE-API-006",
     "CE-API-017"
@@ -241,7 +241,7 @@
    "ported": 2,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/ProjectMembersRosterScopeTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/ProjectMembersRosterScopeTests.cs",
    "ce": [
     "CE-API-012"
    ],
@@ -255,7 +255,7 @@
    "ported": 11,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/ProjectsTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/ProjectsTests.cs",
    "ce": [
     "CE-API-006",
     "CE-API-007",
@@ -271,7 +271,7 @@
    "ported": 5,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/ProjectsLiteTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/ProjectsLiteTests.cs",
    "ce": [
     "CE-API-006"
    ],
@@ -285,7 +285,7 @@
    "ported": 3,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/StateAdminScopeTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/StateAdminScopeTests.cs",
    "ce": [
     "CE-API-009"
    ],
@@ -299,7 +299,7 @@
    "ported": 2,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/WorkItemLinkRelationProjectScopeTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/WorkItemLinkRelationProjectScopeTests.cs",
    "ce": [
     "CE-API-020",
     "CE-API-024"
@@ -314,7 +314,7 @@
    "ported": 20,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Identity.Tests/Acceptance/Original/ApiTokenTests.cs",
+   "target": "tests/modules/Funk.Identity.Tests/Acceptance/Original/ApiTokenTests.cs",
    "ce": [
     "CE-WH-012",
     "CE-WH-013",
@@ -330,7 +330,7 @@
    "ported": 13,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Assets.Tests/Acceptance/Original/AssetRoleScopeAppTests.cs",
+   "target": "tests/modules/Funk.Assets.Tests/Acceptance/Original/AssetRoleScopeAppTests.cs",
    "ce": [
     "CE-OPS-013",
     "CE-WI-036"
@@ -345,7 +345,7 @@
    "ported": 0,
    "adapted": 4,
    "obsolete": 37,
-   "target": "tests/modules/Plane.Identity.Tests/Acceptance/Original/AuthenticationTests.cs",
+   "target": "tests/modules/Funk.Identity.Tests/Acceptance/Original/AuthenticationTests.cs",
    "ce": [
     "CE-AUTH-004",
     "CE-AUTH-005",
@@ -364,7 +364,7 @@
    "ported": 9,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/AvatarUrlAnnotationTests.cs",
+   "target": "tests/modules/Funk.Workspaces.Tests/Acceptance/Original/AvatarUrlAnnotationTests.cs",
    "ce": [
     "CE-WS-009",
     "CE-PROF-001"
@@ -379,7 +379,7 @@
    "ported": 5,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Projects.Tests/Acceptance/Original/CreatorProjectMembershipAppTests.cs",
+   "target": "tests/modules/Funk.Projects.Tests/Acceptance/Original/CreatorProjectMembershipAppTests.cs",
    "ce": [
     "CE-PRJ-004",
     "CE-PRJ-021"
@@ -394,7 +394,7 @@
    "ported": 2,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Cycles.Tests/Acceptance/Original/CycleIssueAppTests.cs",
+   "target": "tests/modules/Funk.Cycles.Tests/Acceptance/Original/CycleIssueAppTests.cs",
    "ce": [
     "CE-CYC-010"
    ],
@@ -408,7 +408,7 @@
    "ported": 11,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicSpace.Tests/Acceptance/Original/DeployBoardIdentityReadonlyAppTests.cs",
+   "target": "tests/modules/Funk.PublicSpace.Tests/Acceptance/Original/DeployBoardIdentityReadonlyAppTests.cs",
    "ce": [
     "CE-SPACE-001",
     "CE-SPACE-002"
@@ -423,7 +423,7 @@
    "ported": 6,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicSpace.Tests/Acceptance/Original/DeployBoardProjectScopeAppTests.cs",
+   "target": "tests/modules/Funk.PublicSpace.Tests/Acceptance/Original/DeployBoardProjectScopeAppTests.cs",
    "ce": [
     "CE-SPACE-001"
    ],
@@ -437,7 +437,7 @@
    "ported": 2,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/DraftToIssueOwnerScopeAppTests.cs",
+   "target": "tests/modules/Funk.WorkItems.Tests/Acceptance/Original/DraftToIssueOwnerScopeAppTests.cs",
    "ce": [
     "CE-WI-049"
    ],
@@ -451,7 +451,7 @@
    "ported": 2,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Exports.Tests/Acceptance/Original/ExportOrderByAllowlistAppTests.cs",
+   "target": "tests/modules/Funk.Exports.Tests/Acceptance/Original/ExportOrderByAllowlistAppTests.cs",
    "ce": [
     "CE-EXP-001"
    ],
@@ -465,7 +465,7 @@
    "ported": 15,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/FavoriteEntityScopeAppTests.cs",
+   "target": "tests/modules/Funk.Workspaces.Tests/Acceptance/Original/FavoriteEntityScopeAppTests.cs",
    "ce": [
     "CE-WS-023"
    ],
@@ -479,7 +479,7 @@
    "ported": 1,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Intake.Tests/Acceptance/Original/IntakeIssueReadOnlyFieldsAppTests.cs",
+   "target": "tests/modules/Funk.Intake.Tests/Acceptance/Original/IntakeIssueReadOnlyFieldsAppTests.cs",
    "ce": [
     "CE-INT-010"
    ],
@@ -493,7 +493,7 @@
    "ported": 1,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueHistoryAppTests.cs",
+   "target": "tests/modules/Funk.WorkItems.Tests/Acceptance/Original/IssueHistoryAppTests.cs",
    "ce": [
     "CE-WI-042"
    ],
@@ -507,7 +507,7 @@
    "ported": 3,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueHistoryScopeAppTests.cs",
+   "target": "tests/modules/Funk.WorkItems.Tests/Acceptance/Original/IssueHistoryScopeAppTests.cs",
    "ce": [
     "CE-WI-041",
     "CE-WI-042"
@@ -522,7 +522,7 @@
    "ported": 3,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueIdProjectScopeAppTests.cs",
+   "target": "tests/modules/Funk.WorkItems.Tests/Acceptance/Original/IssueIdProjectScopeAppTests.cs",
    "ce": [
     "CE-WI-011"
    ],
@@ -536,7 +536,7 @@
    "ported": 3,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueListGuestScopeAppTests.cs",
+   "target": "tests/modules/Funk.WorkItems.Tests/Acceptance/Original/IssueListGuestScopeAppTests.cs",
    "ce": [
     "CE-LV-005",
     "CE-PRJ-022"
@@ -551,7 +551,7 @@
    "ported": 2,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueReadOnlyFieldsAppTests.cs",
+   "target": "tests/modules/Funk.WorkItems.Tests/Acceptance/Original/IssueReadOnlyFieldsAppTests.cs",
    "ce": [
     "CE-WI-003"
    ],
@@ -565,7 +565,7 @@
    "ported": 22,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueSubresourceScopeAppTests.cs",
+   "target": "tests/modules/Funk.WorkItems.Tests/Acceptance/Original/IssueSubresourceScopeAppTests.cs",
    "ce": [
     "CE-WI-035",
     "CE-WI-036",
@@ -583,7 +583,7 @@
    "ported": 2,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.ProjectModules.Tests/Acceptance/Original/ModuleIssueDestroyAppTests.cs",
+   "target": "tests/modules/Funk.ProjectModules.Tests/Acceptance/Original/ModuleIssueDestroyAppTests.cs",
    "ce": [
     "CE-MOD-008"
    ],
@@ -597,7 +597,7 @@
    "ported": 4,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.ProjectModules.Tests/Acceptance/Original/ModuleProjectScopeAppTests.cs",
+   "target": "tests/modules/Funk.ProjectModules.Tests/Acceptance/Original/ModuleProjectScopeAppTests.cs",
    "ce": [
     "CE-MOD-003"
    ],
@@ -611,7 +611,7 @@
    "ported": 0,
    "adapted": 5,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Identity.Tests/Acceptance/Original/OauthCallbackStateAppTests.cs",
+   "target": "tests/modules/Funk.Identity.Tests/Acceptance/Original/OauthCallbackStateAppTests.cs",
    "ce": [
     "CE-AUTH-024",
     "CE-AUTH-029"
@@ -626,7 +626,7 @@
    "ported": 3,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Pages.Tests/Acceptance/Original/PageGuestViewScopeAppTests.cs",
+   "target": "tests/modules/Funk.Pages.Tests/Acceptance/Original/PageGuestViewScopeAppTests.cs",
    "ce": [
     "CE-PAGE-004",
     "CE-PAGE-006"
@@ -641,7 +641,7 @@
    "ported": 4,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Pages.Tests/Acceptance/Original/PageOrderByAllowlistAppTests.cs",
+   "target": "tests/modules/Funk.Pages.Tests/Acceptance/Original/PageOrderByAllowlistAppTests.cs",
    "ce": [
     "CE-PAGE-002"
    ],
@@ -655,7 +655,7 @@
    "ported": 5,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Pages.Tests/Acceptance/Original/PageVersionProjectScopeAppTests.cs",
+   "target": "tests/modules/Funk.Pages.Tests/Acceptance/Original/PageVersionProjectScopeAppTests.cs",
    "ce": [
     "CE-PAGE-019"
    ],
@@ -669,7 +669,7 @@
    "ported": 0,
    "adapted": 0,
    "obsolete": 3,
-   "target": "tests/modules/Plane.Identity.Tests/Acceptance/Original/PasswordStrengthInputBoundAppTests.cs",
+   "target": "tests/modules/Funk.Identity.Tests/Acceptance/Original/PasswordStrengthInputBoundAppTests.cs",
    "ce": [
     "CE-AUTH-021"
    ],
@@ -683,7 +683,7 @@
    "ported": 25,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Projects.Tests/Acceptance/Original/ProjectAppTests.cs",
+   "target": "tests/modules/Funk.Projects.Tests/Acceptance/Original/ProjectAppTests.cs",
    "ce": [
     "CE-PRJ-004",
     "CE-PRJ-005",
@@ -702,7 +702,7 @@
    "ported": 3,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Projects.Tests/Acceptance/Original/ProjectJoinCrossProjectActivationTests.cs",
+   "target": "tests/modules/Funk.Projects.Tests/Acceptance/Original/ProjectJoinCrossProjectActivationTests.cs",
    "ce": [
     "CE-PRJ-007"
    ],
@@ -716,7 +716,7 @@
    "ported": 9,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Projects.Tests/Acceptance/Original/ProjectMemberIsActiveAuthzTests.cs",
+   "target": "tests/modules/Funk.Projects.Tests/Acceptance/Original/ProjectMemberIsActiveAuthzTests.cs",
    "ce": [
     "CE-PRJ-021",
     "CE-WS-008"
@@ -731,7 +731,7 @@
    "ported": 3,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Projects.Tests/Acceptance/Original/ProjectSelfJoinRoleAppTests.cs",
+   "target": "tests/modules/Funk.Projects.Tests/Acceptance/Original/ProjectSelfJoinRoleAppTests.cs",
    "ce": [
     "CE-PRJ-007"
    ],
@@ -745,7 +745,7 @@
    "ported": 5,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Search.Tests/Acceptance/Original/SearchGuestScopeAppTests.cs",
+   "target": "tests/modules/Funk.Search.Tests/Acceptance/Original/SearchGuestScopeAppTests.cs",
    "ce": [
     "CE-SRCH-001",
     "CE-SRCH-002"
@@ -760,7 +760,7 @@
    "ported": 2,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/SessionOriginCheckAppTests.cs",
+   "target": "tests/Funk.BuildingBlocks.Tests/Acceptance/Original/SessionOriginCheckAppTests.cs",
    "ce": [
     "CE-AUTH-024"
    ],
@@ -774,7 +774,7 @@
    "ported": 9,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicSpace.Tests/Acceptance/Original/SpaceAssetCommentScopeAppTests.cs",
+   "target": "tests/modules/Funk.PublicSpace.Tests/Acceptance/Original/SpaceAssetCommentScopeAppTests.cs",
    "ce": [
     "CE-SPACE-007",
     "CE-SPACE-025"
@@ -789,7 +789,7 @@
    "ported": 27,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicSpace.Tests/Acceptance/Original/SpacesBoardObjectScopeAppTests.cs",
+   "target": "tests/modules/Funk.PublicSpace.Tests/Acceptance/Original/SpacesBoardObjectScopeAppTests.cs",
    "ce": [
     "CE-SPACE-003",
     "CE-SPACE-004",
@@ -808,7 +808,7 @@
    "ported": 6,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Projects.Tests/Acceptance/Original/StateAdminScopeAppTests.cs",
+   "target": "tests/modules/Funk.Projects.Tests/Acceptance/Original/StateAdminScopeAppTests.cs",
    "ce": [
     "CE-PRJ-024",
     "CE-PRJ-027"
@@ -823,7 +823,7 @@
    "ported": 0,
    "adapted": 3,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Assets.Tests/Acceptance/Original/StaticAssetDispositionAppTests.cs",
+   "target": "tests/modules/Funk.Assets.Tests/Acceptance/Original/StaticAssetDispositionAppTests.cs",
    "ce": [
     "CE-OPS-012",
     "CE-OPS-013"
@@ -838,7 +838,7 @@
    "ported": 5,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/SubIssueCrossProjectScopeAppTests.cs",
+   "target": "tests/modules/Funk.WorkItems.Tests/Acceptance/Original/SubIssueCrossProjectScopeAppTests.cs",
    "ce": [
     "CE-WI-032"
    ],
@@ -852,7 +852,7 @@
    "ported": 0,
    "adapted": 0,
    "obsolete": 7,
-   "target": "tests/modules/Plane.Identity.Tests/Acceptance/Original/UserEmailChangeAppTests.cs",
+   "target": "tests/modules/Funk.Identity.Tests/Acceptance/Original/UserEmailChangeAppTests.cs",
    "ce": [
     "CE-PROF-004"
    ],
@@ -866,7 +866,7 @@
    "ported": 7,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Identity.Tests/Acceptance/Original/UserOwnedFkScopeAppTests.cs",
+   "target": "tests/modules/Funk.Identity.Tests/Acceptance/Original/UserOwnedFkScopeAppTests.cs",
    "ce": [
     "CE-PROF-001",
     "CE-PROF-003",
@@ -882,7 +882,7 @@
    "ported": 6,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Webhooks.Tests/Acceptance/Original/WebhookSecretKeyScopeAppTests.cs",
+   "target": "tests/modules/Funk.Webhooks.Tests/Acceptance/Original/WebhookSecretKeyScopeAppTests.cs",
    "ce": [
     "CE-WH-004"
    ],
@@ -896,7 +896,7 @@
    "ported": 9,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Analytics.Tests/Acceptance/Original/WorkspaceAnalyticsProjectScopeAppTests.cs",
+   "target": "tests/modules/Funk.Analytics.Tests/Acceptance/Original/WorkspaceAnalyticsProjectScopeAppTests.cs",
    "ce": [
     "CE-ANA-001",
     "CE-ANA-002",
@@ -912,7 +912,7 @@
    "ported": 3,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/WorkspaceAppTests.cs",
+   "target": "tests/modules/Funk.Workspaces.Tests/Acceptance/Original/WorkspaceAppTests.cs",
    "ce": [
     "CE-WS-001"
    ],
@@ -926,13 +926,13 @@
    "ported": 4,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Cycles.Tests/Acceptance/Original/WorkspaceCyclesModulesProjectScopeAppTests.cs",
+   "target": "tests/modules/Funk.Cycles.Tests/Acceptance/Original/WorkspaceCyclesModulesProjectScopeAppTests.cs",
    "ce": [
     "CE-CYC-004",
     "CE-MOD-001"
    ],
    "inc": "I3",
-   "note": "Modul-Fälle in `Plane.ProjectModules.Tests` spiegeln"
+   "note": "Modul-Fälle in `Funk.ProjectModules.Tests` spiegeln"
   },
   {
    "nr": "A-064",
@@ -941,7 +941,7 @@
    "ported": 19,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/WorkspaceDraftProjectMembershipAppTests.cs",
+   "target": "tests/modules/Funk.WorkItems.Tests/Acceptance/Original/WorkspaceDraftProjectMembershipAppTests.cs",
    "ce": [
     "CE-WI-049"
    ],
@@ -955,7 +955,7 @@
    "ported": 0,
    "adapted": 5,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Assets.Tests/Acceptance/Original/WorkspaceFileAssetProjectScopeAppTests.cs",
+   "target": "tests/modules/Funk.Assets.Tests/Acceptance/Original/WorkspaceFileAssetProjectScopeAppTests.cs",
    "ce": [
     "CE-OPS-012",
     "CE-OPS-013"
@@ -970,7 +970,7 @@
    "ported": 4,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/WorkspaceInvitationUpdateAppTests.cs",
+   "target": "tests/modules/Funk.Workspaces.Tests/Acceptance/Original/WorkspaceInvitationUpdateAppTests.cs",
    "ce": [
     "CE-WS-010",
     "CE-WS-011"
@@ -985,7 +985,7 @@
    "ported": 9,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/WorkspaceMemberMassAssignmentAppTests.cs",
+   "target": "tests/modules/Funk.Workspaces.Tests/Acceptance/Original/WorkspaceMemberMassAssignmentAppTests.cs",
    "ce": [
     "CE-WS-009"
    ],
@@ -999,7 +999,7 @@
    "ported": 7,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Analytics.Tests/Acceptance/Original/WorkspaceStatsGroupingProjectScopeAppTests.cs",
+   "target": "tests/modules/Funk.Analytics.Tests/Acceptance/Original/WorkspaceStatsGroupingProjectScopeAppTests.cs",
    "ce": [
     "CE-ANA-001",
     "CE-PRJ-003",
@@ -1015,7 +1015,7 @@
    "ported": 3,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/WorkspaceUpdateAdminScopeAppTests.cs",
+   "target": "tests/modules/Funk.Workspaces.Tests/Acceptance/Original/WorkspaceUpdateAdminScopeAppTests.cs",
    "ce": [
     "CE-WS-003"
    ],
@@ -1029,7 +1029,7 @@
    "ported": 2,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/WorkspaceUserPreferenceAppTests.cs",
+   "target": "tests/modules/Funk.Workspaces.Tests/Acceptance/Original/WorkspaceUserPreferenceAppTests.cs",
    "ce": [
     "CE-WS-021",
     "CE-WS-022"
@@ -1044,7 +1044,7 @@
    "ported": 12,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/WorkspaceUserProfileScopeAppTests.cs",
+   "target": "tests/modules/Funk.Workspaces.Tests/Acceptance/Original/WorkspaceUserProfileScopeAppTests.cs",
    "ce": [
     "CE-PROF-008",
     "CE-PROF-009",
@@ -1061,7 +1061,7 @@
    "ported": 1,
    "adapted": 1,
    "obsolete": 0,
-   "target": "tests/Plane.AppHost.Tests/Acceptance/Original/AuthSmokeTests.cs",
+   "target": "tests/Funk.AppHost.Tests/Acceptance/Original/AuthSmokeTests.cs",
    "ce": [
     "CE-OPS-008",
     "CE-AUTH-001"
@@ -1076,7 +1076,7 @@
    "ported": 0,
    "adapted": 7,
    "obsolete": 0,
-   "target": "tests/Plane.Worker.Tests/Acceptance/Original/CleanupTaskTests.cs",
+   "target": "tests/Funk.Worker.Tests/Acceptance/Original/CleanupTaskTests.cs",
    "ce": [
     "CE-OPS-015"
    ],
@@ -1090,7 +1090,7 @@
    "ported": 0,
    "adapted": 5,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Assets.Tests/Acceptance/Original/CopyS3ObjectsTests.cs",
+   "target": "tests/modules/Funk.Assets.Tests/Acceptance/Original/CopyS3ObjectsTests.cs",
    "ce": [
     "CE-OPS-012",
     "CE-PAGE-009"
@@ -1105,7 +1105,7 @@
    "ported": 0,
    "adapted": 1,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Exports.Tests/Acceptance/Original/ExportTaskGuestScopeTests.cs",
+   "target": "tests/modules/Funk.Exports.Tests/Acceptance/Original/ExportTaskGuestScopeTests.cs",
    "ce": [
     "CE-EXP-001"
    ],
@@ -1119,7 +1119,7 @@
    "ported": 0,
    "adapted": 11,
    "obsolete": 0,
-   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueActivityScopeTests.cs",
+   "target": "tests/modules/Funk.WorkItems.Tests/Acceptance/Original/IssueActivityScopeTests.cs",
    "ce": [
     "CE-WI-039"
    ],
@@ -1133,7 +1133,7 @@
    "ported": 12,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/Plane.Platform.Tests/Acceptance/Original/SsrfAdvisoriesTests.cs",
+   "target": "tests/Funk.Platform.Tests/Acceptance/Original/SsrfAdvisoriesTests.cs",
    "ce": [
     "CE-OPS-018"
    ],
@@ -1147,7 +1147,7 @@
    "ported": 0,
    "adapted": 7,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Intake.Tests/Acceptance/Original/UnsnoozeExpiredIntakeIssuesTests.cs",
+   "target": "tests/modules/Funk.Intake.Tests/Acceptance/Original/UnsnoozeExpiredIntakeIssuesTests.cs",
    "ce": [
     "CE-INT-008"
    ],
@@ -1161,7 +1161,7 @@
    "ported": 24,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/Plane.Platform.Tests/Acceptance/Original/UrlSecurityTests.cs",
+   "target": "tests/Funk.Platform.Tests/Acceptance/Original/UrlSecurityTests.cs",
    "ce": [
     "CE-OPS-018"
    ],
@@ -1175,7 +1175,7 @@
    "ported": 0,
    "adapted": 20,
    "obsolete": 0,
-   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/WorkItemLinkTaskTests.cs",
+   "target": "tests/modules/Funk.WorkItems.Tests/Acceptance/Original/WorkItemLinkTaskTests.cs",
    "ce": [
     "CE-WI-035",
     "CE-OPS-018"
@@ -1190,7 +1190,7 @@
    "ported": 0,
    "adapted": 2,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/ApiAuthenticationTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/ApiAuthenticationTests.cs",
    "ce": [
     "CE-API-001"
    ],
@@ -1204,7 +1204,7 @@
    "ported": 0,
    "adapted": 15,
    "obsolete": 11,
-   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/DbRoutingTests.cs",
+   "target": "tests/Funk.BuildingBlocks.Tests/Acceptance/Original/DbRoutingTests.cs",
    "ce": [
     "CE-OPS-010"
    ],
@@ -1218,7 +1218,7 @@
    "ported": 0,
    "adapted": 3,
    "obsolete": 0,
-   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/LoggerTests.cs",
+   "target": "tests/Funk.BuildingBlocks.Tests/Acceptance/Original/LoggerTests.cs",
    "ce": [
     "CE-OPS-019",
     "CE-API-003"
@@ -1233,7 +1233,7 @@
    "ported": 0,
    "adapted": 7,
    "obsolete": 0,
-   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueCommentModalTests.cs",
+   "target": "tests/modules/Funk.WorkItems.Tests/Acceptance/Original/IssueCommentModalTests.cs",
    "ce": [
     "CE-WI-037"
    ],
@@ -1247,7 +1247,7 @@
    "ported": 0,
    "adapted": 2,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/WorkspaceModelTests.cs",
+   "target": "tests/modules/Funk.Workspaces.Tests/Acceptance/Original/WorkspaceModelTests.cs",
    "ce": [
     "CE-WS-001"
    ],
@@ -1261,7 +1261,7 @@
    "ported": 10,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/ExpandTests.cs",
+   "target": "tests/modules/Funk.WorkItems.Tests/Acceptance/Original/ExpandTests.cs",
    "ce": [
     "CE-API-017",
     "CE-WI-010"
@@ -1276,7 +1276,7 @@
    "ported": 1,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Home.Tests/Acceptance/Original/IssueRecentVisitTests.cs",
+   "target": "tests/modules/Funk.Home.Tests/Acceptance/Original/IssueRecentVisitTests.cs",
    "ce": [
     "CE-HOME-005"
    ],
@@ -1290,7 +1290,7 @@
    "ported": 0,
    "adapted": 3,
    "obsolete": 0,
-   "target": "tests/modules/Plane.PublicApi.Tests/Acceptance/Original/IssueSerializerApiTests.cs",
+   "target": "tests/modules/Funk.PublicApi.Tests/Acceptance/Original/IssueSerializerApiTests.cs",
    "ce": [
     "CE-API-017"
    ],
@@ -1304,7 +1304,7 @@
    "ported": 2,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Projects.Tests/Acceptance/Original/LabelTests.cs",
+   "target": "tests/modules/Funk.Projects.Tests/Acceptance/Original/LabelTests.cs",
    "ce": [
     "CE-PRJ-029"
    ],
@@ -1318,7 +1318,7 @@
    "ported": 8,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Workspaces.Tests/Acceptance/Original/WorkspaceTests.cs",
+   "target": "tests/modules/Funk.Workspaces.Tests/Acceptance/Original/WorkspaceTests.cs",
    "ce": [
     "CE-WS-001",
     "CE-INST-027"
@@ -1333,7 +1333,7 @@
    "ported": 0,
    "adapted": 11,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Identity.Tests/Acceptance/Original/CookieSecureTests.cs",
+   "target": "tests/modules/Funk.Identity.Tests/Acceptance/Original/CookieSecureTests.cs",
    "ce": [
     "CE-AUTH-024"
    ],
@@ -1347,7 +1347,7 @@
    "ported": 0,
    "adapted": 2,
    "obsolete": 0,
-   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/NumProxiesTests.cs",
+   "target": "tests/Funk.BuildingBlocks.Tests/Acceptance/Original/NumProxiesTests.cs",
    "ce": [
     "CE-OPS-005",
     "CE-OPS-007"
@@ -1362,7 +1362,7 @@
    "ported": 0,
    "adapted": 5,
    "obsolete": 0,
-   "target": "tests/Plane.Worker.Tests/Acceptance/Original/RetentionTests.cs",
+   "target": "tests/Funk.Worker.Tests/Acceptance/Original/RetentionTests.cs",
    "ce": [
     "CE-OPS-015"
    ],
@@ -1376,7 +1376,7 @@
    "ported": 0,
    "adapted": 9,
    "obsolete": 0,
-   "target": "tests/Plane.Platform.Tests/Acceptance/Original/StorageTests.cs",
+   "target": "tests/Funk.Platform.Tests/Acceptance/Original/StorageTests.cs",
    "ce": [
     "CE-OPS-012"
    ],
@@ -1390,7 +1390,7 @@
    "ported": 0,
    "adapted": 2,
    "obsolete": 0,
-   "target": "tests/Plane.Platform.Tests/Acceptance/Original/StorageCredentialsTests.cs",
+   "target": "tests/Funk.Platform.Tests/Acceptance/Original/StorageCredentialsTests.cs",
    "ce": [
     "CE-OPS-012"
    ],
@@ -1404,7 +1404,7 @@
    "ported": 3,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Exports.Tests/Acceptance/Original/CsvExportSanitizationTests.cs",
+   "target": "tests/modules/Funk.Exports.Tests/Acceptance/Original/CsvExportSanitizationTests.cs",
    "ce": [
     "CE-EXP-001"
    ],
@@ -1418,7 +1418,7 @@
    "ported": 0,
    "adapted": 6,
    "obsolete": 0,
-   "target": "tests/Plane.Platform.Tests/Acceptance/Original/EmailTests.cs",
+   "target": "tests/Funk.Platform.Tests/Acceptance/Original/EmailTests.cs",
    "ce": [
     "CE-NOTIF-008",
     "CE-INST-019"
@@ -1433,7 +1433,7 @@
    "ported": 1,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/GrouperTests.cs",
+   "target": "tests/modules/Funk.WorkItems.Tests/Acceptance/Original/GrouperTests.cs",
    "ce": [
     "CE-LV-005"
    ],
@@ -1447,7 +1447,7 @@
    "ported": 0,
    "adapted": 7,
    "obsolete": 0,
-   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueDatetimeFiltersTests.cs",
+   "target": "tests/modules/Funk.WorkItems.Tests/Acceptance/Original/IssueDatetimeFiltersTests.cs",
    "ce": [
     "CE-LV-010"
    ],
@@ -1461,7 +1461,7 @@
    "ported": 0,
    "adapted": 5,
    "obsolete": 0,
-   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueFiltersTests.cs",
+   "target": "tests/modules/Funk.WorkItems.Tests/Acceptance/Original/IssueFiltersTests.cs",
    "ce": [
     "CE-WI-012"
    ],
@@ -1475,7 +1475,7 @@
    "ported": 7,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/OrderBySanitizeTests.cs",
+   "target": "tests/modules/Funk.WorkItems.Tests/Acceptance/Original/OrderBySanitizeTests.cs",
    "ce": [
     "CE-LV-005",
     "CE-LV-035"
@@ -1490,7 +1490,7 @@
    "ported": 0,
    "adapted": 4,
    "obsolete": 0,
-   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/OrderQuerysetTests.cs",
+   "target": "tests/modules/Funk.WorkItems.Tests/Acceptance/Original/OrderQuerysetTests.cs",
    "ce": [
     "CE-LV-005"
    ],
@@ -1504,7 +1504,7 @@
    "ported": 5,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/PaginatorTests.cs",
+   "target": "tests/Funk.BuildingBlocks.Tests/Acceptance/Original/PaginatorTests.cs",
    "ce": [
     "CE-LV-005",
     "CE-LV-044"
@@ -1519,7 +1519,7 @@
    "ported": 5,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Identity.Tests/Acceptance/Original/PathValidatorTests.cs",
+   "target": "tests/modules/Funk.Identity.Tests/Acceptance/Original/PathValidatorTests.cs",
    "ce": [
     "CE-AUTH-029"
    ],
@@ -1533,7 +1533,7 @@
    "ported": 0,
    "adapted": 12,
    "obsolete": 0,
-   "target": "tests/Plane.Platform.Tests/Acceptance/Original/RedisTests.cs",
+   "target": "tests/Funk.Platform.Tests/Acceptance/Original/RedisTests.cs",
    "ce": [
     "CE-OPS-011"
    ],
@@ -1547,7 +1547,7 @@
    "ported": 28,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/UrlTests.cs",
+   "target": "tests/Funk.BuildingBlocks.Tests/Acceptance/Original/UrlTests.cs",
    "ce": [
     "CE-WS-001",
     "CE-PRJ-004",
@@ -1563,7 +1563,7 @@
    "ported": 0,
    "adapted": 4,
    "obsolete": 0,
-   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/UuidTests.cs",
+   "target": "tests/Funk.BuildingBlocks.Tests/Acceptance/Original/UuidTests.cs",
    "ce": [
     "CE-WI-009"
    ],
@@ -1577,7 +1577,7 @@
    "ported": 10,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.Exports.Tests/Acceptance/Original/XlsxExportSanitizationTests.cs",
+   "target": "tests/modules/Funk.Exports.Tests/Acceptance/Original/XlsxExportSanitizationTests.cs",
    "ce": [
     "CE-EXP-001"
    ],
@@ -1605,12 +1605,12 @@
    "ported": 0,
    "adapted": 1,
    "obsolete": 0,
-   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/BaseDispatchTests.cs",
+   "target": "tests/Funk.BuildingBlocks.Tests/Acceptance/Original/BaseDispatchTests.cs",
    "ce": [
     "CE-OPS-019"
    ],
    "inc": "I0",
-   "note": "`PlaneExceptionHandler`"
+   "note": "`FunkExceptionHandler`"
   },
   {
    "nr": "A-111",
@@ -1619,7 +1619,7 @@
    "ported": 4,
    "adapted": 0,
    "obsolete": 0,
-   "target": "tests/modules/Plane.WorkItems.Tests/Acceptance/Original/IssueLinkTests.cs",
+   "target": "tests/modules/Funk.WorkItems.Tests/Acceptance/Original/IssueLinkTests.cs",
    "ce": [
     "CE-WI-035"
    ],
@@ -1633,7 +1633,7 @@
    "ported": 0,
    "adapted": 2,
    "obsolete": 0,
-   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/NonObjectJsonBodyTests.cs",
+   "target": "tests/Funk.BuildingBlocks.Tests/Acceptance/Original/NonObjectJsonBodyTests.cs",
    "ce": [
     "CE-WS-003",
     "CE-API-006"
@@ -1648,7 +1648,7 @@
    "ported": 0,
    "adapted": 5,
    "obsolete": 0,
-   "target": "tests/Plane.BuildingBlocks.Tests/Acceptance/Original/SessionOriginCheckTests.cs",
+   "target": "tests/Funk.BuildingBlocks.Tests/Acceptance/Original/SessionOriginCheckTests.cs",
    "ce": [
     "CE-AUTH-024"
    ],
@@ -1662,7 +1662,7 @@
    "ported": 0,
    "adapted": 21,
    "obsolete": 0,
-   "target": "tests/Plane.Documents.Pdf.Tests/Acceptance/Original/PdfRenderingTests.cs",
+   "target": "tests/Funk.Documents.Pdf.Tests/Acceptance/Original/PdfRenderingTests.cs",
    "ce": [
     "CE-PAGE-011"
    ],
@@ -1676,7 +1676,7 @@
    "ported": 0,
    "adapted": 11,
    "obsolete": 0,
-   "target": "tests/Plane.Collaboration.Tests/Acceptance/Original/PdfExportEffectUtilsTests.cs",
+   "target": "tests/Funk.Collaboration.Tests/Acceptance/Original/PdfExportEffectUtilsTests.cs",
    "ce": [
     "CE-PAGE-011"
    ],

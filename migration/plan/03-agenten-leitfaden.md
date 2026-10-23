@@ -240,7 +240,7 @@ Ein Arbeitspaket ist fertig, wenn **alle** folgenden Punkte erfüllt sind.
 - [ ] `ce-coverage-check --ids <CE-IDs des Pakets>` grün.
 - [ ] Keine Abweichung vom Original ohne Eintrag in `deviations.yaml` bzw. `ui-deviations.yaml` mit Entscheidungsverweis (ADR, DT-Zeile, Z-Nummer oder beantwortete Planfrage).
 - [ ] Inkrement-Kennzeichnung im PR-Titel; nur abgenommene Routen registriert.
-- [ ] Namen nach ADR-009C (keine neuen `Plane.*`-, `X-Plane-*`-, `plane_*`-Zielbezeichner); G-BRAND grün.
+- [ ] Namen nach ADR-009C (keine neuen `Plane.*`-, `X-Funk-*`-, `plane_*`-Zielbezeichner); G-BRAND grün.
 - [ ] Texte in `de` und `en` vollständig; keine weiteren Locales.
 - [ ] Genutzte Andockstellen verwendet (z. B. States/Labels über Kataloge, State-Wechsel über die Pipeline, Rechte über `PermissionService`); keine Umgehung.
 - [ ] Keine `TODO`/`FIXME` ohne verlinktes Issue; Kurzreferenz in `docs/` aktualisiert, falls ein Baustein neu ist.

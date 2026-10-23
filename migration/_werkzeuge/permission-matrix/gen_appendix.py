@@ -4,7 +4,7 @@ cat = {c['key']: c for c in d['catalog']}
 LV = {"WS":"Workspace","PRJ":"Projekt","ANON":"anonym","AUTH":"angemeldet","INST":"Instanz","WSA|PA":"Workspace/Projekt"}
 out = []
 out.append("## Anhang A – Permission-Katalog (vollständig, 258 Keys)\n")
-out.append("Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `catalog`). Spalten Admin/Member/Guest = Grant der System-Rolle (Workspace- bzw. Projektrolle je nach Ebene); „Regeln“ = an wie vielen Endpunkten des Keys die Regel zusätzlich deklariert ist (Notation §3.13.2); „API-Scope (H1)“ = reservierter Scope-Name für Bearer-Tokens (§6.4). Die C#-Konstanten erzeugt `tools/Plane.PermissionGen` (§5.8).\n")
+out.append("Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `catalog`). Spalten Admin/Member/Guest = Grant der System-Rolle (Workspace- bzw. Projektrolle je nach Ebene); „Regeln“ = an wie vielen Endpunkten des Keys die Regel zusätzlich deklariert ist (Notation §3.13.2); „API-Scope (H1)“ = reservierter Scope-Name für Bearer-Tokens (§6.4). Die C#-Konstanten erzeugt `tools/Funk.PermissionGen` (§5.8).\n")
 out.append("| # | Permission-Key | C#-Konstante | Ebene | Admin (20) | Member (15) | Guest (5) | Regeln an Endpunkten (Anzahl) | Endpunkte | API-Scope (H1) |")
 out.append("|---|---|---|---|---|---|---|---|---|---|")
 for i, c in enumerate(d['catalog'], 1):

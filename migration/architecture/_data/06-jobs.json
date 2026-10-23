@@ -462,7 +462,7 @@
     {
       "id": "T18",
       "original_task": "issue_activities_task.issue_activity",
-      "target": "`IActivityRecorder` (synchron) + Event `plane.work_item_activity.recorded.v1`",
+      "target": "`IActivityRecorder` (synchron) + Event `funk.work_item_activity.recorded.v1`",
       "trigger": "synchron im Command",
       "queue": "–",
       "retry": "– (Transaktion des Commands)",
@@ -553,7 +553,7 @@
       "idempotency": "–",
       "leader": "–",
       "since": "–",
-      "status": "entfällt (Backfill, ADR-003, CE-WI-042); laufende Versionen schreibt `WorkItemVersionRecorder` mit Inline-Begrenzung `Plane:Retention:WorkItemVersionsKeep` (20, `03` §3.5.5, 17 ABG-102), kein Cron"
+      "status": "entfällt (Backfill, ADR-003, CE-WI-042); laufende Versionen schreibt `WorkItemVersionRecorder` mit Inline-Begrenzung `Funk:Retention:WorkItemVersionsKeep` (20, `03` §3.5.5, 17 ABG-102), kein Cron"
     },
     {
       "id": "T26",
@@ -595,7 +595,7 @@
       "id": "T29",
       "original_task": "notification_task.notifications",
       "target": "`notifications.activity` (`ActivityNotificationConsumer`)",
-      "trigger": "Consumer `plane.work_item_activity.recorded.v1`",
+      "trigger": "Consumer `funk.work_item_activity.recorded.v1`",
       "queue": "notifications",
       "retry": "Default",
       "idempotency": "Inbox",
@@ -1918,21 +1918,21 @@
     {
       "name": "notifications.activity",
       "class": "ActivityNotificationConsumer",
-      "module": "Plane.Notifications",
+      "module": "Funk.Notifications",
       "queue": "notifications",
       "since": "I5"
     },
     {
       "name": "webhooks.events",
       "class": "WebhookEventConsumer",
-      "module": "Plane.Webhooks",
+      "module": "Funk.Webhooks",
       "queue": "webhooks",
       "since": "I6"
     },
     {
       "name": "realtime.fanout",
       "class": "RealtimeFanOutConsumer",
-      "module": "Plane.RealtimeEvents",
+      "module": "Funk.RealtimeEvents",
       "queue": "realtime",
       "host": "Worker",
       "since": "I5"
@@ -1940,14 +1940,14 @@
     {
       "name": "home.recent_visit_cleanup",
       "class": "RecentVisitCleanupConsumer",
-      "module": "Plane.Home",
+      "module": "Funk.Home",
       "queue": "default",
       "since": "I5"
     },
     {
       "name": "search.indexing",
       "class": "SearchIndexingConsumer",
-      "module": "Plane.Search",
+      "module": "Funk.Search",
       "queue": "indexing",
       "since": "I5",
       "detail": "11 §3.10.3"
@@ -1961,7 +1961,7 @@
       "trigger": "`CreateWorkspaceCommand`",
       "queue": "default",
       "idempotency": "`Transactional`; Abbruch, wenn Bot `bot_user_<workspace_id>` existiert",
-      "behavior": "T46 in **einer** Transaktion (Original ohne Transaktion, Teildaten bei Fehler, `DEV-OPS-005`); Bot-User (`username = bot_user_<ws_id>`, `display_name = first_name = \"funk.\"` (Original „Plane“, D06-ADR-25 (e)), `is_bot = true`, `bot_type = \"WORKSPACE_SEED\"`, `email = bot_user_<ws_id>@<Host aus Plane:Urls:Web>`, kein Passwort – Keycloak-Login unmöglich, `05`) über `IBotUserProvisioner` (Identity); Inhalte aus eingebetteten JSON-Dateien `Plane.Workspaces/Seeds/Data/{projects,states,labels,cycles,modules,issues,views,pages}.json` (Kopie von `API/seeds/data/*.json`, Texte mit „Plane“ → „funk.“ und ohne `docs.plane.so`-Links, `BRAND-SEED-01`), ausgeführt durch `IWorkspaceSeedContributor` je Eigentümer-Modul (Projects → Projekt/States/Labels/Mitglieder/`ProjectUserProperty`, Cycles, ProjectModules, WorkItems → 7 Work Items inkl. Sequenz + Activity A1, Views, Pages) in fester Reihenfolge; externe URLs ersetzt: Unsplash-Cover → gebündelte Datei als `PROJECT_COVER`-Asset, jsDelivr-Emoji → `logo_props` mit Unicode-Emoji (`DEV-OPS-005`)",
+      "behavior": "T46 in **einer** Transaktion (Original ohne Transaktion, Teildaten bei Fehler, `DEV-OPS-005`); Bot-User (`username = bot_user_<ws_id>`, `display_name = first_name = \"funk.\"` (Original „Plane“, D06-ADR-25 (e)), `is_bot = true`, `bot_type = \"WORKSPACE_SEED\"`, `email = bot_user_<ws_id>@<Host aus Funk:Urls:Web>`, kein Passwort – Keycloak-Login unmöglich, `05`) über `IBotUserProvisioner` (Identity); Inhalte aus eingebetteten JSON-Dateien `Funk.Workspaces/Seeds/Data/{projects,states,labels,cycles,modules,issues,views,pages}.json` (Kopie von `API/seeds/data/*.json`, Texte mit „Plane“ → „funk.“ und ohne `docs.plane.so`-Links, `BRAND-SEED-01`), ausgeführt durch `IWorkspaceSeedContributor` je Eigentümer-Modul (Projects → Projekt/States/Labels/Mitglieder/`ProjectUserProperty`, Cycles, ProjectModules, WorkItems → 7 Work Items inkl. Sequenz + Activity A1, Views, Pages) in fester Reihenfolge; externe URLs ersetzt: Unsplash-Cover → gebündelte Datei als `PROJECT_COVER`-Asset, jsDelivr-Emoji → `logo_props` mit Unicode-Emoji (`DEV-OPS-005`)",
       "since": "I1"
     },
     {
@@ -1971,7 +1971,7 @@
       "trigger": "`CreateWorkItemLinkCommand`, `UpdateWorkItemLinkCommand` (nur URL geändert)",
       "queue": "default",
       "idempotency": "Dedupe `link-crawl:{link_id}`",
-      "behavior": "T44 1:1: Client `link-preview` (`05`: 1 s Seite, 2 s `HEAD /favicon.ico`, 5 Redirects je Hop SSRF-geprüft, max. 2 MiB), Browser-User-Agent wie Original, `<title>` getrimmt, Favicon-Reihenfolge `icon`, `shortcut icon`, `apple-touch-icon`, `apple-touch-icon-precomposed`, sonst `/favicon.ico`, als `data:`-URI; jeder Fehler → Default-Icon (lucide `link`, Base64-SVG des Originals); `metadata = {title, favicon, url, favicon_url}`. Neu: `Plane:LinkPreview:Enabled` (Default `true`, Airgap-Bundle `false`) – aus → sofort Default-Metadaten ohne Netzaufruf",
+      "behavior": "T44 1:1: Client `link-preview` (`05`: 1 s Seite, 2 s `HEAD /favicon.ico`, 5 Redirects je Hop SSRF-geprüft, max. 2 MiB), Browser-User-Agent wie Original, `<title>` getrimmt, Favicon-Reihenfolge `icon`, `shortcut icon`, `apple-touch-icon`, `apple-touch-icon-precomposed`, sonst `/favicon.ico`, als `data:`-URI; jeder Fehler → Default-Icon (lucide `link`, Base64-SVG des Originals); `metadata = {title, favicon, url, favicon_url}`. Neu: `Funk:LinkPreview:Enabled` (Default `true`, Airgap-Bundle `false`) – aus → sofort Default-Metadaten ohne Netzaufruf",
       "since": "I2"
     },
     {

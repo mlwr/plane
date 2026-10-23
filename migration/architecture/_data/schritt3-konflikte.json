@@ -8,9 +8,9 @@
    "06 §3.12: Gruppen-Autorisierung 'project:' → project.project_entity.read und 'ws:' → 'aktives Workspace-Mitglied' widerspricht 05 §3.11 (workspace.settings.read / project.project.read). D07 folgt 05; 06 ist anzupassen.",
    "06 §3.10/T8 (Job pages.copy_assets schreibt src um und berechnet description_json/binary neu) gegen D07-ADR-24 (beides synchron im DuplicatePageCommand, der Job kopiert nur Objekte). Änderungsauftrag an 06 in D07 §9.2.",
    "03 §3.9.3: 'Migration wird nicht sofort gespeichert' gegen D07 §3.6.2 (Speichern unter Zeilensperre wie Original fetchDocument). Außerdem fehlt in 03 die Spalte pages.description_revision.",
-   "03 verwendet HtmlText.StripTags, 02 und 11 verwenden Plane.Documents.Text.HtmlTextExtractor. D07 folgt 02; 03 ist anzupassen.",
-   "03 nennt die Versionsaufbewahrung 'Plane:Retention:PageVersions', 02 'PlaneRetentionOptions.PageVersionsKeep' (= Plane:Retention:PageVersionsKeep). D07 folgt 02; 03 ist anzupassen.",
-   "15 §3.12/S1-Tabelle ordnet die Tests mit dem Original-Provider 'Plane.Collaboration.Tests/Protocol/*' zu, D07 §7.2 dagegen 'Browser/ProviderConformanceTests'. Änderungsauftrag an 15.",
+   "03 verwendet HtmlText.StripTags, 02 und 11 verwenden Funk.Documents.Text.HtmlTextExtractor. D07 folgt 02; 03 ist anzupassen.",
+   "03 nennt die Versionsaufbewahrung 'Funk:Retention:PageVersions', 02 'FunkRetentionOptions.PageVersionsKeep' (= Funk:Retention:PageVersionsKeep). D07 folgt 02; 03 ist anzupassen.",
+   "15 §3.12/S1-Tabelle ordnet die Tests mit dem Original-Provider 'Funk.Collaboration.Tests/Protocol/*' zu, D07 §7.2 dagegen 'Browser/ProviderConformanceTests'. Änderungsauftrag an 15.",
    "16 §4 / 01 §1.4: CE-OPS-021 ('Lokale Entwicklungsumgebung') wird als 'Hub-Gerüst' für H6 verwendet. Das ist eine Zuordnung zum Walking Skeleton, kein CE-Feature; die Bezeichnung in 16 sollte klargestellt werden.",
    "10 §3.x: CollaborationSession.authorizedScope trägt ein ⚠ 'in S1 bestätigen'. D07 §3.3.6 belegt aus dem Provider-Quelltext provider.authorizedScope (gesetzt in authenticatedHandler); 10 kann das ⚠ auflösen."
   ],
@@ -38,7 +38,7 @@
   "conflicts": [
    "D01 ADR-042/§1.3 and D08 §9 put the Rich/Document editor in I4 and require only S5 (Lite) before I2. D10-ADR-15 puts Rich and Document read-only in I2 with S5 complete before I2. D15 Appendix B.8 tags editor-menus/editor-blocks/editor-config.spec.ts as I4.",
    "D09 §3.2.2: the import list for the Web/Space styles.css lacks tiptap-core.css, which must be the last import and outside any layer because the original appends its style tag to the end of <head>.",
-   "D09 §3.1: PRP/icons/ contains svg-icon.component.ts next to the PlIconDef data. The framework-free editor core needs a data-only entry point (@plane/propel/icons, @plane/blocks/icons). D09's no-component-styles / ViewEncapsulation.None rule does not cover libs/shared/editor/** or libs/space/editor/**.",
+   "D09 §3.1: PRP/icons/ contains svg-icon.component.ts next to the PlIconDef data. The framework-free editor core needs a data-only entry point (@funk/propel/icons, @funk/blocks/icons). D09's no-component-styles / ViewEncapsulation.None rule does not cover libs/shared/editor/** or libs/space/editor/**.",
    "D09 screenshot catalogue: W-031 (work-item detail, I2) has no editor-menu states, and W-046 lacks table-column-dropdown, image-toolbar, callout-picker and code-hover, which D10 AK-D10-06 needs.",
    "D16 D9 row places package blocks in FE/libs/shared/editor (extensions/<block>/), while D10 §6.2 rule 5 sets FE/libs/shared/editor/packages/<paket>/{core,ui}, so no CE file is touched.",
    "D07 §7.5 generates four schema goldens {rich,document,title,server}.schema.json and §3.12 reads the mark order from server.schema.json, but AK-07-20 names only Rich/Document/Title. Whether 'server' and 'rich' differ is unclear; D10 assumes rich = CoreEditorExtensionsWithoutProps.",
@@ -63,12 +63,12 @@
   "doc": "architecture/06-hintergrundjobs-events-benachrichtigungen.md",
   "conflicts": [
    "03 §3.4.18.6: recurring_jobs has columns (cron, last_run_at, next_run_at, last_status) instead of 06 §3.2 (cron_utc, source, job_type, queue, payload, enabled, last_fired_at, next_fire_at, updated_at). 03 jobs has statuses 2 Succeeded / 3 Failed, completed_at, a dedupe index on (0,1,3), and job_type = CLR type name; 06 deletes successful jobs, retries go back to status 0, and job_type is a stable [JobType] name. 03 must adopt the 06 form.",
-   "03 §3.5.5 vs 06 §3.16/§4.2: cron names differ (retention.* vs maintenance.*/exports.expire_links/messaging.*). Retention values differ: outbox 7 d vs 24 h, inbox 14 d vs 7 d, successful jobs kept 7 d vs deleted immediately; option keys Plane:Messaging:* vs Plane:Worker:*; Plane:Retention:PageVersions vs PageVersionsKeep (02). Session cleanup is '*/30 * * * *' in 03 vs '17 * * * *' in 05/06. The hard delete uses a FileAssetPurgeConsumer in 03 vs IObjectStorage.DeleteManyAsync inside the job in 06.",
+   "03 §3.5.5 vs 06 §3.16/§4.2: cron names differ (retention.* vs maintenance.*/exports.expire_links/messaging.*). Retention values differ: outbox 7 d vs 24 h, inbox 14 d vs 7 d, successful jobs kept 7 d vs deleted immediately; option keys Funk:Messaging:* vs Funk:Worker:*; Funk:Retention:PageVersions vs PageVersionsKeep (02). Session cleanup is '*/30 * * * *' in 03 vs '17 * * * *' in 05/06. The hard delete uses a FileAssetPurgeConsumer in 03 vs IObjectStorage.DeleteManyAsync inside the job in 06.",
    "03: the users.bot_type value list (WORKSPACE_SEED, integration, app) is missing 'SYSTEM' for the system bot plane_system_bot (06 D06-ADR-20). The seed bot display_name 'Plane' in 03 §(seed) contradicts ADR-009B (06: 'funk.').",
    "03 §3.4.18.6: the outbox NOTIFY is sent 'nach Commit (Post-Commit-Aktion)', while 06 issues pg_notify inside the transaction (delivered at commit). The effect is the same, but the wording should be unified.",
-   "02 §3.15 PlaneMailOptions.DefaultFrom = 'Team Plane <team@mailer.plane.so>' contradicts ADR-009B; 06 D06-ADR-25 sets 'funk. <noreply@<Host aus Plane:Urls:Web>>' and adds FooterLinks.",
-   "07 D07-ADR-22: page version limit as instance setting PAGE_VERSION_LIMIT vs 02 §3.15 PlaneRetentionOptions.PageVersionsKeep (used by the 06 cleanup job B10). One source must be chosen.",
-   "07: whether CreatePageCommand (with description_html) and DuplicatePageCommand raise plane.page.description_updated.v1, so that PageLogSyncConsumer covers the original page_transaction trigger points, must be confirmed in 07.",
+   "02 §3.15 FunkMailOptions.DefaultFrom = 'Team Plane <team@mailer.plane.so>' contradicts ADR-009B; 06 D06-ADR-25 sets 'funk. <noreply@<Host aus Funk:Urls:Web>>' and adds FooterLinks.",
+   "07 D07-ADR-22: page version limit as instance setting PAGE_VERSION_LIMIT vs 02 §3.15 FunkRetentionOptions.PageVersionsKeep (used by the 06 cleanup job B10). One source must be chosen.",
+   "07: whether CreatePageCommand (with description_html) and DuplicatePageCommand raise funk.page.description_updated.v1, so that PageLogSyncConsumer covers the original page_transaction trigger points, must be confirmed in 07.",
    "11 §3.10.3: SearchIndexingConsumer does not subscribe to plane.project.unarchived, plane.page.unarchived, plane.cycle.archived/unarchived or plane.module.archived/unarchived (06 has these as separate events, not as .updated). Change request to 11.",
    "01 ADR-020 says 'Retry-Policy Webhooks wie Original (5 Versuche, Backoff ab 600 s, Jitter)'. The original (and 06 D06-ADR-06) actually does 6 attempts (1 + max_retries=5) with a random wait of 0..600 s (retry_backoff_max=600, full jitter). 01 should be corrected.",
    "02 §5.2.12: the text says RealtimeFanOutConsumer, but the code skeleton file is LabelRealtimeConsumer.cs — internally inconsistent. 06 uses the generic RealtimeFanOutConsumer (Worker, queue realtime, per 07).",
@@ -78,11 +78,11 @@
   "remaining": [
    "S12 spike: the in-house PostgreSQL messaging is still the main risk (R-D06-01). The live-event chain now has two outbox hops; the < 2 s target must be measured in LiveEventLatencyTests.",
    "O-D06-05: licensing of the mail icons and hero image taken from plane-marketing S3 / imagekit is unresolved (needs the client).",
-   "O-D06-12: should the X-Plane-* webhook headers and the plane_wh_ secret prefix stay as an exception to ADR-009B? Recommendation: keep them (ADR-003 contract); the client must confirm.",
+   "O-D06-12: should the X-Funk-* webhook headers and the funk_wh_ secret prefix stay as an exception to ADR-009B? Recommendation: keep them (ADR-003 contract); the client must confirm.",
    "O-D06-11: a session-mode connection string ('plane-session') for the leader lock and LISTEN behind PgBouncer still needs to be added to 02 §3.15 / 14.",
    "Stored activity comment strings ('Plane has archived the issue', 'Plane updated the state to ') are deliberately kept as data. If the Angular UI shows them as text, 08/09 must replace the actor label with 'funk.' when rendering — not yet verified there.",
    "O-D06-01/-02/-03/-04/-06/-07 (indexing reservation in 16, the 13-beat-entries wording in 15, ownership guard per entity in 02, metric names in 02 §3.14, cycles.completion_published_at in 03, before-form per endpoint in 04) are still open in the neighbor documents.",
-   "DjangoHtmlEncoder needs AllowUnsafeBlocks in Plane.Platform.Mail and must be checked against Django escape() with golden tests (G-MAIL)."
+   "DjangoHtmlEncoder needs AllowUnsafeBlocks in Funk.Platform.Mail and must be checked against Django escape() with golden tests (G-MAIL)."
   ],
   "open": [
    "O-D06-01: 16 Reservations.Queues contains 'indexing', but the CE uses it from I5 → remove from the reservations (change request to 16)",
@@ -90,7 +90,7 @@
    "O-D06-03: OwnershipGuardInterceptor must capture the module scope per entity at tracking time (writes via Contracts services such as IActivityRecorder) → 02/spike S0",
    "O-D06-04: align metric names in 02 §3.14 (plane.outbox.lag_ms, plane.jobs.failed) with 14 §3.19.2/D06 §3.20",
    "O-D06-05: licence/trademark and provenance of the bundled email images (Plane logos, marketing icons) → client",
-   "O-D06-06: column cycles.completion_published_at for plane.cycle.completed.v1 → 03",
+   "O-D06-06: column cycles.completion_published_at for funk.cycle.completed.v1 → 03",
    "O-D06-07: before form (current_instance/v1 serializer) per webhook-relevant endpoint → 04",
    "O-D06-08/09: write load of the API activity log and recent visits through the job queue – measure in I6/I7, buffer if needed",
    "Change requests to 14: §3.18 (worker needs no Valkey), §3.19.2 metric additions, §3.22 plane-cli jobs/scheduler/test-email, §3.12 Helm worker.pools[], §3.14.3 airgap checklist"
@@ -101,14 +101,14 @@
   "conflicts": [
    "03 §3.4.18.8 vs. D11 §3.10.1: search_documents lacks the columns identifier and content_hash and the indexes ix_search_documents_project/ix_search_documents_facets; entity_type values in 03 are comment/view, in D11 work_item_comment/issue_view (IndexEntityTypes); search_vector in 03 without the identifier; body limit '1 MiB' (03) vs. 100,000 characters (D11, tsvector limit 1 MB)",
    "03 §3.10.1 vs. D11 §3.9: trigram index increments differ (03: workspaces/projects I2, users/cycles/modules/views/pages I5; D11: I1/I2/I3/I4)",
-   "06 §3.8 consumer table: search.indexing only lists work_item created/updated/deleted, comment c/u/d and page created/updated/description_updated/deleted; D11 also needs state_changed, archived/unarchived, parent_changed, restored, moved, intake, page archived/unarchived/moved, project/cycle/module/view events and plane.workspace.deleted.v1. The 'CE-Konsument' column of the affected events must be updated too",
+   "06 §3.8 consumer table: search.indexing only lists work_item created/updated/deleted, comment c/u/d and page created/updated/description_updated/deleted; D11 also needs state_changed, archived/unarchived, parent_changed, restored, moved, intake, page archived/unarchived/moved, project/cycle/module/view events and funk.workspace.deleted.v1. The 'CE-Konsument' column of the affected events must be updated too",
    "06 §3.18/§4.2: jobs indexing.index_entity/remove_entry/remove_scope/rebuild and the cron job indexing.reconcile (23 3 * * *) are missing from the job table and the cron plan",
    "06: a change to the page-project link (project_pages) triggers no PageUpdatedV1 (ChangedFields contains projects)",
-   "05 §3.17.2 step 3 / §5.9: the SSRF algorithm only exempts AllowedNetworks from the block rules, not SsrfPolicy.AllowedHosts, so Plane:Ai:AllowedInternalHosts (05 table, client llm) has no effect",
-   "05 §3.14: IVisibilityFilter<T> has no fixed signature; D11 assumes IQueryable<T> Apply(IQueryable<T>, PlanePrincipal, ScopeRef) and additionally needs IVisibilityFilter<SearchDocument>",
-   "02 §3.8: there is no error form for DRF list bodies (400 [\"Null characters are not allowed.\"]); PlaneErrors.DrfList + DrfMessages.NullCharacters needed",
-   "02 §3.11.4: base sets live only in Plane.WorkItems/Query/BaseSets; for Plane.Search (R1) the predicates must move to Plane.Data/Querying/WorkItems/WorkItemBaseSetPredicates.cs",
-   "01 §5.4: Plane.Search 'ab I5' and frontend lib libs/web/search (does not exist in 08); Plane.Assistant image picker under libs/shared/blocks conflicts with Sheriff (uses the web FileService)",
+   "05 §3.17.2 step 3 / §5.9: the SSRF algorithm only exempts AllowedNetworks from the block rules, not SsrfPolicy.AllowedHosts, so Funk:Ai:AllowedInternalHosts (05 table, client llm) has no effect",
+   "05 §3.14: IVisibilityFilter<T> has no fixed signature; D11 assumes IQueryable<T> Apply(IQueryable<T>, FunkPrincipal, ScopeRef) and additionally needs IVisibilityFilter<SearchDocument>",
+   "02 §3.8: there is no error form for DRF list bodies (400 [\"Null characters are not allowed.\"]); FunkErrors.DrfList + DrfMessages.NullCharacters needed",
+   "02 §3.11.4: base sets live only in Funk.WorkItems/Query/BaseSets; for Funk.Search (R1) the predicates must move to Funk.Data/Querying/WorkItems/WorkItemBaseSetPredicates.cs",
+   "01 §5.4: Funk.Search 'ab I5' and frontend lib libs/web/search (does not exist in 08); Funk.Assistant image picker under libs/shared/blocks conflicts with Sheriff (uses the web FileService)",
    "01 §8.1: package Npgsql.EntityFrameworkCore.PostgreSQL.Trigrams is missing from the library list",
    "15 appendix: CE-SRCH-002/-003 listed as I5, while D11 needs the contract scenarios from I2 (picker/mentions in the I2 vertical slices)",
    "14 §4.7.2: GPT_ENGINE is listed as 'Seed nur als Fallback für LLM_MODEL', but 02 §4.10/05 §4.4 drop it; LLM_BASE_URL is missing from 14 §4.7.9; 14 §3.22 lacks the CLI commands search reindex/status; 14 §3.15 lacks the migrator step for the initial index fill",
@@ -127,11 +127,11 @@
   ],
   "open": [
    "O-D11-01: Sollen SR-01/SR-02 für Nicht-Mitglieder 403 statt 200 mit leeren Listen liefern? Empfehlung: 403 laut 05 Anhang B beibehalten (DEV-SRCH-011).",
-   "O-D11-02: Soll der Host aus LLM_BASE_URL automatisch in die SSRF-Allowlist? Empfehlung: nein, Plane:Ai:AllowedInternalHosts bleibt explizit; Entscheidung 05/Auftraggeber.",
+   "O-D11-02: Soll der Host aus LLM_BASE_URL automatisch in die SSRF-Allowlist? Empfehlung: nein, Funk:Ai:AllowedInternalHosts bleibt explizit; Entscheidung 05/Auftraggeber.",
    "O-D11-03: Die Default-Modelle des Originals für anthropic/gemini sind beim Anbieter abgekündigt. Empfehlung: beibehalten und dokumentieren, der Betreiber setzt LLM_MODEL.",
    "O-D11-04: Power-K zeigt bei Pages keinen Projekt-Identifier (Frontend-Feldfehler project__identifiers). Empfehlung: optisch 1:1 belassen; Auftraggeber kann die Korrektur verlangen.",
    "O-D11-05: Editor-KI-Menü (rephrase-grammar) in der CE aktivieren? Empfehlung: nein (G3 nicht gewählt).",
-   "O-D11-06: Optionaler Ollama-Container im Dev-AppHost (Parameter Plane:Dev:LocalLlm). Entscheidung durch 14.",
+   "O-D11-06: Optionaler Ollama-Container im Dev-AppHost (Parameter Funk:Dev:LocalLlm). Entscheidung durch 14.",
    "O-D11-07: Exakte IJob-/Job-Handler-Signatur und Ausnahmetyp für {\"error\": \"Please provide valid detail\"} stehen erst mit 02/06 fest; die Skelette in §5 sind ggf. anzupassen."
   ]
  },
@@ -140,7 +140,7 @@
   "conflicts": [
    "D06 §3.2 und D03 (Vorfassung): D03 hatte andere Messaging-Tabellen (`recurring_jobs`, andere `jobs`-Spalten und -Status, zusätzliche Outbox-Spalten). D03 folgt jetzt D06; D06 muss nichts ändern.",
    "D06 §3.15 (Z. 755 und 786) nennt die Tabelle `export_histories`, D03 legt `exports` fest (D03-ADR-02). D06 sollte den Namen anpassen.",
-   "D06 Z. 408 setzt `PlaneLocks.Migrations = 0x504C_4E00_0003`, D14-ADR-16 bzw. §4.5 dagegen `PlaneLocks.Migrator = 7356001` (`pg_advisory_lock(7356001)`). Der Konflikt besteht zwischen D06 und D14; D03 folgt D14.",
+   "D06 Z. 408 setzt `FunkLocks.Migrations = 0x504C_4E00_0003`, D14-ADR-16 bzw. §4.5 dagegen `FunkLocks.Migrator = 7356001` (`pg_advisory_lock(7356001)`). Der Konflikt besteht zwischen D06 und D14; D03 folgt D14.",
    "D06 §4.2 hat keinen Cron für die Begrenzung von `work_item_versions`. D03 legt fest, dass der `WorkItemVersionRecorder` direkt beim Schreiben auf 20 begrenzt; das ist in D06 nachzutragen.",
    "Innerhalb von D11 widersprechen sich zwei Stellen: D11-ADR-07 nennt eine FK von `search_embeddings` auf den zusammengesetzten Schlüssel `(entity_type, entity_id)`, D11 §6.2 dagegen `search_document_id → search_documents(id)`. D03 folgt §6.2.",
    "D11 §3.10.1 legt `plane_unaccent` in der eigenen Migration `AddSearchDocuments` (I5) an. D03 legt die Funktion bereits in I0 an (`…_Platform_Extensions`), außerdem verstößt der Migrationsname gegen 01 §7.14 (`YYYYMMDDHHmm_Search_Documents`).",
@@ -148,13 +148,13 @@
    "D15 §3.3.2 enthält in der Liste der beim Reset ignorierten Tabellen (`TablesToIgnore`) die nicht existierende Tabelle `event_types`. Es fehlen `instance_configurations` und `recurring_job_states`, und das erneute Ausführen von `BaseSeeds` nach dem Reset (System-Bot) ist nicht genannt.",
    "D02 §3.11.4/§3.11.5 (Raw-SQL der Query-Engine) verwendet `issue_*`-Tabellennamen und die Spalte `issue_id`; verbindlich sind `work_item_*` und `work_item_id` (D03 §4.5). Die Rückmeldung an D02 besteht weiter.",
    "D16 E-13 sieht `external_links` in I0 vor; D03 legt die Tabelle wegen der FK auf `work_items` erst in I2 an.",
-   "D05 §3.7.1/§4.x verortet Entitäten unter `ID/Domain/*.cs`; nach R3 gehören sie nach `Plane.Data/Entities/<Modul>/`."
+   "D05 §3.7.1/§4.x verortet Entitäten unter `ID/Domain/*.cs`; nach R3 gehören sie nach `Funk.Data/Entities/<Modul>/`."
   ],
   "remaining": [
    "Ob `Pgvector.EntityFrameworkCore` 0.3.0 mit EF 10 funktioniert, ist nur indirekt belegt. Die Abhängigkeit Npgsql.EFCore ≥ 9.0.1 hat keine Obergrenze, eine ausdrückliche EF-10-Freigabe fehlt. `PgvectorSmokeTests` in Spike S0 ist Pflicht.",
    "Der Spike für den zusammengesetzten Scope-FK auf `(project_id, workspace_id)` steht aus (R-D03-02, O-D03-05).",
    "Die Lizenz der gebündelten Demo-Seed-Bilder ist ungeklärt (Unsplash, Apple-Emoji, media.docs.plane.so). Zusätzlich ist zu prüfen, ob diese Bilder Plane-Branding zeigen und nach ADR-009B ersetzt werden müssen.",
-   "`PlaneRespawner` muss nach jedem Reset `BaseSeeds` erneut ausführen, sonst fehlt der System-Bot in `users`. D15 §3.3.2 sagt das nicht ausdrücklich; die Liste der dort ignorierten Tabellen enthält außerdem noch `event_types`.",
+   "`FunkRespawner` muss nach jedem Reset `BaseSeeds` erneut ausführen, sonst fehlt der System-Bot in `users`. D15 §3.3.2 sagt das nicht ausdrücklich; die Liste der dort ignorierten Tabellen enthält außerdem noch `event_types`.",
    "Ob `JsonNode.DeepEquals` die Schlüsselreihenfolge beachtet, ist unklar; der Hash des `JsonNodeComparer` hängt von der Reihenfolge ab. Im I0-Spike per Test festhalten.",
    "Im Fachgebiet A9 ist offen, ob der Primärschlüssel `key` von `work_item_relation_types` bei workspace-eigenen Typen per Expand/Contract eine Surrogat-ID bekommt."
   ],
@@ -179,7 +179,7 @@
    "02 §3.3.1 rule 6 says unregistered routes answer 405. Correct (D04-ADR-03) is 405 only if the path exists with another method, otherwise 404.",
    "06 D06-ADR-15 and §3.14.2 say 'exactly 24 trigger points'. D04 DT-WH-07 adds 6 triggers (deletion of work items, cycles, modules and comments; cycle/module assignment). 06 must extend WebhookTriggerMap and the webhooks.events consumer subscriptions.",
    "05 appendix B / 05-permission-matrix.json still list as active the rows D04 does not register: GET /api/workspaces/ (DT-WS-01), the label/link PUTs (DT-GEN-01), legacy file-assets (DT-AST-01), project-boards (DT-SPACE-01), the v1 PUT and module-issue GET (DT-V1-02), the 8 v1 estimates (DT-V1-01), intake POST (DT-INT-01), the favorite lists (DT-GEN-15) and the attachment detail GET (DT-WI-10).",
-   "02 references analyzers PLANE0001/PL0002, but neither 01 nor 02 defines an analyzer project. D04 introduces src/building-blocks/Plane.Analyzers with PLANE0004–0006."
+   "02 references analyzers FUNK0001/PL0002, but neither 01 nor 02 defines an analyzer project. D04 introduces src/building-blocks/Funk.Analyzers with FUNK0004–0006."
   ],
   "remaining": [
    "O-D04-08: The masking default for God-mode secrets (DT-INST-07) needs the client's confirmation, because it conflicts with 05 O-D05-03.",
@@ -187,11 +187,11 @@
    "O-D04-01 / R-D04-01: Spike S0 must confirm that the Mediator source generator dispatches contract commands to internal handlers in other assemblies.",
    "R-D04-05: The status assignment in documented_bodies (taken from the analysis tables) is unchecked; the contract goldens remain authoritative.",
    "frontend_call_detected is still a heuristic; contract-check (generated/frontend-calls.json) has to replace it from I0.",
-   "The Plane.Analyzers project (PLANE0004–0006) is not yet in 01/02 and has to be added there."
+   "The Funk.Analyzers project (FUNK0004–0006) is not yet in 01/02 and has to be added there."
   ],
   "open": [
    "O-D04-01: Can the Mediator source generator dispatch contract commands from other assemblies to internal handlers? To be answered in spike S0; fallback is a <M>CommandDispatch facade.",
-   "O-D04-02: Should the protocol identifiers X-Plane-*, plane_api_ and plane_wh_ also be renamed under ADR-009B? Recommendation: no. Client decision before I6.",
+   "O-D04-02: Should the protocol identifiers X-Funk-*, funk_api_ and funk_wh_ also be renamed under ADR-009B? Recommendation: no. Client decision before I6.",
    "O-D04-03: Should OpenAPI/Scalar stay off by default as in the original (ENABLE_DRF_SPECTACULAR=0)? Recommendation: yes. Client decision before I6.",
    "O-D04-04: Should the group-sum quirk DEV-GRP-001 (0→1) be fixed under Z-12? Recommendation: yes; decided through 02 O-D02-04 before I2.",
    "O-D04-05: Which success status should the repaired POST {P}/invitations/ return? Recommendation: 200, matching the workspace endpoint.",

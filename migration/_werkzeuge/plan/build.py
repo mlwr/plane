@@ -65,7 +65,7 @@ for w in WPS:
 
 def rename(s):
     """Zielbezeichner nach ADR-009C (nur in generierten Texten aus Architekturdaten; Umbenennungstabelle 17)."""
-    return s.replace("Plane.", "Funk.").replace("Plane:", "Funk:").replace("Plane__", "Funk__")
+    return s.replace("Plane.", "Funk.").replace("Plane:", "Funk:").replace("Funk__", "Funk__")
 
 
 # ---------------- Endpunkte zuordnen ----------------

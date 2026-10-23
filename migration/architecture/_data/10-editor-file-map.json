@@ -1726,7 +1726,7 @@
       "original": "packages/editor/src/index.ts",
       "category": "PA",
       "target": "FE/libs/shared/editor/components/src/public-api.ts",
-      "symbol": "`@plane/editor` (gleiche Export-Namen ohne `WithRef`-Suffix-Komponenten: Komponenten-Klassen)",
+      "symbol": "`@funk/editor` (gleiche Export-Namen ohne `WithRef`-Suffix-Komponenten: Komponenten-Klassen)",
       "increment": "I2",
       "ce_ids": "Querschnitt (CE-PAGE-021…023)",
       "note": ""
@@ -1735,7 +1735,7 @@
       "original": "packages/editor/src/lib.ts",
       "category": "PA",
       "target": "FE/libs/shared/editor/core/src/lib.ts",
-      "symbol": "`@plane/editor/core` – Server-Schema + Konverter (nur Tests/Golden)",
+      "symbol": "`@funk/editor/core` – Server-Schema + Konverter (nur Tests/Golden)",
       "increment": "I2",
       "ce_ids": "Querschnitt (CE-PAGE-021…023)",
       "note": ""

@@ -54,7 +54,7 @@ Ein Implementierungs-Agent kann aus §3.4 je Tabelle die Entitätsklasse und die
 | Entitäten | alle CE-genutzten Modelle aus `M/*.py` und `LIC/instance.py`; Zuordnung zu Modulen (01 §5.4) und `[OwnedBy]` (Regel R3) | §3.3, §3.4 |
 | Neue Tabellen | `user_identities`, `user_sessions` (Form aus D05), `roles`, `role_permissions`, `data_protection_keys`, `project_feature_settings`, `workspace_feature_settings`, `work_item_relation_types`, `work_item_sequences`, `work_item_types` (Minimal-Schema), `outbox_messages`, `inbox_messages`, `jobs`, `recurring_job_states`, `integration_connections`, `external_links`, `search_documents` | §3.4.18 ff. |
 | Querschnitt | UUIDv7, `snake_case`, Audit, Soft-Delete-Filter inkl. Join-Entscheidung, Mandanten-Scope-FKs, Kaskaden, Hard-Delete, Sequenzvergabe, Sortierfelder, JSONB, Enums, Checks, Beschreibungsformate, Versionen, Yjs, FTS/Trigram | §3.1, §3.5–§3.11 |
-| Migrationen | EF-Migrationshistorie je Inkrement, Ausführung durch `Plane.Migrator` (Aspire-Ressource mit `WaitForCompletion`), Expand/Contract, Drift-Gate | §3.13 |
+| Migrationen | EF-Migrationshistorie je Inkrement, Ausführung durch `Funk.Migrator` (Aspire-Ressource mit `WaitForCompletion`), Expand/Contract, Drift-Gate | §3.13 |
 | Seeds | Referenzdaten (`BaseSeeds`), Laufzeit-Seeds (Default-States, Default-Intake, Benutzer-Defaults), Instanz-Konfiguration, Demo-Workspace aus `API/seeds/data` | §3.14 |
 | Testdaten | `ParitySeedLoader` (D15), Volumen-Generator (`VolumeSeeder`, CE-OPS-024) | §3.15 |
 | Andockstellen | Schema-Vorhalte für die 🧱-Pakete (A1, A2, A9, A17, B1, B6, C1, C3, D1, D2, E3, E5, F1, F2, G1, H1, H6) | §6 |
@@ -73,7 +73,7 @@ Jede Tabelle entsteht in der Migration des Inkrements, in dem ihr erster vertika
 
 | Inkrement | Migration(en) (`YYYYMMDDHHmm_<Modul>_<Beschreibung>`) | Tabellen | Seeds | Weitere Bausteine dieses Dokuments |
 |---|---|---|---|---|
-| **I0 Walking Skeleton** | `…_Platform_Extensions`, `…_Messaging_Initial`, `…_Instance_Initial`, `…_Identity_Initial`, `…_Authorization_Roles`, `…_Workspaces_Initial`, `…_Projects_Initial`, `…_Integrations_Connections` | Extensions `pg_trgm`, `unaccent`, `vector`; Funktion `plane_unaccent`; `outbox_messages`, `inbox_messages`, `jobs`, `recurring_job_states`, `data_protection_keys`, `instances`, `instance_admins`, `instance_configurations`, `users`, `profiles`, `user_identities`, `user_sessions`, `roles`, `role_permissions`, `workspaces`, `workspace_members`, `projects`, `project_identifiers`, `project_members`, `project_user_properties`, `states`, `integration_connections` | `BaseSeeds`: System-Rollen (6), Instanz-Datensatz (`instance_name` „funk.“), Instanz-Konfiguration aus ENV, System-Bot (D06-ADR-20); Laufzeit: Default-States bei Projektanlage | Basistypen §3.1, Konventionen §3.2, Scope-FKs, Interceptors (D02), Drift-Gate, `PlaneRespawner`-Liste §4.6, `ParitySeedLoader`-Grundform |
+| **I0 Walking Skeleton** | `…_Platform_Extensions`, `…_Messaging_Initial`, `…_Instance_Initial`, `…_Identity_Initial`, `…_Authorization_Roles`, `…_Workspaces_Initial`, `…_Projects_Initial`, `…_Integrations_Connections` | Extensions `pg_trgm`, `unaccent`, `vector`; Funktion `plane_unaccent`; `outbox_messages`, `inbox_messages`, `jobs`, `recurring_job_states`, `data_protection_keys`, `instances`, `instance_admins`, `instance_configurations`, `users`, `profiles`, `user_identities`, `user_sessions`, `roles`, `role_permissions`, `workspaces`, `workspace_members`, `projects`, `project_identifiers`, `project_members`, `project_user_properties`, `states`, `integration_connections` | `BaseSeeds`: System-Rollen (6), Instanz-Datensatz (`instance_name` „funk.“), Instanz-Konfiguration aus ENV, System-Bot (D06-ADR-20); Laufzeit: Default-States bei Projektanlage | Basistypen §3.1, Konventionen §3.2, Scope-FKs, Interceptors (D02), Drift-Gate, `FunkRespawner`-Liste §4.6, `ParitySeedLoader`-Grundform |
 | **I1 Workspace, Projekte, Konto** | `…_Workspaces_InvitesPreferences`, `…_Projects_LabelsEstimates`, `…_Projects_FeatureSettings`, `…_Assets_Initial`, `…_Identity_ApiTokens`, `…_Notifications_Preferences` | `workspace_member_invites`, `workspace_themes`, `workspace_user_properties`, `workspace_user_preferences`, `workspace_feature_settings`, `user_favorites`, `project_member_invites`, `project_feature_settings`, `labels`, `estimates`, `estimate_points`, `file_assets`, `api_tokens`, `user_notification_preferences`; Trigram-Indizes `workspaces.name`, `projects.name`/`identifier` (Eigentümer-Migrationen `…_Workspaces_*`/`…_Projects_*`, ABG-123) | Demo-Workspace-Seed (CE-WS-002) Teil 1 (Projekt, States, Labels) | Kaskaden-Registry vollständig für I0/I1-Tabellen, Hard-Delete-Job |
 | **I2 Work Items & Layouts** | `…_WorkItems_Initial`, `…_Properties_WorkItemTypesMinimal`, `…_Integrations_ExternalLinks` | `work_items`, `work_item_sequences`, `work_item_assignees`, `work_item_labels`, `work_item_relation_types`, `work_item_relations`, `work_item_mentions`, `work_item_subscribers`, `work_item_links`, `work_item_comments`, `work_item_reactions`, `work_item_comment_reactions`, `work_item_activities`, `work_item_description_versions`, `work_item_versions`, `draft_work_items`, `draft_work_item_assignees`, `draft_work_item_labels`, `work_item_types`, `external_links`; Trigram-Indizes `work_items.name` (`…_WorkItems_Initial`) und `users.{display_name,first_name,last_name}` (Migration des Moduls Identity in I2, ABG-123) | `work_item_relation_types` (10 Typen); Demo-Seed Teil 2 (Work Items) | `SequenceAllocator` §3.6, Beschreibungsformate §3.9 |
 | **I3 Planung** | `…_Cycles_Initial`, `…_ProjectModules_Initial`, `…_Intake_Initial`, `…_Views_Initial`, `…_WorkItems_DraftPlanningLinks` | `cycles`, `cycle_work_items`, `cycle_user_properties`, `modules`, `module_members`, `module_work_items`, `module_links`, `module_user_properties`, `intakes`, `intake_work_items`, `views`, `draft_work_item_cycles`, `draft_work_item_modules`; Trigram-Indizes `cycles.name`, `modules.name`, `views.name` (ABG-123) | Demo-Seed Teil 3 (Cycles, Module, View); Laufzeit: Default-Intake beim Aktivieren | Snooze-Index, Cycle-Überschneidungsindex, `cycles.completion_published_at` + Index (D06 §3.17.4) |
@@ -103,8 +103,8 @@ Alle Entscheidungen präzisieren ADR-037/-038 und 01 §7.6–7.8/§7.14; Spalte 
 
 | ID | Belang | Entscheidung | Alternativen (verworfen) | Begründung | ab |
 |---|---|---|---|---|---|
-| **D03-ADR-01** | Kontext und Ablage | **Ein** `PlaneDbContext` (+ `PlaneReadDbContext`, D02-ADR-22/-26) im Projekt `BE/data/Plane.Data`; Entitäten in `Plane.Data/Entities/<Modul>/<Entity>.cs`, Konfigurationen in `Plane.Data/Configurations/<Modul>/<Entity>Configuration.cs`, aufgenommen per `ApplyConfigurationsFromAssembly`; jede Entität trägt `[OwnedBy("<Modul>")]` (R3). Infrastruktur-Tabellen gehören den Pseudo-Modulen `Messaging` (Outbox/Inbox/Jobs) und `Instance` (Key-Ring). | Kontext je Modul; Schema je Modul (`pg schema`) | Work-Item-Listen joinen States, Labels, Cycles, Module, Assignees, Intake in einer Abfrage (ADR-037); Schreibeigentum sichert R3 maschinell | I0 |
-| **D03-ADR-02** | Tabellen- und Spaltennamen | `snake_case` über `UseSnakeCaseNamingConvention()` (EFCore.NamingConventions 10.0.1); Tabellen im Plural; das Fachobjekt heißt **Work Item**: jede Original-Tabelle `issue_*`/`*_issues` wird `work_item_*`/`*_work_items`, jede FK-Spalte `issue_id` wird `work_item_id`, `draft_issue_id` → `draft_work_item_id`, `related_issue_id` → `related_work_item_id`, `issue_comment_id` → `comment_id` (01 §7.1). **Ausnahmen mit Begründung:** `issue_views` → `views` (Modul `Plane.Views`, Entität `View`), `exporters` → `exports`, `sessions` → `user_sessions` (D05), `issue_sequences` → `work_item_sequences` (andere Form, §3.6); Spaltennamen, die als JSON-Feld 1:1 in den Vertrag gehen und keine FKs sind, bleiben (`webhooks.issue`, `exports.project`, `projects.issue_views_view`). JSON-Felder und URL-Segmente behalten die Original-Namen (`issue`, `issue_id`), die Abbildung leisten die DTOs (04). Alias-Tabelle für Nachbardokumente: §4.5 | Original-Tabellennamen 1:1; reine Umbenennung nur in C# | 01 §7.1 ist verbindlich; ein konsistentes Schema ist für Agenten und Raw-SQL (D02 §3.11.6) eindeutiger; Vertrag hängt nicht an Tabellennamen (ADR-003) | I0 |
+| **D03-ADR-01** | Kontext und Ablage | **Ein** `FunkDbContext` (+ `FunkReadDbContext`, D02-ADR-22/-26) im Projekt `BE/data/Funk.Data`; Entitäten in `Funk.Data/Entities/<Modul>/<Entity>.cs`, Konfigurationen in `Funk.Data/Configurations/<Modul>/<Entity>Configuration.cs`, aufgenommen per `ApplyConfigurationsFromAssembly`; jede Entität trägt `[OwnedBy("<Modul>")]` (R3). Infrastruktur-Tabellen gehören den Pseudo-Modulen `Messaging` (Outbox/Inbox/Jobs) und `Instance` (Key-Ring). | Kontext je Modul; Schema je Modul (`pg schema`) | Work-Item-Listen joinen States, Labels, Cycles, Module, Assignees, Intake in einer Abfrage (ADR-037); Schreibeigentum sichert R3 maschinell | I0 |
+| **D03-ADR-02** | Tabellen- und Spaltennamen | `snake_case` über `UseSnakeCaseNamingConvention()` (EFCore.NamingConventions 10.0.1); Tabellen im Plural; das Fachobjekt heißt **Work Item**: jede Original-Tabelle `issue_*`/`*_issues` wird `work_item_*`/`*_work_items`, jede FK-Spalte `issue_id` wird `work_item_id`, `draft_issue_id` → `draft_work_item_id`, `related_issue_id` → `related_work_item_id`, `issue_comment_id` → `comment_id` (01 §7.1). **Ausnahmen mit Begründung:** `issue_views` → `views` (Modul `Funk.Views`, Entität `View`), `exporters` → `exports`, `sessions` → `user_sessions` (D05), `issue_sequences` → `work_item_sequences` (andere Form, §3.6); Spaltennamen, die als JSON-Feld 1:1 in den Vertrag gehen und keine FKs sind, bleiben (`webhooks.issue`, `exports.project`, `projects.issue_views_view`). JSON-Felder und URL-Segmente behalten die Original-Namen (`issue`, `issue_id`), die Abbildung leisten die DTOs (04). Alias-Tabelle für Nachbardokumente: §4.5 | Original-Tabellennamen 1:1; reine Umbenennung nur in C# | 01 §7.1 ist verbindlich; ein konsistentes Schema ist für Agenten und Raw-SQL (D02 §3.11.6) eindeutiger; Vertrag hängt nicht an Tabellennamen (ADR-003) | I0 |
 | **D03-ADR-03** | Namen von Constraints und Indizes | Primärschlüssel `pk_<tabelle>`, FKs `fk_<tabelle>_<ziel>_<spalte>` (EF-Default mit Snake-Case), Indizes `ix_<tabelle>_<spalten>`, Unique `ux_<tabelle>_<spalten>`, Checks `ck_<tabelle>_<regel>`, Alternate Keys `ak_<tabelle>_<spalten>`. **Partielle Unique-Constraints des Originals behalten ihren Original-Namen** (z. B. `state_unique_name_project_when_deleted_at_null`), weil `IUniqueViolationMap` (D02 §3.19) Unique-Verletzungen über den Constraint-Namen auf die endpunktspezifische Original-Fehlermeldung abbildet und die Namen in A02a §2.6/A02b §2.7 dokumentiert sind | durchgängig generierte Namen | Fehlerabbildung bleibt nachvollziehbar zum Original; neue Constraints folgen dem Schema | I0 |
 | **D03-ADR-04** | Primärschlüssel | `uuid`, in der Anwendung als **UUIDv7** erzeugt (`IIdGenerator` → `Guid.CreateVersion7(clock.UtcNow)`; R8), `ValueGeneratedNever()`, **kein** DB-Default. Ausnahmen: `project_identifiers.id` `bigint GENERATED BY DEFAULT AS IDENTITY` (API liefert die Ganzzahl, `ProjectIdentifierEndpoint`), `data_protection_keys.id` `integer` Identity (Framework-Entität), `user_sessions.id` `varchar(64)` (D05 §3.4.1), Katalogtabellen mit fachlichem Schlüssel (`work_item_relation_types.key`, `work_item_sequences.project_id`, `*_feature_settings (…_id, key)`, `inbox_messages (consumer, message_id)`, `recurring_job_states.name`). Seeds und Testdaten nutzen **UUIDv5** (D15-ADR-07/-16) bzw. feste UUIDv7-Konstanten (System-Rollen, D05 §3.13.3) | DB-seitiges `uuidv7()` (PG 18) oder `gen_random_uuid()`; Snowflake/`bigint` | Monoton steigende Schlüssel → B-Tree-freundlich, ohne Roundtrip; App-seitige Erzeugung ist Voraussetzung für Domain-Events vor `SaveChanges` und für deterministische Testdaten | I0 |
 | **D03-ADR-05** | Mandanten-Konsistenz in der DB | Jede Tabelle mit `workspace_id` **und** `project_id` erhält statt der Einzel-FK auf `projects` einen **zusammengesetzten Scope-FK** `fk_<tabelle>_project_scope (project_id, workspace_id) → projects (id, workspace_id)` (Alternate Key `ak_projects_id_workspace_id`), zusätzlich die Einzel-FK `workspace_id → workspaces`. Bei `project_id IS NULL` (Workspace-Entitäten) greift der FK nicht (`MATCH SIMPLE`). Der `ScopeConsistencyInterceptor` (D02 §3.2.2 Nr. 4) bleibt als frühe, verständliche Fehlerquelle | nur Interceptor (D02); Trigger | Schutz gegen Mandantenvermischung auch bei Raw-SQL, `ExecuteUpdate` und Fehlern im Interceptor (Empfehlung A02a §5.2); kostet einen zusätzlichen Unique-Index auf `projects` | I0 |
@@ -115,21 +115,21 @@ Alle Entscheidungen präzisieren ADR-037/-038 und 01 §7.6–7.8/§7.14; Spalte 
 | **D03-ADR-10** | Zeittypen | `DateTimeOffset` → `timestamptz` mit Präzision 6, `DateOnly` → `date`; Original-`DateField`s bleiben `date` (**auch** `work_items.archived_at`, `pages.archived_at`, `work_item_versions.archived_at`), Original-`DateTimeField`s `timestamptz` (`cycles.start_date/end_date`, `modules.archived_at`) | alles `timestamptz` | Tagesgenauigkeit ist Vertrag (A02b §3.13); Mischtypen werden in der Spaltentabelle je Feld ausgewiesen | I0 |
 | **D03-ADR-11** | Zahlen | Original `FloatField` → `double precision`/`double` (Ausgabe mit Dezimalteil, `PythonFloatConverter`, D02-ADR-11; Liste §4.4 für D15 R-D15-04); `IntegerField` → `integer`, `PositiveSmallIntegerField` → `smallint` + Check `>= 0`, `BigIntegerField` → `bigint`; kein `numeric` | `numeric` für `sort_order`; `real` | Wert- und lexikalische Gleichheit mit DRF (`65535.0`); Drag-&-Drop-Mittelwerte brauchen `double` | I0 |
 | **D03-ADR-12** | Texte | `varchar(n)` genau dort, wo das Original `max_length` hat (gleiche Länge, D02 §3.2.3), sonst `text`; `URLField` ohne Länge → `varchar(200)` (Django-Default, Validierungsgrenze Q22); Original-`JSONField` mit HTML-Strings (`projects.description_html`, `modules.description_html`, A02a-#4) → `text`; zu kurze Original-Spalten mit Überlaufrisiko (`*_member_invites.token`, A02a-#17) → `text` | überall `text` + Validator | Validierungsfehlertexte der DRF-Längenprüfung bleiben 1:1 ableitbar; DB-Länge ist Sicherheitsnetz | I0 |
-| **D03-ADR-13** | JSONB | Alle Original-`JSONField`s → `jsonb`. **C#-Typ `JsonObject`** (bzw. `JsonNode` für Nicht-Objekte, `JsonArray` für Listen) mit Value-Converter `JsonNodeValueConverter` und `ValueComparer` auf `JsonNode.DeepEquals` – **Durchreichen unbekannter Schlüssel** ist Pflicht (Frontend schreibt vollständige Objekte, Pakete ergänzen Schlüssel, D16 A7). Für Strukturen, die der Server selbst liest/schreibt, existiert ein **Lesemodell** (`sealed record` in `Plane.Data/Json/`, §3.8), deserialisiert mit `PlaneJsonContext` bei Bedarf. Kein EF-`ToJson()`-Mapping in der CE; Abfragen in JSON-Inhalte nur über benannte SQL-Bausteine. DB-Defaults = Original-Literal (`'{}'::jsonb` bzw. konstante Default-Objekte, §3.8.2) | EF-10-Complex-Types `ToJson()` (verliert unbekannte Schlüssel, Schema-Migrationen bei jedem Frontend-Feld); `JsonDocument` (immutable, `IDisposable`); `string` | Parität bei beliebigen Frontend-Strukturen; Lesemodelle geben Typsicherheit dort, wo Logik existiert | I0 |
+| **D03-ADR-13** | JSONB | Alle Original-`JSONField`s → `jsonb`. **C#-Typ `JsonObject`** (bzw. `JsonNode` für Nicht-Objekte, `JsonArray` für Listen) mit Value-Converter `JsonNodeValueConverter` und `ValueComparer` auf `JsonNode.DeepEquals` – **Durchreichen unbekannter Schlüssel** ist Pflicht (Frontend schreibt vollständige Objekte, Pakete ergänzen Schlüssel, D16 A7). Für Strukturen, die der Server selbst liest/schreibt, existiert ein **Lesemodell** (`sealed record` in `Funk.Data/Json/`, §3.8), deserialisiert mit `FunkJsonContext` bei Bedarf. Kein EF-`ToJson()`-Mapping in der CE; Abfragen in JSON-Inhalte nur über benannte SQL-Bausteine. DB-Defaults = Original-Literal (`'{}'::jsonb` bzw. konstante Default-Objekte, §3.8.2) | EF-10-Complex-Types `ToJson()` (verliert unbekannte Schlüssel, Schema-Migrationen bei jedem Frontend-Feld); `JsonDocument` (immutable, `IDisposable`); `string` | Parität bei beliebigen Frontend-Strukturen; Lesemodelle geben Typsicherheit dort, wo Logik existiert | I0 |
 | **D03-ADR-14** | Enums | Zahlen-Enums (`role` 20/15/5, `network` 0/2, `access`, `intake status` −2…2, `vote` ±1, `start_of_the_week`, `user_type`) als `smallint`/`integer` mit C#-`enum` (explizite Werte) und **Check-Constraint**; String-Enums (`priority`, `state.group`, `module.status`, `estimate.type`, `comment.access`, `exports.provider/status`, `deploy_boards.entity_name`, Navigation-Präferenz) als `varchar` mit `HasConversion<string>()` über `[EnumValue("…")]` und Check-Constraint (Korrektur Q19). **Keine** DB-Checks für Wertelisten, die Pakete erweitern (`file_assets.entity_type`, `user_favorites.entity_type`, `user_recent_visits.entity_name`, `exports.type`, `workspace_user_preferences.key`, `workspace_home_preferences.key`, `users.bot_type`, `notifications.entity_name`) – dort validiert der Fachcode gegen eine Registry | PostgreSQL-`ENUM`-Typen; keine Checks | Checks sind per Expand-Migration erweiterbar, PG-Enums nicht transaktional änderbar; Registry-Werte bleiben paketerweiterbar (D16-ADR-06) | I0 |
 | **D03-ADR-15** | M2M | Jede Original-M2M (`through`-Modell) ist eine **explizite Join-Entität** mit eigenem `id`, Audit und Soft-Delete (Original-Semantik, API liefert teils Zeilen-IDs); keine EF-Skip-Navigationen. Fehlende Unique-Regeln des Originals werden als partielle Unique-Indizes ergänzt (`work_item_labels`, `draft_work_item_labels`, `page_labels`, A02b §2.7 d) | Skip-Navigationen mit implizitem Join-Typ | Soft-Delete der Zuordnung, Activity und Kaskaden brauchen die Zeile als Entität | I0 |
 | **D03-ADR-16** | Work-Item-Nummer | Zählertabelle `work_item_sequences (project_id PK, last_value)`; Vergabe per `INSERT … ON CONFLICT (project_id) DO UPDATE SET last_value = work_item_sequences.last_value + 1 RETURNING last_value` **in der Command-Transaktion** (Zeilensperre bis Commit → nebenläufigkeitssicher, bei Rollback lückenlos); zusätzlich `UNIQUE (project_id, sequence_id)` auf `work_items` (Korrektur Q4) | Original: Advisory-Lock + `MAX(sequence)` aus `issue_sequences`; PostgreSQL-`SEQUENCE` je Projekt (nicht lückenlos, DDL je Projekt); `MAX(sequence_id)+1` mit Retry | Eine Zeile je Projekt statt einer Zeile je Work Item, keine Advisory-Lock-Hashfunktion, deterministisch testbar (01 §7.6, Concurrency-Test) | I2 |
-| **D03-ADR-17** | Beschreibungen und Versionen | Jede beschreibbare Entität behält die vier Original-Formate (`description_html` text, `description_json` jsonb, `description_binary` bytea, `description_stripped` text, §3.9); `*_stripped` wird **serverseitig** mit **einer** Implementierung `Plane.Documents.Text.HtmlTextExtractor.Strip(html)` (Port der Plane-Variante `strip_tags` aus `API/utils/html_processor.py`; der Name `HtmlText.StripTags` entfällt, ABG-110) berechnet (Korrektur Q14). Versionstabellen `work_item_description_versions`, `page_versions`, `work_item_versions` mit 600-s-Merge-Regel; Aufbewahrung über `PlaneRetentionOptions` (`PageVersionsKeep`, `DescriptionVersionsKeep`, `WorkItemVersionsKeep`; ADR-001, Default 20, ABG-102); Original-Defekte Q10/Q11 korrigiert (DEV-DM-06, DEV-DM-10). Der Kommentar-Spiegel `descriptions`/`description_versions` entfällt (Q15) | `descriptions` als Owned Entity übernehmen | Weniger Tabellen, kein verwaister Spiegel; Vertragsfeld `description` des Kommentars wird `null` (DEV-DM-03) | I2 |
+| **D03-ADR-17** | Beschreibungen und Versionen | Jede beschreibbare Entität behält die vier Original-Formate (`description_html` text, `description_json` jsonb, `description_binary` bytea, `description_stripped` text, §3.9); `*_stripped` wird **serverseitig** mit **einer** Implementierung `Funk.Documents.Text.HtmlTextExtractor.Strip(html)` (Port der Plane-Variante `strip_tags` aus `API/utils/html_processor.py`; der Name `HtmlText.StripTags` entfällt, ABG-110) berechnet (Korrektur Q14). Versionstabellen `work_item_description_versions`, `page_versions`, `work_item_versions` mit 600-s-Merge-Regel; Aufbewahrung über `FunkRetentionOptions` (`PageVersionsKeep`, `DescriptionVersionsKeep`, `WorkItemVersionsKeep`; ADR-001, Default 20, ABG-102); Original-Defekte Q10/Q11 korrigiert (DEV-DM-06, DEV-DM-10). Der Kommentar-Spiegel `descriptions`/`description_versions` entfällt (Q15) | `descriptions` als Owned Entity übernehmen | Weniger Tabellen, kein verwaister Spiegel; Vertragsfeld `description` des Kommentars wird `null` (DEV-DM-03) | I2 |
 | **D03-ADR-18** | Yjs-Binärdaten | `bytea` ohne Kompression; für **Pages** kanonisch (Hocuspocus-Persistenz über `IPageDocumentStore`, ADR-022), für Work Items/Drafts/Stickies nur gespeicherter Nebenstand (kein kollaborativer Editor); Größenlimit 10 MiB als Check-Constraint und Validierung (`validate_binary_data`, A02b §3.5 c) | Large Objects; separate Tabelle `documents` | Original-Vertrag (Base64 in JSON, `application/octet-stream`); 10 MiB passt in TOAST | I2/I4 |
 | **D03-ADR-19** | Suche | (a) **Parität:** `ILIKE`-Suchen des Originals (`name__icontains` u. a., §3.10.1) erhalten **GIN-Trigram-Indizes** (`gin_trgm_ops`, Npgsql `HasMethod("gin").HasOperators("gin_trgm_ops")`); (b) **Ranking/G1/B6:** eine Tabelle `search_documents` mit `search_vector tsvector GENERATED ALWAYS AS (…) STORED` über `plane_unaccent()` (IMMUTABLE-Wrapper, weil `unaccent()` nur STABLE ist und Generated Columns IMMUTABLE verlangen) und Konfiguration `simple`; befüllt vom `IIndexingPipeline`-Consumer (I5). **Keine** `tsvector`-Spalten an den Fachtabellen | `tsvector`-Generated-Columns an `work_items`/`pages`; externer Suchdienst | Fachtabellen bleiben schlank; ein Index für Workspace-weite Suche über mehrere Entitätstypen; G1 hängt später Embeddings an dieselbe Pipeline (§6) | I2 (Trigram), I5 (FTS) |
 | **D03-ADR-20** | Erweiterungs-Spalten | Spalten, die der Original-Vertrag enthält und die Pakete nutzen (Klasse V, D16-ADR-06), legt die CE an; reine Paket-Vorhalte (Klasse P) nur dort, wo 01 §1.4/D16 sie verlangen: `work_items.type_id`, `draft_work_items.type_id`, `work_item_types` (minimal), `work_item_relation_types`, `teamspace_id` (ohne FK) an `views`, `pages`, `work_item_comments`, `user_favorites`, `roles`/`role_permissions`, `*_feature_settings`, `integration_connections`, `external_links`, `search_documents`. Alles Weitere fügen Pakete **additiv** hinzu | „vorsorglich“ weitere Spalten | Strategie „schlanker Gesamtrahmen“; Andockstellen ohne Fachdesign | I0–I5 |
-| **D03-ADR-21** | Migrationsausführung | EF-Migrationen werden **ausschließlich** von `Plane.Migrator` (Aspire-Ressource, Hosts `WaitForCompletion`, D14-ADR-16) per `MigrateAsync()` unter `pg_advisory_lock(7356001)` angewandt, gefolgt von Extension-Check, Seeds, Instanz-Init. Das **EF-Migration-Bundle** (`dotnet ef migrations bundle`) wird **nicht** als Laufzeitartefakt genutzt; CI erzeugt stattdessen je Release das **idempotente SQL-Skript** `artifacts/migrations/plane-<version>.sql` (`dotnet ef migrations script --idempotent`) für Betreiber mit DBA-Freigabeprozess | `efbundle` als eigener Compose-Job; `Database.EnsureCreated`; Selbstmigration der Api | Bundle kann weder Seeds noch Lock noch Extension-Check; ein Migrator-Image deckt Compose, Helm (Job je Revision) und AIO ab (D14 §3.15) | I0 |
-| **D03-ADR-22** | Migrationsform | Eine Historie in `Plane.Data/Migrations` (01 §7.14), Namen `YYYYMMDDHHmm_<Modul>_<Beschreibung>`; **Expand/Contract** nach D14 §3.17 mit Attribut `[ContractPhase("vX.Y")]` an jeder Migration mit `DropColumn`/`DropTable`/`RenameColumn`/`AlterColumn` (Typ oder Null-Fähigkeit); Index-Anlagen auf bestehenden großen Tabellen **nach** Release 1.0 mit `CREATE INDEX CONCURRENTLY` in eigener, nicht-transaktionaler Migration (`migrationBuilder.Sql(…, suppressTransaction: true)`, Muster `MIG/0124`); Extensions/Funktionen per `migrationBuilder.Sql` mit `IF NOT EXISTS`; Snapshot nie von Hand | mehrere Historien je Modul | 01 §7.14, D14 §3.17; Zero-Downtime-Rolling (Helm) braucht additive Schritte | I0 |
+| **D03-ADR-21** | Migrationsausführung | EF-Migrationen werden **ausschließlich** von `Funk.Migrator` (Aspire-Ressource, Hosts `WaitForCompletion`, D14-ADR-16) per `MigrateAsync()` unter `pg_advisory_lock(7356001)` angewandt, gefolgt von Extension-Check, Seeds, Instanz-Init. Das **EF-Migration-Bundle** (`dotnet ef migrations bundle`) wird **nicht** als Laufzeitartefakt genutzt; CI erzeugt stattdessen je Release das **idempotente SQL-Skript** `artifacts/migrations/plane-<version>.sql` (`dotnet ef migrations script --idempotent`) für Betreiber mit DBA-Freigabeprozess | `efbundle` als eigener Compose-Job; `Database.EnsureCreated`; Selbstmigration der Api | Bundle kann weder Seeds noch Lock noch Extension-Check; ein Migrator-Image deckt Compose, Helm (Job je Revision) und AIO ab (D14 §3.15) | I0 |
+| **D03-ADR-22** | Migrationsform | Eine Historie in `Funk.Data/Migrations` (01 §7.14), Namen `YYYYMMDDHHmm_<Modul>_<Beschreibung>`; **Expand/Contract** nach D14 §3.17 mit Attribut `[ContractPhase("vX.Y")]` an jeder Migration mit `DropColumn`/`DropTable`/`RenameColumn`/`AlterColumn` (Typ oder Null-Fähigkeit); Index-Anlagen auf bestehenden großen Tabellen **nach** Release 1.0 mit `CREATE INDEX CONCURRENTLY` in eigener, nicht-transaktionaler Migration (`migrationBuilder.Sql(…, suppressTransaction: true)`, Muster `MIG/0124`); Extensions/Funktionen per `migrationBuilder.Sql` mit `IF NOT EXISTS`; Snapshot nie von Hand | mehrere Historien je Modul | 01 §7.14, D14 §3.17; Zero-Downtime-Rolling (Helm) braucht additive Schritte | I0 |
 | **D03-ADR-23** | Seeds | Drei Klassen: **(A) Referenz-Seeds** (`BaseSeeds`: System-Rollen, Relationstyp-Katalog, Instanz-Datensatz, Instanz-Konfiguration) idempotent im Migrator mit festen IDs, Tabellen in `TablesToIgnore` (§4.6); **(B) Laufzeit-Seeds** im Fachcode (Default-States/Triage bei Projektanlage, Default-Intake, Profil/Benachrichtigungs-Präferenzen bei JIT, Demo-Workspace CE-WS-002 als Job) – **nie** im Migrator; **(C) Testdaten** (`ParitySeedLoader`, `VolumeSeeder`) nur in Test/Dev, über Commands (D15). Kein `HasData` für Referenz-Seeds | EF `HasData` (erzeugt Migrations-Diffs bei jeder Wertänderung, keine Upserts mit Bedingungen) | Seeds bleiben änderbar ohne Schema-Migration; Laufzeit-Seeds laufen durch dieselben Invarianten wie Benutzeraktionen | I0 |
 | **D03-ADR-24** | Concurrency-Token | Keine Row-Version (D02 §3.2.3, Lost-Update-Semantik wie Original); Ausnahmen: Zeilensperren für `work_item_sequences` (§3.6) und `SELECT … FOR UPDATE` beim Snooze-Retiming (`intake_work_items`, A02a §3.4); Page-Binärdaten serialisiert der Realtime-Host je Dokument (ADR-022) | `xmin` als Token überall | Parität; kein 409 dort, wo das Original keinen kennt | I0 |
-| **D03-ADR-25** | Messaging-Tabellen | `outbox_messages` mit den Kontextspalten aus ABG-053, `inbox_messages (consumer, message_id)`, `jobs` (Queue, `run_at`, Versuche, Dead-Letter, `dedupe_key`; Erfolg = Zeile gelöscht), `recurring_job_states` (Cron-Zustand); alle im `PlaneDbContext`, Eigentümer `Messaging`, ohne Soft-Delete; Spalten **verbindlich nach D06 §3.2** (Fachgebiet Messaging), Abbildung §3.4.18.6 | eigener Kontext; Broker | ADR-020: gleiche Transaktion wie Fachdaten | I0 |
+| **D03-ADR-25** | Messaging-Tabellen | `outbox_messages` mit den Kontextspalten aus ABG-053, `inbox_messages (consumer, message_id)`, `jobs` (Queue, `run_at`, Versuche, Dead-Letter, `dedupe_key`; Erfolg = Zeile gelöscht), `recurring_job_states` (Cron-Zustand); alle im `FunkDbContext`, Eigentümer `Messaging`, ohne Soft-Delete; Spalten **verbindlich nach D06 §3.2** (Fachgebiet Messaging), Abbildung §3.4.18.6 | eigener Kontext; Broker | ADR-020: gleiche Transaktion wie Fachdaten | I0 |
 | **D03-ADR-26** | Entfallene Modelle | **Nicht portiert (21):** `Account`, `Device`, `DeviceSession`, `SocialLoginConnection`, `Team`, `ProjectDeployBoard`, `ProjectWebhook`, `Integration`, `WorkspaceIntegration`, `GithubRepository`, `GithubRepositorySync`, `GithubIssueSync`, `GithubCommentSync`, `SlackProjectSync`, `Importer`, `ChangeLog`, `IssueBlocker`, `IssueAttachment`, `ProjectIssueType`, `Description`, `DescriptionVersion`. **Ersetzt (zählen zu den 75 portierten):** `Session` → `user_sessions` (D05), `IssueSequence` → Zähler `work_item_sequences` (§3.6); `IssueType` nur minimal (§4.1) | Übernahme „für später“ | Greenfield (ADR-003), CE ungenutzt (A02a §1.3, A02b §1.3), ADR-007/-008 | I0 |
-| **D03-ADR-27** | Volumen-Testdaten | `VolumeSeeder` (`Plane.BuildingBlocks.Testing/Seed`) mit **Bogus** (MIT, Seed fest), schreibt Bulk per Npgsql-`COPY` (binär) unter Umgehung der Commands, aber mit denselben Invarianten-Helfern (Sequenz, Sortierung, Default-State); Profile `volume-S/M/L` | nur über Commands (zu langsam für 100k Work Items); Datenbank-Dump | Lasttests (D15 LT-*) brauchen 10⁵–10⁶ Zeilen in Minuten | I2 |
+| **D03-ADR-27** | Volumen-Testdaten | `VolumeSeeder` (`Funk.BuildingBlocks.Testing/Seed`) mit **Bogus** (MIT, Seed fest), schreibt Bulk per Npgsql-`COPY` (binär) unter Umgehung der Commands, aber mit denselben Invarianten-Helfern (Sequenz, Sortierung, Default-State); Profile `volume-S/M/L` | nur über Commands (zu langsam für 100k Work Items); Datenbank-Dump | Lasttests (D15 LT-*) brauchen 10⁵–10⁶ Zeilen in Minuten | I2 |
 
 ---
 
@@ -139,7 +139,7 @@ Alle Entscheidungen präzisieren ADR-037/-038 und 01 §7.6–7.8/§7.14; Spalte 
 
 #### 3.1.1 Basistypen (Definition in D02 §3.2.1/§5.1.1, hier nur die Spaltensicht)
 
-| Kürzel in §3.4 | C#-Basis (`Plane.BuildingBlocks.Persistence/Entities`) | Spalten (in dieser Reihenfolge am Tabellenanfang) | Original |
+| Kürzel in §3.4 | C#-Basis (`Funk.BuildingBlocks.Persistence/Entities`) | Spalten (in dieser Reihenfolge am Tabellenanfang) | Original |
 |---|---|---|---|
 | **E** | `Entity` | `id uuid NOT NULL` (PK) | `BaseModel.id` |
 | **A** | `AuditableEntity : Entity, IAuditable, ISoftDeletable` | `id`, `created_at timestamptz(6) NOT NULL`, `updated_at timestamptz(6) NOT NULL`, `created_by_id uuid NULL` (FK `users` SET NULL), `updated_by_id uuid NULL` (FK `users` SET NULL), `deleted_at timestamptz(6) NULL` | `BaseModel` (= `AuditModel` + `id`) |
@@ -153,15 +153,15 @@ Ergänzende Marker (D02): `IExternallyReferenced` (`external_source varchar(255)
 
 | Typ | Ort | Zweck |
 |---|---|---|
-| `ITimestamped { DateTimeOffset CreatedAt; DateTimeOffset UpdatedAt; }` | `Plane.BuildingBlocks.Persistence/Entities/ITimestamped.cs` | Entitäten mit Zeitstempeln, aber ohne Benutzer-Audit und Soft-Delete (`User`, `Profile` – Original `TimeAuditModel`); `IAuditable : ITimestamped` (Erweiterung des D02-Interfaces, Rückmeldung §9). Der `AuditInterceptor` setzt die Zeitstempel über `ITimestamped`, die Benutzer über `IAuditable` |
+| `ITimestamped { DateTimeOffset CreatedAt; DateTimeOffset UpdatedAt; }` | `Funk.BuildingBlocks.Persistence/Entities/ITimestamped.cs` | Entitäten mit Zeitstempeln, aber ohne Benutzer-Audit und Soft-Delete (`User`, `Profile` – Original `TimeAuditModel`); `IAuditable : ITimestamped` (Erweiterung des D02-Interfaces, Rückmeldung §9). Der `AuditInterceptor` setzt die Zeitstempel über `ITimestamped`, die Benutzer über `IAuditable` |
 | `IHardDeletable` (Marker) | dto. | Entitäten, die der Fachcode **hart** löscht wie das Original (`UserFavorite`, `UserRecentVisit`, Cleanup-Jobs); `SoftDeleteInterceptor` lässt `EntityState.Deleted` für sie unverändert, wenn der Aufrufer `IHardDelete.Remove(entity)` nutzt (D02-ADR-03) |
-| `[ContractPhase("vX.Y")]` | `Plane.Data/Migrations/ContractPhaseAttribute.cs` | Kennzeichnet Contract-Schritte (Drop/Rename/Typänderung); Architekturtest `MigrationsAreExpandOnly` (D14 §3.17) |
-| `QueryFilterNames` | `Plane.BuildingBlocks.Persistence/QueryFilterNames.cs` | Konstanten `SoftDelete = "soft_delete"`, `WorkspaceTenant = "workspace_tenant"` (01 ADR-037) |
-| `JsonNodeValueConverter<T>` + `JsonNodeComparer<T>` | `Plane.Data/Conventions/Json/` | `JsonObject`/`JsonNode`/`JsonArray` ↔ `jsonb` (D03-ADR-13) |
-| `ScopeForeignKeyConvention` | `Plane.Data/Conventions/ScopeForeignKeyConvention.cs` | legt für jede Entität mit `WorkspaceId` + `ProjectId` den Scope-FK an (D03-ADR-05); wird nach `ApplyConfigurationsFromAssembly` und vor `AuditForeignKeyConvention` (D02 §5.1.3) ausgeführt |
-| `TrigramIndexExtensions.HasTrigramIndex(...)` | `Plane.Data/Conventions/` | `HasIndex(x => x.Name).HasMethod("gin").HasOperators("gin_trgm_ops").HasDatabaseName("ix_<t>_<c>_trgm")` |
-| `PlaneDbFunctions.Unaccent(string)` | `Plane.Data/Functions/` | Abbildung der SQL-Funktion `plane_unaccent(text)` für LINQ |
-| `DbDefaultsAreFallbackOnlyConvention` | `Plane.Data/Conventions/` | setzt für **jede** Property mit `HasDefaultValue`/`HasDefaultValueSql` (außer Computed Columns und Identity) `ValueGeneratedNever()`: EF sendet immer den CLR-Wert, der DB-Default dient nur Raw-SQL/`COPY`/Betreiber-SQL. Grund: EF lässt einen Wert weg, wenn er dem Sentinel (CLR-Default) entspricht – bei `intake_work_items.status` (DB-Default `-2`, `IntakeStatus.Snoozed = 0`) würde ein „Snoozed“-Insert sonst zu „Pending“ (EF-8-Sentinel-Regel, Microsoft Learn „What's New in EF Core 8 – Sentinel values and database defaults“). Pflicht dazu: C#-Initialisierer = Original-Default (`= 65535`, `= true`, `= JsonDefaults.X.DeepClone()`); Test `ClrDefaultsMatchDbDefaultsTests` vergleicht für jede Property mit konstantem DB-Default-Literal (nicht `now()`) den Wert einer frisch konstruierten Entität mit dem Literal |
+| `[ContractPhase("vX.Y")]` | `Funk.Data/Migrations/ContractPhaseAttribute.cs` | Kennzeichnet Contract-Schritte (Drop/Rename/Typänderung); Architekturtest `MigrationsAreExpandOnly` (D14 §3.17) |
+| `QueryFilterNames` | `Funk.BuildingBlocks.Persistence/QueryFilterNames.cs` | Konstanten `SoftDelete = "soft_delete"`, `WorkspaceTenant = "workspace_tenant"` (01 ADR-037) |
+| `JsonNodeValueConverter<T>` + `JsonNodeComparer<T>` | `Funk.Data/Conventions/Json/` | `JsonObject`/`JsonNode`/`JsonArray` ↔ `jsonb` (D03-ADR-13) |
+| `ScopeForeignKeyConvention` | `Funk.Data/Conventions/ScopeForeignKeyConvention.cs` | legt für jede Entität mit `WorkspaceId` + `ProjectId` den Scope-FK an (D03-ADR-05); wird nach `ApplyConfigurationsFromAssembly` und vor `AuditForeignKeyConvention` (D02 §5.1.3) ausgeführt |
+| `TrigramIndexExtensions.HasTrigramIndex(...)` | `Funk.Data/Conventions/` | `HasIndex(x => x.Name).HasMethod("gin").HasOperators("gin_trgm_ops").HasDatabaseName("ix_<t>_<c>_trgm")` |
+| `FunkDbFunctions.Unaccent(string)` | `Funk.Data/Functions/` | Abbildung der SQL-Funktion `plane_unaccent(text)` für LINQ |
+| `DbDefaultsAreFallbackOnlyConvention` | `Funk.Data/Conventions/` | setzt für **jede** Property mit `HasDefaultValue`/`HasDefaultValueSql` (außer Computed Columns und Identity) `ValueGeneratedNever()`: EF sendet immer den CLR-Wert, der DB-Default dient nur Raw-SQL/`COPY`/Betreiber-SQL. Grund: EF lässt einen Wert weg, wenn er dem Sentinel (CLR-Default) entspricht – bei `intake_work_items.status` (DB-Default `-2`, `IntakeStatus.Snoozed = 0`) würde ein „Snoozed“-Insert sonst zu „Pending“ (EF-8-Sentinel-Regel, Microsoft Learn „What's New in EF Core 8 – Sentinel values and database defaults“). Pflicht dazu: C#-Initialisierer = Original-Default (`= 65535`, `= true`, `= JsonDefaults.X.DeepClone()`); Test `ClrDefaultsMatchDbDefaultsTests` vergleicht für jede Property mit konstantem DB-Default-Literal (nicht `now()`) den Wert einer frisch konstruierten Entität mit dem Literal |
 
 #### 3.1.3 Namensregeln (D03-ADR-02/-03)
 
@@ -202,7 +202,7 @@ Ergänzende Marker (D02): `IExternallyReferenced` (`external_source varchar(255)
 
 ### 3.3 Tabellenverzeichnis (Eigentümer, Inkrement, Herkunft)
 
-Vollständige Liste aller Zieltabellen des `PlaneDbContext` (ohne `__EFMigrationsHistory`). „Basis“ siehe §3.1.1. Die Spalte „Eigentümer-Modul“ ist der Wert von `[OwnedBy]` (R3); nur dieses Modul legt Zeilen an, ändert oder löscht sie (Ausnahme: deklarierte Soft-Delete-Kaskaden, D02 §5.2.3). Die Liste ist maschinenlesbar in `_data/03-datenmodell.json` (`tables[]`).
+Vollständige Liste aller Zieltabellen des `FunkDbContext` (ohne `__EFMigrationsHistory`). „Basis“ siehe §3.1.1. Die Spalte „Eigentümer-Modul“ ist der Wert von `[OwnedBy]` (R3); nur dieses Modul legt Zeilen an, ändert oder löscht sie (Ausnahme: deklarierte Soft-Delete-Kaskaden, D02 §5.2.3). Die Liste ist maschinenlesbar in `_data/03-datenmodell.json` (`tables[]`).
 
 | Nr. | Tabelle | Entität | Eigentümer-Modul | Basis | ab | Original | Status | CE-IDs (Haupt) | Detail |
 |---|---|---|---|---|---|---|---|---|---|
@@ -348,7 +348,7 @@ Ergänzt im Review: Abgleich aller 507 IDs aus `features/_data/ce-features.json`
 | CE-LV-032 | `work_items.sort_order` |
 | CE-LV-037 | `work_items.parent_id` |
 | CE-LV-046 | `work_items.archived_at`, `cycles.archived_at`, `modules.archived_at` |
-| CE-OPS-010 | `PlaneReadDbContext` (D03-ADR-01) |
+| CE-OPS-010 | `FunkReadDbContext` (D03-ADR-01) |
 | CE-OPS-014 | §3.5 (Soft-Delete, Kaskaden, Hard-Delete) |
 | CE-OPS-017 | §3.9.1 Regeln (2)/(3), `ck_*_description_binary_size` |
 | CE-PAGE-013 | `pages.description_binary`/`description_revision` (§3.9.3) |
@@ -509,7 +509,7 @@ Entität `Profile` · `[OwnedBy("Identity")]` · Basis eigene Form (Spalten voll
 
 Entität `UserSession` · `[OwnedBy("Identity")]` · Basis eigene Form (Spalten vollständig gelistet) · ab **I0** · Status **ersetzt** · CE-IDs: CE-AUTH-022, CE-AUTH-023, CE-AUTH-024, CE-AUTH-025
 
-Spalten verbindlich aus D05 §3.4.1: `id varchar(64)` PK, `user_id uuid` FK `users` ON DELETE CASCADE, `app varchar(16)`, `keycloak_sid varchar(128)`, `keycloak_sub varchar(255)`, `ticket bytea` (DP-Zweck `Plane.Identity.SessionTicket.v1`), `device_info jsonb` (`SessionDeviceInfo`), `auth_time timestamptz NULL`, `created_at`, `last_seen_at`, `revalidated_at`, `expires_at` (alle `timestamptz NOT NULL` außer `auth_time`). Indizes `(user_id)`, `(keycloak_sid)`, `(keycloak_sub)`, `(expires_at)`. Kein Soft-Delete, keine Audit-Spalten. Check `ck_user_sessions_app` (`app IN ('web','admin','space')`).
+Spalten verbindlich aus D05 §3.4.1: `id varchar(64)` PK, `user_id uuid` FK `users` ON DELETE CASCADE, `app varchar(16)`, `keycloak_sid varchar(128)`, `keycloak_sub varchar(255)`, `ticket bytea` (DP-Zweck `Funk.Identity.SessionTicket.v1`), `device_info jsonb` (`SessionDeviceInfo`), `auth_time timestamptz NULL`, `created_at`, `last_seen_at`, `revalidated_at`, `expires_at` (alle `timestamptz NOT NULL` außer `auth_time`). Indizes `(user_id)`, `(keycloak_sid)`, `(keycloak_sub)`, `(expires_at)`. Kein Soft-Delete, keine Audit-Spalten. Check `ck_user_sessions_app` (`app IN ('web','admin','space')`).
 
 ##### 3.4.1.4 `api_tokens` ← `APIToken` (`M/api.py` Z. 23–46)
 
@@ -526,7 +526,7 @@ Entität `ApiToken` · `[OwnedBy("Identity")]` · Basis `AuditableEntity` (`id`,
 | `user_type` | `smallint` | nein | 0 | UserType: `short` | 0 = Human, 1 = Bot |
 | `workspace_id` | `uuid` | ja | – | WorkspaceId: `Guid?` | FK `workspaces` ON DELETE CASCADE; ungenutzt wie Original (Workspace-Tokens = Paket H3) |
 | `expired_at` | `timestamptz` | ja | – | ExpiredAt: `DateTimeOffset?` | 1:1 |
-| `token_hash` | `char(64)` | nein | – | `TokenHash: string` | SHA-256-Hex des Klartext-Tokens `plane_api_<32hex>`; UNIQUE |
+| `token_hash` | `char(64)` | nein | – | `TokenHash: string` | SHA-256-Hex des Klartext-Tokens `funk_api_<32hex>`; UNIQUE |
 | `token_prefix` | `varchar(14)` | nein | – | `TokenPrefix: string` | erste 14 Zeichen (Anzeige/Log) |
 
 **Indizes/Unique:** `ux_api_tokens_token_hash` UNIQUE (`token_hash`); `ix_api_tokens_user_id` (`user_id`).
@@ -607,7 +607,7 @@ Entität `InstanceConfiguration` · `[OwnedBy("Instance")]` · Basis `AuditableE
 | Spalte | PostgreSQL | Null | Default | C#-Property: Typ | Herkunft / Regel |
 |---|---|---|---|---|---|
 | `key` | `varchar(100)` | nein | – | Key: `string` | 1:1 |
-| `value` | `text` | ja | NULL | Value: `string?` | bei `is_encrypted=true` Base64 eines DP-geschützten Werts (Zweck `Plane.Instance.Configuration.v1`, D02 §3.16) |
+| `value` | `text` | ja | NULL | Value: `string?` | bei `is_encrypted=true` Base64 eines DP-geschützten Werts (Zweck `Funk.Instance.Configuration.v1`, D02 §3.16) |
 | `category` | `varchar(100)` | nein | – | Category: `string` | Original `text`; Werte aus Katalog `InstanceConfigurationKeys` |
 | `is_encrypted` | `boolean` | nein | false | IsEncrypted: `bool` | 1:1 |
 
@@ -786,7 +786,7 @@ Entität `Project` · `[OwnedBy("Projects")]` · Basis `AuditableEntity` (`id`, 
 
 **Checks:** `ck_projects_network` CHECK (`network IN (0,2)`); `ck_projects_archive_in` CHECK (`archive_in BETWEEN 0 AND 12`); `ck_projects_close_in` CHECK (`close_in BETWEEN 0 AND 12`); `ck_projects_identifier_upper` CHECK (`identifier = upper(identifier)`).
 
-**Hinweise:** Zeitzonenwechsel retimed Snoozes von `intake_work_items` in derselben Transaktion (`Project.ChangeTimezone`, `SELECT … FOR UPDATE`, 02a §3.4) über `IIntakeSnoozeRetimer` (Contracts von `Plane.Intake`, R5). Soft-Delete kaskadiert **Deferred**.
+**Hinweise:** Zeitzonenwechsel retimed Snoozes von `intake_work_items` in derselben Transaktion (`Project.ChangeTimezone`, `SELECT … FOR UPDATE`, 02a §3.4) über `IIntakeSnoozeRetimer` (Contracts von `Funk.Intake`, R5). Soft-Delete kaskadiert **Deferred**.
 
 ##### 3.4.4.2 `project_identifiers` ← `ProjectIdentifier` (`M/project.py` Z. 314–331)
 
@@ -1115,7 +1115,7 @@ Entität `WorkItemVote` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (Au
 
 **Checks:** `ck_work_item_votes_vote` CHECK (`vote IN (-1,1)`).
 
-**Hinweise:** Geschrieben vom Modul `Plane.PublicSpace` über `IWorkItemCommands` (R5).
+**Hinweise:** Geschrieben vom Modul `Funk.PublicSpace` über `IWorkItemCommands` (R5).
 
 ##### 3.4.5.13 `work_item_activities` ← `IssueActivity` (`M/issue.py` Z. 415–448)
 
@@ -1156,7 +1156,7 @@ Entität `WorkItemDescriptionVersion` · `[OwnedBy("WorkItems")]` · Basis `Proj
 
 **Indizes/Unique:** `ix_work_item_description_versions_work_item_last_saved` (`work_item_id`, `last_saved_at` DESC).
 
-**Hinweise:** Merge-Regel: jüngste Version desselben Nutzers ≤ 600 s → überschreiben (02b §3.6). Aufbewahrung: je Work Item die 20 neuesten (`PlaneRetentionOptions.DescriptionVersionsKeep`, Schlüssel `Plane:Retention:DescriptionVersionsKeep`, Default 20; 02 §3.15), Hard-Delete-Job täglich 03:15 UTC.
+**Hinweise:** Merge-Regel: jüngste Version desselben Nutzers ≤ 600 s → überschreiben (02b §3.6). Aufbewahrung: je Work Item die 20 neuesten (`FunkRetentionOptions.DescriptionVersionsKeep`, Schlüssel `Funk:Retention:DescriptionVersionsKeep`, Default 20; 02 §3.15), Hard-Delete-Job täglich 03:15 UTC.
 
 ##### 3.4.5.15 `work_item_versions` ← `IssueVersion` (`M/issue.py` Z. 677–779)
 
@@ -1312,7 +1312,7 @@ Entität `Cycle` · `[OwnedBy("Cycles")]` · Basis `ProjectEntity` (Audit-Basis 
 | `logo_props` | `jsonb` | nein | `'{}'::jsonb` | LogoProps: `JsonObject` | Lesemodell `LogoProps` |
 | `timezone` | `varchar(255)` | nein | `'UTC'` | Timezone: `string` | Vertragsfeld; Logik nutzt `projects.timezone` |
 | `version` | `integer` | nein | 1 | Version: `int` | 1 (CE); 2 = Fortschritt aus `progress`-Array (B3/B4) |
-| `completion_published_at` | `timestamptz` | ja | – | CompletionPublishedAt: `DateTimeOffset?` | **neu** (D06 O-D06-06, §3.17.4): gesetzt von `CycleCompletionDetectionJob` beim Ereignis `plane.cycle.completed.v1`, `NULL` gesetzt von `UpdateCycleCommand`, wenn `end_date` in die Zukunft verschoben wird; kein Vertragsfeld |
+| `completion_published_at` | `timestamptz` | ja | – | CompletionPublishedAt: `DateTimeOffset?` | **neu** (D06 O-D06-06, §3.17.4): gesetzt von `CycleCompletionDetectionJob` beim Ereignis `funk.cycle.completed.v1`, `NULL` gesetzt von `UpdateCycleCommand`, wenn `end_date` in die Zukunft verschoben wird; kein Vertragsfeld |
 
 **Indizes/Unique:** `ix_cycles_project_dates` (`project_id`, `start_date`, `end_date`) WHERE `deleted_at IS NULL` – Überschneidungsprüfung CE-CYC-006, Status; GIN-Trigram `ix_cycles_name_trgm`; `ix_cycles_completion_pending` (`end_date`) WHERE `completion_published_at IS NULL AND end_date IS NOT NULL AND deleted_at IS NULL` – Abschluss-Erkennung alle 15 min.
 
@@ -1592,7 +1592,7 @@ Entität `PageVersion` · `[OwnedBy("Pages")]` · Basis eigene Form (Spalten vol
 
 **Indizes/Unique:** `ix_page_versions_page_last_saved` (`page_id`, `last_saved_at` DESC).
 
-**Hinweise:** Original erzeugt wegen `page.description` nie Versionen (Q10) – Ziel schreibt sie (`PageVersionRecorder`, 600-s-Merge, Limit 20 je Page über `PlaneRetentionOptions.PageVersionsKeep` (Schlüssel `Plane:Retention:PageVersionsKeep`, keine Instanz-Einstellung `PAGE_VERSION_LIMIT`; Komponentenname `PageVersionRecorder` bestätigt, ABG-102/ABG-108), DEV-DM-10.
+**Hinweise:** Original erzeugt wegen `page.description` nie Versionen (Q10) – Ziel schreibt sie (`PageVersionRecorder`, 600-s-Merge, Limit 20 je Page über `FunkRetentionOptions.PageVersionsKeep` (Schlüssel `Funk:Retention:PageVersionsKeep`, keine Instanz-Einstellung `PAGE_VERSION_LIMIT`; Komponentenname `PageVersionRecorder` bestätigt, ABG-102/ABG-108), DEV-DM-10.
 
 #### 3.4.11 Modul Assets
 
@@ -1819,7 +1819,7 @@ Entität `Webhook` · `[OwnedBy("Webhooks")]` · Basis eigene Form (Spalten voll
 | `workspace_id` | `uuid` | nein | – | WorkspaceId: `Guid` | FK `workspaces` ON DELETE CASCADE |
 | `url` | `varchar(1024)` | nein | – | Url: `string` | SSRF-Prüfung beim Speichern (D05) |
 | `is_active` | `boolean` | nein | true | IsActive: `bool` | 1:1 |
-| ~~`secret_key`~~ | – | – | – | – | entfällt: ersetzt durch `secret_key_protected` (DP-Zweck `Plane.Webhooks.Secret.v1`, D05 §3.17.5) |
+| ~~`secret_key`~~ | – | – | – | – | entfällt: ersetzt durch `secret_key_protected` (DP-Zweck `Funk.Webhooks.Secret.v1`, D05 §3.17.5) |
 | `project` | `boolean` | nein | false | Project: `bool` | Event-Flag (bool), **kein** FK – Spaltenname wie Original |
 | `issue` | `boolean` | nein | false | Issue: `bool` | Event-Flag |
 | `module` | `boolean` | nein | false | Module: `bool` | Event-Flag |
@@ -1827,7 +1827,7 @@ Entität `Webhook` · `[OwnedBy("Webhooks")]` · Basis eigene Form (Spalten voll
 | `issue_comment` | `boolean` | nein | false | IssueComment: `bool` | Event-Flag |
 | ~~`is_internal`~~ | – | – | – | – | entfällt (D06-ADR-23: in der CE nie gesetzt/gelesen); da `WebhookSerializer` alle Felder ausgibt, liefert das DTO konstant `false` (04) |
 | `version` | `varchar(50)` | nein | `'v1'` | Version: `string` | 1:1 |
-| `secret_key_protected` | `bytea` | nein | – | `SecretKeyProtected: byte[]` | DP-geschütztes `plane_wh_<32hex>`; Klartext nur bei Anlage/Regenerierung |
+| `secret_key_protected` | `bytea` | nein | – | `SecretKeyProtected: byte[]` | DP-geschütztes `funk_wh_<32hex>`; Klartext nur bei Anlage/Regenerierung |
 
 **Indizes/Unique:** `webhook_url_unique_url_when_deleted_at_null` UNIQUE (`workspace_id`, `url`) WHERE `deleted_at IS NULL`.
 
@@ -1926,7 +1926,7 @@ PK `pk_role_permissions` (`role_id`, `permission_key`). In der CE **leer**: Gran
 
 ##### 3.4.18.3 `data_protection_keys` (Eigentümer `Instance`, ab I0, D05-ADR-25)
 
-Entität `Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey`, `PlaneDbContext : IDataProtectionKeyContext`. Spalten nach Snake-Case-Konvention: `id integer GENERATED BY DEFAULT AS IDENTITY` (PK), `friendly_name text NULL`, `xml text NULL`. Kein `[OwnedBy]`-Attribut möglich (Fremdtyp) → Eintrag in `OwnershipRegistry.External["data_protection_keys"] = "Instance"`; geschrieben nur vom Data-Protection-Framework. Referenztabelle für `TablesToIgnore`.
+Entität `Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey`, `FunkDbContext : IDataProtectionKeyContext`. Spalten nach Snake-Case-Konvention: `id integer GENERATED BY DEFAULT AS IDENTITY` (PK), `friendly_name text NULL`, `xml text NULL`. Kein `[OwnedBy]`-Attribut möglich (Fremdtyp) → Eintrag in `OwnershipRegistry.External["data_protection_keys"] = "Instance"`; geschrieben nur vom Data-Protection-Framework. Referenztabelle für `TablesToIgnore`.
 
 ##### 3.4.18.4 `workspace_feature_settings` / `project_feature_settings` (Eigentümer `Workspaces` / `Projects`, ab I1, D16 E-01)
 
@@ -1957,7 +1957,7 @@ Form exakt nach D16 §5.1 (SQL-Skizze). In der CE leer; die fünf CE-Toggles ble
 
 ##### 3.4.18.6 `outbox_messages`, `inbox_messages`, `jobs`, `recurring_job_states` (Eigentümer `Messaging`, ab I0, ADR-020)
 
-**Verbindliche Form: D06 §3.2** (Fachgebiet Messaging; Spaltennamen dort „verbindlich“, ABG-053 für `outbox_messages`). Dieses Dokument übernimmt sie unverändert in die Migration `…_Messaging_Initial` und ergänzt nur die EF-Abbildung. Alle vier Tabellen: kein Soft-Delete, keine Audit-Benutzer, keine FKs (Nachrichten überleben jede Fachlöschung), `[OwnedBy("Messaging")]`, geschrieben nur von `Plane.BuildingBlocks.Messaging`.
+**Verbindliche Form: D06 §3.2** (Fachgebiet Messaging; Spaltennamen dort „verbindlich“, ABG-053 für `outbox_messages`). Dieses Dokument übernimmt sie unverändert in die Migration `…_Messaging_Initial` und ergänzt nur die EF-Abbildung. Alle vier Tabellen: kein Soft-Delete, keine Audit-Benutzer, keine FKs (Nachrichten überleben jede Fachlöschung), `[OwnedBy("Messaging")]`, geschrieben nur von `Funk.BuildingBlocks.Messaging`.
 
 `outbox_messages` (ABG-053 / D06 §3.2 / D02 §3.2.2 Nr. 5):
 
@@ -1965,7 +1965,7 @@ Form exakt nach D16 §5.1 (SQL-Skizze). In der CE leer; die fünf CE-Toggles ble
 |---|---|---|---|---|---|
 | `id` | `uuid` | nein | – | Id: `Guid` | PK = Message-ID (UUIDv7 → Reihenfolge) |
 | `event_type` | `text` | nein | – | EventType: `string` | `plane.<aggregat>.<ereignis>.v<n>` (Katalog D06 §3.8) |
-| `payload` | `jsonb` | nein | – | Payload: `JsonObject` | serialisiertes Integration-Event (`PlaneJsonContext`, snake_case) |
+| `payload` | `jsonb` | nein | – | Payload: `JsonObject` | serialisiertes Integration-Event (`FunkJsonContext`, snake_case) |
 | `occurred_at` | `timestamptz` | nein | – | OccurredAt: `DateTimeOffset` | `IClock` beim `SaveChanges` |
 | `traceparent` | `text` | ja | – | TraceParent: `string?` | W3C Trace Context (01 §7.16) |
 | `actor_id` | `uuid` | ja | – | ActorId: `Guid?` | aus `ICurrentActor`, ohne FK |
@@ -1986,7 +1986,7 @@ Form exakt nach D16 §5.1 (SQL-Skizze). In der CE leer; die fünf CE-Toggles ble
 | Spalte | PostgreSQL | Null | Default | Regel |
 |---|---|---|---|---|
 | `id` | `uuid` | nein | – | PK (UUIDv7) |
-| `queue` | `text` | nein | – | `PlaneQueues.*` oder reservierte Paket-Queue (D16 §3.2.5) |
+| `queue` | `text` | nein | – | `FunkQueues.*` oder reservierte Paket-Queue (D16 §3.2.5) |
 | `job_type` | `text` | nein | – | stabiler Name aus `[JobType("…")]` |
 | `payload` | `jsonb` | nein | – | Job-Daten |
 | `status` | `smallint` | nein | `0` | `0` pending, `1` running, `4` dead; **Erfolg = Zeile gelöscht** (D06 §3.2 Regel 2) |
@@ -2004,7 +2004,7 @@ Form exakt nach D16 §5.1 (SQL-Skizze). In der CE leer; die fünf CE-Toggles ble
 
 **Indizes/Checks:** `ix_jobs_ready` (`queue`, `priority` DESC, `run_at`) WHERE `status = 0`; `ix_jobs_lease` (`locked_until`) WHERE `status = 1`; `ux_jobs_dedupe` UNIQUE (`dedupe_key`) WHERE `dedupe_key IS NOT NULL AND status IN (0, 1)`; `ix_jobs_dead` (`dead_at`) WHERE `status = 4`; `ck_jobs_status` CHECK (`status IN (0,1,4)`).
 
-`recurring_job_states` (Zustand der Cron-Definitionen, D06-ADR-07): `name text` PK, `source text NOT NULL` (`code` \| `dynamic`), `cron_utc text NOT NULL`, `job_type text NOT NULL`, `queue text NOT NULL`, `payload jsonb NOT NULL DEFAULT '{}'`, `enabled boolean NOT NULL DEFAULT true`, `last_fired_at timestamptz NULL` (Termin, nicht Ausführungszeit), `next_fire_at timestamptz NULL`, `updated_at timestamptz NOT NULL`. Leader-Wahl über `pg_try_advisory_lock(PlaneLocks.Scheduler)` (keine Tabelle). Zeilen mit `source = 'code'` schreibt nur der Scheduler-Leader nach jedem Lock-Erwerb (06 §3.6 Nr. 1, ABG-101) idempotent aus `IRecurringJobRegistry` (keine Seeds).
+`recurring_job_states` (Zustand der Cron-Definitionen, D06-ADR-07): `name text` PK, `source text NOT NULL` (`code` \| `dynamic`), `cron_utc text NOT NULL`, `job_type text NOT NULL`, `queue text NOT NULL`, `payload jsonb NOT NULL DEFAULT '{}'`, `enabled boolean NOT NULL DEFAULT true`, `last_fired_at timestamptz NULL` (Termin, nicht Ausführungszeit), `next_fire_at timestamptz NULL`, `updated_at timestamptz NOT NULL`. Leader-Wahl über `pg_try_advisory_lock(FunkLocks.Scheduler)` (keine Tabelle). Zeilen mit `source = 'code'` schreibt nur der Scheduler-Leader nach jedem Lock-Erwerb (06 §3.6 Nr. 1, ABG-101) idempotent aus `IRecurringJobRegistry` (keine Seeds).
 
 ##### 3.4.18.7 `integration_connections` (ab I0) und `external_links` (ab I2) (Eigentümer `Integrations`, Andockstelle F1/F2)
 
@@ -2045,7 +2045,7 @@ Spalten und Schlüssel **verbindlich nach D16 §3.4.2**; hier die Typen:
 
 ##### 3.4.18.8 `search_documents` (Eigentümer `Search`, ab I5, Andockstelle G1/B6)
 
-**Verbindliche Form: D11 §3.10.1** (Fachgebiet Suche); hier die EF-Abbildung. Technische Tabelle: kein Soft-Delete, keine Audit-Benutzer (`[TechnicalTable]`, D11), kein `workspace_tenant`-Bypass nötig (Zugriff nur über `Plane.Search`).
+**Verbindliche Form: D11 §3.10.1** (Fachgebiet Suche); hier die EF-Abbildung. Technische Tabelle: kein Soft-Delete, keine Audit-Benutzer (`[TechnicalTable]`, D11), kein `workspace_tenant`-Bypass nötig (Zugriff nur über `Funk.Search`).
 
 | Spalte | PostgreSQL | Null | Default | C#-Property: Typ | Regel |
 |---|---|---|---|---|---|
@@ -2055,7 +2055,7 @@ Spalten und Schlüssel **verbindlich nach D16 §3.4.2**; hier die Typen:
 | `entity_type` | `varchar(32)` | nein | – | EntityType: `string` | `IndexEntityTypes`: `work_item`, `work_item_comment`, `page`, `project`, `cycle`, `module`, `issue_view` (Werte D11 §3.10.2) |
 | `entity_id` | `uuid` | nein | – | EntityId: `Guid` | polymorph, ohne FK |
 | `title` | `text` | nein | – | Title: `string` | – |
-| `body` | `text` | ja | – | Body: `string?` | Klartext, gekürzt auf `Plane:Search:BodyMaxChars` (100 000) |
+| `body` | `text` | ja | – | Body: `string?` | Klartext, gekürzt auf `Funk:Search:BodyMaxChars` (100 000) |
 | `identifier` | `varchar(64)` | ja | – | Identifier: `string?` | z. B. `WEB-123` |
 | `facets` | `jsonb` | nein | `'{}'::jsonb` | Facets: `JsonObject` | `IndexDocument.Facets` |
 | `content_hash` | `bytea` | nein | – | ContentHash: `byte[]` | SHA-256 über `title\|body\|identifier\|facets` (Upsert nur bei Änderung) |
@@ -2072,7 +2072,7 @@ Spalten und Schlüssel **verbindlich nach D16 §3.4.2**; hier die Typen:
 | Filter | Gilt für | Ausdruck | Abschalten |
 |---|---|---|---|
 | `soft_delete` | alle `ISoftDeletable` (Basen A/W/P sowie X-Tabellen mit `deleted_at`) | `e => e.DeletedAt == null` | `IgnoreQueryFilters([QueryFilterNames.SoftDelete])` (= Original `all_objects`); nur in den Fällen §3.5.2, im Hard-Delete-Job, in Restore-Pfaden und in Admin-Abfragen (`funk-cli`, ABG-149) |
-| `workspace_tenant` | alle `IWorkspaceScoped` | `e => !_tenant.IsBound \|\| e.WorkspaceId == _tenant.WorkspaceId` (D02 §3.5.4) | nie im Fachcode; `IgnoreQueryFilters()` ohne Argument ist außerhalb von `Plane.Data`, Migrator und Tests verboten (Banned-API, D02 §5.1.3) |
+| `workspace_tenant` | alle `IWorkspaceScoped` | `e => !_tenant.IsBound \|\| e.WorkspaceId == _tenant.WorkspaceId` (D02 §3.5.4) | nie im Fachcode; `IgnoreQueryFilters()` ohne Argument ist außerhalb von `Funk.Data`, Migrator und Tests verboten (Banned-API, D02 §5.1.3) |
 
 Tabellen **ohne** Soft-Delete (harte Löschung ist fachlich gewollt oder Zeilen sind unveränderlich): `users`, `profiles`, `user_identities`, `user_sessions`, `role_permissions`, `data_protection_keys`, `work_item_sequences`, `work_item_relation_types`, `*_feature_settings`, `outbox_messages`, `inbox_messages`, `jobs`, `recurring_job_states`, `search_documents`.
 
@@ -2088,7 +2088,7 @@ Tabellen **ohne** Soft-Delete (harte Löschung ist fachlich gewollt oder Zeilen 
 | J6 | Favoriten/Recents/Deploy-Boards auf gelöschte Entitäten (polymorph, kein FK) | Einträge bleiben, Listen-Views filtern über Existenz-Subqueries | gleiche Existenz-Prädikate in den Listen-Queries (`EntityExistsPredicates`) | 1:1 |
 | J7 | Work-Item-Detail eines Work Items mit soft-gelöschtem Parent | `parent` wird über Vorwärts-FK geladen | durch Inline-Kaskade nicht erreichbar (Kind wird mitgelöscht) | – |
 
-Jede neue Abfrage mit `IgnoreQueryFilters([SoftDelete])` braucht einen Eintrag in dieser Tabelle (Architekturtest `SoftDeleteBypassIsDocumented` zählt die Aufrufstellen gegen `tests/Plane.ArchitectureTests/soft-delete-bypass.yaml`).
+Jede neue Abfrage mit `IgnoreQueryFilters([SoftDelete])` braucht einen Eintrag in dieser Tabelle (Architekturtest `SoftDeleteBypassIsDocumented` zählt die Aufrufstellen gegen `tests/Funk.ArchitectureTests/soft-delete-bypass.yaml`).
 
 #### 3.5.3 Soft-Delete-Semantik
 
@@ -2126,7 +2126,7 @@ Abgeleitet aus allen FKs mit Original-`CASCADE`/`SET NULL` (DB-Lösch-Verhalten 
 Registrierungsbeispiel (Eigentümer `WorkItems`):
 
 ```csharp
-// src/modules/WorkItems/Plane.WorkItems/WorkItemsModule.cs (Ausschnitt)
+// src/modules/WorkItems/Funk.WorkItems/WorkItemsModule.cs (Ausschnitt)
 cascade.Cascade<WorkItem, WorkItem>(c => c.ParentId, CascadeMode.Inline);                 // Sub-Work-Items (Original CASCADE parent)
 cascade.Cascade<WorkItem, WorkItemAssignee>(c => c.WorkItemId, CascadeMode.Inline);
 cascade.Cascade<WorkItem, WorkItemLabel>(c => c.WorkItemId, CascadeMode.Inline);
@@ -2145,18 +2145,18 @@ cascade.NoSoftCascade<WorkItem, WorkItemActivity>(c => c.WorkItemId, reason: "Ve
 
 | Job (Name in `IRecurringJobRegistry`, D06 §4.2) | Cron (UTC) | Wirkung (Datenmodell) | Konfiguration (Default) | Original |
 |---|---|---|---|---|
-| `maintenance.hard_delete` (`HardDeleteJob`, ab I1) | `0 0 * * *` | je Wurzeltabelle in FK-sicherer Reihenfolge (`HardDeleteTableRegistry`, aus dem Modell erzeugt) `DELETE … WHERE deleted_at < now() - interval` in Batches à 1000; DB-Kaskaden (`ON DELETE CASCADE/SET NULL`) erledigen Kinder; Schritt 1 des Jobs löscht die Objekte gelöschter `file_assets` per `IObjectStorage.DeleteManyAsync` (06 §3.16, ABG-102) | `Plane:Retention:HardDeleteDays` (60, Alias `HARD_DELETE_AFTER_DAYS`) | `deletion_task.hard_delete`; Abbruch-Bug Q3 behoben, Objektlöschung neu (DEV-OPS-002) |
-| `maintenance.api_activity_logs_cleanup` (ab I6) | `30 2 * * *` | `DELETE api_activity_logs WHERE created_at <= now() - 14 d` | `Plane:Retention:ApiActivityLogDays` (14) | `cleanup_task.delete_api_logs` |
-| `maintenance.webhook_logs_cleanup` (ab I6) | `30 3 * * *` | dto. `webhook_logs` | `Plane:Retention:WebhookLogDays` (14) | `cleanup_task.delete_webhook_logs` |
-| `maintenance.email_notification_logs_cleanup` (ab I5) | `45 2 * * *` | `sent_at <= now() - 7 d` | `Plane:Retention:EmailLogDays` (7, Alias `EMAIL_LOG_RETENTION_DAYS`) | `cleanup_task` |
-| `maintenance.page_versions_cleanup` (ab I4) | `0 3 * * *` | je Page hart löschen, was nach `ROW_NUMBER() OVER (PARTITION BY page_id ORDER BY created_at DESC)` > `PageVersionsKeep` liegt (Original `cleanup_task`; das weiche Löschen nach `last_saved_at` beim Schreiben macht der `PageVersionRecorder`, §3.9.2) | `Plane:Retention:PageVersionsKeep` (20, ABG-102) | `cleanup_task.delete_page_versions` |
-| `maintenance.description_versions_cleanup` (ab I2) | `15 3 * * *` | je Work Item alles außer den 20 neuesten | `Plane:Retention:DescriptionVersionsKeep` (20, 02 §3.15) | `cleanup_task.delete_issue_description_versions` |
-| – (kein Cron; Recorder) | – | `work_item_versions`: der `WorkItemVersionRecorder` löscht nach dem Schreiben im selben Command alle Versionen des Work Items außer den 20 neuesten hart (Original schreibt keine Versionen, Q11; daher kein Original-Cron) | `Plane:Retention:WorkItemVersionsKeep` (20, neu in `PlaneRetentionOptions`, ABG-102) | – (neu, DEV-DM-06) |
-| `assets.soft_delete_unuploaded` (ab I1) | `0 2 * * *` | `file_assets` mit `is_uploaded = false` und älter als n Tage **soft** löschen | `Plane:Retention:UnuploadedAssetDays` (7, Alias `UNUPLOADED_ASSET_DELETE_DAYS`) | `file_asset_task.delete_unuploaded_file_asset` |
-| `exports.expire_links` (ab I6) | `30 1 * * *` | `exports.url IS NOT NULL AND created_at <= now() - 8 d` → Objekt löschen, `url = NULL` (einmal statt doppelt eingeplant, A02a-#13, B13 entfällt) | `Plane:Retention:ExportLinkDays` (8) | `exporter_expired_task.delete_old_s3_link` |
-| `messaging.outbox_cleanup` (ab I0) | `5 * * * *` | `outbox_messages` mit `dispatched_at < now() - Outbox.RetentionHours` löschen | `Plane:Worker:Outbox:RetentionHours` (24, D06 §3.3, ABG-102) | – (neu) |
-| `messaging.inbox_cleanup` (ab I0) | `25 4 * * *` | `inbox_messages` mit `processed_at < now() - InboxRetentionDays` | `Plane:Worker:InboxRetentionDays` (7, D06 §3.4, ABG-102) | – (neu) |
-| `messaging.dead_letter_cleanup` (ab I0) | `40 4 * * *` | `jobs` mit `status = 4 AND dead_at < now() - DeadLetterRetentionDays` (erfolgreiche Jobs sind bereits gelöscht) | `Plane:Worker:DeadLetterRetentionDays` (30, D06 §3.2, ABG-102) | – (neu) |
+| `maintenance.hard_delete` (`HardDeleteJob`, ab I1) | `0 0 * * *` | je Wurzeltabelle in FK-sicherer Reihenfolge (`HardDeleteTableRegistry`, aus dem Modell erzeugt) `DELETE … WHERE deleted_at < now() - interval` in Batches à 1000; DB-Kaskaden (`ON DELETE CASCADE/SET NULL`) erledigen Kinder; Schritt 1 des Jobs löscht die Objekte gelöschter `file_assets` per `IObjectStorage.DeleteManyAsync` (06 §3.16, ABG-102) | `Funk:Retention:HardDeleteDays` (60, Alias `HARD_DELETE_AFTER_DAYS`) | `deletion_task.hard_delete`; Abbruch-Bug Q3 behoben, Objektlöschung neu (DEV-OPS-002) |
+| `maintenance.api_activity_logs_cleanup` (ab I6) | `30 2 * * *` | `DELETE api_activity_logs WHERE created_at <= now() - 14 d` | `Funk:Retention:ApiActivityLogDays` (14) | `cleanup_task.delete_api_logs` |
+| `maintenance.webhook_logs_cleanup` (ab I6) | `30 3 * * *` | dto. `webhook_logs` | `Funk:Retention:WebhookLogDays` (14) | `cleanup_task.delete_webhook_logs` |
+| `maintenance.email_notification_logs_cleanup` (ab I5) | `45 2 * * *` | `sent_at <= now() - 7 d` | `Funk:Retention:EmailLogDays` (7, Alias `EMAIL_LOG_RETENTION_DAYS`) | `cleanup_task` |
+| `maintenance.page_versions_cleanup` (ab I4) | `0 3 * * *` | je Page hart löschen, was nach `ROW_NUMBER() OVER (PARTITION BY page_id ORDER BY created_at DESC)` > `PageVersionsKeep` liegt (Original `cleanup_task`; das weiche Löschen nach `last_saved_at` beim Schreiben macht der `PageVersionRecorder`, §3.9.2) | `Funk:Retention:PageVersionsKeep` (20, ABG-102) | `cleanup_task.delete_page_versions` |
+| `maintenance.description_versions_cleanup` (ab I2) | `15 3 * * *` | je Work Item alles außer den 20 neuesten | `Funk:Retention:DescriptionVersionsKeep` (20, 02 §3.15) | `cleanup_task.delete_issue_description_versions` |
+| – (kein Cron; Recorder) | – | `work_item_versions`: der `WorkItemVersionRecorder` löscht nach dem Schreiben im selben Command alle Versionen des Work Items außer den 20 neuesten hart (Original schreibt keine Versionen, Q11; daher kein Original-Cron) | `Funk:Retention:WorkItemVersionsKeep` (20, neu in `FunkRetentionOptions`, ABG-102) | – (neu, DEV-DM-06) |
+| `assets.soft_delete_unuploaded` (ab I1) | `0 2 * * *` | `file_assets` mit `is_uploaded = false` und älter als n Tage **soft** löschen | `Funk:Retention:UnuploadedAssetDays` (7, Alias `UNUPLOADED_ASSET_DELETE_DAYS`) | `file_asset_task.delete_unuploaded_file_asset` |
+| `exports.expire_links` (ab I6) | `30 1 * * *` | `exports.url IS NOT NULL AND created_at <= now() - 8 d` → Objekt löschen, `url = NULL` (einmal statt doppelt eingeplant, A02a-#13, B13 entfällt) | `Funk:Retention:ExportLinkDays` (8) | `exporter_expired_task.delete_old_s3_link` |
+| `messaging.outbox_cleanup` (ab I0) | `5 * * * *` | `outbox_messages` mit `dispatched_at < now() - Outbox.RetentionHours` löschen | `Funk:Worker:Outbox:RetentionHours` (24, D06 §3.3, ABG-102) | – (neu) |
+| `messaging.inbox_cleanup` (ab I0) | `25 4 * * *` | `inbox_messages` mit `processed_at < now() - InboxRetentionDays` | `Funk:Worker:InboxRetentionDays` (7, D06 §3.4, ABG-102) | – (neu) |
+| `messaging.dead_letter_cleanup` (ab I0) | `40 4 * * *` | `jobs` mit `status = 4 AND dead_at < now() - DeadLetterRetentionDays` (erfolgreiche Jobs sind bereits gelöscht) | `Funk:Worker:DeadLetterRetentionDays` (30, D06 §3.2, ABG-102) | – (neu) |
 | `identity.expired_sessions_cleanup` (ab I0) | `17 * * * *` | `DELETE user_sessions WHERE expires_at < now()` | – | Django-`clearsessions` (implizit), D05-ADR-03 (stündlich) |
 | `cycles.completion_detection` (ab I3) | `*/15 * * * *` | setzt `cycles.completion_published_at` (§3.4.6.1) | – | – (neu, D06 §3.17.4) |
 
@@ -2166,7 +2166,7 @@ Job-Namen, Cron-Zeiten, Queues, Job-Klassen und Fehlerbehandlung sind **verbindl
 
 **Original** (`M/issue.py` Z. 180–214, A02b §3.2): `pg_advisory_xact_lock(convert_uuid_to_integer(project.id))`, dann `MAX(issue_sequences.sequence) + 1`, `INSERT issues`, `INSERT issue_sequences`. Kein Unique auf `(project_id, sequence_id)` (Q4); der Workspace-Seed legt doppelte Sequenzzeilen an (Q6); `fix_duplicate_sequences` repariert nachträglich.
 
-**Ziel** (D03-ADR-16): `ISequenceAllocator` in `Plane.BuildingBlocks.Persistence/Sequences/` (Signatur D02/01 §7.6), Implementierung `PostgresSequenceAllocator` in `Plane.Data`:
+**Ziel** (D03-ADR-16): `ISequenceAllocator` in `Funk.BuildingBlocks.Persistence/Sequences/` (Signatur D02/01 §7.6), Implementierung `PostgresSequenceAllocator` in `Funk.Data`:
 
 ```sql
 -- in derselben Transaktion wie das INSERT des Work Items (TransactionBehavior, D02-ADR-24)
@@ -2184,7 +2184,7 @@ RETURNING last_value;
 | nie wiederverwendet | Zähler sinkt nie; Soft-/Hard-Delete ändern ihn nicht (Original: `issue_sequences` bleibt mit `issue_id = NULL`) |
 | Bulk | `AllocateRangeAsync(projectId, count)` → `last_value = last_value + @count RETURNING last_value` (für Bulk-Create der Public API und Seeds, eine Sperre statt n) |
 | Deadlock-Vermeidung | Commands, die in mehreren Projekten Nummern ziehen (z. B. Bulk über Projekte), allokieren in aufsteigender `project_id`-Reihenfolge |
-| Sicherheitsnetz | `ux_work_items_project_sequence_id`; Verletzung → `PlaneExceptionHandler` 500 + Log (Programmierfehler) |
+| Sicherheitsnetz | `ux_work_items_project_sequence_id`; Verletzung → `FunkExceptionHandler` 500 + Log (Programmierfehler) |
 | Test | `SequenceAllocatorConcurrencyTests`: 100 parallele Creates in einem Projekt → Nummern 1…100 ohne Lücke/Duplikat; Rollback-Test; Bulk-Test (01 §7.6) |
 
 Der Workspace-Seed und der `ParitySeedLoader` nutzen denselben Allokator (Korrektur Q6). `fix_duplicate_sequences` entfällt (CE-OPS-020: Command nicht mehr nötig).
@@ -2213,7 +2213,7 @@ Alle Sortierfelder sind `double precision` mit Original-Default 65535 und Origin
 
 ### 3.8 JSONB-Spalten: Lesemodelle und Defaults
 
-#### 3.8.1 Lesemodelle (`BE/data/Plane.Data/Json/`, `sealed record`, `[JsonExtensionData]` für unbekannte Schlüssel)
+#### 3.8.1 Lesemodelle (`BE/data/Funk.Data/Json/`, `sealed record`, `[JsonExtensionData]` für unbekannte Schlüssel)
 
 | Lesemodell | Spalten | Struktur (Schlüssel) | Schreiber / Leser | Quelle |
 |---|---|---|---|---|
@@ -2233,7 +2233,7 @@ Alle Sortierfelder sind `double precision` mit Original-Default 65535 und Origin
 | `LinkMetadata` | `work_item_links.metadata` | `title`, `favicon` (Data-URI), `url`, `favicon_url`, `error` | `WorkItemLinkCrawlJob` | `API/bgtasks/work_item_link_task.py` |
 | `CycleProgressSnapshot` | `cycles.progress_snapshot` | `total_issues`, `completed_issues`, `cancelled_issues`, `started_issues`, `unstarted_issues`, `backlog_issues`, `distribution{labels,assignees,completion_chart}`, `estimate_distribution{…}` | Cycle-Transfer/-Abschluss | `API/utils/cycle_transfer_issues.py` Z. 410–431 |
 | `PageViewProps` | `pages.view_props` | `full_width` (bool) | Frontend | `M/page.py` Z. 19–20 |
-| `ProseMirrorDoc` | `*.description_json`, `work_item_comments.comment_json`, `stickies.description` | `{type:"doc", content:[…]}` | `Plane.Documents` (ADR-031) | `PKG/editor` |
+| `ProseMirrorDoc` | `*.description_json`, `work_item_comments.comment_json`, `stickies.description` | `{type:"doc", content:[…]}` | `Funk.Documents` (ADR-031) | `PKG/editor` |
 | `FileAssetAttributes` | `file_assets.attributes` | `name`, `type`, `size` | Assets | `API/app/views/asset/v2.py` |
 | `StorageMetadata` | `file_assets.storage_metadata` | `ContentType`, `ContentLength`, `LastModified`, `ETag`, `Metadata{}` (Pascal-Schlüssel wie boto3) | `AssetMetadataJob` | `API/settings/storage.py` Z. 153–169 |
 | `NotificationData` | `notifications.data` | `issue{id,name,identifier,sequence_id,state_name,state_group}`, `issue_activity{id,verb,field,actor,new_value,old_value,issue_comment,old_identifier,new_identifier}` | `NotificationConsumer` | `API/bgtasks/notification_task.py` Z. 158–186 |
@@ -2244,7 +2244,7 @@ Alle Sortierfelder sind `double precision` mit Original-Default 65535 und Origin
 
 Frei/ungenutzt in der CE (Typ `JsonObject`, kein Lesemodell): `profiles.goals`, `workspace_members.getting_started_checklist`/`tips`/`explored_features`, `workspace_themes.colors`, `workspace_user_links.metadata`, `workspace_home_preferences.config`, `module_links.metadata`, `intakes.view_props`, `intake_work_items.extra`, `cycles.view_props`, `modules.view_props`, `projects.icon_prop`/`description_text`, `modules.description_text`, `views.query`, `analytic_views.query`, `work_item_versions.properties`/`meta`, `page_versions.sub_pages_data`, `exports.filters`.
 
-#### 3.8.2 Konstante Defaults (`BE/data/Plane.Data/Json/JsonDefaults.cs`, zugleich DB-Default-Literal)
+#### 3.8.2 Konstante Defaults (`BE/data/Funk.Data/Json/JsonDefaults.cs`, zugleich DB-Default-Literal)
 
 | Name | Literal | Verwendet in | Quelle |
 |---|---|---|---|
@@ -2280,25 +2280,25 @@ Ein Snapshot-Test (`JsonDefaultsSnapshotTests`) vergleicht jedes Literal mit dem
 | `notifications` | `message_html` | `message` (JSON-String) | – | `message_stripped` | – | `message` |
 | `projects`, `modules` | `description_html` (`text`, Legacy) | `description_text` (`jsonb`, Legacy) | – | – | – | `description` (`text`) |
 
-Regeln: (1) `*_stripped` wird **in jedem Command**, das `*_html` setzt, mit `HtmlTextExtractor.Strip` berechnet (`NULL` bei leerem HTML, `""` bei `<p></p>`, Entities dekodiert); (2) HTML wird vor dem Speichern sanitisiert (ADR-030, Allowlist aus `API/utils/content_validator.py`); (3) `*_binary` wird geprüft: ≤ 10 MiB, ≥ 4 Byte, erste 200 Zeichen ohne `<html`, `<!doctype`, `<script`, `javascript:`, `data:`, `<iframe` (Original `validate_binary_data`) **und** zusätzlich als Yjs-Update dekodierbar (ADR-030, YDotNet); (4) keine Server-Synchronisation zwischen den Formaten außer bei Pages (Realtime-Host erzeugt alle drei) und Konvertierungspfaden (`Plane.Documents`, 07).
+Regeln: (1) `*_stripped` wird **in jedem Command**, das `*_html` setzt, mit `HtmlTextExtractor.Strip` berechnet (`NULL` bei leerem HTML, `""` bei `<p></p>`, Entities dekodiert); (2) HTML wird vor dem Speichern sanitisiert (ADR-030, Allowlist aus `API/utils/content_validator.py`); (3) `*_binary` wird geprüft: ≤ 10 MiB, ≥ 4 Byte, erste 200 Zeichen ohne `<html`, `<!doctype`, `<script`, `javascript:`, `data:`, `<iframe` (Original `validate_binary_data`) **und** zusätzlich als Yjs-Update dekodierbar (ADR-030, YDotNet); (4) keine Server-Synchronisation zwischen den Formaten außer bei Pages (Realtime-Host erzeugt alle drei) und Konvertierungspfaden (`Funk.Documents`, 07).
 
 #### 3.9.2 Versionen
 
 | Tabelle | Erzeugung (Recorder, im Command bzw. Consumer) | Merge-Regel | Limit | Lesen |
 |---|---|---|---|---|
-| `work_item_description_versions` | `WorkItemDescriptionVersionRecorder` bei Create (`is_creating`) und bei Update mit geändertem `description_html` | jüngste Version (nach `last_saved_at`) gleicher `owned_by_id` und ≤ 600 s → überschreiben, sonst neu | 20 je Work Item (`Plane:Retention:DescriptionVersionsKeep`, Job §3.5.5) | `…/work-items/{id}/description-versions/[{pk}/]` (CE-WI-041) |
-| `work_item_versions` | `WorkItemVersionRecorder` bei jeder Property-Änderung (State, Priorität, Daten, Assignees, Labels, Cycle, Module, Parent, Estimate, Typ) – **Korrektur Q11** (Original schreibt nie, DEV-DM-06) | 600 s/gleicher Owner → überschreiben | 20 je Work Item (`Plane:Retention:WorkItemVersionsKeep`, neu, inline im Command, kein Cron; ABG-102) | `…/issues/{id}/versions/[{pk}/]` (CE-WI-042) |
-| `page_versions` | `PageVersionRecorder` nach jeder Beschreibungs-Persistenz (REST-PATCH `…/description/` und Realtime-Speicherung) – **Korrektur Q10** (DEV-DM-10) | 600 s/gleicher Owner → überschreiben, > 20 → älteste (nach `last_saved_at`) soft-löschen | 20 je Page (`Plane:Retention:PageVersionsKeep`; harter Cleanup §3.5.5) | CE-PAGE-019 |
+| `work_item_description_versions` | `WorkItemDescriptionVersionRecorder` bei Create (`is_creating`) und bei Update mit geändertem `description_html` | jüngste Version (nach `last_saved_at`) gleicher `owned_by_id` und ≤ 600 s → überschreiben, sonst neu | 20 je Work Item (`Funk:Retention:DescriptionVersionsKeep`, Job §3.5.5) | `…/work-items/{id}/description-versions/[{pk}/]` (CE-WI-041) |
+| `work_item_versions` | `WorkItemVersionRecorder` bei jeder Property-Änderung (State, Priorität, Daten, Assignees, Labels, Cycle, Module, Parent, Estimate, Typ) – **Korrektur Q11** (Original schreibt nie, DEV-DM-06) | 600 s/gleicher Owner → überschreiben | 20 je Work Item (`Funk:Retention:WorkItemVersionsKeep`, neu, inline im Command, kein Cron; ABG-102) | `…/issues/{id}/versions/[{pk}/]` (CE-WI-042) |
+| `page_versions` | `PageVersionRecorder` nach jeder Beschreibungs-Persistenz (REST-PATCH `…/description/` und Realtime-Speicherung) – **Korrektur Q10** (DEV-DM-10) | 600 s/gleicher Owner → überschreiben, > 20 → älteste (nach `last_saved_at`) soft-löschen | 20 je Page (`Funk:Retention:PageVersionsKeep`; harter Cleanup §3.5.5) | CE-PAGE-019 |
 
-Die 600-s-Grenze ist die Konstante `VersionMergeWindow = TimeSpan.FromSeconds(600)` in `Plane.WorkItems.Domain`/`Plane.Pages.Domain`; die Limits sind Werte von `PlaneRetentionOptions` (`PageVersionsKeep`, `DescriptionVersionsKeep`, `WorkItemVersionsKeep`; 02 §3.15, ABG-102) – keine Instanz-Einstellungen – mit großzügigem, aber **paritätsgleichem** Default 20 (ADR-001: kein Plan-Limit).
+Die 600-s-Grenze ist die Konstante `VersionMergeWindow = TimeSpan.FromSeconds(600)` in `Funk.WorkItems.Domain`/`Funk.Pages.Domain`; die Limits sind Werte von `FunkRetentionOptions` (`PageVersionsKeep`, `DescriptionVersionsKeep`, `WorkItemVersionsKeep`; 02 §3.15, ABG-102) – keine Instanz-Einstellungen – mit großzügigem, aber **paritätsgleichem** Default 20 (ADR-001: kein Plan-Limit).
 
 #### 3.9.3 Yjs-Binärdaten im Lebenszyklus der Page
 
 | Schritt | Spalten | Eigentümer |
 |---|---|---|
-| Laden (`IPageDocumentStore.LoadAsync`) | `pages.description_binary`; fehlt sie, wird aus `description_html` + `name` per `Plane.Documents` ein Yjs-Dokument erzeugt (Original `getBinaryDataFromDocumentEditorHTMLString`) – unter Zeilensperre (`SELECT … FOR UPDATE`, erneute Leerprüfung) erzeugt und sofort gespeichert (07 §3.6.2, ABG-109; wie Original `fetchDocument`) | `Plane.Pages` |
-| Speichern (Debounce 10 s, ADR-022) | `description_binary`, `description_html`, `description_json`, `description_stripped`, `name` (Titel-Sync aus Fragment `title`) und `description_revision = description_revision + 1` in **einem** `UPDATE` (Semantik D07 §3.6); danach `page_logs`-Abgleich und `page_versions` | `Plane.Pages` über `IPageDocumentStore.SaveAsync` |
-| Sperre/Archiv | `pages.is_locked`/`archived_at` → Realtime-Server lehnt Schreiben ab (Fehlercodes 4701/4702) | `Plane.Pages` |
+| Laden (`IPageDocumentStore.LoadAsync`) | `pages.description_binary`; fehlt sie, wird aus `description_html` + `name` per `Funk.Documents` ein Yjs-Dokument erzeugt (Original `getBinaryDataFromDocumentEditorHTMLString`) – unter Zeilensperre (`SELECT … FOR UPDATE`, erneute Leerprüfung) erzeugt und sofort gespeichert (07 §3.6.2, ABG-109; wie Original `fetchDocument`) | `Funk.Pages` |
+| Speichern (Debounce 10 s, ADR-022) | `description_binary`, `description_html`, `description_json`, `description_stripped`, `name` (Titel-Sync aus Fragment `title`) und `description_revision = description_revision + 1` in **einem** `UPDATE` (Semantik D07 §3.6); danach `page_logs`-Abgleich und `page_versions` | `Funk.Pages` über `IPageDocumentStore.SaveAsync` |
+| Sperre/Archiv | `pages.is_locked`/`archived_at` → Realtime-Server lehnt Schreiben ab (Fehlercodes 4701/4702) | `Funk.Pages` |
 
 ### 3.10 Volltext- und Trigram-Suche
 
@@ -2335,7 +2335,7 @@ CREATE OR REPLACE FUNCTION plane_unaccent(text) RETURNS text
 
 ### 3.11 Enums und Check-Constraints
 
-| C#-Enum (`Plane.Data/Enums/` bzw. Contracts) | Werte (DB) | Spalte(n) | DB-Typ | Check |
+| C#-Enum (`Funk.Data/Enums/` bzw. Contracts) | Werte (DB) | Spalte(n) | DB-Typ | Check |
 |---|---|---|---|---|
 | `SystemRoleLevel` | `Guest = 5`, `Member = 15`, `Admin = 20` | `workspace_members.role`, `project_members.role`, `*_member_invites.role`, `instance_admins.role`, `roles.level` | `smallint` | `IN (5,15,20)` (Instanz: `= 20`) |
 | `ProjectNetwork` | `Secret = 0`, `Public = 2` | `projects.network` | `smallint` | `IN (0,2)` |
@@ -3319,7 +3319,7 @@ erDiagram
 
 ```mermaid
 flowchart LR
-  Dev[Agent ändert Entität/Konfiguration] --> Add["dotnet ef migrations add YYYYMMDDHHmm_Modul_Beschreibung<br/>-p src/data/Plane.Data -s src/hosts/Plane.Migrator"]
+  Dev[Agent ändert Entität/Konfiguration] --> Add["dotnet ef migrations add YYYYMMDDHHmm_Modul_Beschreibung<br/>-p src/data/Funk.Data -s src/hosts/Funk.Migrator"]
   Add --> Review[Review: nur additiv? ContractPhase?]
   Review --> CI{CI-Gates}
   CI -->|has-pending-model-changes = leer| G1[ok]
@@ -3333,11 +3333,11 @@ flowchart LR
 
 | Regel | Festlegung |
 |---|---|
-| Erzeugung | `dotnet ef migrations add <Name> --project src/data/Plane.Data --startup-project src/hosts/Plane.Migrator --output-dir Migrations`; Design-Time-Factory `PlaneDbContextDesignTimeFactory` (liest `ConnectionStrings__plane` oder Dummy-Verbindung, kein Netzzugriff nötig) |
+| Erzeugung | `dotnet ef migrations add <Name> --project src/data/Funk.Data --startup-project src/hosts/Funk.Migrator --output-dir Migrations`; Design-Time-Factory `FunkDbContextDesignTimeFactory` (liest `ConnectionStrings__plane` oder Dummy-Verbindung, kein Netzzugriff nötig) |
 | Name | `YYYYMMDDHHmm_<Modul>_<Beschreibung>` (01 §7.14); Pakete `W<n>_<Paket>_<Beschreibung>` (D16-ADR-06) |
 | Konflikte paralleler Agenten | eigene Migration löschen, rebasen, neu erzeugen; Snapshot nie von Hand mergen (01 §7.14) |
-| Drift-Gate | `dotnet ef migrations has-pending-model-changes` muss leer sein (CI, `Plane.Migrator.Tests/ModelDriftTests`) |
-| Ausführung | ausschließlich `Plane.Migrator` (D14 §3.15 Schritte 1–11; D03-ADR-21); `Plane.Api`/`Worker`/`Realtime` prüfen nur (Schema-Gate) |
+| Drift-Gate | `dotnet ef migrations has-pending-model-changes` muss leer sein (CI, `Funk.Migrator.Tests/ModelDriftTests`) |
+| Ausführung | ausschließlich `Funk.Migrator` (D14 §3.15 Schritte 1–11; D03-ADR-21); `Funk.Api`/`Worker`/`Realtime` prüfen nur (Schema-Gate) |
 | Extensions/Funktionen | Migration `…_Platform_Extensions` (I0) per `migrationBuilder.Sql("CREATE EXTENSION IF NOT EXISTS …")` und `HasPostgresExtension("pg_trgm")`/`("unaccent")`/`("vector")` im Modell (damit der Snapshot sie kennt); externe Datenbanken ohne Superuser-Rechte: Betreiber legt die Extensions vorab an (D14 §3.15 Schritt 3 meldet klar) |
 | Zirkuläre FKs | `projects.estimate_id`/`default_state_id` ↔ `estimates`/`states`: Tabellen zuerst ohne diese FKs, FKs in derselben Migration danach per `AddForeignKey` (EF ordnet automatisch; Test `InitialMigrationAppliesOnEmptyDatabase`) |
 | Deferrable FK | `work_item_relation_types.reverse_key` per `migrationBuilder.Sql("ALTER TABLE … ADD CONSTRAINT … DEFERRABLE INITIALLY DEFERRED")` |
@@ -3352,15 +3352,15 @@ flowchart LR
 #### 3.13.2 Migrator-Ablauf (Bezug auf D14 §3.15)
 
 ```csharp
-// src/hosts/Plane.Migrator/MigratorWorker.cs (Ausschnitt; Schrittnummern = D14 §3.15)
+// src/hosts/Funk.Migrator/MigratorWorker.cs (Ausschnitt; Schrittnummern = D14 §3.15)
 public sealed class MigratorWorker(IServiceProvider sp, IHostApplicationLifetime life, ILogger<MigratorWorker> log) : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
         await using var scope = sp.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<PlaneDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<FunkDbContext>();
         await DatabaseReadiness.WaitAsync(db, TimeSpan.FromSeconds(60), ct);                       // 1
-        await using var _ = await MigrationLock.AcquireAsync(db, PlaneLocks.Migrator, ct);          // 2  pg_advisory_lock(7356001)
+        await using var _ = await MigrationLock.AcquireAsync(db, FunkLocks.Migrator, ct);          // 2  pg_advisory_lock(7356001)
         await ExtensionCheck.EnsureAsync(db, ["pg_trgm", "unaccent", "vector"], ct);                 // 3
         await SchemaMigrator.MigrateAsync(db, ct);                                                   // 4  Downgrade-Schutz → Exit 3
         await scope.ServiceProvider.GetRequiredService<DataProtectionKeyRingInit>().RunAsync(ct);   // 5
@@ -3383,25 +3383,25 @@ public sealed class MigratorWorker(IServiceProvider sp, IHostApplicationLifetime
 |---|---|---|---|---|
 | `SystemRoleSeed` | `roles` | 6 Zeilen: `workspace`/`project` × `admin` 20, `member` 15, `guest` 5; `is_system = true`, `workspace_id = NULL` | feste UUIDv7-Konstanten `SystemRoles.WorkspaceAdmin` … `SystemRoles.ProjectGuest` | D05 §3.13.3 |
 | `WorkItemRelationTypeSeed` | `work_item_relation_types` | `blocked_by`↔`blocking`, `relates_to`↔`relates_to`, `duplicate`↔`duplicate` (Kategorie Relation); `start_before`↔`start_after`, `finish_before`↔`finish_after` (Dependency); `implemented_by`↔`implements` (Implementation); Labels „Blocked By“, „Blocking“, „Relates To“, „Duplicate“, „Start Before“, „Start After“, „Finish Before“, „Finish After“, „Implemented By“, „Implements“; `sort_order` 1…10 | `key` | `M/issue.py` Z. 272–293, D16 §5.3 |
-| `InstanceBootstrapper` | `instances` | eine Zeile: `instance_name` = `Plane:Instance:DefaultName` (Default `"funk."`, vom Admin änderbar, Auftraggeber 23.10.2026/ABG-104, statt „Plane Community Edition“: ADR-001 entfernt den Editionsnamen, ADR-009B ersetzt den Produktnamen; DEV-DM-12/`BRAND-DM-01`), `instance_id` 24 Hex (Zufall, einmalig), `current_version` = `latest_version` = Assembly-Version, `domain` = `Plane:Urls:Web`, `is_telemetry_enabled = false`, `is_setup_done = false`, `is_test` aus `IS_TEST` | Singleton | D14 §3.15 Schritt 6, CE-INST-001 |
+| `InstanceBootstrapper` | `instances` | eine Zeile: `instance_name` = `Funk:Instance:DefaultName` (Default `"funk."`, vom Admin änderbar, Auftraggeber 23.10.2026/ABG-104, statt „Plane Community Edition“: ADR-001 entfernt den Editionsnamen, ADR-009B ersetzt den Produktnamen; DEV-DM-12/`BRAND-DM-01`), `instance_id` 24 Hex (Zufall, einmalig), `current_version` = `latest_version` = Assembly-Version, `domain` = `Funk:Urls:Web`, `is_telemetry_enabled = false`, `is_setup_done = false`, `is_test` aus `IS_TEST` | Singleton | D14 §3.15 Schritt 6, CE-INST-001 |
 | `InstanceConfigurationSeeder` | `instance_configurations` | alle Schlüssel aus `InstanceConfigurationKeys.All` (D02 §4.10) **ohne** vorhandene Zeile: Wert aus gleichnamiger ENV-Variable oder `SeedDefault`, geheime Werte DP-geschützt | `key` | `configure_instance`, CE-INST-002 |
 | `SystemBotSeed` | `users`, `profiles` | genau ein System-Bot der Instanz für Cron-/Hintergrund-Akteure (D06-ADR-20): feste UUIDv7-Konstante `SystemUsers.SystemBot` (wie `SystemRoles.*`, D03-ADR-04), `username = "plane_system_bot"`, `email = "system-bot@funk.invalid"`, `display_name = first_name = "funk."` (ADR-009B, ABG-104; `username`/E-Mail-Präfix bleiben interne Bezeichner), `is_bot = true`, `bot_type = "SYSTEM"`, `is_active = true`, `is_email_verified = true`; keine `user_identities`-Zeile (kein Login), keine Workspace-Mitgliedschaft | `id` | D06-ADR-20 |
 
-Referenz-Seeds ändern nie Benutzerdaten (Ausnahme: der System-Bot ist Infrastruktur); ein erneuter Lauf ist ein No-op (`SeedRunnerTests.Base_IsIdempotent`). **Respawn:** `users`/`profiles` sind keine Referenztabellen (§4.6) – `PlaneRespawner` ruft nach jedem Reset `BaseSeeds.ApplyAsync` erneut auf (D15 §3.3.2), damit `SystemBotSeed` den Bot wiederherstellt.
+Referenz-Seeds ändern nie Benutzerdaten (Ausnahme: der System-Bot ist Infrastruktur); ein erneuter Lauf ist ein No-op (`SeedRunnerTests.Base_IsIdempotent`). **Respawn:** `users`/`profiles` sind keine Referenztabellen (§4.6) – `FunkRespawner` ruft nach jedem Reset `BaseSeeds.ApplyAsync` erneut auf (D15 §3.3.2), damit `SystemBotSeed` den Bot wiederherstellt.
 
 #### 3.14.2 Laufzeit-Seeds (Fachcode, gleiche Commands wie Benutzeraktionen)
 
 | Auslöser | Erzeugt | Werte | Ort | CE-ID |
 |---|---|---|---|---|
-| Projekt anlegen (App, v1, Demo-Seed) | 6 States (`DEFAULT_STATES`) | `Backlog` `#60646C` 15000 `backlog` **default**; `Todo` `#60646C` 25000 `unstarted`; `In Progress` `#F59E0B` 35000 `started`; `Done` `#46A758` 45000 `completed`; `Cancelled` `#9AA4BC` 55000 `cancelled`; `Triage` `#4E5355` 65000 `triage` (`is_triage = true`) – Werte per **Bulk** (Sequenzregel greift nicht) | `Plane.Projects/Domain/DefaultStates.cs` (Port `M/state.py` Z. 24–62) | CE-PRJ-004, CE-PRJ-023 |
+| Projekt anlegen (App, v1, Demo-Seed) | 6 States (`DEFAULT_STATES`) | `Backlog` `#60646C` 15000 `backlog` **default**; `Todo` `#60646C` 25000 `unstarted`; `In Progress` `#F59E0B` 35000 `started`; `Done` `#46A758` 45000 `completed`; `Cancelled` `#9AA4BC` 55000 `cancelled`; `Triage` `#4E5355` 65000 `triage` (`is_triage = true`) – Werte per **Bulk** (Sequenzregel greift nicht) | `Funk.Projects/Domain/DefaultStates.cs` (Port `M/state.py` Z. 24–62) | CE-PRJ-004, CE-PRJ-023 |
 | Projekt anlegen | `project_identifiers`-Zeile, `project_members` (Ersteller als Admin) + `project_user_properties`, `work_item_sequences` lazy (erste Nummer) | – | `CreateProjectCommand` | CE-PRJ-004 |
-| `intake_view` aktivieren | `intakes`: `name = "<Projektname> Intake"`, `is_default = true`; Triage-State nachlegen, falls fehlend (`sequence` 65000) | – | `Plane.Intake` über Projekt-Event | CE-INT-001 |
+| `intake_view` aktivieren | `intakes`: `name = "<Projektname> Intake"`, `is_default = true`; Triage-State nachlegen, falls fehlend (`sequence` 65000) | – | `Funk.Intake` über Projekt-Event | CE-INT-001 |
 | JIT-Benutzeranlage | `users`, `profiles` (Defaults §3.8.2, `background_color` zufällig), `user_identities`, `user_notification_preferences` (alle `true`, global) | – | `CreateUserStep` (Order 500, D05 §3.7.3) | CE-AUTH-012 |
-| Workspace anlegen | Admin-Mitgliedschaft (Rolle 20), danach **Demo-Seed** als Job `WorkspaceDemoSeedJob` (Queue `default`) | §3.14.3 | `Plane.Workspaces` | CE-WS-001, CE-WS-002 |
+| Workspace anlegen | Admin-Mitgliedschaft (Rolle 20), danach **Demo-Seed** als Job `WorkspaceDemoSeedJob` (Queue `default`) | §3.14.3 | `Funk.Workspaces` | CE-WS-001, CE-WS-002 |
 
 #### 3.14.3 Demo-Workspace (Port `API/bgtasks/workspace_seed_task.py`, Daten `API/seeds/data/*.json`)
 
-Die acht JSON-Dateien werden **unverändert** nach `BE/data/Plane.Data/Seeds/Demo/` kopiert (eingebettete Ressourcen, Lizenz AGPL-3.0 des Originals) und von `WorkspaceDemoSeeder` (`Plane.Workspaces/Application/Jobs/WorkspaceDemoSeedJob.cs`) über die Contracts-Commands der Eigentümer-Module angelegt (R5; kein Direkt-Insert):
+Die acht JSON-Dateien werden **unverändert** nach `BE/data/Funk.Data/Seeds/Demo/` kopiert (eingebettete Ressourcen, Lizenz AGPL-3.0 des Originals) und von `WorkspaceDemoSeeder` (`Funk.Workspaces/Application/Jobs/WorkspaceDemoSeedJob.cs`) über die Contracts-Commands der Eigentümer-Module angelegt (R5; kein Direkt-Insert):
 
 | Schritt | Datei | Inhalt (Original) | Ziel-Regel |
 |---|---|---|---|
@@ -3413,17 +3413,17 @@ Die acht JSON-Dateien werden **unverändert** nach `BE/data/Plane.Data/Seeds/Dem
 | 6 | `modules.json` (3) | Status `planned`/`backlog`/… | 1:1 |
 | 7 | `issues.json` (7) | Work Items mit `sequence_id`, `state_id`, Labels, Cycle, Modulen, `description_html`, Activity „created“ | Nummern über `ISequenceAllocator.AllocateRangeAsync` (Korrektur Q6); Activities über `IActivityRecorder` |
 | 8 | `views.json` (1) | Projekt-View mit `rich_filters` `{"priority__in":"urgent"}` und Seed-Display-Properties | 1:1 (unbekannte Schlüssel durchreichen, D16 A1/A7) |
-| 9 | `pages.json` (2) | Pages mit `description_html` | zusätzlich `description_json`/`description_binary` über `Plane.Documents` erzeugen (Original lässt sie leer, A02a-#19 – korrigiert, ohne Vertragswirkung) |
+| 9 | `pages.json` (2) | Pages mit `description_html` | zusätzlich `description_json`/`description_binary` über `Funk.Documents` erzeugen (Original lässt sie leer, A02a-#19 – korrigiert, ohne Vertragswirkung) |
 
-**Airgapped (ADR-004):** Externe Bild-URLs der Seeds (`images.unsplash.com/photo-1691230995681-480d86cbc135`, `cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/{1f447,1f4a1,1f4cc,1f516,1f680,1f9f1}.png`, `media.docs.plane.so/seed_assets/{21,31,32,33,41,51,61}.png`) liegen als Dateien unter `BE/data/Plane.Data/Seeds/Demo/assets/` (Bilder, die ein Plane-Logo oder den Schriftzug zeigen, werden nach BR-06 ersetzt bzw. neu gerendert; Lizenz/Branding-Klärung Z-114), werden beim Seed als `file_assets` in den Objektspeicher hochgeladen und die URLs im HTML/JSON durch die Asset-URLs ersetzt (`DemoSeedAssetRewriter`). **Branding (ADR-009B):** `DemoSeedBrandingRewriter` ersetzt beim Seed in Namen, Titeln, `description_html` und Labels das Wort „Plane“ als Produktname durch „funk.“ (Fachvokabular wie „Work Items“, „Cycles“ bleibt) und schreibt Hyperlinks auf `docs.plane.so`/`plane.so` auf `Plane:Urls:Docs` um bzw. entfernt sie, wenn nicht konfiguriert (`BRAND-DM-03`); `WorkspaceDemoSeedTests` vergleicht gegen das **gebrandete** Golden-File und prüft `NOT ILIKE '%plane%'` auf allen Seed-Textspalten (außer technischen Bezeichnern). Lizenzprüfung der Bilddateien: §8 R-D03-07.
+**Airgapped (ADR-004):** Externe Bild-URLs der Seeds (`images.unsplash.com/photo-1691230995681-480d86cbc135`, `cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/{1f447,1f4a1,1f4cc,1f516,1f680,1f9f1}.png`, `media.docs.plane.so/seed_assets/{21,31,32,33,41,51,61}.png`) liegen als Dateien unter `BE/data/Funk.Data/Seeds/Demo/assets/` (Bilder, die ein Plane-Logo oder den Schriftzug zeigen, werden nach BR-06 ersetzt bzw. neu gerendert; Lizenz/Branding-Klärung Z-114), werden beim Seed als `file_assets` in den Objektspeicher hochgeladen und die URLs im HTML/JSON durch die Asset-URLs ersetzt (`DemoSeedAssetRewriter`). **Branding (ADR-009B):** `DemoSeedBrandingRewriter` ersetzt beim Seed in Namen, Titeln, `description_html` und Labels das Wort „Plane“ als Produktname durch „funk.“ (Fachvokabular wie „Work Items“, „Cycles“ bleibt) und schreibt Hyperlinks auf `docs.plane.so`/`plane.so` auf `Funk:Urls:Docs` um bzw. entfernt sie, wenn nicht konfiguriert (`BRAND-DM-03`); `WorkspaceDemoSeedTests` vergleicht gegen das **gebrandete** Golden-File und prüft `NOT ILIKE '%plane%'` auf allen Seed-Textspalten (außer technischen Bezeichnern). Lizenzprüfung der Bilddateien: §8 R-D03-07.
 
 ### 3.15 Testdaten-Generator
 
 | Werkzeug | Ort | Zweck | Verfahren | Daten |
 |---|---|---|---|---|
-| `BaseSeeds` | `Plane.Data/Seeds/` | Referenzdaten in jeder Testdatenbank | wie Produktion | §3.14.1 |
-| `ParitySeedLoader` | `Plane.BuildingBlocks.Testing/Seed/` (D15 §3.14) | identische Daten in Original und Ziel für Contract-/Visual-Tests | YAML `tests/seed/parity-seed.yaml` (Fragmente `base`, `labels-hierarchy`, `security-matrix`, `visual`, `e2e`), **UUIDv5** (`ns = a3c1f0c8-6d2e-5b7a-9e1f-0f00f00f0015`, Schlüssel `ws:acme`, `prj:acme/WEB`, `wi:acme/WEB-12` …), `FixedClock`/`DeterministicIdGenerator`; schreibt über die Commands der Module (Invarianten, Activities) und erzeugt `manifest.funk.json` | D15 §3.14.1 |
-| `VolumeSeeder` (CE-OPS-024) | `Plane.BuildingBlocks.Testing/Seed/VolumeSeeder.cs`; CLI `funk-cli create-dummy-data --profile volume-M --workspace <slug>` (Port `create_dummy_data`, ohne interaktive Eingaben) | Last-/Performance-Tests, lokale Entwicklung | **Bogus** (MIT) mit festem `Randomizer.Seed`; IDs aus `DeterministicIdGenerator` (UUIDv7 aus `FixedClock` + Seed-Zufall), Bulk per Npgsql binärem `COPY` (`NpgsqlBinaryImporter`) je Tabelle in Abhängigkeitsreihenfolge; Invarianten-Helfer: `WorkItemSequenceBlock` (vergibt Nummern per `AllocateRangeAsync`), `SortOrderSequence`, `DefaultStates`; danach `ANALYZE` | Profile s. u. |
+| `BaseSeeds` | `Funk.Data/Seeds/` | Referenzdaten in jeder Testdatenbank | wie Produktion | §3.14.1 |
+| `ParitySeedLoader` | `Funk.BuildingBlocks.Testing/Seed/` (D15 §3.14) | identische Daten in Original und Ziel für Contract-/Visual-Tests | YAML `tests/seed/parity-seed.yaml` (Fragmente `base`, `labels-hierarchy`, `security-matrix`, `visual`, `e2e`), **UUIDv5** (`ns = a3c1f0c8-6d2e-5b7a-9e1f-0f00f00f0015`, Schlüssel `ws:acme`, `prj:acme/WEB`, `wi:acme/WEB-12` …), `FixedClock`/`DeterministicIdGenerator`; schreibt über die Commands der Module (Invarianten, Activities) und erzeugt `manifest.funk.json` | D15 §3.14.1 |
+| `VolumeSeeder` (CE-OPS-024) | `Funk.BuildingBlocks.Testing/Seed/VolumeSeeder.cs`; CLI `funk-cli create-dummy-data --profile volume-M --workspace <slug>` (Port `create_dummy_data`, ohne interaktive Eingaben) | Last-/Performance-Tests, lokale Entwicklung | **Bogus** (MIT) mit festem `Randomizer.Seed`; IDs aus `DeterministicIdGenerator` (UUIDv7 aus `FixedClock` + Seed-Zufall), Bulk per Npgsql binärem `COPY` (`NpgsqlBinaryImporter`) je Tabelle in Abhängigkeitsreihenfolge; Invarianten-Helfer: `WorkItemSequenceBlock` (vergibt Nummern per `AllocateRangeAsync`), `SortOrderSequence`, `DefaultStates`; danach `ANALYZE` | Profile s. u. |
 
 | Profil | Workspaces | Projekte je WS | Mitglieder je WS | Work Items je Projekt | Kommentare je WI | Labels/States je Projekt | Cycles/Module je Projekt | Pages je Projekt | Activities | Zielzeit (CI-Runner) |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -3439,7 +3439,7 @@ Verteilung: Prioritäten gleichverteilt, 30 % mit Parent (max. Tiefe 3), 60 % mi
 
 Reihenfolge wie Quelldateien. Enum-/Manager-Klassen (`StateGroup`, `IssueRelationChoices`, `IssueManager`, `StateManager`, `TriageStateManager`, `EstimateType`, `ModuleStatus`, `SourceType`, `IntakeIssueStatus`, `EntityNameEnum`, `BotTypeEnum`, `ROLE`, `ProjectNetwork`, `InstanceEdition`, `SessionStore`) sind keine Tabellen; ihre Abbildung steht in §3.11 bzw. §3.5. Abstrakte Basen (`BaseModel`, `WorkspaceBaseModel`, `ProjectBaseModel`, `AuditModel`, `TimeAuditModel`, `UserAuditModel`, `SoftDeleteModel`) → §3.1.1. Spaltendetails je Tabelle: §3.4.
 
-| Nr. | Django-Model (Datei, Zeilen) | Original-Tabelle | Ziel-Entität (`BE/data/Plane.Data/Entities/<Modul>/`) | Ziel-Tabelle | Status | Abweichungen / Begründung |
+| Nr. | Django-Model (Datei, Zeilen) | Original-Tabelle | Ziel-Entität (`BE/data/Funk.Data/Entities/<Modul>/`) | Ziel-Tabelle | Status | Abweichungen / Begründung |
 |---|---|---|---|---|---|---|
 | M001 | `AnalyticView` (`M/analytic.py` Z. 11–26) | `analytic_views` | `Analytics/AnalyticView` | `analytic_views` | angepasst | – |
 | M002 | `APIToken` (`M/api.py` Z. 23–46) | `api_tokens` | `Identity/ApiToken` | `api_tokens` | angepasst | `token` entfällt; +`token_hash`; +`token_prefix` |
@@ -3546,7 +3546,7 @@ Abgedeckt: **75** Modelle portiert (davon `Session` → `user_sessions` ersetzt,
 |---|---|---|---|
 | `SoftDeletionManager.objects` / `all_objects` | `API/db/mixins.py` | Filter `soft_delete` / `IgnoreQueryFilters([SoftDelete])` (§3.5.1) | 1:1 |
 | `IssueManager.issue_objects` (Default-Manager) | `M/issue.py` Z. 92–101 | Basismenge `WorkItemBaseSets.IssueObjects` (D02 §3.11.4), **kein** Default-Filter (Q1) | korrigiert |
-| `StateManager` / `TriageStateManager` | `M/state.py` Z. 65–76 | Prädikate `StatePredicates.NotTriage` / `.Triage` in `Plane.Projects.Contracts` (`IStateCatalog` liefert ohne Triage) | angepasst |
+| `StateManager` / `TriageStateManager` | `M/state.py` Z. 65–76 | Prädikate `StatePredicates.NotTriage` / `.Triage` in `Funk.Projects.Contracts` (`IStateCatalog` liefert ohne Triage) | angepasst |
 | `BaseModel.save` (crum-Audit) | `M/base.py` Z. 24–44 | `AuditInterceptor` + `ICurrentActor` (D02 §5.1.2); `created_by_id`-Override über `ICreatedByOverride` | angepasst |
 | `WorkspaceBaseModel.save`/`ProjectBaseModel.save` (Workspace aus Projekt) | `M/workspace.py` Z. 192–195, `M/project.py` Z. 237–239 | `ScopeConsistencyInterceptor` + Scope-FK (D03-ADR-05) | angepasst |
 | `SoftDeleteModel.delete` + `soft_delete_related_objects` | `API/db/mixins.py`, `API/bgtasks/deletion_task.py` | `SoftDeleteInterceptor` + Registry §3.5.4 | angepasst (inline, DEV-OPS-001) |
@@ -3674,9 +3674,9 @@ Nicht in dieser Liste, aber vom gleichen Converter betroffen (Werte aus Abfragen
 | `sessions` | `user_sessions` | D05 §3.4.1 |
 | `issue_reactions`, `comment_reactions`, `issue_links`, `issue_mentions`, `issue_subscribers`, `issue_description_versions`, `issue_versions` | `work_item_reactions`, `work_item_comment_reactions`, `work_item_links`, `work_item_mentions`, `work_item_subscribers`, `work_item_description_versions`, `work_item_versions` | – |
 | `draft_issue_assignees/labels/modules/cycles` | `draft_work_item_assignees/labels/modules/cycles` | – |
-| Entitätsnamen in D05 `ID/Domain/UserSession.cs`, `ID/Domain/ApiToken.cs`, `INS/Domain/InstanceAdminMirror.cs` | `BE/data/Plane.Data/Entities/Identity/UserSession.cs`, `…/Identity/ApiToken.cs`, `…/Instance/InstanceAdminMirror.cs` (R3: Entitäten liegen in `Plane.Data`) | D05 §4.x |
+| Entitätsnamen in D05 `ID/Domain/UserSession.cs`, `ID/Domain/ApiToken.cs`, `INS/Domain/InstanceAdminMirror.cs` | `BE/data/Funk.Data/Entities/Identity/UserSession.cs`, `…/Identity/ApiToken.cs`, `…/Instance/InstanceAdminMirror.cs` (R3: Entitäten liegen in `Funk.Data`) | D05 §4.x |
 
-### 4.6 Referenztabellen für `TablesToIgnore` (D15 §3.3.2, `PlaneRespawner`)
+### 4.6 Referenztabellen für `TablesToIgnore` (D15 §3.3.2, `FunkRespawner`)
 
 | Tabelle | Grund | Befüllt durch |
 |---|---|---|
@@ -3706,7 +3706,7 @@ Nicht in dieser Liste, aber vom gleichen Converter betroffen (Werte aus Abfragen
 | `DEV-DM-11` | gelöschter Workspace sofort unzugänglich (kein Fenster bis Kaskadenende) | ja (403 statt Daten) | §3.5.2 J5 |
 | `DEV-DM-12` / `BRAND-DM-01` | Default-`instance_name` „funk.“ statt „Plane Community Edition“ (ADR-001, ADR-009B) | ja (Text; Screenshot-Maske laut ADR-009B) | §3.14.1 |
 | `BRAND-DM-02` | Demo-Seed-Bot `display_name` „funk.“ statt „Plane“ | ja (Text in Activities/Mitgliederliste) | §3.14.3 |
-| `BRAND-DM-03` | Demo-Seed: Produktname „Plane“ in Projektname, Work-Item-/Page-Titeln und -HTML durch „funk.“ ersetzt (`DemoSeedBrandingRewriter`), Links auf `docs.plane.so`/`plane.so` auf `Plane:Urls:Docs` (konfigurierbar, ADR-009B „Externe Links“) umgeschrieben bzw. entfernt | ja (Seed-Inhalt) | §3.14.3 |
+| `BRAND-DM-03` | Demo-Seed: Produktname „Plane“ in Projektname, Work-Item-/Page-Titeln und -HTML durch „funk.“ ersetzt (`DemoSeedBrandingRewriter`), Links auf `docs.plane.so`/`plane.so` auf `Funk:Urls:Docs` (konfigurierbar, ADR-009B „Externe Links“) umgeschrieben bzw. entfernt | ja (Seed-Inhalt) | §3.14.3 |
 | `DEV-DM-13` | Demo-Projekt-Identifier nur ASCII; Demo-Pages mit JSON/Binary | ja (Seed-Inhalt) | §3.14.3 |
 | `DEV-DM-14` | SetNull bei Soft-Delete auf alle Zeilen | ja (archivierte/Triage-Items) | §3.5.3 |
 | `DEV-DM-15` | Hard-Delete entfernt Activities gelöschter Work Items | nein | §3.5.5 |
@@ -3737,14 +3737,14 @@ Nicht in dieser Liste, aber vom gleichen Converter betroffen (Werte aus Abfragen
 
 ## 5. Code-Skelette
 
-Die Skelette legen Namen, Signaturen und Konfigurationsmuster fest; sie ergänzen D02 §5.1/§5.2 (Basistypen, `PlaneEntityConfiguration<T>`, Label-Referenzmodul) und werden nicht wiederholt.
+Die Skelette legen Namen, Signaturen und Konfigurationsmuster fest; sie ergänzen D02 §5.1/§5.2 (Basistypen, `FunkEntityConfiguration<T>`, Label-Referenzmodul) und werden nicht wiederholt.
 
-### 5.1 `PlaneDbContext` – `src/data/Plane.Data/PlaneDbContext.cs`
+### 5.1 `FunkDbContext` – `src/data/Funk.Data/FunkDbContext.cs`
 
 ```csharp
-namespace Plane.Data;
+namespace Funk.Data;
 
-public sealed class PlaneDbContext(DbContextOptions<PlaneDbContext> options, IWorkspaceContext tenant)
+public sealed class FunkDbContext(DbContextOptions<FunkDbContext> options, IWorkspaceContext tenant)
     : DbContext(options), IDataProtectionKeyContext
 {
     private readonly IWorkspaceContext _tenant = tenant;           // Filter workspace_tenant (D02 §3.5.4)
@@ -3772,17 +3772,17 @@ public sealed class PlaneDbContext(DbContextOptions<PlaneDbContext> options, IWo
     protected override void OnModelCreating(ModelBuilder mb)
     {
         mb.HasPostgresExtension("pg_trgm").HasPostgresExtension("unaccent").HasPostgresExtension("vector");
-        mb.HasDbFunction(typeof(PlaneDbFunctions).GetMethod(nameof(PlaneDbFunctions.Unaccent))!).HasName("plane_unaccent");
+        mb.HasDbFunction(typeof(FunkDbFunctions).GetMethod(nameof(FunkDbFunctions.Unaccent))!).HasName("plane_unaccent");
 
-        mb.ApplyConfigurationsFromAssembly(typeof(PlaneDbContext).Assembly);   // Configurations/<Modul>/*
+        mb.ApplyConfigurationsFromAssembly(typeof(FunkDbContext).Assembly);   // Configurations/<Modul>/*
         ScopeForeignKeyConvention.Apply(mb);                                     // D03-ADR-05 (§5.2)
         AuditForeignKeyConvention.Apply(mb);                                     // D02 §5.1.3
         DeleteBehaviorConvention.AssertExplicit(mb);                             // jede FK hat explizites OnDelete (§3.4)
 
-        var apply = typeof(PlaneDbContext).GetMethod(nameof(ApplyTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var apply = typeof(FunkDbContext).GetMethod(nameof(ApplyTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!;
         foreach (var et in mb.Model.GetEntityTypes().Where(t => t.BaseType is null && typeof(IWorkspaceScoped).IsAssignableFrom(t.ClrType)))
             apply.MakeGenericMethod(et.ClrType).Invoke(this, [mb]);
-        // soft_delete wird je Entität in PlaneEntityConfiguration<T> gesetzt (D02 §5.1.3)
+        // soft_delete wird je Entität in FunkEntityConfiguration<T> gesetzt (D02 §5.1.3)
     }
 
     // EF parametrisiert Zugriffe auf Felder des Kontexts je Query (kein Modell-Cache-Problem, D02-ADR-26: kein Pooling)
@@ -3792,7 +3792,7 @@ public sealed class PlaneDbContext(DbContextOptions<PlaneDbContext> options, IWo
 }
 ```
 
-### 5.2 Scope-FK-Konvention – `src/data/Plane.Data/Conventions/ScopeForeignKeyConvention.cs`
+### 5.2 Scope-FK-Konvention – `src/data/Funk.Data/Conventions/ScopeForeignKeyConvention.cs`
 
 ```csharp
 internal static class ScopeForeignKeyConvention
@@ -3826,25 +3826,25 @@ internal static class ScopeForeignKeyConvention
 
 Hinweis: Die Konfigurationsklassen der Module deklarieren **keine** eigene FK `ProjectId → Project` mehr (Abweichung zum D02-Beispiel `LabelConfiguration`, Rückmeldung §9); ein Architekturtest prüft, dass jede Entität mit `ProjectId` genau die Scope-FK besitzt.
 
-### 5.3 JSON-Konverter – `src/data/Plane.Data/Conventions/Json/JsonNodeValueConverter.cs`
+### 5.3 JSON-Konverter – `src/data/Funk.Data/Conventions/Json/JsonNodeValueConverter.cs`
 
 ```csharp
 public sealed class JsonNodeValueConverter<T>() : ValueConverter<T, string>(
-    v => v.ToJsonString(PlaneJsonStorage.Options),                          // kompakt, Schlüsselreihenfolge erhalten
-    s => (T)JsonNode.Parse(s, null, PlaneJsonStorage.DocumentOptions)!) where T : JsonNode;   // alle Argumente positional: Expression-Trees erlauben weder ausgelassene optionale (CS0854) noch benannte Argumente
+    v => v.ToJsonString(FunkJsonStorage.Options),                          // kompakt, Schlüsselreihenfolge erhalten
+    s => (T)JsonNode.Parse(s, null, FunkJsonStorage.DocumentOptions)!) where T : JsonNode;   // alle Argumente positional: Expression-Trees erlauben weder ausgelassene optionale (CS0854) noch benannte Argumente
 
 public sealed class JsonNodeComparer<T>() : ValueComparer<T>(
     (a, b) => JsonNode.DeepEquals(a, b),
-    v => v == null ? 0 : v.ToJsonString(PlaneJsonStorage.Options).GetHashCode(StringComparison.Ordinal),
+    v => v == null ? 0 : v.ToJsonString(FunkJsonStorage.Options).GetHashCode(StringComparison.Ordinal),
     v => (T)v.DeepClone()) where T : JsonNode;
 
-public static class PlaneJsonStorage
+public static class FunkJsonStorage
 {
     public static readonly JsonSerializerOptions Options = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping, WriteIndented = false };
     public static readonly JsonDocumentOptions DocumentOptions = new() { MaxDepth = 256 };
 }
 
-// Lesemodell-Beispiel (Plane.Data/Json/LogoProps.cs)
+// Lesemodell-Beispiel (Funk.Data/Json/LogoProps.cs)
 public sealed record LogoProps(string? InUse, LogoEmoji? Emoji, LogoIcon? Icon)
 { [JsonExtensionData] public Dictionary<string, JsonElement>? Extra { get; init; } }
 public sealed record LogoEmoji(string? Value, string? Url);
@@ -3854,7 +3854,7 @@ public sealed record LogoIcon(string? Name, string? Color, string? BackgroundCol
 ### 5.4 Work Item – Entität und Konfiguration
 
 ```csharp
-// src/data/Plane.Data/Entities/WorkItems/WorkItem.cs
+// src/data/Funk.Data/Entities/WorkItems/WorkItem.cs
 [OwnedBy("WorkItems")]
 public sealed class WorkItem : ProjectEntity, IExternallyReferenced, ISortable
 {
@@ -3888,8 +3888,8 @@ public sealed class WorkItem : ProjectEntity, IExternallyReferenced, ISortable
     { DescriptionHtml = sanitizedHtml; DescriptionStripped = HtmlTextExtractor.Strip(sanitizedHtml); if (json is not null) DescriptionJson = json; if (binary is not null) DescriptionBinary = binary; }
 }
 
-// src/data/Plane.Data/Configurations/WorkItems/WorkItemConfiguration.cs
-internal sealed class WorkItemConfiguration : PlaneEntityConfiguration<WorkItem>
+// src/data/Funk.Data/Configurations/WorkItems/WorkItemConfiguration.cs
+internal sealed class WorkItemConfiguration : FunkEntityConfiguration<WorkItem>
 {
     protected override void ConfigureEntity(EntityTypeBuilder<WorkItem> b)
     {
@@ -3927,16 +3927,16 @@ internal sealed class WorkItemConfiguration : PlaneEntityConfiguration<WorkItem>
 }
 ```
 
-### 5.5 Sequenz-Allokator – `src/data/Plane.Data/Sequences/PostgresSequenceAllocator.cs`
+### 5.5 Sequenz-Allokator – `src/data/Funk.Data/Sequences/PostgresSequenceAllocator.cs`
 
 ```csharp
-public interface ISequenceAllocator          // Plane.BuildingBlocks.Persistence/Sequences (01 §7.6)
+public interface ISequenceAllocator          // Funk.BuildingBlocks.Persistence/Sequences (01 §7.6)
 {
     ValueTask<int> NextAsync(Guid projectId, CancellationToken ct);
     ValueTask<(int First, int Last)> AllocateRangeAsync(Guid projectId, int count, CancellationToken ct);
 }
 
-internal sealed class PostgresSequenceAllocator(PlaneDbContext db, IClock clock) : ISequenceAllocator
+internal sealed class PostgresSequenceAllocator(FunkDbContext db, IClock clock) : ISequenceAllocator
 {
     public async ValueTask<int> NextAsync(Guid projectId, CancellationToken ct) => (await AllocateRangeAsync(projectId, 1, ct)).Last;
 
@@ -3962,7 +3962,7 @@ internal sealed class PostgresSequenceAllocator(PlaneDbContext db, IClock clock)
 ### 5.6 Such-Tabelle und Trigram-Erweiterung
 
 ```csharp
-// src/data/Plane.Data/Configurations/Search/SearchDocumentConfiguration.cs  (Form D11 §3.10.1/§5.6)
+// src/data/Funk.Data/Configurations/Search/SearchDocumentConfiguration.cs  (Form D11 §3.10.1/§5.6)
 internal sealed class SearchDocumentConfiguration : IEntityTypeConfiguration<SearchDocument>
 {
     public void Configure(EntityTypeBuilder<SearchDocument> b)
@@ -3988,7 +3988,7 @@ internal sealed class SearchDocumentConfiguration : IEntityTypeConfiguration<Sea
     }
 }
 
-// src/data/Plane.Data/Conventions/TrigramIndexExtensions.cs
+// src/data/Funk.Data/Conventions/TrigramIndexExtensions.cs
 public static class TrigramIndexExtensions
 {
     public static IndexBuilder<T> HasTrigramIndex<T>(this EntityTypeBuilder<T> b, Expression<Func<T, object?>> column, string name) where T : class
@@ -3999,7 +3999,7 @@ public static class TrigramIndexExtensions
 ### 5.7 Migration für Extensions und Funktion (I0)
 
 ```csharp
-// src/data/Plane.Data/Migrations/202611020900_Platform_Extensions.cs (Name nach 01 §7.14)
+// src/data/Funk.Data/Migrations/202611020900_Platform_Extensions.cs (Name nach 01 §7.14)
 public partial class Platform_Extensions : Migration
 {
     protected override void Up(MigrationBuilder m)
@@ -4020,15 +4020,15 @@ public partial class Platform_Extensions : Migration
 public sealed class ContractPhaseAttribute(string sinceVersion) : Attribute { public string SinceVersion { get; } = sinceVersion; }
 ```
 
-### 5.8 Referenz-Seeds – `src/data/Plane.Data/Seeds/`
+### 5.8 Referenz-Seeds – `src/data/Funk.Data/Seeds/`
 
 ```csharp
-public interface IReferenceSeed { int Order { get; } ValueTask ApplyAsync(PlaneDbContext db, IClock clock, CancellationToken ct); }
+public interface IReferenceSeed { int Order { get; } ValueTask ApplyAsync(FunkDbContext db, IClock clock, CancellationToken ct); }
 
 internal sealed class SystemRoleSeed : IReferenceSeed
 {
     public int Order => 100;
-    public async ValueTask ApplyAsync(PlaneDbContext db, IClock clock, CancellationToken ct)
+    public async ValueTask ApplyAsync(FunkDbContext db, IClock clock, CancellationToken ct)
     {
         foreach (var r in SystemRoles.All)          // 6 Einträge, feste UUIDv7 (D05 §3.13.3)
             await db.Database.ExecuteSqlAsync($"""
@@ -4042,12 +4042,12 @@ internal sealed class SystemRoleSeed : IReferenceSeed
 internal sealed class WorkItemRelationTypeSeed : IReferenceSeed   // Werte D16 §5.3 / §3.14.1
 {
     public int Order => 200;
-    public ValueTask ApplyAsync(PlaneDbContext db, IClock clock, CancellationToken ct) => /* Upsert der 10 Zeilen in einer Transaktion (deferrable FK) */ ValueTask.CompletedTask;
+    public ValueTask ApplyAsync(FunkDbContext db, IClock clock, CancellationToken ct) => /* Upsert der 10 Zeilen in einer Transaktion (deferrable FK) */ ValueTask.CompletedTask;
 }
 
 public static class BaseSeeds   // genutzt von Migrator (SeedRunner) und Tests (D15 §5.1: BaseSeeds.ApplyAsync)
 {
-    public static async Task ApplyAsync(PlaneDbContext db, IClock clock, CancellationToken ct)
+    public static async Task ApplyAsync(FunkDbContext db, IClock clock, CancellationToken ct)
     {
         foreach (var seed in ReferenceSeedCatalog.All.OrderBy(s => s.Order)) await seed.ApplyAsync(db, clock, ct);
     }
@@ -4057,11 +4057,11 @@ public static class BaseSeeds   // genutzt von Migrator (SeedRunner) und Tests (
 ### 5.9 Lösch-Konvention und Registry-Prüfung (Test)
 
 ```csharp
-// tests/Plane.ArchitectureTests/DataModel/SoftDeleteCascadeCoverageTests.cs
+// tests/Funk.ArchitectureTests/DataModel/SoftDeleteCascadeCoverageTests.cs
 [Fact]
 public void Every_cascading_fk_to_soft_deletable_principal_is_registered()
 {
-    var model = TestModel.Create();                                   // PlaneDbContext-Modell ohne Datenbank
+    var model = TestModel.Create();                                   // FunkDbContext-Modell ohne Datenbank
     var registry = SoftDeleteCascadeRegistry.BuildFromModules(ModuleCatalog.All);
     var missing = model.GetEntityTypes()
         .SelectMany(e => e.GetForeignKeys())
@@ -4077,7 +4077,7 @@ public void Every_cascading_fk_to_soft_deletable_principal_is_registered()
 
 ## 6. Erweiterungspunkte für Bezahl-Pakete
 
-**Kein Fachdesign.** Die folgende Tabelle nennt nur die Stellen **im Datenmodell**, an denen die 🧱-Pakete aus `features/30-paid-auswahlliste.md` später andocken, und was die CE dafür anlegt. Fachliche Spalten, Regeln und APIs plant die jeweilige Welle (D16 §6). Klassen P/V/R/S nach D16 §1.5. Pakete erweitern das Schema **nur additiv** (D16-ADR-06): neue Tabellen in `BE/data/Plane.Data/Entities/<Paket>/`, neue nullable Spalten, neue Indizes; Migrationen `W<n>_<Paket>_<Beschreibung>`; nie Umbenennung oder Typänderung einer CE-Spalte.
+**Kein Fachdesign.** Die folgende Tabelle nennt nur die Stellen **im Datenmodell**, an denen die 🧱-Pakete aus `features/30-paid-auswahlliste.md` später andocken, und was die CE dafür anlegt. Fachliche Spalten, Regeln und APIs plant die jeweilige Welle (D16 §6). Klassen P/V/R/S nach D16 §1.5. Pakete erweitern das Schema **nur additiv** (D16-ADR-06): neue Tabellen in `BE/data/Funk.Data/Entities/<Paket>/`, neue nullable Spalten, neue Indizes; Migrationen `W<n>_<Paket>_<Beschreibung>`; nie Umbenennung oder Typänderung einer CE-Spalte.
 
 ### 6.1 Andockstellen je 🧱-Paket
 
@@ -4103,7 +4103,7 @@ public void Every_cascading_fk_to_soft_deletable_principal_is_registered()
 
 ### 6.2 Reservierte Tabellennamen (Klasse R)
 
-Damit CE-Migrationen nie mit späteren Paket-Tabellen kollidieren, sind folgende Namen reserviert (Liste `tests/Plane.ArchitectureTests/DataModel/reserved-tables.yaml`, Test `ReservedTableNamesTests` – keine CE-Tabelle darf so heißen; Pakete müssen einen dieser Namen oder einen Namen mit eigenem Präfix nutzen):
+Damit CE-Migrationen nie mit späteren Paket-Tabellen kollidieren, sind folgende Namen reserviert (Liste `tests/Funk.ArchitectureTests/DataModel/reserved-tables.yaml`, Test `ReservedTableNamesTests` – keine CE-Tabelle darf so heißen; Pakete müssen einen dieser Namen oder einen Namen mit eigenem Präfix nutzen):
 
 `project_work_item_types`, `work_item_properties`, `work_item_property_options`, `work_item_property_values`, `work_item_type_hierarchy_rules`, `workspace_work_item_type_links`, `property_rollups`, `property_contexts`, `teamspaces`, `teamspace_members`, `teamspace_projects`, `teamspace_updates`, `collections`, `collection_pages`, `collection_members`, `page_shares`, `page_subscribers`, `view_shares`, `idp_group_mappings`, `audit_log_entries`, `apps`, `app_installations`, `app_bot_users`, `integration_secrets`, `user_integration_connections`, `integration_entity_mappings`, `integration_webhook_deliveries`, `integration_sync_runs`, `milestones`, `milestone_work_items`, `worklogs`, `timesheet_approvals`, `module_assignment_rules`, `project_states`, `project_labels`, `project_updates`, `project_join_requests`, `intake_forms`, `intake_email_addresses`, `search_embeddings` (Quellen: D16 §3.3, §3.4.2, D05 §6.2).
 
@@ -4111,12 +4111,12 @@ Damit CE-Migrationen nie mit späteren Paket-Tabellen kollidieren, sind folgende
 
 | Mechanik | Wirkung auf neue Paket-Entitäten | Pflicht für das Paket |
 |---|---|---|
-| `PlaneEntityConfiguration<T>` + `AuditForeignKeyConvention` | Audit-FKs, Präzision, `soft_delete`-Filter | Basisklasse A/W/P verwenden |
+| `FunkEntityConfiguration<T>` + `AuditForeignKeyConvention` | Audit-FKs, Präzision, `soft_delete`-Filter | Basisklasse A/W/P verwenden |
 | `ScopeForeignKeyConvention` | Scope-FK bei `WorkspaceId` + `ProjectId` | – |
 | Filter `workspace_tenant` | bei `IWorkspaceScoped` | `IWorkspaceScoped` implementieren |
 | `OwnershipGuardInterceptor` | Schreibschutz durch fremde Module | `[OwnedBy("<Paketmodul>")]` |
 | `SoftDeleteCascadeRegistry` + Coverage-Test | Kaskaden von CE-Wurzeln auf Paket-Tabellen | Einträge im Paketmodul registrieren (CE-Datei bleibt unverändert) |
-| `PlaneRespawner` | neue Tabellen werden in Tests geleert | Referenztabellen des Pakets in `TablesToIgnore` des Paket-Testprojekts ergänzen |
+| `FunkRespawner` | neue Tabellen werden in Tests geleert | Referenztabellen des Pakets in `TablesToIgnore` des Paket-Testprojekts ergänzen |
 | `ReservedTableNamesTests`, `MigrationsAreExpandOnly` | Kollisions- und Additivitätsprüfung | Migrationen `W<n>_…` nur additiv |
 
 ## 7. Akzeptanzkriterien & Tests
@@ -4127,7 +4127,7 @@ Damit CE-Migrationen nie mit späteren Paket-Tabellen kollidieren, sind folgende
 |---|---|---|---|
 | AK-03-01 | Jede Tabelle aus §3.3, die zum laufenden Inkrement gehört, existiert nach `MigrateAsync()` auf leerer PostgreSQL-17-Datenbank mit genau den Spalten, Typen, Null-Fähigkeiten und Defaults aus §3.4 | `SchemaConformanceTests`: liest `information_schema.columns` und vergleicht mit `_data/03-datenmodell.json` (generiert aus diesem Dokument) | I0 ff. |
 | AK-03-02 | Alle Unique-, partiellen und Trigram-Indizes und Check-Constraints aus §3.4 existieren mit den angegebenen Namen | `pg_indexes`/`pg_constraint`-Abgleich in `SchemaConformanceTests` | I0 ff. |
-| AK-03-03 | `dotnet ef migrations has-pending-model-changes` ist leer; Migrationen sind auf leerer DB und wiederholt (No-op) anwendbar | CI-Gate + `Plane.Migrator.Tests/MigrationIdempotencyTests` | I0 |
+| AK-03-03 | `dotnet ef migrations has-pending-model-changes` ist leer; Migrationen sind auf leerer DB und wiederholt (No-op) anwendbar | CI-Gate + `Funk.Migrator.Tests/MigrationIdempotencyTests` | I0 |
 | AK-03-04 | Kein Schreibzugriff eines Moduls auf fremde Entitäten außer deklarierten Kaskaden | `OwnershipGuardInterceptor` in allen Integrationstests aktiv (R3) | I0 |
 | AK-03-05 | 100 parallele Work-Item-Anlagen in einem Projekt erzeugen `sequence_id` 1…100 ohne Lücke/Duplikat; Rollback verbraucht keine Nummer | `SequenceAllocatorConcurrencyTests` | I2 |
 | AK-03-06 | Jede FK mit `CASCADE`/`SET NULL` auf eine soft-löschbare Entität ist in der Registry oder als `NoSoftCascade` vermerkt; die Kaskaden aus §3.5.4 wirken (je Wurzel ein Test) | `SoftDeleteCascadeCoverageTests`, `SoftDeleteCascadeBehaviourTests` | I0–I6 |
@@ -4144,7 +4144,7 @@ Damit CE-Migrationen nie mit späteren Paket-Tabellen kollidieren, sind folgende
 | AK-03-17 | `VolumeSeeder volume-M` läuft unter 5 min und ist deterministisch | `VolumeSeederDeterminismTests`, CI-Messung | I2 |
 | AK-03-18 | Keine CE-Tabelle trägt einen reservierten Namen (§6.2); jede 🧱-Andockstelle aus §6.1 existiert im Modell | `ReservedTableNamesTests`, `ExtensionAnchorSchemaTests` (Eintrag in `tests/extension-points.yaml`, D15 EP) | I0–I5 |
 | AK-03-19 | `pgvector` (`vector`-Extension, `Pgvector.EntityFrameworkCore` mit EF 10) lässt sich laden, eine Testspalte anlegen und eine `CosineDistance`-Abfrage übersetzen | `PgvectorSmokeTests` (Spike S0, D15) | I0 |
-| AK-03-20 | Instanz-, Konfigurations- und Rollen-Tabellen bleiben beim Respawn gefüllt; alle anderen werden geleert | `PlaneRespawnerTests` | I0 |
+| AK-03-20 | Instanz-, Konfigurations- und Rollen-Tabellen bleiben beim Respawn gefüllt; alle anderen werden geleert | `FunkRespawnerTests` | I0 |
 | AK-03-21 | Für jede Property mit konstantem DB-Default ist `ValueGenerated = Never` und der CLR-Initialisierer gleich dem Literal; ein Insert mit dem CLR-Default-Wert eines Enums (z. B. `IntakeStatus.Snoozed = 0`) speichert genau diesen Wert | `ClrDefaultsMatchDbDefaultsTests` (Modell-Scan) + `IntakeStatusInsertTests` | I0/I3 |
 | AK-03-22 | Kein Spaltenpaar `NOT NULL` + `ON DELETE SET NULL` im Modell | `DeleteBehaviorIsExplicit` (Modell-Scan: `fk.DeleteBehavior == SetNull` ⇒ alle FK-Properties nullable) | I0 |
 | AK-03-23 | Demo-Workspace-Seed und System-Bot enthalten in keiner Textspalte den Produktnamen „Plane“ (ADR-009B); `display_name` des Seed-Bots und Default-`instance_name` = „funk.“ | `WorkspaceDemoSeedTests.NoPlaneBranding`, `SeedRunnerTests.InstanceName` | I0/I1 |
@@ -4153,19 +4153,19 @@ Damit CE-Migrationen nie mit späteren Paket-Tabellen kollidieren, sind folgende
 
 | Testklasse | Projekt | Inhalt |
 |---|---|---|
-| `SchemaConformanceTests` | `tests/Plane.Migrator.Tests/` | AK-03-01/-02 gegen `_data/03-datenmodell.json` |
-| `MigrationIdempotencyTests`, `ModelDriftTests`, `InitialMigrationAppliesOnEmptyDatabase` | `tests/Plane.Migrator.Tests/` | AK-03-03 |
-| `MigrationsAreExpandOnly`, `SoftDeleteCascadeCoverageTests`, `SoftDeleteBypassIsDocumented`, `ReservedTableNamesTests`, `DbSetsMatchTableDirectory`, `DeleteBehaviorIsExplicit` | `tests/Plane.ArchitectureTests/DataModel/` | Modellregeln |
-| `SequenceAllocatorConcurrencyTests`, `ScopeForeignKeyTests`, `JsonPassthroughTests`, `JsonDefaultsSnapshotTests`, `FloatFieldOutputTests` | `tests/Plane.BuildingBlocks.Tests/Persistence/` | Querschnitt |
+| `SchemaConformanceTests` | `tests/Funk.Migrator.Tests/` | AK-03-01/-02 gegen `_data/03-datenmodell.json` |
+| `MigrationIdempotencyTests`, `ModelDriftTests`, `InitialMigrationAppliesOnEmptyDatabase` | `tests/Funk.Migrator.Tests/` | AK-03-03 |
+| `MigrationsAreExpandOnly`, `SoftDeleteCascadeCoverageTests`, `SoftDeleteBypassIsDocumented`, `ReservedTableNamesTests`, `DbSetsMatchTableDirectory`, `DeleteBehaviorIsExplicit` | `tests/Funk.ArchitectureTests/DataModel/` | Modellregeln |
+| `SequenceAllocatorConcurrencyTests`, `ScopeForeignKeyTests`, `JsonPassthroughTests`, `JsonDefaultsSnapshotTests`, `FloatFieldOutputTests` | `tests/Funk.BuildingBlocks.Tests/Persistence/` | Querschnitt |
 | `SoftDeleteCascadeBehaviourTests` | je Modul `tests/modules/Plane.<M>.Tests/Integration/SoftDelete/` | je Wurzel aus §3.5.4 |
 | `TenantIsolationTests` | je Modul | 01 §7.9 |
-| `SeedRunnerTests`, `DefaultStatesTests`, `WorkspaceDemoSeedTests` | `tests/Plane.Migrator.Tests/`, `tests/modules/Plane.Projects.Tests/`, `tests/modules/Plane.Workspaces.Tests/` | Seeds |
-| `HardDeleteJobTests` | `tests/Plane.Worker.Tests/` | Aufbewahrung |
-| `SearchIndexUsageTests` | `tests/modules/Plane.Search.Tests/` | Indexnutzung |
-| `VolumeSeederDeterminismTests` | `tests/Plane.BuildingBlocks.Testing.Tests/` | Generator |
-| `PgvectorSmokeTests`, `PlaneRespawnerTests` | `tests/Plane.BuildingBlocks.Testing.Tests/` | S0, Respawn |
-| `ClrDefaultsMatchDbDefaultsTests` | `tests/Plane.ArchitectureTests/DataModel/` | AK-03-21 |
-| `IntakeStatusInsertTests` | `tests/modules/Plane.Intake.Tests/` | AK-03-21 |
+| `SeedRunnerTests`, `DefaultStatesTests`, `WorkspaceDemoSeedTests` | `tests/Funk.Migrator.Tests/`, `tests/modules/Funk.Projects.Tests/`, `tests/modules/Funk.Workspaces.Tests/` | Seeds |
+| `HardDeleteJobTests` | `tests/Funk.Worker.Tests/` | Aufbewahrung |
+| `SearchIndexUsageTests` | `tests/modules/Funk.Search.Tests/` | Indexnutzung |
+| `VolumeSeederDeterminismTests` | `tests/Funk.BuildingBlocks.Testing.Tests/` | Generator |
+| `PgvectorSmokeTests`, `FunkRespawnerTests` | `tests/Funk.BuildingBlocks.Testing.Tests/` | S0, Respawn |
+| `ClrDefaultsMatchDbDefaultsTests` | `tests/Funk.ArchitectureTests/DataModel/` | AK-03-21 |
+| `IntakeStatusInsertTests` | `tests/modules/Funk.Intake.Tests/` | AK-03-21 |
 
 Alle Integrationstests laufen gegen PostgreSQL 17 mit `pgvector`-Image (Testcontainers bzw. `Aspire.Hosting.Testing`, D15 §5.1) – **nie** gegen SQLite/In-Memory, weil partielle Indizes, `tsvector`, `jsonb`, Arrays und Zeilensperren Teil des Vertrags sind.
 
@@ -4193,7 +4193,7 @@ Alle Integrationstests laufen gegen PostgreSQL 17 mit `pgvector`-Image (Testcont
 | ID | Punkt | Empfehlung | Entscheidung durch / bis |
 |---|---|---|---|
 | O-D03-01 | Soll der Vertrag `issue_comment.description` (Feld fällt weg, `null`) für Clients erhalten bleiben? | `null` ausgeben (DEV-DM-03); Frontend-Typ kennt das Feld nicht | 04 / I2 |
-| O-D03-02 | `work_item_versions`-Aufbewahrung (neu, Original ohne Daten) | Default 20 wie Beschreibungsversionen (`Plane:Retention:WorkItemVersionsKeep`, inline begrenzt, ABG-102; Bestätigung offen als Z-114) | Auftraggeber (Abnahme I2) |
+| O-D03-02 | `work_item_versions`-Aufbewahrung (neu, Original ohne Daten) | Default 20 wie Beschreibungsversionen (`Funk:Retention:WorkItemVersionsKeep`, inline begrenzt, ABG-102; Bestätigung offen als Z-114) | Auftraggeber (Abnahme I2) |
 | O-D03-03 | ~~Produktname im Default-`instance_name`~~ | **entschieden durch ADR-009B:** `"funk."` (Review 23.10.2026); **bestätigt durch Auftraggeber 23.10.2026 (ABG-104)** | – |
 | O-D03-04 | Lizenzklärung Demo-Seed-Bilder (R-D03-07) | vor I1 | Auftraggeber |
 | O-D03-05 | Scope-FK auch für Tabellen mit **nullable** `workspace_id` (`file_assets`, `user_notification_preferences`) | ja – die Konvention greift; `MATCH SIMPLE` erzwingt die FK nur, wenn beide Spalten gesetzt sind (Benutzer-Assets ohne Workspace bleiben zulässig) | I1 (Bestätigung im Scope-FK-Spike, R-D03-02) |
@@ -4205,19 +4205,19 @@ Alle Integrationstests laufen gegen PostgreSQL 17 mit `pgvector`-Image (Testcont
 
 | Dokument | Beziehung | Was D03 von dort nutzt | Was D03 liefert / Rückmeldung (Änderungsbedarf beim Nachbarn) |
 |---|---|---|---|
-| `00-grundsatzentscheidungen.md` | bindend | ADR-001 (keine Plan-Limits → Aufbewahrung als Konfiguration `PlaneRetentionOptions`, ABG-102), ADR-003 (Greenfield), ADR-004 (Seeds ohne externe URLs), ADR-007 (Integrationstabellen), ADR-008 (keine Passwort-/OAuth-Tabellen), ADR-009 (`funk.`), ADR-009B (Branding: `instance_name`, Seed-Bot, Demo-Inhalte → `BRAND-DM-01…03`) | – |
+| `00-grundsatzentscheidungen.md` | bindend | ADR-001 (keine Plan-Limits → Aufbewahrung als Konfiguration `FunkRetentionOptions`, ABG-102), ADR-003 (Greenfield), ADR-004 (Seeds ohne externe URLs), ADR-007 (Integrationstabellen), ADR-008 (keine Passwort-/OAuth-Tabellen), ADR-009 (`funk.`), ADR-009B (Branding: `instance_name`, Seed-Bot, Demo-Inhalte → `BRAND-DM-01…03`) | – |
 | `01-zielarchitektur-und-tech-stack.md` | bindend | ADR-020, -024, -025, -037, -038; §1.4 Andockstellen; §5.1 Baum; R3; §7.6–7.8, §7.14; Glossar | Präzisierungen: Tabellen `work_item_sequences` (Zähler statt `IssueSequence`-Zeilen), Extension `vector` bereits in I0 (wie D14 Migrator-Schritt 3) statt I5 (§1.4 G1); keine ADR-Änderung |
-| `02-backend-solution-und-konventionen.md` | nutzt | Basistypen, Interceptor-Kette, `PlaneEntityConfiguration<T>`, Label-Referenzmodul, Query-Engine (§3.11), Registrierung (D02-ADR-26) | **(1)** Raw-SQL der Query-Engine (§3.11.4/§3.11.5) mit Tabellennamen nach §4.5 (`work_item_labels`, `work_item_assignees`, `cycle_work_items`, `module_work_items`, `intake_work_items`, Spalte `work_item_id`); **(2)** `ITimestamped` als Basis von `IAuditable` (§3.1.2); **(3)** `LabelConfiguration`: Projekt-FK über `ScopeForeignKeyConvention` statt eigener `HasOne<Project>` (§5.2); **(4)** Soft-Delete-Kaskaden setzen `updated_by_id` nicht auf `NULL` (D03-ADR-09) |
+| `02-backend-solution-und-konventionen.md` | nutzt | Basistypen, Interceptor-Kette, `FunkEntityConfiguration<T>`, Label-Referenzmodul, Query-Engine (§3.11), Registrierung (D02-ADR-26) | **(1)** Raw-SQL der Query-Engine (§3.11.4/§3.11.5) mit Tabellennamen nach §4.5 (`work_item_labels`, `work_item_assignees`, `cycle_work_items`, `module_work_items`, `intake_work_items`, Spalte `work_item_id`); **(2)** `ITimestamped` als Basis von `IAuditable` (§3.1.2); **(3)** `LabelConfiguration`: Projekt-FK über `ScopeForeignKeyConvention` statt eigener `HasOne<Project>` (§5.2); **(4)** Soft-Delete-Kaskaden setzen `updated_by_id` nicht auf `NULL` (D03-ADR-09) |
 | `04-api-design-und-endpunktkatalog.md` | liefert an | D04-ADR-17 (Branding in Verträgen, `BRAND-API-*`) | Tabellen-/Spaltennamen für DTO-Projektionen, `FloatField`-Liste §4.4, Vertragsfelder ohne Spalte (Konstanten: `is_password_autoset`, `is_superuser`, `is_staff`, `edition`, Kommentar-`description`, `Webhook.is_internal` = `false`), Abweichungen DEV-DM-*/BRAND-DM-* §4.7 |
-| `05-auth-sicherheit-berechtigungen.md` | nutzt | `user_sessions`, `user_identities`, `api_tokens` (Hash), `roles`, `role_permissions`, `instance_admins` (Spiegel), `data_protection_keys`, DP-Zwecke | Rückmeldung: Entitäten liegen nach R3 unter `Plane.Data/Entities/<Modul>/` (D05 nennt `ID/Domain/*.cs`, §4.5); `roles` erhält Audit-Spalten und `sort_order` (§3.4.18.2) |
-| `06-hintergrundjobs-events-benachrichtigungen.md` | nutzt (Fachgebiet Messaging/Jobs) | §3.2 (Tabellen `outbox_messages`, `inbox_messages`, `jobs`, `recurring_job_states` – übernommen, §3.4.18.6; verbindlich nach ABG-101), §4.2 (Cron-Namen, übernommen in §3.5.5), D06-ADR-20 (System-Bot, §3.14.1), D06-ADR-23 (`Webhook.is_internal`, `EmailNotificationLog.entity/old_value/new_value` entfallen), O-D06-06 (`cycles.completion_published_at`), §3.9.3/§3.14.1 (Activities/Webhooks) | Rückmeldung: **(1)** Tabellenname `exports` statt `export_histories` (§4.5) – **erledigt (ABG-103)**; **(2)** `PlaneLocks.Migrations = 0x504C_4E00_0003` (D06 Vorfassung) widersprach D14-ADR-16/§4.5 `PlaneLocks.Migrator = 7356001` – D03 folgt D14 – **erledigt (ABG-103)**: 06 nutzt `Migrator = 7356001`, `Scheduler = 7356002`, Erweiterungen `7356003…7356099`; **(3)** `work_item_versions` werden vom Recorder inline auf 20 begrenzt (kein Cron, §3.5.5; ABG-102); **(4)** Activity-Index `(work_item_id, created_at)` ohne `DESC` genügt (B-Tree rückwärts lesbar) |
+| `05-auth-sicherheit-berechtigungen.md` | nutzt | `user_sessions`, `user_identities`, `api_tokens` (Hash), `roles`, `role_permissions`, `instance_admins` (Spiegel), `data_protection_keys`, DP-Zwecke | Rückmeldung: Entitäten liegen nach R3 unter `Funk.Data/Entities/<Modul>/` (D05 nennt `ID/Domain/*.cs`, §4.5); `roles` erhält Audit-Spalten und `sort_order` (§3.4.18.2) |
+| `06-hintergrundjobs-events-benachrichtigungen.md` | nutzt (Fachgebiet Messaging/Jobs) | §3.2 (Tabellen `outbox_messages`, `inbox_messages`, `jobs`, `recurring_job_states` – übernommen, §3.4.18.6; verbindlich nach ABG-101), §4.2 (Cron-Namen, übernommen in §3.5.5), D06-ADR-20 (System-Bot, §3.14.1), D06-ADR-23 (`Webhook.is_internal`, `EmailNotificationLog.entity/old_value/new_value` entfallen), O-D06-06 (`cycles.completion_published_at`), §3.9.3/§3.14.1 (Activities/Webhooks) | Rückmeldung: **(1)** Tabellenname `exports` statt `export_histories` (§4.5) – **erledigt (ABG-103)**; **(2)** `FunkLocks.Migrations = 0x504C_4E00_0003` (D06 Vorfassung) widersprach D14-ADR-16/§4.5 `FunkLocks.Migrator = 7356001` – D03 folgt D14 – **erledigt (ABG-103)**: 06 nutzt `Migrator = 7356001`, `Scheduler = 7356002`, Erweiterungen `7356003…7356099`; **(3)** `work_item_versions` werden vom Recorder inline auf 20 begrenzt (kein Cron, §3.5.5; ABG-102); **(4)** Activity-Index `(work_item_id, created_at)` ohne `DESC` genügt (B-Tree rückwärts lesbar) |
 | `07-realtime-kollaboration-dokumente.md` | nutzt | §3.6.8 (Spaltenanforderungen: `pages.description_revision` übernommen, `page_versions`, `page_logs` wie Original) | Page-Spalten und Speicherreihenfolge (§3.9.3), Größengrenze `description_binary`, Versionsregel |
 | `08-frontend-angular-architektur.md` | – | – | keine (JSON-Verträge über 04) |
 | `09-ui-paritaet-designsystem.md` | – | – | Seed-Fragment `visual` nutzt die Tabellen dieses Dokuments (über D15) |
 | `10-editor-angular.md` | – | D10 §3.2 (Schema-Freeze) | `description_json`-Schema = Tiptap-Schema-Freeze (ADR-042) |
 | `11-suche-und-ai-basis.md` | nutzt (Fachgebiet Suche) | §3.10.1 (Form `search_documents` – übernommen, §3.4.18.8), §6.2 (`search_embeddings` reserviert) | Rückmeldung: **(1)** D11-ADR-07 nennt eine FK auf „den zusammengesetzten Schlüssel `(entity_type, entity_id)`“, D11 §6.2 dagegen `search_document_id → search_documents(id)` – D03 folgt §6.2 (Surrogat-PK `id`) – **entschieden ABG-122**; **(2)** `plane_unaccent` legt bereits `…_Platform_Extensions` (I0) an – die D11-Migration `AddSearchDocuments` darf sie nicht erneut definieren und heißt nach 01 §7.14 `YYYYMMDDHHmm_Search_Documents` – **erledigt (ABG-122)**; **(3)** Quelltabelle heißt `views`, nicht `issue_views` (§4.5) – **erledigt (ABG-122)**; **(4)** `project_id` erhält die Scope-FK statt Einzel-FK – **entschieden ABG-122** (Spike-Vorbehalt Z-107) |
 | `14-infrastruktur-deployment-betrieb.md` | nutzt | Migrator-Schritte (§3.15), Expand/Contract (§3.17), PostgreSQL-Image mit `pgvector`, Extension-Init-Skript | `[ContractPhase]` und `MigrationsAreExpandOnly` (§3.13); idempotentes SQL-Skript als Release-Artefakt `artifacts/migrations/funk-<version>.sql` (ABG-149); Default-Instanzname „funk.“ statt „Plane Community Edition“ (ADR-009B; D14 §3.15 Schritt 6 verweist auf D03) |
-| `15-teststrategie-qualitaet-paritaet.md` | nutzt | `ParitySeedLoader`, UUIDv5-Namensraum, `PlaneRespawner`, `BaseSeeds.ApplyAsync`, Testprojekte | **R-D15-04**: `FloatField`-Liste §4.4; **TablesToIgnore**: §4.6 (ohne `event_types`, dafür `instance_configurations`, `recurring_job_states`); Testinventar §7.2; `VolumeSeeder`-Profile §3.15 |
+| `15-teststrategie-qualitaet-paritaet.md` | nutzt | `ParitySeedLoader`, UUIDv5-Namensraum, `FunkRespawner`, `BaseSeeds.ApplyAsync`, Testprojekte | **R-D15-04**: `FloatField`-Liste §4.4; **TablesToIgnore**: §4.6 (ohne `event_types`, dafür `instance_configurations`, `recurring_job_states`); Testinventar §7.2; `VolumeSeeder`-Profile §3.15 |
 | `16-erweiterungspunkte-bezahl-features.md` | nutzt | §3.2.6 Feature-Kataloge, §3.4.2 Integrationstabellen, §4.2 Backend-Spuren, §5.1/§5.3/§5.4/§5.13 Skizzen, D16-ADR-06 | Rückmeldung: **(1)** `external_links` entsteht in I2 (FK auf `work_items`), nicht I0 (E-13); **(2)** Tabellennamen `views` statt `issue_views`, `work_item_labels` statt `issue_labels` (§4.5); **(3)** reservierte Tabellennamen §6.2 inkl. `search_embeddings` für G1 |
 | `17-abgleich-dokumentuebergreifend.md` | bindend | ABG-011 (Lieferungen von 03), ABG-053 (Outbox-Spalten), Z-12 (funktionale Fehler korrigieren), Z-10 (nur Chromium – ohne Bezug); Teil 2: ABG-101 … ABG-149 (Protokoll am Dokumentende), BR-01 … BR-14 | ABG-011: `FloatField`-Liste (§4.4) und Referenztabellen (§4.6) geliefert; ABG-053: Spalten übernommen (§3.4.18.6) |
 | `migration/plan/01-roadmap-ce.md`, `_data/wp-ce.json` (noch nicht vorhanden) | liefert an | – | Migrationen/Tabellen je Inkrement (§1.4) als Bestandteil der Arbeitspakete |
@@ -4285,7 +4285,7 @@ Alle Integrationstests laufen gegen PostgreSQL 17 mit `pgvector`-Image (Testcont
 - `PgvectorSmokeTests` (S0) muss die EF-10-Tauglichkeit von `Pgvector.EntityFrameworkCore` 0.3.0 praktisch belegen (R-D03-01).
 - Scope-FK-Spike (R-D03-02, O-D03-05) steht aus.
 - Lizenzklärung der gebündelten Demo-Seed-Bilder (R-D03-07, O-D03-04) – zusätzlich prüfen, ob `media.docs.plane.so`-Bilder Plane-Branding zeigen (ADR-009B → Ersatzbilder).
-- `PlaneRespawner` muss nach jedem Reset `BaseSeeds` erneut anwenden (System-Bot in `users`); D15 §3.3.2 nennt das nicht ausdrücklich.
+- `FunkRespawner` muss nach jedem Reset `BaseSeeds` erneut anwenden (System-Bot in `users`); D15 §3.3.2 nennt das nicht ausdrücklich.
 - `JsonNodeComparer` bildet den Hash über die serialisierte Form (schlüsselreihenfolgeabhängig); ob `JsonNode.DeepEquals` Objekte reihenfolgeunabhängig vergleicht, ist im I0-Spike per Test festzuhalten – für Change-Tracking unkritisch (höchstens ein überflüssiges `UPDATE`), als Dictionary-Schlüssel ungeeignet.
 
 ---
@@ -4297,14 +4297,14 @@ Umgesetzt am 23.10.2026 nach `17-abgleich-dokumentuebergreifend.md` Teil 2 / `_d
 | ABG-ID | Umgesetzt in | Kern der Änderung |
 |---|---|---|
 | ABG-101 umgesetzt | §3.4.18.6, §9 (Zeile 06), RV-01 | Code-Definitionen in `recurring_job_states` schreibt nur der Scheduler-Leader nach jedem Lock-Erwerb (06 §3.6 Nr. 1); Messaging-Tabellen verbindlich nach ABG-101 |
-| ABG-102 umgesetzt | D03-ADR-17, §3.4.5.14 (Hinweise), §3.4.10.5 (Hinweise), §3.4.11.1 (Hinweise `file_assets`), §3.5.5, §3.9.2, §8.2 O-D03-02, §9 (Zeilen 00, 06) | Objektlöschung in Schritt 1 von `maintenance.hard_delete` per `IObjectStorage.DeleteManyAsync`, kein `FileAssetPurgeConsumer`; Schlüssel `Plane:Retention:PageVersionsKeep` (Cleanup nach `ROW_NUMBER()` über `created_at DESC`), `Plane:Retention:WorkItemVersionsKeep` (inline, kein Cron), volle Schlüssel `Plane:Worker:Outbox:RetentionHours`, `Plane:Worker:InboxRetentionDays`, `Plane:Worker:DeadLetterRetentionDays`; keine Instanz-Einstellungen. Folgeangleichung: Beschreibungsversionen auf den bestehenden 02-Schlüssel `Plane:Retention:DescriptionVersionsKeep` |
-| ABG-103 umgesetzt (Nachzug) | §4.5 (Alias `export_histories`), §9 (Zeile 06) | Rückmeldungen (1) `exports` und (2) `PlaneLocks.Migrator` als erledigt; Alias-Quelle „D06 Vorfassung“ |
-| ABG-104 umgesetzt | §3.14.1 (`InstanceBootstrapper`, `SystemBotSeed`), §8.2 O-D03-03 | Default-`instance_name` „funk.“ aus `Plane:Instance:DefaultName`, vom Admin änderbar; System-Bot `display_name = first_name = "funk."`; O-D03-03 „bestätigt durch Auftraggeber 23.10.2026 (ABG-104)“ |
+| ABG-102 umgesetzt | D03-ADR-17, §3.4.5.14 (Hinweise), §3.4.10.5 (Hinweise), §3.4.11.1 (Hinweise `file_assets`), §3.5.5, §3.9.2, §8.2 O-D03-02, §9 (Zeilen 00, 06) | Objektlöschung in Schritt 1 von `maintenance.hard_delete` per `IObjectStorage.DeleteManyAsync`, kein `FileAssetPurgeConsumer`; Schlüssel `Funk:Retention:PageVersionsKeep` (Cleanup nach `ROW_NUMBER()` über `created_at DESC`), `Funk:Retention:WorkItemVersionsKeep` (inline, kein Cron), volle Schlüssel `Funk:Worker:Outbox:RetentionHours`, `Funk:Worker:InboxRetentionDays`, `Funk:Worker:DeadLetterRetentionDays`; keine Instanz-Einstellungen. Folgeangleichung: Beschreibungsversionen auf den bestehenden 02-Schlüssel `Funk:Retention:DescriptionVersionsKeep` |
+| ABG-103 umgesetzt (Nachzug) | §4.5 (Alias `export_histories`), §9 (Zeile 06) | Rückmeldungen (1) `exports` und (2) `FunkLocks.Migrator` als erledigt; Alias-Quelle „D06 Vorfassung“ |
+| ABG-104 umgesetzt | §3.14.1 (`InstanceBootstrapper`, `SystemBotSeed`), §8.2 O-D03-03 | Default-`instance_name` „funk.“ aus `Funk:Instance:DefaultName`, vom Admin änderbar; System-Bot `display_name = first_name = "funk."`; O-D03-03 „bestätigt durch Auftraggeber 23.10.2026 (ABG-104)“ |
 | ABG-108 umgesetzt | §3.4.10.5 (Hinweise) | Komponentenname `PageVersionRecorder` bestätigt; Schlüssel nach ABG-102 |
 | ABG-109 umgesetzt | §3.9.3 (Zeile „Laden“) | fehlendes `description_binary` wird unter Zeilensperre erzeugt und sofort gespeichert (07 §3.6.2) |
-| ABG-110 umgesetzt | D03-ADR-17, §3.4.5.1 und Kommentar-Tabelle (Spalten `*_stripped`), §3.9.1 Regel 1, §4.2 (Mapping inkl. Q14), §5.4 (Skelett `WorkItem.SetDescription`) | alle Vorkommen `HtmlText.StripTags` → `HtmlTextExtractor.Strip` (`Plane.Documents.Text`) |
+| ABG-110 umgesetzt | D03-ADR-17, §3.4.5.1 und Kommentar-Tabelle (Spalten `*_stripped`), §3.9.1 Regel 1, §4.2 (Mapping inkl. Q14), §5.4 (Skelett `WorkItem.SetDescription`) | alle Vorkommen `HtmlText.StripTags` → `HtmlTextExtractor.Strip` (`Funk.Documents.Text`) |
 | ABG-122 umgesetzt (Nachzug) | §9 (Zeile 11) | Rückmeldungen (2) und (3) erledigt, (1) und (4) „entschieden ABG-122“ |
 | ABG-123 umgesetzt | §1.4 (Migrationsliste), §3.10.1 (Spalte „ab“) | Trigram-Indizes im Inkrement der ersten Nutzung: `workspaces.name`, `projects.name`/`identifier` I1; `users.*`, `work_items.name` I2; `cycles`/`modules`/`views` I3; `pages.name` I4; `stickies`, `search_documents.title` I5 – Anlage in der Eigentümer-Konfiguration (`HasTrigramIndex`) |
-| ABG-149 umgesetzt | §3.5.1 (Query-Filter), §3.13.1 (Migrations-Diagramm), §3.15 (`VolumeSeeder`), §4.8 (Management-Commands), §9 (Zeile 14) | Befehlsbeispiele `plane-cli` → `funk-cli`; Image `funk-migrator`, Helm-Chart `funk`; Release-Artefakt `artifacts/migrations/funk-<version>.sql` (Projekt `Plane.Cli` bleibt) |
+| ABG-149 umgesetzt | §3.5.1 (Query-Filter), §3.13.1 (Migrations-Diagramm), §3.15 (`VolumeSeeder`), §4.8 (Management-Commands), §9 (Zeile 14) | Befehlsbeispiele `plane-cli` → `funk-cli`; Image `funk-migrator`, Helm-Chart `funk`; Release-Artefakt `artifacts/migrations/funk-<version>.sql` (Projekt `Funk.Cli` bleibt) |
 
 **Branding-Durchgang (ADR-009B, BR-01 … BR-14):** Geprüft wurden alle Stellen, an denen dieses Dokument sichtbare Daten der Zielplattform festlegt (Instanzname, System- und Seed-Bot, Demo-Inhalte, Seed-Bilder, CLI-/Image-/Artefaktnamen): sie zeigen „funk.“ bzw. `funk-*` (`BRAND-DM-01…03`, ergänzt um den BR-06-Hinweis zu Seed-Bildern mit Plane-Logo, Z-114); unverändert bleiben nach BR-02 Verweise auf das Original (Modellnamen, `M/…`-Pfade, „Plane-Variante“ von `strip_tags`, Original-Defaults in Herkunftsangaben), interne Bezeichner (`Plane.*`, `Plane:`-Schlüssel, `plane_unaccent`, `plane_system_bot`, `bot_user_*`, Helm-Job-Name `plane-migrator-r…`) und gespeicherte Daten-Strings.
