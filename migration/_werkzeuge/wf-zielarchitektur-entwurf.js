@@ -106,6 +106,31 @@ Autor-Zusammenfassung: ${res ? res.summary : '(keine — Dokument ggf. selbst er
   return { docs: results.filter(Boolean).map((r) => ({ key: r.key, file: r.file, summary: r.author ? r.author.summary : null, decisions: r.author ? r.author.decisions : [], open: r.author ? r.author.open_questions : [], risks: r.author ? r.author.risks : [], remaining: r.review ? r.review.remaining_issues : [], conflicts: r.review ? r.review.cross_doc_conflicts : [] })) }
 }
 
+// ---------------------------------------------------------------- Stage: resume (nach Abbruch)
+// args.items = [{ key: 'D05', mode: 'complete' | 'review' | 'full' }]
+if (A.stage === 'resume') {
+  const STRUCT = '1. Ziel & Scope, 2. Entscheidungen, 3. Detaildesign, 4. Vollständige Mapping-Tabellen Original → Ziel, 5. Code-Skelette, 6. Erweiterungspunkte für Bezahl-Pakete, 7. Akzeptanzkriterien & Tests, 8. Risiken & offene Punkte, 9. Abhängigkeiten zu anderen Dokumenten (02–16)'
+  const review = (k, d, note) => agent(`${CTX}
+Adversarialer Review des Dokuments ${MIG}/${d.file} (Thema: ${d.topic}).
+Prüfe hart: (1) Vollständigkeit gegenüber den Quellen — jede relevante Entität/Endpunkt/Task/Komponente/CE-ID aus den einschlägigen ${MIG}/analysis/*.md und dem CE-Katalog ist abgebildet oder bewusst ausgeschlossen; (2) Konsistenz mit 00 und 01 (Libraries, Namen, Strukturen) und mit der Strategie (CE detailliert, Bezahl-Features nur Erweiterungspunkte); (3) technische Korrektheit und Machbarkeit (Library-APIs/Versionen/Lizenzen aktiv nachprüfen); (4) Umsetzbarkeit für einen Agenten (konkret genug, Akzeptanzkriterien messbar); (5) 1:1-UI-Relevanz, wo zutreffend; (6) Vollständigkeit der Gliederung (${STRUCT}). Korrigiere und ergänze DIREKT im Dokument. Hänge "## Review-Protokoll" an. Melde Konflikte mit anderen Dokumenten in cross_doc_conflicts. ${note || ''}`, { label: `review:${k}`, phase: 'Review', schema: REVIEW_SCHEMA })
+  const out = await pipeline(
+    A.items || [],
+    (it) => {
+      const d = DOCS[it.key]
+      if (it.mode === 'review') return Promise.resolve({ skipped: true })
+      if (it.mode === 'complete') return agent(`${CTX}
+Das Dokument ${MIG}/${d.file} (${it.key}; Thema: ${d.topic}) wurde durch einen Container-Neustart UNVOLLSTÄNDIG geschrieben. Soll-Gliederung: ${STRUCT}.
+AUFGABE: Lies das vorhandene Dokument (es ist groß — erst die Überschriften per grep, dann gezielt die letzten Abschnitte). Prüfe, ob der letzte vorhandene Abschnitt mitten im Satz/in einer Tabelle endet, und schließe ihn sauber ab. Schreibe dann ALLE fehlenden Abschnitte im gleichen Stil und gleicher Detailtiefe, konsistent zu den bereits getroffenen Entscheidungen im Dokument sowie zu 00 und 01. Verändere vorhandene Abschnitte nur, wo es für die Konsistenz nötig ist.`, { label: `vervollstaendigen:${it.key}`, phase: 'Fachdokumente', schema: DOC_SCHEMA })
+      return agent(`${CTX}
+DEIN DOKUMENT (${it.key}): ${MIG}/${d.file}
+THEMA: ${d.topic}
+Lies zuerst 00-grundsatzentscheidungen.md und 01-zielarchitektur-und-tech-stack.md (verbindlich), dann gezielt die relevanten Analyse- und Feature-Dokumente sowie die bereits vorhandenen Architektur-Dokumente 02, 05, 08, 09, 14, 15. Struktur: ${STRUCT}.`, { label: `doc:${it.key}`, phase: 'Fachdokumente', schema: DOC_SCHEMA })
+    },
+    (res, it) => review(it.key, DOCS[it.key], res && !res.skipped ? `Autor-Zusammenfassung: ${res.summary}` : '').then((r) => ({ key: it.key, file: DOCS[it.key].file, author: res && !res.skipped ? res : null, review: r })),
+  )
+  return { docs: out.filter(Boolean).map((r) => ({ key: r.key, file: r.file, summary: r.author ? r.author.summary : null, open: r.author ? r.author.open_questions : [], remaining: r.review ? r.review.remaining_issues : [], conflicts: r.review ? r.review.cross_doc_conflicts : [] })) }
+}
+
 // ---------------------------------------------------------------- Stage: plan
 if (A.stage === 'plan') {
   phase('CE-Plan')
