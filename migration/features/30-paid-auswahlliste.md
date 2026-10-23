@@ -1,6 +1,6 @@
 # Auswahlliste der Bezahl-Features
 
-Diese Liste dient der Entscheidung, **welche Bezahl-Features nach der Community Edition umgesetzt werden** und in welcher Reihenfolge. Sie fasst alle 246 Features aus [29-paid-feature-matrix.md](29-paid-feature-matrix.md) zu 71 Paketen zusammen. 20 Features entfallen nach ADR-001/ADR-004 (Lizenz, Billing, Hersteller-Betrieb) bzw. ADR-007 (GitHub/GitLab/Bitbucket, ersetzt durch Forgejo) (siehe Abschnitt „Entfällt“).
+Diese Liste dient der Entscheidung, **welche Bezahl-Features nach der Community Edition umgesetzt werden** und in welcher Reihenfolge. Sie fasst alle 246 Features aus [29-paid-feature-matrix.md](29-paid-feature-matrix.md) zu 68 Paketen zusammen. 28 Features entfallen nach ADR-001/ADR-004 (Lizenz, Billing, Hersteller-Betrieb) , ADR-007 (GitHub/GitLab/Bitbucket, ersetzt durch Forgejo) bzw. ADR-008 (SSO, LDAP, 2FA, Passkeys, Password Policy, Domains – übernimmt Keycloak) (siehe Abschnitt „Entfällt“).
 
 ## So wird die Liste benutzt
 
@@ -21,7 +21,7 @@ Diese Liste dient der Entscheidung, **welche Bezahl-Features nach der Community 
 | B Planung, Insights, Teams | 8 | 2 | 1 | 3 | 3 | 1 |
 | C Workflows, Automationen, Templates | 6 | 2 | 0 | 2 | 3 | 1 |
 | D Wissen: Pages & Wiki | 12 | 2 | 1 | 6 | 3 | 2 |
-| E Sicherheit & Administration | 8 | 3 | 0 | 5 | 2 | 1 |
+| E Sicherheit & Administration | 5 | 2 | 0 | 3 | 1 | 1 |
 | F Integrationen & Importer | 9 | 2 | 0 | 2 | 6 | 1 |
 | G Plane AI | 3 | 1 | 0 | 0 | 2 | 1 |
 | H Plattform, API & Betrieb | 8 | 2 | 0 | 3 | 4 | 1 |
@@ -480,42 +480,18 @@ _Hinweis:_ Kaum öffentlich spezifiziert.
 
 | ✓ | Prio | Paket | Aufwand | 🧱 | Plan im Original | Setzt voraus |
 |---|---|---|---|---|---|---|
-| [ ] | | **E1** SSO instanzweit (SAML, OIDC, God-Mode-Login per SSO) | M (5–15 PT) | 🧱 | Pro | – |
-| [ ] | | **E2** Workspace-Identity (verifizierte Domains, Workspace-SSO, Domain Security) | M (5–15 PT) |  | Pro, Business | E1 |
-| [ ] | | **E3** LDAP, IdP Group Sync, SCIM | L (15–40 PT) |  | Enterprise | E1, E5 |
-| [ ] | | **E4** 2FA, Passkeys, Password Policy | M (5–15 PT) | 🧱 | Pro | – |
+| [ ] | | **E3** IdP Group Sync aus Keycloak-Gruppen/-Rollen (→ Workspace-/Projektrollen), SCIM optional | M (5–15 PT) | 🧱 | Enterprise | E5 |
 | [ ] | | **E5** Rollenmodell (RBAC, Custom Roles, GAC) | XL (40–100 PT) | 🧱 | Business, Enterprise | – |
 | [ ] | | **E6** Admin Interface, Workspace Activity Logs, Audit Logs (API) | M (5–15 PT) |  | Business, Enterprise | Event/Outbox |
 | [ ] | | **E7** God-Mode-Erweiterungen (User Management, Session-Einstellungen, System Checks, Multi-Workspace-Management) | M (5–15 PT) |  | Commercial-Free, Enterprise | – |
 | [ ] | | **E8** PII-/Sensitive-Data-Scanner (Argus) | L (15–40 PT) |  | unklar | – |
 
-<details><summary><b>E1</b> – 2 Features</summary>
+<details><summary><b>E3</b> – 2 Features</summary>
 
-- [ ] `EE-P08-001` SAML-SSO instanzweit (God Mode, inkl. God-Mode-Login per SSO) — Plan: Pro · CE: Stub/UI-Hülle im CE · Konfidenz: hoch · Detail: migration/features/27-paid-sicherheit-admin-lizenz.md#P08-01; migration/features/22-paid-architektur-selfhosting-dienste.md#P03-F04; migration/features/20-paid-spuren-im-repo.md#PF-93
-- [ ] `EE-P08-002` OIDC-SSO instanzweit (God Mode) — Plan: Pro · CE: Stub/UI-Hülle im CE · Konfidenz: hoch · Detail: migration/features/27-paid-sicherheit-admin-lizenz.md#P08-02; migration/features/22-paid-architektur-selfhosting-dienste.md#P03-F05; migration/features/20-paid-spuren-im-repo.md#PF-93
+_Hinweis:_ LDAP, SAML/OIDC-SSO, 2FA, Passkeys, Password Policy und Domain-Regeln übernimmt Keycloak (ADR-008).
 
-</details>
-
-<details><summary><b>E2</b> – 2 Features</summary>
-
-- [ ] `EE-P08-003` Workspace-Identity: verifizierte Domains und Workspace-SSO (SAML oder OIDC) — Plan: Business · CE: Stub/UI-Hülle im CE · Konfidenz: mittel · Detail: migration/features/27-paid-sicherheit-admin-lizenz.md#P08-03; migration/features/22-paid-architektur-selfhosting-dienste.md#P03-F06; migration/features/20-paid-spuren-im-repo.md#PF-93
-- [ ] `EE-P08-010` Domain Security (erlaubte/gesperrte Anmelde-Domains) — Plan: Pro · CE: fehlt · Konfidenz: niedrig · Detail: migration/features/27-paid-sicherheit-admin-lizenz.md#P08-10; migration/features/20-paid-spuren-im-repo.md#PF-94; migration/features/22-paid-architektur-selfhosting-dienste.md#P03-F10
-
-</details>
-
-<details><summary><b>E3</b> – 3 Features</summary>
-
-- [ ] `EE-P08-004` LDAP-Authentifizierung [Matrix coming soon, ausgeliefert] — Plan: Enterprise · CE: Stub/UI-Hülle im CE · Konfidenz: hoch · Detail: migration/features/27-paid-sicherheit-admin-lizenz.md#P08-04; migration/features/22-paid-architektur-selfhosting-dienste.md#P03-F07; migration/features/20-paid-spuren-im-repo.md#PF-97
 - [ ] `EE-P08-005` IdP Group Sync (OIDC-Gruppen → Workspace-/Projektrollen) — Plan: Enterprise · CE: fehlt · Konfidenz: hoch · Detail: migration/features/27-paid-sicherheit-admin-lizenz.md#P08-05; migration/features/21-paid-api-referenz-developer-docs.md#F12; migration/features/22-paid-architektur-selfhosting-dienste.md#P03-F08; migration/features/20-paid-spuren-im-repo.md#PF-98
 - [ ] `EE-P08-006` SCIM-Provisioning — Plan: Enterprise · CE: fehlt · Konfidenz: niedrig · Detail: migration/features/27-paid-sicherheit-admin-lizenz.md#P08-06; migration/features/20-paid-spuren-im-repo.md#PF-98
-
-</details>
-
-<details><summary><b>E4</b> – 3 Features</summary>
-
-- [ ] `EE-P08-007` Zwei-Faktor-Authentifizierung — Plan: Pro · CE: fehlt · Konfidenz: niedrig · Detail: migration/features/27-paid-sicherheit-admin-lizenz.md#P08-07; migration/features/20-paid-spuren-im-repo.md#PF-95; migration/features/22-paid-architektur-selfhosting-dienste.md#P03-F10
-- [ ] `EE-P08-008` Passkeys — Plan: Pro · CE: fehlt · Konfidenz: niedrig · Detail: migration/features/27-paid-sicherheit-admin-lizenz.md#P08-08; migration/features/20-paid-spuren-im-repo.md#PF-95; migration/features/22-paid-architektur-selfhosting-dienste.md#P03-F10
-- [ ] `EE-P08-009` Password Policy (eigene Passwort-Richtlinien) — Plan: Pro · CE: teilweise im CE · Konfidenz: mittel · Detail: migration/features/27-paid-sicherheit-admin-lizenz.md#P08-09; migration/features/20-paid-spuren-im-repo.md#PF-96; migration/features/22-paid-architektur-selfhosting-dienste.md#P03-F10
 
 </details>
 
@@ -696,7 +672,7 @@ _Hinweis:_ Indexierungs-Pipeline in der CE vorsehen; lokaler Provider für Airga
 
 <details><summary><b>H1</b> – 4 Features</summary>
 
-_Hinweis:_ OAuth2-Autorisierungsserver von Anfang an einplanen.
+_Hinweis:_ Empfehlung: Keycloak als Autorisierungsserver (ADR-008) statt eigenem OAuth2-Server.
 
 - [ ] `EE-P09-044` OAuth-App-Plattform („Build your own app“, Consent, Bot-/User-Token, Scopes, Installationen) — Plan: unklar · CE: Stub/UI-Hülle im CE · Konfidenz: hoch · Detail: migration/features/28-paid-integrationen-importer-ai.md#P09-F47; migration/features/22-paid-architektur-selfhosting-dienste.md#P03-F25; migration/features/21-paid-api-referenz-developer-docs.md#F31; migration/features/20-paid-spuren-im-repo.md#PF-92
 - [ ] `EE-P09-045` App-Marketplace — Plan: unklar · CE: Stub/UI-Hülle im CE · Konfidenz: mittel · Detail: migration/features/28-paid-integrationen-importer-ai.md#P09-F48; migration/features/20-paid-spuren-im-repo.md#PF-92; migration/features/22-paid-architektur-selfhosting-dienste.md#P03-F40
@@ -766,15 +742,23 @@ _Hinweis:_ Eigene Produkte, nicht Teil von Web/Angular.
 
 </details>
 
-## Entfällt (ADR-001 / ADR-004 / ADR-007)
+## Entfällt (ADR-001 / ADR-004 / ADR-007 / ADR-008)
 
-Diese Einträge sind Lizenz-, Billing-, Kontingent- oder Hersteller-Betriebsmechanik bzw. Code-Hosting-Integrationen, die durch Forgejo (Paket F2) ersetzt werden.
+Diese Einträge sind Lizenz-, Billing-, Kontingent- oder Hersteller-Betriebsmechanik bzw. Funktionen, die durch Forgejo (Paket F2) oder Keycloak (ADR-008) ersetzt werden.
 
 | ID | Feature | Grund |
 |---|---|---|
 | `EE-P03-009` | Installationskanäle der Matrix: One-click Deployment, DigitalOcean-Marketplace-App, Heroku-App, AWS AMI [entfällt als Plan-/Billing-Mechanik] | ADR-004 (Vertriebskanäle) |
 | `EE-P03-010` | Private + managed deployments (vom Hersteller betriebene private Cloud-Instanz) [coming soon; entfällt als Plan-/Billing-Mechanik] | ADR-004 (Hersteller-Betrieb) |
 | `EE-P06-016` | Anzahl Automationen je Workspace (Limit) [entfällt als Plan-/Billing-Mechanik] | ADR-001 |
+| `EE-P08-001` | SAML-SSO instanzweit (God Mode, inkl. God-Mode-Login per SSO) | ADR-008 (Keycloak: Identity Brokering) |
+| `EE-P08-002` | OIDC-SSO instanzweit (God Mode) | ADR-008 (Keycloak: Identity Brokering) |
+| `EE-P08-003` | Workspace-Identity: verifizierte Domains und Workspace-SSO (SAML oder OIDC) | ADR-008 (Keycloak: Realms/Identity Provider/Domains) |
+| `EE-P08-004` | LDAP-Authentifizierung [Matrix coming soon, ausgeliefert] | ADR-008 (Keycloak: User Federation LDAP/AD) |
+| `EE-P08-007` | Zwei-Faktor-Authentifizierung | ADR-008 (Keycloak: OTP) |
+| `EE-P08-008` | Passkeys | ADR-008 (Keycloak: WebAuthn/Passkeys) |
+| `EE-P08-009` | Password Policy (eigene Passwort-Richtlinien) | ADR-008 (Keycloak: Password Policies) |
+| `EE-P08-010` | Domain Security (erlaubte/gesperrte Anmelde-Domains) | ADR-008 (Keycloak: Domain-/Registrierungsregeln) |
 | `EE-P08-014` | Guests-Kontingent (5 Gäste je bezahltem Mitglied) [entfällt als Plan-/Billing-Mechanik] | ADR-001 |
 | `EE-P08-018` | Workspace-Lizenz und Seite „Billing and plans“ (Sync plan, Delink, Trial, Upgrade-Flow) [entfällt als Plan-/Billing-Mechanik] | ADR-001 |
 | `EE-P08-019` | Enterprise-Grid-Instanzlizenz (God Mode → Billing) [entfällt als Plan-/Billing-Mechanik] | ADR-001 |
@@ -796,8 +780,8 @@ Diese Einträge sind Lizenz-, Billing-, Kontingent- oder Hersteller-Betriebsmech
 ## Prüfsumme
 
 - Features in der Matrix: 246
-- Zugeordnet zu Paketen: 226
-- Entfällt: 20
-- Pakete: 71, davon strukturrelevant: 18
+- Zugeordnet zu Paketen: 218
+- Entfällt: 28
+- Pakete: 68, davon strukturrelevant: 17
 
 _Erzeugt mit `migration/_werkzeuge/paid-auswahl/build.py`; das Skript prüft, dass jede EE-ID genau einmal vorkommt._

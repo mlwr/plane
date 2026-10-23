@@ -101,11 +101,8 @@ GROUPS = [
         ("D12", "Pages-Public-API", "M", False, "D1, D2", "", ["EE-P07-041"]),
     ]),
     ("E", "Sicherheit & Administration", [
-        ("E1", "SSO instanzweit (SAML, OIDC, God-Mode-Login per SSO)", "M", True, "–", "", ["EE-P08-001", "EE-P08-002"]),
-        ("E2", "Workspace-Identity (verifizierte Domains, Workspace-SSO, Domain Security)", "M", False, "E1", "",
-         ["EE-P08-003", "EE-P08-010"]),
-        ("E3", "LDAP, IdP Group Sync, SCIM", "L", False, "E1, E5", "", ["EE-P08-004", "EE-P08-005", "EE-P08-006"]),
-        ("E4", "2FA, Passkeys, Password Policy", "M", True, "–", "", ["EE-P08-007", "EE-P08-008", "EE-P08-009"]),
+        ("E3", "IdP Group Sync aus Keycloak-Gruppen/-Rollen (→ Workspace-/Projektrollen), SCIM optional", "M", True, "E5",
+         "LDAP, SAML/OIDC-SSO, 2FA, Passkeys, Password Policy und Domain-Regeln übernimmt Keycloak (ADR-008).", ["EE-P08-005", "EE-P08-006"]),
         ("E5", "Rollenmodell (RBAC, Custom Roles, GAC)", "XL", True, "–",
          "Berechtigungskatalog statt fester Rollenwerte bereits in der CE.", ["EE-P08-011", "EE-P08-012", "EE-P08-013"]),
         ("E6", "Admin Interface, Workspace Activity Logs, Audit Logs (API)", "M", False, "Event/Outbox", "",
@@ -141,7 +138,7 @@ GROUPS = [
     ]),
     ("H", "Plattform, API & Betrieb", [
         ("H1", "OAuth-App-Plattform (Apps, Consent, Scopes, Bot-User, App-Mentions, Marketplace, OAuth Bridge)", "L", True, "–",
-         "OAuth2-Autorisierungsserver von Anfang an einplanen.", ["EE-P09-044", "EE-P09-045", "EE-P09-046", "EE-P09-018"]),
+         "Empfehlung: Keycloak als Autorisierungsserver (ADR-008) statt eigenem OAuth2-Server.", ["EE-P09-044", "EE-P09-045", "EE-P09-046", "EE-P09-018"]),
         ("H2", "Agents-Plattform (Agent Runs, Activities, Signals)", "L", False, "H1", "", ["EE-P09-047"]),
         ("H3", "Public API v2 und API-Erweiterungen (Feature-APIs, Member entfernen, Views-API, Webhooks v2, Workspace-Tokens, GraphQL/Marketplace-Endpunkte)", "L", False, "–",
          "", ["EE-P02-002", "EE-P02-003", "EE-P02-004", "EE-P02-005", "EE-P02-006", "EE-P09-048", "EE-P09-049", "EE-P03-006"]),
@@ -155,7 +152,7 @@ GROUPS = [
     ]),
 ]
 
-# Entfällt nach ADR-001 (keine Plan-Stufen/Billing), ADR-004 (kein Hersteller-Betrieb) bzw. ADR-007 (nur Forgejo)
+# Entfällt nach ADR-001 (keine Plan-Stufen/Billing), ADR-004 (kein Hersteller-Betrieb) ADR-007 (nur Forgejo) bzw. ADR-008 (Login nur über Keycloak)
 DROPPED = {
     "EE-P08-014": "ADR-001", "EE-P08-018": "ADR-001", "EE-P08-019": "ADR-001", "EE-P08-020": "ADR-001",
     "EE-P08-021": "ADR-001", "EE-P08-022": "ADR-001", "EE-P08-023": "ADR-001/004", "EE-P08-024": "ADR-001",
@@ -165,6 +162,10 @@ DROPPED = {
     "EE-P09-004": "ADR-007 (ersetzt durch Forgejo, Paket F2)", "EE-P09-005": "ADR-007 (ersetzt durch Forgejo, Paket F2)",
     "EE-P09-006": "ADR-007 (ersetzt durch Forgejo, Paket F2)", "EE-P09-007": "ADR-007 (ersetzt durch Forgejo, Paket F2)",
     "EE-P09-008": "ADR-007 (ersetzt durch Forgejo, Paket F2)",
+    "EE-P08-001": "ADR-008 (Keycloak: Identity Brokering)", "EE-P08-002": "ADR-008 (Keycloak: Identity Brokering)",
+    "EE-P08-003": "ADR-008 (Keycloak: Realms/Identity Provider/Domains)", "EE-P08-004": "ADR-008 (Keycloak: User Federation LDAP/AD)",
+    "EE-P08-007": "ADR-008 (Keycloak: OTP)", "EE-P08-008": "ADR-008 (Keycloak: WebAuthn/Passkeys)",
+    "EE-P08-009": "ADR-008 (Keycloak: Password Policies)", "EE-P08-010": "ADR-008 (Keycloak: Domain-/Registrierungsregeln)",
 }
 
 
@@ -190,7 +191,7 @@ def main():
     w("")
     w("Diese Liste dient der Entscheidung, **welche Bezahl-Features nach der Community Edition umgesetzt werden** und in welcher Reihenfolge. "
       f"Sie fasst alle {len(feats)} Features aus [29-paid-feature-matrix.md](29-paid-feature-matrix.md) zu {n_pkg} Paketen zusammen. "
-      f"{len(DROPPED)} Features entfallen nach ADR-001/ADR-004 (Lizenz, Billing, Hersteller-Betrieb) bzw. ADR-007 (GitHub/GitLab/Bitbucket, ersetzt durch Forgejo) (siehe Abschnitt „Entfällt“).")
+      f"{len(DROPPED)} Features entfallen nach ADR-001/ADR-004 (Lizenz, Billing, Hersteller-Betrieb) , ADR-007 (GitHub/GitLab/Bitbucket, ersetzt durch Forgejo) bzw. ADR-008 (SSO, LDAP, 2FA, Passkeys, Password Policy, Domains – übernimmt Keycloak) (siehe Abschnitt „Entfällt“).")
     w("")
     w("## So wird die Liste benutzt")
     w("")
@@ -238,9 +239,9 @@ def main():
             w("</details>")
             w("")
 
-    w("## Entfällt (ADR-001 / ADR-004 / ADR-007)")
+    w("## Entfällt (ADR-001 / ADR-004 / ADR-007 / ADR-008)")
     w("")
-    w("Diese Einträge sind Lizenz-, Billing-, Kontingent- oder Hersteller-Betriebsmechanik bzw. Code-Hosting-Integrationen, die durch Forgejo (Paket F2) ersetzt werden.")
+    w("Diese Einträge sind Lizenz-, Billing-, Kontingent- oder Hersteller-Betriebsmechanik bzw. Funktionen, die durch Forgejo (Paket F2) oder Keycloak (ADR-008) ersetzt werden.")
     w("")
     w("| ID | Feature | Grund |")
     w("|---|---|---|")
