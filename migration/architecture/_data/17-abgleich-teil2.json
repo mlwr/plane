@@ -1,0 +1,672 @@
+[
+  {
+    "id": "ABG-101",
+    "decision": "Tabellenname **`recurring_job_states`** (Spalten exakt wie 06 §3.2: `name` PK, `source`, `cron_utc`, `job_type`, `queue`, `payload`, `enabled`, `last_fired_at`, `next_fire_at`, `updated_at`). `outbox_messages` hat **genau** die Spalten aus ABG-053 + `id`, `event_type`, `payload`, `occurred_at`, `traceparent`, `dispatched_at` – **ohne** `attempts`/`last_error` (der Dispatcher in 06 §3.3 liest/schreibt sie nicht; Fehler je Consumer stehen in `jobs.attempts`/`last_error`). `jobs` wie 06 §3.2 (Status 0/1/4, Erfolg = Zeile gelöscht, `ux_jobs_dedupe` nur für Status 0/1, `job_type` = stabiler `[JobType]`-Name). Die Code-Definitionen schreibt **nur der Leader** nach jedem Lock-Erwerb (06 §3.5 Nr. 1). Weckruf: `pg_notify` **in** der Transaktion, Zustellung beim Commit (06 §3.2 Regel 4; 03 ist bereits angeglichen, K06.4 erledigt).",
+    "targets": [
+      {
+        "doc": "06-hintergrundjobs-events-benachrichtigungen.md",
+        "change": "§3.2 DDL: `CREATE TABLE recurring_jobs` → `recurring_job_states`, Kommentar Z. 230–231 („Änderungsauftrag an 03 …“) streichen; `outbox_messages.attempts`/`last_error` (Z. 189–190) streichen; alle Vorkommen `recurring_jobs` (Z. 63, 88, 125, 390, 392, 407, 909, 1912, 2044) → `recurring_job_states`; K8 (Z. 2100) korrigieren; §9-Auftrag an 03 (Z. 2115) als erledigt markieren."
+      },
+      {
+        "doc": "03-datenmodell-efcore.md",
+        "change": "§3.4.18.6 Z. 2006: „schreibt jede Worker-Instanz beim Start“ → „schreibt nur der Scheduler-Leader nach jedem Lock-Erwerb (06 §3.5 Nr. 1)“; §9-Zeile 06 und RV-01 auf ABG-101 verweisen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-102",
+    "decision": "(1) Seitenversionen: Schlüssel **`Plane:Retention:PageVersionsKeep`** (`PlaneRetentionOptions.PageVersionsKeep` = 20, Eigentümer 02); keine Instanz-Einstellung `PAGE_VERSION_LIMIT`. Zwei Original-Regeln bleiben beide: `PageVersionRecorder` weich-löscht beim Schreiben die älteste nach `last_saved_at` (> 20, Original `page_version_task`), der Cron `maintenance.page_versions_cleanup` löscht hart nach `ROW_NUMBER() … ORDER BY created_at DESC > PageVersionsKeep` (Original `cleanup_task`). (2) Hard-Delete löscht Objekte gelöschter `file_assets` **im Job** `maintenance.hard_delete` per `IObjectStorage.DeleteManyAsync` (06 §3.16 Schritt 1), **kein** `FileAssetPurgeConsumer`. (3) Messaging-Fristen mit vollem Schlüssel: `Plane:Worker:Outbox:RetentionHours` (24), `Plane:Worker:InboxRetentionDays` (7), `Plane:Worker:DeadLetterRetentionDays` (30). (4) `work_item_versions` werden geschrieben (`WorkItemVersionRecorder`, 03 DEV-DM-06) und beim Schreiben im selben Command auf **`Plane:Retention:WorkItemVersionsKeep`** (= 20, neu in `PlaneRetentionOptions`) begrenzt; kein Cron. Der Backfill T25 entfällt weiterhin.",
+    "targets": [
+      {
+        "doc": "03-datenmodell-efcore.md",
+        "change": "§3.5.5 Z. 2147: „anschließend entfernt `FileAssetPurgeConsumer` …“ → „Schritt 1 des Jobs löscht die Objekte per `IObjectStorage.DeleteManyAsync` (06 §3.16)“; Z. 1626 entsprechend; Z. 2151: Schlüssel `Plane:Retention:PageVersionsKeep`, Kriterium „`ROW_NUMBER()` nach `created_at DESC` > 20“; Z. 1594: „Instanz-Einstellung“ → „`PlaneRetentionOptions.PageVersionsKeep`“; Z. 2153 und §3.9.2 Z. 2289: `Plane:Retention:WorkItemVersionsKeep`; Z. 2156–2158: volle Schlüssel `Plane:Worker:…`."
+      },
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "§3.15 `PlaneRetentionOptions` (Z. 934): `WorkItemVersionsKeep` = 20 ergänzen (Nachtrag 03, ABG-102)."
+      },
+      {
+        "doc": "06-hintergrundjobs-events-benachrichtigungen.md",
+        "change": "T25 (Z. 977) und CE-WI-042 (Z. 1345): „Tabelle bleibt leer“ → „Backfill entfällt; laufende Versionen schreibt `WorkItemVersionRecorder` mit Inline-Begrenzung `WorkItemVersionsKeep` (03 §3.5.5), kein Cron“; §4.2 Fußnote: kein Cron für `work_item_versions` (K03.4)."
+      }
+    ]
+  },
+  {
+    "id": "ABG-103",
+    "decision": "Erledigt: 06 nutzt `exports` und `PlaneLocks.Migrator = 7356001` (14 D14-ADR-16), `Scheduler = 7356002`, Erweiterungen nur aus `7356003…7356099`. Keine weitere Änderung an 06.",
+    "targets": [
+      {
+        "doc": "03-datenmodell-efcore.md",
+        "change": "§9 Zeile 06 (Z. 4209): Rückmeldungen (1) und (2) als „erledigt (ABG-103)“ markieren; Alias-Zeile Z. 3668: Quelle „D06 §3.15 (Z. 755, 786)“ → „D06 Vorfassung“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-104",
+    "decision": "**Default-`instance_name` = „funk.“** (Auftraggeber, 23.10.2026; ADR-009B), gesetzt vom `InstanceBootstrapper` aus `Plane:Instance:DefaultName`, vom Admin änderbar. System-Bot `plane_system_bot` (`bot_type = 'SYSTEM'`, `display_name = first_name = \"funk.\"`), Seed-Bot `bot_user_<workspace_id>` (`display_name = \"funk.\"`); `username`/E-Mail-Präfixe bleiben interne Bezeichner. O-D03-03 ist geschlossen.",
+    "targets": [
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "§3.15 Tabelle Schritt 6 (Z. 749): „(„Plane Community Edition“ → Produktname D03)“ → „Default „funk.“ aus `Plane:Instance:DefaultName` (03 §3.14.1, ABG-104, `BRAND-DM-01`)“."
+      },
+      {
+        "doc": "03-datenmodell-efcore.md",
+        "change": "O-D03-03 (Z. 4193): Vermerk „bestätigt durch Auftraggeber 23.10.2026 (ABG-104)“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-105",
+    "decision": "(1) `PlaneMailOptions.DefaultFrom` = **`funk. <noreply@<Host aus Plane:Urls:Web>>`**, neu `FooterLinks` (Liste `{Label, Url, Icon}`, Default leer); der Lesedefault von `EMAIL_FROM` ist dieser Wert. (2) **Logos** `logo-white.png`/`logo-dark.png` werden aus `assets/funk_logo.svg` in der Pixelgröße der Originale gerendert (`BRAND-MAIL-02`). (3) **Marketing-Bilder entfallen ersatzlos** (Auftraggeber, 23.10.2026): `invite-hero.png` (imagekit), alle `icon-*.png` aus `plane-marketing.s3…` und die Social-Icons (mailinblue); das jeweilige `<img>`-Element und eine nur dafür vorhandene Tabellenzelle werden entfernt, Text und Layout der übrigen Zellen bleiben (`BRAND-MAIL-05`, neu). Es werden **keine** Bilder aus Original-URLs übernommen; `MAIL/Assets/` enthält nur die zwei funk.-Logos (+ `SOURCES.md`). (4) G-MAIL vergleicht gegen Original-Renderings mit derselben Ersetzung (Logo getauscht, Marketing-Bilder entfernt). O-D06-05 und R-D06-10 sind geschlossen.",
+    "targets": [
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "§3.15 Z. 946: `DefaultFrom` = `funk. <noreply@<Host aus Plane:Urls:Web>>`, `FooterLinks` ergänzen; §4 Nr. 29 (Z. 1255): Zielwert „Lesedefault `funk. <noreply@…>` (ABG-105)“."
+      },
+      {
+        "doc": "06-hintergrundjobs-events-benachrichtigungen.md",
+        "change": "§3.13.2 Z. 682: Absatz „einmalig aus den Original-URLs übernommen: `invite-hero.png` …, `icon-{…}.png` …“ ersetzen durch „entfallen (ABG-105, `BRAND-MAIL-05`)“; Liste `BRAND-MAIL-*` um `BRAND-MAIL-05` (Marketing-Bilder entfernt) ergänzen; D06-ADR-14 Satz zu `plane-marketing.s3…`/`ik.imagekit.io` anpassen; R-D06-10 und O-D06-05 schließen; AK-D06-16: Referenz-Renderings mit entfernten Marketing-Bildern."
+      },
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "§4.7.2 Z. 1146 `EMAIL_FROM`: Laufzeit-Fallback `funk. <noreply@<Host aus WEB_URL>>` (ABG-105), Marker „⚠ D06“ entfernen."
+      },
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "G-MAIL-Beschreibung: Referenz-Renderings des Originals mit getauschtem Logo und entfernten Marketing-Bildern (`BRAND-MAIL-02/-05`)."
+      }
+    ]
+  },
+  {
+    "id": "ABG-106",
+    "decision": "(1) `RealtimeFanOutConsumer` (Modul `Plane.RealtimeEvents`, Consumer `realtime.fanout`) läuft auf Queue **`realtime` im Worker** (Worker-Katalog enthält `Notifications` für die Zähler-Query, 02 §3.1.3); generisch für alle katalogisierten Events, **kein** `LabelRealtimeConsumer`. (2) Einziger Zustellweg zum Hub: `IRealtimePublisher` ist in Api/Worker **`QueuedRealtimePublisher`** (Job `realtime.push` transaktional auf der **neuen Queue `live`**, `PlaneQueues.Live`), im Host `Plane.Realtime` **`HubRealtimePublisher`** (`IHubContext<LiveEventsHub>`). Nur `Plane.Realtime` (und `Plane.AllInOne`) registrieren SignalR und verarbeiten `live`: Host-Defaults `Plane:Worker:Queues` Realtime = `[\"live\"]`, Worker = `[\"*\"]` mit `ExcludeQueues = [\"live\"]`, AllInOne `[\"*\"]`. Ab 2 Realtime-Replikas verteilt die Valkey-Backplane. **Entfällt:** `HubContextRealtimePublisher`, `NotifyRealtimePublisher`, `LiveEventsNotifyListener`, Kanal `plane_live_events`. (3) Gruppen-Autorisierung wie 05 §3.11: `ws:` → `workspace.settings.read`, `project:` → `project.project.read`, `user:` nur eigene ID (06 ist angeglichen, K07.4 erledigt).",
+    "targets": [
+      {
+        "doc": "07-realtime-kollaboration-dokumente.md",
+        "change": "D07-ADR-27, §1.5/§3.1, §3.16.3, §3.16.4, Skelett Z. 1974–1986, Z. 95, 265–266, AK-07-37/-40: `RealtimeFanOutConsumer` im **Worker** auf Queue `realtime`; `realtime.push` auf Queue `live` (nur Realtime-Host/AllInOne); „Queue `realtime` nur im Realtime-Host“ ersetzen."
+      },
+      {
+        "doc": "06-hintergrundjobs-events-benachrichtigungen.md",
+        "change": "D06-ADR-12 (Z. 93), §3.1-Diagramm (Z. 143–146) und Tabelle (Z. 164), Z. 283, §3.5.4 Queue-Tabelle (Z. 341 ff., neue Zeile `live`: `realtime.push`, Host Realtime/AllInOne), §3.5.6 Host-Defaults (Realtime `[\"live\"]`, Worker `ExcludeQueues [\"live\"]`), §3.12 (Z. 640–641), Z. 878, 1920, 2047: Publisher `QueuedRealtimePublisher`/`HubRealtimePublisher`, `NotifyRealtimePublisher`/`LiveEventsNotifyListener`/`plane_live_events` streichen; `PlaneQueues.Live` in §5.1 (Z. 1446)."
+      },
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "§3.15 `PlaneWorkerOptions` (Z. 935): Host-Defaults und `Concurrency` um `live` (16) ergänzen, Hinweis „Transport nach 07 §3.16.4“ → „ABG-106“; §5.2.12 (Z. 2240–2244): Skelett `LabelRealtimeConsumer` durch Registrierung der `plane.label.*`-Einträge im `RealtimeFanOutMap` ersetzen."
+      },
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "§6.1 Host-Defaults/Worker-Pools: Realtime-Replika verarbeitet Queue `live`; Worker schließt `live` aus; Compose/Helm-Umgebungsvariablen entsprechend."
+      },
+      {
+        "doc": "16-erweiterungspunkte-bezahl-features.md",
+        "change": "§3.2.5: `live` als CE-Queue (nicht reservierbar) aufnehmen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-107",
+    "decision": "Token-Mismatch in der Auth-Nachricht → **nur** `PermissionDenied(\"permission-denied\")`, der Server schließt nicht (der Provider trennt selbst). Rechteentzug während der Sitzung (Signal `access`/`member_removed`) → `PermissionDenied`, **danach** Close 4403; `read-write` → `readonly` → 4205. Dokumentrecht prüft `ICollaborationDocumentType.AuthorizeAsync` je Verbindung (nicht `LoadAsync`). WebSocket-Upgrade ohne Session-Cookie → **403** (05 AK-20; 07 bereits angeglichen, K07.2 nur zur Kenntnis).",
+    "targets": [
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "§3.11 Z. 520: „Abweichung → `PermissionDenied` (Close-Code 4403)“ → „Abweichung → `PermissionDenied` (ohne Close; Rechteentzug in der Sitzung: `PermissionDenied` + 4403, 07 D07-ADR-05)“; Z. 521: „`IPageDocumentStore.LoadAsync` prüft“ → „`ICollaborationDocumentType.AuthorizeAsync` prüft je Verbindung“; Neuprüfung bei `access`/`member_removed` (4205/4403) ergänzen (07 §9.2 Z. 2290)."
+      }
+    ]
+  },
+  {
+    "id": "ABG-108",
+    "decision": "(1) `page_logs` werden **synchron** in derselben Transaktion von **`PageReferenceIndexer`** (`Plane.Pages/Application/Services/`) abgeglichen – an allen Original-Auslösepunkten: `CreatePageCommand` (mit `description_html`), `UpdatePageCommand` (PATCH mit `description_html`), `PageDocumentStore.SaveFromRestAsync` (Beschreibungs-PATCH), `PageDocumentStore.SaveAsync` (Live) und `DuplicatePageCommand`. **Kein** Consumer `pages.page_log_sync`/`PageLogSyncConsumer`. (2) Versionen: **`PageVersionRecorder`** (synchron, D07-ADR-22). (3) Objektkopie beim Duplizieren: Job **`pages.copy_duplicated_assets`** (`CopyDuplicatedAssetsJob`, Queue `default`) kopiert nur Objekte und setzt `is_uploaded`; `src`-Umschreiben, Binary und HTML/JSON erzeugt `DuplicatePageCommand` synchron (D07-ADR-24). (4) Events: Create/Duplicate schreiben `plane.page.created.v1`, spätere Inhaltsänderungen `plane.page.description_updated.v1`; Consumer, die Inhalt brauchen (Suche), abonnieren beide (ABG-124) – damit ist K06.7 beantwortet.",
+    "targets": [
+      {
+        "doc": "06-hintergrundjobs-events-benachrichtigungen.md",
+        "change": "D06-ADR-02 (Z. 83): Satz zu `PageLogSyncConsumer` → „PageLog synchron über `PageReferenceIndexer` (07 D07-ADR-23, ABG-108)“; Consumer-Zeile `pages.page_log_sync` (Z. 530) und Event-Katalog/JSON-Eintrag streichen; §3.9.5 Z. 576–578: `PageVersionTracker` → `PageVersionRecorder`, Absatz „Nicht synchron: T30 …“ → „T30 synchron (`PageReferenceIndexer`)“; T30/T31 (Z. 982–983), Z. 1349, 2047, K6 (Z. 2098), §9 Z. 2116 angleichen."
+      },
+      {
+        "doc": "07-realtime-kollaboration-dokumente.md",
+        "change": "Z. 815, 1353, 2266, 2293: Job `pages.copy_assets`/`CopyPageAssetsJob` → `pages.copy_duplicated_assets`/`CopyDuplicatedAssetsJob`; D07-ADR-23 und Mapping Z. 1352: Auslösepunkte um `CreatePageCommand` und `UpdatePageCommand` (PATCH mit `description_html`) ergänzen; Event-Regel (4) in §3.6 aufnehmen."
+      },
+      {
+        "doc": "03-datenmodell-efcore.md",
+        "change": "Z. 1594: Komponentenname `PageVersionRecorder` bestätigt; Schlüssel nach ABG-102."
+      }
+    ]
+  },
+  {
+    "id": "ABG-109",
+    "decision": "Fehlt `description_binary`, erzeugt `IPageDocumentStore.LoadAsync` den Zustand aus `description_html` + `name` **unter Zeilensperre** (`SELECT … FOR UPDATE`, erneute Leerprüfung) und **speichert** ihn sofort (wie Original `fetchDocument`). `pages.description_revision bigint NOT NULL DEFAULT 0` ist vorhanden (03 bereits angeglichen).",
+    "targets": [
+      {
+        "doc": "03-datenmodell-efcore.md",
+        "change": "§3.9.3 Zeile „Laden“: „und **nicht** sofort gespeichert“ → „unter Zeilensperre erzeugt und sofort gespeichert (07 §3.6.2, ABG-109)“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-110",
+    "decision": "Einzige Implementierung: **`Plane.Documents.Text.HtmlTextExtractor.Strip(html)`** (Port `utils/html_processor.py` `strip_tags`, Regeln aus 03 §3.9 Regel 1: `NULL` bei leerem HTML, `\"\"` bei `<p></p>`, Entities dekodiert; Q14 „eine Variante“ bleibt). `HtmlText.StripTags` entfällt als Name.",
+    "targets": [
+      {
+        "doc": "03-datenmodell-efcore.md",
+        "change": "Alle Vorkommen `HtmlText.StripTags` (Z. 946, 1061, 2282, 3558, 3587, 3884) → `HtmlTextExtractor.Strip`."
+      }
+    ]
+  },
+  {
+    "id": "ABG-111",
+    "decision": "Tests mit Original-`@hocuspocus/provider` 2.15.2 im Browser: `tests/Plane.Collaboration.Tests/Browser/ProviderConformanceTests` (P-01 … P-30), `TwoClientConvergenceTests`, `YjsDecodeInBrowserTests`; Lib0-/Codec-/Wire-Tests in `…/Protocol/`.",
+    "targets": [
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "§3.12.3/S1-Zeile (Z. 1135): „`Plane.Collaboration.Tests/Protocol/*` (Playwright .NET …)“ → „`…/Browser/ProviderConformanceTests` (Playwright .NET, P-01…P-30) und `…/Protocol/*` (lib0/Codec/Wire, AK-07-44)“; §3.6-Golden-Tabelle um G-MD/G-PDF-web (07 §9.2 Z. 2289)."
+      }
+    ]
+  },
+  {
+    "id": "ABG-112",
+    "decision": "Das H6-Hub-Gerüst ist **kein CE-Feature**, sondern Teil des Walking Skeleton (I0, `RealtimeSmokeTests`); CE-Bezug erst ab I5 über CE-NOTIF-001. In Tabellen steht statt einer CE-ID „– (Walking Skeleton I0)“.",
+    "targets": [
+      {
+        "doc": "16-erweiterungspunkte-bezahl-features.md",
+        "change": "§4 Z. 790: „CE-OPS-021 (Hub-Gerüst); erste Nutzung CE-NOTIF-001“ → „– (Walking Skeleton I0); erste Nutzung CE-NOTIF-001 (I5)“."
+      },
+      {
+        "doc": "07-realtime-kollaboration-dokumente.md",
+        "change": "§3.2 Z. 298 Spalte CE: `CE-OPS-021` → „– (Walking Skeleton)“; Z. 1440 als Hinweiszeile beibehalten oder streichen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-113",
+    "decision": "Der Angular-Client liest den Scope aus **`provider.authorizedScope`** (`\"read-write\"` \\| `\"readonly\"` \\| `undefined`), gesetzt in `authenticatedHandler(scope)` vor dem Ereignis `authenticated` (ohne Parameter). Das ⚠ entfällt; O-D10-05 behält nur die DOM-Punkte.",
+    "targets": [
+      {
+        "doc": "10-editor-angular.md",
+        "change": "Z. 529: „aus der `Authenticated`-Nachricht … ⚠ in S1 bestätigen“ → „aus `provider.authorizedScope` (gesetzt in `authenticatedHandler`, 07 §3.3.6)“; O-D10-05: Teil „Feld/Ereignis für `authorizedScope`“ streichen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-114",
+    "decision": "**Rich-Text-Editor mit allen NodeViews/Menüs und Document-Editor (read-only) gehören zu I2** (Work-Item-Beschreibung, Modal, Peek, Beschreibungs-Versionen); I4 bringt Kollaboration, Titel-Editor und Page-Hüllen. Spike **S5 muss vor I2 vollständig grün sein**; nur das Kriterium „NodeView-Rendering stabil mit Yjs“ darf bis vor I4 nachgeliefert werden. Editor-Specs `web/editor/editor-{menus,blocks,config}.spec.ts` laufen ab I2 im Work-Item-Kontext; die Page-Varianten derselben Fälle ab I4.",
+    "targets": [
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "§1.3 Z. 72: „Editor-Kern + Lite-Editor“ → „Editor-Kern, Lite-, Rich- und Document-Editor (read-only) mit allen NodeViews (10 D10-ADR-15)“; Z. 74: Rich/Document aus I4 streichen, „Kollaboration, Titel-Editor, Page-Hüllen“; S5 als Gate vor I2 (Restkriterium Yjs vor I4); ADR-042 Inkrement-Spalte entsprechend."
+      },
+      {
+        "doc": "08-frontend-angular-architektur.md",
+        "change": "§9 Z. 2214: „Lite-Editor (I2) und Rich/Document-Editor (I4)“ → „Lite-, Rich- und Document-Editor read-only (I2), kollaborativer Page-Editor (I4)“."
+      },
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "Anhang B.8 Z. 703–706: Inkrement der Editor-Specs I4 → I2 (Page-Fälle I4); Anhang C: CE-PAGE-021…040 (ohne -013…-020) Inkrement I2 wie 10 §1.3."
+      }
+    ]
+  },
+  {
+    "id": "ABG-115",
+    "decision": "Web und Space importieren `FE/libs/shared/editor/styles/tiptap-core.css` als **letzten** Import von `styles.css`, **außerhalb jeder `@layer`**; Admin importiert keine Editor-Styles. `injectCSS: false` (D10-ADR-13).",
+    "targets": [
+      {
+        "doc": "09-ui-paritaet-designsystem.md",
+        "change": "§3.2.2 Zeilen web (Z. 226) und space (Z. 228): am Ende „→ `FE/libs/shared/editor/styles/tiptap-core.css` (letzter Import, ungeschichtet, 10 D10-ADR-13)“; §5.1-Snippet (Z. 1250 ff.) um die Zeile ergänzen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-116",
+    "decision": "`@plane/propel/icons` und `@plane/blocks/icons` sind **datenreine** Einstiege (nur `PlIconDef`-Konstanten und Typen, kein `@angular/*`-Import; ESLint-Pfadregel). Die Render-Komponente `svg[plSvgIcon]` liegt in `PRP/components/svg-icon/` (Einstieg `@plane/propel/components/svg-icon`). `no-component-styles` und `ViewEncapsulation.None`-Pflicht gelten zusätzlich für `libs/shared/editor/**` und `libs/space/editor/**` (sowie `libs/web/core/editor/**`, bereits über `libs/web/**`).",
+    "targets": [
+      {
+        "doc": "09-ui-paritaet-designsystem.md",
+        "change": "§3.1 Z. 188: `svg-icon.component.ts` aus `icons/` nach `components/svg-icon/` verschieben, Kommentar „datenreiner Einstieg“; Skelett §5 (Z. 1569) Pfad anpassen; §3.3 Z. 312: Geltungsbereich von `no-component-styles` um `libs/shared/editor/**`, `libs/space/editor/**` erweitern; neue Lint-Regel „keine `@angular/*`-Importe in `PRP/icons/**`, `BLKT/icons/**`“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-117",
+    "decision": "W-031 (I2) erhält die Zustände `description-slash-menu`, `description-bubble-menu`, `description-block-menu`, `description-table-column-dropdown`, `description-image-toolbar`, `description-callout-picker`, `description-code-hover`, `description-mention-suggestion`, `description-emoji-suggestion` (Seed-Beschreibung „alle Nodes“); W-046 (I4) zusätzlich `table-column-dropdown`, `image-toolbar`, `callout-picker`, `code-hover`.",
+    "targets": [
+      {
+        "doc": "09-ui-paritaet-designsystem.md",
+        "change": "Katalogzeilen W-031 (Z. 1156) und W-046 (Z. 1171) um die genannten Zustände ergänzen; Seed-Bedarf „Beschreibung alle Nodes“ im UI-Seed-Umfang vermerken."
+      }
+    ]
+  },
+  {
+    "id": "ABG-118",
+    "decision": "Paket-Blöcke liegen unter `FE/libs/shared/editor/packages/<paket>/{core,ui}/src/` (Sheriff-Tags `editor:package-core`/`editor:package-ui`, Einbindung nur über `provide<Paket>Extensions()`); keine CE-Datei wird geändert.",
+    "targets": [
+      {
+        "doc": "16-erweiterungspunkte-bezahl-features.md",
+        "change": "D9-Zeile Z. 400: „`FE/libs/shared/editor` (`extensions/<block>/`)“ → „`FE/libs/shared/editor/packages/<paket>/{core,ui}` (10 §6.2 Regel 5)“; Status „`10-editor-angular.md` (noch nicht vorhanden)“ → vorhanden."
+      }
+    ]
+  },
+  {
+    "id": "ABG-119",
+    "decision": "Server-Goldens (Eigentümer 07): `tests/Plane.Documents.Tests/Golden/schema/{rich,document,title}.schema.json` mit `rich` = `CoreEditorExtensionsWithoutProps`, `document` = `+ DocumentEditorExtensionsWithoutProps`, `title` = `TitleExtensions`; **kein** `server.schema.json`. Browser-Goldens (Eigentümer 10): `…/schema/browser/{rich,lite,document,collaborative,title}.{schema,extensions,plugins}.json`. Die Mark-Rangfolge liest 07 aus `rich`/`document`.",
+    "targets": [
+      {
+        "doc": "10-editor-angular.md",
+        "change": "§9 Nr. 6 (Z. 2194) als erledigt (ABG-119) markieren; §3.2.3 Spalten „Variante `server`/`server-document`“ als Prüfer der D07-Goldens `rich`/`document` belassen."
+      },
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "G-SCHEMA (Z. 581): Varianten „Rich, Lite, Document, Title sowie Server-Schema“ → „Server: `rich`, `document`, `title` (07 §7.5); Browser: `browser/{rich,lite,document,collaborative,title}` (10 §3.2.3)“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-120",
+    "decision": "Maßgeblich sind die **Lockfile-Pins** aus 10 §3.2.1 (`ED/VERSIONS.json`): `@tiptap/core` 2.27.3, Extensions/`pm`/`starter-kit`/`suggestion` 2.26.1, transitive StarterKit-Teile und `@tiptap/html` 2.26.2, `@tiptap/extension-bubble-menu` 2.26.3; `emojibase-data` **15.3.2** (ABG-029/Z-04). `jsx-dom-cjs` entfällt (in 01 bereits nicht mehr enthalten).",
+    "targets": [
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "§8.2 Z. 1251: Versionsspalte → „exakt nach 10 §3.2.1 (core 2.27.3, übrige 2.26.1/2.26.2/2.26.3)“; Z. 1259: „Version, die frimousse 0.3 … ⚠“ → „15.3.2 (ABG-029, endgültig Z-04)“; doppelte Zeile `emojibase-data` (§8.2 Frontend-Liste) zusammenführen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-121",
+    "decision": "Vertrag SR-03 → 11 §3.5; Ort und Service `EditorMentionService` (`FE/libs/web/core/editor/editor-mention.service.ts`) → 11 §3.12.",
+    "targets": [
+      {
+        "doc": "10-editor-angular.md",
+        "change": "Z. 484: „Ort und Vertrag wie D11 §3.5“ → „Vertrag D11 §3.5, Ort/Service D11 §3.12“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-122",
+    "decision": "Form nach **03 §3.4.18.8**: PK `id uuid` (UUIDv7), `uq_search_documents_entity` UNIQUE (`entity_type`, `entity_id`) (Upsert-Ziel), `project_id` mit Scope-FK `(project_id, workspace_id) → projects` ON DELETE CASCADE, Spalte `source_updated_at` (statt `updated_at`), `entity_type varchar(32)`, Indexnamen wie 03 (`ix_search_documents_search_vector`, `…_title_trgm`, `…_workspace`, `…_project`, `…_facets`). Fachliche Spalten aus 11 bleiben (`identifier`, `content_hash`, `body` ≤ `Plane:Search:BodyMaxChars` = 100 000, Gewichtung A/B). `search_embeddings` (G1, reserviert): `search_document_id uuid NOT NULL REFERENCES search_documents(id) ON DELETE CASCADE`, Unique (`search_document_id`, `model_key`, `chunk_index`). Bereits erledigt: `entity_type`-Werte `work_item_comment`/`issue_view`, Quelltabelle `views`, `plane_unaccent` in `…_Platform_Extensions` (I0), Migration `…_Search_Documents`.",
+    "targets": [
+      {
+        "doc": "11-suche-und-ai-basis.md",
+        "change": "§3.10.1 DDL und Text (Z. 425–452): auf die 03-Form umstellen (PK `id`, Unique, Scope-FK, `source_updated_at`, Indexnamen); EF-Abbildung `HasKey(x => x.Id)` + `HasIndex(...).IsUnique()`, Upsert `ON CONFLICT (entity_type, entity_id)`; D11-ADR-07 (Z. 104) und §6.2 (Z. 1927–1941): FK `search_document_id → search_documents(id)`; R-01 auf ABG-122 verweisen."
+      },
+      {
+        "doc": "03-datenmodell-efcore.md",
+        "change": "§9 Zeile 11 (Z. 4214): Rückmeldungen (2) und (3) als erledigt, (1) und (4) als „entschieden ABG-122“ markieren."
+      },
+      {
+        "doc": "16-erweiterungspunkte-bezahl-features.md",
+        "change": "G1-Zeile/§3.3.7: `search_embeddings`-FK auf `search_documents(id)`."
+      }
+    ]
+  },
+  {
+    "id": "ABG-123",
+    "decision": "Index entsteht im Inkrement seiner ersten Nutzung (11 §3.9): `workspaces.name`, `projects.name`/`identifier` **I1**; `users.{display_name,first_name,last_name}`, `work_items.name` **I2**; `cycles.name`, `modules.name`, `views.name` **I3**; `pages.name` **I4**; `stickies.description_stripped`, `search_documents.title` **I5**. Anlage in der EF-Konfiguration des Eigentümer-Moduls (`TrigramIndexExtensions.HasTrigramIndex`).",
+    "targets": [
+      {
+        "doc": "03-datenmodell-efcore.md",
+        "change": "§3.10.1 Spalte „ab“: Werte nach ABG-123; Migrationsliste §1.3 entsprechend (Indizes in den Migrationen der Eigentümer-Module I1–I4)."
+      }
+    ]
+  },
+  {
+    "id": "ABG-124",
+    "decision": "Verbindlich ist die Abo-Liste 11 §3.10.3 (inkl. `plane.project.unarchived`, `plane.page.unarchived`, `plane.cycle.archived/unarchived`, `plane.module.archived/unarchived`, `plane.workspace.deleted`); 11 ist bereits angeglichen (K06.8 erledigt). `project_pages` ändert sich in der CE nur bei Anlage und Duplizieren (beide `plane.page.created.v1` mit `ProjectIds`); **jede künftige** Änderung der Projektverknüpfung (D1/D2) muss `plane.page.updated.v1` mit `ChangedFields ∋ \"projects\"` auslösen (Pflicht für Pakete). Der Nachtjob `indexing.reconcile` bleibt Sicherheitsnetz.",
+    "targets": [
+      {
+        "doc": "06-hintergrundjobs-events-benachrichtigungen.md",
+        "change": "§3.8 Zeile `search.indexing` (Z. 529): `plane.workspace.deleted.v1` ergänzen, Zusatz „Änderungsauftrag an `11`“ streichen; Event-Zeile Z. 443: CE-Konsument `SearchIndexingConsumer (I5)`; Event-Zeile `plane.page.updated.v1` (Z. 511): Regel „Änderung der Projektverknüpfung ⇒ `ChangedFields ∋ projects` (Pflicht für D1/D2)“; `_data/06-event-catalog.json` nachziehen."
+      },
+      {
+        "doc": "11-suche-und-ai-basis.md",
+        "change": "§3.10.3 „Voraussetzungen an andere Module“: Änderungsauftrag `project_pages` durch Regel aus ABG-124 ersetzen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-125",
+    "decision": "06 §3.18 führt die Jobs `indexing.index_entity`, `indexing.remove_entry`, `indexing.remove_scope`, `indexing.rebuild` (Queue `indexing`, Fachlogik und Dedupe-Schlüssel 11 §3.10.4) und den Cron `indexing.reconcile` (`23 3 * * *`, bereits in §4.2). `indexing` ist **CE-Queue** (`PlaneQueues.Indexing`, ab I5) und **keine** Reservierung; G1/B6 nutzen sie mit.",
+    "targets": [
+      {
+        "doc": "06-hintergrundjobs-events-benachrichtigungen.md",
+        "change": "§3.18: vier Zeilen `indexing.*` (Job-Klasse, Queue `indexing`, Policy, Dedupe nach 11 §3.10.4, ab I5); O-D06-01 schließen."
+      },
+      {
+        "doc": "16-erweiterungspunkte-bezahl-features.md",
+        "change": "§3.2.5 Z. 291 und `Reservations.Queues` (Z. 853): `indexing` entfernen; Hinweis „CE-Queue ab I5, von G1/B6 mitgenutzt“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-126",
+    "decision": "**Kein** Paket `…PostgreSQL.Trigrams` und **kein** `UseTrigrams()`: die Trigramm-Funktionen (`EF.Functions.TrigramsSimilarity`, `TrigramsWordSimilarity`, …) sind seit Npgsql EF 6 Teil von `Npgsql.EntityFrameworkCore.PostgreSQL` (10.x). Indizes per `HasMethod(\"gin\").HasOperators(\"gin_trgm_ops\")`. Fallback-Mapping `[DbFunction(\"similarity\")]` nur, falls S0 einen Namensunterschied zeigt.",
+    "targets": [
+      {
+        "doc": "11-suche-und-ai-basis.md",
+        "change": "§9.2 Z. 2104 streichen; R-D11-02 (Z. 2050) und Skelett Z. 1153: „Funktionen aus `Npgsql.EntityFrameworkCore.PostgreSQL` 10.x (kein Plugin, kein `UseTrigrams()`)“; R-15 korrigieren; ⚠-Punkt S0 auf „Signaturprüfung“ reduzieren."
+      },
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "§8.1: **kein** Eintrag `…Trigrams`; Hinweis bei `Npgsql.EntityFrameworkCore.PostgreSQL`: „inkl. Trigramm-Funktionen (`pg_trgm`)“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-127",
+    "decision": "Erledigt: `Plane:Ai:AllowedInternalHosts` füllt `SsrfPolicy(\"llm\").AllowedHosts`; für diese Hosts entfällt nur die IP-Blockprüfung (Pinning, Redirect- und Größenregeln bleiben). Keine weitere Änderung; O-D11-02 (Host aus `LLM_BASE_URL` automatisch freigeben?) bleibt offen (Z-111).",
+    "targets": [
+      {
+        "doc": "11-suche-und-ai-basis.md",
+        "change": "§9.2-Zeile zu 05 §3.17.2 als erledigt (ABG-127) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-128",
+    "decision": "Verbindlich ist die Signatur aus **01 §5.5**: `IQueryable<TEntity> Apply(IQueryable<TEntity> query, PlanePrincipal principal, ScopeRef scope)` in `Plane.Authorization.Contracts`. 05 ergänzt das Skelett und die Implementierung `IVisibilityFilter<SearchDocument>` (Teil von `SearchVisibilityFilter`; Prädikat je `entity_type` wie die Quell-Filter).",
+    "targets": [
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "§3.14: Skelett der Schnittstelle (Signatur 01 §5.5) und Zeile `IVisibilityFilter<SearchDocument>` in der Tabelle Z. 707 ff. ergänzen."
+      },
+      {
+        "doc": "11-suche-und-ai-basis.md",
+        "change": "Z. 398: „von diesem Dokument angenommen …“ → „01 §5.5“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-129",
+    "decision": "02 §3.8 ergänzt `PlaneErrors.DrfList(int status, params string[] messages)` (Körper = JSON-Array, z. B. 400 `[\"Null characters are not allowed.\"]`) und `DrfMessages.NullCharacters = \"Null characters are not allowed.\"`.",
+    "targets": [
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "§3.8 Tabelle der Fehlerformen um `DrfList` und Konstante `DrfMessages.NullCharacters` ergänzen."
+      },
+      {
+        "doc": "11-suche-und-ai-basis.md",
+        "change": "O-D11-08 als entschieden (ABG-129) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-130",
+    "decision": "Die Ausdrucks-Prädikate `IssueObjects`, `AllObjects` liegen in `Plane.Data/Querying/WorkItems/WorkItemBaseSetPredicates.cs` (`Expression<Func<WorkItem,bool>>`); `WorkItemBaseSets` (`Plane.WorkItems`) und `Plane.Search` nutzen dieselben Ausdrücke (lesend, R1). Andockstelle `IWorkItemBaseSetFilter` (E-04) wird in beiden angewandt.",
+    "targets": [
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "§3.11.4 Tabelle (Z. 672): Zeile `WorkItemBaseSetPredicates` (`Plane.Data/Querying/WorkItems/`) ergänzen; `WorkItemBaseSets` „nutzt `WorkItemBaseSetPredicates`“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-131",
+    "decision": "`Plane.Search`: ab **I2** (Picker/Mentions) / I5 (globale Suche, Index); Frontend-Libs `libs/web/power-k`, Services in `libs/web/workspace`/`libs/web/project`, Picker in `libs/web/work-items` – `libs/web/search` entfällt. `Plane.Assistant`: Image-Picker in `libs/web/core` (Sheriff verbietet `shared → web`).",
+    "targets": [
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "§5.4 Z. 851 und Z. 856 nach ABG-131."
+      }
+    ]
+  },
+  {
+    "id": "ABG-132",
+    "decision": "CE-SRCH-002 und CE-SRCH-003: Contract-Szenarien `search.entity-*` (Typen `user_mention`, `project`, `issue`) und SR-02 ab **I2**, übrige Entity-Typen ab I3/I4, Gast-Scope-Ledger A-051 vollständig ab I5.",
+    "targets": [
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "Anhang C Z. 2624–2625: Inkrement „I2 (Teil), I5 (vollständig)“; Spec `web/search/search.spec.ts`-Fälle für Picker/Mentions in I2."
+      }
+    ]
+  },
+  {
+    "id": "ABG-133",
+    "decision": "`GPT_ENGINE` **entfällt** (kein Leser im Original). `LLM_BASE_URL` ist neue Instanz-Variable (Kategorie AI, unverschlüsselt, Default `\"\"`, 11 D11-ADR-10). CLI: `plane-cli search reindex [--workspace] [--project] [--entity] [--wait]` und `plane-cli search status` (Namen nach ABG-149). Migrator-Schritt „Erstbefüllung Such-Index“: plant `indexing.rebuild`, wenn `search_documents` leer ist und Fachdaten existieren (idempotent).",
+    "targets": [
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "§4.7.2 Z. 1171: `GPT_ENGINE` → „entfällt (kein Leser, 02 §4.10)“; §4.7.8 Z. 1254 entsprechend; §4.7.9: Zeile `LLM_BASE_URL`; §3.22: Befehle `search reindex`/`search status`; §3.15: Schritt „Erstbefüllung Such-Index“ nach den Seeds."
+      }
+    ]
+  },
+  {
+    "id": "ABG-134",
+    "decision": "09 §4.12 erhält **U23**: Hinweis-Kasten „If you have a preferred AI models vendor, please get in touch with us“ mit Link `plane.so/contact` im God-Mode-AI-Formular entfällt (ADR-001, ADR-009B). Die Abweichungen erhalten die nächsten freien Nummern der UI-Abweichungsliste: `UI-DEV-D11-01` → **`UI-DEV-016`** (zusätzliches Feld „Base URL“), `UI-DEV-D11-02` → **`UI-DEV-017`** (Kontakt-Hinweis entfällt).",
+    "targets": [
+      {
+        "doc": "09-ui-paritaet-designsystem.md",
+        "change": "§4.12: Zeile U23; Abweichungsliste: `UI-DEV-016`, `UI-DEV-017` (Quelle 11 §3.17)."
+      },
+      {
+        "doc": "11-suche-und-ai-basis.md",
+        "change": "Z. 771, 853–854: `UI-DEV-D11-01/-02` → `UI-DEV-016/-017`."
+      }
+    ]
+  },
+  {
+    "id": "ABG-135",
+    "decision": "16 ergänzt die Reservierungen: V1-Route `workspaces/{slug}/work-items/advanced-search/` (B6), App-Route `workspaces/{slug}/rephrase-grammar/` (G3), Tabelle `search_embeddings` (G1, Form ABG-122), Index-Typ-Präfixe und Such-Profil-IDs ≥ 100 für Pakete, Provider-Keys aus 11 §6.4; einzige Quelle bleibt `reservations.yaml`.",
+    "targets": [
+      {
+        "doc": "16-erweiterungspunkte-bezahl-features.md",
+        "change": "§3.2.2 und Folgeabschnitte, `reservations.yaml`-Inhalt: Einträge nach ABG-135."
+      }
+    ]
+  },
+  {
+    "id": "ABG-136",
+    "decision": "Webhook-Zustellung: **6 Versuche** (1 + `max_retries` 5), Wartezeit je Wiederholung **zufällig 0…600 s** (Celery: `min(600·2ⁿ, retry_backoff_max = 600)` mit Full Jitter), wie 06 D06-ADR-06.",
+    "targets": [
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "ADR-020 (Z. 126): „5 Versuche, Backoff ab 600 s, Jitter“ → „6 Versuche (1 + 5), Wartezeit zufällig 0…600 s (Celery `retry_backoff=600`, `retry_backoff_max=600`, Jitter), 06 D06-ADR-06“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-137",
+    "decision": "`WebhookTriggerMap` = 24 Original-Stellen (W1…W22, WD1, WD2) **plus** die 6 Auslöser aus DT-WH-07: `issue`/`deleted`, `cycle`/`deleted`, `module`/`deleted`, `issue_comment`/`deleted` (je `data = {\"id\": …}`), `issue`/`updated` mit `activity.field = \"cycles\"` bzw. `\"modules\"`; Quellen `plane.work_item.deleted.v1`, `plane.cycle.deleted.v1`, `plane.module.deleted.v1`, `plane.work_item_comment.deleted.v1`, `plane.work_item.cycle_changed.v1`, `plane.work_item.module_changed.v1`. Der `webhooks.events`-Consumer abonniert diese Events zusätzlich.",
+    "targets": [
+      {
+        "doc": "06-hintergrundjobs-events-benachrichtigungen.md",
+        "change": "D06-ADR-15 (Z. 96): „genau die 24“ → „24 Original-Stellen + 6 Auslöser aus 04 DT-WH-07 (ABG-137)“, „`deleted` nur für Projekte“ entsprechend; §3.14.2: sechs Zeilen ergänzen; Consumer-Abos `webhooks.events` und Event-Katalog-Spalte „CE-Konsument“ der sechs Events; `WebhookTriggerCoverageTests`."
+      },
+      {
+        "doc": "04-api-design-und-endpunktkatalog.md",
+        "change": "O-D04-09 als entschieden (ABG-137, Z-12) markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-138",
+    "decision": "`CronRegistrationTests` prüfen: **11** übernommene Original-Einträge mit identischer UTC-Zeit, **B3 und B13 als entfallen** (`DroppedBeatEntries`), **7** neue Einträge (`identity.expired_sessions_cleanup`, `identity.idp_user_state_sync`, `messaging.outbox_cleanup`, `messaging.inbox_cleanup`, `messaging.dead_letter_cleanup`, `cycles.completion_detection`, `indexing.reconcile`).",
+    "targets": [
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "Z. 180, 313, 1153, 2020: „13 Beat-Einträge“ → „11 übernommen, B3/B13 entfallen, 7 neu (06 §4.2)“."
+      },
+      {
+        "doc": "06-hintergrundjobs-events-benachrichtigungen.md",
+        "change": "O-D06-02 schließen (ABG-138)."
+      }
+    ]
+  },
+  {
+    "id": "ABG-139",
+    "decision": "`TablesToIgnore` = `__EFMigrationsHistory`, `roles`, `work_item_relation_types`, `data_protection_keys`, `instances`, `instance_configurations`, `recurring_job_states` (Liste 03 §4.6, maschinenlesbar `_data/03-datenmodell.json` → `reference_tables[]`); `event_types` existiert nicht. `PlaneRespawner` ruft nach jedem Reset `BaseSeeds.ApplyAsync` (System-Bot, ABG-104).",
+    "targets": [
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "Z. 281 und Skelett Z. 1242: Liste nach ABG-139; Satz „nach jedem Reset `BaseSeeds.ApplyAsync`“ ergänzen; §9.3-Zeile 03 als erledigt markieren."
+      }
+    ]
+  },
+  {
+    "id": "ABG-140",
+    "decision": "Raw-SQL und Kommentare in 02 verwenden die Zielnamen aus 03 §4.5: `work_items`, `work_item_labels`, `work_item_assignees`, `cycle_work_items`, `module_work_items`, … und Spalte `work_item_id`; Original-Namen nur in Spalten „Original“.",
+    "targets": [
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "§3.11.5 (Z. 786 ff.) und Z. 1855: `issue_*`-Tabellen und `issue_id` im Ziel-SQL auf 03-Namen umstellen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-141",
+    "decision": "`integration_connections` ab **I0**, `external_links` ab **I2** (FK auf `work_items`/`work_item_comments`, die erst in I2 existieren). Die Fassade `IIntegrationLinkProvider` bleibt I2.",
+    "targets": [
+      {
+        "doc": "16-erweiterungspunkte-bezahl-features.md",
+        "change": "E-13 (Z. 329) Spalte ab: „I0 (`integration_connections`), I2 (`external_links`, Fassade)“; §3.4.2 Z. 482 und Z. 616 entsprechend."
+      }
+    ]
+  },
+  {
+    "id": "ABG-142",
+    "decision": "Entitäten liegen in `Plane.Data/Entities/Identity/` (`User`, `Profile`, `UserIdentity`, `UserSession`, `ApiToken`, `ApiActivityLog`) mit `[OwnedBy(\"Identity\")]`; `Plane.Identity/Domain/` enthält nur Domänenlogik ohne Entitäten.",
+    "targets": [
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "Z. 1553–1555 und §3.7.1: `ID/Domain/*.cs` → `Plane.Data/Entities/Identity/*.cs`."
+      }
+    ]
+  },
+  {
+    "id": "ABG-143",
+    "decision": "Default **`Plane:Security:MaskInstanceSecrets = true`**: `GET /api/instances/configurations/` liefert für verschlüsselte Keys `\"********\"`, ein `PATCH` mit `\"********\"` lässt den gespeicherten Wert unverändert; Klartext nur bei ausdrücklichem Betreiber-Opt-out `false`. `Cache-Control: no-store` und Log-Redaktion bleiben. Vorläufig bindend bis zur Bestätigung durch den Auftraggeber (Z-112).",
+    "targets": [
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "SEC-58 (Z. 1189): „bewusst beibehalten“ → „korrigiert: Default maskiert (`MaskInstanceSecrets = true`), Opt-out `false`“; R-09 und O-D05-03 auf ABG-143/Z-112 verweisen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-144",
+    "decision": "(1) Auth-Oberfläche hat **keinen** Oberflächen-Default; je Endpunkt gilt 05 §3.17.6: `authentication` für N-01, N-02, N-13; Sign-out unbegrenzt; N-06/N-08 `anon` (04 §3.12 setzt das per Zeile). (2) `integration_webhook` ab **I0** (ABG-051, Teil 1). (3) Pfad der Policy `asset_duplicate`: `POST /api/assets/v2/workspaces/{slug}/duplicate-assets/{asset_id}/` (EP-0430).",
+    "targets": [
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "§3.3.1 Z. 304: Spalte Rate-Limit der Auth-Oberfläche „`authentication`“ → „je Endpunkt (05 §3.17.6)“; §3.13 Z. 888: Pfad nach EP-0430."
+      },
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "§3.17.6 Z. 1043: Pfad nach EP-0430; Z. 1045: `integration_webhook` „W1“ → „I0 (ABG-051)“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-145",
+    "decision": "(1) Sonderroute `{W}/work-items/{project_identifier}-{issue_identifier}` **ohne** Constraint auf die Sequenz; der Handler parst (Split am letzten `-`) und antwortet bei nicht numerischem Wert 400 `{\"error\": \"Invalid issue identifier\"}`. (2) Nicht registrierte Routen: 405 nur, wenn der Pfad mit anderer Methode existiert, sonst 404 `{\"error\": \"Page not found.\"}` (D04-ADR-03). (3) `Cache-Control: private, max-age=12` für `GET /api/users/me/`, `…/me/settings/`, `…/me/profile/` und `GET /api/instances/` (04-Tabelle). (4) `GET /api/schema/` liefert wie drf-spectacular **YAML** (`application/vnd.oai.openapi`), `?format=json` JSON.",
+    "targets": [
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "§3.3.1 Regel 4: Constraint `work_item_identifier` streichen (Parsen im Handler, 04 §3.1.2); Regel 6: „antworten nach Regel 5 mit 405“ → „404 bzw. 405 nach D04-ADR-03“; Regel 8: Cache-Control-Zeilen ergänzen; §3.18 Z. 989: „(JSON)“ → „(YAML, `?format=json` JSON)“."
+      }
+    ]
+  },
+  {
+    "id": "ABG-146",
+    "decision": "Zeilen, die 04 nicht registriert (`GET /api/workspaces/`, Label-/Link-`PUT`, Legacy-File-Assets, Project-Boards, v1-`PUT` und Modul-Issue-`GET`, 8 v1-Estimates, Intake-`POST`, Favoriten-Listen, Attachment-Detail-`GET`), bleiben zur Nachverfolgung stehen, erhalten die Markierung **`registered: false`** mit DT-Verweis und werden vom `Plane.PermissionGen`-Generator und von den Matrix-Tests übersprungen (Erwartung 404/405 nach ABG-145).",
+    "targets": [
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "Anhang B: Spalte/Marker „nicht registriert (04 DT-…)“ für die genannten Zeilen; `_data/05-permission-matrix.json`: Feld `registered: false` + `deviation`; Generator-Regel §7 ergänzen."
+      }
+    ]
+  },
+  {
+    "id": "ABG-147",
+    "decision": "Roslyn-Analyzer-Projekt **`src/building-blocks/Plane.Analyzers`** (netstandard2.0, als Analyzer in alle `src/`-Projekte über `Directory.Build.props`). IDs: `PLANE0001` Rollenzahlen nur in `SystemRoles`/`Plane.Authorization/Visibility`, `PLANE0002` Audit-Felder nur durch `AuditInterceptor` (ersetzt `PL0002`), `PLANE0003` reserviert, `PLANE0004` keine String-Literale in `PlaneErrors.*`, `PLANE0005` Format `WithOriginalContract`, `PLANE0006` Route ohne `WithName`/`WithOriginalContract`. Neue IDs fortlaufend, Katalog in 02 §3.1.1.",
+    "targets": [
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "§5.1 Baum (Z. 613 ff.): `Plane.Analyzers/` unter `building-blocks/` ergänzen."
+      },
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "§3.1.1 Projektliste: Projekt `Plane.Analyzers` mit ID-Katalog nach ABG-147; Z. 1367 `PL0002` → `PLANE0002`."
+      }
+    ]
+  },
+  {
+    "id": "ABG-148",
+    "decision": "Alle Dokumente wenden die Regeln **BR-01 … BR-14** (§2.3) an: nach außen sichtbar ist nur „funk.“ (Texte, i18n, Seitentitel/Meta, Manifeste, Favicons/App-Icons, Logos, Illustrationen, Instanzname, Bot-Namen, Mails, Keycloak-Login-/Mail-Theme, God Mode, Space-Badge, Fehlerseiten, PDF-Metadaten, OpenAPI-Info, Doku, Images/Chart/CLI nach ABG-149); **nicht** geändert werden Verweise auf das Original, Pfade/Zeilen im Original-Repo, interne Bezeichner und gespeicherte Daten-Strings. Jede Ersetzung steht als `BRAND-<Bereich>-<nn>` im Abweichungsregister des Eigentümers; Paritätsvergleiche laufen gegen Referenzen mit vorab ersetztem Branding; Gate **G-BRAND** (15) sucht Restvorkommen.",
+    "targets": [
+      {
+        "doc": "01-zielarchitektur-und-tech-stack.md",
+        "change": "Z. 70, 534: „Keycloak (Plane-Theme)“ → „Keycloak-Login-Theme im Original-Layout mit funk.-Branding“; §5.1/§6.1: Werkzeug `frontend/tools/brand/` (BR-06, BR-10) und Gate G-BRAND aufnehmen."
+      },
+      {
+        "doc": "02-backend-solution-und-konventionen.md",
+        "change": "Brand-Konstante `Plane.BuildingBlocks/Branding/Brand.cs` (`ProductName = \"funk.\"`, BR-03) in §3 aufnehmen; Mail-Default nach ABG-105; OpenAPI-Titel nach 04 BRAND-API-01 (§3.18 Z. 989 „Titel „The Plane REST API““ → „The funk. REST API“)."
+      },
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "§3.15.2 Z. 744: `displayName`/`displayNameHtml` = `funk.`; §3.15.8 Z. 855: Beschreibung „funk. God Mode administrator“ (Rollenname bleibt); §3.16: Theme-Texte (`messages_*.properties`), Logo, Favicon und Mail-Theme-Absendername nach BR-09, „Powered by funk. Publish“ (Z. 907, 1274); „Plane-Theme“ → „Login-Theme `plane` (funk.-Branding)“ (Z. 510, 1231); Abweichungen `BRAND-KC-01…`."
+      },
+      {
+        "doc": "07-realtime-kollaboration-dokumente.md",
+        "change": "PDF-Export: Dokument-Metadaten (`Creator`/`Producer`, sichtbarer Kopf/Fuß) ohne „Plane“; Default-`author` leer bzw. Benutzername, `Producer` = „funk.“ (`BRAND-DOC-01`); §9-Zeile ADR-009B ergänzen."
+      },
+      {
+        "doc": "08-frontend-angular-architektur.md",
+        "change": "D08-ADR-24/Z. 371 und §5.1 (Z. 1224): `APP_TITLE` = „funk. | Simple, extensible, open-source project management tool.“, Space-Titel/-Beschreibung nach BR-05, `application-name`, `og:*`-Texte nach BR-05; hart codierte Literale nach BR-11 über `BRAND.productName` aus `@plane/constants`; i18n-Port mit Ersetzungsschritt BR-10 (Lib `shared/i18n`, Ausnahmetabellen je Locale); Abweichungen `BRAND-WEB-*`, `BRAND-I18N-*`."
+      },
+      {
+        "doc": "09-ui-paritaet-designsystem.md",
+        "change": "§4.11 Z. 1020: „Name „Plane“ bleibt (Produktname, ADR-005)“ → „`name`/`short_name` = „funk.“ (ADR-009B, `BRAND-UI-01`)“; Favicons, App-Icons, `logo-spinner-{light,dark}.gif`, Brand-Icons `PlaneLogo`/`PlaneLockup` (Daten aus `assets/funk_logo.svg`, Bezeichner bleiben), Space-Badge CE-SPACE-032 („Powered by funk. Publish“), Empty-State-Illustrationen mit Plane-Logo nach BR-06; Visual-Verfahren nach BR-13; Abweichungen `BRAND-UI-*`."
+      },
+      {
+        "doc": "10-editor-angular.md",
+        "change": "D10-ADR-12/§3.x: Bestätigung „keine sichtbaren Plane-Texte in `ED0/`“ bleibt; Editor-Platzhalter/Tooltips laufen über i18n (BR-10)."
+      },
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "§3.10 und D14-ADR-13 nach ABG-149; Doku-/Betriebstexte (README, `plane-cli`-Hilfetexte, Helm-`NOTES.txt`, Compose-Kommentare) sichtbar „funk.“; Abweichungen `BRAND-OPS-*`."
+      },
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "Neues Gate **G-BRAND** (BR-14) mit Allowlist; Visual-/DOM-Paritätsverfahren nach BR-13 (Referenzaufnahme mit Branding-Ersetzung); Z. 639, 1641, 2930 „Plane-Theme“ → „Login-Theme (funk.-Branding)“; Z. 963 Test-Bot „Original-Bot „Plane“, Ziel „funk.““."
+      },
+      {
+        "doc": "16-erweiterungspunkte-bezahl-features.md",
+        "change": "Paket-Texte und Paketnamen in UI-Andockstellen nach BR-04 („Plane-Apps“ → „funk.-Apps“); Upsell-/Plan-Bezeichnungen entfallen (ADR-001)."
+      }
+    ]
+  },
+  {
+    "id": "ABG-149",
+    "decision": "Veröffentlichte Artefakte heißen **`funk-<dienst>`**: Images `${PLANE_REGISTRY}/funk-gateway`, `funk-api`, `funk-worker`, `funk-realtime`, `funk-migrator`, `funk-aio`, `funk-cli`, `funk-keycloak` (jeweils `:${PLANE_VERSION}`; OCI-Label `org.opencontainers.image.title` = „funk. <Dienst>“); Helm-Chart `funk` (`deploy/helm/funk`); Betriebs-CLI-Befehl **`funk-cli`** (Projekt `src/tools/Plane.Cli` bleibt). **Bleiben** (interne Bezeichner/Konfigurationsschlüssel): ENV-Präfix `PLANE_*` (`PLANE_REGISTRY`, `PLANE_VERSION`, `PLANE_PUBLIC_URL`), `Plane__*`, Projekt-/Assembly-Namen, Keycloak-Realm-/Client-IDs `plane-*`, Theme-Ordner `themes/plane*`, Secret-/ConfigMap-Namen im Chart, OTel-`service.name`. ABG-002 gilt mit dem Image-Namen `funk-keycloak`.",
+    "targets": [
+      {
+        "doc": "14-infrastruktur-deployment-betrieb.md",
+        "change": "§3.10 Image-Tabelle, §3.11/§3.12 (Compose/Helm), D14-ADR-13 (Chart `funk`, Pfad `deploy/helm/funk`), §3.22 Überschrift und alle Befehlsbeispiele `plane-cli` → `funk-cli`; Abweichung `BRAND-OPS-01` (Images/Chart), `BRAND-OPS-02` (CLI)."
+      },
+      {
+        "doc": "05-auth-sicherheit-berechtigungen.md",
+        "change": "§3.15.1 Z. 734: `plane-keycloak` → `funk-keycloak`; `plane-cli`-Befehle → `funk-cli`."
+      },
+      {
+        "doc": "03-datenmodell-efcore.md",
+        "change": "Befehlsbeispiele `plane-cli` → `funk-cli`."
+      },
+      {
+        "doc": "04-api-design-und-endpunktkatalog.md",
+        "change": "Befehlsbeispiele `plane-cli` → `funk-cli`."
+      },
+      {
+        "doc": "06-hintergrundjobs-events-benachrichtigungen.md",
+        "change": "Befehlsbeispiele `plane-cli` (`jobs requeue`, `test-email`) → `funk-cli`."
+      },
+      {
+        "doc": "07-realtime-kollaboration-dokumente.md",
+        "change": "Befehlsbeispiele `plane-cli` → `funk-cli`."
+      },
+      {
+        "doc": "11-suche-und-ai-basis.md",
+        "change": "Befehlsbeispiele `plane-cli search …` → `funk-cli search …` (Projektdateien `Plane.Cli/Commands/*` bleiben)."
+      },
+      {
+        "doc": "15-teststrategie-qualitaet-paritaet.md",
+        "change": "Image-/CLI-Namen in Testumgebungen und CI-Beschreibungen nach ABG-149."
+      }
+    ]
+  }
+]

@@ -26,6 +26,7 @@
    - 3.13 Performance
    - 3.14 Fehlerbehandlung, Status- und Fehlerseiten
    - 3.15 Browser-Storage
+   - 3.16 Branding der Oberfläche (ADR-009B)
 4. [Vollständige Mapping-Tabellen Original → Ziel](#4-vollständige-mapping-tabellen-original--ziel)
 5. [Code-Skelette](#5-code-skelette)
 6. [Erweiterungspunkte für Bezahl-Pakete](#6-erweiterungspunkte-für-bezahl-pakete)
@@ -85,11 +86,11 @@ Inkremente gemäß 01 §1.3. Ein Baustein wird **im genannten Inkrement vollstä
 | DnD-Direktiven, `RenderIfVisible`, Sentinel-Pagination (§3.9) | | ◐ (Labels-DnD) | ● | | | | | |
 | List/Kanban/Spreadsheet/Calendar/Gantt (§3.9) | | | ● | | | | | |
 | Rich-Filter (`libs/shared/shared-state`), `FILTER_FIELDS`, `PROPERTY_RENDERERS`, `RELATION_TYPES` | | | ● | | | | | |
-| Lite-Editor (Kommentare/Beschreibung) | | | ● | | | | | |
+| Lite-, Rich- und Document-Editor (read-only) mit allen NodeViews/Menüs (Kommentare, Work-Item-Beschreibung in Detail/Modal/Peek, Beschreibungs-Versionen; 10 D10-ADR-15, 17 ABG-114) | | | ● | | | | | |
 | Charts (D3) | | | | ● | | | | |
 | Date-Picker (Propel `Calendar`) | | | ● | | | | | |
 | Emoji-/Icon-Picker, Emoji-Reaktionen | | ◐ (Logo-Picker Projekt) | ● | | | | | |
-| Pages, Rich/Document-Editor, Hocuspocus-Provider (§3.12) | | | | | ● | | | |
+| Pages: kollaborativer Page-Editor (Kollaboration, Titel-Editor, Page-Hüllen), Hocuspocus-Provider (§3.12) | | | | | ● | | | |
 | Power-K, Shortcuts (§3.10) | ◐ (`cmd+k` öffnet leere Palette nicht – erst I5) | | | | | ● | | |
 | Live-Events (SignalR, H6-Andockstelle) | ● (Service, ohne Handler) | | | | | ● (Notification-Zähler) | | |
 | Masonry (Stickies) | | | | | | ● | | |
@@ -128,7 +129,7 @@ Inkremente gemäß 01 §1.3. Ein Baustein wird **im genannten Inkrement vollstä
 | **D08-ADR-21** | Date-Picker | Eigene Komponente `pl-calendar` mit **Klassenvertrag** von Propel `calendar` (react-day-picker 10.0.1, `PROPEL/elements/calendar/variants.js`); Wochenstart Default Montag (Propel) bzw. Profil (`start_of_the_week`) wo das Original es übergibt; `date-fns` 4.1 | Angular-Material-Datepicker | DOM-Parität | I2 |
 | **D08-ADR-22** | Realtime-Events (H6) | `LiveEventsService` (`@microsoft/signalr` 10.x) in `libs/web/core/live-events`, verbindet nach Login lazy mit `/live/events/`, verteilt Events an Multi-Provider `LIVE_EVENT_HANDLERS`; CE nutzt ihn ab I5 für den Notification-Zähler | Polling | 01 ADR-023 / §1.4 H6 | I0 (Gerüst), I5 |
 | **D08-ADR-23** | Change Detection | Zoneless (Default v22), OnPush (Default v22); keine `zone.js`-Abhängigkeit. Drittbibliotheken mit DOM-Events (pragmatic-dnd, tippy, floating-ui) brauchen kein `runOutsideAngular`, Signalschreibungen lösen Rendering aus | Zone-basiert | Performance, v22-Defaults | I0 |
-| **D08-ADR-24** | Seitentitel & Meta | `PlaneTitleStrategy` setzt `route.title` **wörtlich** (ohne Suffix); `PageHeadDirective`/`PageTitleService` für Laufzeit-Titel (Ersatz `PageHead`); Route-`data.robots` → `Meta`-Service (`noindex, nofollow` bzw. `index, nofollow`) | Titel-Suffix-Strategie | Titel exakt wie Layout-`meta` des Originals | I0 |
+| **D08-ADR-24** | Seitentitel & Meta | `PlaneTitleStrategy` setzt `route.title` **wörtlich** (ohne Suffix); `PageHeadDirective`/`PageTitleService` für Laufzeit-Titel (Ersatz `PageHead`); Route-`data.robots` → `Meta`-Service (`noindex, nofollow` bzw. `index, nofollow`); Produktname in Titeln/Meta nach ADR-009B/BR-05 „funk.“ (Suffix „- Plane“ → „- funk.“, `APP_TITLE`, §3.3.6, §3.16, `BRAND-WEB-01`/`-02`) | Titel-Suffix-Strategie | Titel exakt wie Layout-`meta` des Originals, Produktname ersetzt (17 ABG-148) | I0 |
 | **D08-ADR-25** | Lazy Loading | Jede Page- und Layout-Komponente per `loadComponent`; Domänen-Libs werden dadurch automatisch in Chunks geteilt; keine `loadChildren`-Routendateien je Domäne (Routen bleiben in `app.routes.ts`, 1:1-Review gegen `core.ts`) | Routendatei je Domäne | Routenbaum an einer Stelle prüfbar | I0 |
 | **D08-ADR-26** | Space-SSR | Space wird **CSR** gebaut; Social-Meta für `/spaces/issues/:anchor` erzeugt das Gateway (01 ADR-033); im Client setzt ein Resolver nur `document.title`/`description` | Angular SSR (Node zur Laufzeit, verletzt ADR-002) | Kein Node | I6 |
 | **D08-ADR-27** | Tests Frontend | Vitest (Angular-22-Builder) + `@testing-library/angular` für Unit/Komponenten; Playwright für E2E, Visual Regression (Referenz-Screenshots des Originals) und DOM-Snapshots; Original-Unit-Tests aus `PKG/blocks` (21) und `PKG/services` (`url.test.ts`) werden als Spezifikation portiert | Jest, Cypress | 01 ADR-048 | I0 |
@@ -147,7 +148,8 @@ frontend/
 ├── eslint.config.js  .prettierrc  vitest.config.ts  playwright.config.ts   # vitest.config.ts: test.projects shared-node, shared-dom, web, admin, space, browser (ABG-007)
 ├── apps/
 │   ├── web/                               # base href "/"
-│   │   ├── public/                        # ← WEB/public (favicon/*, icons/*, site.webmanifest.json, manifest.json); sw.js/workbox entfallen (E19)
+│   │   ├── public/                        # ← WEB/public (favicon/*, icons/*, site.webmanifest.json, manifest.json); sw.js/workbox entfallen (E19);
+│   │   │                                  #   Icons/Manifeste mit funk.-Branding aus tools/brand/ (BR-05/BR-06, §3.16)
 │   │   └── src/
 │   │       ├── index.html                 # Inline-Theme-Script (§5.1), Portale #context-menu-portal, #editor-portal
 │   │       ├── main.ts                    # bootstrapApplication(AppComponent, appConfig)
@@ -184,6 +186,7 @@ frontend/
 └── tools/
     ├── propel-port/                       # port-icons.mjs (Icons → PlIconDef + svg[plSvgIcon]), vendor-css, port-variants, port-illustrations (09 D09-ADR-07; ersetzt icons-codegen/, ABG-027)
     ├── contract-check/  i18n-sync-check/  i18n-generate-types/
+    ├── brand/                             # ADR-009B (01 §6.1): render-brand-assets.mjs (BR-06), brand-i18n.mjs (BR-10), scan-literals.mjs, allowlist.json (G-BRAND, §3.16)
     ├── eslint-rules/                      # @plane/eslint-rules (§7.6)
     ├── store-parity-check/  route-contract-check/   # §7.3, §7.2
     ├── visual/                            # css-diff.ts, reference-css/, capture-reference.ts, report/ (09 §3.1, 01 §6.1)
@@ -368,8 +371,8 @@ Alle Redirects aus A08 §2.2.8 werden als `redirectTo`-**Funktionen** (`Redirect
 
 #### 3.3.6 Titel, Meta, Scroll
 
-- `title` je Layout-Route exakt wie Original-Layout-`meta` (z. B. `"Sign up - Plane"`, `"Create Workspace"`, `"Onboarding"`, `"Invitations"`, `"Workspace Invitations"`); Default-Titel `APP_TITLE = "Plane | Simple, extensible, open-source project management tool."` in `index.html`. Laufzeit-Titel (`${ws} - Home`, `${project} - Work items`, …) setzt die Page über `PageTitleService.set()` – Ersatz für `PageHead`.
-- `data: { robots }` für `LALL` (`noindex, nofollow`) und `LH` (`index, nofollow`); OG-/Twitter-Meta des Original-`root.tsx` stehen statisch in `index.html` (`og:url` → konfigurierbar über Gateway-Templating, Default entfernt wegen ADR-004).
+- `title` je Layout-Route exakt wie Original-Layout-`meta`, Produktname nach BR-05 ersetzt (z. B. Original `"Sign up - Plane"` → `"Sign up - funk."`, Admin `"Authentication Settings - Plane Web"` → `"Authentication Settings - funk. Web"` (BR-04), `"Create Workspace"`, `"Onboarding"`, `"Invitations"`, `"Workspace Invitations"`); Default-Titel web/admin `APP_TITLE = "funk. | Simple, extensible, open-source project management tool."` in `index.html` und als Fallback von `PageTitleService` (Original `core/page-title.tsx`); Space `"funk. Publish | Make your funk. boards public with one-click"` (`BRAND-WEB-01`/`-02`, §3.16). Titel mit Produktnamen werden aus `BRAND.productName` zusammengesetzt, nicht als Literal. Laufzeit-Titel (`${ws} - Home`, `${project} - Work items`, …) setzt die Page über `PageTitleService.set()` – Ersatz für `PageHead`.
+- `data: { robots }` für `LALL` (`noindex, nofollow`) und `LH` (`index, nofollow`); OG-/Twitter-Meta des Original-`root.tsx` stehen statisch in `index.html` (`og:url` → konfigurierbar über Gateway-Templating, Default entfernt wegen ADR-004) – mit Texten nach BR-05: `application-name` = „funk.“, `apple-mobile-web-app-title`/`og:title`/`og:site_name` = `APP_TITLE`, `og:image:alt`/`twitter:image:alt` = „funk. - Modern project management“, Space-Beschreibung „funk. Publish is a customer feedback management tool built on top of funk.“ (ohne `plane.so`); `twitter:site` `@planepowers` entfällt (BR-12); `og:image` wird nach BR-06 aus `assets/funk_logo.svg` in Originalgröße 1200×630 erzeugt. Das Gateway (`OgMetaMiddleware`, 14 §3.7) setzt dieselben Werte.
 - Scroll-Wiederherstellung **aus** (Original: React Router SPA ohne `ScrollRestoration`); Scroll-Container sind innere `ContentWrapper`.
 
 ### 3.4 State-Management
@@ -530,7 +533,7 @@ Fallback (S0 rot): Reactive Forms (`FormGroup`, `ControlValueAccessor` auf dense
 
 ### 3.7 i18n
 
-- **Dateien:** `PKG/i18n/src/locales/{22 Sprachen}/{28 Namespaces}.json` → `FE/libs/shared/i18n/src/locales/**` (1:1, gleiche Ordner `bg, cs, de, en, es, fr, id, it, ja, ka-ge, ko, nl, pl, pt-BR, ro, ru, sk, tr-TR, ua, vi-VN, zh-CN, zh-TW`). Build kopiert sie als Assets nach `/{base}/i18n/` (alle drei Apps). EE-Namespaces (`automation`, `template`, `wiki`, `work-item-type`, `workflow`, …) werden mitkopiert (Texte für spätere Pakete, A13b §2.1.8).
+- **Dateien:** `PKG/i18n/src/locales/{22 Sprachen}/{28 Namespaces}.json` → `FE/libs/shared/i18n/src/locales/**` (1:1 bis auf die Branding-Ersetzung BR-10, siehe unten; gleiche Ordner `bg, cs, de, en, es, fr, id, it, ja, ka-ge, ko, nl, pl, pt-BR, ro, ru, sk, tr-TR, ua, vi-VN, zh-CN, zh-TW`). Build kopiert sie als Assets nach `/{base}/i18n/` (alle drei Apps). EE-Namespaces (`automation`, `template`, `wiki`, `work-item-type`, `workflow`, …) werden mitkopiert (Texte für spätere Pakete, A13b §2.1.8).
 - **Instanz:** `PKG/i18n/src/core/instance.ts` 1:1 (Optionen A13b §2.1.2: `fallbackLng "en"`, `supportedLngs`, `ns` = 28, `defaultNS "common"`, `fallbackNS` = übrige, `keySeparator "."`, `nsSeparator false`, `interpolation.escapeValue false`, `returnNull/returnEmptyString false`, Plugin `ICU`), Backend: `resourcesToBackend((lng, ns) => fetch(\`${base}i18n/${lng}/${ns}.json\`).then(r => r.json()))`; `initReactI18next` entfällt.
 - **API** (`TranslationService`, `libs/shared/i18n/src/translation.service.ts`): `t(key, params?)` inkl. `coerceToString`, Signal `currentLocale`, `changeLanguage(lng)` (fire-and-forget, `console.error` bei Fehler), `languages = SUPPORTED_LANGUAGES`, `setLanguage(lng): Promise<void>` (`localStorage.userLanguage`, `<html lang>`). Pipe `t` (`{{ 'workspace.title' | t: {name} }}`) ist `pure: false` und liest das Signal `currentLocale()`; ein Sprachwechsel markiert dadurch alle Templates mit `t` als geändert (zoneless), ohne Neuladen.
 - **Typisierung:** `tools/i18n-generate-types` (Port von `PKG/i18n/scripts/generate-types.ts`) erzeugt `TTranslationKeys`; `t()` ist auf `TTranslationKeys` typisiert (Verbesserung ohne UI-Wirkung, A13b §5.2).
@@ -538,6 +541,7 @@ Fallback (S0 rot): Reactive Forms (`FormGroup`, `ControlValueAccessor` auf dense
 - **Profil-Sync:** wie A13b §3.1 (Profil-Fetch → `setLanguage(profile.language)`; Update optimistisch; Sign-out → `en`).
 - **Datumsformate** bleiben wie Original **englisch** (date-fns ohne Locale, `Intl.DateTimeFormat("en-US")`, A13b §3.1 Pkt. 7) – keine Lokalisierung, die das Original nicht hat.
 - **QA:** `tools/i18n-sync-check` (Port `sync-check.ts`, `--ci`) im CI; Skill `translate` aus dem Original-Repo gilt für neue Keys.
+- **Branding (ADR-009B, 17 ABG-148, BR-10):** Der Locale-Port übernimmt die Original-Dateien nicht unverändert, sondern über den Generatorschritt `frontend/tools/brand/brand-i18n.mjs`: (1) Ersetzen des **ganzen Worts** `Plane` (Regex `(?<![\p{L}\p{N}_])Plane(?![\p{L}\p{N}_])`) sowie der Transliterationen `Плейн` und `플레인` durch `funk.` – nie in Schlüsseln, ICU-Platzhaltern, `{{…}}`, HTML-Attributnamen und nie innerhalb anderer Wörter (`Planen`, `Planejado`); (2) gebeugte Formen vorher über die Ausnahmetabellen `libs/shared/i18n/brand/<locale>.json` (z. B. tr `Plane'de` → `funk.'ta`, ko `플레인과` → `funk.와`, en `Plane's` → Umformulierung je Schlüssel; Freigabe im Übersetzungs-Review, 17 Z-113); (3) Satzzeichenregel BR-03 (`Welcome to Plane.` → `Welcome to funk.`); (4) auch Strings nicht portierter Funktionen (Plan-/Upsell-/AI-Texte) werden ersetzt. Das Ergebnis ist eingecheckt; `tools/i18n-sync-check` prüft weiterhin die **Schlüsselmenge** gegen das Original (AK-D08-19), G-BRAND (15) die Werte. Jede Ausnahme-Ersetzung ist ein Eintrag `BRAND-I18N-<nn>` (§3.16).
 
 ### 3.8 Theming
 
@@ -642,6 +646,25 @@ Fallback (S0 rot): Reactive Forms (`FormGroup`, `ControlValueAccessor` auf dense
 ### 3.15 Browser-Storage
 
 Alle Schlüssel und Formate aus A08 §2.10 (web), A11 §2.14 (admin: `theme`, `god_mode_sidebar_collapsed`) und A11 §2.26 (space) werden **identisch** übernommen und ausschließlich über `persisted()` bzw. `@plane/cdk` `LocalStorageService` (Port `use-local-storage.tsx` inkl. Custom-Event `local-storage:${key}`) gelesen/geschrieben. Formate exakt (JSON vs. String, z. B. `module_sidebar_collapsed` als JSON-String `"true"`, E10 beibehalten). `lib/local-storage.ts` (leere Objekte/falsy werden nicht gespeichert) 1:1. Die acht nur geschriebenen `*_collapsed`-Schlüssel des Theme-Stores (E14) werden ebenfalls nur geschrieben. IndexedDB nur durch `y-indexeddb`.
+
+### 3.16 Branding der Oberfläche (ADR-009B, 17 ABG-148)
+
+Nach außen sichtbar ist in allen drei Apps nur „funk.“ (Regeln BR-01 … BR-14, 17 Teil 2 §2.3); Fachvokabular (Work Items, Cycles, Modules, Pages, Intake, God Mode) bleibt. Interne Bezeichner bleiben nach BR-02 unverändert: `@plane/*`-Aliase, `PlaneTitleStrategy`, `PlaneErrorHandler`, Selektor-Präfix `pl-`, Sheriff-Tags, Storage-Schlüssel (`__plane_chunk_reload`), MIME-Typ `text/plane-editor-html`.
+
+| Bereich | Festlegung | Original (Auszug) | Abweichung |
+|---|---|---|---|
+| Eine Quelle für den Namen | `BRAND.productName = "funk."` in `libs/shared/constants/src/brand.ts` (Import `@plane/constants`, BR-03); Templates, Titel und Meta beziehen den Namen nur von dort bzw. aus den ersetzten i18n-Dateien | – | – |
+| Seitentitel und Meta web/admin | `APP_TITLE`, Routentitel-Suffix „- funk.“ (auch `PageHead`-Suffix in `auth-screens/header.tsx`), `application-name`, `apple-mobile-web-app-title`, `og:*`, `twitter:image:alt` nach BR-05 (§3.3.6, §5.1); `twitter:site` entfällt | `WEB/app/root.tsx` Z. 35/64/97/108, `ADM/app/root.tsx` Z. 24, `PKG/constants/src/metadata.ts` Z. 7–18, `WEB/components/core/page-title.tsx` | `BRAND-WEB-01` |
+| Seitentitel und Meta space | „funk. Publish \| Make your funk. boards public with one-click“, Beschreibung „… built on top of funk.“; Board-Default-Titel „funk.“, Default-Beschreibung „Made with funk., …“ (Resolver `/spaces/issues/:anchor/`, D08-ADR-26) | `SPC/app/root.tsx` Z. 27–28, `SPC/app/issues/[anchor]/layout.tsx` Z. 22–23 | `BRAND-WEB-02` |
+| Akteur-Anzeige (BR-11) | `BRAND.productName` statt Literal: Activity-Akteur für System-/Automatik-Aktionen (`customUserName \|\| "Plane"`, Auto-Archive), Erstellername bei `-intake`-Benutzern, Profil-Activity, Intake-Avatar (`alt` = „funk.“, Initiale „f“), Intake-Seitentitel ohne Projekt (`workspace: "Plane"`) | `WEB/components/common/activity/user.tsx` Z. 32, `…/activity/helper.tsx` Z. 105, `…/issue-activity/activity/actions/helpers/issue-creator.tsx` Z. 30, `…/actions/archived-at.tsx` Z. 39, `WEB/components/issues/peek-overview/properties.tsx` Z. 128, `WEB/components/inbox/sidebar/inbox-list-item.tsx` Z. 127, `WEB/components/profile/activity/activity-list.tsx` Z. 150, `WEB/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/intake/page.tsx` Z. 70 | `BRAND-WEB-03` |
+| Gespeicherte Activity-Texte | bleiben in der Datenbank unverändert (BR-02 Nr. 3, z. B. „Plane has archived the issue“); zeigt eine Komponente einen gespeicherten Text roh, ersetzt der Renderer das führende „Plane “ durch „funk. “ (`ActivityTextBrandPipe`, `libs/web/core/activity/`) | Activity-Komponenten mit `activity.comment` | `BRAND-WEB-04` |
+| Hart codierte Fließtexte | jedes Template-Literal mit „Plane“ (z. B. „Welcome back to funk.“, „Create your funk. account.“, Onboarding-, Tour-, Instance-not-ready-, Maintenance-, Workspace-Invitation-Texte; Admin: „Manage your funk. instance“, „Setup your funk. Instance“, „Redirect to funk.“, Telemetrie-/E-Mail-Texte; Space: Auth-Header, Fehlerseite, `alt`-Texte) interpoliert `BRAND.productName`; das Inventar erzeugt `frontend/tools/brand/scan-literals.mjs` aus `apps/{web,admin,space}` und `packages/*` des Originals (Ausgabe `tools/brand/literal-inventory.json`, Pflicht-Abgleich bei jedem Port eines Templates) | `WEB/components/account/auth-forms/auth-header.tsx`, `WEB/components/onboarding/**`, `WEB/components/instance/*`, `ADM/app/(all)/**`, `ADM/components/**`, `SPC/app/error.tsx`, `SPC/components/**` | `BRAND-WEB-05` |
+| Space-Badge | „Powered by funk. Publish“ (BR-04, CE-SPACE-032); Text über `BRAND.productName`, Badge-Asset und Visual-Abnahme 09 (`BRAND-UI-*`) | `SPC/components/common/powered-by.tsx` Z. 30 | `BRAND-WEB-06` |
+| Logos, Favicons, Manifeste, Lade-Animation | `public/` je App mit Dateien aus `frontend/tools/brand/render-brand-assets.mjs` (BR-06: gleiche Pixelgrößen und Dateinamen wie das Original, Quelle `assets/funk_logo.svg`); Manifest `name`/`short_name` = „funk.“, `start_url` unverändert; `LogoSpinner` und `PlaneLogo`/`PlaneLockup` mit funk.-Daten (Inventar und Abnahme 09 §4.11) | `WEB/public/**`, `ADM/public/**`, `SPC/public/**`, `WEB/components/common/logo-spinner` | 09 `BRAND-UI-*` |
+| i18n (22 Sprachen) | Generatorschritt BR-10 (§3.7); Ausnahmetabellen je Locale | `PKG/i18n/src/locales/*` (je 61–110 Treffer) | `BRAND-I18N-01` (Wortersatz alle Locales), `BRAND-I18N-02` … (je Ausnahmetabelle tr, ko, ru/ua, en-Possessiv; Z-113) |
+| Externe Links | Links auf `plane.so`, `docs.plane.so`, `forum.plane.so`, GitHub/X/LinkedIn von Plane entfallen oder zeigen auf konfigurierbare Ziele (`website_url`, `support_email`, `external_links_enabled`, §3.11; BR-12) | Hilfe-Menü, Fehlerseiten, Onboarding | `FE-RC-01`, 09 §4.12 |
+
+**Prüfung:** Gate G-BRAND (15, BR-14) durchsucht die gebauten Bundles, `index.html` und Manifeste aller drei Apps nach `Plane`, `Плейн`, `플레인`, `plane\.so` (Allowlist `frontend/tools/brand/allowlist.json`, nur BR-02-Fälle wie Copyright/AGPL-Hinweis im About-Dialog); Visual- und DOM-Paritätstests vergleichen gegen Referenzaufnahmen des Originals mit **vorab ersetztem Branding** (BR-13: Text nach BR-10/BR-03 ersetzt, BR-06-Assets per `page.route` ausgeliefert; Raster in Illustrationen maskiert). Die Einträge `BRAND-WEB-*`/`BRAND-I18N-*` stehen in `tests/contracts/deviations.yaml` (Bereich `frontend:`, §7.7) und – soweit sichtbar – in `ui-deviations.yaml` (Art `brand`, 09).
 
 ---
 ## 4. Vollständige Mapping-Tabellen Original → Ziel
@@ -1198,7 +1221,7 @@ Die Routen-Tabellen §4.1–§4.3 ordnen die **Screen**-CE-IDs zu. Die folgende 
 | CE-WS-023 | Favoriten mit Ordnern | `FavoriteStore` (§4.5 Nr. 51), `FAVORITE_ENTITY_RENDERERS` | I1 |
 | CE-PRJ-005, -011…-013, -016 | Identifier-Prüfung, Projektliste/Kontextmenü/erweiterte Projekt-Sidebar, Projekt-Präferenzen | `libs/web/project` (Komponenten), `ProjectStore`, `ProjectFilterStore`, `NavigationPreferencesService` | I0/I1 |
 | CE-LV-003, -004, -006, -014, -038, -042, -043, -045 | Layout-Kontextmenü, Layout-Kontexte, Rich-Filter-Ausdrücke, Anzeige-Einstellungen, Inline-Properties, Empty-States, Skeletons, Layout-Fehlergrenze | `ISSUES_STORE_TYPE` (§3.4.6), `@plane/shared-state` (§4.6), `PROPERTY_RENDERERS`-Leser (§6.1), `pl-layout-error-boundary` (§3.14) | I2 |
-| CE-PROF-001, -004, -005 | Profilmodell, E-Mail ändern, Konto deaktivieren | `ProfileStore`/`UserStore` (§4.5 Nr. 9–10); E-Mail-Änderung und Kontosperre nach ADR-008 gemäß 05 (Keycloak-Verweis, Plane-seitige Deaktivierung) | I1 |
+| CE-PROF-001, -004, -005 | Profilmodell, E-Mail ändern, Konto deaktivieren | `ProfileStore`/`UserStore` (§4.5 Nr. 9–10); E-Mail-Änderung und Kontosperre nach ADR-008 gemäß 05 (Keycloak-Verweis, anwendungsseitige Deaktivierung) | I1 |
 | CE-AUTH-022…-025 | Abmelden, Session-Ablauf, Session-Status | `UserStore.signOut` (Formular-POST, D08-ADR-07), `unauthorizedInterceptor` (§3.5.2), `AuthenticationWrapper` (§3.3.4) | I0 |
 | CE-INST-003, -005 | Instanz-Info, Instanz-Zustände in der Web-App | `InstanceStore`, `InstanceWrapper` (Maintenance, Not ready, §3.3.4) | I0 |
 | CE-SRCH-001…-003 | Globale Suche, Entity-Suche (Mentions/Picker), Work-Item-Picker | `WorkspaceService.searchWorkspace/searchEntity`, `ProjectService.projectIssuesSearch` (1:1, §3.5.1); UI in `libs/web/power-k` (I5) bzw. Dropdowns/Editor-Mentions (I2) | I2/I5 |
@@ -1221,11 +1244,16 @@ Die Skelette legen Namen, Signaturen und Semantik fest; Implementierungsdetails 
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Plane | Simple, extensible, open-source project management tool.</title>
+  <title>funk. | Simple, extensible, open-source project management tool.</title><!-- APP_TITLE, BRAND-WEB-01 -->
   <base href="/" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#fff" />
-  <!-- PWA-/OG-/Twitter-Meta wie WEB/app/root.tsx (og:url entfällt, ADR-004) -->
+  <!-- PWA-/OG-/Twitter-Meta wie WEB/app/root.tsx (og:url und twitter:site entfallen, ADR-004/BR-12); Texte nach BR-05 -->
+  <meta name="application-name" content="funk." />
+  <meta name="apple-mobile-web-app-title" content="funk. | Simple, extensible, open-source project management tool." />
+  <meta property="og:title" content="funk. | Simple, extensible, open-source project management tool." />
+  <meta property="og:image:alt" content="funk. - Modern project management" />
+  <meta name="twitter:image:alt" content="funk. - Modern project management" />
   <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png" />
   <link rel="manifest" href="site.webmanifest.json" /><!-- relativ zu <base href> (§3.11, Base-Path ohne Rebuild) -->
   <link rel="preload" href="media/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
@@ -1249,7 +1277,7 @@ Die Skelette legen Namen, Signaturen und Semantik fest; Implementierungsdetails 
   <div id="context-menu-portal"></div>
   <div id="editor-portal"></div>
   <pl-root>
-    <!-- statischer HydrateFallback: LogoSpinner-Markup aus WEB/components/common/logo-spinner -->
+    <!-- statischer HydrateFallback: LogoSpinner-Markup aus WEB/components/common/logo-spinner (funk.-Variante, BR-06) -->
     <div class="relative flex h-screen w-full items-center justify-center bg-canvas"><!-- spinner svg --></div>
   </pl-root>
 </body>
@@ -1897,7 +1925,7 @@ Die Teststrategie insgesamt (Ebenen L0–L8, Gates G0–G6, Dual-Target-E2E, Vis
 | AK-D08-16 | HTTP-Verträge: jede Service-Methode der 46 Web-Services (A08 §2.7.2), der Admin-/Space-Services und von `PKG/services` sendet dieselbe Methode, denselben Pfad (mit `/`), dieselben Query-Parameter und denselben Body wie das Original; Fehler werden als `{ response: { status, data, headers } }` geworfen | `*.service.spec.ts` (`HttpTestingController`); Erwartungswerte aus `tools/contract-check` (extrahiert Methode/Pfad je Service-Methode per ts-morph aus dem Original) | I0 ff. |
 | AK-D08-17 | Interceptor-Kette §3.5.2: Reihenfolge fest; 401-Redirect nur in web und nicht auf `/`; Upload-Requests ohne Credentials; `AbortSignal` bricht laufende Requests ab (kein veralteter Response überschreibt Store-Daten); Admin-Step-up nur bei 401 + 5210; die 5 Fälle aus `PKG/services/src/helpers/url.test.ts` bestehen unverändert | `libs/web/core/http/*.spec.ts`, `libs/shared/services/src/helpers/url.interceptor.spec.ts`, `libs/admin/core/http/admin-step-up.interceptor.spec.ts` | I0 |
 | AK-D08-18 | Formulare: Validierungsmeldungen wörtlich (inkl. i18n-Keys), `dirtyFields` → `getChangedIssuefields` liefert dieselben Payloads wie das Original, Reset-Zeitpunkte gleich (Projektwechsel im Issue-Modal); Tab-Reihenfolge der Formulare gleich Original (CE-UIX-005) | Komponenten-Tests je Formular (L2); `web/uix/ui-crosscutting.spec.ts` (Abschnitt Tab-Reihenfolge) (L7) | I0 / I1 |
-| AK-D08-19 | i18n: Schlüsselmenge je Locale identisch zum Original (G-I18N); Sprachwechsel aktualisiert alle sichtbaren Texte ohne Neuladen; ICU-Plural-Ausgaben für `en`, `de`, `ru`, `pl`, `ja`, `ua` (Sonderregel en-US) identisch zur Original-i18next-Ausgabe für 50 Schlüssel × 5 Zahlenwerte; fehlender Schlüssel → Fallback `en` | `tools/i18n-sync-check --ci`, `translation.service.spec.ts` (Golden aus Original), `web/i18n/language-timezone.spec.ts` | I0 / I1 (CE-I18N-001, CE-I18N-002) |
+| AK-D08-19 | i18n: Schlüsselmenge je Locale identisch zum Original (G-I18N); Sprachwechsel aktualisiert alle sichtbaren Texte ohne Neuladen; ICU-Plural-Ausgaben für `en`, `de`, `ru`, `pl`, `ja`, `ua` (Sonderregel en-US) identisch zur Original-i18next-Ausgabe für 50 Schlüssel × 5 Zahlenwerte; fehlender Schlüssel → Fallback `en`; Werte mit Produktnamen nach BR-10 ersetzt (§3.7) | `tools/i18n-sync-check --ci`, `translation.service.spec.ts` (Golden aus Original), `web/i18n/language-timezone.spec.ts` | I0 / I1 (CE-I18N-001, CE-I18N-002) |
 | AK-D08-20 | Kein Theme-Flash: für `light`, `dark`, `light-contrast`, `dark-contrast`, `custom`, `system` (hell/dunkel emuliert) trägt `<html>` beim ersten Paint bereits das korrekte `data-theme` (und `color-scheme` nur bei `light`/`dark`); bei ungültigem Wert trägt `<html>` `data-theme` = gespeicherter Wert unverändert, ohne `color-scheme` (wie next-themes 0.4.6, ABG-031); der CSP-Hash in `theme-script.sha256` entspricht dem ausgelieferten Script | `web/i18n/themes.spec.ts` (Abschnitt No-Flash) (Prüfung per `MutationObserver` im Init-Script + `PerformanceObserver('paint')`), `tools/ci/csp-hash-check.mjs` | I0 (CE-I18N-005) |
 | AK-D08-21 | Theme-Persistenz, Custom Theme und High Contrast: Server-Sync einmal je Sitzung, Wechsel lädt neu (Parität), Visual-Diff ≤ 0,5 % für 5 Leitseiten je Theme | `theme.service.spec.ts`, `visual/web/themes.visual.ts` | I1 (CE-I18N-006, -007, -008) |
 | AK-D08-22 | DnD (S4): Kanban 1 000 Karten in 8 Spalten ≥ 55 fps beim Drag; Sort-Order-Ergebnisse (oben/unten/zwischen, 65535/Mittelwert), Gantt-Verschiebung (±1000) und Sidebar-Reorder (±10000) identisch zum Original; State- und Label-DnD (CE-PRJ-025, CE-PRJ-030) | `libs/shared/dnd/**/*.spec.ts`, `work-items-core` Sort-Order-Tests, `web/layouts/kanban.spec.ts`, Perf-Trace LT-15 (D15 §3.12) | I1 / I2 |
@@ -2124,6 +2152,8 @@ Die Fallzahlen sind per `it(`/`test(`-Zählung ermittelt; maßgeblich ist die Le
 | `FE-RC-01` | Konfiguration über `runtime-config.json` statt `VITE_*`; Marketing-/Community-Links nur bei `external_links_enabled` (Default `false`) | ADR-004, §3.11 |
 | `FE-ED-01` | Editor-Flag `collaboration-cursor` in CE aktiv (sofern O-D08-07 so entschieden) | ADR-001, §4.7 |
 | `FE-INT-01` | Integrations-Seite (GitHub/Slack) entfällt; Forgejo-Einstellungen erst mit W1 | ADR-007, §4.1 |
+| `BRAND-WEB-01` … `-06` | Produktname „funk.“ statt „Plane“ in Titeln/Meta (web/admin, space), Akteur-Anzeige, gespeicherten Activity-Texten beim Rendern, Fließtexten, Space-Badge | ADR-009B, 17 ABG-148, §3.16 |
+| `BRAND-I18N-01` ff. | i18n-Werte nach BR-10 ersetzt (Wortersatz, Ausnahmetabellen je Locale) | ADR-009B, 17 ABG-148, §3.7 |
 
 ### 7.8 Definition of Done für Frontend-Arbeitspakete (Ergänzung zu D15 §3.15.3)
 
@@ -2202,7 +2232,7 @@ Ein Arbeitspaket mit Frontend-Anteil (Schnitttyp „V“ oder „F“ aus D15) i
 
 | Dokument | Beziehung | Was 08 liefert | Was 08 erwartet |
 |---|---|---|---|
-| `00-grundsatzentscheidungen.md` | bindend | – | ADR-001 (keine Plan-Stufen, Upsell entfällt), ADR-002 (kein Node zur Laufzeit → Space CSR, Hocuspocus-Server in .NET), ADR-003 (API-JSON-Verträge am Original), ADR-004 (Airgap → gebündelte Fonts/Emoji, keine CDN-Requests), ADR-005 (UI 1:1), ADR-007 (Forgejo einzige Code-Hosting-Integration → Integrations-Seite entfällt), ADR-008 (Keycloak-only → Auth-Routen §3.3.5), ADR-009 (`funk.`, Step-up Default aus) |
+| `00-grundsatzentscheidungen.md` | bindend | – | ADR-001 (keine Plan-Stufen, Upsell entfällt), ADR-002 (kein Node zur Laufzeit → Space CSR, Hocuspocus-Server in .NET), ADR-003 (API-JSON-Verträge am Original), ADR-004 (Airgap → gebündelte Fonts/Emoji, keine CDN-Requests), ADR-005 (UI 1:1), ADR-007 (Forgejo einzige Code-Hosting-Integration → Integrations-Seite entfällt), ADR-008 (Keycloak-only → Auth-Routen §3.3.5), ADR-009 (`funk.`, Step-up Default aus), ADR-009B (Marke „funk.“ in der gesamten sichtbaren Oberfläche, §3.16) |
 | `01-zielarchitektur-und-tech-stack.md` | bindend | Präzisierungen (markiert in §2: D08-ADR-02, §3.1.1, §3.11 neue Runtime-Config-Felder), Routen-/Store-/Library-Mapping (Anhang A) | Frontend-Workspace §6, Registries §6.4, Store-Skelett §6.5, ADR-039 … ADR-047, Querschnitt §7 (§7.12 Runtime-Config, §7.17 DOM-Parität, §7.19 keine Platzhalter-Routen, §7.20 Abweichungen), Spikes S0, S1, S4, S5, S6, S10, S11 (§9) |
 | `02-backend-solution-und-konventionen.md` | Vertragspartner | Erwartung: Trailing-Slash-normalisierte Requests (`trailingSlashInterceptor`), Auswertung von `error`/`detail`/`error_code` wie Original | JSON-/Fehler-/Pagination-Formen (02 §7 AK-02 … AK-11), Toleranz für Pfade mit und ohne `/`, Rich-Filter-Ausdruck `TWorkItemFilterExpression` als Wire-Form (B6) |
 | `03-datenmodell-efcore.md` | indirekt | – | Feldnamen der DTOs unverändert gegenüber `PKG/types` (z. B. `type_id`, `is_bot`, `parent_id` an Pages), damit `libs/shared/types` Kopie bleibt |
@@ -2211,7 +2241,7 @@ Ein Arbeitspaket mit Frontend-Anteil (Schnitttyp „V“ oder „F“ aus D15) i
 | `06-hintergrundjobs-events-benachrichtigungen.md` | nutzt | Konsum der Live-Events über `LIVE_EVENT_HANDLERS` (ab I5 Notification-Zähler) | Ereignisnamen und Nutzlast der an den Hub gepushten Notification-Ereignisse; Activity-`field`/`verb`-Katalog für `ACTIVITY_RENDERERS` |
 | `07-realtime-kollaboration-dokumente.md` | Vertragspartner | unveränderter `@hocuspocus/provider` 2.15.2, URL-/Query-Schema `…/collaboration?documentType=…`, Token-JSON `{id}`, Stateless-Ereignisse (`RealtimePageEventsService`), SignalR-Client nur WebSockets mit `skipNegotiation` | Hocuspocus-Protokoll-Server (S1), Hub `/live/events/` mit Gruppen `ws:`, `project:`, `user:`; Fallback-Entscheidung y-websocket (R-D08-13) |
 | `09-ui-paritaet-designsystem.md` | Vertragspartner | Ablage der Libs `propel`/`blocks`/`tailwind-config`, Bootstrap/Theme-Service-Einbindung, Overlay-Container, Interaktionsbausteine (§3.9) als Konsumenten der Primitive | Komponenten-Port Propel/Blocks inkl. Variantentabellen, D09-ADR-03 (Attribut-Selektoren, keine Komponenten-Styles), Icons-Codegen, Galerie-Referenzen, Visual-/DOM-Verfahren; Port der Original-Tests §7.5 als Teil der Komponenten-Abnahme |
-| `10-editor-angular.md` | nutzt | Andockstellen `EDITOR_EXTENSIONS`, `EDITOR_BLOCKS`, `EDITOR_MENTION_TYPES`, `EDITOR_FLAGS` (CE-Default §6.1), `PAGE_PANE_EXTENSIONS`; Einbindung Lite-Editor (I2) und Rich/Document-Editor (I4) | Editor-Lib `libs/shared/editor` mit Schema-Freeze, NodeViews (S5), Kapselung des Collaboration-Providers |
+| `10-editor-angular.md` | nutzt | Andockstellen `EDITOR_EXTENSIONS`, `EDITOR_BLOCKS`, `EDITOR_MENTION_TYPES`, `EDITOR_FLAGS` (CE-Default §6.1), `PAGE_PANE_EXTENSIONS`; Einbindung Lite-, Rich- und Document-Editor read-only (I2), kollaborativer Page-Editor (I4) (17 ABG-114; Spike S5 vor I2 grün, nur „NodeView-Rendering stabil mit Yjs“ bis vor I4) | Editor-Lib `libs/shared/editor` mit Schema-Freeze, NodeViews (S5), Kapselung des Collaboration-Providers |
 | `11-suche-und-ai-basis.md` | nutzt | Power-K-Frontend (`libs/web/power-k`, `POWER_K_COMMANDS`, `SEARCH_RESULT_RENDERERS`), `DUPLICATE_DETECTION`-Token (CE `[]`) | Such-Endpunkte und Ergebnisformate der globalen Suche/Power-K; AI-Endpunkte des Editors (CE-AI, I6) |
 | `12-…`, `13-…` | – (in 01 Anhang A nicht vergeben) | – | – |
 | `14-infrastruktur-deployment-betrieb.md` | Vertragspartner | Dev-Server-Skripte (`ng serve <app> --port ${PORT}`, Ports 4200/4201/4202, Gateway :3000 – ABG-015), Base-Pfade und Output-Ordner (§3.1.2), Runtime-Config-Felder (§3.11), Cache-Erwartungen, `<base href>`-Ersatzfähigkeit (keine absoluten Asset-URLs), Reload bei `app_version`-Wechsel, `theme-script.sha256` für die CSP; **kein** `sw.js` (E19) – die Header-Regel für `sw.js` in D14 AK-14-07 ist damit gegenstandslos | Gateway liefert `runtime-config.json` (`no-cache`) und SPA-Fallback je App, ersetzt `<base href>` bei geänderten Pfaden, setzt CSP mit Script-Hash, liefert OG-Meta für Space (I6), übernimmt Dist-Ordner in `wwwroot` (D14-ADR-07) |
@@ -2298,3 +2328,12 @@ Umgesetzt sind die verbindlichen Entscheidungen aus `17-abgleich-dokumentuebergr
 | ABG-032 | §3.1.1-Baum, §7.1 AK-D08-36, §7.9 I0 | `provideFakeExtensions(config?: FakeExtensionConfig)` + `provideFakeAdminExtensions`/`provideFakeSpaceExtensions`; `libs/admin/extensions/testing`, `libs/space/extensions/testing` im Baum |
 | ABG-055 | §6.1, §6.5 | `PermissionCheck` mit `teamspaceId?`; `PERMISSION_EVALUATOR` mit `factory: () => roleBasedEvaluator` in `libs/web/core/permissions/` |
 | ABG-057 | §6.1, §6.5 | `DUPLICATE_DETECTION`-Signatur → `DuplicateDetectionFn` (CE-Default `signal([])`) |
+
+**Teil 2** (`17-abgleich-dokumentuebergreifend.md` Abschnitt „Teil 2 – Abgleich nach Schritt 3“, `_data/17-abgleich-teil2.json`, Stand 23.10.2026) – Fundstellen per Volltextsuche (Inkrement-Matrix, Tabellen, Projektbaum, `index.html`-Skelett, §7, §9):
+
+| ABG-ID | Umgesetzt in | Änderung |
+|---|---|---|
+| ABG-114 umgesetzt | §1.3 Inkrement-Matrix, §9 (D10-Zeile) | Lite-, Rich- und Document-Editor (read-only) mit allen NodeViews/Menüs in **I2** (Work-Item-Beschreibung, Modal, Peek, Beschreibungs-Versionen); I4 nur noch kollaborativer Page-Editor (Kollaboration, Titel-Editor, Page-Hüllen); S5 vor I2 grün, Restkriterium Yjs vor I4 |
+| ABG-148 umgesetzt | D08-ADR-24, §3.1.1-Baum (`public/`, `tools/brand/`), §3.3.6, §3.7 (Branding-Bullet BR-10), neuer §3.16 (Inhaltsverzeichnis ergänzt), §5.1 `index.html`, §7.1 AK-D08-19, §7.7, §9 (`00`-Zeile) | `APP_TITLE` = „funk. \| Simple, extensible, open-source project management tool.“, Space-Titel/-Beschreibung nach BR-05, `application-name`, `apple-mobile-web-app-title`, `og:*`/`twitter:image:alt` nach BR-05, `twitter:site` entfällt; hart codierte Literale nach BR-11 über `BRAND.productName` aus `@plane/constants` (Inventar der Original-Fundstellen in §3.16); i18n-Port mit Ersetzungsschritt BR-10 in `libs/shared/i18n` und Ausnahmetabellen `brand/<locale>.json`; Abweichungen `BRAND-WEB-01 … -06`, `BRAND-I18N-01 ff.`; Prüfung G-BRAND und Paritätsreferenzen nach BR-13 |
+
+**Branding-Durchgang (ADR-009B, ABG-148, BR-01 … BR-14):** Alle Stellen, an denen dieses Dokument nach außen sichtbare Namen der Zielplattform festlegt – Seitentitel, Meta-Tags, Manifeste, Icons/Lade-Animation, Akteur-Anzeigen, Template-Texte, Space-Badge und i18n-Werte –, zeigen jetzt „funk.“ (zentral über `BRAND.productName` bzw. den BR-10-Generator); unverändert bleiben nach BR-02 Verweise auf das Original (z. B. `WEB/app/root.tsx`, „Plane v1.4.2 CE“, Original-Literale in der Inventartabelle), interne Bezeichner (`@plane/*`, `PlaneTitleStrategy`, `PlaneErrorHandler`, `Plane:`-Schlüssel, Storage-Schlüssel) und gespeicherte Activity-Texte; „Plane-seitige Deaktivierung“ (§4.10) ist neutral als „anwendungsseitige Deaktivierung“ formuliert.

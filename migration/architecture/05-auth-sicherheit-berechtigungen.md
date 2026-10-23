@@ -26,7 +26,7 @@
    - 3.13 Autorisierung: Permission-Katalog, Evaluator, Regeln, Policies
    - 3.14 Gast-Sichtbarkeit (`guest_view_all_features`)
    - 3.15 Keycloak-Realm als Code
-   - 3.16 Plane-Login-Theme (1:1-Optik der Sign-in-Seite)
+   - 3.16 Login-Theme `plane` (1:1-Optik der Sign-in-Seite, funk.-Branding)
    - 3.17 Sicherheitsmechanismen (CORS, SSRF, Sanitizing, Upload, Secrets, Rate Limits, Header, Logging)
    - 3.18 Korrektur der dokumentierten Sicherheitslücken des Originals
 4. [Mapping-Tabellen Original → Ziel](#4-mapping-tabellen-original--ziel)
@@ -46,7 +46,7 @@
 
 ### 1.1 Ziel
 
-Dieses Dokument legt fest, **wer sich wie anmeldet** (ausschließlich Keycloak per OIDC, ADR-008), **wie eine Anmeldung in eine Plane-Session übersetzt wird** (Backend-for-Frontend in `Plane.Api`, serverseitige Session, HttpOnly-Cookie), **wer was darf** (Permission-Katalog aus dem Original-Code, System-Rollen Admin 20 / Member 15 / Guest 5, Gast-Sichtbarkeit) und **welche Sicherheitsmechanismen** die Plattform querschnittlich bereitstellt (CORS, CSRF, SSRF, Sanitizing, Uploads, Secrets, Rate Limits, Header). Es ist für Implementierungs-Agenten direkt umsetzbar: jede Klasse hat einen Ort in `funk.`, jede Regel eine Quelle im Original und ein Akzeptanzkriterium.
+Dieses Dokument legt fest, **wer sich wie anmeldet** (ausschließlich Keycloak per OIDC, ADR-008), **wie eine Anmeldung in eine funk.-Session übersetzt wird** (Backend-for-Frontend in `Plane.Api`, serverseitige Session, HttpOnly-Cookie), **wer was darf** (Permission-Katalog aus dem Original-Code, System-Rollen Admin 20 / Member 15 / Guest 5, Gast-Sichtbarkeit) und **welche Sicherheitsmechanismen** die Plattform querschnittlich bereitstellt (CORS, CSRF, SSRF, Sanitizing, Uploads, Secrets, Rate Limits, Header). Es ist für Implementierungs-Agenten direkt umsetzbar: jede Klasse hat einen Ort in `funk.`, jede Regel eine Quelle im Original und ein Akzeptanzkriterium.
 
 ### 1.2 Im Scope
 
@@ -93,20 +93,20 @@ Jede Entscheidung konkretisiert eine ADR aus `00`/`01`; Abweichungen von `01` gi
 
 | ADR | Entscheidung | Alternativen (verworfen) | Begründung | ab |
 |---|---|---|---|---|
-| **D05-ADR-01** | **Drei OIDC-Schemata, drei Keycloak-Clients, ein Callback-Pfad.** `Plane.Api` registriert je App ein Schema `oidc-web`, `oidc-admin`, `oidc-space` (`Microsoft.AspNetCore.Authentication.OpenIdConnect`) mit fester `ClientId`/`ClientSecret` (`plane-web`, `plane-admin`, `plane-space`), **identischem** `CallbackPath=/auth/oidc/callback` (ohne Slash, weil `TrailingSlashMiddleware` den Slash vor dem Routing entfernt, D02-ADR-07; die an Keycloak gesendete und dort registrierte `redirect_uri` bleibt `…/auth/oidc/callback/`) und `SkipUnrecognizedRequests=true`. Der State jedes Schemas ist mit einem **schemaeigenen** Data-Protection-Zweck geschützt (`Plane.Identity.OidcState.v1.<scheme>`); ein Handler, der den State nicht entschlüsseln kann, überspringt die Anfrage (`HandleRequestResult.SkipHandler()`), sodass genau das Schema des Logins den Callback verarbeitet. Die App (`web`, `admin`, `space`) wird beim Login als Query-Parameter `app` übergeben und wählt das Schema. Confidential Clients, PKCE `S256` Pflicht (`pkce.code.challenge.method=S256`). Auflösung **O-06**: je App ein Client (eigene Login-Theme-Variante, eigene Redirect-Regeln), eine gemeinsame Plane-Session. | (a) **ein** Schema mit je Request umgeschriebener `client_id` (ursprünglicher D05-Entwurf, verworfen im Review: `OpenIdConnectProtocolValidator.ValidateIdToken` vergleicht das Keycloak-`azp` mit `Options.ClientId` und wirft `IDX21340` für `plane-admin`/`plane-space`; Quelle `OpenIdConnectHandler.cs` release/10.0, `ClientId = Options.ClientId`); (b) drei Callback-Pfade `/auth/oidc/{app}/callback/` (widerspricht `01` §3.3, Realm-Änderung); (c) Public SPA-Client mit Token im Browser (verletzt ADR-008); (d) BFF im Gateway (YARP) – trennt Session-Logik vom Fachmodell `Plane.Identity` | Standardverhalten des Handlers ohne Eingriff in die Protokollvalidierung; ein Callback-Pfad im Realm, eine Session-Erzeugung, Theme-Varianten über Client-Zuordnung | I0 |
+| **D05-ADR-01** | **Drei OIDC-Schemata, drei Keycloak-Clients, ein Callback-Pfad.** `Plane.Api` registriert je App ein Schema `oidc-web`, `oidc-admin`, `oidc-space` (`Microsoft.AspNetCore.Authentication.OpenIdConnect`) mit fester `ClientId`/`ClientSecret` (`plane-web`, `plane-admin`, `plane-space`), **identischem** `CallbackPath=/auth/oidc/callback` (ohne Slash, weil `TrailingSlashMiddleware` den Slash vor dem Routing entfernt, D02-ADR-07; die an Keycloak gesendete und dort registrierte `redirect_uri` bleibt `…/auth/oidc/callback/`) und `SkipUnrecognizedRequests=true`. Der State jedes Schemas ist mit einem **schemaeigenen** Data-Protection-Zweck geschützt (`Plane.Identity.OidcState.v1.<scheme>`); ein Handler, der den State nicht entschlüsseln kann, überspringt die Anfrage (`HandleRequestResult.SkipHandler()`), sodass genau das Schema des Logins den Callback verarbeitet. Die App (`web`, `admin`, `space`) wird beim Login als Query-Parameter `app` übergeben und wählt das Schema. Confidential Clients, PKCE `S256` Pflicht (`pkce.code.challenge.method=S256`). Auflösung **O-06**: je App ein Client (eigene Login-Theme-Variante, eigene Redirect-Regeln), eine gemeinsame funk.-Session. | (a) **ein** Schema mit je Request umgeschriebener `client_id` (ursprünglicher D05-Entwurf, verworfen im Review: `OpenIdConnectProtocolValidator.ValidateIdToken` vergleicht das Keycloak-`azp` mit `Options.ClientId` und wirft `IDX21340` für `plane-admin`/`plane-space`; Quelle `OpenIdConnectHandler.cs` release/10.0, `ClientId = Options.ClientId`); (b) drei Callback-Pfade `/auth/oidc/{app}/callback/` (widerspricht `01` §3.3, Realm-Änderung); (c) Public SPA-Client mit Token im Browser (verletzt ADR-008); (d) BFF im Gateway (YARP) – trennt Session-Logik vom Fachmodell `Plane.Identity` | Standardverhalten des Handlers ohne Eingriff in die Protokollvalidierung; ein Callback-Pfad im Realm, eine Session-Erzeugung, Theme-Varianten über Client-Zuordnung | I0 |
 | **D05-ADR-02** | **Eine Session für alle drei Apps.** Cookie-Name aus `SESSION_COOKIE_NAME` (Default `session-id`), `HttpOnly`, `SameSite=Lax`, `Path=/`, `Domain=COOKIE_DOMAIN` (Default host-only), `Secure` nach der Original-Regel `_cookies_secure` (§3.4.3). Das separate Cookie `admin-session-id` entfällt (Folge ADR-008: kein separates God-Mode-Login); damit entfällt auch der Fehler E-08 (Teilstring `instances`). | getrennte Admin-Session (Original, 1 h) | Gleiche Site, gleiche Keycloak-Identität; Admin-Schutz über Rolle + optionalen Step-up (D05-ADR-11) | I0 |
 | **D05-ADR-03** | **Serverseitige Session per `ITicketStore`.** Cookie-Schema `Session` (`02` §3.4.1 Schritt 10) mit `SessionStore = PostgresTicketStore` (Tabelle `user_sessions`). Der Browser erhält nur einen Data-Protection-geschützten Schlüssel; das `AuthenticationTicket` (Claims + `id_token` + `refresh_token`) liegt serialisiert und zusätzlich mit Zweck `Plane.Identity.SessionTicket.v1` verschlüsselt in PostgreSQL. **Absolute** Laufzeit `SESSION_COOKIE_AGE` (Default 604 800 s) wie Original; `SESSION_SAVE_EVERY_REQUEST=1` schaltet gleitende Laufzeit ein. Abgelaufene Zeilen löscht der Job `ExpiredSessionCleanupJob` stündlich (Korrektur E-18). | Session-Inhalt im Cookie (Größe, Sperrbarkeit); Redis-Sessions (zusätzliche Pflichtkomponente) | Sofortige Sperre durch Zeilenlöschung, `device_info` wie Original, Mehrinstanzfähigkeit über gemeinsamen Key-Ring | I0 |
-| **D05-ADR-04** | **Plane-Session folgt der Keycloak-Session.** (1) Back-Channel-Logout (`POST /auth/oidc/backchannel-logout/`, OIDC Back-Channel Logout 1.0) löscht alle `user_sessions` mit passendem `keycloak_sid` (bzw. `sub`). (2) Zusätzlich **Revalidierung**: Ist `revalidated_at` älter als `Plane:Auth:RevalidateIntervalSeconds` (Default 300), tauscht `SessionRevalidator` beim nächsten Request den gespeicherten Refresh-Token; schlägt das fehl (`invalid_grant`: Session beendet, Benutzer gesperrt/deaktiviert), wird die Plane-Session gelöscht → 401. Neue Tokens aktualisieren Rollen/Gruppen im Ticket. | nur Back-Channel (verpasste Zustellung bei Netzwerkfehler bleibt unbemerkt); Token-Introspection (zusätzlicher Client mit Introspection-Recht) | Belt-and-braces gegen den S7-Abbruchgrund „Back-Channel unzuverlässig“; Rollenentzug wirkt spätestens nach 5 min | I0 |
-| **D05-ADR-05** | **Abmeldung bleibt ein Formular-POST.** `POST /auth/sign-out/` (Formularfeld `csrfmiddlewaretoken`, Antiforgery) löscht die Plane-Session und leitet per 302 auf den Keycloak-`end_session_endpoint` mit `id_token_hint`, `client_id`, `post_logout_redirect_uri={APP}/auth/oidc/signed-out/` und `state` (geschütztes Ziel). Aliase mit identischem Handler: `POST /auth/spaces/sign-out/` (mit `next_path`), `POST /api/instances/admins/sign-out/` (Ziel `/god-mode/`). | GET-Logout (CSRF-anfällig); nur lokale Abmeldung (Keycloak-SSO bliebe aktiv, Forgejo ebenfalls) | Original-Frontend-Mechanik (verstecktes Formular) bleibt; vollständiges Single Logout | I0 |
+| **D05-ADR-04** | **funk.-Session folgt der Keycloak-Session.** (1) Back-Channel-Logout (`POST /auth/oidc/backchannel-logout/`, OIDC Back-Channel Logout 1.0) löscht alle `user_sessions` mit passendem `keycloak_sid` (bzw. `sub`). (2) Zusätzlich **Revalidierung**: Ist `revalidated_at` älter als `Plane:Auth:RevalidateIntervalSeconds` (Default 300), tauscht `SessionRevalidator` beim nächsten Request den gespeicherten Refresh-Token; schlägt das fehl (`invalid_grant`: Session beendet, Benutzer gesperrt/deaktiviert), wird die funk.-Session gelöscht → 401. Neue Tokens aktualisieren Rollen/Gruppen im Ticket. | nur Back-Channel (verpasste Zustellung bei Netzwerkfehler bleibt unbemerkt); Token-Introspection (zusätzlicher Client mit Introspection-Recht) | Belt-and-braces gegen den S7-Abbruchgrund „Back-Channel unzuverlässig“; Rollenentzug wirkt spätestens nach 5 min | I0 |
+| **D05-ADR-05** | **Abmeldung bleibt ein Formular-POST.** `POST /auth/sign-out/` (Formularfeld `csrfmiddlewaretoken`, Antiforgery) löscht die funk.-Session und leitet per 302 auf den Keycloak-`end_session_endpoint` mit `id_token_hint`, `client_id`, `post_logout_redirect_uri={APP}/auth/oidc/signed-out/` und `state` (geschütztes Ziel). Aliase mit identischem Handler: `POST /auth/spaces/sign-out/` (mit `next_path`), `POST /api/instances/admins/sign-out/` (Ziel `/god-mode/`). | GET-Logout (CSRF-anfällig); nur lokale Abmeldung (Keycloak-SSO bliebe aktiv, Forgejo ebenfalls) | Original-Frontend-Mechanik (verstecktes Formular) bleibt; vollständiges Single Logout | I0 |
 | **D05-ADR-06** | **CSRF wie Original: Origin-Prüfung + Token nur für Formulare.** Für jede cookie-authentifizierte Anfrage mit unsicherer Methode prüft `OriginCheckMiddleware` (`02` §3.4.1 Schritt 11) den `Origin`-Header exakt nach `A06` §3.14.1 (fehlender `Origin` → erlaubt, `null` → abgelehnt, Schema ignoriert bei Host-Gleichheit, Allowlist aus Basis-URLs + `CORS_ALLOWED_ORIGINS` + `CSRF_TRUSTED_ORIGINS`); Ablehnung 403 `{"detail": "CSRF Failed: origin not allowed"}`. Zusätzlich wird bei fehlendem `Origin` `Sec-Fetch-Site: cross-site` abgelehnt (Härtung ohne Vertragsänderung). Antiforgery (Formularfeld `csrfmiddlewaretoken`, Header `X-CSRFToken`, Cookie `csrftoken`) gilt nur noch für `POST /auth/sign-out/` und Aliase; `GET /auth/get-csrf-token/` bleibt. Auflösung von **E-17/OP-02**: kein Token-CSRF mehr für JSON-Endpunkte. | Double-Submit-Token für alle XHR (Frontend-Vertragsänderung) | Parität, SameSite=Lax als zweite Linie | I0 |
 | **D05-ADR-07** | **JIT-Provisionierung als Pipeline.** Nach **vollständiger** Protokollvalidierung (Signatur, `iss`, `aud`, `azp`, `nonce`, `at_hash` – im Handler-Ereignis `OnTicketReceived`, **nicht** `OnTokenValidated`, weil der Handler die `OpenIdConnectProtocolValidator`-Prüfung inkl. Nonce erst **nach** `TokenValidated` ausführt) läuft `UserProvisioningPipeline` mit geordneten `IUserProvisioningStep`-Implementierungen (CE: Identität → Benutzer → Profil/Avatar → Signup-Gate → Instanz-Admin-Spiegel → Einladungen → Onboarding-Ziel). Verknüpfung über `(issuer, subject)` in `user_identities`; E-Mail-Verknüpfung mit einem bestehenden, **unverknüpften** Konto nur bei `email_verified=true`; `email_verified=false` → kein Konto, Fehler 5124 `OAUTH_PROVIDER_UNVERIFIED_EMAIL`. | Verknüpfung nur über E-Mail (Takeover-Risiko, vgl. GHSA-7j95-vh8g-f365); Provisionierung über Keycloak-Event-Listener/SPI (Java-Code im Stack) | Andockstelle E3 (`01` §1.4), Takeover-Schutz | I0 (Kern), I1 (Einladungen) |
-| **D05-ADR-08** | **Keycloak ist führend für E-Mail und Anmeldedaten.** `users.email` und `users.is_email_verified` werden bei **jedem** Login aus den Claims übernommen. Plane bietet keine eigene E-Mail-Änderung mehr (CE-PROF-004 **angepasst**: „Change email“ öffnet die Keycloak-Kontokonsole); Passwort, 2FA, Passkeys und Geräte verwaltet die Kontokonsole (Profil → Security). Namen und Avatar übernimmt Plane nur bei der Anlage, außer `Plane:Auth:SyncProfileOnLogin=true` (Nachfolger von `ENABLE_<PROVIDER>_SYNC`, CE-AUTH-012). | E-Mail-Änderung in Plane mit Rückschreiben nach Keycloak (Admin-API-Credentials in Plane) | Eine Quelle der Wahrheit; kein Admin-Token für Keycloak in Plane | I0/I1 |
-| **D05-ADR-09** | **Instanz-Admin = Keycloak-Realm-Rolle.** Konfigurierbar `Plane:Auth:InstanceAdminRole` (Default `plane-instance-admin`, Claim `roles`) und optional `Plane:Auth:InstanceAdminGroup` (Claim `groups`, z. B. `/plane-instance-admins`). `PlanePrincipal.IsInstanceAdmin` entsteht ausschließlich aus dem Session-Ticket. Tabelle `instance_admins` ist nur **Spiegel** (bei jedem Login gepflegt) für `GET /api/instances/admins/` und die Workspace-Liste; `POST`/`DELETE /api/instances/admins/` entfallen (CE-INST-004 angepasst, O-11). | eigene Admin-Pflege in Plane (Doppelpflege, widerspricht ADR-008) | Rechteentzug in Keycloak wirkt ohne Plane-Aktion | I0 |
-| **D05-ADR-10** | **Erst-Einrichtung ohne Admin-Konto.** `Plane.Migrator` legt die Instanz (`is_setup_done=false`) und die Default-Konfiguration an (Korrektur B-31). Der erste Keycloak-Benutzer mit Admin-Rolle sieht im God Mode das reduzierte Setup-Formular (Vorname, Nachname, E-Mail read-only, Firmenname, Telemetrie-Checkbox ohne Wirkung) und schließt es mit `POST /api/instances/admins/setup/` (JSON) atomar ab (Row-Lock, S-16). Den ersten Admin-Benutzer legt der Realm-Import (Dev/Test) bzw. `deploy/keycloak/config/10-plane-bootstrap-admin.json` (Prod, Variablen `PLANE_BOOTSTRAP_ADMIN_EMAIL`, `PLANE_BOOTSTRAP_ADMIN_PASSWORD`, Required Action `UPDATE_PASSWORD`) an. | Admin-Anlage per Plane-Formular mit Passwort (widerspricht ADR-008) | ADR-008, B-31 | I0 |
+| **D05-ADR-08** | **Keycloak ist führend für E-Mail und Anmeldedaten.** `users.email` und `users.is_email_verified` werden bei **jedem** Login aus den Claims übernommen. funk. bietet keine eigene E-Mail-Änderung mehr (CE-PROF-004 **angepasst**: „Change email“ öffnet die Keycloak-Kontokonsole); Passwort, 2FA, Passkeys und Geräte verwaltet die Kontokonsole (Profil → Security). Namen und Avatar übernimmt funk. nur bei der Anlage, außer `Plane:Auth:SyncProfileOnLogin=true` (Nachfolger von `ENABLE_<PROVIDER>_SYNC`, CE-AUTH-012). | E-Mail-Änderung in funk. mit Rückschreiben nach Keycloak (Admin-API-Credentials in funk.) | Eine Quelle der Wahrheit; kein Admin-Token für Keycloak in funk. | I0/I1 |
+| **D05-ADR-09** | **Instanz-Admin = Keycloak-Realm-Rolle.** Konfigurierbar `Plane:Auth:InstanceAdminRole` (Default `plane-instance-admin`, Claim `roles`) und optional `Plane:Auth:InstanceAdminGroup` (Claim `groups`, z. B. `/plane-instance-admins`). `PlanePrincipal.IsInstanceAdmin` entsteht ausschließlich aus dem Session-Ticket. Tabelle `instance_admins` ist nur **Spiegel** (bei jedem Login gepflegt) für `GET /api/instances/admins/` und die Workspace-Liste; `POST`/`DELETE /api/instances/admins/` entfallen (CE-INST-004 angepasst, O-11). | eigene Admin-Pflege in funk. (Doppelpflege, widerspricht ADR-008) | Rechteentzug in Keycloak wirkt ohne funk.-Aktion | I0 |
+| **D05-ADR-10** | **Erst-Einrichtung ohne Admin-Konto.** `Plane.Migrator` legt die Instanz (`is_setup_done=false`) und die Default-Konfiguration an (Korrektur B-31). Der erste Keycloak-Benutzer mit Admin-Rolle sieht im God Mode das reduzierte Setup-Formular (Vorname, Nachname, E-Mail read-only, Firmenname, Telemetrie-Checkbox ohne Wirkung) und schließt es mit `POST /api/instances/admins/setup/` (JSON) atomar ab (Row-Lock, S-16). Den ersten Admin-Benutzer legt der Realm-Import (Dev/Test) bzw. `deploy/keycloak/config/10-plane-bootstrap-admin.json` (Prod, Variablen `PLANE_BOOTSTRAP_ADMIN_EMAIL`, `PLANE_BOOTSTRAP_ADMIN_PASSWORD`, Required Action `UPDATE_PASSWORD`) an. | Admin-Anlage per funk.-Formular mit Passwort (widerspricht ADR-008) | ADR-008, B-31 | I0 |
 | **D05-ADR-11** | **Step-up für God Mode optional, Default aus** (ADR-009, O-08). `Plane:Auth:AdminStepUpMaxAgeSeconds` = 0 (aus). Bei > 0 verlangt `AdminStepUpFilter` auf allen `/api/instances/`-Endpunkten außer `GET /api/instances/` und `…/admins/session/` einen `auth_time`-Claim jünger als der Wert; sonst 401 `{"error_code": 5210, "error_message": "ADMIN_REAUTHENTICATION_REQUIRED"}` → Admin-App leitet zu `/auth/oidc/login/?app=admin&max_age=0&next_path=…` (immer `max_age=0`, kein Konfigurationsfeld im Frontend; die Schwelle prüft nur der Server – ABG-021). | Pflicht-Step-up (widerspricht ADR-009) | – | I0 (Schalter), I6 (UI) |
-| **D05-ADR-12** | **Signup-Gate bleibt als JIT-Regel.** `ENABLE_SIGNUP` (Instanz-Konfiguration, eindeutiger Default `"1"`, Korrektur E-03) entscheidet, ob ein **neuer** Plane-Benutzer ohne offene Workspace-/Projekt-Einladung angelegt wird; sonst 5015 `SIGNUP_DISABLED`. Instanz-Admins sind ausgenommen. Optional `Plane:Auth:RequiredRole` (Default leer): ohne diese Realm-Rolle kein Zugang (5015). Der God-Mode-Schalter „Allow anyone to sign up even without an invite“ bleibt auf der neuen Seite `/god-mode/authentication/` (Rest von CE-INST-020). | Signup-Steuerung ausschließlich in Keycloak (verliert die Plane-spezifische „nur mit Einladung“-Regel, wenn Keycloak mit Forgejo geteilt wird) | Keycloak-Benutzer ≠ Plane-Benutzer; Betreiber kann Plane auf Eingeladene begrenzen | I1 |
-| **D05-ADR-13** | **Realm als Code, zwei Anwendungswege.** Dev: `deploy/keycloak/realms/plane-realm.json`, Test: generierte `plane-realm.test.json` (`15` §3.14.2), je Profil genau eine Datei per Aspire `WithRealmImport` (`--import-realm`; bestehende Realms werden übersprungen). Prod/Upgrade: `deploy/keycloak/config/*.json` per **keycloak-config-cli** (adorsys, Apache-2.0) als idempotenter Init-Container `keycloak-config` (Aspire-Ressource im Profil `prodlike`, Compose-Service). Platzhalter `${VAR}` werden aus Umgebungsvariablen ersetzt (Keycloak-Import) bzw. per `import.var-substitution.enabled=true` (config-cli). Secrets nie im Repo. | nur `--import-realm` (keine Aktualisierung bestehender Realms); Terraform-Provider (zusätzliche Toolchain); Keycloak-Admin-API-Code in Plane | Reproduzierbar, upgrade-fähig, airgapped (Image gespiegelt) | I0 (Dev), I7 (Prod) |
-| **D05-ADR-14** | **Eigenes FreeMarker-Login-Theme `plane`** (`parent=base`, volle Kontrolle über DOM) und Kind-Theme `plane-space`. Zwei-Schritt-Ablauf wie Original (E-Mail → Passwort) über einen eigenen Browser-Flow `plane-browser` mit **Username Form** + **Password Form**. CSS wird zur Build-Zeit mit Tailwind 4.1 aus den Template-Klassen erzeugt (`tools/keycloak-theme/`), Texte aus `packages/i18n` (alle Plane-Sprachen) generiert, Schrift Inter gebündelt. Fallback (S7): Keycloakify (MIT, Node nur im Build). | `keycloak.v2`-Theme anpassen (PatternFly-DOM, keine Pixelparität); Login-UI in Angular mit Keycloak-Direct-Grant (Passwort durch Plane, verletzt ADR-008) | ADR-005-Parität, Airgap | I0 (E-Mail/Passwort), I1 (alle Seiten) |
+| **D05-ADR-12** | **Signup-Gate bleibt als JIT-Regel.** `ENABLE_SIGNUP` (Instanz-Konfiguration, eindeutiger Default `"1"`, Korrektur E-03) entscheidet, ob ein **neuer** funk.-Benutzer ohne offene Workspace-/Projekt-Einladung angelegt wird; sonst 5015 `SIGNUP_DISABLED`. Instanz-Admins sind ausgenommen. Optional `Plane:Auth:RequiredRole` (Default leer): ohne diese Realm-Rolle kein Zugang (5015). Der God-Mode-Schalter „Allow anyone to sign up even without an invite“ bleibt auf der neuen Seite `/god-mode/authentication/` (Rest von CE-INST-020). | Signup-Steuerung ausschließlich in Keycloak (verliert die funk.-spezifische „nur mit Einladung“-Regel, wenn Keycloak mit Forgejo geteilt wird) | Keycloak-Benutzer ≠ funk.-Benutzer; Betreiber kann funk. auf Eingeladene begrenzen | I1 |
+| **D05-ADR-13** | **Realm als Code, zwei Anwendungswege.** Dev: `deploy/keycloak/realms/plane-realm.json`, Test: generierte `plane-realm.test.json` (`15` §3.14.2), je Profil genau eine Datei per Aspire `WithRealmImport` (`--import-realm`; bestehende Realms werden übersprungen). Prod/Upgrade: `deploy/keycloak/config/*.json` per **keycloak-config-cli** (adorsys, Apache-2.0) als idempotenter Init-Container `keycloak-config` (Aspire-Ressource im Profil `prodlike`, Compose-Service). Platzhalter `${VAR}` werden aus Umgebungsvariablen ersetzt (Keycloak-Import) bzw. per `import.var-substitution.enabled=true` (config-cli). Secrets nie im Repo. | nur `--import-realm` (keine Aktualisierung bestehender Realms); Terraform-Provider (zusätzliche Toolchain); Keycloak-Admin-API-Code in funk. | Reproduzierbar, upgrade-fähig, airgapped (Image gespiegelt) | I0 (Dev), I7 (Prod) |
+| **D05-ADR-14** | **Eigenes FreeMarker-Login-Theme `plane`** (`parent=base`, volle Kontrolle über DOM) und Kind-Theme `plane-space`. Zwei-Schritt-Ablauf wie Original (E-Mail → Passwort) über einen eigenen Browser-Flow `plane-browser` mit **Username Form** + **Password Form**. CSS wird zur Build-Zeit mit Tailwind 4.1 aus den Template-Klassen erzeugt (`tools/keycloak-theme/`), Texte aus `packages/i18n` (alle funk.-Sprachen) generiert, Schrift Inter gebündelt. Fallback (S7): Keycloakify (MIT, Node nur im Build). | `keycloak.v2`-Theme anpassen (PatternFly-DOM, keine Pixelparität); Login-UI in Angular mit Keycloak-Direct-Grant (Passwort durch funk., verletzt ADR-008) | ADR-005-Parität, Airgap | I0 (E-Mail/Passwort), I1 (alle Seiten) |
 | **D05-ADR-15** | **Authentifizierungs-Schemata als Policy-Scheme `Plane`** nach Pfad: `/api/v1/` → `ApiKey` (Header `X-Api-Key`), bei aktiviertem H1 zusätzlich `Bearer` (Keycloak-JWT, Audience `plane-api`); alle anderen Pfade → `Session` (Cookie-Schema). Session-Cookies werden unter `/api/v1/` **nicht** akzeptiert (Original). `PlanePrincipal.Kind` = `User` / `ApiKey` / `App` / `Bot`. | ein Schema für alles (Cookie-Fallback auf v1 würde CSRF-Fläche öffnen) | Parität, H1-Andockstelle | I0 |
 | **D05-ADR-16** | **API-Keys gehasht.** Format bleibt `plane_api_` + 32 Hex; gespeichert wird `token_hash = SHA-256(token)` (Hex) + `token_prefix` (erste 14 Zeichen) – Klartext nur einmal in der Create-Antwort (wie Original-UI, CE-WH-013); Lookup per Hash. Fehlerformen 1:1: ohne Header 401 `{"detail": "Authentication credentials were not provided."}`, ungültig/abgelaufen/inaktiv/Benutzer deaktiviert 403 `{"detail": "Given API token is not valid"}` (B-03 bewusst nicht geändert, Vertrag). `last_used` wird höchstens einmal pro 60 s geschrieben. Rate-Limit-Schlüssel = `token_hash`. | Klartext-Speicherung (Original) | Leak der DB kompromittiert keine Tokens | I6 |
 | **D05-ADR-17** | **Autorisierung über einen aus dem Code abgeleiteten Permission-Katalog** (ADR-019): 258 Keys `<ebene>.<ressource>.<aktion>` (Anhang A), je Endpunkt-Methode genau eine Angabe `.RequirePermission(key, rules)` oder `.AllowAnonymous()` (Anhang B). System-Rollen (`roles`, `is_system=true`): Admin 20, Member 15, Guest 5 auf Workspace- und Projektebene; die Grant-Mengen entstehen aus der Matrix. **Regeln** sind deklarative Zusätze je Endpunkt: `C:<Model>` (Ersteller-Bypass), `OWN` (nur eigene Objekte), `SELF` (eigener Datensatz), `VIS` (Gast-Sichtbarkeit), `PAGE` (Page-Zugriff), `BOARD` (Deploy-Board-Schalter), `WSA\|PA` (Workspace-Admin **oder** Projekt-Admin ohne Mitgliedschaft). Jeder Key ist zusätzlich als ASP.NET-Policy `perm:<key>` registriert (für SignalR-Hubs und `[Authorize]`-Konsumenten). | ASP.NET-Policies je Rolle (`role >= 15`) | E5/B1 docken ohne Umbau an; Matrix-Test maschinell | I0 (Gerüst), je Inkrement die Keys |
@@ -231,7 +231,7 @@ sequenceDiagram
 | Aspekt | `web` | `admin` (God Mode) | `space` |
 |---|---|---|---|
 | Keycloak-Client | `plane-web` | `plane-admin` | `plane-space` |
-| Login-Theme | `plane` | `plane` (Variante „admin“ über `client.clientId`, Überschrift „Manage your Plane instance“ / „Configure instance-wide settings to secure your instance“ aus `ADM/app/(all)/(home)/sign-in-form.tsx`) | `plane-space` |
+| Login-Theme | `plane` | `plane` (Variante „admin“ über `client.clientId`, Überschrift „Manage your funk. instance“ (Original „Manage your Plane instance“, BR-10) / „Configure instance-wide settings to secure your instance“ aus `ADM/app/(all)/(home)/sign-in-form.tsx`) | `plane-space` |
 | Einstieg (anonym, ohne `error_code`) | `/` → Auto-Redirect zu N-01 (`Plane:Auth:AutoRedirect=true`, Default) | `/god-mode/` → Auto-Redirect | `/spaces/` zeigt `AuthView` mit Button; Board-Seiten (`/spaces/issues/{anchor}`) bleiben anonym lesbar, „Sign in“-Links führen zu N-01 mit `next_path` = aktuelle Seite **inkl. Query** (Korrektur A11 3.27: Peek/Board-Parameter gingen verloren) |
 | Erfolgsziel | `{APP}/?next_path=<validiert>` bzw. `{APP}/` (Original-Semantik, Frontend entscheidet über `get_redirection_path`-Äquivalent) | `{ADMIN}general/` bzw. `{ADMIN}` wenn `is_setup_done=false` (Setup-Formular) | `{SPACE}<next_path>` (validiert) bzw. `{SPACE}` |
 | Voraussetzung | Instanz eingerichtet, sonst 5000 `INSTANCE_NOT_CONFIGURED` | Rolle `plane-instance-admin`, sonst 5175 `ADMIN_AUTHENTICATION_FAILED` | Instanz eingerichtet, sonst 5000 |
@@ -274,16 +274,16 @@ Das BFF leitet wie das Original **immer auf die App-Wurzel** mit `?next_path=` u
 | Token-Endpunkt/JWKS nicht erreichbar | `HttpRequestException` | 5201 `IDENTITY_PROVIDER_UNAVAILABLE` |
 | `email_verified=false` | Pipeline-Schritt Identität | 5124 `OAUTH_PROVIDER_UNVERIFIED_EMAIL` (Original-Code, Text im Frontend ergänzt, OP-06) |
 | E-Mail fehlt im Claim | dto. | 5010 `EMAIL_REQUIRED` |
-| E-Mail gehört einem anderen, bereits verknüpften Plane-Benutzer | dto. | 5202 `IDENTITY_ALREADY_LINKED` |
+| E-Mail gehört einem anderen, bereits verknüpften funk.-Benutzer | dto. | 5202 `IDENTITY_ALREADY_LINKED` |
 | Bot-Benutzer | Pipeline-Schritt Benutzer | 5017 `BOT_USER_LOGIN_FORBIDDEN` |
-| in Plane deaktiviert (`is_active=false` und `last_logout_time` gesetzt) | dto. | 5019 `USER_ACCOUNT_DEACTIVATED` (bei `app=admin`: 5190 `ADMIN_USER_DEACTIVATED`, Admin-Banner) |
+| in funk. deaktiviert (`is_active=false` und `last_logout_time` gesetzt) | dto. | 5019 `USER_ACCOUNT_DEACTIVATED` (bei `app=admin`: 5190 `ADMIN_USER_DEACTIVATED`, Admin-Banner) |
 | neuer Benutzer, Signup-Gate greift | Pipeline-Schritt Signup-Gate | 5015 `SIGNUP_DISABLED` |
 | Instanz nicht eingerichtet (`web`/`space`) | Pipeline-Schritt Instanz | 5000 `INSTANCE_NOT_CONFIGURED` |
 | `app=admin` ohne Admin-Rolle | dto. | 5175 `ADMIN_AUTHENTICATION_FAILED` |
 | Rate-Limit | N-01: Policy `authentication`; N-02: `AuthCallbackRateLimiter` in `OnMessageReceived` | 5900 `RATE_LIMIT_EXCEEDED` |
 | unerwartete Ausnahme in Pipeline/Session-Anlage | `try/catch` im Callback-Handler (Log Error, Kategorie `plane.authentication`) | 5999 `AUTHENTICATION_FAILED` (statt HTTP 500) |
 
-Bei Fehlern **nach** erfolgreichem Token-Tausch wird keine Plane-Session angelegt; die Keycloak-SSO-Session bleibt bestehen (der Banner bietet „Sign in“ = N-01 mit `prompt=login`, damit ein anderes Konto gewählt werden kann).
+Bei Fehlern **nach** erfolgreichem Token-Tausch wird keine funk.-Session angelegt; die Keycloak-SSO-Session bleibt bestehen (der Banner bietet „Sign in“ = N-01 mit `prompt=login`, damit ein anderes Konto gewählt werden kann).
 
 ### 3.4 Sessions und Cookies
 
@@ -292,7 +292,7 @@ Bei Fehlern **nach** erfolgreichem Token-Tausch wird keine Plane-Session angeleg
 | Spalte | Typ | Inhalt |
 |---|---|---|
 | `id` | `varchar(64)` PK | Zufall 32 Byte, Base64URL (`RandomNumberGenerator`) – Schlüssel, den `ITicketStore.StoreAsync` liefert |
-| `user_id` | `uuid` FK `users`, Index | Plane-Benutzer (Ersatz `sessions.user_id`) |
+| `user_id` | `uuid` FK `users`, Index | funk.-Benutzer (Ersatz `sessions.user_id`) |
 | `app` | `varchar(16)` | `web` \| `admin` \| `space` (App des Logins) |
 | `keycloak_sid` | `varchar(128)`, Index | Claim `sid` (Back-Channel-Logout) |
 | `keycloak_sub` | `varchar(255)`, Index | Claim `sub` (Back-Channel-Logout ohne `sid`) |
@@ -356,7 +356,7 @@ Diese Optionsnamen sind **verbindlich** (D05 ist fachlicher Eigentümer von `Pla
 | Sliding aktiv | `expires_at` = jetzt + Laufzeit, Cookie neu |
 | Abmelden (N-03…N-05) | Zeile löschen, Cookie löschen, Keycloak-Logout |
 | Back-Channel-Logout | alle Zeilen mit `keycloak_sid` (bzw. `keycloak_sub`) löschen + Revoke-Nachricht |
-| Konto in Plane deaktiviert (CE-PROF-005) | alle Zeilen des Benutzers löschen (`ISessionRevoker.RevokeAllAsync(userId)`) |
+| Konto in funk. deaktiviert (CE-PROF-005) | alle Zeilen des Benutzers löschen (`ISessionRevoker.RevokeAllAsync(userId)`) |
 | Rollenänderung in Keycloak | wirksam bei nächster Revalidierung (≤ 300 s) oder sofort nach Keycloak-„Sign out all sessions“ |
 | Ablauf | Request → 401 → Frontend → `/?next_path=` → Auto-Redirect → stilles Re-Login, solange die Keycloak-SSO-Session lebt (CE-AUTH-023) |
 | Bereinigung | `ExpiredSessionCleanupJob` (Cron `17 * * * *` UTC) löscht `expires_at < now()` (E-18) |
@@ -386,7 +386,7 @@ sequenceDiagram
   A-->>B: 302 K/logout?id_token_hint=…&client_id=plane-web&post_logout_redirect_uri={APP}/auth/oidc/signed-out/&state=…
   B->>K: Logout (ohne Bestätigungsseite, da id_token_hint)
   K->>F: Back-Channel-Logout an alle übrigen Clients der SSO-Session
-  K->>A: Back-Channel-Logout (andere Plane-Sessions derselben sid, idempotent)
+  K->>A: Back-Channel-Logout (andere funk.-Sessions derselben sid, idempotent)
   K-->>B: 302 {APP}/auth/oidc/signed-out/?state=…
   B->>A: GET /auth/oidc/signed-out/?state=…
   A-->>B: 302 {APP}/ (bzw. Space-next_path)
@@ -400,6 +400,8 @@ Keycloak erreicht den Endpunkt über die **interne** Adresse (`backchannel.logou
 
 #### 3.7.1 Datenmodell (Eigentümer `Identity`, Details in `03-…`)
 
+Ablage (17 ABG-142): die Entitäten `User`, `Profile`, `UserIdentity`, `UserSession`, `ApiToken`, `ApiActivityLog` liegen in `Plane.Data/Entities/Identity/` mit `[OwnedBy("Identity")]`; `Plane.Identity/Domain/` enthält nur Domänenlogik ohne Entitäten.
+
 | Tabelle | Neu/aus Original | Felder (Auth-relevant) |
 |---|---|---|
 | `users` | `User` (`A02a`) | `id`, `email` (unique, lowercase), `username` (`uuid4().hex` bei Anlage wie Original), `first_name`, `last_name`, `display_name` (aus E-Mail-Lokalteil wie `M/user.py`), `avatar`, `avatar_asset_id`, `is_active`, `is_bot`, `bot_type`, `is_email_verified`, `last_login_time`, `last_login_ip`, `last_login_uagent`, `last_login_medium` (neu immer `"oidc"`), `last_logout_time`, `last_logout_ip`, `last_active`, `user_timezone`. **Entfällt:** `password`, `is_password_autoset` (API liefert `is_password_autoset: false` als Konstante für Vertragskompatibilität), `token`, `token_updated_at` |
@@ -408,9 +410,9 @@ Keycloak erreicht den Endpunkt über die **interne** Adresse (`backchannel.logou
 | `accounts` | `Account` | **entfällt** (CE-PROF-007) |
 | `sessions` | `Session` | ersetzt durch `user_sessions` |
 
-#### 3.7.2 Claims → Plane-Felder
+#### 3.7.2 Claims → funk.-Felder
 
-| Claim | Keycloak-Quelle (Mapper §3.15.5) | Plane-Feld | Anlage | Folgelogin |
+| Claim | Keycloak-Quelle (Mapper §3.15.5) | funk.-Feld | Anlage | Folgelogin |
 |---|---|---|---|---|
 | `iss` + `sub` | Realm, Benutzer-ID (UUID) | `user_identities.(issuer, subject)` | ja | Schlüssel der Zuordnung |
 | `email` | Benutzer-E-Mail | `users.email` (`Trim().ToLowerInvariant()`, Validierung wie `Adapter.sanitize_email`) | ja | **immer** synchronisiert; Konflikt → 5202 |
@@ -418,7 +420,7 @@ Keycloak erreicht den Endpunkt über die **interne** Adresse (`backchannel.logou
 | `given_name` / `family_name` | Vor-/Nachname | `first_name` / `last_name` (`None` → `""`; URL-Verbot S-21: enthält der Name eine URL, wird er leer übernommen) | ja | nur bei `SyncProfileOnLogin` |
 | `name`, `preferred_username` | – | nicht übernommen (`display_name` wie Original aus E-Mail) | – | – |
 | `picture` | Benutzerattribut `picture` (IdP-Mapper bei Brokering) | `avatar` + `avatar_asset_id` (Download §3.17.2: SSRF-sicher, 10 s, max. 5 Redirects, ≤ `FILE_SIZE_LIMIT`, MIME ∈ {jpeg, png, gif, webp}, Upload als `FileAsset` `USER_AVATAR`) | ja | nur bei `SyncProfileOnLogin` |
-| `locale` | Benutzerattribut `locale` | `profiles.language`, wenn Wert ∈ Plane-Sprachen | ja | nein |
+| `locale` | Benutzerattribut `locale` | `profiles.language`, wenn Wert ∈ funk.-Sprachen | ja | nein |
 | `roles` | Realm-Rollen | Ticket, `instance_admins`-Spiegel | – | – |
 | `groups` | Gruppenmitgliedschaften | Ticket (E3) | – | – |
 
@@ -445,8 +447,8 @@ Alle Schritte laufen in **einer** Datenbanktransaktion (`ModuleScope("Identity")
 | Fall | Verhalten |
 |---|---|
 | Benutzer ändert E-Mail in Keycloak | Folgelogin synchronisiert `users.email`; offene Einladungen der **neuen** Adresse werden ab dann zugeordnet; Bestätigungsmails des Originals (`user_email_update_task`) entfallen (Keycloak verifiziert selbst, `verifyEmail=true`) |
-| Gleiche E-Mail, neuer `sub` (Benutzer in Keycloak gelöscht und neu angelegt) | 5202; Auflösung durch Instanz-Admin per CLI `plane-cli identities relink --email <e> --subject <sub>` (§4.6) |
-| Keycloak-Issuer ändert sich (Hostname-Umzug) | `user_identities.issuer` per CLI `plane-cli identities migrate-issuer --from <a> --to <b>` |
+| Gleiche E-Mail, neuer `sub` (Benutzer in Keycloak gelöscht und neu angelegt) | 5202; Auflösung durch Instanz-Admin per CLI `funk-cli identities relink --email <e> --subject <sub>` (§4.6) |
+| Keycloak-Issuer ändert sich (Hostname-Umzug) | `user_identities.issuer` per CLI `funk-cli identities migrate-issuer --from <a> --to <b>` |
 | Brokered Login (SAML/OIDC/LDAP in Keycloak, E1/E3/E4 durch Keycloak) | identisch; Betreiber setzt am IdP bzw. an der Federation `trustEmail=true`, sonst greift 5124 |
 | Gleichzeitige Erstlogins derselben Person (zwei Tabs) | Unique-Constraints `(issuer, subject)` und `email`; zweiter Versuch fängt `DbUpdateException` und wiederholt Schritt 300 einmal |
 
@@ -458,13 +460,13 @@ Alle Schritte laufen in **einer** Datenbanktransaktion (`ModuleScope("Identity")
 
 #### 3.7.6 Signup-Gate und Registrierung
 
-Keycloak-Selbstregistrierung (`registrationAllowed`) ist im Realm **aus**; Betreiber können sie einschalten (Theme enthält `register.ftl`). Unabhängig davon entscheidet Plane per `ENABLE_SIGNUP`, ob ein Keycloak-Benutzer **Plane** ohne Einladung nutzen darf (D05-ADR-12). `GET /api/instances/` liefert `config.enable_signup` wie Original.
+Keycloak-Selbstregistrierung (`registrationAllowed`) ist im Realm **aus**; Betreiber können sie einschalten (Theme enthält `register.ftl`). Unabhängig davon entscheidet funk. per `ENABLE_SIGNUP`, ob ein Keycloak-Benutzer **funk.** ohne Einladung nutzen darf (D05-ADR-12). `GET /api/instances/` liefert `config.enable_signup` wie Original.
 
 ### 3.8 Instanz-Admin per Keycloak-Rolle und optionaler Step-up
 
 | Element | Festlegung |
 |---|---|
-| Rolle | Realm-Rolle `plane-instance-admin` (Beschreibung „Plane God Mode administrator“); Composite: keine |
+| Rolle | Realm-Rolle `plane-instance-admin` (Beschreibung „funk. God Mode administrator“, ADR-009B/BR-09, `BRAND-KC-03`; Rollenname bleibt); Composite: keine |
 | Gruppe (optional) | `/plane-instance-admins` mit Rollenzuweisung `plane-instance-admin` (Realm-Import legt sie an); Betreiber pflegen Mitglieder in Keycloak bzw. per LDAP-Gruppen-Mapper |
 | Auswertung | `PlanePrincipalFactory`: `IsInstanceAdmin = roles ∋ InstanceAdminRole ∨ groups ∋ InstanceAdminGroup`; `InstanceAdminRequirementHandler` prüft nur `IsInstanceAdmin` (Original zusätzlich `InstanceAdmin.role >= 15` – entfällt, Spiegel hat immer 20) |
 | Wirkungszeit | Login, Revalidierung (≤ `RevalidateIntervalSeconds`), Back-Channel-Logout |
@@ -495,30 +497,31 @@ sequenceDiagram
   A-->>B: 200 {redirect:"/god-mode/general/"}
 ```
 
-- **Web-App vor der Einrichtung:** `GET /api/instances/` liefert `is_setup_done=false` → Seite „Welcome to Plane“ mit Link zum God Mode (CE-INST-005, unverändert).
+- **Web-App vor der Einrichtung:** `GET /api/instances/` liefert `is_setup_done=false` → Seite „Welcome to funk.“ (Original „Welcome to Plane“, ADR-009B/BR-10) mit Link zum God Mode (CE-INST-005, sonst unverändert).
 - **Setup-Formular** (`frontend/libs/admin/instance/setup-form/`): DOM 1:1 zu `ADM/components/instance/setup-form.tsx` ohne Passwort-/Bestätigungs-Felder; E-Mail-Feld `disabled` mit Wert aus Session; Vor-/Nachname vorbelegt aus Claims. Fehlerbanner jetzt wirksam (Korrektur des Original-Bugs „Codes als Namen verglichen“, A11 3.2 Punkt 6).
 - **Telemetrie-Checkbox:** bleibt sichtbar (1:1), Wert wird in `instances.is_telemetry_enabled` gespeichert, ohne Export (ADR-004).
 - **Kein Bootstrap-Admin vorhanden** (Betreiber hat keinen angelegt): God Mode zeigt nach Login ohne Rolle Banner 5175; Dokumentation in `14-…` beschreibt `kcadm.sh`-Befehl bzw. config-cli-Variablen.
-- **CLI:** `plane-cli instance status` (zeigt `is_setup_done`, Anzahl Spiegel-Admins, Keycloak-Erreichbarkeit); `plane-cli instance reset-setup` (setzt `is_setup_done=false`, nur mit `--force`).
+- **CLI:** `funk-cli instance status` (zeigt `is_setup_done`, Anzahl Spiegel-Admins, Keycloak-Erreichbarkeit); `funk-cli instance reset-setup` (setzt `is_setup_done=false`, nur mit `--force`).
 
 ### 3.10 Deaktivierte und gesperrte Konten
 
-| Szenario | Auslöser | Wirkung in Plane | Wirkung in Keycloak | Anmeldung danach |
+| Szenario | Auslöser | Wirkung in funk. | Wirkung in Keycloak | Anmeldung danach |
 |---|---|---|---|---|
-| **Konto in Plane deaktivieren** (CE-PROF-005, `DELETE /api/users/me/`) | Benutzer selbst (nicht Instanz-Admin, sonst 400) | wie Original `A06` §3.17: Mitgliedschaften deaktivieren, Workspace-Einladungen der E-Mail löschen, Profil zurücksetzen, `is_active=false`, `last_logout_time/-ip`, alle `user_sessions` löschen, API-Tokens deaktivieren, Mail `user_deactivation_email`; **Passwort-Randomisierung entfällt**; Antwort 204, Frontend sendet danach `POST /auth/sign-out/` (RP-Logout) | unverändert (Konto bleibt; Sperre des Kontos selbst in Keycloak, ADR-008) | 5019 `USER_ACCOUNT_DEACTIVATED` (Banner) |
-| **Reaktivierung** | Instanz-Admin | `plane-cli users activate <email>` (wie `activate_user`), später God-Mode-Benutzerverwaltung (E7) | – | normal |
-| **Konto in Keycloak deaktiviert** (`enabled=false`) | Keycloak-Admin, LDAP-Sync | nächste Revalidierung: Refresh schlägt fehl → Session gelöscht → 401. API-Keys hängen nicht an einer Keycloak-Session; deshalb gleicht `IdpUserStateSyncJob` (Cron `*/15 * * * *`, Service-Account-Client `plane-backend` mit Realm-Management-Rolle `view-users`, §3.15.3) für alle Benutzer mit aktiven API-Tokens den Keycloak-Status `enabled` ab: gesperrt oder gelöscht → alle `api_tokens` des Benutzers `is_active=false`, Integration-Event `plane.identity.user_disabled_in_idp.v1`. Abschaltbar mit `Plane:Auth:IdpUserSync:Enabled=false` (dann wirkt die Sperre auf API-Keys erst nach manueller Deaktivierung in Plane) | Login unmöglich | Keycloak-Fehlerseite im Plane-Theme (`error.ftl`) |
+| **Konto in funk. deaktivieren** (CE-PROF-005, `DELETE /api/users/me/`) | Benutzer selbst (nicht Instanz-Admin, sonst 400) | wie Original `A06` §3.17: Mitgliedschaften deaktivieren, Workspace-Einladungen der E-Mail löschen, Profil zurücksetzen, `is_active=false`, `last_logout_time/-ip`, alle `user_sessions` löschen, API-Tokens deaktivieren, Mail `user_deactivation_email`; **Passwort-Randomisierung entfällt**; Antwort 204, Frontend sendet danach `POST /auth/sign-out/` (RP-Logout) | unverändert (Konto bleibt; Sperre des Kontos selbst in Keycloak, ADR-008) | 5019 `USER_ACCOUNT_DEACTIVATED` (Banner) |
+| **Reaktivierung** | Instanz-Admin | `funk-cli users activate <email>` (wie `activate_user`), später God-Mode-Benutzerverwaltung (E7) | – | normal |
+| **Konto in Keycloak deaktiviert** (`enabled=false`) | Keycloak-Admin, LDAP-Sync | nächste Revalidierung: Refresh schlägt fehl → Session gelöscht → 401. API-Keys hängen nicht an einer Keycloak-Session; deshalb gleicht `IdpUserStateSyncJob` (Cron `*/15 * * * *`, Service-Account-Client `plane-backend` mit Realm-Management-Rolle `view-users`, §3.15.3) für alle Benutzer mit aktiven API-Tokens den Keycloak-Status `enabled` ab: gesperrt oder gelöscht → alle `api_tokens` des Benutzers `is_active=false`, Integration-Event `plane.identity.user_disabled_in_idp.v1`. Abschaltbar mit `Plane:Auth:IdpUserSync:Enabled=false` (dann wirkt die Sperre auf API-Keys erst nach manueller Deaktivierung in funk.) | Login unmöglich | Keycloak-Fehlerseite im Login-Theme `plane` (funk.-Branding, `error.ftl`) |
 | **Keycloak-Admin „Sign out“ / „Sign out all sessions“** | Keycloak | Back-Channel-Logout → Sessions gelöscht (< 2 s) | Sessions beendet | stilles Re-Login unmöglich, Login-Seite |
 | **Konto in Keycloak gelöscht** | Keycloak-Admin | wie deaktiviert; `user_identities` bleibt (Historie) | – | neues Konto gleicher E-Mail → 5202 bis `identities relink` |
 | **Bot-Benutzer** | – | Bots haben keine Identität; jede Verknüpfung → 5017 | – | – |
-| **Brute-Force** | Fehlversuche | – | Brute-Force-Detection (§3.15.2) + Plane-Rate-Limit `authentication` auf N-01/N-02 | temporäre Sperre |
+| **Brute-Force** | Fehlversuche | – | Brute-Force-Detection (§3.15.2) + funk.-Rate-Limit `authentication` auf N-01/N-02 | temporäre Sperre |
 
 ### 3.11 Authentisierung von Realtime (Hocuspocus-WebSocket, SignalR)
 
 - **Upgrade-Request** an `/live/collaboration` bzw. `/live/events/` trägt das Session-Cookie (same-origin über das Gateway). `Plane.Realtime` registriert dasselbe Cookie-Schema mit `PostgresTicketStore` (gemeinsamer Key-Ring, Anwendungsname `plane`) – keine HTTP-Rundreise zur API (Original: Cookie-Weitergabe an `GET /api/users/me/`, `A12`). `Plane.Realtime` führt **keine** Token-Revalidierung aus (keine Client-Secrets im Realtime-Host): es akzeptiert nur Tickets, deren `user_sessions`-Zeile existiert und deren Spalte `revalidated_at` nicht älter als `RevalidateIntervalSeconds + RevalidateGraceSeconds` ist; die Revalidierung übernimmt der nächste HTTP-Request des Browsers an `Plane.Api`, Sperren erreichen offene Verbindungen über die Revoke-Nachricht.
 - **Origin-Pflicht** (D05-ADR-22) vor dem Upgrade; fehlt `Origin` → 403.
-- **Hocuspocus-`token`** (`{id, cookie?}` aus `LIVE/lib/auth.ts`) wird nur noch gegen `principal.UserId` verglichen; Abweichung → `PermissionDenied` (Close-Code 4403).
-- **Dokument-Autorisierung:** `IPageDocumentStore.LoadAsync` prüft `project.page.read` (+ `PAGE`-Regel) und liefert `read-write` nur bei `project.page.update`; sonst Scope `readonly` (`01` ADR-022).
+- **Hocuspocus-`token`** (`{id, cookie?}` aus `LIVE/lib/auth.ts`) wird nur noch gegen `principal.UserId` verglichen; Abweichung → `PermissionDenied` (**ohne** Close – der Provider trennt selbst; Rechteentzug in der Sitzung: `PermissionDenied` + 4403, `07` D07-ADR-05, 17 ABG-107). Ein WebSocket-Upgrade ohne Session-Cookie wird mit **403** abgewiesen (AK-20).
+- **Dokument-Autorisierung:** `ICollaborationDocumentType.AuthorizeAsync` prüft **je Verbindung** `project.page.read` (+ `PAGE`-Regel) und liefert `read-write` nur bei `project.page.update`; sonst Scope `readonly` (`01` ADR-022, `07` D07-ADR-05, 17 ABG-107).
+- **Neuprüfung während der Sitzung:** Signal `access` bzw. `member_removed` → alle betroffenen Verbindungen werden über `AuthorizeAsync` neu autorisiert; Leserecht entzogen → `PermissionDenied`, **danach** Close 4403; `read-write` → `readonly` → Close 4205 (`Reset Connection`, Reconnect mit neuem Scope) (`07` §3.5, 17 ABG-107; Wire-Verhalten wird in Spike S1 gemessen, 17 Z-101).
 - **Session-Widerruf:** Revoke-Nachricht (§3.6) schließt betroffene Verbindungen mit Close-Code 4401 (`Unauthorized`, `@hocuspocus/common` 2.15.2).
 - **SignalR-Gruppen:** Beitritt `ws:{id}` erfordert `WS(A,M,G)`, `project:{id}` erfordert `PRJ(A,M,G)`, `user:{id}` nur eigene ID; Prüfung im Hub über `IPermissionEvaluator` (Keys `workspace.settings.read`, `project.project.read`), keine Client-gesteuerten Gruppennamen.
 
@@ -704,6 +707,17 @@ sichtbar(item, user) := ∃ pm ∈ project_members(item.project_id, user) mit pm
                         ∧ (pm.level > 5 ∨ project.guest_view_all_features ∨ item.created_by_id = user)
 ```
 
+Schnittstelle (verbindliche Signatur aus `01` §5.5, Projekt `Plane.Authorization.Contracts`, 17 ABG-128):
+
+```csharp
+public interface IVisibilityFilter<TEntity>       // Gast-Sichtbarkeit (guest_view_all_features), später Teamspace/Secret Projects (B1, 16)
+{
+    IQueryable<TEntity> Apply(IQueryable<TEntity> query, PlanePrincipal principal, ScopeRef scope);
+}
+```
+
+Implementierungen liegen in `Plane.Authorization/Visibility/`, sind reine Query-Prädikate (kein Materialisieren, keine Ausnahme) und werden von Listen-, Detail- und Such-Handlern **nach** allen fachlichen Filtern angewendet; `SearchVisibilityFilter` ist zugleich Fassade `IVisibilityFilter<T> For<T>()` für die Suche (`11` §3.8.2).
+
 | `IVisibilityFilter<T>`-Implementierung (`Plane.Authorization/Visibility/`) | Entität | Original-Stellen (alle müssen identisch greifen) | Keys mit `+VIS` |
 |---|---|---|---|
 | `WorkItemVisibilityFilter` | `WorkItem` | `V/issue/base.py` Z. 97–108, 311–323, 597–616, 910–921, 1033–1058, 1339–1351; Detail-403 `{"error": "You are not allowed to view this issue"}` | `project.work_item.read`, `.read_archived`, `.search` |
@@ -712,7 +726,8 @@ sichtbar(item, user) := ∃ pm ∈ project_members(item.project_id, user) mit pm
 | `IntakeVisibilityFilter` | `IntakeWorkItem` | `V/intake/base.py` Z. 220, 544, 596 | `project.intake_work_item.read` |
 | `ViewVisibilityFilter` | Projekt-/Workspace-Views (`owned_by` bzw. öffentlich und Nicht-Gast) | `V/view/base.py` Z. 157–161, 308, 320–332 | `project.view.read`, `workspace.view.read` |
 | `PageVisibilityFilter` | `Page` (`owned_by`) | `V/page/base.py` Z. 222, 297, 444; `PERM/page.py` | `project.page.read` |
-| `SearchVisibilityFilter` | Suchtreffer (Issues, Pages, Views, Intake) | `V/search/base.py` Z. 96–100, 177–182, 229–234, 266–270, 428, 540, 641, 750; `V/search/issue.py` Z. 111–114 | `workspace.search.read`, `project.work_item.search` |
+| `SearchVisibilityFilter` | Suchtreffer (Issues, Pages, Views, Intake); Fassade `For<T>()` (`11` §3.8.2) | `V/search/base.py` Z. 96–100, 177–182, 229–234, 266–270, 428, 540, 641, 750; `V/search/issue.py` Z. 111–114 | `workspace.search.read`, `project.work_item.search` |
+| `IVisibilityFilter<SearchDocument>` (Teil von `SearchVisibilityFilter`, 17 ABG-128) | `SearchDocument` (`search_documents`, `11` §3.10; Leser B6/G1) | – (neu, ohne Original-Gegenstück); Prädikat je `entity_type` wie die Quell-Filter: `work_item`/`page`/`issue_view` → Prädikat des jeweiligen Quell-Filters über `entity_id`; `project`/`cycle`/`module` → aktive Mitgliedschaft (`deleted_at IS NULL`); `work_item_comment` → Sichtbarkeit des Work Items | `workspace.search.read` (Pakete B6/G1) |
 | `ProfileStatsVisibilityFilter` | Profil-/Statistik-Abfragen | `V/workspace/user.py` Z. 72–80, 314–320 | `workspace.member_profile.read`, `.read_own` |
 | `FavoriteVisibilityFilter` | Favoriten | `API/app/serializers/favorite.py` Z. 74–97 | `workspace.favorite.read`, `project.*.read_favorites` |
 | `ExportVisibilityFilter` | Export | `API/bgtasks/export_task.py` Z. 149–153 | `workspace.export.create` |
@@ -729,9 +744,9 @@ Zusätzlich gilt für alle Mitgliedschaftsprüfungen `deleted_at IS NULL` und `D
 | `realms/plane-realm.json` | vollständiger Realm für **Dev** inkl. Testbenutzer (§3.15.7), von Hand gepflegt | Aspire `WithRealmImport("../../../deploy/keycloak/realms/plane-realm.json")` (`--import-realm`; **Datei**, nicht Verzeichnis, weil im Verzeichnis zwei Dateien desselben Realms `plane` liegen) |
 | `realms/plane-realm.test.json` | **generiert** (`15` §3.14.2, Werkzeug `keycloak-test-realm`): `plane-realm.json` ⊕ `tests/seed/keycloak/test-overrides.json` (Access-Token 60 s, Back-Channel-URL `http://gateway/auth/oidc/backchannel-logout/`, Test-Schwellwerte Brute-Force) ⊕ `tests/seed/keycloak/parity-users.json` (Parity-Seed-Benutzer, Gruppen `team-a`/`team-b`, Test-Client `plane-test-app` für H1-Erweiterungstests) | Profil `test` (`WithRealmImport("…/plane-realm.test.json")`) und Testcontainers (`Testcontainers.Keycloak` mit `WithResourceMapping(<datei>, "/opt/keycloak/data/import/")` + `--import-realm` ⚠ S0: genaue Builder-API der gepinnten 4.x-Version prüfen); `KeycloakRealmConfigTests.TestRealm_IsUpToDate` (`--check`) |
 | `config/00-plane-realm.json` | Realm **ohne** Benutzer für Prod/`prodlike` (keycloak-config-cli-Format = Realm-Representation) | Init-Container `keycloak-config` (`adorsys/keycloak-config-cli`, Version an Keycloak-Major gekoppelt ⚠ S0) mit `KEYCLOAK_URL`, `KEYCLOAK_USER`, `KEYCLOAK_PASSWORD`, `IMPORT_FILES_LOCATIONS=/config/*.json`, `IMPORT_VARSUBSTITUTION_ENABLED=true`, `IMPORT_MANAGED_CLIENT=no-delete` |
-| `config/10-plane-bootstrap-admin.json` | erster Instanz-Admin (Benutzer + Rolle, Required Action `UPDATE_PASSWORD`) | nur wenn `PLANE_BOOTSTRAP_ADMIN_EMAIL` gesetzt (`plane-cli init --bootstrap-admin` kopiert die Datei nach `./keycloak/config/`; kein Compose-Profil, `14` §5.9) |
+| `config/10-plane-bootstrap-admin.json` | erster Instanz-Admin (Benutzer + Rolle, Required Action `UPDATE_PASSWORD`) | nur wenn `PLANE_BOOTSTRAP_ADMIN_EMAIL` gesetzt (`funk-cli init --bootstrap-admin` kopiert die Datei nach `./keycloak/config/`; kein Compose-Profil, `14` §5.9) |
 | `config/20-forgejo-client.json` | Client `plane-forgejo` (F2) | wenn Forgejo gebündelt (`Plane:Forgejo:Bundled`) |
-| `themes/plane/`, `themes/plane-space/` | Login-Theme (§3.16) | Bind-Mount `/opt/keycloak/themes/` (Dev) bzw. eigenes Image `${PLANE_REGISTRY}/plane-keycloak:${PLANE_VERSION}` = `quay.io/keycloak/keycloak:26.x` (Pin) + Themes + `kc.sh build` (Prod, airgapped; ABG-002, Packaging `14` D14-ADR-04) |
+| `themes/plane/`, `themes/plane-space/` | Login-Theme (§3.16) | Bind-Mount `/opt/keycloak/themes/` (Dev) bzw. eigenes Image `${PLANE_REGISTRY}/funk-keycloak:${PLANE_VERSION}` = `quay.io/keycloak/keycloak:26.x` (Pin) + Themes + `kc.sh build` (Prod, airgapped; ABG-002 mit Image-Namen nach ABG-149, OCI-Label `org.opencontainers.image.title` = „funk. Keycloak“; Packaging `14` D14-ADR-04) |
 | `tools/keycloak-theme/` (Repo-Wurzel) | Build des Themes: Tailwind-CSS, Messages, Passwort-Stärke-Skript, Visual-Tests | CI, Node nur Build-Zeit |
 
 Platzhalter (Keycloak ersetzt `${VAR}` beim Import aus Umgebungsvariablen; config-cli ebenso mit `IMPORT_VARSUBSTITUTION_ENABLED`): `PLANE_PUBLIC_URL` (z. B. `http://localhost:3000`), `PLANE_BACKCHANNEL_BASE_URL`, `PLANE_WEB_CLIENT_SECRET`, `PLANE_ADMIN_CLIENT_SECRET`, `PLANE_SPACE_CLIENT_SECRET`, `PLANE_BACKEND_CLIENT_SECRET`, `FORGEJO_PUBLIC_URL`, `FORGEJO_CLIENT_SECRET`, `PLANE_DEV_USER_PASSWORD` (nur Dev/Test), `PLANE_BOOTSTRAP_ADMIN_EMAIL`, `PLANE_BOOTSTRAP_ADMIN_PASSWORD`, `PLANE_SMTP_*` (Keycloak-Mailversand für Verify/Reset). Aspire setzt sie aus Parametern (`01` §3.4 erweitert: je Client ein Secret-Parameter `oidc-web-secret`, `oidc-admin-secret`, `oidc-space-secret`, `oidc-backend-secret`). Hinweis: `01` §3.4 nennt `${env.…}` – maßgeblich ist die Keycloak-Syntax `${VAR}` (Keycloak-Doku „Importing and Exporting Realms“).
@@ -741,11 +756,11 @@ Platzhalter (Keycloak ersetzt `${VAR}` beim Import aus Umgebungsvariablen; confi
 | Attribut | Wert | Begründung |
 |---|---|---|
 | `enabled` | `true` | |
-| `displayName` / `displayNameHtml` | `Plane` | Theme-Titel |
+| `displayName` / `displayNameHtml` | `funk.` | Theme-Titel, Kontokonsole, Mail-Betreffs von Keycloak (ADR-009B, BR-09, `BRAND-KC-01`); Realm-Name `plane` bleibt (BR-02) |
 | `loginTheme` | `plane` | §3.16 |
 | `accountTheme` | `keycloak.v3` | Kontokonsole (Passwort, 2FA, Passkeys, Geräte); kein 1:1-Vorbild im Original |
-| `emailTheme` | `plane` | Keycloak-Mails im Plane-Stil (Templates aus `apps/api/templates/emails/auth/*` übernommen) |
-| `internationalizationEnabled` / `supportedLocales` / `defaultLocale` | `true` / alle 22 Plane-Locales aus `packages/i18n/src/locales` (`bg`, `cs`, `de`, `en`, `es`, `fr`, `id`, `it`, `ja`, `ka-ge`, `ko`, `nl`, `pl`, `pt-BR`, `ro`, `ru`, `sk`, `tr-TR`, `ua`, `vi-VN`, `zh-CN`, `zh-TW`) – im Realm stehen die **Keycloak-Codes** (BCP 47), die der Build aus `tools/keycloak-theme/locale-map.json` ableitet (z. B. `ua` → `uk`, `ka-ge` → `ka`, `tr-TR` → `tr`, `vi-VN` → `vi`); `ui_locales` aus N-01 wird mit derselben Tabelle übersetzt / `en` | i18n-Parität |
+| `emailTheme` | `plane` | Keycloak-Mails im Original-Layout mit funk.-Branding (Templates aus `apps/api/templates/emails/auth/*` übernommen; Texte „Plane“ → „funk.“, Logo nach BR-06, Marketing-/Social-Bilder entfernt wie `06` `BRAND-MAIL-05`; `BRAND-KC-05`) |
+| `internationalizationEnabled` / `supportedLocales` / `defaultLocale` | `true` / alle 22 funk.-Locales aus `packages/i18n/src/locales` (`bg`, `cs`, `de`, `en`, `es`, `fr`, `id`, `it`, `ja`, `ka-ge`, `ko`, `nl`, `pl`, `pt-BR`, `ro`, `ru`, `sk`, `tr-TR`, `ua`, `vi-VN`, `zh-CN`, `zh-TW`) – im Realm stehen die **Keycloak-Codes** (BCP 47), die der Build aus `tools/keycloak-theme/locale-map.json` ableitet (z. B. `ua` → `uk`, `ka-ge` → `ka`, `tr-TR` → `tr`, `vi-VN` → `vi`); `ui_locales` aus N-01 wird mit derselben Tabelle übersetzt / `en` | i18n-Parität |
 | `registrationAllowed` | `false` | ADR-008; Betreiber kann aktivieren |
 | `registrationEmailAsUsername` / `loginWithEmailAllowed` / `duplicateEmailsAllowed` / `editUsernameAllowed` | `true` / `true` / `false` / `false` | E-Mail ist Identifikator wie im Original |
 | `resetPasswordAllowed` | `true` | Nachfolger CE-AUTH-017/-018 |
@@ -759,7 +774,7 @@ Platzhalter (Keycloak ersetzt `${VAR}` beim Import aus Umgebungsvariablen; confi
 | `revokeRefreshToken` / `refreshTokenMaxReuse` | `false` / `0` | Revalidierung parallel aus mehreren Instanzen ohne Rotationskonflikt (R-05) |
 | `offlineSessionIdleTimeout` | Default | `offline_access` wird nicht angefordert |
 | `browserFlow` | `plane-browser` | §3.15.6 |
-| `smtpServer` | `${PLANE_SMTP_HOST}` … (leer erlaubt; ohne SMTP setzen Admins `emailVerified` manuell) | |
+| `smtpServer` | `${PLANE_SMTP_HOST}` … (leer erlaubt; ohne SMTP setzen Admins `emailVerified` manuell); `fromDisplayName` = `funk.` | Absendername nach BR-09 (`BRAND-KC-06`) |
 | `eventsEnabled` / `adminEventsEnabled` / `enabledEventTypes` | `true` / `true` / Login-, Logout-, Update-Password-, Update-Email-, Remove-TOTP-Ereignisse; Aufbewahrung 30 Tage | Audit (E6 nutzt später) |
 | `attributes."frontendUrl"` | `${KEYCLOAK_PUBLIC_URL}` (Prod), leer in Dev | Issuer-Konsistenz hinter Proxy |
 
@@ -772,9 +787,9 @@ Platzhalter (Keycloak ersetzt `${VAR}` beim Import aus Umgebungsvariablen; confi
 | `plane-space` | wie `plane-web` (`${PLANE_SPACE_CLIENT_SECRET}`) | wie oben | wie oben | – | wie oben | wie oben | `plane-space` | wie oben |
 | `plane-backend` | confidential, **nur Service-Account** (`serviceAccountsEnabled=true`, `standardFlowEnabled=false`) | – | – | – | – | Client Credentials | – | Service-Account-Rollen: `realm-management/view-users` (für `IdpUserStateSyncJob`; E3 Offline-Sync) |
 | `plane-api` | **Resource-Server** (`bearerOnly`-Äquivalent: kein Flow aktiv, `publicClient=false`) | – | – | – | – | – | – | dient als Audience: Client-Scope `plane-api-audience` (Audience-Mapper `included.client.audience=plane-api`), in CE keinem Client zugewiesen (H1) |
-| `plane-forgejo` (Name nach `01` §4.1, Präfix `plane-` wie alle Plane-Clients) | confidential (`${FORGEJO_CLIENT_SECRET}`) | `${FORGEJO_PUBLIC_URL}/user/oauth2/keycloak/callback` | `${FORGEJO_PUBLIC_URL}/` | – | `${FORGEJO_PUBLIC_URL}/…` nicht unterstützt → `frontchannelLogout=false`, kein Back-Channel | Code + PKCE | `plane` | `openid`, `profile`, `email`, `plane-groups` |
+| `plane-forgejo` (Name nach `01` §4.1, Präfix `plane-` wie alle funk.-Clients) | confidential (`${FORGEJO_CLIENT_SECRET}`) | `${FORGEJO_PUBLIC_URL}/user/oauth2/keycloak/callback` | `${FORGEJO_PUBLIC_URL}/` | – | `${FORGEJO_PUBLIC_URL}/…` nicht unterstützt → `frontchannelLogout=false`, kein Back-Channel | Code + PKCE | `plane` | `openid`, `profile`, `email`, `plane-groups` |
 
-Hinweis: Alle drei Plane-Clients nutzen denselben Redirect-Pfad `${PLANE_PUBLIC_URL}/auth/oidc/callback/`; die Unterscheidung erfolgt über den schemaeigen verschlüsselten `state` (D05-ADR-01). Keycloak verlangt exakte Redirect-URIs – keine Wildcards; die `redirect_uri` im Authorize- und Token-Request wird deshalb in `OnRedirectToIdentityProvider`/`OnAuthorizationCodeReceived` explizit **mit** Slash gesetzt, obwohl der Handler intern auf `/auth/oidc/callback` (ohne Slash) lauscht.
+Hinweis: Alle drei funk.-Clients nutzen denselben Redirect-Pfad `${PLANE_PUBLIC_URL}/auth/oidc/callback/`; die Unterscheidung erfolgt über den schemaeigen verschlüsselten `state` (D05-ADR-01). Keycloak verlangt exakte Redirect-URIs – keine Wildcards; die `redirect_uri` im Authorize- und Token-Request wird deshalb in `OnRedirectToIdentityProvider`/`OnAuthorizationCodeReceived` explizit **mit** Slash gesetzt, obwohl der Handler intern auf `/auth/oidc/callback` (ohne Slash) lauscht.
 
 #### 3.15.4 Rollen und Gruppen
 
@@ -814,7 +829,7 @@ Identity-Provider-Mapper (wenn Betreiber Brokering konfiguriert, Doku in `14-…
 | 3 |   ├ Condition – user configured | REQUIRED | |
 | 3 |   └ OTP Form | REQUIRED | – (E4 über Keycloak) |
 
-Required Actions aktiv: `VERIFY_EMAIL`, `UPDATE_PASSWORD`, `CONFIGURE_TOTP`, `webauthn-register-passwordless` (deaktiviert), `TERMS_AND_CONDITIONS` (deaktiviert), `UPDATE_PROFILE` (deaktiviert – Plane-Onboarding erfasst Namen).
+Required Actions aktiv: `VERIFY_EMAIL`, `UPDATE_PASSWORD`, `CONFIGURE_TOTP`, `webauthn-register-passwordless` (deaktiviert), `TERMS_AND_CONDITIONS` (deaktiviert), `UPDATE_PROFILE` (deaktiviert – funk.-Onboarding erfasst Namen).
 
 #### 3.15.7 Testbenutzer (nur `realms/plane-realm.json`, deterministische IDs für Paritäts-Harness)
 
@@ -835,6 +850,8 @@ Passwort aller Testbenutzer: `${PLANE_DEV_USER_PASSWORD}` (Default im AppHost-Pa
 ```json
 {
   "realm": "plane",
+  "displayName": "funk.",
+  "displayNameHtml": "funk.",
   "enabled": true,
   "loginTheme": "plane",
   "emailTheme": "plane",
@@ -844,6 +861,7 @@ Passwort aller Testbenutzer: `${PLANE_DEV_USER_PASSWORD}` (Default im AppHost-Pa
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
   "verifyEmail": true,
+  "smtpServer": { "fromDisplayName": "funk.", "from": "${PLANE_SMTP_FROM}", "host": "${PLANE_SMTP_HOST}" },
   "bruteForceProtected": true,
   "failureFactor": 10,
   "passwordPolicy": "length(8) and maxLength(128) and upperCase(1) and lowerCase(1) and digits(1) and specialChars(1) and notEmail and notUsername",
@@ -852,7 +870,7 @@ Passwort aller Testbenutzer: `${PLANE_DEV_USER_PASSWORD}` (Default im AppHost-Pa
   "accessTokenLifespan": 300,
   "browserFlow": "plane-browser",
   "attributes": { "CreateDefaultClientScopes": "true" },
-  "roles": { "realm": [ { "name": "plane-instance-admin", "description": "Plane God Mode administrator" }, { "name": "plane-user" } ] },
+  "roles": { "realm": [ { "name": "plane-instance-admin", "description": "funk. God Mode administrator" }, { "name": "plane-user" } ] },
   "groups": [ { "name": "plane-instance-admins", "realmRoles": ["plane-instance-admin"] }, { "name": "plane" } ],
   "clientScopes": [
     { "name": "plane-roles", "protocol": "openid-connect", "attributes": { "include.in.token.scope": "false" },
@@ -866,7 +884,7 @@ Passwort aller Testbenutzer: `${PLANE_DEV_USER_PASSWORD}` (Default im AppHost-Pa
         "config": { "included.client.audience": "plane-api", "access.token.claim": "true", "id.token.claim": "false" } } ] }
   ],
   "clients": [
-    { "clientId": "plane-web", "name": "Plane Web", "enabled": true, "publicClient": false,
+    { "clientId": "plane-web", "name": "funk. Web", "enabled": true, "publicClient": false,
       "clientAuthenticatorType": "client-secret", "secret": "${PLANE_WEB_CLIENT_SECRET}",
       "redirectUris": ["${PLANE_PUBLIC_URL}/auth/oidc/callback/"], "webOrigins": ["-"],
       "standardFlowEnabled": true, "directAccessGrantsEnabled": false, "implicitFlowEnabled": false, "serviceAccountsEnabled": false,
@@ -879,11 +897,11 @@ Passwort aller Testbenutzer: `${PLANE_DEV_USER_PASSWORD}` (Default im AppHost-Pa
 }
 ```
 
-(`plane-admin`, `plane-space`, `plane-backend`, `plane-api`, Flow-Definition `authenticationFlows` und Testbenutzer analog den Tabellen; vollständige Datei entsteht in I0, Schnitt 1.)
+(`plane-admin`, `plane-space`, `plane-backend`, `plane-api`, Flow-Definition `authenticationFlows` und Testbenutzer analog den Tabellen; sichtbare Client-Namen `funk. God Mode`, `funk. Publish`, `funk. Backend`, `funk. API` nach BR-04 (`BRAND-KC-08`), Client-IDs bleiben; vollständige Datei entsteht in I0, Schnitt 1.)
 
 **Wichtig (geprüft im Keycloak-Quelltext `RealmManager.isCreateDefaultClientScopes`):** Enthält eine Realm-Datei ein `clientScopes`-Array, legt Keycloak beim Import die Standard-Scopes (`basic`, `profile`, `email`, `acr`, `web-origins`, `roles`, `address`, `phone`, `offline_access`, `microprofile-jwt`, `organization`) **nicht** an – die Clients würden dann auf nicht existierende Scopes verweisen und es gäbe weder `sub`/`auth_time` (`basic`) noch `email`. Deshalb setzt der Realm das Realm-Attribut `CreateDefaultClientScopes = "true"` (Konstante `Constants.CREATE_DEFAULT_CLIENT_SCOPES`); greift es in der gepinnten Version nicht (⚠ S7, `KeycloakRealmConfigTests` prüft `GET /admin/realms/plane/client-scopes` auf `basic`, `profile`, `email`, `acr`, `web-origins`), werden die Standard-Scopes aus einem `kc.sh export` eines frischen Realms derselben Version in die Datei übernommen. Für keycloak-config-cli (Prod) gilt dasselbe: der Realm wird dort beim ersten Lauf angelegt.
 
-### 3.16 Plane-Login-Theme (1:1-Optik der Sign-in-Seite)
+### 3.16 Login-Theme `plane` (1:1-Optik der Sign-in-Seite, funk.-Branding)
 
 #### 3.16.1 Aufbau
 
@@ -900,40 +918,56 @@ deploy/keycloak/themes/
 │   │   ├── webauthn-authenticate.ftl, webauthn-register.ftl, select-authenticator.ftl,
 │   │   ├── login-verify-email.ftl, login-page-expired.ftl, login-idp-link-confirm.ftl, login-idp-link-email.ftl,
 │   │   ├── logout-confirm.ftl, info.ftl, error.ftl, register.ftl, terms.ftl
-│   │   ├── messages/messages_<locale>.properties   # generiert
-│   │   └── resources/{css/plane-login.css, js/plane-login.js, fonts/inter/*.woff2, img/plane-lockup.svg, img/logos/*.svg, img/bg/*.svg}
-│   └── email/                      # html/*.ftl + text/*.ftl (Verify, Reset, Update-Password)
+│   │   ├── messages/messages_<locale>.properties   # generiert, Produktname „funk.“ (BR-10, BRAND-KC-02)
+│   │   └── resources/{css/plane-login.css, js/plane-login.js, fonts/inter/*.woff2, img/plane-lockup.svg, img/favicon.ico, img/logos/*.svg, img/bg/*.svg}
+│   │                                   # plane-lockup.svg/favicon.ico: Inhalt aus assets/funk_logo.svg (BR-06, BRAND-KC-04), Dateinamen bleiben
+│   └── email/                      # html/*.ftl + text/*.ftl (Verify, Reset, Update-Password); Texte/Logo funk. (BRAND-KC-05)
 └── plane-space/
-    └── login/ (parent=plane; template.ftl überschrieben: Space-Layout, „Powered by Plane Publish“-Badge, kein Brand-Footer)
+    └── login/ (parent=plane; template.ftl überschrieben: Space-Layout, „Powered by funk. Publish“-Badge (BR-04, BRAND-KC-07), kein Brand-Footer)
 ```
 
 #### 3.16.2 Seiten-Mapping Original → Theme
 
 | Keycloak-Template | Original-Vorbild (DOM/Klassen 1:1) | Texte (i18n-Schlüssel aus `packages/i18n` bzw. Original-Literal) | Abweichung |
 |---|---|---|---|
-| `template.ftl` | `WEB/components/auth-screens/auth-base.tsx` (`relative z-10 flex h-screen w-screen flex-col items-center overflow-hidden overflow-y-auto px-8 pt-6 pb-10`), `header.tsx` (`AuthHeaderBase`: `PlaneLockup` 95×20, Link „Sign up“ nur bei `realm.registrationAllowed`), `footer.tsx` (Brand-Logos, schaltbar), `AuthContainer` (`mt-10 … max-w-[22.5rem] gap-6`) | `auth.common.new_to_plane`, `Sign up`, `Join 10,000+ teams building with Plane` | Brand-Footer per Theme-Property `plane.brandFooter` (Default `true`, CE-AUTH-015) |
-| `login-username.ftl` | `WEB/components/account/auth-forms/email.tsx` (`AuthEmailForm`: Label `text-13 font-medium text-tertiary`, `Input size="2xl"`, Clear-Button `CloseCircleOutline`, Fehler `text-11 text-danger-primary` mit `WarningCircleOutline`, Button `variant=primary size=lg stretch=full`), Header `auth-header.tsx` („Work in all dimensions.“ / „Welcome back to Plane.“) | `auth.common.email.label`, `auth.common.email.placeholder`, `auth.common.email.errors.invalid`, `common.continue` | Einladungskopf (DEV-UI-01) |
+| `template.ftl` | `WEB/components/auth-screens/auth-base.tsx` (`relative z-10 flex h-screen w-screen flex-col items-center overflow-hidden overflow-y-auto px-8 pt-6 pb-10`), `header.tsx` (`AuthHeaderBase`: `PlaneLockup` 95×20 – Konstantenname bleibt, Pfaddaten aus `assets/funk_logo.svg`, BR-06; Link „Sign up“ nur bei `realm.registrationAllowed`), `footer.tsx` (Brand-Logos, schaltbar), `AuthContainer` (`mt-10 … max-w-[22.5rem] gap-6`) | `auth.common.new_to_plane` (Schlüssel bleibt, Wert mit „funk.“), `Sign up`, `Join 10,000+ teams building with funk.` (Original „… with Plane“, BR-10) | Brand-Footer per Theme-Property `plane.brandFooter` (Default `true`, CE-AUTH-015) |
+| `login-username.ftl` | `WEB/components/account/auth-forms/email.tsx` (`AuthEmailForm`: Label `text-13 font-medium text-tertiary`, `Input size="2xl"`, Clear-Button `CloseCircleOutline`, Fehler `text-11 text-danger-primary` mit `WarningCircleOutline`, Button `variant=primary size=lg stretch=full`), Header `auth-header.tsx` („Work in all dimensions.“ / „Welcome back to funk.“ – Original „Welcome back to Plane.“, Satzpunkt entfällt nach BR-03) | `auth.common.email.label`, `auth.common.email.placeholder`, `auth.common.email.errors.invalid`, `common.continue` | Einladungskopf (DEV-UI-01) |
 | `login-password.ftl` | `…/auth-forms/password.tsx` (Sign-in-Variante: E-Mail-Feld disabled mit X → `url.loginRestartFlowUrl`, Passwortfeld mit Auge-Toggle, „Forgot your password?“ → `url.loginResetCredentialsUrl`, Button „Continue“) | `auth.common.password.*`, `auth.common.forgot_password` | Kein „Sign in with unique code“ (Magic-Code entfällt) |
 | `login-reset-password.ftl` | `…/auth-forms/forgot-password.tsx` | `auth.forgot_password.*` | 30-s-Timer entfällt (Keycloak zeigt Info-Seite) |
 | `login-update-password.ftl` | `…/auth-forms/reset-password.tsx` / `set-password.tsx` inkl. `PasswordStrengthIndicator` (Port von `getPasswordStrength`/Kriterien aus `PKG/utils/src/auth.ts` nach `resources/js/plane-login.js`, gebündelt mit esbuild) | `auth.common.password.*`, Kriterientexte | – |
 | `login-otp.ftl`, `login-config-totp.ftl`, `webauthn-*.ftl`, `select-authenticator.ftl` | kein Vorbild (E4 über Keycloak) → Gestaltung im selben Layout mit Propel-`Input`/`Button`-Klassen | Keycloak-Messages, übersetzt | neu |
 | `login-verify-email.ftl`, `info.ftl`, `error.ftl`, `login-page-expired.ftl` | Banner-Stil `Banner placement="inline" variant="accent"` (Propel) wie Fehlerbanner in `auth-root.tsx` | Keycloak-Messages | neu |
 | `register.ftl` | Sign-up-Variante von `password.tsx` (Passwort + Bestätigung + Stärkeanzeige) | `auth.sign_up.*` | nur wenn Registrierung aktiviert |
-| `plane-space/login/template.ftl` | `SPC/app/page.tsx` → `AuthView` (`SPC/components/views/auth.tsx`), `PoweredBy`-Badge (CE-SPACE-032), Rechtshinweis `SPC/components/account/terms-and-conditions.tsx` (CE-SPACE-013) | Space-Texte (A11 §2.23/2.24) | – |
-| Admin-Variante (in `plane`, `client.clientId == "plane-admin"`) | `ADM/app/(all)/(home)/sign-in-form.tsx` Kopf („Manage your Plane instance“ / „Configure instance-wide settings to secure your instance“) | Original-Literale | – |
+| `plane-space/login/template.ftl` | `SPC/app/page.tsx` → `AuthView` (`SPC/components/views/auth.tsx`), `PoweredBy`-Badge (CE-SPACE-032, Text „Powered by funk. Publish“, BR-04), Rechtshinweis `SPC/components/account/terms-and-conditions.tsx` (CE-SPACE-013) | Space-Texte (A11 §2.23/2.24) | – |
+| Admin-Variante (in `plane`, `client.clientId == "plane-admin"`) | `ADM/app/(all)/(home)/sign-in-form.tsx` Kopf („Manage your funk. instance“ – Original „Manage your Plane instance“ – / „Configure instance-wide settings to secure your instance“) | Original-Literale mit Ersetzung nach BR-10 | `BRAND-KC-02` |
 | Rechtshinweis | `WEB/components/account/terms-and-conditions.tsx` | Links aus Theme-Properties `plane.termsUrl`, `plane.privacyUrl` (leer → Hinweis ausgeblendet; airgapped) | – |
 
 #### 3.16.3 Build und Prüfung
 
 | Schritt (`tools/keycloak-theme/`) | Werkzeug | Ergebnis |
 |---|---|---|
-| `gen-messages.mjs` | Node (Build-Zeit) | liest `packages/i18n/src/locales/<locale>/*.json` (die oben genannten Schlüssel) + Original-Literale → `messages_<locale>.properties` (UTF-8, Keycloak ≥ 22 liest UTF-8) |
+| `gen-messages.mjs` | Node (Build-Zeit) | liest `packages/i18n/src/locales/<locale>/*.json` (die oben genannten Schlüssel) + Original-Literale, wendet den Branding-Schritt `frontend/tools/brand/brand-i18n.mjs` samt Ausnahmetabellen je Locale an (17 BR-10: ganzes Wort „Plane“, `Плейн`, `플레인` → „funk.“; BR-03-Satzzeichenregel) → `messages_<locale>.properties` (UTF-8, Keycloak ≥ 22 liest UTF-8); kein „Plane“ im Ergebnis (Gate G-BRAND, `15`) |
 | `build-css.mjs` | `@tailwindcss/cli` 4.1.17 mit `libs/shared/tailwind-config` + Propel-Styles, `@source "../../deploy/keycloak/themes/**/*.ftl"` | `plane-login.css` (nur genutzte Klassen, Dark-Mode über `data-theme`, gesetzt von `plane-login.js` synchron im `<head>` aus `prefers-color-scheme` (09 §3.13); Propel-Dark-Variante `[data-theme*="dark"]`, **keine** `@media (prefers-color-scheme)`-Regeln; Abweichung `UI-DEV-010`, ABG-034) |
 | `build-js.mjs` | esbuild | `plane-login.js` (Theme-Auflösung: setzt synchron im `<head>` `data-theme` = `light`│`dark` an `<html>` nach 09 §5.8 mit Eingabe `system` = `matchMedia('(prefers-color-scheme: dark)')` und folgt `matchMedia`-Wechseln – kein Inline-Script, Keycloak-CSP unberührt (ABG-034); Passwort-Stärke, Clear-Button, Auge-Toggle; kein Framework) |
-| `visual.spec.ts` | Playwright gegen Keycloak-Container + Referenz-Screenshots des Originals (S11-Katalog) | Visual-Diff ≤ 1 % (S7-Kriterium) für: E-Mail-Schritt, Passwort-Schritt, Fehlerbanner, Space-Variante, Admin-Variante, je hell/dunkel |
+| `visual.spec.ts` | Playwright gegen Keycloak-Container + Referenz-Screenshots des Originals **mit vorab ersetztem Branding** (S11-Katalog; Texte nach BR-10/BR-03, Logos/Favicon per `page.route` nach BR-06; 17 BR-13) | Visual-Diff ≤ 1 % (S7-Kriterium) für: E-Mail-Schritt, Passwort-Schritt, Fehlerbanner, Space-Variante, Admin-Variante, je hell/dunkel |
 | Airgap-Check | CI | Theme lädt keine externen Ressourcen (Netzwerk-Log leer außer Keycloak-Host) |
 
 Theme-Properties (`theme.properties`): `parent=base`, `import=common/keycloak` (nur für `resourcesCommonPath`), `styles=css/plane-login.css`, `scripts=js/plane-login.js`, `locales=…`, `plane.brandFooter=true`, `plane.termsUrl=`, `plane.privacyUrl=`. Ob Keycloak ENV-Platzhalter in `theme.properties` auflöst, prüft S7 (⚠); sonst werden die Werte beim Image-Build gesetzt.
+
+#### 3.16.4 Branding (ADR-009B, 17 ABG-148/BR-09) – Abweichungsregister `BRAND-KC-*`
+
+Sichtbar ist im Login-, Fehler-, Konto- und Mail-Theme nur „funk.“; Theme-, Realm-, Client- und Rollennamen (`plane`, `plane-space`, `plane-web`, `plane-instance-admin` …) bleiben als interne Bezeichner (BR-02). G-BRAND (`15`) durchsucht das gebaute Theme (`.ftl`, `messages_*.properties`, `theme.properties`, Ressourcen) und den Realm-Export.
+
+| ID | Gegenstand | Original | Ziel |
+|---|---|---|---|
+| `BRAND-KC-01` | Realm `displayName`/`displayNameHtml` (Theme-Titel, Kontokonsole, Keycloak-Mail-Betreffs) | – (Keycloak-Default) bzw. „Plane“ | „funk.“ (§3.15.2, §3.15.8) |
+| `BRAND-KC-02` | Theme-Texte `messages_<locale>.properties` und Original-Literale (u. a. „Welcome back to Plane.“, „Join 10,000+ teams building with Plane“, „Manage your Plane instance“) | „Plane“ | „funk.“ nach BR-10/BR-03 (`gen-messages.mjs`, §3.16.3; Ausnahmetabellen je Locale wie `08` `BRAND-I18N-*`) |
+| `BRAND-KC-03` | Beschreibung der Realm-Rolle `plane-instance-admin` | „Plane God Mode administrator“ | „funk. God Mode administrator“ |
+| `BRAND-KC-04` | Theme-Logo (`img/plane-lockup.svg`, `PlaneLockup` 95×20) und Favicon | Plane-Lockup/-Favicon | gerendert aus `assets/funk_logo.svg` in Größe und Dateiname der Originale (BR-06) |
+| `BRAND-KC-05` | Mail-Theme `plane` (Verify, Reset, Update-Password) | Plane-Texte, Plane-Logo, Marketing-/Social-Bilder | Texte „funk.“, funk.-Logo, Marketing-/Social-Bilder entfernt (wie `06` `BRAND-MAIL-02`/`-05`) |
+| `BRAND-KC-06` | Absendername `smtpServer.fromDisplayName` | – | „funk.“ (BR-09; Absender-Default der App: `06` D06-ADR-25 (d)) |
+| `BRAND-KC-07` | Space-Badge im Theme `plane-space` | „Powered by Plane Publish“ | „Powered by funk. Publish“ (BR-04, CE-SPACE-032) |
+| `BRAND-KC-08` | sichtbare Client-Namen (`name`, Kontokonsole/Consent) | – | „funk. Web“, „funk. God Mode“, „funk. Publish“, „funk. Backend“, „funk. API“ (BR-04) |
 
 ### 3.17 Sicherheitsmechanismen (CORS, SSRF, Sanitizing, Upload, Secrets, Rate Limits, Header, Logging)
 
@@ -943,7 +977,7 @@ Alle Mechanismen dieses Abschnitts sind **querschnittlich** und liegen in `src/p
 
 | Element | Festlegung | Original |
 |---|---|---|
-| Ort | `UseCors("plane")` in `Plane.Api` (`02` §3.4.1 Schritt 8); `Plane.Realtime` registriert dieselbe Policy für `/live/events/negotiate` | `corsheaders.middleware.CorsMiddleware` |
+| Ort | `UseCors("plane")` in `Plane.Api` (`02` §3.4.1 Schritt 8); `Plane.Realtime` nutzt dieselbe Origin-Liste für die `Origin`-Prüfung beim WebSocket-Upgrade auf `/live/events/` (kein Negotiate, `skipNegotiation: true`, 07 D07-ADR-27) | `corsheaders.middleware.CorsMiddleware` |
 | Erlaubte Origins | `Plane:Cors:AllowedOrigins` (ENV-Alias `CORS_ALLOWED_ORIGINS`, kommagetrennt, getrimmt, ohne abschließenden `/`); **leer → nur die eigenen Origins** aus `Plane:Urls:{Web,Admin,Space,Live}` (Korrektur **SEC-30**, OP-04) | leer → `CORS_ALLOW_ALL_ORIGINS = True` mit Credentials |
 | Credentials | `AllowCredentials()` | `CORS_ALLOW_CREDENTIALS = True` |
 | Methoden | `DELETE`, `GET`, `OPTIONS`, `PATCH`, `POST`, `PUT` | django-cors-headers-Default |
@@ -951,7 +985,7 @@ Alle Mechanismen dieses Abschnitts sind **querschnittlich** und liegen in `src/p
 | Exponierte Header | `X-RateLimit-Remaining`, `X-RateLimit-Reset`, `Retry-After` (nur `/api/v1/`) | – (Härtung: Browser-Clients der Public API können die Limits lesen) |
 | Preflight-Cache | `SetPreflightMaxAge(TimeSpan.FromSeconds(86400))` | `CORS_PREFLIGHT_MAX_AGE` 86400 |
 | Validierung beim Start | Eintrag `*` oder Origin mit Pfad/Query → `OptionsValidationException` (ASP.NET erlaubt `AllowAnyOrigin` + Credentials ohnehin nicht) | – |
-| Keycloak | `webOrigins = ["-"]` für alle Plane-Clients (§3.15.3): kein Browser-CORS zu Keycloak nötig, weil der Token-Tausch serverseitig läuft | – |
+| Keycloak | `webOrigins = ["-"]` für alle funk.-Clients (§3.15.3): kein Browser-CORS zu Keycloak nötig, weil der Token-Tausch serverseitig läuft | – |
 | Betriebsnorm | Same-Origin über `Plane.Gateway` (web `/`, admin `/god-mode/`, space `/spaces/`, API `/api/`, `/auth/`, live `/live/`); CORS ist nur für getrennte Hostnamen relevant | `A01` §2.8.1 |
 
 #### 3.17.2 SSRF-sicherer HTTP-Client (`SsrfSafeHttpHandler`, D05-ADR-24)
@@ -1025,12 +1059,12 @@ Anwendungsstellen (alle mit derselben Instanz, Pflicht laut Architekturtest `Htm
 | Schutz des Key-Rings | optional `ProtectKeysWithCertificate(X509)` aus `Plane:DataProtection:CertificatePath` + `…:CertificatePassword` (PFX); Prod-Empfehlung in `14`; ohne Zertifikat Startwarnung `"Data protection keys are stored unencrypted at rest."` (Kategorie `plane.api`) |
 | Zwecke (Purpose-Strings, versioniert) | `Plane.Identity.SessionCookie.v1` (Cookie-Schlüssel), `Plane.Identity.SessionTicket.v1` (Ticket in `user_sessions`), `Plane.Identity.OidcState.v1.<scheme>` (State je OIDC-Schema; Nonce-/Correlation-Cookies schützt der Handler mit seinem eigenen Zweck), `Plane.Instance.Configuration.v1` (verschlüsselte Instanz-Konfiguration), `Plane.Antiforgery` (Framework), `Plane.Webhooks.Secret.v1` (Webhook-Secrets – müssen für HMAC entschlüsselbar sein), `Plane.Integrations.ConnectionSecret.v1` (F1, reserviert), `Plane.Forgejo.UserToken.v1` (F2, reserviert) |
 | Instanz-Secrets | Schlüssel mit `is_encrypted=true` (`EMAIL_HOST_PASSWORD`, `LLM_API_KEY`, `UNSPLASH_ACCESS_KEY`; die OAuth-Secrets entfallen, §4.4) werden mit `Plane.Instance.Configuration.v1` geschützt (`IDataProtector.Protect`, Base64URL). Lesen: `IInstanceConfiguration.GetAsync(key)` entschlüsselt; Entschlüsselungsfehler (fremder/verlorener Key-Ring) → leerer Wert + Log Error `"Instance configuration {Key} could not be decrypted"` (Original: still leer, A01 E-07) und God-Mode-Systemhinweis (I6) |
-| Ausgabe an God Mode | `GET /api/instances/configurations/` liefert entschlüsselte Werte nur an `INST` (Parität CE-INST-018/-025/-026: Passwortfeld mit Auge-Toggle), mit `Cache-Control: no-store`; Werte erscheinen nie in Logs (Redaktion §3.17.8). Entscheidung zu A11 O8: **1:1 beibehalten** (Risiko R-09) |
+| Ausgabe an God Mode | `GET /api/instances/configurations/` liefert nur an `INST`, mit `Cache-Control: no-store`; Werte erscheinen nie in Logs (Redaktion §3.17.8). Entscheidung zu A11 O8 (**17 ABG-143**, vorläufig bindend, Z-112): Default `Plane:Security:MaskInstanceSecrets = true` → verschlüsselte Keys als `"********"`, `PATCH` mit `"********"` lässt den gespeicherten Wert unverändert; entschlüsselte Werte (Original-Parität CE-INST-018/-025/-026: Passwortfeld mit Auge-Toggle) nur bei Betreiber-Opt-out `false` (SEC-58, Risiko R-09) |
 | Webhook-Secrets | `plane_wh_` + 32 Hex; gespeichert DP-geschützt (Purpose `Plane.Webhooks.Secret.v1`), Ausgabe nur bei Anlage/Regenerierung (S-03) |
 | API-Keys | nur `token_hash` (SHA-256) + `token_prefix` (D05-ADR-16) |
-| OIDC-Client-Secrets | ausschließlich Konfiguration (Aspire-Parameter `oidc-web-secret`, `oidc-admin-secret`, `oidc-space-secret`, `oidc-backend-secret`; Prod: Secret-Store/ENV, `14`), nie in der DB, nie im Repo; Rotation: neues Secret in Keycloak setzen → Plane-Konfiguration aktualisieren → Neustart (kurze Login-Störung, Runbook in `14`) |
+| OIDC-Client-Secrets | ausschließlich Konfiguration (Aspire-Parameter `oidc-web-secret`, `oidc-admin-secret`, `oidc-space-secret`, `oidc-backend-secret`; Prod: Secret-Store/ENV, `14`), nie in der DB, nie im Repo; Rotation: neues Secret in Keycloak setzen → funk.-Konfiguration aktualisieren → Neustart (kurze Login-Störung, Runbook in `14`) |
 | `SECRET_KEY` | wird nicht mehr gelesen; gesetzt → Startwarnung `"SECRET_KEY is ignored; ASP.NET Core Data Protection is used."`; bekannte Platzhalter (`change-this-key-on-deployment`, `60gp0byfz2…`) → zusätzlich Level Critical (Parität S-23) |
-| Rotation | automatisch durch Data Protection (neuer Schlüssel nach Ablauf, alte bleiben zum Entschlüsseln); manueller Widerruf `plane-cli dataprotection revoke --all --reason "<text>"` (führt `IKeyManager.RevokeAllKeys` aus; danach sind **alle** Sessions ungültig und verschlüsselte Instanz-Secrets müssen neu gesetzt werden – Runbook) |
+| Rotation | automatisch durch Data Protection (neuer Schlüssel nach Ablauf, alte bleiben zum Entschlüsseln); manueller Widerruf `funk-cli dataprotection revoke --all --reason "<text>"` (führt `IKeyManager.RevokeAllKeys` aus; danach sind **alle** Sessions ungültig und verschlüsselte Instanz-Secrets müssen neu gesetzt werden – Runbook) |
 
 #### 3.17.6 Rate Limiting und Client-IP (D05-ADR-26, ADR-034)
 
@@ -1038,11 +1072,12 @@ Mechanik, Algorithmus (`SlidingWindowRateLimiter`, verteilt über `RedisRateLimi
 
 | Policy (`PlaneRateLimitPolicies`) | Rate (Default, ENV-Alias) | Partition | Gilt für (Ziel) | Original | ab |
 |---|---|---|---|---|---|
-| `anon` | `30/minute` | Client-IP, nur anonyme Requests | Default der Oberflächen App, Space, Instance, Auth (N-06, N-08, N-09, N-10) | `AnonRateThrottle` | I0 |
+| `anon` | `30/minute` | Client-IP, nur anonyme Requests | Default der Oberflächen App, Space, Instance (u. a. N-09, N-10); die Auth-Oberfläche hat **keinen** Oberflächen-Default – dort je Endpunkt: N-06, N-08 `anon` (`04` §3.12 setzt das per Zeile, 17 ABG-144) | `AnonRateThrottle` | I0 |
 | `authentication` | `10/minute` (`AUTHENTICATION_RATE_LIMIT`) | Client-IP (auch angemeldet) | N-01, N-13 als Endpunkt-Policy; N-02 über `AuthCallbackRateLimiter` (`ID/Authentication/AuthCallbackRateLimiter.cs`: `PartitionedRateLimiter<HttpContext>` mit derselben Rate und Partition, bei Valkey verteilt über `RedisRateLimiting`; Aufruf in `OnMessageReceived` aller drei OIDC-Schemata, Ablehnung → `HandleResponse()` + 302 mit 5900). Grund: der OIDC-Handler beantwortet den Callback in `UseAuthentication` (Schritt 10, `02` §3.4.1), **bevor** `UseRateLimiter` (Schritt 13) läuft – Endpunkt-Metadaten oder ein `GlobalLimiter` greifen dort nie. Der Zähler ist von N-01 getrennt (Original: gemeinsamer DRF-Scope `authentication`; Abweichung ohne Sicherheitswirkung) | `AuthenticationThrottle`, `throttle_auth_redirect` | I0 |
-| `asset_duplicate` | `5/minute` | Routenwert `asset_id` | `POST {W}/assets/v2/duplicate/{asset_id}/` | `AssetRateThrottle` | I1 |
+| `asset_duplicate` | `5/minute` | Routenwert `asset_id` | `POST /api/assets/v2/workspaces/{slug}/duplicate-assets/{asset_id}/` (`04` EP-0430, 17 ABG-144) | `AssetRateThrottle` | I1 |
 | `api_key` | `60/minute` (`API_KEY_RATE_LIMIT`) | `token_hash` | gesamte Oberfläche `/api/v1/` inkl. Einladungen/Stickies (Korrektur B-04) | `ApiKeyRateThrottle` | I6 |
-| `integration_webhook` | `600/minute` | `connection_id` | `/api/integrations/{provider}/webhooks/{connection_id}/` | – (F1) | W1 |
+| `integration_webhook` | `600/minute` | `connection_id` | `/api/integrations/{provider}/webhooks/{connection_id}/` | – (F1) | I0 (ABG-051, 17 ABG-144) |
+| keine (unbegrenzt) | – | – | Sign-out N-03, N-04, N-05 und Back-Channel-Logout N-07 (wie Original ohne Throttle; Auth-Oberfläche ohne Default, 17 ABG-144) | – | I0 |
 | Gateway `static` | `300/minute` | Client-IP | statische Frontends (`14` §3.7.4) | Caddy `rate_limit` | I0 |
 | entfällt | – | – | `email_verification` (3/h), Magic-Code-Zähler, E-Mail-Änderungs-Zähler | `EmailVerificationThrottle`, Redis-Zähler | – (ADR-008, O-D02-08) |
 
@@ -1100,7 +1135,7 @@ report-uri /csp-report
 | Sicherheitsereignisse (Kategorie `plane.authentication`, strukturierte Felder) | `auth.login.succeeded` (`user_id`, `app`, `kc_sid`-Hash, `ip`), `auth.login.failed` (`error_code`, `app`, `ip`), `auth.logout` (`user_id`, `reason` = `user`\|`backchannel`\|`revalidation_failed`\|`deactivated`), `auth.session.revoked` (`count`), `auth.backchannel.rejected` (`reason`), `auth.origin.rejected` (`origin`, `path`), `auth.csrf.rejected` (`path`), `auth.apikey.rejected` (`token_prefix`), `auth.ratelimit.rejected` (`policy`, `partition`-Hash), `authz.denied` (`user_id`, `permission`, `route`; Level Debug, Metrik `plane.authz.denied` als Zähler), `security.ssrf.blocked` (`client`, `host`, `reason`) |
 | Metriken | `plane.auth.logins` (Tags `app`, `result`), `plane.auth.sessions.active` (Gauge aus `user_sessions`, alle 5 min), `plane.auth.backchannel.latency_ms` (Histogramm Zeitpunkt `iat` → Löschung), `plane.authz.denied`, `plane.ssrf.blocked` |
 | Audit-Andockstelle (E6) | alle obigen Ereignisse werden zusätzlich als Integration-Events `plane.identity.<event>.v1` in die Outbox geschrieben, sofern `Plane:Audit:Enabled=true` (Default `false`; E6 aktiviert und konsumiert) |
-| Keycloak | eigene Ereignisse (`eventsEnabled`, `adminEventsEnabled`, §3.15.2); keine Weiterleitung in Plane in der CE |
+| Keycloak | eigene Ereignisse (`eventsEnabled`, `adminEventsEnabled`, §3.15.2); keine Weiterleitung in funk. in der CE |
 
 #### 3.17.9 Weitere übernommene Mechanismen (Zuordnung)
 
@@ -1168,7 +1203,7 @@ Grundsatz (OP-01 aus `A06`, ADR-005): Sicherheitslücken werden **korrigiert**, 
 | **SEC-37** | Admin-Cookie-Auswahl per Teilstring `instances` (E-08, `A01` E-09) | ein Cookie (D05-ADR-02) | – | `SessionCookieTests` | I0 |
 | **SEC-38** | Zufälliger `SECRET_KEY` je Prozess, Fernet mit festem Salt `b"salt"`, Schlüsselwechsel macht Konfiguration still unlesbar (E-28, `A01` E-07, E-08) | Data-Protection-Key-Ring (§3.17.5) | alle Hosts | `DataProtectionSharedKeyRingTests` (Api schützt, Worker entschlüsselt) | I0 |
 | **SEC-39** | `POST /live/convert-document/` ohne Authentifizierung öffentlich (`A12` E8, `A01` E-23) | kein HTTP-Endpunkt; Konvertierung In-Process (`Plane.Documents`); falls `07` einen internen Endpunkt vorsieht: nur Management-Port, nicht über Gateway geroutet | `Plane.Realtime` | `GatewayRoutingTests.ConvertDocumentNotRouted` | I4 |
-| **SEC-40** | Dokument-Zugriffsprüfung nur beim ersten Laden, kein Read-only-Scope (`A12` E3) | Prüfung **je Verbindung** (`project.page.read` + `PAGE`), `readonly` ohne `project.page.update` (§3.11) | `Plane.Realtime` | `CollaborationAuthorizationTests` | I4 |
+| **SEC-40** | Dokument-Zugriffsprüfung nur beim ersten Laden, kein Read-only-Scope (`A12` E3) | Prüfung **je Verbindung** über `ICollaborationDocumentType.AuthorizeAsync` (`project.page.read` + `PAGE`), `readonly` ohne `project.page.update`; Neuprüfung bei `access`/`member_removed` (4403 bzw. 4205) (§3.11, ABG-107) | `Plane.Realtime` | `CollaborationAuthorizationTests` | I4 |
 | **SEC-41** | Cookie als Query-Parameter-Fallback (`A12` E26) | nur `Cookie`-Header des Upgrade-Requests | `Plane.Realtime` | `CollaborationAuthTests.CookieInQuery_IsIgnored` | I4 |
 | **SEC-42** | WebSocket ohne Origin-Prüfung (Cross-Site-WebSocket-Hijacking) | Origin-Pflicht + Allowlist (D05-ADR-22) | `Plane.Realtime/Security/WebSocketOriginValidator.cs` | `WebSocketOriginTests` | I0 (Hub), I4 |
 | **SEC-43** | Admin-Sign-in verrät Deaktivierungsstatus vor Passwortprüfung (E-06) | entfällt (Login in Keycloak) | – | – | I0 |
@@ -1186,7 +1221,7 @@ Grundsatz (OP-01 aus `A06`, ADR-005): Sicherheitslücken werden **korrigiert**, 
 | **SEC-55** | Intake-Erstellung übernimmt Sanitizer-Ergebnis ohne Fehlerprüfung | Fehler → 400 | `Plane.Intake` | `IntakeSanitizerTests` | I3 |
 | **SEC-56** | Workspace-Asset-Download ohne Projektprüfung (`A03` Q-33); `entity_identifier` nicht validiert (Q-34); Mention-Suche mit `project_id` ohne Mitgliedschaftsprüfung (Q-35); inaktive Mitgliedschaften zählen in der Suche (Q-36) | Download prüft `project.project.read` des Asset-Projekts; `entity_identifier` muss im URL-Workspace/-Projekt existieren (sonst 400 `{"error": "Invalid entity identifier"}`, neuer Fehlertext); Mention-Suche verlangt `PRJ(A,M,G)` des angefragten Projekts; Suche filtert `is_active` und `deleted_at IS NULL` | `Plane.Assets`, `Plane.Search` | `AssetScopeTests`, `SearchScopeTests` | I1, I5 |
 | **SEC-57** | Account-Takeover über unverifizierte Provider-E-Mail (GHSA-7j95-vh8g-f365) | Verknüpfung nur über `(iss, sub)`; E-Mail-Verknüpfung nur bei `email_verified=true` und unverknüpftem Konto (D05-ADR-07) | `Plane.Identity` | `OidcProvisioningTests.EmailNotVerified_IsRejected`, `…ExistingLinkedEmail_Returns5202` | I0 |
-| **SEC-58** | God-Mode-Secrets im Klartext an den Browser (A11 O8) | **bewusst beibehalten** (Parität, nur `INST`), `Cache-Control: no-store`, Log-Redaktion; Option `Plane:Security:MaskInstanceSecrets=true` liefert `"********"` und ignoriert diesen Wert beim Speichern (Betreiberwahl) | `Plane.Instance` | `InstanceSecretsResponseTests` | I6 |
+| **SEC-58** | God-Mode-Secrets im Klartext an den Browser (A11 O8) | **korrigiert (17 ABG-143):** Default maskiert – `Plane:Security:MaskInstanceSecrets = true`: `GET /api/instances/configurations/` liefert für verschlüsselte Keys `"********"`, ein `PATCH` mit `"********"` lässt den gespeicherten Wert unverändert; Klartext nur bei ausdrücklichem Betreiber-Opt-out `false`; `Cache-Control: no-store` und Log-Redaktion bleiben (vorläufig bindend bis zur Bestätigung durch den Auftraggeber, 17 Z-112) | `Plane.Instance` | `InstanceSecretsResponseTests` | I6 |
 | **HARM-AUTH-01** | Signup-Gate prüft nur `workspace_member_invites` (`AUTH/adapter/base.py` Z. 108) | zusätzlich `project_member_invites` und Ausnahme für Instanz-Admins (Keycloak-Rolle) – nur rechteerweiternd, kein Sicherheitsverlust, weil beide Gruppen ohnehin eingeladen bzw. berechtigt sind | `Plane.Identity` (`SignupGateStep`) | `SignupGateTests.ProjectInviteOnly_AllowsSignup`, `…InstanceAdmin_AllowsSignup` | I1 |
 
 **Bewusst nicht geändert** (Vertrag, keine Sicherheitslücke im engeren Sinn): `B-03` ungültiger API-Key → 403 statt 401 (Frontend/SDKs erwarten 403); `E-12` Login-Ziel immer App-Wurzel; `E-26` nie ausgelöste Fehlercodes bleiben im Katalog; `X-XSS-Protection` bleibt (wirkungslos, aber Parität).
@@ -1216,10 +1251,10 @@ Status: **entfällt** (ADR-008, keine Implementierung, Route 404 bzw. Frontend-R
 | CE-AUTH-002 | Sign-up-Seite | entfällt | `/sign-up` → Redirect `/` (`08` §3.3.5); Registrierung nur, wenn der Betreiber `registrationAllowed` in Keycloak aktiviert (`register.ftl`) | §3.7.6 | I0 | `LegacyAuthRoutesTests` |
 | CE-AUTH-003 | E-Mail-Existenzprüfung | entfällt | `POST /auth/email-check/` 404; der E-Mail-Schritt ist Keycloaks Username-Form | §4.2 | I0 | `RemovedRoutesTests` |
 | CE-AUTH-004 | Anmeldung mit E-Mail und Passwort | entfällt | Passwortprüfung in Keycloak (Password Form im Flow `plane-browser`) | §3.15.6 | I0 | `KeycloakRealmConfigTests` |
-| CE-AUTH-005 | Registrierung mit E-Mail und Passwort | entfällt | siehe CE-AUTH-002; Signup-Gate in Plane bleibt (CE-AUTH-013 Rest) | §3.7.6 | I0 | – |
+| CE-AUTH-005 | Registrierung mit E-Mail und Passwort | entfällt | siehe CE-AUTH-002; Signup-Gate in funk. bleibt (CE-AUTH-013 Rest) | §3.7.6 | I0 | – |
 | CE-AUTH-006 | Magic-Code anfordern | entfällt | – (Keycloak kennt optional „Email OTP“ nicht im CE-Umfang) | – | I0 | `RemovedRoutesTests` |
 | CE-AUTH-007 | Anmeldung/Registrierung mit Magic-Code | entfällt | – | – | I0 | `RemovedRoutesTests` |
-| CE-AUTH-008 | Login mit Google | entfällt | Betreiber kann Google als Identity Provider **in Keycloak** einrichten (Brokering); Plane sieht nur Keycloak-Claims | §3.7.4 | – | – |
+| CE-AUTH-008 | Login mit Google | entfällt | Betreiber kann Google als Identity Provider **in Keycloak** einrichten (Brokering); funk. sieht nur Keycloak-Claims | §3.7.4 | – | – |
 | CE-AUTH-009 | Login mit GitHub inkl. Organisationspflicht | entfällt | dto.; Organisationspflicht ggf. über Keycloak-IdP-Mapper/Flows | – | – | – |
 | CE-AUTH-010 | Login mit GitLab | entfällt | dto. | – | – | – |
 | CE-AUTH-011 | Login mit Gitea | entfällt | dto.; Forgejo/Gitea hängt selbst als **Client** an Keycloak (F2) | §3.15.3 | – | – |
@@ -1228,24 +1263,24 @@ Status: **entfällt** (ADR-008, keine Implementierung, Route 404 bzw. Frontend-R
 | CE-AUTH-014 | Auth-Fehlercodes als Banner | angepasst | gleiche Banner-Komponenten und Texte; Codes kommen jetzt aus N-02 (§3.3.6); neue Codes 5200, 5201, 5202, 5210 und Texte für 5124 (§4.3) | §3.3.6, §4.3 | I0 | `AuthBannerMappingTests` (Angular) |
 | CE-AUTH-015 | AGB-Hinweis und Auth-Fuß | unverändert (Ort neu) | im Keycloak-Theme (`template.ftl`), Brand-Footer per `plane.brandFooter`, Links per `plane.termsUrl`/`plane.privacyUrl` (leer → ausgeblendet, airgapped) | §3.16.2 | I1 | Visual `keycloak` |
 | CE-AUTH-016 | CSRF-Fehlerseite | unverändert | HTML `csrf_failure.html` 1:1 (HTTP 200) bei ungültigem Antiforgery-Token der Sign-out-Formulare | §3.5 | I0 | `CsrfFormPostTests` |
-| CE-AUTH-017 | Passwort vergessen | entfällt | Keycloak „Forgot password?“ (`login-reset-password.ftl`) im Plane-Theme; Mail-Template im Keycloak-Email-Theme `plane` | §3.16.2 | I1 | Visual `keycloak` |
+| CE-AUTH-017 | Passwort vergessen | entfällt | Keycloak „Forgot password?“ (`login-reset-password.ftl`) im Login-Theme `plane` (funk.-Branding); Mail-Template im Keycloak-Email-Theme `plane` (funk.-Branding, `BRAND-KC-05`) | §3.16.2 | I1 | Visual `keycloak` |
 | CE-AUTH-018 | Passwort zurücksetzen | entfällt | Keycloak `login-update-password.ftl` | §3.16.2 | I1 | Visual `keycloak` |
 | CE-AUTH-019 | Passwort erstmalig setzen | entfällt | `/accounts/set-password` → Redirect `/`; Erst-Passwort setzt Keycloak (Required Action `UPDATE_PASSWORD`) | – | I0 | `LegacyAuthRoutesTests` |
 | CE-AUTH-020 | Passwort ändern | entfällt | Profil-Tab „Security“ zeigt Verweis auf die Keycloak-Kontokonsole (§4.7) | §4.7 | I1 | `web/profile/security.spec.ts` |
 | CE-AUTH-021 | Passwortstärke-Anzeige | entfällt (Ort neu) | `PasswordStrengthIndicator` als JS im Theme (`plane-login.js`, Kriterien aus `PKG/utils/src/auth.ts`) für Reset/Update/Register | §3.16.2 | I1 | Visual `keycloak` |
-| CE-AUTH-022 | Abmelden | angepasst | `POST /auth/sign-out/` (+ Aliase) löscht die Plane-Session, setzt `last_logout_time/-ip`, leitet zum Keycloak-`end_session_endpoint` (RP-initiated Logout) | §3.6 | I0 | `OidcLoginFlowTests.RpLogout_*` |
+| CE-AUTH-022 | Abmelden | angepasst | `POST /auth/sign-out/` (+ Aliase) löscht die funk.-Session, setzt `last_logout_time/-ip`, leitet zum Keycloak-`end_session_endpoint` (RP-initiated Logout) | §3.6 | I0 | `OidcLoginFlowTests.RpLogout_*` |
 | CE-AUTH-023 | Session-Ablauf | angepasst | 401 → `/?next_path=` → Auto-Redirect → stilles Re-Login solange Keycloak-SSO-Session lebt; sonst Keycloak-Login | §3.4.4, §3.13.8 | I0 | `web/auth/keycloak-login.spec.ts` |
 | CE-AUTH-024 | Sessions und Cookies | angepasst | `user_sessions` + `PostgresTicketStore`; ein Cookie `session-id` für alle Apps; `admin-session-id` entfällt; Secure-Regel 1:1 | §3.4 | I0 | `SessionCookieTests`, Port `test_cookie_secure.py` |
 | CE-AUTH-025 | Session-Status-Abfrage | angepasst | N-09/N-10 unverändert in der Form; N-10 liefert `is_authenticated: true` nur mit Keycloak-Admin-Rolle | §3.2 | I0 | `SessionEndpointTests` |
 | CE-AUTH-026 | Rate-Limits | angepasst | `authentication` 10/min auf N-01/N-02/N-13, `anon` 30/min, `asset_duplicate` 5/min, `api_key` 60/min; `email_verification` entfällt; Brute-Force der Passworteingabe in Keycloak | §3.17.6 | I1 | `RateLimitPolicyTests` |
-| CE-AUTH-027 | Login-Sperre deaktivierter Konten | angepasst | in Plane deaktiviert → 5019; in Keycloak gesperrt → Keycloak-Fehlerseite + Session-Ende per Revalidierung/Back-Channel; API-Keys über `IdpUserStateSyncJob` | §3.10 | I1 | `OidcProvisioningTests.DeactivatedUser_CannotLogin`, `IdpUserStateSyncJobTests` |
+| CE-AUTH-027 | Login-Sperre deaktivierter Konten | angepasst | in funk. deaktiviert → 5019; in Keycloak gesperrt → Keycloak-Fehlerseite + Session-Ende per Revalidierung/Back-Channel; API-Keys über `IdpUserStateSyncJob` | §3.10 | I1 | `OidcProvisioningTests.DeactivatedUser_CannotLogin`, `IdpUserStateSyncJobTests` |
 | CE-AUTH-028 | Automatischer Beitritt aus angenommenen Einladungen | unverändert (korrigiert) | `JoinAcceptedInvitationsStep` für web/admin/space; Projekt-Einladungen **mit** `project_id` (E-02) | §3.7.3, §3.7.5 | I1 | `JoinAcceptedInvitationsStepTests` |
 | CE-AUTH-029 | Weiterleitung nach dem Login | angepasst | `next_path`-Validierung 1:1 (URL-kodiert), Ziel immer App-Wurzel + `next_path`; Zielermittlung im Frontend über `GET /api/users/me/settings/` | §3.3.4, §3.3.5 | I0 | `NextPathValidatorTests` |
 | CE-AUTH-030 | Onboarding | angepasst | Profil-Schritt ohne Passwortfeld; Vor-/Nachname aus Claims vorbelegt; Rest (Workspace anlegen/Einladungen annehmen) unverändert | §3.7.2 | I1 | `web/onboarding.spec.ts` |
 | CE-INST-002 | Instanz-Konfiguration aus ENV und DB | angepasst | 36 → 14 Schlüssel (§4.4, beantwortet O-D02-03); Verschlüsselung per Data Protection | §4.4, §3.17.5 | I0 | `InstanceConfigurationSeedTests` |
 | CE-INST-003 | Instanz-Info und öffentliche Konfiguration | angepasst | `config` behält alle Felder (Frontend-Typ unverändert), entfallene Login-Flags liefern feste Werte (§4.4); neu `is_oidc_auto_redirect_enabled`, `oidc_account_console_url`; anonyme `instance`-Felder reduziert (SEC-49) | §4.4 | I0 | `InstanceEndpointContractTests` |
 | CE-INST-004 | Instanz-Admins verwalten (nur API) | angepasst | `GET` = Spiegel der Keycloak-Rolle (`source: "keycloak"`); `POST`/`DELETE` entfallen; Pflege in Keycloak | §3.8 | I0 (Spiegel), I6 (God-Mode-Anzeige) | `InstanceAdminMirrorTests` |
-| CE-INST-005 | Instanz-Zustände in der Web-App | unverändert | „Welcome to Plane“ solange `is_setup_done=false` | §3.9 | I0 | `web/instance-states.spec.ts` |
+| CE-INST-005 | Instanz-Zustände in der Web-App | unverändert (Branding nach ADR-009B) | „Welcome to funk.“ (Original „Welcome to Plane“) solange `is_setup_done=false` | §3.9 | I0 | `web/instance-states.spec.ts` |
 | CE-INST-006 | Erst-Einrichtung der Instanz | angepasst | Setup-Formular ohne Passwort, JSON-`POST /api/instances/admins/setup/` (N-13), Admin-Konto kommt aus Keycloak | §3.9 | I0 | `InstanceBootstrapConcurrencyTests`, `admin/setup.spec.ts` |
 | CE-INST-007 | Admin-Anmeldung | entfällt | `/god-mode/` ohne Session → Auto-Redirect N-01 `?app=admin`; Banner-Codes 5175/5210 | §3.3.2 | I0 | `admin/login.spec.ts` |
 | CE-INST-008 | Admin-Abmeldung | angepasst | verstecktes Formular → N-05 → Keycloak-Logout; Stores/Theme-Reset 1:1 | §3.6 | I0 | `admin/logout.spec.ts` |
@@ -1271,11 +1306,11 @@ Status: **entfällt** (ADR-008, keine Implementierung, Route 404 bzw. Frontend-R
 | CE-SPACE-027 | Emoji-Reaktionen auf Work Items | angepasst | dto. | §3.13 | I6 | dto. |
 | CE-SPACE-028 | Up- und Downvotes | angepasst | dto. `public.vote.*`; Wertprüfung (SEC-52) | §3.18.2 | I6 | `SpaceVoteTests` |
 | CE-SPACE-029 | iframe-Einbettung | unverändert | Board-Seiten ohne `X-Frame-Options`, `frame-ancestors` konfigurierbar | §3.17.7 | I6 | `GatewayRoutingTests.SpaceBoardFramable` |
-| CE-SPACE-032 | „Powered by Plane Publish“-Badge | unverändert (zusätzlich im Theme) | Badge auch auf der Keycloak-Login-Seite `plane-space` | §3.16.2 | I6 | Visual `keycloak` |
+| CE-SPACE-032 | „Powered by Plane Publish“-Badge | angepasst (Branding, zusätzlich im Theme) | Badge „Powered by funk. Publish“ (ADR-009B, BR-04, `BRAND-KC-07`) auch auf der Keycloak-Login-Seite `plane-space` | §3.16.2 | I6 | Visual `keycloak` |
 | CE-PROF-002 | Profil-Einstellungen (Modal und Seite) | angepasst | Tab `security` bleibt in der Navigation, Inhalt = Keycloak-Verweis (§4.7) | §4.7 | I1 | `web/profile/security.spec.ts` |
-| CE-PROF-003 | Profil bearbeiten | angepasst | E-Mail-Feld read-only; „Change email“ öffnet Kontokonsole (`…/account/personal-info`); Namen/Avatar/Cover unverändert in Plane | §4.7 | I1 | `web/profile/general.spec.ts` |
-| CE-PROF-004 | E-Mail-Adresse ändern | angepasst | Änderung nur in Keycloak (Verifizierung dort); Plane übernimmt beim nächsten Login (D05-ADR-08); Endpunkte `email/generate-code/`, `PATCH email/` entfallen (O-D02-08) | §3.7.4 | I1 | `EmailSyncOnLoginTests` |
-| CE-PROF-005 | Konto deaktivieren | angepasst | Plane-Deaktivierung 1:1 ohne Passwort-Randomisierung + RP-Logout; Keycloak-Konto bleibt | §3.10 | I1 | `DeactivateAccountTests` |
+| CE-PROF-003 | Profil bearbeiten | angepasst | E-Mail-Feld read-only; „Change email“ öffnet Kontokonsole (`…/account/personal-info`); Namen/Avatar/Cover unverändert in funk. | §4.7 | I1 | `web/profile/general.spec.ts` |
+| CE-PROF-004 | E-Mail-Adresse ändern | angepasst | Änderung nur in Keycloak (Verifizierung dort); funk. übernimmt beim nächsten Login (D05-ADR-08); Endpunkte `email/generate-code/`, `PATCH email/` entfallen (O-D02-08) | §3.7.4 | I1 | `EmailSyncOnLoginTests` |
+| CE-PROF-005 | Konto deaktivieren | angepasst | funk.-Deaktivierung 1:1 ohne Passwort-Randomisierung + RP-Logout; Keycloak-Konto bleibt | §3.10 | I1 | `DeactivateAccountTests` |
 | CE-PROF-007 | Verknüpfte OAuth-Konten (nur API) | entfällt | `accounts` und `/api/users/me/accounts/` entfallen (SEC-34) | §3.7.1 | I0 | `RemovedRoutesTests` |
 | CE-WS-008 | Rollen- und Berechtigungsmodell | unverändert (Mechanik neu) | Permission-Katalog + System-Rollen 20/15/5 (§3.13), Matrix Anhang B | §3.13 | I0…I6 | `PermissionMatrixTests` |
 | CE-WS-010 | Mitglieder einladen | unverändert | Rolle ≤ eigene Rolle; Annahme nur durch Eingeladenen (S-24) | §3.17.9 | I1 | Port `test_workspace_invitation_update_app.py` |
@@ -1429,7 +1464,7 @@ Nummern `#1…#37` und `AD-1…AD-7` aus `A06` §2.1/§2.2. „404“ = Route ni
 | 5175 | `ADMIN_AUTHENTICATION_FAILED` | aktiv | `ResolveInstanceStep` (`app=admin` ohne Rolle/Gruppe) |
 | 5180 | `ADMIN_USER_ALREADY_EXIST` | ruhend | – |
 | 5185 | `ADMIN_USER_DOES_NOT_EXIST` | ruhend | – |
-| 5190 | `ADMIN_USER_DEACTIVATED` | aktiv | `app=admin` und Plane-Konto deaktiviert (statt 5019, Parität Admin-Banner) |
+| 5190 | `ADMIN_USER_DEACTIVATED` | aktiv | `app=admin` und funk.-Konto deaktiviert (statt 5019, Parität Admin-Banner) |
 | **5200** | `OIDC_AUTHENTICATION_FAILED` | **neu** | Keycloak-Fehler im Callback, ungültiger/abgelaufener State |
 | **5201** | `IDENTITY_PROVIDER_UNAVAILABLE` | **neu** | Discovery/Token/JWKS nicht erreichbar (Timeout 10 s) |
 | **5202** | `IDENTITY_ALREADY_LINKED` | **neu** | E-Mail gehört einem anders verknüpften Benutzer |
@@ -1505,7 +1540,7 @@ Ergebnis: **14 Schlüssel** in der CE (ohne AI-Erweiterungen aus `11`). Unbekann
 
 ### 4.5 Backend-Dateien Original → Ziel
 
-Zielpfade relativ zu `funk.`; `ID/` = `src/modules/Identity/Plane.Identity/`, `IDC/` = `src/modules/Identity/Plane.Identity.Contracts/`, `AZ/` = `src/modules/Authorization/Plane.Authorization/`, `SEC/` = `src/platform/Plane.Platform.Security/`, `BBW/` = `src/building-blocks/Plane.BuildingBlocks.Web/`, `INS/` = `src/modules/Instance/Plane.Instance/`.
+Zielpfade relativ zu `funk.`; `ID/` = `src/modules/Identity/Plane.Identity/`, `IDC/` = `src/modules/Identity/Plane.Identity.Contracts/`, `AZ/` = `src/modules/Authorization/Plane.Authorization/`, `SEC/` = `src/platform/Plane.Platform.Security/`, `BBW/` = `src/building-blocks/Plane.BuildingBlocks.Web/`, `INS/` = `src/modules/Instance/Plane.Instance/`, `DATA/` = `src/data/Plane.Data/`. Entitäten liegen nach `01` §5.2 R3 und 17 ABG-142 ausschließlich in `Plane.Data/Entities/<Modul>/` (mit `[OwnedBy("<Modul>")]`); `ID/Domain/` enthält nur Domänenlogik ohne Entitäten.
 
 | Original (`apps/api/plane/…`) | Inhalt | Ziel | Status |
 |---|---|---|---|
@@ -1550,17 +1585,17 @@ Zielpfade relativ zu `funk.`; `ID/` = `src/modules/Identity/Plane.Identity/`, `I
 | `utils/csv_utils.py` | Formel-Präfix | `SEC/Export/CsvInjectionGuard.cs` | unverändert |
 | `utils/url.py` | `contains_url` | `SEC/Text/UrlDetector.cs` | unverändert |
 | `settings/common.py` (Sicherheits-Settings `A06` §2.7) | Cookies, CORS, CSRF, MIME-Listen, `FILE_SIZE_LIMIT` | `PlaneAuthOptions`, `PlaneCorsOptions`, `PlaneSecurityOptions`, `UploadPolicy`, `PlaneUploadsOptions` (`FILE_SIZE_LIMIT` → `Plane:Uploads:MaxFileSizeBytes`, ABG-044) | angepasst |
-| `db/models/session.py` | `Session` | `ID/Domain/UserSession.cs` (`user_sessions`) | ersetzt |
-| `db/models/user.py` (`User`, `Profile`, `Account`) | Auth-Felder | `ID/Domain/User.cs` (ohne Passwort/Token), `Profile.cs`, `UserIdentity.cs` (neu); `Account` entfällt | angepasst |
-| `db/models/api.py` (`APIToken`, `APIActivityLog`) | Klartext-Token | `ID/Domain/ApiToken.cs` (`token_hash`, `token_prefix`), `ID/Domain/ApiActivityLog.cs` | angepasst |
-| `license/models/instance.py` (`InstanceAdmin`) | Admin-Tabelle | `INS/Domain/InstanceAdminMirror.cs` (`instance_admins`, `source`) | angepasst |
+| `db/models/session.py` | `Session` | `DATA/Entities/Identity/UserSession.cs` (`user_sessions`) | ersetzt |
+| `db/models/user.py` (`User`, `Profile`, `Account`) | Auth-Felder | `DATA/Entities/Identity/User.cs` (ohne Passwort/Token), `…/Identity/Profile.cs`, `…/Identity/UserIdentity.cs` (neu); `Account` entfällt | angepasst |
+| `db/models/api.py` (`APIToken`, `APIActivityLog`) | Klartext-Token | `DATA/Entities/Identity/ApiToken.cs` (`token_hash`, `token_prefix`), `DATA/Entities/Identity/ApiActivityLog.cs` | angepasst |
+| `license/models/instance.py` (`InstanceAdmin`) | Admin-Tabelle | `DATA/Entities/Instance/InstanceAdminMirror.cs` (`instance_admins`, `source`; Ablage wie ABG-142, `03` T007) | angepasst |
 | `apps/live/src/lib/auth.ts`, `auth-middleware.ts` | Cookie → `GET /api/users/me/` | `src/hosts/Plane.Realtime/Security/{SessionTicketReader,WebSocketOriginValidator}.cs` | ersetzt (In-Process) |
 
-### 4.6 Management-Commands → `plane-cli`
+### 4.6 Management-Commands → `funk-cli`
 
-`plane-cli` = `src/tools/Plane.Cli/` (01 §5.1) (`System.CommandLine`, nutzt `PlaneDbContext` und die Contracts-Services; Container-Befehl `docker compose exec api plane-cli …`, Detail `14`).
+`funk-cli` = `src/tools/Plane.Cli/` (01 §5.1) (`System.CommandLine`, nutzt `PlaneDbContext` und die Contracts-Services; Container-Befehl `docker compose exec api funk-cli …`, Detail `14`).
 
-| Original-Command | Wirkung im Original | `plane-cli` | Status |
+| Original-Command | Wirkung im Original | `funk-cli` | Status |
 |---|---|---|---|
 | `activate_user <email>` | `is_active=True` | `users activate <email>` (setzt `is_active=true`, `last_logout_time=null` bleibt gesetzt → nächster Login erlaubt) | unverändert |
 | `reset_password <email>` | neues Passwort setzen | – (Keycloak-Admin-Konsole bzw. `kcadm.sh set-password`) | entfällt |
@@ -2145,7 +2180,7 @@ labels.MapPost("", CreateLabel)                                                 
  .RequirePermission(ProjectsPermissions.ProjectLabelCreate, PermissionRule.Prerequisite(StandardPermissions.WorkspaceProjectBaseCreate));   // WS(A,M) ∧ PRJ⁺(A) → PRJ(A) + Prerequisite
 ```
 
-Generator `tools/Plane.PermissionGen/` (Konsolen-Tool, läuft in CI und als MSBuild-Target `GeneratePermissionKeys` vor `Plane.*.Contracts`): liest `05-permission-matrix.json` (Kopie unter `funk./docs/security/05-permission-matrix.json`, Prüfsumme gegen die Plan-Datei im CI), erzeugt je Modul `<M>Permissions.g.cs`, `StandardPermissions` (Vorbedingungs-Deskriptoren, Anhang A „Vorbedingungs-Keys“, ABG-042), `SystemRoleGrants.g.cs` (Grant-Mengen je System-Rolle) und `tests/security/permission-matrix.yaml` (Eingabe für `PermissionMatrixTests`, `15` §3.13.1). Für jede „∧“-Zeile (Feld `original_check` mit `∧`) gibt der Generator am Endpunkt zusätzlich die Regel `PermissionRule.Prerequisite(StandardPermissions.<Vorbedingung>)` aus; die Vorbedingung ist die Klassenstufe (Original-Permission-Klasse × Methodengruppe, `02` §3.6.3) und steht im Matrix-Feld `prerequisite` (Key aus Anhang A „Vorbedingungs-Keys“; ABG-041). Abweichungen zwischen generiertem Code und Datei brechen den Build.
+Generator `tools/Plane.PermissionGen/` (Konsolen-Tool, läuft in CI und als MSBuild-Target `GeneratePermissionKeys` vor `Plane.*.Contracts`): liest `05-permission-matrix.json` (Kopie unter `funk./docs/security/05-permission-matrix.json`, Prüfsumme gegen die Plan-Datei im CI), erzeugt je Modul `<M>Permissions.g.cs`, `StandardPermissions` (Vorbedingungs-Deskriptoren, Anhang A „Vorbedingungs-Keys“, ABG-042), `SystemRoleGrants.g.cs` (Grant-Mengen je System-Rolle) und `tests/security/permission-matrix.yaml` (Eingabe für `PermissionMatrixTests`, `15` §3.13.1). Zeilen mit `registered: false` (Feld `deviation` = DT-ID aus `04`, 17 ABG-146) erzeugen **keine** Endpunkt-Deskriptoren und keine Matrix-Erwartung; Keys, die nur von solchen Zeilen genutzt werden, bleiben im Katalog (Anhang A) zur Nachverfolgung, werden aber keinem Endpunkt zugeordnet. Für jede „∧“-Zeile (Feld `original_check` mit `∧`) gibt der Generator am Endpunkt zusätzlich die Regel `PermissionRule.Prerequisite(StandardPermissions.<Vorbedingung>)` aus; die Vorbedingung ist die Klassenstufe (Original-Permission-Klasse × Methodengruppe, `02` §3.6.3) und steht im Matrix-Feld `prerequisite` (Key aus Anhang A „Vorbedingungs-Keys“; ABG-041). Abweichungen zwischen generiertem Code und Datei brechen den Build.
 
 ### 5.9 SSRF-sicherer Handler (`SEC/Ssrf/SsrfSafeHttpHandler.cs`)
 
@@ -2351,7 +2386,7 @@ Kein Fachdesign. Dieser Abschnitt listet nur die **Stellen in D05-Bausteinen**, 
 | **E3** IdP Group Sync (W4) | §6.2 | `groups`-Claim im Ticket, `IUserProvisioningStep`-Kette, Revalidierung ruft Pipeline-Teilmenge | I0 |
 | **E5** Rollenmodell (W4) | §6.3 | Permission-Katalog, `roles`, `role_id`, `IRoleDefinitionProvider`, Frontend-Token `PERMISSION_EVALUATOR` | I0 |
 | **F1** Integrations-Framework (W1) | eingehende Webhooks, Verbindungs-Secrets, ausgehende Aufrufe | Oberfläche `Integrations` (`/api/integrations/{provider}/webhooks/{connection_id}/`): `.AllowAnonymous()` + `IWebhookSignatureVerifier`, kein Origin-Check (kein Cookie), Policy `integration_webhook`; DP-Zweck `Plane.Integrations.ConnectionSecret.v1`; `AddSsrfSafeHttpClient("integrations", …)` für nutzerkonfigurierte Ziel-URLs; Keys `workspace.integration.*` reserviert | I0 (Contracts), W1 |
-| **F2** Forgejo (W1) | SSO, Benutzerzuordnung, persönliche Verknüpfung | Keycloak-Client `plane-forgejo` + `config/20-forgejo-client.json` (§3.15.1); Zuordnung Plane-Benutzer ↔ Forgejo-Benutzer über **gleiches** `sub` (`user_identities.subject` = Forgejo „external login user id“ der Quelle `keycloak`); DP-Zweck `Plane.Forgejo.UserToken.v1`; Forgejo-Basis-URLs aus Workspace-Einstellungen nur über `AddSsrfSafeHttpClient("forgejo", …)` mit Allowlist `Plane:Forgejo:AllowedHosts` (gebündeltes Forgejo vorbelegt); Keys `workspace.forgejo_connection.*`, `project.forgejo_mapping.*` reserviert; Smoke-Test `ForgejoSsoSmokeTests` ab I0 | I0 |
+| **F2** Forgejo (W1) | SSO, Benutzerzuordnung, persönliche Verknüpfung | Keycloak-Client `plane-forgejo` + `config/20-forgejo-client.json` (§3.15.1); Zuordnung funk.-Benutzer ↔ Forgejo-Benutzer über **gleiches** `sub` (`user_identities.subject` = Forgejo „external login user id“ der Quelle `keycloak`); DP-Zweck `Plane.Forgejo.UserToken.v1`; Forgejo-Basis-URLs aus Workspace-Einstellungen nur über `AddSsrfSafeHttpClient("forgejo", …)` mit Allowlist `Plane:Forgejo:AllowedHosts` (gebündeltes Forgejo vorbelegt); Keys `workspace.forgejo_connection.*`, `project.forgejo_mapping.*` reserviert; Smoke-Test `ForgejoSsoSmokeTests` ab I0 | I0 |
 | **G1** AI-Basis (nicht gewählt) | Embeddings/Suche dürfen keine unsichtbaren Inhalte liefern | `ISearchProvider`-Ergebnisse laufen durch `SearchVisibilityFilter` (CE-Pflicht, §3.14); Client `llm` mit SSRF-Policy | I5 |
 | **H1** OAuth-App-Plattform (W1) | §6.4 | Bearer-Schema, `PrincipalKind.App`/`Bot`, Spalte `api_scope` je Key, Audience `plane-api` | I0 |
 | **H6** Realtime-Event-Server (W1) | Autorisierung von Hub-Gruppen | SignalR-Hub `/live/events/` nutzt Session-Schema + `IPermissionEvaluator` für Gruppenbeitritt (§3.11); Policy `perm:<key>` je Key registriert (D05-ADR-17); Revoke-Nachricht schließt Hub-Verbindungen | I0 |
@@ -2384,7 +2419,7 @@ Kein Fachdesign. Dieser Abschnitt listet nur die **Stellen in D05-Bausteinen**, 
 | Policies | `perm:<key>` je Key | unverändert nutzbar |
 | Architekturtest 4 | Rollenwerte `20/15/5` nur in `SystemRoles`/`SystemRoleProvider` | sichert, dass kein Code an E5 vorbei auf Levels prüft |
 
-### 6.4 H1 (und H4) – Keycloak als Autorisierungsserver für Plane-Apps und MCP
+### 6.4 H1 (und H4) – Keycloak als Autorisierungsserver für funk.-Apps und MCP
 
 | Andockstelle | CE-Zustand | Was H1/H4 später ergänzen |
 |---|---|---|
@@ -2392,8 +2427,8 @@ Kein Fachdesign. Dieser Abschnitt listet nur die **Stellen in D05-Bausteinen**, 
 | Client-Scope `plane-api-audience` | im Realm, keinem Client zugewiesen | je App-Client als Default-Scope |
 | API-Scopes | Spalte `api_scope` je Key in Anhang A (`<ebene-plural>.<ressource-plural>:read\|write`) | Keycloak-Client-Scopes mit genau diesen Namen; `scope`-Claim → `PlanePrincipal.ApiScopes`; Evaluator verlangt bei `Kind = App`/`Bot` **zusätzlich** zum Rollen-Grant den Scope (`IApiScopeCheck`, CE: immer erfüllt, weil nie aufgerufen) |
 | App-Identitäten | `PrincipalKind.App` (Client-Credentials, `azp` = App-Client), `PrincipalKind.Bot` (`users.is_bot`, `api_tokens.user_type=1`) | Bot-Benutzer je installierter App (Mitgliedschaften wie Menschen); Zuordnung Keycloak-Service-Account (`sub`) → Bot-User über `user_identities` (`provider = "keycloak-client"`) |
-| Consent | – | Keycloak-Consent (`consentRequired=true` für Drittanbieter-Apps); Theme-Template `login-oauth-grant.ftl` im Plane-Stil ergänzen (Liste §3.16.1) |
-| Dynamische Registrierung / Marketplace | – | Keycloak Client Registration Service (Initial-Access-Token, nur Instanz-Admins); Plane speichert App-Metadaten |
+| Consent | – | Keycloak-Consent (`consentRequired=true` für Drittanbieter-Apps); Theme-Template `login-oauth-grant.ftl` im Original-Layout mit funk.-Branding ergänzen (Liste §3.16.1) |
+| Dynamische Registrierung / Marketplace | – | Keycloak Client Registration Service (Initial-Access-Token, nur Instanz-Admins); funk. speichert App-Metadaten |
 | MCP (H4) | – | `Plane.Api` veröffentlicht OAuth-Protected-Resource-Metadaten (RFC 9728) unter `/.well-known/oauth-protected-resource` mit `authorization_servers = [Keycloak-Issuer]`; MCP-Server validiert Keycloak-Tokens mit Audience `plane-mcp` (eigener Resource-Client analog `plane-api`) ⚠ Keycloak-Unterstützung der MCP-Autorisierungsanforderungen kurz vor W9 prüfen |
 | Rate Limiting | Policy `api_key` (Partition Token-Hash) | Policy `oauth_app` (Partition `azp` + `sub`) |
 | Audit | Sicherheitsereignisse §3.17.8 (`Kind` im Ereignis) | App-Aktivitäten (H2) |
@@ -2403,7 +2438,7 @@ Kein Fachdesign. Dieser Abschnitt listet nur die **Stellen in D05-Bausteinen**, 
 | Paket | Berührung | Vorbereitung in der CE |
 |---|---|---|
 | E6 Audit Logs | Sicherheitsereignisse | Outbox-Events `plane.identity.*.v1` hinter `Plane:Audit:Enabled` (§3.17.8) |
-| E7 God-Mode-Erweiterungen (User Management, Session-Einstellungen) | Benutzer sperren, Sessions verwalten | `ISessionRevoker`, `plane-cli sessions revoke`, Session-Optionen in `PlaneAuthOptions` (live über `IOptionsMonitor`) |
+| E7 God-Mode-Erweiterungen (User Management, Session-Einstellungen) | Benutzer sperren, Sessions verwalten | `ISessionRevoker`, `funk-cli sessions revoke`, Session-Optionen in `PlaneAuthOptions` (live über `IOptionsMonitor`) |
 | H3 Public API v2 / Workspace-Tokens | Workspace-gebundene API-Keys | `api_tokens.workspace_id` bleibt im Schema (CE ungenutzt, §3.12.2) |
 | D8 Page-Sharing | private Pages teilen | `IPageAccessExtension` (§3.13.5) |
 | H7 Betrieb (FIPS, External Secrets) | Key-Ring-Schutz, Secrets | `ProtectKeysWithCertificate`, Secrets nur aus Konfiguration (§3.17.5) |
@@ -2475,13 +2510,13 @@ Teststrategie, Werkzeuge, Pyramide und Gates stehen in `15` (D15-ADR-04, -05, -1
 | `KeycloakHeadlessLogin` (Hilfsklasse `15`) | Login per HTTP gegen das Theme-Formular: nutzt die Formular-IDs `username`, `password`, `kc-login` → Theme muss diese IDs beibehalten (Vertrag Theme ↔ Tests) |
 | `visual.spec.ts` | Screenshots §3.16.3; Referenz = Original-Sign-in (`/`, `/spaces/`, `/god-mode/`) mit identischem Viewport/Theme |
 | `theme-i18n.spec.ts` | für jede der 22 Locales: Seite `login-username` rendert ohne fehlende Message-Keys (`???key???`-Muster) |
-| `ForgejoSsoSmokeTests` | Forgejo-Login via Keycloak; Forgejo-Benutzer hat `login_source` „keycloak“ mit `sub` des Plane-Testbenutzers |
+| `ForgejoSsoSmokeTests` | Forgejo-Login via Keycloak; Forgejo-Benutzer hat `login_source` „keycloak“ mit `sub` des funk.-Testbenutzers |
 
 ### 7.4 Matrix-Test (Generierung und Abdeckung)
 
 1. `tools/Plane.PermissionGen` erzeugt `tests/security/permission-matrix.yaml` aus `05-permission-matrix.json`: je Endpunkt-Methode der Erwartungswert je Akteur-Klasse (`15` §3.13.1). Ableitung: Ziel-Prüfung → Akteur-Ergebnis (z. B. `PRJ(A,M)+C:Issue` ⇒ `prj-admin` 2xx, `prj-member` 2xx, `prj-guest` 403, `creator` (Gast, Ersteller) 2xx, `ws-member-not-in-project` 403, `anon` 401, `foreign-ws-admin` 403/404).
 2. `PermissionMatrixTests` ruft jede Methode je Akteur mit Seed-Objekten auf und vergleicht Status **und** Fehlerkörper-Klasse (`Detail`/`Error`/Inline-Text).
-3. Abdeckung: 100 % der Zeilen mit `permission != null` und der `entfällt`-Zeilen; fehlende Matrixzeile für eine registrierte Route = Testfehler (neue Routen müssen die JSON-Datei ergänzen; Pflege-Workflow: Änderung in `05-permission-matrix.json` + Anhang A/B neu generieren mit `migration/_werkzeuge/permission-matrix/gen_appendix.py` bzw. im Zielrepo `tools/Plane.PermissionGen --emit-md`).
+3. Abdeckung: 100 % der Zeilen mit `permission != null` und der `entfällt`-Zeilen, **ohne** die Zeilen mit `registered: false` (17 ABG-146; für sie prüft `RemovedRoutesTests`/`V1RouteInventoryTests` in `04` die Antwort 404/405 nach ABG-145); fehlende Matrixzeile für eine registrierte Route = Testfehler (neue Routen müssen die JSON-Datei ergänzen; Pflege-Workflow: Änderung in `05-permission-matrix.json` + Anhang A/B neu generieren mit `migration/_werkzeuge/permission-matrix/gen_appendix.py` bzw. im Zielrepo `tools/Plane.PermissionGen --emit-md`).
 
 ### 7.5 Pen-Test-Checkliste (Abnahme I7, ergänzt ZAP-Läufe `15` D15-SEC-04/-05)
 
@@ -2518,11 +2553,11 @@ Teststrategie, Werkzeuge, Pyramide und Gates stehen in `15` (D15-ADR-04, -05, -1
 | R-02 | Aspire-Keycloak-Integration ist Preview (`01` O-01) | API-Bruch beim Update | Version pinnen; Fallback `AddContainer("keycloak", "quay.io/keycloak/keycloak", "<pin>")` mit gleichem Realm-Import | S0 |
 | R-03 | Back-Channel-Logout-URL aus Sicht des Keycloak-Containers in Dev (Host-Netz, Ports) bzw. Prod (internes Netz) nicht erreichbar | Sessions enden erst durch Revalidierung (≤ 300 s) | `PLANE_BACKCHANNEL_BASE_URL` getrennt von `PLANE_PUBLIC_URL`; Aspire-Endpoint-Referenz; Systemtest AK-04 schlägt sonst fehl | S7 |
 | R-04 | Drei OIDC-Schemata mit gemeinsamem `CallbackPath` (D05-ADR-01): ein Schema verarbeitet einen fremden Callback (gleicher State-Zweck durch Konfigurationsfehler) bzw. der Platzhalter-Endpunkt wird bei gültigem State erreicht | Login einzelner Apps scheitert mit 5200 | schemaeigener DP-Zweck `Plane.Identity.OidcState.v1.<scheme>` (Unit-Test: State von `oidc-web` ist für `oidc-admin` nicht entschlüsselbar); `OidcLoginFlowTests.Login_{Web,Admin,Space}` + P-05 (`azp`-Vertauschung); Fallback: drei Callback-Pfade `/auth/oidc/{app}/callback/` (Realm-Änderung, kein Frontend-Einfluss) | S7 |
-| R-05 | `revokeRefreshToken=false` (Wiederverwendung erlaubt) senkt den Schutz bei Diebstahl des Refresh-Tokens | Token-Missbrauch außerhalb von Plane | Refresh-Token verlässt nie den Server (verschlüsseltes Ticket); bei Bedarf Rotation einschalten und Revalidierung per Advisory-Lock je Session serialisieren | I7-Härtung |
+| R-05 | `revokeRefreshToken=false` (Wiederverwendung erlaubt) senkt den Schutz bei Diebstahl des Refresh-Tokens | Token-Missbrauch außerhalb von funk. | Refresh-Token verlässt nie den Server (verschlüsseltes Ticket); bei Bedarf Rotation einschalten und Revalidierung per Advisory-Lock je Session serialisieren | I7-Härtung |
 | R-06 | Revalidierungslast auf Keycloak (1 Refresh je aktiver Session alle 300 s) | Latenz/Last bei vielen Sessions | Intervall konfigurierbar; Revalidierung nur bei Requests (keine Hintergrundaktivität); Lasttest LT-13 (`15`) | I7 |
 | R-07 | ~~Rate-Limit am Callback greift nicht~~ – **im Review aufgelöst:** `UseAuthentication` liegt vor `UseRateLimiter` (`02` §3.4.1), daher weder Endpunkt- noch Global-Limiter wirksam; Lösung `AuthCallbackRateLimiter` in `OnMessageReceived` (§3.17.6, §5.2) | – | `RateLimitPolicyTests.Callback_11thRequest_Redirects5900` | I0 |
 | R-08 | HtmlSanitizer weicht in Randfällen von `nh3`/Ammonia ab (Attribut-Normalisierung, Entities, Custom-Elemente) | Editor-Inhalte verändern sich beim Speichern | Golden-Korpus (AK-16) mit DOM-Vergleich; Abweichungsliste mit Begründung | Start I2 |
-| R-09 | God-Mode-Secrets werden wie im Original im Klartext an Instanz-Admins ausgeliefert (SEC-58) | Offenlegung bei kompromittierter Admin-Session | `no-store`, Redaktion, optional Maskierung; Step-up für God Mode zuschaltbar | Entscheidung Auftraggeber (O-D05-03) |
+| R-09 | God-Mode-Secrets im Klartext an Instanz-Admins nur noch bei Betreiber-Opt-out `MaskInstanceSecrets = false` (SEC-58, 17 ABG-143) | Offenlegung bei kompromittierter Admin-Session (nur mit Opt-out) | Default maskiert, `no-store`, Redaktion; Step-up für God Mode zuschaltbar | ABG-143 (vorläufig bindend), Bestätigung Auftraggeber Z-112 (O-D05-03) |
 | R-10 | Permission-Matrix aus AST-Extraktion enthält Fehlzuordnungen (dynamische `get_permissions`, Decorators in Basisklassen) | falsche Rechte in einzelnen Endpunkten | Paritäts-Harness ruft die Original-Endpunkte mit denselben Akteuren auf (`15` §3.13) und vergleicht mit der Matrix; Abweichungen → Korrektur der JSON-Datei | je Inkrement |
 | R-11 | Harmonisierungen (HARM-00, -03, -04, -06) erweitern Rechte gegenüber der Public API v1 des Originals | Auftraggeber-Akzeptanz | Rechte nie über die App-Rechte desselben Benutzers hinaus; Liste in §3.18.1 zur Freigabe | O-D05-02 |
 | R-12 | CSP blockiert Funktionen (Editor-Erweiterungen, Emoji, Worker, Changelog-iframe) | Fehlfunktionen nach Enforce | Report-Only ab I0, Auswertung je E2E-Lauf (AK-17), Enforce erst I7 | I7 |
@@ -2553,7 +2588,7 @@ Teststrategie, Werkzeuge, Pyramide und Gates stehen in `15` (D15-ADR-04, -05, -1
 |---|---|---|---|
 | O-D05-01 | Exakte Deep-Link-Pfade der Kontokonsole `keycloak.v3` (Security, Personal info) und Rücksprung (`referrer`, `referrer_uri`) | in S7 gegen die gepinnte Keycloak-Version verifizieren und in `PlaneAuthOptions` hinterlegen | Ende S7 |
 | O-D05-02 | Freigabe der rechteerweiternden Harmonisierungen HARM-00, HARM-03, HARM-04, HARM-06 | freigeben (keine Rechte über App-Rechte hinaus) | Start I0 (HARM-00), Start I6 (übrige) |
-| O-D05-03 | God-Mode-Secrets im Klartext (SEC-58): Default `MaskInstanceSecrets=false` (Parität) oder `true` | `false` (Parität), Betreiber kann maskieren | Start I6 |
+| O-D05-03 | God-Mode-Secrets im Klartext (SEC-58): Default `MaskInstanceSecrets` | **vorläufig entschieden (17 ABG-143):** `true` (maskiert), Opt-out `false`; Bestätigung durch den Auftraggeber (17 Z-112) | vor I6 |
 | O-D05-04 | Passwortlose Anmeldung als Ersatz für Magic-Code (Passkeys sind in Keycloak enthalten, E-Mail-OTP nicht im Keycloak-Kern) | Passkeys als Option im Flow (deaktiviert); kein E-Mail-OTP in der CE | Ende I1 |
 | O-D05-05 | Ist das Auto-Redirect auch für Space-Boards gewünscht (anonymes Lesen bleibt)? | nein: Space-Startseite zeigt Button, Boards bleiben anonym | Start I6 |
 | O-D05-06 | Rate-Limit am OIDC-Callback (R-07) | **entschieden:** `AuthCallbackRateLimiter` in `OnMessageReceived` | erledigt |
@@ -2572,12 +2607,12 @@ Dokumente `12` und `13` sind in `01` Anhang A nicht vergeben. „Liefert“ = di
 | `03-datenmodell-efcore.md` | Tabellen `user_sessions`, `user_identities`, `roles`, `instance_admins` (Spiegel), `api_tokens` (Hash), `data_protection_keys`; Wegfall `accounts`, Passwortfelder (§3.4.1, §3.7.1, §4.8) | Konventionen (UUIDv7, snake_case, benannte Query-Filter, `[OwnedBy]`) | – |
 | `04-api-design-und-endpunktkatalog.md` | Berechtigung je Endpunkt (Anhang B), entfallene Auth-Routen (§4.2), Bug-/Sicherheitsentscheidungen SEC-/HARM-xx (§3.18) | Request/Response-Formen, Paritäts-Ausnahmen | Bug-/Sicherheits-Entscheidungstabelle in `04` verweist für alle Rechte-Abweichungen auf §3.18 (keine Doppelpflege) |
 | `06-hintergrundjobs-events-benachrichtigungen.md` | Jobs `ExpiredSessionCleanupJob` (`17 * * * *`), `IdpUserStateSyncJob` (`*/15 * * * *`), `DownloadAvatarJob`; SSRF-Client `webhooks` + Signatur; Mail `user_activation_email`/`user_deactivation_email`; Integration-Events `plane.identity.*.v1` | Job-/Cron-Mechanik, Outbox, Mail-Templates | Webhook-Zustellung nutzt ausschließlich `AddSsrfSafeHttpClient("webhooks")` |
-| `07-realtime-kollaboration-dokumente.md` | Upgrade-Authentisierung, Origin-Pflicht, Close-Codes 4401/4403, Dokumentrecht je Verbindung (§3.11, SEC-39…42), Binärprüfung | Hocuspocus-Protokoll, `IPageDocumentStore` | `/live/convert-document/` wird nicht über das Gateway geroutet (SEC-39) |
+| `07-realtime-kollaboration-dokumente.md` | Upgrade-Authentisierung (ohne Cookie → 403), Origin-Pflicht, Token-Mismatch → `PermissionDenied` ohne Close, Close-Codes 4205/4401/4403, Dokumentrecht je Verbindung über `ICollaborationDocumentType.AuthorizeAsync` (§3.11, SEC-39…42, 17 ABG-107), Binärprüfung | Hocuspocus-Protokoll, `ICollaborationDocumentType`/`IPageDocumentStore` | `/live/convert-document/` wird nicht über das Gateway geroutet (SEC-39) |
 | `08-frontend-angular-architektur.md` | `PermissionService`/`PERMISSION_EVALUATOR` (`PermissionCheck`, ABG-055), Wrapper-Komponenten (D08-ADR-12, ABG-020), `unauthorizedInterceptor`, `SignOutFormComponent`, `AuthLandingComponent` (+ `pl-auth-landing-base`, ABG-022), Instanz-Feld `is_oidc_auto_redirect_enabled` (Antwort auf `08` §3.3.5), Banner-Codes (§4.3), Profil-Security-Tab (§4.7) | Routen-/Store-Mapping, Runtime-Config, CSP-Hash des Theme-Skripts | Profil-Tab `security` bleibt als Tab mit Keycloak-Verweis (wie `08` Route 57) |
 | `09-ui-paritaet-designsystem.md` | Theme-Seiten-Mapping (§3.16.2), UI-Abweichungen DEV-UI-01…07 (§8.2) | Propel-/Tailwind-Klassen, Visual-Verfahren | **Anpassung in `09`:** Zeile W-025 (`/settings/profile/security`) nicht „Tab entfällt“, sondern „Inhalt ersetzt durch Keycloak-Verweis (DEV-UI-04)“ |
 | `10-editor-angular.md` | Sanitizer-Allowlist als Vertrag für Editor-HTML (§3.17.3) | Extension-Liste für den Golden-Korpus | Neue Editor-Attribute erfordern Erweiterung der Allowlist **und** des Golden-Korpus |
 | `11-suche-und-ai-basis.md` | `SearchVisibilityFilter`, Client `llm` mit `Plane:Ai:AllowedInternalHosts` | AI-Konfigurationsschlüssel (z. B. Basis-URL) | weitere AI-Schlüssel ergänzen §4.4 nicht, sondern `11` |
-| `14-infrastruktur-deployment-betrieb.md` | Realm-Inhalt (§3.15), Theme-Inhalt (§3.16), Header-Werte und CSP (§3.17.7), Forwarded-Headers-Regeln, Secrets/Key-Ring (§3.17.5), CLI (§4.6), Optionsnamen `PlaneAuthOptions` (§3.4.3) | Container, Packaging, Pfad `/idp/`, ENV-Mapping, TLS, Backup, interne `MetadataAddress` | **Anpassungen in `14`:** (1) Forgejo-Client heißt `plane-forgejo` (folgt `01` §4.1/`16`; in `14` §3.2.1 Parameter-Tabelle und §3.3.2 noch `forgejo`); (2) Themes `plane`/`plane-space` – bereits konsistent (D14-ADR-04); (3) §3.7.3 „CSP nicht gesetzt“ ersetzen durch D05-ADR-23 (Report-Only ab I0, Enforce ab I7) und Header-Matrix §3.17.7 inkl. `X-Frame-Options`-Ausnahme für `/spaces/issues/*`; (4) O-14-05 ist durch D05-ADR-12 entschieden (`ENABLE_SIGNUP` bleibt, Default `"1"`); (5) ENV-Namen der Clients: `Plane__Auth__Clients__{Web,Admin,Space}__ClientSecret`, `Plane__Auth__Backend__ClientSecret`, `Plane__Auth__Oidc__MetadataAddress` (deckt sich mit `14` §3.2.2, ⚠ dort bitte als final markieren); (6) SSRF-Client-Namen: `link-preview` und `avatar-import` (nicht `link-crawler`/`avatar-download`, `14` §3.6). **Stand:** (1), (3)–(6) sind in `14` über Dokument 17 umgesetzt (ABG-003, ABG-016, ABG-017, ABG-035, ABG-040); Keycloak-Image einheitlich `${PLANE_REGISTRY}/plane-keycloak:${PLANE_VERSION}` (ABG-002) |
+| `14-infrastruktur-deployment-betrieb.md` | Realm-Inhalt (§3.15), Theme-Inhalt (§3.16), Header-Werte und CSP (§3.17.7), Forwarded-Headers-Regeln, Secrets/Key-Ring (§3.17.5), CLI (§4.6), Optionsnamen `PlaneAuthOptions` (§3.4.3) | Container, Packaging, Pfad `/idp/`, ENV-Mapping, TLS, Backup, interne `MetadataAddress` | **Anpassungen in `14`:** (1) Forgejo-Client heißt `plane-forgejo` (folgt `01` §4.1/`16`; in `14` §3.2.1 Parameter-Tabelle und §3.3.2 noch `forgejo`); (2) Themes `plane`/`plane-space` – bereits konsistent (D14-ADR-04); (3) §3.7.3 „CSP nicht gesetzt“ ersetzen durch D05-ADR-23 (Report-Only ab I0, Enforce ab I7) und Header-Matrix §3.17.7 inkl. `X-Frame-Options`-Ausnahme für `/spaces/issues/*`; (4) O-14-05 ist durch D05-ADR-12 entschieden (`ENABLE_SIGNUP` bleibt, Default `"1"`); (5) ENV-Namen der Clients: `Plane__Auth__Clients__{Web,Admin,Space}__ClientSecret`, `Plane__Auth__Backend__ClientSecret`, `Plane__Auth__Oidc__MetadataAddress` (deckt sich mit `14` §3.2.2, ⚠ dort bitte als final markieren); (6) SSRF-Client-Namen: `link-preview` und `avatar-import` (nicht `link-crawler`/`avatar-download`, `14` §3.6). **Stand:** (1), (3)–(6) sind in `14` über Dokument 17 umgesetzt (ABG-003, ABG-016, ABG-017, ABG-035, ABG-040); Keycloak-Image einheitlich `${PLANE_REGISTRY}/funk-keycloak:${PLANE_VERSION}` (ABG-002) |
 | `15-teststrategie-qualitaet-paritaet.md` | Akzeptanzkriterien AK-01…25, Matrix-Datei, Pen-Test-Checkliste, Port-Liste (§7) | Testwerkzeuge, `TestAuth`-Schema, `KeycloakHeadlessLogin`, Akteur-Klassen, Seeds, generierter Test-Realm | **Bestätigt (Review):** Test-Realm-Verfahren `15` §3.14.2 (generierte `plane-realm.test.json` aus `plane-realm.json` ⊕ Overrides ⊕ Parity-Benutzer, Test-Client `plane-test-app` nur dort) ist verbindlich und in §3.15.1 übernommen; Akteur-Klassen `15` §3.13.1 sind Grundlage von AK-11. **Anpassungen in `15`:** (1) Test-IDs `D15-SEC-xx` (bereits umgesetzt); (2) Option `Plane__Auth__Bearer__Enabled` statt `Plane__Auth__BearerEnabled` (`15` §6, H1-Zeile); (3) Client `plane-forgejo` statt `forgejo` in `15` §3.14.2 Tabellenzeile `plane-realm.json`; (4) S-14 „E-Mail-Änderungscodes bleiben in Plane, falls …“ entfällt (CE-PROF-004 angepasst, O-D15-03 damit entschieden) |
 | `16-erweiterungspunkte-bezahl-features.md` | Andockstellen §6 (insbesondere E3, E5, H1/H4, F1, F2, H6) | Paket-Skizzen kurz vor der Umsetzung | `16` übernimmt §6.1–§6.4 als Referenz, Fachdesign erst vor W1/W4 |
 | `00`/`01` | Konkretisierung von ADR-008, ADR-017…019, ADR-030, ADR-034, ADR-036; Auflösung O-06, O-08, O-11 | Grundsatzentscheidungen | `01` §5.1 ist auf `funk./` angeglichen (früherer Arbeitstitel `plane-net/`, ADR-009, ABG-018 g); AppHost-Skelett `01` §3.4 nutzt die Namen aus §3.4.3/§5.11 (drei Client-Secrets + Backend, ABG-018 d/ABG-035; früher `Plane__Auth__Oidc__ClientSecret`); Client-Name `plane-forgejo` aus `01` §4.1 übernommen |
@@ -2874,6 +2909,8 @@ Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `endp
 **Spalten:** „Original-Prüfung“ = wirksame Prüfung im Original (`WS(…)`/`PRJ(…)` = Permission-Klasse → `DenyStyle.Detail`; `PRJ⁺(…)` = `allow_permission` mit WS-Admin-Override bzw. `… ∨ Creator(Model)` = `allow_permission(creator=True)` → `DenyStyle.Error`; `Auth` = nur angemeldet; `Anon` = `AllowAny`; `INST` = `InstanceAdminPermission`). „Ziel-Prüfung“ = Notation §3.13.2. „Abw.“ = Korrektur-/Harmonisierungs-ID (§3.18) bzw. `ADR-008`.
 
 
+**Nicht registrierte Zeilen (17 ABG-146):** Zeilen, die `04` nicht registriert (`GET /api/workspaces/` DT-WS-01, Label-/Link-`PUT` DT-GEN-01, Legacy-File-Assets DT-AST-01, Project-Boards DT-SPACE-01, 8 v1-Estimates DT-V1-01, v1-`PUT` und Modul-Issue-`GET` DT-V1-02, Intake-`POST` DT-INT-01, Favoriten-Listen DT-GEN-15, Attachment-Detail-`GET` DT-WI-10; zusammen 35 Endpunkt-Methoden), bleiben zur Nachverfolgung stehen und tragen in der Spalte „Abw.“ die Markierung **nicht registriert** (`registered: false` mit DT-Verweis). `tools/Plane.PermissionGen` und die Matrix-Tests überspringen sie; erwartet wird 405, wenn der Pfad mit anderer Methode registriert ist, sonst 404 `{"error": "Page not found."}` (17 ABG-145).
+
 ### B.Identity (29 Endpunkt-Methoden)
 
 | Methode | Pfad | Original (Klasse.Aktion, Datei) | Original-Prüfung | Ziel-Permission | Ziel-Prüfung | Abw. |
@@ -2952,19 +2989,19 @@ Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `endp
 | GET | `/api/users/me/workspaces/{slug}/issues-completed-graph/` | `UserIssueCompletedGraphEndpoint.get` (V/workspace/user.py:583) | `Auth` | `workspace.member_profile.read_own` | `WS(A,M,G)+SELF+VIS` |  |
 | GET | `/api/users/me/workspaces/{slug}/projects/invitations/` | `UserProjectInvitationsViewset.list` (V/project/invite.py) | `Auth` | `user.invitation.read` | `AUTH+SELF` | SEC-06 |
 | GET | `/api/workspace-slug-check/` | `WorkSpaceAvailabilityCheckEndpoint.get` (V/workspace/base.py:216) | `Auth` | `user.workspace.create` | `AUTH+SELF` |  |
-| GET | `/api/workspaces/` | `WorkSpaceViewSet.list` (V/workspace/base.py:154) | `WS(A,M,G)` | `user.workspace.read` | `WS(A,M,G)` |  |
+| GET | `/api/workspaces/` | `WorkSpaceViewSet.list` (V/workspace/base.py:154) | `WS(A,M,G)` | `user.workspace.read` | `WS(A,M,G)` | **nicht registriert** (`registered: false`, 04 [DT-WS-01](04-api-design-und-endpunktkatalog.md#DT-WS-01); Erwartung 405, ABG-145/-146) |
 | POST | `/api/workspaces/` | `WorkSpaceViewSet.create` (V/workspace/base.py:82) | `Auth` | `user.workspace.create` | `AUTH+SELF` |  |
 | DELETE | `{P}/favorite-pages/{page_id}/` | `PageFavoriteViewSet.destroy` (V/page/base.py:483) | `PRJ⁺(A,M)` | `project.page.favorite` | `PRJ(A,M)` |  |
 | POST | `{P}/favorite-pages/{page_id}/` | `PageFavoriteViewSet.create` (V/page/base.py:471) | `PRJ⁺(A,M)` | `project.page.favorite` | `PRJ(A,M)` |  |
 | GET | `{P}/join/{pk}/` | `ProjectJoinEndpoint.get` (V/project/invite.py:292) | `Anon` | `public.invitation.read` | `ANON` |  |
 | POST | `{P}/join/{pk}/` | `ProjectJoinEndpoint.post` (V/project/invite.py:195) | `Anon` | `public.invitation.respond` | `ANON` |  |
-| GET | `{P}/user-favorite-cycles/` | `CycleFavoriteViewSet.list` (V/cycle/base.py) | `Auth` | `project.cycle.read_favorites` | `PRJ(A,M,G)+OWN` |  |
+| GET | `{P}/user-favorite-cycles/` | `CycleFavoriteViewSet.list` (V/cycle/base.py) | `Auth` | `project.cycle.read_favorites` | `PRJ(A,M,G)+OWN` | **nicht registriert** (`registered: false`, 04 [DT-GEN-15](04-api-design-und-endpunktkatalog.md#DT-GEN-15); Erwartung 405, ABG-145/-146) |
 | POST | `{P}/user-favorite-cycles/` | `CycleFavoriteViewSet.create` (V/cycle/base.py:573) | `PRJ⁺(A,M)` | `project.cycle.favorite` | `PRJ(A,M)` |  |
 | DELETE | `{P}/user-favorite-cycles/{cycle_id}/` | `CycleFavoriteViewSet.destroy` (V/cycle/base.py:587) | `PRJ⁺(A,M)` | `project.cycle.favorite` | `PRJ(A,M)` |  |
-| GET | `{P}/user-favorite-modules/` | `ModuleFavoriteViewSet.list` (V/module/base.py) | `PRJ(A,M,G)` | `project.module.read_favorites` | `PRJ(A,M,G)` |  |
+| GET | `{P}/user-favorite-modules/` | `ModuleFavoriteViewSet.list` (V/module/base.py) | `PRJ(A,M,G)` | `project.module.read_favorites` | `PRJ(A,M,G)` | **nicht registriert** (`registered: false`, 04 [DT-GEN-15](04-api-design-und-endpunktkatalog.md#DT-GEN-15); Erwartung 405, ABG-145/-146) |
 | POST | `{P}/user-favorite-modules/` | `ModuleFavoriteViewSet.create` (V/module/base.py:811) | `PRJ(A,M,G)` | `project.module.favorite` | `PRJ(A,M,G)` |  |
 | DELETE | `{P}/user-favorite-modules/{module_id}/` | `ModuleFavoriteViewSet.destroy` (V/module/base.py:824) | `PRJ(A,M,G)` | `project.module.favorite` | `PRJ(A,M,G)` |  |
-| GET | `{P}/user-favorite-views/` | `IssueViewFavoriteViewSet.list` (V/view/base.py) | `Auth` | `project.view.read_favorites` | `PRJ(A,M,G)+OWN` |  |
+| GET | `{P}/user-favorite-views/` | `IssueViewFavoriteViewSet.list` (V/view/base.py) | `Auth` | `project.view.read_favorites` | `PRJ(A,M,G)+OWN` | **nicht registriert** (`registered: false`, 04 [DT-GEN-15](04-api-design-und-endpunktkatalog.md#DT-GEN-15); Erwartung 405, ABG-145/-146) |
 | POST | `{P}/user-favorite-views/` | `IssueViewFavoriteViewSet.create` (V/view/base.py:421) | `PRJ⁺(A,M)` | `project.view.favorite` | `PRJ(A,M)` |  |
 | DELETE | `{P}/user-favorite-views/{view_id}/` | `IssueViewFavoriteViewSet.destroy` (V/view/base.py:435) | `PRJ⁺(A,M)` | `project.view.favorite` | `PRJ(A,M)` |  |
 | DELETE | `{W}/` | `WorkSpaceViewSet.destroy` (V/workspace/base.py:169) | `WS(A) ∧ WS(A)` | `workspace.settings.delete` | `WS(A)` + Prerequisite(— ⚠ Vorbedingungs-Key für `WorkSpaceBasePermission` PUT/PATCH/DELETE fehlt in ABG-042; beide Stufen identisch WS(A), wirksam DenyStyle.Detail der Klassenstufe – O-D05-08) |  |
@@ -3028,14 +3065,14 @@ Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `endp
 |---|---|---|---|---|---|---|
 | DELETE | `{V1P}/archive/` | `ProjectArchiveUnarchiveAPIEndpoint.delete` (V1V/project.py:690) | `PRJ⁺(A)` | `project.project.unarchive` | `PRJ(A,M)` | HARM-05 |
 | POST | `{V1P}/archive/` | `ProjectArchiveUnarchiveAPIEndpoint.post` (V1V/project.py:666) | `WS(A,M)` | `project.project.archive` | `PRJ(A,M)` | HARM-05 |
-| DELETE | `{V1P}/estimates/` | `ProjectEstimateAPIEndpoint.delete` (V1V/estimate.py:129) | `PRJ(A,M)` | `project.estimate.delete` | `PRJ(A,M)` |  |
-| GET | `{V1P}/estimates/` | `ProjectEstimateAPIEndpoint.get` (V1V/estimate.py:83) | `PRJ(A,M,G)` | `project.estimate.read` | `PRJ(A,M,G)` |  |
-| PATCH | `{V1P}/estimates/` | `ProjectEstimateAPIEndpoint.patch` (V1V/estimate.py:106) | `PRJ(A,M)` | `project.estimate.update` | `PRJ(A,M)` |  |
-| POST | `{V1P}/estimates/` | `ProjectEstimateAPIEndpoint.post` (V1V/estimate.py:47) | `PRJ(A,M)` | `project.estimate.create` | `PRJ(A,M)` |  |
-| GET | `{V1P}/estimates/{estimate_id}/estimate-points/` | `EstimatePointListCreateAPIEndpoint.get` (V1V/estimate.py:168) | `PRJ(A,M,G)` | `project.estimate.read` | `PRJ(A,M,G)` |  |
-| POST | `{V1P}/estimates/{estimate_id}/estimate-points/` | `EstimatePointListCreateAPIEndpoint.post` (V1V/estimate.py:196) | `PRJ(A,M)` | `project.estimate.create` | `PRJ(A,M)` |  |
-| DELETE | `{V1P}/estimates/{estimate_id}/estimate-points/{estimate_point_id}/` | `EstimatePointDetailAPIEndpoint.delete` (V1V/estimate.py:286) | `PRJ(A,M)` | `project.estimate.delete` | `PRJ(A,M)` |  |
-| PATCH | `{V1P}/estimates/{estimate_id}/estimate-points/{estimate_point_id}/` | `EstimatePointDetailAPIEndpoint.patch` (V1V/estimate.py:264) | `PRJ(A,M)` | `project.estimate.update` | `PRJ(A,M)` |  |
+| DELETE | `{V1P}/estimates/` | `ProjectEstimateAPIEndpoint.delete` (V1V/estimate.py:129) | `PRJ(A,M)` | `project.estimate.delete` | `PRJ(A,M)` | **nicht registriert** (`registered: false`, 04 [DT-V1-01](04-api-design-und-endpunktkatalog.md#DT-V1-01); Erwartung 404, ABG-145/-146) |
+| GET | `{V1P}/estimates/` | `ProjectEstimateAPIEndpoint.get` (V1V/estimate.py:83) | `PRJ(A,M,G)` | `project.estimate.read` | `PRJ(A,M,G)` | **nicht registriert** (`registered: false`, 04 [DT-V1-01](04-api-design-und-endpunktkatalog.md#DT-V1-01); Erwartung 404, ABG-145/-146) |
+| PATCH | `{V1P}/estimates/` | `ProjectEstimateAPIEndpoint.patch` (V1V/estimate.py:106) | `PRJ(A,M)` | `project.estimate.update` | `PRJ(A,M)` | **nicht registriert** (`registered: false`, 04 [DT-V1-01](04-api-design-und-endpunktkatalog.md#DT-V1-01); Erwartung 404, ABG-145/-146) |
+| POST | `{V1P}/estimates/` | `ProjectEstimateAPIEndpoint.post` (V1V/estimate.py:47) | `PRJ(A,M)` | `project.estimate.create` | `PRJ(A,M)` | **nicht registriert** (`registered: false`, 04 [DT-V1-01](04-api-design-und-endpunktkatalog.md#DT-V1-01); Erwartung 404, ABG-145/-146) |
+| GET | `{V1P}/estimates/{estimate_id}/estimate-points/` | `EstimatePointListCreateAPIEndpoint.get` (V1V/estimate.py:168) | `PRJ(A,M,G)` | `project.estimate.read` | `PRJ(A,M,G)` | **nicht registriert** (`registered: false`, 04 [DT-V1-01](04-api-design-und-endpunktkatalog.md#DT-V1-01); Erwartung 404, ABG-145/-146) |
+| POST | `{V1P}/estimates/{estimate_id}/estimate-points/` | `EstimatePointListCreateAPIEndpoint.post` (V1V/estimate.py:196) | `PRJ(A,M)` | `project.estimate.create` | `PRJ(A,M)` | **nicht registriert** (`registered: false`, 04 [DT-V1-01](04-api-design-und-endpunktkatalog.md#DT-V1-01); Erwartung 404, ABG-145/-146) |
+| DELETE | `{V1P}/estimates/{estimate_id}/estimate-points/{estimate_point_id}/` | `EstimatePointDetailAPIEndpoint.delete` (V1V/estimate.py:286) | `PRJ(A,M)` | `project.estimate.delete` | `PRJ(A,M)` | **nicht registriert** (`registered: false`, 04 [DT-V1-01](04-api-design-und-endpunktkatalog.md#DT-V1-01); Erwartung 404, ABG-145/-146) |
+| PATCH | `{V1P}/estimates/{estimate_id}/estimate-points/{estimate_point_id}/` | `EstimatePointDetailAPIEndpoint.patch` (V1V/estimate.py:264) | `PRJ(A,M)` | `project.estimate.update` | `PRJ(A,M)` | **nicht registriert** (`registered: false`, 04 [DT-V1-01](04-api-design-und-endpunktkatalog.md#DT-V1-01); Erwartung 404, ABG-145/-146) |
 | GET | `{V1P}/labels/` | `LabelListCreateAPIEndpoint.get` (V1V/issue.py:1006) | `PRJ(A,M,G)` | `project.label.read` | `PRJ(A,M,G)` |  |
 | POST | `{V1P}/labels/` | `LabelListCreateAPIEndpoint.post` (V1V/issue.py:933) | `PRJ⁺(A)` | `project.label.create` | `PRJ(A)` |  |
 | DELETE | `{V1P}/labels/{pk}/` | `LabelDetailAPIEndpoint.delete` (V1V/issue.py:1116) | `PRJ⁺(A)` | `project.label.delete` | `PRJ(A)` |  |
@@ -3092,7 +3129,7 @@ Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `endp
 | DELETE | `{P}/issue-labels/{pk}/` | `LabelViewSet.destroy` (V/issue/label.py:86) | `PRJ⁺(A) ∧ PRJ⁺(A)` | `project.label.delete` | `PRJ(A)` + Prerequisite(`project.project_base.write`) |  |
 | GET | `{P}/issue-labels/{pk}/` | `LabelViewSet.retrieve` (V/issue/label.py) | `WS(A,M,G)` | `project.label.read` | `PRJ(A,M,G)` | SEC-21 |
 | PATCH | `{P}/issue-labels/{pk}/` | `LabelViewSet.partial_update` (V/issue/label.py:59) | `PRJ⁺(A) ∧ PRJ⁺(A)` | `project.label.update` | `PRJ(A)` + Prerequisite(`project.project_base.write`) |  |
-| PUT | `{P}/issue-labels/{pk}/` | `LabelViewSet.update` (V/issue/label.py) | `PRJ⁺(A)` | entfällt (405, ABG-043) | **entfällt (405, ABG-043)** – nicht portiert, Antwort 405 `{"detail": "Method \"PUT\" not allowed."}`; Abweichung `DEV-API-…` in `tests/contracts/deviations.yaml` | ABG-043 |
+| PUT | `{P}/issue-labels/{pk}/` | `LabelViewSet.update` (V/issue/label.py) | `PRJ⁺(A)` | entfällt (405, ABG-043) | **entfällt (405, ABG-043)** – nicht portiert, Antwort 405 `{"detail": "Method \"PUT\" not allowed."}`; Abweichung `DEV-API-…` in `tests/contracts/deviations.yaml` | ABG-043; **nicht registriert** (`registered: false`, 04 [DT-GEN-01](04-api-design-und-endpunktkatalog.md#DT-GEN-01); Erwartung 405, ABG-145/-146) |
 | GET | `{P}/members/` | `ProjectMemberViewSet.list` (V/project/member.py:157) | `PRJ⁺(A,M,G)` | `project.member.read` | `PRJ(A,M,G)` |  |
 | POST | `{P}/members/` | `ProjectMemberViewSet.create` (V/project/member.py:47) | `PRJ⁺(A)` | `project.member.create` | `PRJ(A)` |  |
 | POST | `{P}/members/leave/` | `ProjectMemberViewSet.leave` (V/project/member.py:325) | `PRJ⁺(A,M,G)` | `project.member.leave` | `PRJ(A,M,G)` |  |
@@ -3150,7 +3187,7 @@ Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `endp
 | DELETE | `{V1P}/issues/{pk}/` | `IssueDetailAPIEndpoint.delete` (V1V/issue.py:852) | `PRJ(A,M)` | `project.work_item.delete` | `PRJ(A)+C:Issue` | SEC-14 |
 | GET | `{V1P}/issues/{pk}/` | `IssueDetailAPIEndpoint.get` (V1V/issue.py:582) | `PRJ(A,M,G)` | `project.work_item.read` | `PRJ(A,M,G)+VIS` |  |
 | PATCH | `{V1P}/issues/{pk}/` | `IssueDetailAPIEndpoint.patch` (V1V/issue.py:778) | `PRJ(A,M)` | `project.work_item.update` | `PRJ(A,M)` |  |
-| PUT | `{V1P}/issues/{pk}/` | `IssueDetailAPIEndpoint.put` (V1V/issue.py:623) | `PRJ(A,M)` | `project.work_item.update` | `PRJ(A,M)` |  |
+| PUT | `{V1P}/issues/{pk}/` | `IssueDetailAPIEndpoint.put` (V1V/issue.py:623) | `PRJ(A,M)` | `project.work_item.update` | `PRJ(A,M)` | **nicht registriert** (`registered: false`, 04 [DT-V1-02](04-api-design-und-endpunktkatalog.md#DT-V1-02); Erwartung 405, ABG-145/-146) |
 | GET | `{V1P}/work-items/` | `IssueListCreateAPIEndpoint.get` (V1V/issue.py:317) | `PRJ(A,M,G)` | `project.work_item.read` | `PRJ(A,M,G)+VIS` |  |
 | POST | `{V1P}/work-items/` | `IssueListCreateAPIEndpoint.post` (V1V/issue.py:456) | `PRJ(A,M)` | `project.work_item.create` | `PRJ(A,M)` |  |
 | GET | `{V1P}/work-items/{issue_id}/activities/` | `IssueActivityListAPIEndpoint.get` (V1V/issue.py:1732) | `PRJ(A,M,G)` | `project.work_item_activity.read` | `PRJ(A,M,G)+VIS` |  |
@@ -3175,7 +3212,7 @@ Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `endp
 | DELETE | `{V1P}/work-items/{pk}/` | `IssueDetailAPIEndpoint.delete` (V1V/issue.py:852) | `PRJ(A,M)` | `project.work_item.delete` | `PRJ(A)+C:Issue` | SEC-14 |
 | GET | `{V1P}/work-items/{pk}/` | `IssueDetailAPIEndpoint.get` (V1V/issue.py:582) | `PRJ(A,M,G)` | `project.work_item.read` | `PRJ(A,M,G)+VIS` |  |
 | PATCH | `{V1P}/work-items/{pk}/` | `IssueDetailAPIEndpoint.patch` (V1V/issue.py:778) | `PRJ(A,M)` | `project.work_item.update` | `PRJ(A,M)` |  |
-| PUT | `{V1P}/work-items/{pk}/` | `IssueDetailAPIEndpoint.put` (V1V/issue.py:623) | `PRJ(A,M)` | `project.work_item.update` | `PRJ(A,M)` |  |
+| PUT | `{V1P}/work-items/{pk}/` | `IssueDetailAPIEndpoint.put` (V1V/issue.py:623) | `PRJ(A,M)` | `project.work_item.update` | `PRJ(A,M)` | **nicht registriert** (`registered: false`, 04 [DT-V1-02](04-api-design-und-endpunktkatalog.md#DT-V1-02); Erwartung 405, ABG-145/-146) |
 | GET | `{V1W}/issues/{project_identifier}-{issue_identifier}/` | `WorkspaceIssueAPIEndpoint.get` (V1V/issue.py:236) | `PRJ(A,M,G)` | `project.work_item.read` | `PRJ(A,M,G)+VIS` |  |
 | GET | `{V1W}/work-items/{project_identifier}-{issue_identifier}/` | `WorkspaceIssueAPIEndpoint.get` (V1V/issue.py:236) | `PRJ(A,M,G)` | `project.work_item.read` | `PRJ(A,M,G)+VIS` |  |
 | DELETE | `/api/assets/v2/workspaces/{slug}/projects/{project_id}/issues/{issue_id}/attachments/` | `IssueAttachmentV2Endpoint.delete` (V/issue/attachment.py:155) | `PRJ⁺(A) ∨ Creator(FileAsset)` | `project.work_item_attachment.delete` | `PRJ(A)+C:FileAsset` |  |
@@ -3209,14 +3246,14 @@ Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `endp
 | GET | `{P}/issues/{issue_id}/issue-attachments/` | `IssueAttachmentEndpoint.get` (V/issue/attachment.py:91) | `PRJ⁺(A,M,G)` | `project.work_item_attachment.read` | `PRJ(A,M,G)` |  |
 | POST | `{P}/issues/{issue_id}/issue-attachments/` | `IssueAttachmentEndpoint.post` (V/issue/attachment.py:38) | `PRJ⁺(A,M,G)` | `project.work_item_attachment.create` | `PRJ(A,M,G)` |  |
 | DELETE | `{P}/issues/{issue_id}/issue-attachments/{pk}/` | `IssueAttachmentEndpoint.delete` (V/issue/attachment.py:65) | `PRJ⁺(A) ∨ Creator(FileAsset)` | `project.work_item_attachment.delete` | `PRJ(A)+C:FileAsset` |  |
-| GET | `{P}/issues/{issue_id}/issue-attachments/{pk}/` | `IssueAttachmentEndpoint.get` (V/issue/attachment.py:91) | `PRJ⁺(A,M,G)` | `project.work_item_attachment.read` | `PRJ(A,M,G)` |  |
+| GET | `{P}/issues/{issue_id}/issue-attachments/{pk}/` | `IssueAttachmentEndpoint.get` (V/issue/attachment.py:91) | `PRJ⁺(A,M,G)` | `project.work_item_attachment.read` | `PRJ(A,M,G)` | **nicht registriert** (`registered: false`, 04 [DT-WI-10](04-api-design-und-endpunktkatalog.md#DT-WI-10); Erwartung 405, ABG-145/-146) |
 | POST | `{P}/issues/{issue_id}/issue-attachments/{pk}/` | `IssueAttachmentEndpoint.post` (V/issue/attachment.py:38) | `PRJ⁺(A,M,G)` | `project.work_item_attachment.create` | `PRJ(A,M,G)` |  |
 | GET | `{P}/issues/{issue_id}/issue-links/` | `IssueLinkViewSet.list` (V/issue/link.py) | `PRJ(A,M,G)` | `project.work_item_link.read` | `PRJ(A,M,G)` |  |
 | POST | `{P}/issues/{issue_id}/issue-links/` | `IssueLinkViewSet.create` (V/issue/link.py:48) | `PRJ(A,M)` | `project.work_item_link.create` | `PRJ(A,M)` |  |
 | DELETE | `{P}/issues/{issue_id}/issue-links/{pk}/` | `IssueLinkViewSet.destroy` (V/issue/link.py:104) | `PRJ(A,M)` | `project.work_item_link.delete` | `PRJ(A,M)` |  |
 | GET | `{P}/issues/{issue_id}/issue-links/{pk}/` | `IssueLinkViewSet.retrieve` (V/issue/link.py) | `PRJ(A,M,G)` | `project.work_item_link.read` | `PRJ(A,M,G)` |  |
 | PATCH | `{P}/issues/{issue_id}/issue-links/{pk}/` | `IssueLinkViewSet.partial_update` (V/issue/link.py:73) | `PRJ(A,M)` | `project.work_item_link.update` | `PRJ(A,M)` |  |
-| PUT | `{P}/issues/{issue_id}/issue-links/{pk}/` | `IssueLinkViewSet.update` (V/issue/link.py) | `PRJ(A,M)` | `project.work_item_link.update` | `PRJ(A,M)` |  |
+| PUT | `{P}/issues/{issue_id}/issue-links/{pk}/` | `IssueLinkViewSet.update` (V/issue/link.py) | `PRJ(A,M)` | `project.work_item_link.update` | `PRJ(A,M)` | **nicht registriert** (`registered: false`, 04 [DT-GEN-01](04-api-design-und-endpunktkatalog.md#DT-GEN-01); Erwartung 405, ABG-145/-146) |
 | GET | `{P}/issues/{issue_id}/issue-relation/` | `IssueRelationViewSet.list` (V/issue/relation.py:61) | `PRJ(A,M,G)` | `project.work_item_relation.read` | `PRJ(A,M,G)` |  |
 | POST | `{P}/issues/{issue_id}/issue-relation/` | `IssueRelationViewSet.create` (V/issue/relation.py:240) | `PRJ(A,M)` | `project.work_item_relation.create` | `PRJ(A,M)` |  |
 | GET | `{P}/issues/{issue_id}/issue-subscribers/` | `IssueSubscriberViewSet.list` (V/issue/subscriber.py:67) | `PRJ(A,M,G)` | `project.work_item_subscription.read` | `PRJ(A,M,G)` |  |
@@ -3319,7 +3356,7 @@ Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `endp
 | GET | `{V1P}/modules/{module_id}/module-issues/` | `ModuleIssueListCreateAPIEndpoint.get` (V1V/module.py:644) | `PRJ(A,M,G)` | `project.module_work_item.read` | `PRJ(A,M)` | HARM-02 |
 | POST | `{V1P}/modules/{module_id}/module-issues/` | `ModuleIssueListCreateAPIEndpoint.post` (V1V/module.py:712) | `PRJ(A,M)` | `project.module_work_item.create` | `PRJ(A,M)` |  |
 | DELETE | `{V1P}/modules/{module_id}/module-issues/{issue_id}/` | `ModuleIssueDetailAPIEndpoint.delete` (V1V/module.py:914) | `PRJ(A,M)` | `project.module_work_item.delete` | `PRJ(A,M)` |  |
-| GET | `{V1P}/modules/{module_id}/module-issues/{issue_id}/` | `ModuleIssueDetailAPIEndpoint.get` (V1V/module.py:850) | `PRJ(A,M,G)` | `project.module_work_item.read` | `PRJ(A,M)` | HARM-02 |
+| GET | `{V1P}/modules/{module_id}/module-issues/{issue_id}/` | `ModuleIssueDetailAPIEndpoint.get` (V1V/module.py:850) | `PRJ(A,M,G)` | `project.module_work_item.read` | `PRJ(A,M)` | HARM-02; **nicht registriert** (`registered: false`, 04 [DT-V1-02](04-api-design-und-endpunktkatalog.md#DT-V1-02); Erwartung 405, ABG-145/-146) |
 | DELETE | `{V1P}/modules/{pk}/` | `ModuleDetailAPIEndpoint.delete` (V1V/module.py:540) | `PRJ(A,M)` | `project.module.delete` | `PRJ(A)+C:Module` | SEC-20 |
 | GET | `{V1P}/modules/{pk}/` | `ModuleDetailAPIEndpoint.get` (V1V/module.py:518) | `PRJ(A,M,G)` | `project.module.read` | `PRJ(A,M,G)` |  |
 | PATCH | `{V1P}/modules/{pk}/` | `ModuleDetailAPIEndpoint.patch` (V1V/module.py:452) | `PRJ(A,M)` | `project.module.update` | `PRJ(A,M)` |  |
@@ -3349,7 +3386,7 @@ Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `endp
 | DELETE | `{P}/modules/{module_id}/module-links/{pk}/` | `ModuleLinkViewSet.destroy` (V/module/base.py) | `PRJ(A,M)` | `project.module_link.delete` | `PRJ(A,M)` |  |
 | GET | `{P}/modules/{module_id}/module-links/{pk}/` | `ModuleLinkViewSet.retrieve` (V/module/base.py) | `PRJ(A,M,G)` | `project.module_link.read` | `PRJ(A,M,G)` |  |
 | PATCH | `{P}/modules/{module_id}/module-links/{pk}/` | `ModuleLinkViewSet.partial_update` (V/module/base.py) | `PRJ(A,M)` | `project.module_link.update` | `PRJ(A,M)` |  |
-| PUT | `{P}/modules/{module_id}/module-links/{pk}/` | `ModuleLinkViewSet.update` (V/module/base.py) | `PRJ(A,M)` | `project.module_link.update` | `PRJ(A,M)` |  |
+| PUT | `{P}/modules/{module_id}/module-links/{pk}/` | `ModuleLinkViewSet.update` (V/module/base.py) | `PRJ(A,M)` | `project.module_link.update` | `PRJ(A,M)` | **nicht registriert** (`registered: false`, 04 [DT-GEN-01](04-api-design-und-endpunktkatalog.md#DT-GEN-01); Erwartung 405, ABG-145/-146) |
 | DELETE | `{P}/modules/{pk}/` | `ModuleViewSet.destroy` (V/module/base.py:725) | `PRJ⁺(A) ∨ Creator(Module)` | `project.module.delete` | `PRJ(A)+C:Module` |  |
 | GET | `{P}/modules/{pk}/` | `ModuleViewSet.retrieve` (V/module/base.py:397) | `PRJ⁺(A,M)` | `project.module.read_detail` | `PRJ(A,M)` |  |
 | PATCH | `{P}/modules/{pk}/` | `ModuleViewSet.partial_update` (V/module/base.py:653) | `PRJ⁺(A,M)` | `project.module.update` | `PRJ(A,M)` |  |
@@ -3370,7 +3407,7 @@ Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `endp
 | GET | `{P}/inbox-issues/{pk}/` | `IntakeIssueViewSet.retrieve` (V/intake/base.py:508) | `PRJ⁺(A,M,G) ∨ Creator(Issue)` | `project.intake_work_item.read` | `PRJ(A,M,G)+C:Issue+VIS` |  |
 | PATCH | `{P}/inbox-issues/{pk}/` | `IntakeIssueViewSet.partial_update` (V/intake/base.py:336) | `PRJ⁺(A) ∨ Creator(Issue)` | `project.intake_work_item.update` | `PRJ(A)+C:Issue` |  |
 | GET | `{P}/inboxes/` | `IntakeViewSet.list` (V/intake/base.py:75) | `PRJ⁺(A,M)` | `project.intake.read` | `PRJ(A,M)` |  |
-| POST | `{P}/inboxes/` | `IntakeViewSet.create` (V/intake/base.py) | `Auth` | `project.intake.create` | `PRJ(A)` | SEC-03 |
+| POST | `{P}/inboxes/` | `IntakeViewSet.create` (V/intake/base.py) | `Auth` | `project.intake.create` | `PRJ(A)` | SEC-03; **nicht registriert** (`registered: false`, 04 [DT-INT-01](04-api-design-und-endpunktkatalog.md#DT-INT-01); Erwartung 405, ABG-145/-146) |
 | DELETE | `{P}/inboxes/{pk}/` | `IntakeViewSet.destroy` (V/intake/base.py:84) | `PRJ⁺(A,M)` | `project.intake.delete` | `PRJ(A,M)` |  |
 | GET | `{P}/inboxes/{pk}/` | `IntakeViewSet.retrieve` (V/intake/base.py) | `Auth` | `project.intake.read` | `PRJ(A,M)` | SEC-03 |
 | PATCH | `{P}/inboxes/{pk}/` | `IntakeViewSet.partial_update` (V/intake/base.py) | `Auth` | `project.intake.update` | `PRJ(A)` | SEC-03 |
@@ -3382,7 +3419,7 @@ Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `endp
 | GET | `{P}/intake-work-items/{work_item_id}/description-versions/` | `IntakeWorkItemDescriptionVersionEndpoint.get` (V/intake/base.py:584) | `PRJ⁺(A,M,G)` | `project.intake_work_item.read` | `PRJ(A,M,G)+VIS` |  |
 | GET | `{P}/intake-work-items/{work_item_id}/description-versions/{pk}/` | `IntakeWorkItemDescriptionVersionEndpoint.get` (V/intake/base.py:584) | `PRJ⁺(A,M,G)` | `project.intake_work_item.read` | `PRJ(A,M,G)+VIS` |  |
 | GET | `{P}/intakes/` | `IntakeViewSet.list` (V/intake/base.py:75) | `PRJ⁺(A,M)` | `project.intake.read` | `PRJ(A,M)` |  |
-| POST | `{P}/intakes/` | `IntakeViewSet.create` (V/intake/base.py) | `Auth` | `project.intake.create` | `PRJ(A)` | SEC-03 |
+| POST | `{P}/intakes/` | `IntakeViewSet.create` (V/intake/base.py) | `Auth` | `project.intake.create` | `PRJ(A)` | SEC-03; **nicht registriert** (`registered: false`, 04 [DT-INT-01](04-api-design-und-endpunktkatalog.md#DT-INT-01); Erwartung 405, ABG-145/-146) |
 | DELETE | `{P}/intakes/{pk}/` | `IntakeViewSet.destroy` (V/intake/base.py:84) | `PRJ⁺(A,M)` | `project.intake.delete` | `PRJ(A,M)` |  |
 | GET | `{P}/intakes/{pk}/` | `IntakeViewSet.retrieve` (V/intake/base.py) | `Auth` | `project.intake.read` | `PRJ(A,M)` | SEC-03 |
 | PATCH | `{P}/intakes/{pk}/` | `IntakeViewSet.partial_update` (V/intake/base.py) | `Auth` | `project.intake.update` | `PRJ(A)` | SEC-03 |
@@ -3484,19 +3521,19 @@ Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `endp
 | GET | `/api/assets/v2/workspaces/{slug}/{asset_id}/` | `WorkspaceFileAssetEndpoint.get` (V/asset/v2.py:512) | `WS(A,M,G)` | `workspace.asset.read` | `WS(A,M,G)` |  |
 | PATCH | `/api/assets/v2/workspaces/{slug}/{asset_id}/` | `WorkspaceFileAssetEndpoint.patch` (V/asset/v2.py:458) | `WS(A,M,G)` | `workspace.asset.update` | `WS(A,M,G)` |  |
 | POST | `/api/assets/v2/workspaces/{slug}/{asset_id}/` | `WorkspaceFileAssetEndpoint.post` (V/asset/v2.py:381) | `WS(A,M,G)` | `workspace.asset.create` | `WS(A,M,G)` |  |
-| DELETE | `/api/users/file-assets/` | `UserAssetsEndpoint.delete` (V/asset/base.py:99) | `Auth` | `user.user_asset.delete` | `AUTH+SELF` |  |
-| GET | `/api/users/file-assets/` | `UserAssetsEndpoint.get` (V/asset/base.py:81) | `Auth` | `user.user_asset.read` | `AUTH+SELF` |  |
-| POST | `/api/users/file-assets/` | `UserAssetsEndpoint.post` (V/asset/base.py:92) | `Auth` | `user.user_asset.create` | `AUTH+SELF` |  |
-| DELETE | `/api/users/file-assets/{asset_key}/` | `UserAssetsEndpoint.delete` (V/asset/base.py:99) | `Auth` | `user.user_asset.delete` | `AUTH+SELF` |  |
-| GET | `/api/users/file-assets/{asset_key}/` | `UserAssetsEndpoint.get` (V/asset/base.py:81) | `Auth` | `user.user_asset.read` | `AUTH+SELF` |  |
-| POST | `/api/users/file-assets/{asset_key}/` | `UserAssetsEndpoint.post` (V/asset/base.py:92) | `Auth` | `user.user_asset.create` | `AUTH+SELF` |  |
-| DELETE | `/api/workspaces/file-assets/{workspace_id}/{asset_key}/` | `FileAssetEndpoint.delete` (V/asset/base.py:49) | `WS(A,M,G)` | `workspace.asset_legacy.delete` | `WS(A,M,G)` |  |
-| GET | `/api/workspaces/file-assets/{workspace_id}/{asset_key}/` | `FileAssetEndpoint.get` (V/asset/base.py:27) | `WS(A,M,G)` | `workspace.asset_legacy.read` | `WS(A,M,G)` |  |
-| POST | `/api/workspaces/file-assets/{workspace_id}/{asset_key}/` | `FileAssetEndpoint.post` (V/asset/base.py:39) | `WS(A,M,G)` | `workspace.asset_legacy.create` | `WS(A,M,G)` |  |
-| POST | `/api/workspaces/file-assets/{workspace_id}/{asset_key}/restore/` | `FileAssetViewSet.restore` (V/asset/base.py:65) | `WS(A,M,G)` | `workspace.asset_legacy.update` | `WS(A,M,G)` |  |
-| DELETE | `{W}/file-assets/` | `FileAssetEndpoint.delete` (V/asset/base.py:49) | `WS(A,M,G)` | `workspace.asset_legacy.delete` | `WS(A,M,G)` |  |
-| GET | `{W}/file-assets/` | `FileAssetEndpoint.get` (V/asset/base.py:27) | `WS(A,M,G)` | `workspace.asset_legacy.read` | `WS(A,M,G)` |  |
-| POST | `{W}/file-assets/` | `FileAssetEndpoint.post` (V/asset/base.py:39) | `WS(A,M,G)` | `workspace.asset_legacy.create` | `WS(A,M,G)` |  |
+| DELETE | `/api/users/file-assets/` | `UserAssetsEndpoint.delete` (V/asset/base.py:99) | `Auth` | `user.user_asset.delete` | `AUTH+SELF` | **nicht registriert** (`registered: false`, 04 [DT-AST-01](04-api-design-und-endpunktkatalog.md#DT-AST-01); Erwartung 404, ABG-145/-146) |
+| GET | `/api/users/file-assets/` | `UserAssetsEndpoint.get` (V/asset/base.py:81) | `Auth` | `user.user_asset.read` | `AUTH+SELF` | **nicht registriert** (`registered: false`, 04 [DT-AST-01](04-api-design-und-endpunktkatalog.md#DT-AST-01); Erwartung 404, ABG-145/-146) |
+| POST | `/api/users/file-assets/` | `UserAssetsEndpoint.post` (V/asset/base.py:92) | `Auth` | `user.user_asset.create` | `AUTH+SELF` | **nicht registriert** (`registered: false`, 04 [DT-AST-01](04-api-design-und-endpunktkatalog.md#DT-AST-01); Erwartung 404, ABG-145/-146) |
+| DELETE | `/api/users/file-assets/{asset_key}/` | `UserAssetsEndpoint.delete` (V/asset/base.py:99) | `Auth` | `user.user_asset.delete` | `AUTH+SELF` | **nicht registriert** (`registered: false`, 04 [DT-AST-01](04-api-design-und-endpunktkatalog.md#DT-AST-01); Erwartung 404, ABG-145/-146) |
+| GET | `/api/users/file-assets/{asset_key}/` | `UserAssetsEndpoint.get` (V/asset/base.py:81) | `Auth` | `user.user_asset.read` | `AUTH+SELF` | **nicht registriert** (`registered: false`, 04 [DT-AST-01](04-api-design-und-endpunktkatalog.md#DT-AST-01); Erwartung 404, ABG-145/-146) |
+| POST | `/api/users/file-assets/{asset_key}/` | `UserAssetsEndpoint.post` (V/asset/base.py:92) | `Auth` | `user.user_asset.create` | `AUTH+SELF` | **nicht registriert** (`registered: false`, 04 [DT-AST-01](04-api-design-und-endpunktkatalog.md#DT-AST-01); Erwartung 404, ABG-145/-146) |
+| DELETE | `/api/workspaces/file-assets/{workspace_id}/{asset_key}/` | `FileAssetEndpoint.delete` (V/asset/base.py:49) | `WS(A,M,G)` | `workspace.asset_legacy.delete` | `WS(A,M,G)` | **nicht registriert** (`registered: false`, 04 [DT-AST-01](04-api-design-und-endpunktkatalog.md#DT-AST-01); Erwartung 404, ABG-145/-146) |
+| GET | `/api/workspaces/file-assets/{workspace_id}/{asset_key}/` | `FileAssetEndpoint.get` (V/asset/base.py:27) | `WS(A,M,G)` | `workspace.asset_legacy.read` | `WS(A,M,G)` | **nicht registriert** (`registered: false`, 04 [DT-AST-01](04-api-design-und-endpunktkatalog.md#DT-AST-01); Erwartung 404, ABG-145/-146) |
+| POST | `/api/workspaces/file-assets/{workspace_id}/{asset_key}/` | `FileAssetEndpoint.post` (V/asset/base.py:39) | `WS(A,M,G)` | `workspace.asset_legacy.create` | `WS(A,M,G)` | **nicht registriert** (`registered: false`, 04 [DT-AST-01](04-api-design-und-endpunktkatalog.md#DT-AST-01); Erwartung 404, ABG-145/-146) |
+| POST | `/api/workspaces/file-assets/{workspace_id}/{asset_key}/restore/` | `FileAssetViewSet.restore` (V/asset/base.py:65) | `WS(A,M,G)` | `workspace.asset_legacy.update` | `WS(A,M,G)` | **nicht registriert** (`registered: false`, 04 [DT-AST-01](04-api-design-und-endpunktkatalog.md#DT-AST-01); Erwartung 404, ABG-145/-146) |
+| DELETE | `{W}/file-assets/` | `FileAssetEndpoint.delete` (V/asset/base.py:49) | `WS(A,M,G)` | `workspace.asset_legacy.delete` | `WS(A,M,G)` | **nicht registriert** (`registered: false`, 04 [DT-AST-01](04-api-design-und-endpunktkatalog.md#DT-AST-01); Erwartung 404, ABG-145/-146) |
+| GET | `{W}/file-assets/` | `FileAssetEndpoint.get` (V/asset/base.py:27) | `WS(A,M,G)` | `workspace.asset_legacy.read` | `WS(A,M,G)` | **nicht registriert** (`registered: false`, 04 [DT-AST-01](04-api-design-und-endpunktkatalog.md#DT-AST-01); Erwartung 404, ABG-145/-146) |
+| POST | `{W}/file-assets/` | `FileAssetEndpoint.post` (V/asset/base.py:39) | `WS(A,M,G)` | `workspace.asset_legacy.create` | `WS(A,M,G)` | **nicht registriert** (`registered: false`, 04 [DT-AST-01](04-api-design-und-endpunktkatalog.md#DT-AST-01); Erwartung 404, ABG-145/-146) |
 | DELETE | `/api/public/assets/v2/anchor/{anchor}/` | `EntityAssetEndpoint.delete` (SPV/asset.py:198) | `Auth` | `public.asset.delete` | `AUTH+BOARD+OWN` | SEC-19 |
 | GET | `/api/public/assets/v2/anchor/{anchor}/` | `EntityAssetEndpoint.get` (SPV/asset.py:46) | `Anon` | `public.asset.read` | `ANON` |  |
 | PATCH | `/api/public/assets/v2/anchor/{anchor}/` | `EntityAssetEndpoint.patch` (SPV/asset.py:177) | `Auth` | `public.asset.update` | `AUTH+BOARD+OWN` | SEC-19 |
@@ -3585,7 +3622,7 @@ Erzeugt aus `migration/architecture/_data/05-permission-matrix.json` (Feld `endp
 | DELETE | `{P}/project-deploy-boards/{pk}/` | `DeployBoardViewSet.destroy` (V/project/base.py) | `PRJ(A,M)` | `project.publish.delete` | `PRJ(A,M)` | SEC-16 |
 | GET | `{P}/project-deploy-boards/{pk}/` | `DeployBoardViewSet.retrieve` (V/project/base.py) | `PRJ(A,M,G)` | `project.publish.read` | `PRJ(A,M,G)` | SEC-16 |
 | PATCH | `{P}/project-deploy-boards/{pk}/` | `DeployBoardViewSet.partial_update` (V/project/base.py) | `PRJ(A,M)` | `project.publish.update` | `PRJ(A,M)` | SEC-16 |
-| GET | `/api/public/workspaces/{slug}/project-boards/` | `WorkspaceProjectDeployBoardEndpoint.get` (SPV/project.py:31) | `Anon` | `public.board.read` | `ANON` |  |
+| GET | `/api/public/workspaces/{slug}/project-boards/` | `WorkspaceProjectDeployBoardEndpoint.get` (SPV/project.py:31) | `Anon` | `public.board.read` | `ANON` | **nicht registriert** (`registered: false`, 04 [DT-SPACE-01](04-api-design-und-endpunktkatalog.md#DT-SPACE-01); Erwartung 404, ABG-145/-146) |
 | GET | `/api/public/workspaces/{slug}/projects/{project_id}/anchor/` | `WorkspaceProjectAnchorEndpoint.get` (SPV/project.py:57) | `Anon` | `public.board.read` | `ANON` |  |
 | GET | `{SP}/comments/{comment_id}/reactions/` | `CommentReactionPublicViewSet.list` (SPV/issue.py) | `Auth` | `public.reaction.read` | `AUTH+BOARD` |  |
 | POST | `{SP}/comments/{comment_id}/reactions/` | `CommentReactionPublicViewSet.create` (SPV/issue.py:519) | `Auth` | `public.reaction.create` | `AUTH+BOARD` |  |
@@ -3694,7 +3731,7 @@ Umsetzung der verbindlichen Abgleich-Entscheidungen aus `17-abgleich-dokumentueb
 
 | ABG-ID | Thema | Umgesetzt in diesem Dokument |
 |---|---|---|
-| ABG-002 | Keycloak-Image | §3.15.1 Zeile `themes/…`: `funk/keycloak` → `${PLANE_REGISTRY}/plane-keycloak:${PLANE_VERSION}`; §9 Zeile 14 |
+| ABG-002 | Keycloak-Image | §3.15.1 Zeile `themes/…`: `funk/keycloak` → `${PLANE_REGISTRY}/plane-keycloak:${PLANE_VERSION}`; §9 Zeile 14 (Image-Name präzisiert durch Teil 2 ABG-149: `funk-keycloak`) |
 | ABG-020 | Wrapper-Komponenten statt Guards | §3.1 (Z. „Frontend“: `AuthGuard` gestrichen, Wrapper ergänzt), §3.13.8 Zeile „Wrapper-Komponenten“ (08 D08-ADR-12), §4.7 (`libs/web/core/wrappers/authentication-wrapper.component.ts`), §9 Zeile 08 |
 | ABG-021 | Step-up `max_age=0` | D05-ADR-11 (`…&max_age=0&…`), N-01 (`max_age` Ganzzahl ≥ 0, nur `app=admin`), §3.13.8 Interceptor-Zeile, Skelett §5.3 (`q.MaxAge is >= 0`) |
 | ABG-022 | `pl-auth-landing-base` | §3.1 Ablage `frontend/libs/shared/blocks/auth/`, §4.7 (Web/Admin/Space-Hüllen `AuthLandingComponent`, `AuthBase`/`AuthBanner` in `pl-auth-landing-base`), Skelett §5.10 als app-spezifische Hülle (`libs/web/auth/components/auth-landing/`) |
@@ -3713,3 +3750,22 @@ Umsetzung der verbindlichen Abgleich-Entscheidungen aus `17-abgleich-dokumentueb
 **Folgeanpassung (Verweisziel):** §4.4 Zeile `SECRET_KEY` nennt Warntext und Critical-Level aus ABG-012 (Entscheidung verweist auf 05 §4.4).
 
 **Nicht in diesem Dokument umgesetzt (außerhalb des Auftrags):** Die Erweiterung von `_data/05-permission-matrix.json` (Feld `prerequisite`, Katalogteil Vorbedingungs-Keys, Zeile `PUT {P}/issue-labels/{pk}/` als `entfällt`) aus ABG-041/-042/-043 steht noch aus; Anhang A/B sind bis dahin gegenüber der Datei vorausgezogen. Offene Lücken der Vorbedingungs-Keys siehe O-D05-08.
+
+### Teil 2 (ABG-101 … ABG-149, Stand 23.10.2026)
+
+Umsetzung der Entscheidungen aus `17-abgleich-dokumentuebergreifend.md` **Teil 2** bzw. `_data/17-abgleich-teil2.json`, soweit ihre `targets` dieses Dokument nennen; Fundstellen per Volltextsuche (Fließtext, Tabellen, Realm-JSON, Theme-Baum, Code-Skelette, Anhang B, §8/§9).
+
+| ABG-ID | Thema | Umgesetzt in diesem Dokument |
+|---|---|---|
+| ABG-107 umgesetzt | Kollaboration: Token-Mismatch, Rechteentzug, Upgrade ohne Cookie | §3.11: Token-Mismatch → `PermissionDenied` **ohne** Close (Rechteentzug: `PermissionDenied` + 4403), Upgrade ohne Cookie → 403; Dokumentrecht über `ICollaborationDocumentType.AuthorizeAsync` je Verbindung (statt `IPageDocumentStore.LoadAsync`); neuer Punkt „Neuprüfung während der Sitzung“ (`access`/`member_removed` → 4403 bzw. 4205); SEC-40; §9 Zeile `07` |
+| ABG-128 umgesetzt | Signatur `IVisibilityFilter<T>` | §3.14: Skelett der Schnittstelle (Signatur `01` §5.5, `Plane.Authorization.Contracts`) mit Anwendungsregel; Tabelle um Zeile `IVisibilityFilter<SearchDocument>` (Teil von `SearchVisibilityFilter`, Prädikat je `entity_type`) und Fassade `For<T>()` ergänzt |
+| ABG-142 umgesetzt | Ablage der Identity-Entitäten | §3.7.1 Ablagehinweis; §4.5 Mapping (Kürzel `DATA/` = `src/data/Plane.Data/`): `ID/Domain/*.cs` → `DATA/Entities/Identity/*.cs` (`User`, `Profile`, `UserIdentity`, `UserSession`, `ApiToken`, `ApiActivityLog`); Folgeanpassung `InstanceAdminMirror` → `DATA/Entities/Instance/` (gleiche Regel, `03` T007) |
+| ABG-143 umgesetzt | Maskierung der God-Mode-Secrets | SEC-58 (§3.18.2) „korrigiert: Default maskiert (`MaskInstanceSecrets = true`), Opt-out `false`“ (`"********"` lesen, `PATCH` mit `"********"` ändert nichts); §3.17.5 Zeile „Ausgabe an God Mode“; R-09 und O-D05-03 verweisen auf ABG-143/Z-112 |
+| ABG-144 umgesetzt | Rate-Limit-Policies | §3.17.6: Auth-Oberfläche ohne Oberflächen-Default (N-06/N-08 `anon` je Endpunkt, `authentication` für N-01/N-02/N-13), neue Zeile „keine (unbegrenzt)“ für Sign-out und Back-Channel-Logout; Pfad `asset_duplicate` nach EP-0430 (`POST /api/assets/v2/workspaces/{slug}/duplicate-assets/{asset_id}/`); `integration_webhook` ab I0 (ABG-051) |
+| ABG-146 umgesetzt | Nicht registrierte Zeilen | Anhang B: Hinweisabsatz und Markierung **nicht registriert** (`registered: false`, DT-Verweis, Erwartung 404/405 nach ABG-145) an 35 Endpunkt-Methoden (DT-WS-01 1, DT-GEN-01 3, DT-AST-01 13, DT-SPACE-01 1, DT-V1-01 8, DT-V1-02 3, DT-INT-01 2, DT-GEN-15 3, DT-WI-10 1); Generator-Regel §5.8 und Abdeckungsregel §7.4 (Zeilen werden übersprungen) |
+| ABG-148 umgesetzt | Branding Keycloak (BR-09) | §3.15.2 `displayName`/`displayNameHtml` = `funk.`, `emailTheme` (funk.-Branding), `smtpServer.fromDisplayName` = `funk.`; §3.8 Rollenbeschreibung und Realm-JSON §3.15.8 („funk. God Mode administrator“, `displayName`, `smtpServer`, Client-Name „funk. Web“, sichtbare Namen der übrigen Clients); §3.3.2 Admin-Überschrift („Manage your funk. instance“); §3.16 Überschrift/TOC „Login-Theme `plane` (funk.-Branding)“, Theme-Baum (Messages, Logo/Favicon aus `assets/funk_logo.svg`, Mail-Theme, „Powered by funk. Publish“), §3.16.2 Texte („Welcome back to funk.“, „Join 10,000+ teams building with funk.“, „Manage your funk. instance“), §3.16.3 `gen-messages.mjs` mit BR-10-Schritt und Visual-Referenzen mit ersetztem Branding (BR-13); neuer §3.16.4 Abweichungsregister `BRAND-KC-01 … -08`; „Plane-Theme“ → „Login-Theme `plane` (funk.-Branding)“ (§3.10 Fehlerseite, CE-AUTH-017); CE-SPACE-032, CE-INST-005/§3.9 („Welcome to funk.“), §6.4 Überschrift („funk.-Apps“, BR-04), §6.4 Consent-Template |
+| ABG-149 umgesetzt | Artefaktnamen | §3.15.1: `${PLANE_REGISTRY}/plane-keycloak` → `funk-keycloak` (OCI-Titel „funk. Keycloak“); alle Befehle `plane-cli` → `funk-cli` (§3.7, §3.9, §3.10, §3.15.1, §3.17.5, §4.6 inkl. Überschrift, §6); Projekt `src/tools/Plane.Cli/` bleibt; Teil-1-Zeile ABG-002 oben mit Verweis auf ABG-149 |
+
+**Branding-Durchgang (ADR-009B, BR-01 … BR-14):** Alle nach außen sichtbaren Namen dieses Dokuments – Realm-Anzeigename, Login-/Fehler-/Konto-/Mail-Theme-Texte, Logo und Favicon, Mail-Absendername, Rollenbeschreibung, sichtbare Client-Namen, Space-Badge, Seiten-/Überschriftstexte und Artefakt-/CLI-Namen – lauten „funk.“ (Register `BRAND-KC-*` in §3.16.4); unverändert bleiben nach BR-02 Original-Verweise und Analysetitel (CE-Katalog, Anhang A/B), interne Bezeichner (Realm `plane`, Client-IDs `plane-*`, Theme-Ordner `themes/plane*`, Rollen-/Gruppennamen, `Plane.*`, `Plane:`-Schlüssel, `PLANE_*`-Variablen, Schema-Name `Plane`) und Protokollbezeichner (`plane_api_`, `X-Plane-*`) bis Z-110.
+
+**Nicht in diesem Dokument umgesetzt (außerhalb des Auftrags):** `_data/05-permission-matrix.json` (Feld `registered: false` + `deviation` für die 35 Zeilen aus ABG-146) ist noch nachzuziehen; Anhang B ist bis dahin vorausgezogen.

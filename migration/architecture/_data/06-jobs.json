@@ -378,7 +378,7 @@
     {
       "id": "T11",
       "original_task": "dummy_data_task.create_dummy_data",
-      "target": "`plane-cli create-dummy-data` (synchron, Bogus, CE-OPS-024)",
+      "target": "`funk-cli create-dummy-data` (synchron, Bogus, CE-OPS-024)",
       "trigger": "CLI",
       "queue": "–",
       "retry": "–",
@@ -553,7 +553,7 @@
       "idempotency": "–",
       "leader": "–",
       "since": "–",
-      "status": "entfällt (Backfill, ADR-003; `work_item_versions` bleibt leer wie in einer frischen Original-Instanz, CE-WI-042)"
+      "status": "entfällt (Backfill, ADR-003, CE-WI-042); laufende Versionen schreibt `WorkItemVersionRecorder` mit Inline-Begrenzung `Plane:Retention:WorkItemVersionsKeep` (20, `03` §3.5.5, 17 ABG-102), kein Cron"
     },
     {
       "id": "T26",
@@ -606,11 +606,11 @@
     {
       "id": "T30",
       "original_task": "page_transaction_task.page_transaction",
-      "target": "`pages.page_log_sync` (`PageLogSyncConsumer`, `07` D07-ADR-23)",
-      "trigger": "Consumer `plane.page.description_updated.v1`",
-      "queue": "default",
-      "retry": "Default",
-      "idempotency": "Inbox + Abgleich gegen aktuellen Inhalt",
+      "target": "`PageReferenceIndexer` (synchron, `07` D07-ADR-23, 17 ABG-108)",
+      "trigger": "synchron in Create/Update/Duplicate und im Store (`SaveAsync`, `SaveFromRestAsync`)",
+      "queue": "–",
+      "retry": "–",
+      "idempotency": "Commit-gebunden, Abgleich gegen aktuellen Inhalt",
       "leader": "nein",
       "since": "I4",
       "status": "korrigiert (DEV-OPS-004)"
@@ -618,7 +618,7 @@
     {
       "id": "T31",
       "original_task": "page_version_task.track_page_version",
-      "target": "`PageVersionTracker` (synchron, `07` D07-ADR-22)",
+      "target": "`PageVersionRecorder` (synchron, `07` D07-ADR-22, 17 ABG-108)",
       "trigger": "synchron im Store",
       "queue": "–",
       "retry": "–",
@@ -1951,14 +1951,229 @@
       "queue": "indexing",
       "since": "I5",
       "detail": "11 §3.10.3"
+    }
+  ],
+  "further_jobs": [
+    {
+      "job_type": "workspaces.seed",
+      "class": "WorkspaceSeedJob",
+      "module": "Workspaces",
+      "trigger": "`CreateWorkspaceCommand`",
+      "queue": "default",
+      "idempotency": "`Transactional`; Abbruch, wenn Bot `bot_user_<workspace_id>` existiert",
+      "behavior": "T46 in **einer** Transaktion (Original ohne Transaktion, Teildaten bei Fehler, `DEV-OPS-005`); Bot-User (`username = bot_user_<ws_id>`, `display_name = first_name = \"funk.\"` (Original „Plane“, D06-ADR-25 (e)), `is_bot = true`, `bot_type = \"WORKSPACE_SEED\"`, `email = bot_user_<ws_id>@<Host aus Plane:Urls:Web>`, kein Passwort – Keycloak-Login unmöglich, `05`) über `IBotUserProvisioner` (Identity); Inhalte aus eingebetteten JSON-Dateien `Plane.Workspaces/Seeds/Data/{projects,states,labels,cycles,modules,issues,views,pages}.json` (Kopie von `API/seeds/data/*.json`, Texte mit „Plane“ → „funk.“ und ohne `docs.plane.so`-Links, `BRAND-SEED-01`), ausgeführt durch `IWorkspaceSeedContributor` je Eigentümer-Modul (Projects → Projekt/States/Labels/Mitglieder/`ProjectUserProperty`, Cycles, ProjectModules, WorkItems → 7 Work Items inkl. Sequenz + Activity A1, Views, Pages) in fester Reihenfolge; externe URLs ersetzt: Unsplash-Cover → gebündelte Datei als `PROJECT_COVER`-Asset, jsDelivr-Emoji → `logo_props` mit Unicode-Emoji (`DEV-OPS-005`)",
+      "since": "I1"
     },
     {
-      "name": "pages.page_log_sync",
-      "class": "PageLogSyncConsumer",
-      "module": "Plane.Pages",
+      "job_type": "work_items.crawl_link",
+      "class": "CrawlWorkItemLinkJob",
+      "module": "WorkItems",
+      "trigger": "`CreateWorkItemLinkCommand`, `UpdateWorkItemLinkCommand` (nur URL geändert)",
       "queue": "default",
-      "since": "I4",
-      "detail": "07 D07-ADR-23"
+      "idempotency": "Dedupe `link-crawl:{link_id}`",
+      "behavior": "T44 1:1: Client `link-preview` (`05`: 1 s Seite, 2 s `HEAD /favicon.ico`, 5 Redirects je Hop SSRF-geprüft, max. 2 MiB), Browser-User-Agent wie Original, `<title>` getrimmt, Favicon-Reihenfolge `icon`, `shortcut icon`, `apple-touch-icon`, `apple-touch-icon-precomposed`, sonst `/favicon.ico`, als `data:`-URI; jeder Fehler → Default-Icon (lucide `link`, Base64-SVG des Originals); `metadata = {title, favicon, url, favicon_url}`. Neu: `Plane:LinkPreview:Enabled` (Default `true`, Airgap-Bundle `false`) – aus → sofort Default-Metadaten ohne Netzaufruf",
+      "since": "I2"
+    },
+    {
+      "job_type": "assets.read_metadata",
+      "class": "ReadAssetMetadataJob",
+      "module": "Assets",
+      "trigger": "Upload-Bestätigungen (alle 10 Aufrufstellen A07 §2.16.6), nur wenn `storage_metadata` leer",
+      "queue": "default",
+      "idempotency": "Dedupe `asset-meta:{asset_id}`",
+      "behavior": "T35: `IObjectStorage.HeadAsync` → `{ContentType, ContentLength, LastModified (ISO), ETag, Metadata}`; Objekt fehlt → still beenden",
+      "since": "I1"
+    },
+    {
+      "job_type": "pages.copy_duplicated_assets",
+      "class": "CopyDuplicatedAssetsJob",
+      "module": "Pages",
+      "trigger": "`DuplicatePageCommand` (`07` D07-ADR-24)",
+      "queue": "default",
+      "idempotency": "Dedupe `page-asset-copy:{new_asset_id}`; Objekt bereits vorhanden → nur `is_uploaded = true`",
+      "behavior": "T8 (Objektteil): `DuplicatePageCommand` legt synchron die neuen `file_assets`-Zeilen (`is_uploaded = false`, Key `<workspace_id>/<uuid32>-<name>`) an und schreibt `image-component[src]`, Binary, HTML und JSON um (`07`); der Job kopiert je Asset das Objekt (`IObjectStorage.CopyAsync`) und setzt `is_uploaded = true`. Quell-Assets werden im Workspace **und Projekt der Quell-Page** gesucht (Korrektur der Schleifenvariable, `DEV-OPS-006`)",
+      "since": "I4"
+    },
+    {
+      "job_type": "home.record_visit",
+      "class": "RecordRecentVisitJob",
+      "module": "Home",
+      "trigger": "Query-Handler der Detail-Endpunkte (`project`, `issue`, `module`, `cycle`, `view`, `page` – Aufrufstellen A07 §3.15) – **außerhalb** einer Transaktion",
+      "queue": "default",
+      "idempotency": "Dedupe `recent:{user}:{entity_name}:{entity_id}`",
+      "behavior": "T34 1:1: vorhandener Eintrag → `visited_at = now`; sonst bei genau 20 Einträgen je (User, Workspace) ältesten (`created_at`) soft-löschen, dann anlegen",
+      "since": "I5"
+    },
+    {
+      "job_type": "identity.write_api_activity_log",
+      "class": "WriteApiActivityLogJob",
+      "module": "Identity",
+      "trigger": "`ApiActivityLogMiddleware` (`05` §3.12.2) – außerhalb einer Transaktion",
+      "queue": "default",
+      "idempotency": "keine (jede Anfrage)",
+      "behavior": "T27: `api_activity_logs` mit `token_identifier = token_hash`, Header als JSON (redigiert), Body-Regeln wie `MW/logger.py`",
+      "since": "I6"
+    },
+    {
+      "job_type": "identity.download_avatar",
+      "class": "DownloadAvatarJob",
+      "module": "Identity",
+      "trigger": "`CreateUserStep` (`05` §3.7.3)",
+      "queue": "default",
+      "idempotency": "Dedupe `avatar:{user_id}`",
+      "behavior": "Client `avatar-import` (`05`), Upload als `USER_AVATAR`",
+      "since": "I0"
+    },
+    {
+      "job_type": "identity.idp_user_state_sync",
+      "class": "IdpUserStateSyncJob",
+      "module": "Identity",
+      "trigger": "Cron `*/15 * * * *`",
+      "queue": "maintenance",
+      "idempotency": "–",
+      "behavior": "`05` §3.10 (Keycloak-Status ↔ API-Tokens)",
+      "since": "I1"
+    },
+    {
+      "job_type": "emails.workspace_invitation",
+      "class": "SendWorkspaceInvitationEmailJob",
+      "module": "Workspaces",
+      "trigger": "`CreateWorkspaceInvitationsCommand` (je neu angelegter Einladung)",
+      "queue": "emails",
+      "idempotency": "`Transactional`; Dedupe `mail-ws-invite:{invitation_id}`",
+      "behavior": "T45/M5; speichert den Klartext der Mail in `workspace_member_invites.message` (1:1); Einladung gelöscht → still beenden",
+      "since": "I1"
+    },
+    {
+      "job_type": "emails.project_addition",
+      "class": "SendProjectAdditionEmailJob",
+      "module": "Projects",
+      "trigger": "`AddProjectMembersCommand` (je neu hinzugefügtem Mitglied)",
+      "queue": "emails",
+      "idempotency": "Dedupe `mail-prj-add:{project_member_id}`",
+      "behavior": "T32/M7",
+      "since": "I1"
+    },
+    {
+      "job_type": "emails.user_activation",
+      "class": "SendUserActivationEmailJob",
+      "module": "Identity",
+      "trigger": "`AccountStateGuardStep` (Aktivierung vorprovisionierter Konten, `05` §3.7.3)",
+      "queue": "emails",
+      "idempotency": "Dedupe `mail-activate:{user_id}:{epoch}`",
+      "behavior": "T36/M8",
+      "since": "I1"
+    },
+    {
+      "job_type": "emails.user_deactivation",
+      "class": "SendUserDeactivationEmailJob",
+      "module": "Identity",
+      "trigger": "`DeactivateAccountCommand`",
+      "queue": "emails",
+      "idempotency": "Dedupe `mail-deactivate:{user_id}:{epoch}`",
+      "behavior": "T37/M9 (`login_url = <web>/login` 1:1; Link führt auf die Keycloak-Einstiegsseite)",
+      "since": "I1"
+    },
+    {
+      "job_type": "emails.webhook_deactivated",
+      "class": "SendWebhookDeactivationEmailJob",
+      "module": "Webhooks",
+      "trigger": "`DeliverWebhookJob` (6. Fehlschlag)",
+      "queue": "emails",
+      "idempotency": "Dedupe `mail-wh-off:{webhook_id}:{delivery_id}`",
+      "behavior": "T40/M10",
+      "since": "I6"
+    },
+    {
+      "job_type": "notifications.send_email_digest",
+      "class": "SendEmailDigestJob",
+      "module": "Notifications",
+      "trigger": "`StackEmailNotificationsJob`",
+      "queue": "emails",
+      "idempotency": "Dedupe `mail-digest:{receiver}:{work_item}:{hash}`; `sent_at` je Log",
+      "behavior": "T13/M12 (§3.11)",
+      "since": "I5"
+    },
+    {
+      "job_type": "exports.analytics_email",
+      "class": "ExportAnalyticsEmailJob",
+      "module": "Analytics",
+      "trigger": "`ExportAnalyticsCommand`",
+      "queue": "exports",
+      "idempotency": "–",
+      "behavior": "T1/M11 (§3.15.2)",
+      "since": "I5"
+    },
+    {
+      "job_type": "messaging.consume",
+      "class": "ConsumeEventJob",
+      "module": "Messaging",
+      "trigger": "Outbox-Dispatcher",
+      "queue": "Queue des Consumers",
+      "idempotency": "Dedupe `evt:{message_id}:{consumer}` + Inbox",
+      "behavior": "§3.4",
+      "since": "I0"
+    },
+    {
+      "job_type": "maintenance.soft_delete_cascade",
+      "class": "SoftDeleteCascadeJob",
+      "module": "Persistence (`02`)",
+      "trigger": "`SoftDeleteInterceptor` (Deferred)",
+      "queue": "default",
+      "idempotency": "`Transactional`, `WHERE deleted_at IS NULL`",
+      "behavior": "§3.16",
+      "since": "I1"
+    },
+    {
+      "job_type": "realtime.push",
+      "class": "RealtimePushJob",
+      "module": "RealtimeEvents",
+      "trigger": "`QueuedRealtimePublisher` (Api/Worker, transaktional)",
+      "queue": "live` (nur Realtime-Host/AllInOne)",
+      "idempotency": "keine (Zustellung höchstens einmal); Policy `Default`",
+      "behavior": "stellt `{group, event, payload, occurred_at}` über `HubRealtimePublisher` zu (§3.12, 17 ABG-106)",
+      "since": "I0/I5"
+    },
+    {
+      "job_type": "indexing.index_entity",
+      "class": "IndexEntityJob",
+      "module": "Search",
+      "trigger": "`SearchIndexingConsumer` (`runAt = now + IndexingDebounceMilliseconds`)",
+      "queue": "indexing",
+      "idempotency": "Dedupe `indexing:{type}:{id}` (`11` §3.10.4); Policy `Default`",
+      "behavior": "lädt den aktuellen Zustand und schreibt `search_documents` über `IIndexingPipeline` (Fachlogik `11` §3.10.4, 17 ABG-125)",
+      "since": "I5"
+    },
+    {
+      "job_type": "indexing.remove_entry",
+      "class": "RemoveIndexEntryJob",
+      "module": "Search",
+      "trigger": "`SearchIndexingConsumer` (sofort)",
+      "queue": "indexing",
+      "idempotency": "Dedupe `indexing-remove:{type}:{id}`; Policy `Default`",
+      "behavior": "`IIndexingPipeline.RemoveAsync` (`11` §3.10.4)",
+      "since": "I5"
+    },
+    {
+      "job_type": "indexing.remove_scope",
+      "class": "RemoveIndexEntriesByScopeJob",
+      "module": "Search",
+      "trigger": "`SearchIndexingConsumer` (Projekt-/Workspace-Löschung, Work-Item-Kommentare)",
+      "queue": "indexing",
+      "idempotency": "Dedupe `indexing-remove-scope:{ws}:{project}:{type}:{facetKey}:{facetValue}`; Policy `Default`",
+      "behavior": "`DELETE … WHERE` nach Scope (`11` §3.10.4)",
+      "since": "I5"
+    },
+    {
+      "job_type": "indexing.rebuild",
+      "class": "SearchIndexRebuildJob",
+      "module": "Search",
+      "trigger": "`funk-cli search reindex`, Identifier-Änderung, Erstbefüllung (Migrator) – außerhalb einer Transaktion",
+      "queue": "indexing",
+      "idempotency": "Dedupe `indexing:rebuild:{ws}:{project}:{type}`; Policy `Default`",
+      "behavior": "plant `IndexEntityJob` in Batches (`11` §3.10.4); Cron `indexing.reconcile` (`23 3 * * *`) siehe §4.2",
+      "since": "I5"
     }
-  ]
+  ],
+  "further_jobs_source": "06 §3.18 (Weitere Jobs; inkl. realtime.push nach 17 ABG-106 und indexing.* nach ABG-125)"
 }

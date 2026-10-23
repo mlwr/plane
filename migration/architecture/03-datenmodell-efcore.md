@@ -35,6 +35,7 @@ Kürzel wie in 01: `API/` = `apps/api/plane/`, `M/` = `apps/api/plane/db/models/
 8. [Risiken & offene Punkte](#8-risiken--offene-punkte)
 9. [Abhängigkeiten zu anderen Dokumenten (02–16)](#9-abhängigkeiten-zu-anderen-dokumenten-0216)
 10. [Review-Protokoll](#review-protokoll)
+11. [Abgleich-Protokoll (Dokument 17)](#abgleich-protokoll-dokument-17)
 
 ---
 
@@ -73,11 +74,11 @@ Jede Tabelle entsteht in der Migration des Inkrements, in dem ihr erster vertika
 | Inkrement | Migration(en) (`YYYYMMDDHHmm_<Modul>_<Beschreibung>`) | Tabellen | Seeds | Weitere Bausteine dieses Dokuments |
 |---|---|---|---|---|
 | **I0 Walking Skeleton** | `…_Platform_Extensions`, `…_Messaging_Initial`, `…_Instance_Initial`, `…_Identity_Initial`, `…_Authorization_Roles`, `…_Workspaces_Initial`, `…_Projects_Initial`, `…_Integrations_Connections` | Extensions `pg_trgm`, `unaccent`, `vector`; Funktion `plane_unaccent`; `outbox_messages`, `inbox_messages`, `jobs`, `recurring_job_states`, `data_protection_keys`, `instances`, `instance_admins`, `instance_configurations`, `users`, `profiles`, `user_identities`, `user_sessions`, `roles`, `role_permissions`, `workspaces`, `workspace_members`, `projects`, `project_identifiers`, `project_members`, `project_user_properties`, `states`, `integration_connections` | `BaseSeeds`: System-Rollen (6), Instanz-Datensatz (`instance_name` „funk.“), Instanz-Konfiguration aus ENV, System-Bot (D06-ADR-20); Laufzeit: Default-States bei Projektanlage | Basistypen §3.1, Konventionen §3.2, Scope-FKs, Interceptors (D02), Drift-Gate, `PlaneRespawner`-Liste §4.6, `ParitySeedLoader`-Grundform |
-| **I1 Workspace, Projekte, Konto** | `…_Workspaces_InvitesPreferences`, `…_Projects_LabelsEstimates`, `…_Projects_FeatureSettings`, `…_Assets_Initial`, `…_Identity_ApiTokens`, `…_Notifications_Preferences` | `workspace_member_invites`, `workspace_themes`, `workspace_user_properties`, `workspace_user_preferences`, `workspace_feature_settings`, `user_favorites`, `project_member_invites`, `project_feature_settings`, `labels`, `estimates`, `estimate_points`, `file_assets`, `api_tokens`, `user_notification_preferences` | Demo-Workspace-Seed (CE-WS-002) Teil 1 (Projekt, States, Labels) | Kaskaden-Registry vollständig für I0/I1-Tabellen, Hard-Delete-Job |
-| **I2 Work Items & Layouts** | `…_WorkItems_Initial`, `…_Properties_WorkItemTypesMinimal`, `…_Integrations_ExternalLinks` | `work_items`, `work_item_sequences`, `work_item_assignees`, `work_item_labels`, `work_item_relation_types`, `work_item_relations`, `work_item_mentions`, `work_item_subscribers`, `work_item_links`, `work_item_comments`, `work_item_reactions`, `work_item_comment_reactions`, `work_item_activities`, `work_item_description_versions`, `work_item_versions`, `draft_work_items`, `draft_work_item_assignees`, `draft_work_item_labels`, `work_item_types`, `external_links`; Trigram-Indizes `work_items.name`, `projects.name/identifier`, `workspaces.name` | `work_item_relation_types` (10 Typen); Demo-Seed Teil 2 (Work Items) | `SequenceAllocator` §3.6, Beschreibungsformate §3.9 |
-| **I3 Planung** | `…_Cycles_Initial`, `…_ProjectModules_Initial`, `…_Intake_Initial`, `…_Views_Initial`, `…_WorkItems_DraftPlanningLinks` | `cycles`, `cycle_work_items`, `cycle_user_properties`, `modules`, `module_members`, `module_work_items`, `module_links`, `module_user_properties`, `intakes`, `intake_work_items`, `views`, `draft_work_item_cycles`, `draft_work_item_modules` | Demo-Seed Teil 3 (Cycles, Module, View); Laufzeit: Default-Intake beim Aktivieren | Snooze-Index, Cycle-Überschneidungsindex, `cycles.completion_published_at` + Index (D06 §3.17.4) |
-| **I4 Pages & Realtime** | `…_Pages_Initial` | `pages` (inkl. `description_revision`, D07), `project_pages`, `page_labels`, `page_logs`, `page_versions` | Demo-Seed Teil 4 (Pages) | Yjs-Binärfeld, Versionsaufbewahrung |
-| **I5 Überblick** | `…_Home_Initial`, `…_Notifications_Inbox`, `…_Analytics_Views`, `…_Search_Documents` | `workspace_home_preferences`, `workspace_user_links`, `user_recent_visits`, `stickies`, `notifications`, `email_notification_logs`, `analytic_views`, `search_documents`; Trigram-Indizes übrige Suchfelder | – | FTS §3.10 |
+| **I1 Workspace, Projekte, Konto** | `…_Workspaces_InvitesPreferences`, `…_Projects_LabelsEstimates`, `…_Projects_FeatureSettings`, `…_Assets_Initial`, `…_Identity_ApiTokens`, `…_Notifications_Preferences` | `workspace_member_invites`, `workspace_themes`, `workspace_user_properties`, `workspace_user_preferences`, `workspace_feature_settings`, `user_favorites`, `project_member_invites`, `project_feature_settings`, `labels`, `estimates`, `estimate_points`, `file_assets`, `api_tokens`, `user_notification_preferences`; Trigram-Indizes `workspaces.name`, `projects.name`/`identifier` (Eigentümer-Migrationen `…_Workspaces_*`/`…_Projects_*`, ABG-123) | Demo-Workspace-Seed (CE-WS-002) Teil 1 (Projekt, States, Labels) | Kaskaden-Registry vollständig für I0/I1-Tabellen, Hard-Delete-Job |
+| **I2 Work Items & Layouts** | `…_WorkItems_Initial`, `…_Properties_WorkItemTypesMinimal`, `…_Integrations_ExternalLinks` | `work_items`, `work_item_sequences`, `work_item_assignees`, `work_item_labels`, `work_item_relation_types`, `work_item_relations`, `work_item_mentions`, `work_item_subscribers`, `work_item_links`, `work_item_comments`, `work_item_reactions`, `work_item_comment_reactions`, `work_item_activities`, `work_item_description_versions`, `work_item_versions`, `draft_work_items`, `draft_work_item_assignees`, `draft_work_item_labels`, `work_item_types`, `external_links`; Trigram-Indizes `work_items.name` (`…_WorkItems_Initial`) und `users.{display_name,first_name,last_name}` (Migration des Moduls Identity in I2, ABG-123) | `work_item_relation_types` (10 Typen); Demo-Seed Teil 2 (Work Items) | `SequenceAllocator` §3.6, Beschreibungsformate §3.9 |
+| **I3 Planung** | `…_Cycles_Initial`, `…_ProjectModules_Initial`, `…_Intake_Initial`, `…_Views_Initial`, `…_WorkItems_DraftPlanningLinks` | `cycles`, `cycle_work_items`, `cycle_user_properties`, `modules`, `module_members`, `module_work_items`, `module_links`, `module_user_properties`, `intakes`, `intake_work_items`, `views`, `draft_work_item_cycles`, `draft_work_item_modules`; Trigram-Indizes `cycles.name`, `modules.name`, `views.name` (ABG-123) | Demo-Seed Teil 3 (Cycles, Module, View); Laufzeit: Default-Intake beim Aktivieren | Snooze-Index, Cycle-Überschneidungsindex, `cycles.completion_published_at` + Index (D06 §3.17.4) |
+| **I4 Pages & Realtime** | `…_Pages_Initial` | `pages` (inkl. `description_revision`, D07), `project_pages`, `page_labels`, `page_logs`, `page_versions`; Trigram-Index `pages.name` (ABG-123) | Demo-Seed Teil 4 (Pages) | Yjs-Binärfeld, Versionsaufbewahrung |
+| **I5 Überblick** | `…_Home_Initial`, `…_Notifications_Inbox`, `…_Analytics_Views`, `…_Search_Documents` | `workspace_home_preferences`, `workspace_user_links`, `user_recent_visits`, `stickies`, `notifications`, `email_notification_logs`, `analytic_views`, `search_documents`; Trigram-Indizes `stickies.description_stripped`, `search_documents.title` (ABG-123) | – | FTS §3.10 |
 | **I6 Außenwirkung & Administration** | `…_PublicSpace_Initial`, `…_Webhooks_Initial`, `…_Exports_Initial`, `…_Identity_ApiActivityLogs`, `…_WorkItems_Votes` | `deploy_boards`, `project_public_members`, `work_item_votes`, `webhooks`, `webhook_logs`, `exports`, `api_activity_logs` | – | Aufbewahrungsindizes |
 | **I7 Härtung & Betrieb** | Squash der Historie zu `…_CE_Baseline` (einmalig vor Release 1.0), danach nur additive Migrationen | – | – | Expand/Contract-Gate, Migrations-Lasttest, Backup/Restore-Test |
 | **W1 … W9** | `W<n>_<Paket>_<Beschreibung>` (D16-ADR-06) | Paket-Tabellen | Paket-Seeds (Fragmente `scope: ee`, D15 EP-T03) | §6 |
@@ -118,7 +119,7 @@ Alle Entscheidungen präzisieren ADR-037/-038 und 01 §7.6–7.8/§7.14; Spalte 
 | **D03-ADR-14** | Enums | Zahlen-Enums (`role` 20/15/5, `network` 0/2, `access`, `intake status` −2…2, `vote` ±1, `start_of_the_week`, `user_type`) als `smallint`/`integer` mit C#-`enum` (explizite Werte) und **Check-Constraint**; String-Enums (`priority`, `state.group`, `module.status`, `estimate.type`, `comment.access`, `exports.provider/status`, `deploy_boards.entity_name`, Navigation-Präferenz) als `varchar` mit `HasConversion<string>()` über `[EnumValue("…")]` und Check-Constraint (Korrektur Q19). **Keine** DB-Checks für Wertelisten, die Pakete erweitern (`file_assets.entity_type`, `user_favorites.entity_type`, `user_recent_visits.entity_name`, `exports.type`, `workspace_user_preferences.key`, `workspace_home_preferences.key`, `users.bot_type`, `notifications.entity_name`) – dort validiert der Fachcode gegen eine Registry | PostgreSQL-`ENUM`-Typen; keine Checks | Checks sind per Expand-Migration erweiterbar, PG-Enums nicht transaktional änderbar; Registry-Werte bleiben paketerweiterbar (D16-ADR-06) | I0 |
 | **D03-ADR-15** | M2M | Jede Original-M2M (`through`-Modell) ist eine **explizite Join-Entität** mit eigenem `id`, Audit und Soft-Delete (Original-Semantik, API liefert teils Zeilen-IDs); keine EF-Skip-Navigationen. Fehlende Unique-Regeln des Originals werden als partielle Unique-Indizes ergänzt (`work_item_labels`, `draft_work_item_labels`, `page_labels`, A02b §2.7 d) | Skip-Navigationen mit implizitem Join-Typ | Soft-Delete der Zuordnung, Activity und Kaskaden brauchen die Zeile als Entität | I0 |
 | **D03-ADR-16** | Work-Item-Nummer | Zählertabelle `work_item_sequences (project_id PK, last_value)`; Vergabe per `INSERT … ON CONFLICT (project_id) DO UPDATE SET last_value = work_item_sequences.last_value + 1 RETURNING last_value` **in der Command-Transaktion** (Zeilensperre bis Commit → nebenläufigkeitssicher, bei Rollback lückenlos); zusätzlich `UNIQUE (project_id, sequence_id)` auf `work_items` (Korrektur Q4) | Original: Advisory-Lock + `MAX(sequence)` aus `issue_sequences`; PostgreSQL-`SEQUENCE` je Projekt (nicht lückenlos, DDL je Projekt); `MAX(sequence_id)+1` mit Retry | Eine Zeile je Projekt statt einer Zeile je Work Item, keine Advisory-Lock-Hashfunktion, deterministisch testbar (01 §7.6, Concurrency-Test) | I2 |
-| **D03-ADR-17** | Beschreibungen und Versionen | Jede beschreibbare Entität behält die vier Original-Formate (`description_html` text, `description_json` jsonb, `description_binary` bytea, `description_stripped` text, §3.9); `*_stripped` wird **serverseitig** mit **einer** Implementierung `HtmlText.StripTags` (Port der Plane-Variante aus `API/utils/html_processor.py`) berechnet (Korrektur Q14). Versionstabellen `work_item_description_versions`, `page_versions`, `work_item_versions` mit 600-s-Merge-Regel; Aufbewahrung als Instanz-Einstellung (ADR-001, Default 20); Original-Defekte Q10/Q11 korrigiert (DEV-DM-06, DEV-DM-10). Der Kommentar-Spiegel `descriptions`/`description_versions` entfällt (Q15) | `descriptions` als Owned Entity übernehmen | Weniger Tabellen, kein verwaister Spiegel; Vertragsfeld `description` des Kommentars wird `null` (DEV-DM-03) | I2 |
+| **D03-ADR-17** | Beschreibungen und Versionen | Jede beschreibbare Entität behält die vier Original-Formate (`description_html` text, `description_json` jsonb, `description_binary` bytea, `description_stripped` text, §3.9); `*_stripped` wird **serverseitig** mit **einer** Implementierung `Plane.Documents.Text.HtmlTextExtractor.Strip(html)` (Port der Plane-Variante `strip_tags` aus `API/utils/html_processor.py`; der Name `HtmlText.StripTags` entfällt, ABG-110) berechnet (Korrektur Q14). Versionstabellen `work_item_description_versions`, `page_versions`, `work_item_versions` mit 600-s-Merge-Regel; Aufbewahrung über `PlaneRetentionOptions` (`PageVersionsKeep`, `DescriptionVersionsKeep`, `WorkItemVersionsKeep`; ADR-001, Default 20, ABG-102); Original-Defekte Q10/Q11 korrigiert (DEV-DM-06, DEV-DM-10). Der Kommentar-Spiegel `descriptions`/`description_versions` entfällt (Q15) | `descriptions` als Owned Entity übernehmen | Weniger Tabellen, kein verwaister Spiegel; Vertragsfeld `description` des Kommentars wird `null` (DEV-DM-03) | I2 |
 | **D03-ADR-18** | Yjs-Binärdaten | `bytea` ohne Kompression; für **Pages** kanonisch (Hocuspocus-Persistenz über `IPageDocumentStore`, ADR-022), für Work Items/Drafts/Stickies nur gespeicherter Nebenstand (kein kollaborativer Editor); Größenlimit 10 MiB als Check-Constraint und Validierung (`validate_binary_data`, A02b §3.5 c) | Large Objects; separate Tabelle `documents` | Original-Vertrag (Base64 in JSON, `application/octet-stream`); 10 MiB passt in TOAST | I2/I4 |
 | **D03-ADR-19** | Suche | (a) **Parität:** `ILIKE`-Suchen des Originals (`name__icontains` u. a., §3.10.1) erhalten **GIN-Trigram-Indizes** (`gin_trgm_ops`, Npgsql `HasMethod("gin").HasOperators("gin_trgm_ops")`); (b) **Ranking/G1/B6:** eine Tabelle `search_documents` mit `search_vector tsvector GENERATED ALWAYS AS (…) STORED` über `plane_unaccent()` (IMMUTABLE-Wrapper, weil `unaccent()` nur STABLE ist und Generated Columns IMMUTABLE verlangen) und Konfiguration `simple`; befüllt vom `IIndexingPipeline`-Consumer (I5). **Keine** `tsvector`-Spalten an den Fachtabellen | `tsvector`-Generated-Columns an `work_items`/`pages`; externer Suchdienst | Fachtabellen bleiben schlank; ein Index für Workspace-weite Suche über mehrere Entitätstypen; G1 hängt später Embeddings an dieselbe Pipeline (§6) | I2 (Trigram), I5 (FTS) |
 | **D03-ADR-20** | Erweiterungs-Spalten | Spalten, die der Original-Vertrag enthält und die Pakete nutzen (Klasse V, D16-ADR-06), legt die CE an; reine Paket-Vorhalte (Klasse P) nur dort, wo 01 §1.4/D16 sie verlangen: `work_items.type_id`, `draft_work_items.type_id`, `work_item_types` (minimal), `work_item_relation_types`, `teamspace_id` (ohne FK) an `views`, `pages`, `work_item_comments`, `user_favorites`, `roles`/`role_permissions`, `*_feature_settings`, `integration_connections`, `external_links`, `search_documents`. Alles Weitere fügen Pakete **additiv** hinzu | „vorsorglich“ weitere Spalten | Strategie „schlanker Gesamtrahmen“; Andockstellen ohne Fachdesign | I0–I5 |
@@ -458,7 +459,7 @@ Entität `User` · `[OwnedBy("Identity")]` · Basis eigene Form (Spalten vollst�
 | `masked_at` | `timestamptz` | ja | – | MaskedAt: `DateTimeOffset?` | 1:1 |
 | `password` | – | – | – | – | entfällt (ADR-008); ebenso `last_login` aus `AbstractBaseUser` und die M2M-Tabellen `users_groups`/`users_user_permissions` aus `PermissionsMixin` |
 
-**Indizes/Unique:** `ux_users_email` UNIQUE (`email`); `ux_users_username` UNIQUE (`username`); GIN-Trigram `ix_users_display_name_trgm`, `ix_users_first_name_trgm`, `ix_users_last_name_trgm` (`gin_trgm_ops`, Mention-Suche CE-SRCH-002, ab I5).
+**Indizes/Unique:** `ux_users_email` UNIQUE (`email`); `ux_users_username` UNIQUE (`username`); GIN-Trigram `ix_users_display_name_trgm`, `ix_users_first_name_trgm`, `ix_users_last_name_trgm` (`gin_trgm_ops`, Mention-Suche CE-SRCH-002, ab I2 – §3.10.1, ABG-123).
 
 **Checks:** `ck_users_email_lowercase` CHECK (`email = lower(email)`).
 
@@ -943,7 +944,7 @@ Entität `WorkItem` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (Audit-
 | `name` | `varchar(255)` | nein | – | Name: `string` | 1:1 |
 | `description_json` | `jsonb` | nein | `'{}'::jsonb` | DescriptionJson: `JsonObject` | Lesemodell `ProseMirrorDoc` |
 | `description_html` | `text` | nein | `'<p></p>'` | DescriptionHtml: `string` | 1:1 |
-| `description_stripped` | `text` | ja | – | DescriptionStripped: `string?` | serverseitig aus HTML (`HtmlText.StripTags`, eine Implementierung, Q14) |
+| `description_stripped` | `text` | ja | – | DescriptionStripped: `string?` | serverseitig aus HTML (`HtmlTextExtractor.Strip`, eine Implementierung, Q14) |
 | `description_binary` | `bytea` | ja | – | DescriptionBinary: `byte[]?` | Yjs-Update (Rich-Text-Schema), nicht kanonisch für Work Items |
 | `priority` | `varchar(30)` | nein | `'none'` | Priority: `string` | `urgent`, `high`, `medium`, `low`, `none` |
 | `start_date` | `date` | ja | – | StartDate: `DateOnly?` | 1:1 |
@@ -1058,7 +1059,7 @@ Entität `WorkItemComment` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` 
 
 | Spalte | PostgreSQL | Null | Default | C#-Property: Typ | Herkunft / Regel |
 |---|---|---|---|---|---|
-| `comment_stripped` | `text` | nein | – | CommentStripped: `string` | `HtmlText.StripTags` |
+| `comment_stripped` | `text` | nein | – | CommentStripped: `string` | `HtmlTextExtractor.Strip` |
 | `comment_json` | `jsonb` | nein | `'{}'::jsonb` | CommentJson: `JsonObject` | Lesemodell `ProseMirrorDoc` |
 | `comment_html` | `text` | nein | `'<p></p>'` | CommentHtml: `string` | 1:1 |
 | ~~`description`~~ | – | – | – | – | entfällt: 1:1-Spiegel `descriptions` entfällt (Q15); DTO liefert `description: null` (DEV-DM-03) |
@@ -1155,7 +1156,7 @@ Entität `WorkItemDescriptionVersion` · `[OwnedBy("WorkItems")]` · Basis `Proj
 
 **Indizes/Unique:** `ix_work_item_description_versions_work_item_last_saved` (`work_item_id`, `last_saved_at` DESC).
 
-**Hinweise:** Merge-Regel: jüngste Version desselben Nutzers ≤ 600 s → überschreiben (02b §3.6). Aufbewahrung: je Work Item die 20 neuesten (Instanz-Einstellung `Plane:Retention:WorkItemDescriptionVersions`, Default 20), Hard-Delete-Job täglich 03:15 UTC.
+**Hinweise:** Merge-Regel: jüngste Version desselben Nutzers ≤ 600 s → überschreiben (02b §3.6). Aufbewahrung: je Work Item die 20 neuesten (`PlaneRetentionOptions.DescriptionVersionsKeep`, Schlüssel `Plane:Retention:DescriptionVersionsKeep`, Default 20; 02 §3.15), Hard-Delete-Job täglich 03:15 UTC.
 
 ##### 3.4.5.15 `work_item_versions` ← `IssueVersion` (`M/issue.py` Z. 677–779)
 
@@ -1591,7 +1592,7 @@ Entität `PageVersion` · `[OwnedBy("Pages")]` · Basis eigene Form (Spalten vol
 
 **Indizes/Unique:** `ix_page_versions_page_last_saved` (`page_id`, `last_saved_at` DESC).
 
-**Hinweise:** Original erzeugt wegen `page.description` nie Versionen (Q10) – Ziel schreibt sie (`PageVersionRecorder`, 600-s-Merge, Limit 20 je Page als Instanz-Einstellung `Plane:Retention:PageVersions`), DEV-DM-10.
+**Hinweise:** Original erzeugt wegen `page.description` nie Versionen (Q10) – Ziel schreibt sie (`PageVersionRecorder`, 600-s-Merge, Limit 20 je Page über `PlaneRetentionOptions.PageVersionsKeep` (Schlüssel `Plane:Retention:PageVersionsKeep`, keine Instanz-Einstellung `PAGE_VERSION_LIMIT`; Komponentenname `PageVersionRecorder` bestätigt, ABG-102/ABG-108), DEV-DM-10.
 
 #### 3.4.11 Modul Assets
 
@@ -1623,7 +1624,7 @@ Entität `FileAsset` · `[OwnedBy("Assets")]` · Basis eigene Form (Spalten voll
 
 **Indizes/Unique:** `asset_entity_type_idx` (`entity_type`); `asset_entity_identifier_idx` (`entity_identifier`); `asset_entity_idx` (`entity_type`, `entity_identifier`); `asset_asset_idx` (`asset`); `ix_file_assets_unuploaded` (`created_at`) WHERE `NOT is_uploaded AND deleted_at IS NULL` – Bereinigungs-Job; `ix_file_assets_work_item` (`work_item_id`) WHERE `work_item_id IS NOT NULL`; `ix_file_assets_page` (`page_id`) WHERE `page_id IS NOT NULL`.
 
-**Hinweise:** Hard-Delete löscht zusätzlich das Objekt im Speicher (`IObjectStorage`, Verbesserung 02a §5.2) über `FileAssetPurgeConsumer`.
+**Hinweise:** Hard-Delete löscht zusätzlich das Objekt im Speicher (`IObjectStorage`, Verbesserung 02a §5.2): Schritt 1 des Jobs `maintenance.hard_delete` löscht die Objekte per `IObjectStorage.DeleteManyAsync` (06 §3.16), **kein** `FileAssetPurgeConsumer` (ABG-102).
 
 #### 3.4.12 Modul Home
 
@@ -2003,7 +2004,7 @@ Form exakt nach D16 §5.1 (SQL-Skizze). In der CE leer; die fünf CE-Toggles ble
 
 **Indizes/Checks:** `ix_jobs_ready` (`queue`, `priority` DESC, `run_at`) WHERE `status = 0`; `ix_jobs_lease` (`locked_until`) WHERE `status = 1`; `ux_jobs_dedupe` UNIQUE (`dedupe_key`) WHERE `dedupe_key IS NOT NULL AND status IN (0, 1)`; `ix_jobs_dead` (`dead_at`) WHERE `status = 4`; `ck_jobs_status` CHECK (`status IN (0,1,4)`).
 
-`recurring_job_states` (Zustand der Cron-Definitionen, D06-ADR-07): `name text` PK, `source text NOT NULL` (`code` \| `dynamic`), `cron_utc text NOT NULL`, `job_type text NOT NULL`, `queue text NOT NULL`, `payload jsonb NOT NULL DEFAULT '{}'`, `enabled boolean NOT NULL DEFAULT true`, `last_fired_at timestamptz NULL` (Termin, nicht Ausführungszeit), `next_fire_at timestamptz NULL`, `updated_at timestamptz NOT NULL`. Leader-Wahl über `pg_try_advisory_lock(PlaneLocks.Scheduler)` (keine Tabelle). Zeilen mit `source = 'code'` schreibt jede Worker-Instanz beim Start idempotent aus `IRecurringJobRegistry` (keine Seeds).
+`recurring_job_states` (Zustand der Cron-Definitionen, D06-ADR-07): `name text` PK, `source text NOT NULL` (`code` \| `dynamic`), `cron_utc text NOT NULL`, `job_type text NOT NULL`, `queue text NOT NULL`, `payload jsonb NOT NULL DEFAULT '{}'`, `enabled boolean NOT NULL DEFAULT true`, `last_fired_at timestamptz NULL` (Termin, nicht Ausführungszeit), `next_fire_at timestamptz NULL`, `updated_at timestamptz NOT NULL`. Leader-Wahl über `pg_try_advisory_lock(PlaneLocks.Scheduler)` (keine Tabelle). Zeilen mit `source = 'code'` schreibt nur der Scheduler-Leader nach jedem Lock-Erwerb (06 §3.6 Nr. 1, ABG-101) idempotent aus `IRecurringJobRegistry` (keine Seeds).
 
 ##### 3.4.18.7 `integration_connections` (ab I0) und `external_links` (ab I2) (Eigentümer `Integrations`, Andockstelle F1/F2)
 
@@ -2050,7 +2051,7 @@ Spalten und Schlüssel **verbindlich nach D16 §3.4.2**; hier die Typen:
 |---|---|---|---|---|---|
 | `id` | `uuid` | nein | – | Id: `Guid` | PK (UUIDv7, `IIdGenerator`); Ziel der FK aus `search_embeddings` (G1, §6.1) |
 | `workspace_id` | `uuid` | nein | – | WorkspaceId: `Guid` | FK `workspaces` ON DELETE CASCADE |
-| `project_id` | `uuid` | ja | – | ProjectId: `Guid?` | Scope-FK `fk_search_documents_project_scope (project_id, workspace_id) → projects` ON DELETE CASCADE über `ScopeForeignKeyConvention` (ersetzt die Einzel-FK `REFERENCES projects(id)` aus D11 §3.10.1 bei gleichem Lösch-Verhalten); Pages mit mehreren Projekten → `NULL` + `facets.project_ids` |
+| `project_id` | `uuid` | ja | – | ProjectId: `Guid?` | Scope-FK `fk_search_documents_project_scope (project_id, workspace_id) → projects` ON DELETE CASCADE über `ScopeForeignKeyConvention` (identisch in D11 §3.10.1, ABG-122; Spike-Vorbehalt Z-107); Pages mit mehreren Projekten → `NULL` + `facets.project_ids` |
 | `entity_type` | `varchar(32)` | nein | – | EntityType: `string` | `IndexEntityTypes`: `work_item`, `work_item_comment`, `page`, `project`, `cycle`, `module`, `issue_view` (Werte D11 §3.10.2) |
 | `entity_id` | `uuid` | nein | – | EntityId: `Guid` | polymorph, ohne FK |
 | `title` | `text` | nein | – | Title: `string` | – |
@@ -2070,7 +2071,7 @@ Spalten und Schlüssel **verbindlich nach D16 §3.4.2**; hier die Typen:
 
 | Filter | Gilt für | Ausdruck | Abschalten |
 |---|---|---|---|
-| `soft_delete` | alle `ISoftDeletable` (Basen A/W/P sowie X-Tabellen mit `deleted_at`) | `e => e.DeletedAt == null` | `IgnoreQueryFilters([QueryFilterNames.SoftDelete])` (= Original `all_objects`); nur in den Fällen §3.5.2, im Hard-Delete-Job, in Restore-Pfaden und in Admin-Abfragen (`plane-cli`) |
+| `soft_delete` | alle `ISoftDeletable` (Basen A/W/P sowie X-Tabellen mit `deleted_at`) | `e => e.DeletedAt == null` | `IgnoreQueryFilters([QueryFilterNames.SoftDelete])` (= Original `all_objects`); nur in den Fällen §3.5.2, im Hard-Delete-Job, in Restore-Pfaden und in Admin-Abfragen (`funk-cli`, ABG-149) |
 | `workspace_tenant` | alle `IWorkspaceScoped` | `e => !_tenant.IsBound \|\| e.WorkspaceId == _tenant.WorkspaceId` (D02 §3.5.4) | nie im Fachcode; `IgnoreQueryFilters()` ohne Argument ist außerhalb von `Plane.Data`, Migrator und Tests verboten (Banned-API, D02 §5.1.3) |
 
 Tabellen **ohne** Soft-Delete (harte Löschung ist fachlich gewollt oder Zeilen sind unveränderlich): `users`, `profiles`, `user_identities`, `user_sessions`, `role_permissions`, `data_protection_keys`, `work_item_sequences`, `work_item_relation_types`, `*_feature_settings`, `outbox_messages`, `inbox_messages`, `jobs`, `recurring_job_states`, `search_documents`.
@@ -2144,18 +2145,18 @@ cascade.NoSoftCascade<WorkItem, WorkItemActivity>(c => c.WorkItemId, reason: "Ve
 
 | Job (Name in `IRecurringJobRegistry`, D06 §4.2) | Cron (UTC) | Wirkung (Datenmodell) | Konfiguration (Default) | Original |
 |---|---|---|---|---|
-| `maintenance.hard_delete` (`HardDeleteJob`, ab I1) | `0 0 * * *` | je Wurzeltabelle in FK-sicherer Reihenfolge (`HardDeleteTableRegistry`, aus dem Modell erzeugt) `DELETE … WHERE deleted_at < now() - interval` in Batches à 1000; DB-Kaskaden (`ON DELETE CASCADE/SET NULL`) erledigen Kinder; anschließend entfernt `FileAssetPurgeConsumer` die Objekte gelöschter `file_assets` aus dem Speicher | `Plane:Retention:HardDeleteDays` (60, Alias `HARD_DELETE_AFTER_DAYS`) | `deletion_task.hard_delete`; Abbruch-Bug Q3 behoben, Objektlöschung neu (DEV-OPS-002) |
+| `maintenance.hard_delete` (`HardDeleteJob`, ab I1) | `0 0 * * *` | je Wurzeltabelle in FK-sicherer Reihenfolge (`HardDeleteTableRegistry`, aus dem Modell erzeugt) `DELETE … WHERE deleted_at < now() - interval` in Batches à 1000; DB-Kaskaden (`ON DELETE CASCADE/SET NULL`) erledigen Kinder; Schritt 1 des Jobs löscht die Objekte gelöschter `file_assets` per `IObjectStorage.DeleteManyAsync` (06 §3.16, ABG-102) | `Plane:Retention:HardDeleteDays` (60, Alias `HARD_DELETE_AFTER_DAYS`) | `deletion_task.hard_delete`; Abbruch-Bug Q3 behoben, Objektlöschung neu (DEV-OPS-002) |
 | `maintenance.api_activity_logs_cleanup` (ab I6) | `30 2 * * *` | `DELETE api_activity_logs WHERE created_at <= now() - 14 d` | `Plane:Retention:ApiActivityLogDays` (14) | `cleanup_task.delete_api_logs` |
 | `maintenance.webhook_logs_cleanup` (ab I6) | `30 3 * * *` | dto. `webhook_logs` | `Plane:Retention:WebhookLogDays` (14) | `cleanup_task.delete_webhook_logs` |
 | `maintenance.email_notification_logs_cleanup` (ab I5) | `45 2 * * *` | `sent_at <= now() - 7 d` | `Plane:Retention:EmailLogDays` (7, Alias `EMAIL_LOG_RETENTION_DAYS`) | `cleanup_task` |
-| `maintenance.page_versions_cleanup` (ab I4) | `0 3 * * *` | je Page alles außer den 20 neuesten (`last_saved_at`) hart löschen | `Plane:Retention:PageVersions` (20) | `cleanup_task.delete_page_versions` |
-| `maintenance.description_versions_cleanup` (ab I2) | `15 3 * * *` | je Work Item alles außer den 20 neuesten | `Plane:Retention:WorkItemDescriptionVersions` (20) | `cleanup_task.delete_issue_description_versions` |
-| – (kein Cron; Recorder) | – | `work_item_versions`: der `WorkItemVersionRecorder` löscht nach dem Schreiben im selben Command alle Versionen des Work Items außer den 20 neuesten hart (Original schreibt keine Versionen, Q11; daher kein Original-Cron) | `Plane:Retention:WorkItemVersions` (20, neu) | – (neu, DEV-DM-06) |
+| `maintenance.page_versions_cleanup` (ab I4) | `0 3 * * *` | je Page hart löschen, was nach `ROW_NUMBER() OVER (PARTITION BY page_id ORDER BY created_at DESC)` > `PageVersionsKeep` liegt (Original `cleanup_task`; das weiche Löschen nach `last_saved_at` beim Schreiben macht der `PageVersionRecorder`, §3.9.2) | `Plane:Retention:PageVersionsKeep` (20, ABG-102) | `cleanup_task.delete_page_versions` |
+| `maintenance.description_versions_cleanup` (ab I2) | `15 3 * * *` | je Work Item alles außer den 20 neuesten | `Plane:Retention:DescriptionVersionsKeep` (20, 02 §3.15) | `cleanup_task.delete_issue_description_versions` |
+| – (kein Cron; Recorder) | – | `work_item_versions`: der `WorkItemVersionRecorder` löscht nach dem Schreiben im selben Command alle Versionen des Work Items außer den 20 neuesten hart (Original schreibt keine Versionen, Q11; daher kein Original-Cron) | `Plane:Retention:WorkItemVersionsKeep` (20, neu in `PlaneRetentionOptions`, ABG-102) | – (neu, DEV-DM-06) |
 | `assets.soft_delete_unuploaded` (ab I1) | `0 2 * * *` | `file_assets` mit `is_uploaded = false` und älter als n Tage **soft** löschen | `Plane:Retention:UnuploadedAssetDays` (7, Alias `UNUPLOADED_ASSET_DELETE_DAYS`) | `file_asset_task.delete_unuploaded_file_asset` |
 | `exports.expire_links` (ab I6) | `30 1 * * *` | `exports.url IS NOT NULL AND created_at <= now() - 8 d` → Objekt löschen, `url = NULL` (einmal statt doppelt eingeplant, A02a-#13, B13 entfällt) | `Plane:Retention:ExportLinkDays` (8) | `exporter_expired_task.delete_old_s3_link` |
-| `messaging.outbox_cleanup` (ab I0) | `5 * * * *` | `outbox_messages` mit `dispatched_at < now() - OutboxRetentionHours` löschen | `OutboxRetentionHours` (24, D06 §3.3) | – (neu) |
-| `messaging.inbox_cleanup` (ab I0) | `25 4 * * *` | `inbox_messages` mit `processed_at < now() - InboxRetentionDays` | `InboxRetentionDays` (7, D06 §3.4) | – (neu) |
-| `messaging.dead_letter_cleanup` (ab I0) | `40 4 * * *` | `jobs` mit `status = 4 AND dead_at < now() - DeadLetterRetentionDays` (erfolgreiche Jobs sind bereits gelöscht) | `DeadLetterRetentionDays` (30, D06 §3.2) | – (neu) |
+| `messaging.outbox_cleanup` (ab I0) | `5 * * * *` | `outbox_messages` mit `dispatched_at < now() - Outbox.RetentionHours` löschen | `Plane:Worker:Outbox:RetentionHours` (24, D06 §3.3, ABG-102) | – (neu) |
+| `messaging.inbox_cleanup` (ab I0) | `25 4 * * *` | `inbox_messages` mit `processed_at < now() - InboxRetentionDays` | `Plane:Worker:InboxRetentionDays` (7, D06 §3.4, ABG-102) | – (neu) |
+| `messaging.dead_letter_cleanup` (ab I0) | `40 4 * * *` | `jobs` mit `status = 4 AND dead_at < now() - DeadLetterRetentionDays` (erfolgreiche Jobs sind bereits gelöscht) | `Plane:Worker:DeadLetterRetentionDays` (30, D06 §3.2, ABG-102) | – (neu) |
 | `identity.expired_sessions_cleanup` (ab I0) | `17 * * * *` | `DELETE user_sessions WHERE expires_at < now()` | – | Django-`clearsessions` (implizit), D05-ADR-03 (stündlich) |
 | `cycles.completion_detection` (ab I3) | `*/15 * * * *` | setzt `cycles.completion_published_at` (§3.4.6.1) | – | – (neu, D06 §3.17.4) |
 
@@ -2279,37 +2280,40 @@ Ein Snapshot-Test (`JsonDefaultsSnapshotTests`) vergleicht jedes Literal mit dem
 | `notifications` | `message_html` | `message` (JSON-String) | – | `message_stripped` | – | `message` |
 | `projects`, `modules` | `description_html` (`text`, Legacy) | `description_text` (`jsonb`, Legacy) | – | – | – | `description` (`text`) |
 
-Regeln: (1) `*_stripped` wird **in jedem Command**, das `*_html` setzt, mit `HtmlText.StripTags` berechnet (`NULL` bei leerem HTML, `""` bei `<p></p>`, Entities dekodiert); (2) HTML wird vor dem Speichern sanitisiert (ADR-030, Allowlist aus `API/utils/content_validator.py`); (3) `*_binary` wird geprüft: ≤ 10 MiB, ≥ 4 Byte, erste 200 Zeichen ohne `<html`, `<!doctype`, `<script`, `javascript:`, `data:`, `<iframe` (Original `validate_binary_data`) **und** zusätzlich als Yjs-Update dekodierbar (ADR-030, YDotNet); (4) keine Server-Synchronisation zwischen den Formaten außer bei Pages (Realtime-Host erzeugt alle drei) und Konvertierungspfaden (`Plane.Documents`, 07).
+Regeln: (1) `*_stripped` wird **in jedem Command**, das `*_html` setzt, mit `HtmlTextExtractor.Strip` berechnet (`NULL` bei leerem HTML, `""` bei `<p></p>`, Entities dekodiert); (2) HTML wird vor dem Speichern sanitisiert (ADR-030, Allowlist aus `API/utils/content_validator.py`); (3) `*_binary` wird geprüft: ≤ 10 MiB, ≥ 4 Byte, erste 200 Zeichen ohne `<html`, `<!doctype`, `<script`, `javascript:`, `data:`, `<iframe` (Original `validate_binary_data`) **und** zusätzlich als Yjs-Update dekodierbar (ADR-030, YDotNet); (4) keine Server-Synchronisation zwischen den Formaten außer bei Pages (Realtime-Host erzeugt alle drei) und Konvertierungspfaden (`Plane.Documents`, 07).
 
 #### 3.9.2 Versionen
 
 | Tabelle | Erzeugung (Recorder, im Command bzw. Consumer) | Merge-Regel | Limit | Lesen |
 |---|---|---|---|---|
-| `work_item_description_versions` | `WorkItemDescriptionVersionRecorder` bei Create (`is_creating`) und bei Update mit geändertem `description_html` | jüngste Version (nach `last_saved_at`) gleicher `owned_by_id` und ≤ 600 s → überschreiben, sonst neu | 20 je Work Item (Job §3.5.5) | `…/work-items/{id}/description-versions/[{pk}/]` (CE-WI-041) |
-| `work_item_versions` | `WorkItemVersionRecorder` bei jeder Property-Änderung (State, Priorität, Daten, Assignees, Labels, Cycle, Module, Parent, Estimate, Typ) – **Korrektur Q11** (Original schreibt nie, DEV-DM-06) | 600 s/gleicher Owner → überschreiben | 20 je Work Item (`Plane:Retention:WorkItemVersions`, neu) | `…/issues/{id}/versions/[{pk}/]` (CE-WI-042) |
-| `page_versions` | `PageVersionRecorder` nach jeder Beschreibungs-Persistenz (REST-PATCH `…/description/` und Realtime-Speicherung) – **Korrektur Q10** (DEV-DM-10) | 600 s/gleicher Owner → überschreiben, > 20 → älteste soft-löschen | 20 je Page | CE-PAGE-019 |
+| `work_item_description_versions` | `WorkItemDescriptionVersionRecorder` bei Create (`is_creating`) und bei Update mit geändertem `description_html` | jüngste Version (nach `last_saved_at`) gleicher `owned_by_id` und ≤ 600 s → überschreiben, sonst neu | 20 je Work Item (`Plane:Retention:DescriptionVersionsKeep`, Job §3.5.5) | `…/work-items/{id}/description-versions/[{pk}/]` (CE-WI-041) |
+| `work_item_versions` | `WorkItemVersionRecorder` bei jeder Property-Änderung (State, Priorität, Daten, Assignees, Labels, Cycle, Module, Parent, Estimate, Typ) – **Korrektur Q11** (Original schreibt nie, DEV-DM-06) | 600 s/gleicher Owner → überschreiben | 20 je Work Item (`Plane:Retention:WorkItemVersionsKeep`, neu, inline im Command, kein Cron; ABG-102) | `…/issues/{id}/versions/[{pk}/]` (CE-WI-042) |
+| `page_versions` | `PageVersionRecorder` nach jeder Beschreibungs-Persistenz (REST-PATCH `…/description/` und Realtime-Speicherung) – **Korrektur Q10** (DEV-DM-10) | 600 s/gleicher Owner → überschreiben, > 20 → älteste (nach `last_saved_at`) soft-löschen | 20 je Page (`Plane:Retention:PageVersionsKeep`; harter Cleanup §3.5.5) | CE-PAGE-019 |
 
-Die 600-s-Grenze ist die Konstante `VersionMergeWindow = TimeSpan.FromSeconds(600)` in `Plane.WorkItems.Domain`/`Plane.Pages.Domain`; die Limits sind Instanz-Einstellungen mit großzügigem, aber **paritätsgleichem** Default 20 (ADR-001: kein Plan-Limit).
+Die 600-s-Grenze ist die Konstante `VersionMergeWindow = TimeSpan.FromSeconds(600)` in `Plane.WorkItems.Domain`/`Plane.Pages.Domain`; die Limits sind Werte von `PlaneRetentionOptions` (`PageVersionsKeep`, `DescriptionVersionsKeep`, `WorkItemVersionsKeep`; 02 §3.15, ABG-102) – keine Instanz-Einstellungen – mit großzügigem, aber **paritätsgleichem** Default 20 (ADR-001: kein Plan-Limit).
 
 #### 3.9.3 Yjs-Binärdaten im Lebenszyklus der Page
 
 | Schritt | Spalten | Eigentümer |
 |---|---|---|
-| Laden (`IPageDocumentStore.LoadAsync`) | `pages.description_binary`; fehlt sie, wird aus `description_html` + `name` per `Plane.Documents` ein Yjs-Dokument erzeugt (Original `getBinaryDataFromDocumentEditorHTMLString`) und **nicht** sofort gespeichert | `Plane.Pages` |
+| Laden (`IPageDocumentStore.LoadAsync`) | `pages.description_binary`; fehlt sie, wird aus `description_html` + `name` per `Plane.Documents` ein Yjs-Dokument erzeugt (Original `getBinaryDataFromDocumentEditorHTMLString`) – unter Zeilensperre (`SELECT … FOR UPDATE`, erneute Leerprüfung) erzeugt und sofort gespeichert (07 §3.6.2, ABG-109; wie Original `fetchDocument`) | `Plane.Pages` |
 | Speichern (Debounce 10 s, ADR-022) | `description_binary`, `description_html`, `description_json`, `description_stripped`, `name` (Titel-Sync aus Fragment `title`) und `description_revision = description_revision + 1` in **einem** `UPDATE` (Semantik D07 §3.6); danach `page_logs`-Abgleich und `page_versions` | `Plane.Pages` über `IPageDocumentStore.SaveAsync` |
 | Sperre/Archiv | `pages.is_locked`/`archived_at` → Realtime-Server lehnt Schreiben ab (Fehlercodes 4701/4702) | `Plane.Pages` |
 
 ### 3.10 Volltext- und Trigram-Suche
 
-#### 3.10.1 Trigram-Indizes (Parität `__icontains`, ab I2/I5)
+#### 3.10.1 Trigram-Indizes (Parität `__icontains`, ab I1–I5)
+
+Jeder Index entsteht im Inkrement seiner ersten Nutzung (11 §3.9) in der Migration des Eigentümer-Moduls, angelegt in dessen EF-Konfiguration über `TrigramIndexExtensions.HasTrigramIndex` (ABG-123).
 
 | Tabelle | Spalte(n) | Original-Nutzung | ab |
 |---|---|---|---|
 | `work_items` | `name` | Globale Suche, Entity-/Picker-Suche, Filter `name`, v1-Suche (`API/app/views/search/base.py`, `API/utils/issue_search.py`, `API/api/views/issue.py` Z. 2289) | I2 |
-| `projects` | `name`, `identifier` | Globale Suche | I2 |
-| `workspaces` | `name` | Globale Suche | I2 |
-| `cycles`, `modules`, `views`, `pages` | `name` | Globale Suche, Entity-Suche | I5 |
-| `users` | `first_name`, `last_name`, `display_name` | Mention-Suche (`member__*__icontains`) | I5 |
+| `projects` | `name`, `identifier` | Globale Suche | I1 |
+| `workspaces` | `name` | Globale Suche | I1 |
+| `cycles`, `modules`, `views` | `name` | Globale Suche, Entity-Suche | I3 |
+| `pages` | `name` | Globale Suche, Entity-Suche | I4 |
+| `users` | `first_name`, `last_name`, `display_name` | Mention-Suche (`member__*__icontains`) | I2 |
 | `stickies` | `description_stripped` | Sticky-Suche | I5 |
 | `search_documents` | `title` | Ranking-Suche | I5 |
 
@@ -3320,11 +3324,11 @@ flowchart LR
   Review --> CI{CI-Gates}
   CI -->|has-pending-model-changes = leer| G1[ok]
   CI -->|Migrations-Lint: Drop/Rename/Alter ohne ContractPhase| Fail[Build rot]
-  CI --> Script["migrations script --idempotent → artifacts/migrations/plane-version.sql"]
-  G1 --> Image[Image plane-migrator]
+  CI --> Script["migrations script --idempotent → artifacts/migrations/funk-version.sql"]
+  G1 --> Image[Image funk-migrator]
   Image --> Aspire["AppHost: migrator → WaitForCompletion → api/worker/realtime"]
   Image --> Compose["Compose: migrator (restart: no) → depends_on: service_completed_successfully"]
-  Image --> Helm["Helm: Job plane-migrator-r{Revision} + Schema-Gate"]
+  Image --> Helm["Helm (Chart funk): Job plane-migrator-r{Revision} + Schema-Gate"]
 ```
 
 | Regel | Festlegung |
@@ -3379,9 +3383,9 @@ public sealed class MigratorWorker(IServiceProvider sp, IHostApplicationLifetime
 |---|---|---|---|---|
 | `SystemRoleSeed` | `roles` | 6 Zeilen: `workspace`/`project` × `admin` 20, `member` 15, `guest` 5; `is_system = true`, `workspace_id = NULL` | feste UUIDv7-Konstanten `SystemRoles.WorkspaceAdmin` … `SystemRoles.ProjectGuest` | D05 §3.13.3 |
 | `WorkItemRelationTypeSeed` | `work_item_relation_types` | `blocked_by`↔`blocking`, `relates_to`↔`relates_to`, `duplicate`↔`duplicate` (Kategorie Relation); `start_before`↔`start_after`, `finish_before`↔`finish_after` (Dependency); `implemented_by`↔`implements` (Implementation); Labels „Blocked By“, „Blocking“, „Relates To“, „Duplicate“, „Start Before“, „Start After“, „Finish Before“, „Finish After“, „Implemented By“, „Implements“; `sort_order` 1…10 | `key` | `M/issue.py` Z. 272–293, D16 §5.3 |
-| `InstanceBootstrapper` | `instances` | eine Zeile: `instance_name` = `Plane:Instance:DefaultName` (Default `"funk."` statt „Plane Community Edition“: ADR-001 entfernt den Editionsnamen, ADR-009B ersetzt den Produktnamen; DEV-DM-12/`BRAND-DM-01`), `instance_id` 24 Hex (Zufall, einmalig), `current_version` = `latest_version` = Assembly-Version, `domain` = `Plane:Urls:Web`, `is_telemetry_enabled = false`, `is_setup_done = false`, `is_test` aus `IS_TEST` | Singleton | D14 §3.15 Schritt 6, CE-INST-001 |
+| `InstanceBootstrapper` | `instances` | eine Zeile: `instance_name` = `Plane:Instance:DefaultName` (Default `"funk."`, vom Admin änderbar, Auftraggeber 23.10.2026/ABG-104, statt „Plane Community Edition“: ADR-001 entfernt den Editionsnamen, ADR-009B ersetzt den Produktnamen; DEV-DM-12/`BRAND-DM-01`), `instance_id` 24 Hex (Zufall, einmalig), `current_version` = `latest_version` = Assembly-Version, `domain` = `Plane:Urls:Web`, `is_telemetry_enabled = false`, `is_setup_done = false`, `is_test` aus `IS_TEST` | Singleton | D14 §3.15 Schritt 6, CE-INST-001 |
 | `InstanceConfigurationSeeder` | `instance_configurations` | alle Schlüssel aus `InstanceConfigurationKeys.All` (D02 §4.10) **ohne** vorhandene Zeile: Wert aus gleichnamiger ENV-Variable oder `SeedDefault`, geheime Werte DP-geschützt | `key` | `configure_instance`, CE-INST-002 |
-| `SystemBotSeed` | `users`, `profiles` | genau ein System-Bot der Instanz für Cron-/Hintergrund-Akteure (D06-ADR-20): feste UUIDv7-Konstante `SystemUsers.SystemBot` (wie `SystemRoles.*`, D03-ADR-04), `username = "plane_system_bot"`, `email = "system-bot@funk.invalid"`, `display_name = "funk."` (ADR-009B), `is_bot = true`, `bot_type = "SYSTEM"`, `is_active = true`, `is_email_verified = true`; keine `user_identities`-Zeile (kein Login), keine Workspace-Mitgliedschaft | `id` | D06-ADR-20 |
+| `SystemBotSeed` | `users`, `profiles` | genau ein System-Bot der Instanz für Cron-/Hintergrund-Akteure (D06-ADR-20): feste UUIDv7-Konstante `SystemUsers.SystemBot` (wie `SystemRoles.*`, D03-ADR-04), `username = "plane_system_bot"`, `email = "system-bot@funk.invalid"`, `display_name = first_name = "funk."` (ADR-009B, ABG-104; `username`/E-Mail-Präfix bleiben interne Bezeichner), `is_bot = true`, `bot_type = "SYSTEM"`, `is_active = true`, `is_email_verified = true`; keine `user_identities`-Zeile (kein Login), keine Workspace-Mitgliedschaft | `id` | D06-ADR-20 |
 
 Referenz-Seeds ändern nie Benutzerdaten (Ausnahme: der System-Bot ist Infrastruktur); ein erneuter Lauf ist ein No-op (`SeedRunnerTests.Base_IsIdempotent`). **Respawn:** `users`/`profiles` sind keine Referenztabellen (§4.6) – `PlaneRespawner` ruft nach jedem Reset `BaseSeeds.ApplyAsync` erneut auf (D15 §3.3.2), damit `SystemBotSeed` den Bot wiederherstellt.
 
@@ -3411,7 +3415,7 @@ Die acht JSON-Dateien werden **unverändert** nach `BE/data/Plane.Data/Seeds/Dem
 | 8 | `views.json` (1) | Projekt-View mit `rich_filters` `{"priority__in":"urgent"}` und Seed-Display-Properties | 1:1 (unbekannte Schlüssel durchreichen, D16 A1/A7) |
 | 9 | `pages.json` (2) | Pages mit `description_html` | zusätzlich `description_json`/`description_binary` über `Plane.Documents` erzeugen (Original lässt sie leer, A02a-#19 – korrigiert, ohne Vertragswirkung) |
 
-**Airgapped (ADR-004):** Externe Bild-URLs der Seeds (`images.unsplash.com/photo-1691230995681-480d86cbc135`, `cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/{1f447,1f4a1,1f4cc,1f516,1f680,1f9f1}.png`, `media.docs.plane.so/seed_assets/{21,31,32,33,41,51,61}.png`) liegen als Dateien unter `BE/data/Plane.Data/Seeds/Demo/assets/`, werden beim Seed als `file_assets` in den Objektspeicher hochgeladen und die URLs im HTML/JSON durch die Asset-URLs ersetzt (`DemoSeedAssetRewriter`). **Branding (ADR-009B):** `DemoSeedBrandingRewriter` ersetzt beim Seed in Namen, Titeln, `description_html` und Labels das Wort „Plane“ als Produktname durch „funk.“ (Fachvokabular wie „Work Items“, „Cycles“ bleibt) und schreibt Hyperlinks auf `docs.plane.so`/`plane.so` auf `Plane:Urls:Docs` um bzw. entfernt sie, wenn nicht konfiguriert (`BRAND-DM-03`); `WorkspaceDemoSeedTests` vergleicht gegen das **gebrandete** Golden-File und prüft `NOT ILIKE '%plane%'` auf allen Seed-Textspalten (außer technischen Bezeichnern). Lizenzprüfung der Bilddateien: §8 R-D03-07.
+**Airgapped (ADR-004):** Externe Bild-URLs der Seeds (`images.unsplash.com/photo-1691230995681-480d86cbc135`, `cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/{1f447,1f4a1,1f4cc,1f516,1f680,1f9f1}.png`, `media.docs.plane.so/seed_assets/{21,31,32,33,41,51,61}.png`) liegen als Dateien unter `BE/data/Plane.Data/Seeds/Demo/assets/` (Bilder, die ein Plane-Logo oder den Schriftzug zeigen, werden nach BR-06 ersetzt bzw. neu gerendert; Lizenz/Branding-Klärung Z-114), werden beim Seed als `file_assets` in den Objektspeicher hochgeladen und die URLs im HTML/JSON durch die Asset-URLs ersetzt (`DemoSeedAssetRewriter`). **Branding (ADR-009B):** `DemoSeedBrandingRewriter` ersetzt beim Seed in Namen, Titeln, `description_html` und Labels das Wort „Plane“ als Produktname durch „funk.“ (Fachvokabular wie „Work Items“, „Cycles“ bleibt) und schreibt Hyperlinks auf `docs.plane.so`/`plane.so` auf `Plane:Urls:Docs` um bzw. entfernt sie, wenn nicht konfiguriert (`BRAND-DM-03`); `WorkspaceDemoSeedTests` vergleicht gegen das **gebrandete** Golden-File und prüft `NOT ILIKE '%plane%'` auf allen Seed-Textspalten (außer technischen Bezeichnern). Lizenzprüfung der Bilddateien: §8 R-D03-07.
 
 ### 3.15 Testdaten-Generator
 
@@ -3419,7 +3423,7 @@ Die acht JSON-Dateien werden **unverändert** nach `BE/data/Plane.Data/Seeds/Dem
 |---|---|---|---|---|
 | `BaseSeeds` | `Plane.Data/Seeds/` | Referenzdaten in jeder Testdatenbank | wie Produktion | §3.14.1 |
 | `ParitySeedLoader` | `Plane.BuildingBlocks.Testing/Seed/` (D15 §3.14) | identische Daten in Original und Ziel für Contract-/Visual-Tests | YAML `tests/seed/parity-seed.yaml` (Fragmente `base`, `labels-hierarchy`, `security-matrix`, `visual`, `e2e`), **UUIDv5** (`ns = a3c1f0c8-6d2e-5b7a-9e1f-0f00f00f0015`, Schlüssel `ws:acme`, `prj:acme/WEB`, `wi:acme/WEB-12` …), `FixedClock`/`DeterministicIdGenerator`; schreibt über die Commands der Module (Invarianten, Activities) und erzeugt `manifest.funk.json` | D15 §3.14.1 |
-| `VolumeSeeder` (CE-OPS-024) | `Plane.BuildingBlocks.Testing/Seed/VolumeSeeder.cs`; CLI `plane-cli create-dummy-data --profile volume-M --workspace <slug>` (Port `create_dummy_data`, ohne interaktive Eingaben) | Last-/Performance-Tests, lokale Entwicklung | **Bogus** (MIT) mit festem `Randomizer.Seed`; IDs aus `DeterministicIdGenerator` (UUIDv7 aus `FixedClock` + Seed-Zufall), Bulk per Npgsql binärem `COPY` (`NpgsqlBinaryImporter`) je Tabelle in Abhängigkeitsreihenfolge; Invarianten-Helfer: `WorkItemSequenceBlock` (vergibt Nummern per `AllocateRangeAsync`), `SortOrderSequence`, `DefaultStates`; danach `ANALYZE` | Profile s. u. |
+| `VolumeSeeder` (CE-OPS-024) | `Plane.BuildingBlocks.Testing/Seed/VolumeSeeder.cs`; CLI `funk-cli create-dummy-data --profile volume-M --workspace <slug>` (Port `create_dummy_data`, ohne interaktive Eingaben) | Last-/Performance-Tests, lokale Entwicklung | **Bogus** (MIT) mit festem `Randomizer.Seed`; IDs aus `DeterministicIdGenerator` (UUIDv7 aus `FixedClock` + Seed-Zufall), Bulk per Npgsql binärem `COPY` (`NpgsqlBinaryImporter`) je Tabelle in Abhängigkeitsreihenfolge; Invarianten-Helfer: `WorkItemSequenceBlock` (vergibt Nummern per `AllocateRangeAsync`), `SortOrderSequence`, `DefaultStates`; danach `ANALYZE` | Profile s. u. |
 
 | Profil | Workspaces | Projekte je WS | Mitglieder je WS | Work Items je Projekt | Kommentare je WI | Labels/States je Projekt | Cycles/Module je Projekt | Pages je Projekt | Activities | Zielzeit (CI-Runner) |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -3548,14 +3552,14 @@ Abgedeckt: **75** Modelle portiert (davon `Session` → `user_sessions` ersetzt,
 | `SoftDeleteModel.delete` + `soft_delete_related_objects` | `API/db/mixins.py`, `API/bgtasks/deletion_task.py` | `SoftDeleteInterceptor` + Registry §3.5.4 | angepasst (inline, DEV-OPS-001) |
 | `hard_delete` | `API/bgtasks/deletion_task.py` Z. 114–185 | `HardDeleteJob` §3.5.5 | korrigiert (Q3) |
 | `ChangeTrackerMixin` (`TRACKED_FIELDS`) | `API/db/mixins.py` | `IChangeSet<T>` über `EntityEntry.OriginalValues` (D02 §4.1) | angepasst |
-| `Issue.save` (Default-State, `completed_at`, Sequenz, `sort_order`, `description_stripped`) | `M/issue.py` Z. 180–255 | `CreateWorkItemCommand` + `WorkItemStateChanger` + `ISequenceAllocator` + `WorkItemSortRules` + `HtmlText.StripTags` | angepasst |
+| `Issue.save` (Default-State, `completed_at`, Sequenz, `sort_order`, `description_stripped`) | `M/issue.py` Z. 180–255 | `CreateWorkItemCommand` + `WorkItemStateChanger` + `ISequenceAllocator` + `WorkItemSortRules` + `HtmlTextExtractor.Strip` | angepasst |
 | `IssueComment.save` (Stripped, `Description`-Spiegel) | `M/issue.py` Z. 481–530 | `CreateCommentCommand`/`UpdateCommentCommand` (Stripped); Spiegel entfällt (Q15) | korrigiert |
 | `IssueVersion.log_issue_version` | `M/issue.py` Z. 736–779 | `WorkItemVersionRecorder` (§3.9.2) | korrigiert (Q11) |
 | `IssueDescriptionVersion.log_issue_description_version` | `M/issue.py` Z. 800–822 | `WorkItemDescriptionVersionRecorder` | 1:1 |
 | `DraftIssue.save` | `M/draft.py` Z. 84–132 | `DraftWorkItem`-Commands (`completed_at` nur bei Wechsel, Q13) | korrigiert |
 | `State.save` (Slug, Sequenz) | `M/state.py` Z. 117–126 | `StateRules.Slugify`, `StateSequenceRules.Next` (Triage fest, Q12) | korrigiert |
 | `Label.save`, `Cycle.save`, `Module.save`, `IssueView.save` (Sortierung, `query`) | `M/label.py`, `M/cycle.py`, `M/module.py`, `M/view.py` | Sortierregeln §3.7; `ViewQueryCache.FromLegacyFilters(filters)` | 1:1 |
-| `Page.save`, `PageVersion.save`, `Description.save` (Stripped) | `M/page.py`, `M/description.py` | `HtmlText.StripTags` in den Commands | angepasst (eine Implementierung, Q14) |
+| `Page.save`, `PageVersion.save`, `Description.save` (Stripped) | `M/page.py`, `M/description.py` | `HtmlTextExtractor.Strip` in den Commands | angepasst (eine Implementierung, Q14) |
 | `IntakeIssue.save` (Snooze → 00:00 Projekt-TZ) | `M/intake.py` Z. 100–110 | `IntakeSnoozeRules.NormalizeToProjectDayStart` | 1:1 |
 | `Project.save` (Identifier `upper`, TZ erben, Snooze-Retiming) | `M/project.py` Z. 167–227 | `Project.Create`, `Project.ChangeTimezone` + `IIntakeSnoozeRetimer` (`SELECT … FOR UPDATE`) | 1:1 |
 | `ProjectMember.save` (legt `ProjectUserProperty` an) | `M/project.py` Z. 276–310 | `IProjectMembershipService.AddAsync` (eine Transaktion, `ON CONFLICT DO NOTHING`) | 1:1 |
@@ -3584,7 +3588,7 @@ Abgedeckt: **75** Modelle portiert (davon `Session` → `user_sessions` ersetzt,
 | Q11 | `log_issue_version` → `FieldError` | Versionen werden geschrieben | DEV-DM-06 |
 | Q12 | `State.save` überschreibt Sequenz; Triage 70000; `is_triage` nicht gesetzt | Triage 65000, Flag = Gruppe (Check) | DEV-DM-17 |
 | Q13 | `DraftIssue.completed_at` bei jedem Save | nur bei State-Wechsel | DEV-DM-18 |
-| Q14 | zwei `strip_tags`-Varianten | eine (`HtmlText.StripTags`, Plane-Variante) | – (Kommentare unverändert) |
+| Q14 | zwei `strip_tags`-Varianten | eine (`HtmlTextExtractor.Strip`, Plane-Variante) | – (Kommentare unverändert) |
 | Q15 | `Description`-Spiegel verwaist/Kaskade falsch herum | Spiegel entfällt, Feld `description` = `null` | DEV-DM-03 |
 | Q16 | `PageLog`-Löschung ohne `page_id`, voll eindeutig | partiell eindeutig + Seitenfilter | DEV-DM-09 |
 | Q17 | State-Löschung löscht Drafts | Drafts `state_id` → `NULL` | DEV-DM-07 |
@@ -3665,7 +3669,7 @@ Nicht in dieser Liste, aber vom gleichen Converter betroffen (Werte aus Abfragen
 | `issue_types` | `work_item_types` | 01 §1.4, D16 §5.1 |
 | `issue_sequences` | `work_item_sequences` (Zähler) | 01 §10 |
 | `exporters` | `exports` | 01 §5.4 (Modul `Exports`) |
-| `export_histories` | `exports` | D06 §3.15 (Z. 755, 786) |
+| `export_histories` | `exports` | D06 Vorfassung (ABG-103) |
 | `recurring_jobs` (Vorfassung D03) | `recurring_job_states` (Form D06 §3.2) | – |
 | `sessions` | `user_sessions` | D05 §3.4.1 |
 | `issue_reactions`, `comment_reactions`, `issue_links`, `issue_mentions`, `issue_subscribers`, `issue_description_versions`, `issue_versions` | `work_item_reactions`, `work_item_comment_reactions`, `work_item_links`, `work_item_mentions`, `work_item_subscribers`, `work_item_description_versions`, `work_item_versions` | – |
@@ -3723,13 +3727,13 @@ Nicht in dieser Liste, aber vom gleichen Converter betroffen (Werte aus Abfragen
 |---|---|---|
 | `wait_for_db`, `wait_for_migrations` | `DatabaseReadiness`, Schema-Gate (D14 §3.15) | ersetzt |
 | `create_bucket`, `update_bucket` | `BucketInitializer` / entfällt | ersetzt / entfällt |
-| `clear_cache` | `plane-cli clear-cache` | 1:1 |
-| `create_dummy_data` | `plane-cli create-dummy-data --profile …` (`VolumeSeeder`, §3.15) | angepasst (nicht interaktiv) |
+| `clear_cache` | `funk-cli clear-cache` | 1:1 |
+| `create_dummy_data` | `funk-cli create-dummy-data --profile …` (`VolumeSeeder`, §3.15) | angepasst (nicht interaktiv) |
 | `fix_duplicate_sequences` | entfällt (Unique + Zähler, §3.6) | entfällt |
 | `copy_issue_comment_to_description`, `sync_issue_version`, `sync_issue_description_version`, `update_deleted_workspace_slug` | entfallen (Greenfield-Datenmigrationen) | entfällt |
-| `create_instance_admin`, `reset_password`, `activate_user` | entfallen bzw. Keycloak (ADR-008); `plane-cli users activate <email>` setzt nur `is_active` | angepasst |
-| `reactivate_workspace_member`, `create_project_member --role` | `plane-cli members reactivate|add` | 1:1 (Bug A02a-#15 behoben) |
-| `test_email` | `plane-cli mail test` | 1:1 |
+| `create_instance_admin`, `reset_password`, `activate_user` | entfallen bzw. Keycloak (ADR-008); `funk-cli users activate <email>` setzt nur `is_active` | angepasst |
+| `reactivate_workspace_member`, `create_project_member --role` | `funk-cli members reactivate|add` | 1:1 (Bug A02a-#15 behoben) |
+| `test_email` | `funk-cli mail test` | 1:1 |
 
 ## 5. Code-Skelette
 
@@ -3881,7 +3885,7 @@ public sealed class WorkItem : ProjectEntity, IExternallyReferenced, ISortable
     public Guid? TypeId { get; private set; }                   // A1 (CE: immer null)
 
     public void SetDescription(string sanitizedHtml, JsonObject? json, byte[]? binary)
-    { DescriptionHtml = sanitizedHtml; DescriptionStripped = HtmlText.StripTags(sanitizedHtml); if (json is not null) DescriptionJson = json; if (binary is not null) DescriptionBinary = binary; }
+    { DescriptionHtml = sanitizedHtml; DescriptionStripped = HtmlTextExtractor.Strip(sanitizedHtml); if (json is not null) DescriptionJson = json; if (binary is not null) DescriptionBinary = binary; }
 }
 
 // src/data/Plane.Data/Configurations/WorkItems/WorkItemConfiguration.cs
@@ -4189,8 +4193,8 @@ Alle Integrationstests laufen gegen PostgreSQL 17 mit `pgvector`-Image (Testcont
 | ID | Punkt | Empfehlung | Entscheidung durch / bis |
 |---|---|---|---|
 | O-D03-01 | Soll der Vertrag `issue_comment.description` (Feld fällt weg, `null`) für Clients erhalten bleiben? | `null` ausgeben (DEV-DM-03); Frontend-Typ kennt das Feld nicht | 04 / I2 |
-| O-D03-02 | `work_item_versions`-Aufbewahrung (neu, Original ohne Daten) | Default 20 wie Beschreibungsversionen | Auftraggeber (Abnahme I2) |
-| O-D03-03 | ~~Produktname im Default-`instance_name`~~ | **entschieden durch ADR-009B:** `"funk."` (Review 23.10.2026) | – |
+| O-D03-02 | `work_item_versions`-Aufbewahrung (neu, Original ohne Daten) | Default 20 wie Beschreibungsversionen (`Plane:Retention:WorkItemVersionsKeep`, inline begrenzt, ABG-102; Bestätigung offen als Z-114) | Auftraggeber (Abnahme I2) |
+| O-D03-03 | ~~Produktname im Default-`instance_name`~~ | **entschieden durch ADR-009B:** `"funk."` (Review 23.10.2026); **bestätigt durch Auftraggeber 23.10.2026 (ABG-104)** | – |
 | O-D03-04 | Lizenzklärung Demo-Seed-Bilder (R-D03-07) | vor I1 | Auftraggeber |
 | O-D03-05 | Scope-FK auch für Tabellen mit **nullable** `workspace_id` (`file_assets`, `user_notification_preferences`) | ja – die Konvention greift; `MATCH SIMPLE` erzwingt die FK nur, wenn beide Spalten gesetzt sind (Benutzer-Assets ohne Workspace bleiben zulässig) | I1 (Bestätigung im Scope-FK-Spike, R-D03-02) |
 | O-D03-06 | Externe Datenbanken ohne Extension-Rechte: Trigram/`unaccent` optional machen? | nein – Pflicht-Extensions dokumentieren (D14) | I7 |
@@ -4201,21 +4205,21 @@ Alle Integrationstests laufen gegen PostgreSQL 17 mit `pgvector`-Image (Testcont
 
 | Dokument | Beziehung | Was D03 von dort nutzt | Was D03 liefert / Rückmeldung (Änderungsbedarf beim Nachbarn) |
 |---|---|---|---|
-| `00-grundsatzentscheidungen.md` | bindend | ADR-001 (keine Plan-Limits → Aufbewahrung als Instanz-Einstellung), ADR-003 (Greenfield), ADR-004 (Seeds ohne externe URLs), ADR-007 (Integrationstabellen), ADR-008 (keine Passwort-/OAuth-Tabellen), ADR-009 (`funk.`), ADR-009B (Branding: `instance_name`, Seed-Bot, Demo-Inhalte → `BRAND-DM-01…03`) | – |
+| `00-grundsatzentscheidungen.md` | bindend | ADR-001 (keine Plan-Limits → Aufbewahrung als Konfiguration `PlaneRetentionOptions`, ABG-102), ADR-003 (Greenfield), ADR-004 (Seeds ohne externe URLs), ADR-007 (Integrationstabellen), ADR-008 (keine Passwort-/OAuth-Tabellen), ADR-009 (`funk.`), ADR-009B (Branding: `instance_name`, Seed-Bot, Demo-Inhalte → `BRAND-DM-01…03`) | – |
 | `01-zielarchitektur-und-tech-stack.md` | bindend | ADR-020, -024, -025, -037, -038; §1.4 Andockstellen; §5.1 Baum; R3; §7.6–7.8, §7.14; Glossar | Präzisierungen: Tabellen `work_item_sequences` (Zähler statt `IssueSequence`-Zeilen), Extension `vector` bereits in I0 (wie D14 Migrator-Schritt 3) statt I5 (§1.4 G1); keine ADR-Änderung |
 | `02-backend-solution-und-konventionen.md` | nutzt | Basistypen, Interceptor-Kette, `PlaneEntityConfiguration<T>`, Label-Referenzmodul, Query-Engine (§3.11), Registrierung (D02-ADR-26) | **(1)** Raw-SQL der Query-Engine (§3.11.4/§3.11.5) mit Tabellennamen nach §4.5 (`work_item_labels`, `work_item_assignees`, `cycle_work_items`, `module_work_items`, `intake_work_items`, Spalte `work_item_id`); **(2)** `ITimestamped` als Basis von `IAuditable` (§3.1.2); **(3)** `LabelConfiguration`: Projekt-FK über `ScopeForeignKeyConvention` statt eigener `HasOne<Project>` (§5.2); **(4)** Soft-Delete-Kaskaden setzen `updated_by_id` nicht auf `NULL` (D03-ADR-09) |
 | `04-api-design-und-endpunktkatalog.md` | liefert an | D04-ADR-17 (Branding in Verträgen, `BRAND-API-*`) | Tabellen-/Spaltennamen für DTO-Projektionen, `FloatField`-Liste §4.4, Vertragsfelder ohne Spalte (Konstanten: `is_password_autoset`, `is_superuser`, `is_staff`, `edition`, Kommentar-`description`, `Webhook.is_internal` = `false`), Abweichungen DEV-DM-*/BRAND-DM-* §4.7 |
 | `05-auth-sicherheit-berechtigungen.md` | nutzt | `user_sessions`, `user_identities`, `api_tokens` (Hash), `roles`, `role_permissions`, `instance_admins` (Spiegel), `data_protection_keys`, DP-Zwecke | Rückmeldung: Entitäten liegen nach R3 unter `Plane.Data/Entities/<Modul>/` (D05 nennt `ID/Domain/*.cs`, §4.5); `roles` erhält Audit-Spalten und `sort_order` (§3.4.18.2) |
-| `06-hintergrundjobs-events-benachrichtigungen.md` | nutzt (Fachgebiet Messaging/Jobs) | §3.2 (Tabellen `outbox_messages`, `inbox_messages`, `jobs`, `recurring_job_states` – übernommen, §3.4.18.6), §4.2 (Cron-Namen, übernommen in §3.5.5), D06-ADR-20 (System-Bot, §3.14.1), D06-ADR-23 (`Webhook.is_internal`, `EmailNotificationLog.entity/old_value/new_value` entfallen), O-D06-06 (`cycles.completion_published_at`), §3.9.3/§3.14.1 (Activities/Webhooks) | Rückmeldung: **(1)** Tabellenname `exports` statt `export_histories` (§4.5); **(2)** `PlaneLocks.Migrations = 0x504C_4E00_0003` (D06 Z. 408) widerspricht D14-ADR-16/§4.5 `PlaneLocks.Migrator = 7356001` – D03 folgt D14; **(3)** `work_item_versions` werden vom Recorder inline auf 20 begrenzt (kein Cron, §3.5.5); **(4)** Activity-Index `(work_item_id, created_at)` ohne `DESC` genügt (B-Tree rückwärts lesbar) |
+| `06-hintergrundjobs-events-benachrichtigungen.md` | nutzt (Fachgebiet Messaging/Jobs) | §3.2 (Tabellen `outbox_messages`, `inbox_messages`, `jobs`, `recurring_job_states` – übernommen, §3.4.18.6; verbindlich nach ABG-101), §4.2 (Cron-Namen, übernommen in §3.5.5), D06-ADR-20 (System-Bot, §3.14.1), D06-ADR-23 (`Webhook.is_internal`, `EmailNotificationLog.entity/old_value/new_value` entfallen), O-D06-06 (`cycles.completion_published_at`), §3.9.3/§3.14.1 (Activities/Webhooks) | Rückmeldung: **(1)** Tabellenname `exports` statt `export_histories` (§4.5) – **erledigt (ABG-103)**; **(2)** `PlaneLocks.Migrations = 0x504C_4E00_0003` (D06 Vorfassung) widersprach D14-ADR-16/§4.5 `PlaneLocks.Migrator = 7356001` – D03 folgt D14 – **erledigt (ABG-103)**: 06 nutzt `Migrator = 7356001`, `Scheduler = 7356002`, Erweiterungen `7356003…7356099`; **(3)** `work_item_versions` werden vom Recorder inline auf 20 begrenzt (kein Cron, §3.5.5; ABG-102); **(4)** Activity-Index `(work_item_id, created_at)` ohne `DESC` genügt (B-Tree rückwärts lesbar) |
 | `07-realtime-kollaboration-dokumente.md` | nutzt | §3.6.8 (Spaltenanforderungen: `pages.description_revision` übernommen, `page_versions`, `page_logs` wie Original) | Page-Spalten und Speicherreihenfolge (§3.9.3), Größengrenze `description_binary`, Versionsregel |
 | `08-frontend-angular-architektur.md` | – | – | keine (JSON-Verträge über 04) |
 | `09-ui-paritaet-designsystem.md` | – | – | Seed-Fragment `visual` nutzt die Tabellen dieses Dokuments (über D15) |
 | `10-editor-angular.md` | – | D10 §3.2 (Schema-Freeze) | `description_json`-Schema = Tiptap-Schema-Freeze (ADR-042) |
-| `11-suche-und-ai-basis.md` | nutzt (Fachgebiet Suche) | §3.10.1 (Form `search_documents` – übernommen, §3.4.18.8), §6.2 (`search_embeddings` reserviert) | Rückmeldung: **(1)** D11-ADR-07 nennt eine FK auf „den zusammengesetzten Schlüssel `(entity_type, entity_id)`“, D11 §6.2 dagegen `search_document_id → search_documents(id)` – D03 folgt §6.2 (Surrogat-PK `id`); **(2)** `plane_unaccent` legt bereits `…_Platform_Extensions` (I0) an – die D11-Migration `AddSearchDocuments` darf sie nicht erneut definieren und heißt nach 01 §7.14 `YYYYMMDDHHmm_Search_Documents`; **(3)** Quelltabelle heißt `views`, nicht `issue_views` (§4.5); **(4)** `project_id` erhält die Scope-FK statt Einzel-FK |
-| `14-infrastruktur-deployment-betrieb.md` | nutzt | Migrator-Schritte (§3.15), Expand/Contract (§3.17), PostgreSQL-Image mit `pgvector`, Extension-Init-Skript | `[ContractPhase]` und `MigrationsAreExpandOnly` (§3.13); idempotentes SQL-Skript als Release-Artefakt `artifacts/migrations/plane-<version>.sql`; Default-Instanzname „funk.“ statt „Plane Community Edition“ (ADR-009B; D14 §3.15 Schritt 6 verweist auf D03) |
+| `11-suche-und-ai-basis.md` | nutzt (Fachgebiet Suche) | §3.10.1 (Form `search_documents` – übernommen, §3.4.18.8), §6.2 (`search_embeddings` reserviert) | Rückmeldung: **(1)** D11-ADR-07 nennt eine FK auf „den zusammengesetzten Schlüssel `(entity_type, entity_id)`“, D11 §6.2 dagegen `search_document_id → search_documents(id)` – D03 folgt §6.2 (Surrogat-PK `id`) – **entschieden ABG-122**; **(2)** `plane_unaccent` legt bereits `…_Platform_Extensions` (I0) an – die D11-Migration `AddSearchDocuments` darf sie nicht erneut definieren und heißt nach 01 §7.14 `YYYYMMDDHHmm_Search_Documents` – **erledigt (ABG-122)**; **(3)** Quelltabelle heißt `views`, nicht `issue_views` (§4.5) – **erledigt (ABG-122)**; **(4)** `project_id` erhält die Scope-FK statt Einzel-FK – **entschieden ABG-122** (Spike-Vorbehalt Z-107) |
+| `14-infrastruktur-deployment-betrieb.md` | nutzt | Migrator-Schritte (§3.15), Expand/Contract (§3.17), PostgreSQL-Image mit `pgvector`, Extension-Init-Skript | `[ContractPhase]` und `MigrationsAreExpandOnly` (§3.13); idempotentes SQL-Skript als Release-Artefakt `artifacts/migrations/funk-<version>.sql` (ABG-149); Default-Instanzname „funk.“ statt „Plane Community Edition“ (ADR-009B; D14 §3.15 Schritt 6 verweist auf D03) |
 | `15-teststrategie-qualitaet-paritaet.md` | nutzt | `ParitySeedLoader`, UUIDv5-Namensraum, `PlaneRespawner`, `BaseSeeds.ApplyAsync`, Testprojekte | **R-D15-04**: `FloatField`-Liste §4.4; **TablesToIgnore**: §4.6 (ohne `event_types`, dafür `instance_configurations`, `recurring_job_states`); Testinventar §7.2; `VolumeSeeder`-Profile §3.15 |
 | `16-erweiterungspunkte-bezahl-features.md` | nutzt | §3.2.6 Feature-Kataloge, §3.4.2 Integrationstabellen, §4.2 Backend-Spuren, §5.1/§5.3/§5.4/§5.13 Skizzen, D16-ADR-06 | Rückmeldung: **(1)** `external_links` entsteht in I2 (FK auf `work_items`), nicht I0 (E-13); **(2)** Tabellennamen `views` statt `issue_views`, `work_item_labels` statt `issue_labels` (§4.5); **(3)** reservierte Tabellennamen §6.2 inkl. `search_embeddings` für G1 |
-| `17-abgleich-dokumentuebergreifend.md` | bindend | ABG-011 (Lieferungen von 03), ABG-053 (Outbox-Spalten), Z-12 (funktionale Fehler korrigieren), Z-10 (nur Chromium – ohne Bezug) | ABG-011: `FloatField`-Liste (§4.4) und Referenztabellen (§4.6) geliefert; ABG-053: Spalten übernommen (§3.4.18.6) |
+| `17-abgleich-dokumentuebergreifend.md` | bindend | ABG-011 (Lieferungen von 03), ABG-053 (Outbox-Spalten), Z-12 (funktionale Fehler korrigieren), Z-10 (nur Chromium – ohne Bezug); Teil 2: ABG-101 … ABG-149 (Protokoll am Dokumentende), BR-01 … BR-14 | ABG-011: `FloatField`-Liste (§4.4) und Referenztabellen (§4.6) geliefert; ABG-053: Spalten übernommen (§3.4.18.6) |
 | `migration/plan/01-roadmap-ce.md`, `_data/wp-ce.json` (noch nicht vorhanden) | liefert an | – | Migrationen/Tabellen je Inkrement (§1.4) als Bestandteil der Arbeitspakete |
 
 ---
@@ -4256,7 +4260,7 @@ Alle Integrationstests laufen gegen PostgreSQL 17 mit `pgvector`-Image (Testcont
 
 | Nr. | Befund | Schwere | Korrektur (Abschnitt) |
 |---|---|---|---|
-| RV-01 | Messaging-Tabellen widersprachen D06 §3.2 (Fachgebiet, „Spaltennamen verbindlich“): `recurring_jobs` statt `recurring_job_states`, andere `jobs`-Statussemantik (Succeeded/Failed-Zeilen statt „Erfolg = gelöscht“), fehlende Kontextspalten in `jobs`, zusätzliche Outbox-Spalten `attempts`/`last_error`, andere Indexnamen | hoch | §3.4.18.6 neu nach D06; T086, D03-ADR-25, §4.6, §6.1 C3, ER §3.12.10, JSON |
+| RV-01 | Messaging-Tabellen widersprachen D06 §3.2 (Fachgebiet, „Spaltennamen verbindlich“): `recurring_jobs` statt `recurring_job_states`, andere `jobs`-Statussemantik (Succeeded/Failed-Zeilen statt „Erfolg = gelöscht“), fehlende Kontextspalten in `jobs`, zusätzliche Outbox-Spalten `attempts`/`last_error`, andere Indexnamen | hoch | §3.4.18.6 neu nach D06; T086, D03-ADR-25, §4.6, §6.1 C3, ER §3.12.10, JSON; verbindlich bestätigt durch ABG-101 (17 Teil 2) |
 | RV-02 | Aufbewahrungs-Cron-Namen/-Zeiten/-Fristen wichen von D06 §4.2 ab (`retention.*` statt `maintenance.*`/`messaging.*`, Outbox 7 d statt 24 h, Inbox 14 d statt 7 d, Session-Cleanup `*/30` statt `17 * * * *`/stündlich D05-ADR-03) | mittel | §3.5.5 neu, D06 als verbindliche Quelle |
 | RV-03 | `owned_by_id` der drei Versionstabellen `NOT NULL` **und** `ON DELETE SET NULL` – nicht ausführbar (Verletzung bei Benutzerlöschung) | hoch | `RESTRICT`, D03-ADR-07 angepasst, AK-03-22 |
 | RV-04 | Sortierregeln falsch: `user_favorites.sequence` ist `max(workspace) + 10000` (nicht `min(user) − 10000`), `stickies.sort_order` workspaceweit (nicht je Owner), `project_members.sort_order` ohne Anlage-Regel | mittel (1:1-Reihenfolge in Sidebar/Favoriten/Stickies) | §3.7, Spalte `user_favorites.sequence` |
@@ -4283,3 +4287,24 @@ Alle Integrationstests laufen gegen PostgreSQL 17 mit `pgvector`-Image (Testcont
 - Lizenzklärung der gebündelten Demo-Seed-Bilder (R-D03-07, O-D03-04) – zusätzlich prüfen, ob `media.docs.plane.so`-Bilder Plane-Branding zeigen (ADR-009B → Ersatzbilder).
 - `PlaneRespawner` muss nach jedem Reset `BaseSeeds` erneut anwenden (System-Bot in `users`); D15 §3.3.2 nennt das nicht ausdrücklich.
 - `JsonNodeComparer` bildet den Hash über die serialisierte Form (schlüsselreihenfolgeabhängig); ob `JsonNode.DeepEquals` Objekte reihenfolgeunabhängig vergleicht, ist im I0-Spike per Test festzuhalten – für Change-Tracking unkritisch (höchstens ein überflüssiges `UPDATE`), als Dictionary-Schlüssel ungeeignet.
+
+---
+
+## Abgleich-Protokoll (Dokument 17)
+
+Umgesetzt am 23.10.2026 nach `17-abgleich-dokumentuebergreifend.md` Teil 2 / `_data/17-abgleich-teil2.json` (alle 10 Aufträge an dieses Dokument). Die maschinenlesbare Fassung `_data/03-datenmodell.json` ist von diesem Durchgang nicht berührt; ihre Angleichung (Retention-Schlüssel, Trigram-Inkremente) ist Nachzug beim nächsten Generatorlauf.
+
+| ABG-ID | Umgesetzt in | Kern der Änderung |
+|---|---|---|
+| ABG-101 umgesetzt | §3.4.18.6, §9 (Zeile 06), RV-01 | Code-Definitionen in `recurring_job_states` schreibt nur der Scheduler-Leader nach jedem Lock-Erwerb (06 §3.6 Nr. 1); Messaging-Tabellen verbindlich nach ABG-101 |
+| ABG-102 umgesetzt | D03-ADR-17, §3.4.5.14 (Hinweise), §3.4.10.5 (Hinweise), §3.4.11.1 (Hinweise `file_assets`), §3.5.5, §3.9.2, §8.2 O-D03-02, §9 (Zeilen 00, 06) | Objektlöschung in Schritt 1 von `maintenance.hard_delete` per `IObjectStorage.DeleteManyAsync`, kein `FileAssetPurgeConsumer`; Schlüssel `Plane:Retention:PageVersionsKeep` (Cleanup nach `ROW_NUMBER()` über `created_at DESC`), `Plane:Retention:WorkItemVersionsKeep` (inline, kein Cron), volle Schlüssel `Plane:Worker:Outbox:RetentionHours`, `Plane:Worker:InboxRetentionDays`, `Plane:Worker:DeadLetterRetentionDays`; keine Instanz-Einstellungen. Folgeangleichung: Beschreibungsversionen auf den bestehenden 02-Schlüssel `Plane:Retention:DescriptionVersionsKeep` |
+| ABG-103 umgesetzt (Nachzug) | §4.5 (Alias `export_histories`), §9 (Zeile 06) | Rückmeldungen (1) `exports` und (2) `PlaneLocks.Migrator` als erledigt; Alias-Quelle „D06 Vorfassung“ |
+| ABG-104 umgesetzt | §3.14.1 (`InstanceBootstrapper`, `SystemBotSeed`), §8.2 O-D03-03 | Default-`instance_name` „funk.“ aus `Plane:Instance:DefaultName`, vom Admin änderbar; System-Bot `display_name = first_name = "funk."`; O-D03-03 „bestätigt durch Auftraggeber 23.10.2026 (ABG-104)“ |
+| ABG-108 umgesetzt | §3.4.10.5 (Hinweise) | Komponentenname `PageVersionRecorder` bestätigt; Schlüssel nach ABG-102 |
+| ABG-109 umgesetzt | §3.9.3 (Zeile „Laden“) | fehlendes `description_binary` wird unter Zeilensperre erzeugt und sofort gespeichert (07 §3.6.2) |
+| ABG-110 umgesetzt | D03-ADR-17, §3.4.5.1 und Kommentar-Tabelle (Spalten `*_stripped`), §3.9.1 Regel 1, §4.2 (Mapping inkl. Q14), §5.4 (Skelett `WorkItem.SetDescription`) | alle Vorkommen `HtmlText.StripTags` → `HtmlTextExtractor.Strip` (`Plane.Documents.Text`) |
+| ABG-122 umgesetzt (Nachzug) | §9 (Zeile 11) | Rückmeldungen (2) und (3) erledigt, (1) und (4) „entschieden ABG-122“ |
+| ABG-123 umgesetzt | §1.4 (Migrationsliste), §3.10.1 (Spalte „ab“) | Trigram-Indizes im Inkrement der ersten Nutzung: `workspaces.name`, `projects.name`/`identifier` I1; `users.*`, `work_items.name` I2; `cycles`/`modules`/`views` I3; `pages.name` I4; `stickies`, `search_documents.title` I5 – Anlage in der Eigentümer-Konfiguration (`HasTrigramIndex`) |
+| ABG-149 umgesetzt | §3.5.1 (Query-Filter), §3.13.1 (Migrations-Diagramm), §3.15 (`VolumeSeeder`), §4.8 (Management-Commands), §9 (Zeile 14) | Befehlsbeispiele `plane-cli` → `funk-cli`; Image `funk-migrator`, Helm-Chart `funk`; Release-Artefakt `artifacts/migrations/funk-<version>.sql` (Projekt `Plane.Cli` bleibt) |
+
+**Branding-Durchgang (ADR-009B, BR-01 … BR-14):** Geprüft wurden alle Stellen, an denen dieses Dokument sichtbare Daten der Zielplattform festlegt (Instanzname, System- und Seed-Bot, Demo-Inhalte, Seed-Bilder, CLI-/Image-/Artefaktnamen): sie zeigen „funk.“ bzw. `funk-*` (`BRAND-DM-01…03`, ergänzt um den BR-06-Hinweis zu Seed-Bildern mit Plane-Logo, Z-114); unverändert bleiben nach BR-02 Verweise auf das Original (Modellnamen, `M/…`-Pfade, „Plane-Variante“ von `strip_tags`, Original-Defaults in Herkunftsangaben), interne Bezeichner (`Plane.*`, `Plane:`-Schlüssel, `plane_unaccent`, `plane_system_bot`, `bot_user_*`, Helm-Job-Name `plane-migrator-r…`) und gespeicherte Daten-Strings.

@@ -87,7 +87,7 @@ Gleiches CSS und gleiches DOM ergeben gleiche Pixel. Der Pixelvergleich (§3.14.
 | CE-LV-042 | Empty-States der Layouts | §4.7, §4.11 |
 | CE-WI-006 | Toast-Aktionen nach dem Erstellen | §3.10 |
 | CE-INST-012 | Konto-Menü mit Theme-Umschaltung (God Mode) | §3.9 (Admin: nur light/dark/system) |
-| CE-SPACE-032 | „Powered by Plane Publish“-Badge | §4.11 (Logos), Katalog Space |
+| CE-SPACE-032 | „Powered by Plane Publish“-Badge (Ziel: „Powered by funk. Publish“, ADR-009B, `BRAND-UI-05`) | §4.11 (Logos, §4.11.1), Katalog Space |
 | CE-AUTH-001 (angepasst) | Sign-in-Seite → Keycloak-Login-Theme | D09-ADR-14, §3.13 |
 
 **Bewusst nicht hier** (Zuständigkeit `08`): CE-I18N-001…-004 (Sprache, Übersetzung, Datum/Zeit, Zeitzonen – D09 liefert nur Calendar-Klassen und Locale-Daten für `PlCalendar`), CE-UIX-006 (synchronisierte LocalStorage-Präferenzen), CE-UIX-007 (Zwischenablage/CSV – Toast-Optik über §3.10), CE-UIX-011 (Stale-Chunk-Reload), CE-UIX-012 (Legacy-Redirects, Routing-Tests §4.14).
@@ -122,7 +122,7 @@ Grundsatz: Ein Baustein wird in dem Inkrement **fertig** (Code + Galerie-Story +
 | **D09-ADR-04** | Zwei Schichten wie Propel | **`elements` → Attribut-Direktiven** (nur Klassen aus `cva` + statische `data-*`), **`components` → Komponenten**, die das Verhalten (Headless-Schicht, §3.4/§3.5) mit der Element-Direktive komponieren. Apps dürfen beide Schichten nutzen (Original: 25 Importe aus `elements/button`, `elements/combobox` 4 usw.) | Nur eine Schicht | Gleiche Wiederverwendbarkeit wie im Original (Blocks nutzt Elemente direkt, z. B. Combobox-Elemente in der Select-Engine) | I0 |
 | **D09-ADR-05** | Varianten | **`class-variance-authority` 0.7.1** (framework-frei) mit **maschinell übertragenen** `variants.ts` (57 Elemente) und `internal/*.ts` (Rezepte): `FE/tools/propel-port/port-variants.mjs` liest `PROPEL/elements/*/variants.js` und `PROPEL/internal/*.js` und erzeugt TS-Dateien mit wortgleichen Klassenstrings; Hand-Edits sind verboten (Header `// GENERATED – do not edit`), Unit-Test vergleicht die Ausgabe aller Varianten-Kombinationen mit dem Original (Node, `import()` des Original-JS) | Klassen von Hand abschreiben; Tailwind-`@apply`-Komponentenklassen | Klassenstrings sind Daten; maschinelle Übertragung ist fehlerfrei und wiederholbar bei Propel-Updates | I0 |
 | **D09-ADR-06** | `cn()` | `UTL/common.ts` (`cn` = `twMerge(clsx(…))` mit identischer `extendTailwindMerge`-Konfiguration) wird **1:1 kopiert** nach `FE/libs/shared/utils/src/common.ts` (Teil der 1:1-Kopie von `packages/utils`, `01` §6.2); `tailwind-merge` **3.4.0** exakt, `clsx` 2.1.x. Propel-Port nutzt wie das Original `cx` (kein Merge), Blocks-Port `cn()` | Eigener Merger; neuere tailwind-merge-Version | Ein anderer Merger lässt andere Klassen überleben (`A13a` §3.7, F-05) | I0 |
-| **D09-ADR-07** | Icons | **Codegen** aus den Original-Paketen in **tree-shakable Konstanten** (`PlIconDef` = SVG-Knotenbaum als JSON-AST) + **eine** Render-Komponente `svg[plSvgIcon]`, die die Knoten per `Renderer2` im SVG-Namespace erzeugt (kein `innerHTML`, Trusted-Types-/CSP-fest). Quellen: `PROPEL/icons/**` (919), `PROPEL/internal/solid-icons/*`, `lucide@1.34.0` (Propel-intern), `lucide@0.469.0` (Apps/Blocks + 157 persistierte Namen), `BLK/icons/**`, `WEB/components/icons/**` (SVG-Teil). Namen 1:1 (`PaletteOutline`) | 919 einzelne Angular-Komponenten mit Template; SVG-Sprite mit `<use>`; `lucide-angular` | DOM bleibt `<svg …>` wie im Original (kein Host-Element), Bundle enthält nur genutzte Icons, ein Generator für alle Quellen | I0 |
+| **D09-ADR-07** | Icons | **Codegen** aus den Original-Paketen in **tree-shakable Konstanten** (`PlIconDef` = SVG-Knotenbaum als JSON-AST) + **eine** Render-Komponente `svg[plSvgIcon]` (Ablage `PRP/components/svg-icon/`, Einstieg `@plane/propel/components/svg-icon`; `@plane/propel/icons` und `@plane/blocks/icons` bleiben datenreine Einstiege ohne `@angular/*`, ABG-116), die die Knoten per `Renderer2` im SVG-Namespace erzeugt (kein `innerHTML`, Trusted-Types-/CSP-fest). Quellen: `PROPEL/icons/**` (919), `PROPEL/internal/solid-icons/*`, `lucide@1.34.0` (Propel-intern), `lucide@0.469.0` (Apps/Blocks + 157 persistierte Namen), `BLK/icons/**`, `WEB/components/icons/**` (SVG-Teil). Namen 1:1 (`PaletteOutline`) | 919 einzelne Angular-Komponenten mit Template; SVG-Sprite mit `<use>`; `lucide-angular` | DOM bleibt `<svg …>` wie im Original (kein Host-Element), Bundle enthält nur genutzte Icons, ein Generator für alle Quellen | I0 |
 | **D09-ADR-08** | Schriften, Emoji-Daten, Assets | Alles **gebündelt** (ADR-004): `@fontsource-variable/inter` 5.2.8, `@fontsource/ibm-plex-mono` 5.2.7, `@fontsource/material-symbols-rounded` 5.2.30 über `angular.json`-`styles`; Inter-Latin-woff2 als Asset mit festem Namen + `<link rel="preload">`; **Emojibase-Daten** lokal als Asset (Korrektur von `A13a` E-22); Raster-/SVG-Assets aus `apps/*/app/assets` und `apps/*/public` **unverändert** (Liste §4.11) | CDN-Laden; Neuzeichnen | Airgapped-Pflicht, Pixelgleichheit | I0 (Fonts), I1 (Emoji, Illustrationen) |
 | **D09-ADR-09** | Theme-Laufzeit | `ThemeService` (Signals `theme`, `resolvedTheme`, `systemTheme`) + **Inline-Script** in jeder `index.html` mit der Logik von `next-themes` 0.4.6 (Schlüssel `localStorage["theme"]`, Attribut `data-theme` an `<html>`, `style.color-scheme` für `light`/`dark`, `matchMedia`-Listener, `storage`-Event); Theme-Listen je App wie Original (Web 5 + system, Admin/Space `light`/`dark` + system); Custom-Theme über 1:1 kopiertes `UTL/theme/*` | `prefers-color-scheme`-Media-Queries; Angular-Material-Theming | `A13a` §3.1–§3.5, F-06; Edge-Cases E-01…E-05, E-14, E-29…E-33 werden **nachgebaut** | I0 (L/D/System), I1 (HC, Custom) |
 | **D09-ADR-10** | Headless-Unterbau | **Angular Aria 22.x** für Muster mit passender Semantik (Tabs, Toolbar, Listbox/Combobox-Tastaturmodell, Menu-Tastaturmodell, Accordion), **Angular CDK** nur für a11y (`FocusTrap`, `FocusKeyManager`, `ActiveDescendantKeyManager`, `LiveAnnouncer`, `Directionality`, `InteractivityChecker`), **eigene Schicht** `PRP/headless/` für alles, was Base UI zusätzlich festlegt: Zustandsattribute, Präsenz/Transitions, Portal, Dismissal, Hover-Intent, Delay-Gruppen, Scroll-Lock. **Kein** CDK-Overlay-Container, **keine** CDK-Positionierung | Angular Material; reines CDK; Spartan/ng-primitives; vollständiger Eigenbau | Base UI legt DOM/Attribute fest, die keine Angular-Bibliothek 1:1 erzeugt; Aria/CDK liefern geprüfte Tastatur- und Fokuslogik, die Schicht ergänzt den Vertrag. Fallback bei Lücken (S10, `A13a` O-09): Eigenbau auf CDK a11y | I0 |
@@ -181,11 +181,12 @@ funk./
 │   │   │   ├── internal/                       # generierte Rezepte (*.ts aus PROPEL/internal/*.js) + handgeschriebene Logik (fit-side, avatar-shared …)
 │   │   │   ├── elements/<name>/                # 57 Ordner: variants.ts (generiert) + *.directive.ts
 │   │   │   ├── components/<name>/              # 68 Ordner: *.component.ts/.html bzw. *.directive.ts, public-api.ts
+│   │   │   ├── components/svg-icon/            # svg-icon.component.ts (`svg[plSvgIcon]`), Einstieg `@plane/propel/components/svg-icon` (ABG-116)
 │   │   │   ├── base/composite/                 # PlComposite, PlCompositeItem
 │   │   │   ├── hooks/                          # controllable-state.ts (model()-Hilfen)
 │   │   │   ├── headless/                       # §3.4/§3.5: state-attrs, presence, portal, floating, dismiss, focus, delay-group, scroll-lock, ids
 │   │   │   ├── state-icons/                    # PlStateGroupIcon, PlStartedGroupIcon, PlUnstartedGroupIcon
-│   │   │   ├── icons/                          # generiert: <kategorie>/<kebab-name>.ts (PlIconDef-Konstanten), index.ts, svg-icon.component.ts
+│   │   │   ├── icons/                          # generiert: <kategorie>/<kebab-name>.ts (PlIconDef-Konstanten), index.ts, types.ts – datenreiner Einstieg `@plane/propel/icons` (kein `@angular/*`-Import, ABG-116)
 │   │   │   └── styles/ → ../../tailwind-config/propel-styles (nur Verweis, keine Kopie)
 │   │   ├── blocks/src/                         # BLKT/ – Ordner 1:1 wie BLK/ (auth entfällt, §4.7)
 │   │   ├── icons-lucide/src/{v0469,v134}/      # generierte PlIconDef-Konstanten (lucide@0.469.0 / lucide@1.34.0)
@@ -211,7 +212,7 @@ funk./
     └── keycloak-theme/                         # Eigentümer `05` §3.16.3; build-css.mjs: TWT-Eingaben → deploy/keycloak/themes/plane/login/resources/css/plane-login.css
 ```
 
-Sheriff-Tags (`01` §6.3): `tailwind-config`, `propel`, `blocks`, `icons-lucide`, `theme` tragen `type:ui`; Richtung `propel ← blocks ← editor`; `theme` darf `utils` importieren (Custom-Theme-Generator in `libs/shared/utils/src/theme/*`, 1:1-Kopie von `UTL/theme/*`).
+Sheriff-Tags (`01` §6.3): `tailwind-config`, `propel`, `blocks`, `icons-lucide`, `theme` tragen `type:ui`; Richtung `propel ← blocks ← editor`; der framework-freie Editor-Kern (`editor:core`, 10 §3.1) darf aus `propel`/`blocks` **nur** die datenreinen Einstiege `@plane/propel/icons` und `@plane/blocks/icons` importieren (kein `@angular/*` dahinter, Lint-Regel `icons-data-only`, ABG-116); `theme` darf `utils` importieren (Custom-Theme-Generator in `libs/shared/utils/src/theme/*`, 1:1-Kopie von `UTL/theme/*`).
 
 ### 3.2 CSS-Pipeline
 
@@ -223,9 +224,9 @@ Sheriff-Tags (`01` §6.3): `tailwind-config`, `propel`, `blocks`, `icons-lucide`
 
 | App | Reihenfolge (Ziel) | Original |
 |---|---|---|
-| web | `styles.css` (= `WEB/styles/globals.css`): `@import "tailwindcss" source(none)` (über `TWT/index.css`) → `TWT/propel-styles/propel.css` → `TWT/index.css`-Regeln → `FE/libs/shared/editor/styles/index.css` → `./styles/power-k.css` → `./styles/emoji.css` → `@plugin "@tailwindcss/typography"` → restliche Regeln aus `globals.css` | `WEB/styles/globals.css` Z. 1–5 |
+| web | `styles.css` (= `WEB/styles/globals.css`): `@import "tailwindcss" source(none)` (über `TWT/index.css`) → `TWT/propel-styles/propel.css` → `TWT/index.css`-Regeln → `FE/libs/shared/editor/styles/index.css` → `./styles/power-k.css` → `./styles/emoji.css` → `@plugin "@tailwindcss/typography"` → restliche Regeln aus `globals.css` → `FE/libs/shared/editor/styles/tiptap-core.css` (letzter Import, ungeschichtet, 10 D10-ADR-13; ABG-115) | `WEB/styles/globals.css` Z. 1–5 |
 | admin | `styles.css` (= `ADM/styles/globals.css`): `TWT/index.css` → (doppelt, wie Original) `TWT/propel-styles/propel.css` → Admin-Regeln (`.shadow-custom`, `.backdrop-blur-custom`, `.progress-bar`, bprogress) | `ADM/styles/globals.css` Z. 1–6 |
-| space | `styles.css` (= `SPC/styles/globals.css`): `TWT/index.css` → Editor-Styles → `@plugin "@tailwindcss/typography"` → Space-Regeln | `SPC/styles/globals.css` Z. 1–3 |
+| space | `styles.css` (= `SPC/styles/globals.css`): `TWT/index.css` → Editor-Styles → `@plugin "@tailwindcss/typography"` → Space-Regeln → `FE/libs/shared/editor/styles/tiptap-core.css` (letzter Import, ungeschichtet, 10 D10-ADR-13; ABG-115) | `SPC/styles/globals.css` Z. 1–3 |
 | Schriften | `angular.json` → `projects.<app>.architect.build.options.styles`: `@fontsource-variable/inter/index.css`, `@fontsource/ibm-plex-mono/index.css`, `@fontsource/material-symbols-rounded/index.css`, danach `src/styles.css` | `WEB/app/root.tsx` Z. 30–33 (Import vor `globals.css`) |
 
 #### 3.2.3 Quellen-Scan (`@source`)
@@ -309,11 +310,12 @@ Die Regeln sind Teil des in `08` §7.6 festgelegten Pakets (gleiche Ablage, glei
 
 | Regel | Inhalt | Herkunft |
 |---|---|---|
-| `no-component-styles` | `styles`/`styleUrl(s)` in `@Component` verboten in `libs/shared/{propel,blocks}` und `libs/web/**`; `encapsulation: ViewEncapsulation.None` Pflicht in `libs/shared/{propel,blocks}` | `08` §7.6 (D09-ADR-03) |
+| `no-component-styles` | `styles`/`styleUrl(s)` in `@Component` verboten in `libs/shared/{propel,blocks}`, `libs/shared/editor/**`, `libs/space/editor/**` und `libs/web/**` (damit auch `libs/web/core/editor/**`); `encapsulation: ViewEncapsulation.None` Pflicht in `libs/shared/{propel,blocks}`, `libs/shared/editor/**` und `libs/space/editor/**` (ABG-116) | `08` §7.6 (D09-ADR-03), ABG-116 |
+| `icons-data-only` (neu) | keine `@angular/*`-Importe in `PRP/icons/**` und `BLKT/icons/**` (ESLint-Pfadregel): `@plane/propel/icons` und `@plane/blocks/icons` sind datenreine Einstiege (nur `PlIconDef`-Konstanten und Typen); Render-Komponenten liegen in `PRP/components/svg-icon/` bzw. – für die Blocks-Hand-Ports – in `BLKT/icon-components/**` (Einstieg `@plane/blocks/icon-components`, §4.8) | ABG-116, D09-ADR-07 |
 | `no-plan-identifiers` | Plan-/Upsell-Bezeichner und i18n-Schlüssel (`upgrade`, `billing`, `plan`, `subscription`, `is_paid`, `trial`, `isPro`, `UpgradeBadge`, `ProIcon`) verboten; D09 ergänzt die Allow-List-freien Präfixe `plans-` (Tokens `text-plans-*`, `bg-plans-*`) und die Upsell-Schlüssel aus G-13 | `08` §7.6, Rahmen §7.18, ADR-001 |
 | `no-test-ids` | keine neuen `data-testid` (DOM-Parität) | `08` §7.6, `15` §3.9.1 |
 | `no-generated-edit` (neu) | Dateien mit Header `// GENERATED` dürfen nur vom Generator geändert werden (CI vergleicht Neu-Generierung mit Repo-Stand, T-GEN-01) | D09-ADR-05/-07 |
-| `icon-source` (neu) | `<svg>` mit Inline-Pfaden in Templates verboten außer in generierten Dateien, `state-icons/` und `BLKT/icons/**` (Hand-Ports §4.8); Icons nur über `svg[plSvgIcon]` bzw. `span[plIcon]` | D09-ADR-07 |
+| `icon-source` (neu) | `<svg>` mit Inline-Pfaden in Templates verboten außer in generierten Dateien, `state-icons/` und `BLKT/icon-components/**` (Hand-Ports §4.8, ABG-116); Icons nur über `svg[plSvgIcon]` bzw. `span[plIcon]` | D09-ADR-07 |
 | `no-cdk-overlay` (neu) | Import von `@angular/cdk/overlay` verboten | D09-ADR-10/-11, H-01 |
 | `no-trigger-wrapper` (neu) | Komponenten-Selektoren `pl-tooltip`, `pl-preview-card`, `pl-popover`, `pl-menu-trigger`, `pl-dialog-trigger` … verboten; Trigger-Komposita nur als Attribut-Direktive (§3.3.4 H1) | D09-ADR-03 |
 | `ee-no-arbitrary-values` (neu) | in `libs/web/<paket>/**` keine Arbitrary Values für Farben, Abstände, Radien, Schatten, Schriftgrößen (G-02) | D09-ADR-19 |
@@ -446,7 +448,7 @@ Subset-Abdeckung für die 22 Locales (`A13a` O-05) wird automatisch geprüft: E2
 
 **Festlegung:**
 
-1. `emojibase-data` wird auf **eine** Version gepinnt (Vorschlag: die bei der ersten `capture-reference`-Aufnahme aktuelle Version; Festhalten in `FE/apps/{web,space}/src/assets/emojibase/VERSION` und im pnpm-Catalog, `01` §8.2) und nach `FE/apps/{web,space}/src/assets/emojibase/<version>/<locale>/{data,messages}.json` kopiert (alle Locales, die frimousse für die 22 Plane-Sprachen anfordert; Fallback `en`).
+1. `emojibase-data` wird auf **eine** Version gepinnt (Vorschlag: die bei der ersten `capture-reference`-Aufnahme aktuelle Version; Festhalten in `FE/apps/{web,space}/src/assets/emojibase/VERSION` und im pnpm-Catalog, `01` §8.2) und nach `FE/apps/{web,space}/src/assets/emojibase/<version>/<locale>/{data,messages}.json` kopiert (alle Locales, die frimousse für die 22 Sprachen des Originals anfordert; Fallback `en`).
 2. **Referenzumgebung:** `capture-reference.ts` beantwortet jede Anfrage an `https://cdn.jsdelivr.net/npm/emojibase-data@*/**` per `page.route(...)` aus genau diesen gepinnten Dateien (ETag fest). So sehen Original und Ziel dieselben Emoji-Daten; ohne diese Umleitung ist ein Emoji-Picker-Eintrag nicht deterministisch (R-D09-16).
 3. Der Angular-Emoji-Picker (`BLKT/emoji-icon-picker/emoji/`) lädt nur von dort. Das Zwischenspeichern in `localStorage`/`sessionStorage` wird **nicht** nachgebaut (keine sichtbare Wirkung; Netzwerk-Abweichung `UI-DEV-015`).
 4. Emoji-Speicherformat (Dezimal-Codepoints mit `-`, `emojiToString`/`stringToEmoji`) wird 1:1 kopiert.
@@ -454,7 +456,7 @@ Subset-Abdeckung für die 22 Locales (`A13a` O-05) wird automatisch geprüft: E2
 #### 3.8.3 Illustrationen und Raster-Assets
 
 - **59 Blocks-Illustrationen** (`HORIZONTAL_STACK_ASSETS` 32, `VERTICAL_STACK_ASSETS` 25, `ILLUSTRATION_ASSETS` 2; `A13a` §2.31) werden von `port-illustrations.mjs` in `PlIllustrationDef`-Konstanten übersetzt (gleiche AST-Form wie Icons, Farben bleiben `var(--illustration-*)`), lazy per `import()` geladen (Original `React.lazy`, Fallback = nichts rendern) und über `svg[plIllustration]` gerendert. Registry-Schlüssel 1:1 (`asset-registry.tsx`).
-- **Raster-/SVG-Dateien** aus `apps/*/app/assets/**` und `apps/*/public/**` werden byte-identisch kopiert (vollständige Tabelle §4.11). Referenzen im Code bleiben pfadgleich relativ zum `assets/`-Ordner (`assets/empty-state/cycle/…`).
+- **Raster-/SVG-Dateien** aus `apps/*/app/assets/**` und `apps/*/public/**` werden byte-identisch kopiert (vollständige Tabelle §4.11) – **ausgenommen** die Brand-Assets nach ADR-009B/BR-06 (Favicons, App-Icons, Manifeste, `logo-spinner-*`, Logos, Illustrationen mit Plane-Logo oder -Schriftzug): sie erzeugt `frontend/tools/brand/render-brand-assets.mjs` aus `assets/funk_logo.svg` in Pixelgröße, Format und Dateiname der Original-Datei (Inventar §4.11.1, Einträge `BRAND-UI-*`). Referenzen im Code bleiben pfadgleich relativ zum `assets/`-Ordner (`assets/empty-state/cycle/…`).
 - **Theme-abhängige Assets:** `FE/libs/shared/theme/src/theme-asset-helpers.ts` exportiert `isLightStrict(resolvedTheme)` (`=== "light"`), `isDarkStrict(resolvedTheme)` (`=== "dark"`) und `resolveGeneralTheme(resolvedTheme)` (`includes("light")`/`includes("dark")`/`"system"`). Jede der 46 Fundstellen aus `A13a` §3.5 verwendet **dasselbe** Muster wie im Original (E-03 nachbauen). Der Port-Agent übernimmt die Fundstellen-Liste als Checkliste in die jeweilige Domänen-Lib.
 
 ### 3.9 Theme-Laufzeit
@@ -510,11 +512,11 @@ Die sechs Blocks-Charts (`bar`, `area`, `line`, `pie`, `radar`, `tree-map`) werd
 | Thema | Regel |
 |---|---|
 | CSS | `tools/keycloak-theme/build-css.mjs` (Eigentümer `05` §3.16.3) übersetzt mit `@tailwindcss/cli` **4.1.17** eine Einstiegsdatei `tools/keycloak-theme/plane-login.css` = `@import` von `TWT/index.css` (dort `source(none)`) + `TWT/propel-styles/propel.css` + `@source "../../deploy/keycloak/themes/**/*.ftl"`; Ausgabe `deploy/keycloak/themes/plane/login/resources/css/plane-login.css` (eingecheckt, CI prüft Aktualität). Pflichttest `css-diff --subset keycloak`: `@layer theme`/`base` identisch zum Web-Referenz-CSS, jede Utility im Theme-CSS existiert mit identischen Deklarationen im Web-Referenz-CSS (§3.2.5) |
-| Fonts, Bilder | `deploy/keycloak/themes/plane/login/resources/fonts/inter/*.woff2` (Inter Variable aus `@fontsource-variable/inter` 5.2.8, dieselben Dateien wie die Apps) und `resources/img/{plane-lockup.svg,logos/*.svg,bg/*.svg}` (`bg/` = `background-pattern{,-dark}.svg` aus `WEB/app/assets/auth/`) – Struktur laut `05` §3.16.1; IBM Plex Mono nur, falls ein Template Mono-Text enthält (Original-Sign-in: nein) |
-| DOM-Vorlage | Web/Admin: `WEB/app/(home)/page.tsx`, `WEB/components/auth-screens/**` (Layout, Header mit `PlaneLockup`, Footer mit Kundenlogos `AccentureLogo`, `DolbyLogo`, `SonyLogo`, `ZerodhaLogo` und `dark:text-on-color`), `BLK/auth/password/password-input.tsx` (Passwortfeld mit Show/Hide-Toggle), `BLK/auth/password/indicator.tsx` (nur für `login-update-password.ftl`); Space: `SPC/app/page.tsx` + `SPC/components/account/**`; Hintergrund `assets/auth/background-pattern{,-dark}.svg` |
+| Fonts, Bilder | `deploy/keycloak/themes/plane/login/resources/fonts/inter/*.woff2` (Inter Variable aus `@fontsource-variable/inter` 5.2.8, dieselben Dateien wie die Apps) und `resources/img/{plane-lockup.svg,logos/*.svg,bg/*.svg}` (`bg/` = `background-pattern{,-dark}.svg` aus `WEB/app/assets/auth/`) – Struktur laut `05` §3.16.1; `plane-lockup.svg` und das Theme-Favicon enthalten die funk.-Wortmarke aus `assets/funk_logo.svg` (BR-06; Dateiname bleibt interner Bezeichner, BR-02; `05` `BRAND-KC-*`, hier `BRAND-UI-04`); IBM Plex Mono nur, falls ein Template Mono-Text enthält (Original-Sign-in: nein) |
+| DOM-Vorlage | Web/Admin: `WEB/app/(home)/page.tsx`, `WEB/components/auth-screens/**` (Layout, Header mit `PlaneLockup` – im Ziel mit funk.-Pfaddaten, `BRAND-UI-04` –, Footer mit Kundenlogos `AccentureLogo`, `DolbyLogo`, `SonyLogo`, `ZerodhaLogo` und `dark:text-on-color`), `BLK/auth/password/password-input.tsx` (Passwortfeld mit Show/Hide-Toggle), `BLK/auth/password/indicator.tsx` (nur für `login-update-password.ftl`); Space: `SPC/app/page.tsx` + `SPC/components/account/**`; Hintergrund `assets/auth/background-pattern{,-dark}.svg` |
 | Theme-Umschaltung | Keycloak-Seiten lesen `localStorage["theme"]` der App-Origin nicht (Keycloak läuft unter `/idp` bzw. eigener Origin, andere Speicherpartition) → Login folgt `prefers-color-scheme` (light/dark). Weil die Propel-Dark-Variante am Selektor `[data-theme*="dark"]` hängt (nicht an der Media-Query), setzt `resources/js/plane-login.js` (Build `05` §3.16.3 `build-js.mjs`) **synchron im `<head>`** `data-theme` an `<html>` mit der Auflösungslogik von §5.8 (Eingabe nur `system`) und hört auf `matchMedia`-Wechsel; kein Inline-Script nötig (Keycloak-CSP bleibt unberührt). Dokumentierte Abweichung `UI-DEV-010` |
 | Varianten | wie `05` §3.16.1/§3.16.2: Theme `plane` für Web, darin Admin-Variante per `client.clientId == "plane-admin"`; Theme `plane-space` (`parent=plane`, eigenes `template.ftl`) für Space; Zuordnung je Client über das Client-Attribut `login_theme` (`14` D14-ADR-04) |
-| Verifikation | Katalog-Einträge `K-001`…`K-004` (§4.14) gegen Original-Sign-in (`/`, `/god-mode/`, `/spaces/`), Schwellwert 1 % (S7); Textunterschiede (Keycloak-Felder statt E-Mail-Check-Schritt) als Masken mit Eintrag `UI-DEV-011` |
+| Verifikation | Katalog-Einträge `K-001`…`K-004` (§4.14) gegen Original-Sign-in (`/`, `/god-mode/`, `/spaces/`), Schwellwert 1 % (S7); Referenz mit vorab ersetztem Branding (BR-13, §3.14.2 Zeile „Branding der Referenz“); Textunterschiede (Keycloak-Felder statt E-Mail-Check-Schritt) als Masken mit Eintrag `UI-DEV-011` |
 
 ### 3.14 Verifikationsverfahren
 
@@ -522,7 +524,7 @@ Die sechs Blocks-Charts (`bar`, `area`, `line`, `pie`, `radar`, `tree-map`) werd
 
 ```mermaid
 flowchart LR
-  subgraph REF["Referenz (Original v1.4.2, unverändert)"]
+  subgraph REF["Referenz (Original v1.4.2, Code unverändert; Branding beim Aufnehmen ersetzt, BR-13)"]
     O1["tools/parity/start-original.sh --from-source<br/>web/admin/space/api/live/proxy :13000"] --> O2["seed_plane.py<br/>parity-seed.yaml (Fragmente base + visual)"]
     O2 --> O3["capture-reference.ts<br/>Screenshots · DOM · ARIA"]
     G1["reference-gallery<br/>(React + Propel 0.7.3 + Blocks)"] --> O3
@@ -551,6 +553,7 @@ Eigentümer von Umgebung, Start und Seed ist `15` (D15-ADR-16, D15-ADR-20, §3.4
 | Seed | kanonische Seed-Spezifikation `tests/seed/parity-seed.yaml` (D15-ADR-16, Schlüssel-basiert, UUIDv5, feste Zeitstempel) mit den Fragmenten `base` **und** `visual` (`15` EP-T03; Pflichtumfang des Fragments `visual` §3.14.4); Original-Lader `seed_plane.py` (Django-ORM im Original-Container, setzt Zeitstempel per `QuerySet.update`), Ziel-Lader `ParitySeedLoader` (EF Core), Manifest-Abgleich `tools/ci/seed-manifest-diff`; Avatare/Cover aus `tests/seed/files/` |
 | Zeitanker | **T0 = `2026-02-01T10:00:00Z`** (`15` §3.14.1, O-D15-11 verbindlich); alle Zeitstempel relativ zu T0; Server-Uhr = T0 (`Plane__Testing__FixedUtcNow` im AppHost-Profil `test`), Browser-Uhr = T0 (§3.14.3). Felder, die das Original **während** der Aufnahme selbst fortschreibt (z. B. `last_active`, `last_workspace_id`, `updated_at` nach Login), setzt `FE/tools/visual/seed/normalize-original.sql` bzw. `normalize-funk.sql` nach dem Login je Rolle auf den Seed-Wert zurück, damit relative Zeitangaben („2 days ago“) stabil sind |
 | ID-Abbildung | `manifest.original.json`/`manifest.funk.json` (`15` §3.14.1: semantischer Schlüssel → UUID/Slug/Anchor); `capture-reference.ts` leitet daraus `seed-map.<target>.json` für die DOM-Normalisierung (N7) ab; Katalog-Routen verwenden nur semantische Schlüssel (`{ws:acme}`, `{project:WEB}`, `{issue:WEB-1}`) |
+| Branding der Referenz (ADR-009B, BR-13) | Die Original-Instanz bleibt unverändert; `capture-reference.ts` erzeugt **Referenzaufnahmen mit vorab ersetztem Branding**: (1) Text – vor jeder Aufnahme ersetzt ein Init-Script im Browser-Kontext sichtbare Textknoten, `title`, `alt`, `aria-label`, `placeholder` und `<title>`/Meta-Inhalte nach BR-10/BR-03 (ganzes Wort „Plane“ → „funk.“, Ausnahmetabellen je Locale, `FE/tools/brand/`-Generatoren als einzige Regelquelle); (2) Assets – `page.route` liefert für alle Pfade aus §4.11.1 die von `render-brand-assets.mjs` erzeugten funk.-Dateien aus, die Referenz-Galerie bindet für `PlaneLogo`/`PlaneLockup` die funk.-Pfaddaten ein; (3) nur wo das nicht möglich ist (Raster in Illustrationen/`webp`, deren Logo nicht separat ausgeliefert wird), werden die betroffenen Flächen maskiert (`kind: mask`, Eintrag `BRAND-UI-06`). Die Ersetzungsliste je Aufnahme wird im Report protokolliert; DOM-Verträge enthalten die ersetzten Texte |
 | Ziel | dieselben Fragmente gegen `funk.` (`ParitySeedLoader`, AppHost-Profil `test`), Keycloak-Benutzer aus `tests/seed/keycloak/parity-users.json` im generierten Test-Realm `deploy/keycloak/realms/plane-realm.test.json` (`15` §3.14.2; erzeugt von `Plane.Tools.ParityHarness keycloak-test-realm`, Import per `WithRealmImport`; kein Partial Import, keine Ressource `keycloak-test-users` – ABG-001) |
 
 #### 3.14.3 Determinismus der Aufnahmen
@@ -579,7 +582,7 @@ Ein Katalog-Eintrag beschreibt **eine Route in einem fachlichen Zustand**. Jeder
 | Viewports | `mobile-390` (390×844), `tablet-768` (768×1024), `laptop-1024` (1024×768), `desktop-1440` (1440×900), `wide-1920` (1920×1080) | Grundzustand jeder Route (`state: base`) in `mobile-390`, `tablet-768`, `laptop-1024`, `desktop-1440`; interaktive Zustände nur `desktop-1440`; `wide-1920` zusätzlich für Kanban, Spreadsheet, Gantt, Kalender |
 | Rollen (Seed-Benutzer `15` §3.14.1) | `admin` = `owner@acme` (WS-Admin 20 + Instanz-Admin), `member` = `member@acme` (15), `guest` = `guest@acme` (5), `anonymous` (Space ohne Login), `instance-admin` = `owner@acme` im God Mode | Standard `admin`; Rollen-Varianten nur, wo sich die Oberfläche unterscheidet (Tag `role-variant`) |
 
-Pflichtumfang für die Visual-Aufnahmen = Fragment `base` (`15` §3.14.1: u. a. `acme/WEB` mit 120 Work Items über alle State-Gruppen × Prioritäten, 3-stufige Sub-Items, je Relationstyp ein Paar, Kommentare mit Reaktionen, Links, Anhänge; Cycles abgeschlossen/laufend/kommend/Entwurf; Module in allen 6 Status; Intake pending/accepted/declined/snoozed/duplicate; Pages öffentlich/privat/gesperrt/archiviert/„alle Nodes“/mit Versionen; Views; Stickies; Notifications; Webhook; API-Tokens; Export; veröffentlichtes Board `acme/WEB`) **plus** Fragment `visual` (D09-Pflicht, in `15` §9.2 als Fragment übernommen): Workspace-Logo „Acme Corp“; Projekte `acme/MOB` (Material-Icon-Logo, 12 Work Items), `acme/EMPTY` (keine Inhalte, für Empty-States), `acme/OFF` (alle Projekt-Features aus); Emoji-Logo für `acme/WEB`; Labels in 5 Hierarchien (zusammen 20); 3 Projekt-Views, 2 Workspace-Views; 3 archivierte Work Items/Cycles/Modules; 10 Benachrichtigungen (gelesen/ungelesen/archiviert/gesnoozed); 2 Drafts; 2 Webhooks; Board-Einstellungen Kommentare/Reaktionen/Votes an mit festem Anchor; Benutzer `deactivated@acme` (Member, deaktiviert) und `invited@acme` (ausstehende Einladung) sind Teil von `base`. Katalog-Platzhalter `{user:…}` nutzen diese Namen (`{user:owner}`, `{user:guest}`).
+Pflichtumfang für die Visual-Aufnahmen = Fragment `base` (`15` §3.14.1: u. a. `acme/WEB` mit 120 Work Items über alle State-Gruppen × Prioritäten, 3-stufige Sub-Items, je Relationstyp ein Paar, Kommentare mit Reaktionen, Links, Anhänge; Cycles abgeschlossen/laufend/kommend/Entwurf; Module in allen 6 Status; Intake pending/accepted/declined/snoozed/duplicate; Pages öffentlich/privat/gesperrt/archiviert/„alle Nodes“/mit Versionen; Views; Stickies; Notifications; Webhook; API-Tokens; Export; veröffentlichtes Board `acme/WEB`) **plus** Fragment `visual` (D09-Pflicht, in `15` §9.2 als Fragment übernommen): Workspace-Logo „Acme Corp“; Projekte `acme/MOB` (Material-Icon-Logo, 12 Work Items), `acme/EMPTY` (keine Inhalte, für Empty-States), `acme/OFF` (alle Projekt-Features aus); Emoji-Logo für `acme/WEB`; Labels in 5 Hierarchien (zusammen 20); 3 Projekt-Views, 2 Workspace-Views; 3 archivierte Work Items/Cycles/Modules; 10 Benachrichtigungen (gelesen/ungelesen/archiviert/gesnoozed); 2 Drafts; 2 Webhooks; Board-Einstellungen Kommentare/Reaktionen/Votes an mit festem Anchor; Benutzer `deactivated@acme` (Member, deaktiviert) und `invited@acme` (ausstehende Einladung) sind Teil von `base`; Work Item `acme/WEB-1` mit einer Beschreibung „alle Nodes“ (jede CE-Editor-Node einschließlich Tabelle, Bild, Callout, Code-Block, Mention und Emoji – Voraussetzung der `description-*`-Zustände von W-031, ABG-117; Inhalt wie die Page `{page:all-nodes}`). Katalog-Platzhalter `{user:…}` nutzen diese Namen (`{user:owner}`, `{user:guest}`).
 
 Vollständige Liste der Katalog-Einträge: §4.14.
 
@@ -980,7 +983,9 @@ Ziel `BLKT/<gleicher Pfad>`; `*.tsx` → `*.component.ts` (+ `.html`, wenn Templ
 
 ### 4.8 Blocks-Icons (`BLK/icons/**`)
 
-| Original | Ziel (`BLKT/icons/…`) | Art | Angular | Inkr. |
+Ablage nach ABG-116: generierte Konstanten (Art „gen“), Farbkonstanten und Typen liegen in `BLKT/icons/…` (datenreiner Einstieg `@plane/blocks/icons`, kein `@angular/*`); die Hand-Ports (Art „Hand“, Angular-Komponenten) liegen mit derselben Unterordnerstruktur in `BLKT/icon-components/…` (Einstieg `@plane/blocks/icon-components`). In der Spalte „Ziel“ steht der Pfad relativ zum jeweiligen Ordner.
+
+| Original | Ziel (`BLKT/icons/…` bzw. Hand: `BLKT/icon-components/…`) | Art | Angular | Inkr. |
 |---|---|---|---|---|
 | `state/state-group-icon.tsx`, `state/helper.tsx` | `state/state-group-icon.component.ts`, `helper.ts` | Hand | `PlBlkStateGroupIcon` (`svg`-Attribut-Komponente; `stateGroup`, `color` Default `STATE_GROUP_COLORS`, `percentage`, `size`); `STATE_GROUP_COLORS` | I2 |
 | `state/backlog-group-icon.tsx`, `unstarted-group-icon.tsx` (E-16), `started-group-icon.tsx`, `completed-group-icon.tsx`, `cancelled-group-icon.tsx`, `triage-group-icon.tsx` | `state/*.component.ts` | Hand | `PlBlkBacklogGroupIcon`, `PlBlkUnstartedGroupIcon`, `PlBlkStartedGroupIcon`, `PlBlkCompletedGroupIcon`, `PlBlkCancelledGroupIcon`, `PlBlkTriageGroupIcon` | I2 |
@@ -990,7 +995,7 @@ Ziel `BLKT/<gleicher Pfad>`; `*.tsx` → `*.component.ts` (+ `.html`, wenn Templ
 | `module/module-status-icon.tsx`, `module/{backlog,cancelled,completed,in-progress,paused,planned}.tsx` | `module/*` | Hand / gen | `PlBlkModuleStatusIcon` (Fallback planned); 6 Glyphen gen | I3 |
 | `priority-icon.tsx` | `priority-icon.component.ts` | Hand | `PlBlkPriorityIcon` (Propel `PriorityUrgent/High/Medium/Low/None`, `text-priority-*`, `size-3.5`) | I2 |
 | `blocked-icon.tsx`, `blocker-icon.tsx`, `calendar-after-icon.tsx`, `calendar-before-icon.tsx`, `favorite-folder-icon.tsx`, `layer-stack.tsx`, `monospace-icon.tsx`, `sans-serif-icon.tsx`, `serif-icon.tsx`, `properties/label-icon.tsx` | gleiche Namen `.ts` | gen | `BlockedIcon`, `BlockerIcon`, `CalendarAfterIcon`, `CalendarBeforeIcon`, `FavoriteFolderIcon`, `LayerStackIcon`, `MonospaceIcon`, `SansSerifIcon`, `SerifIcon`, `LabelPropertyIcon` | I0 |
-| `brand/plane-logo.tsx`, `brand/plane-lockup.tsx`, `brand/accenture-logo.tsx`, `brand/dolby-logo.tsx`, `brand/sony-logo.tsx`, `brand/zerodha-logo.tsx`, `sub-brand/pi-chat.tsx` | `brand/*.ts`, `sub-brand/pi-chat.ts` | gen | `PlaneLogo`, `PlaneLockup`, `AccentureLogo`, `DolbyLogo`, `SonyLogo`, `ZerodhaLogo`, `PiChatLogo` | I0 |
+| `brand/plane-logo.tsx`, `brand/plane-lockup.tsx`, `brand/accenture-logo.tsx`, `brand/dolby-logo.tsx`, `brand/sony-logo.tsx`, `brand/zerodha-logo.tsx`, `sub-brand/pi-chat.tsx` | `brand/*.ts`, `sub-brand/pi-chat.ts` | gen (`PlaneLogo`/`PlaneLockup`: Pfaddaten aus `assets/funk_logo.svg`, Konstantennamen bleiben – BR-06/BR-02, `BRAND-UI-04`) | `PlaneLogo`, `PlaneLockup`, `AccentureLogo`, `DolbyLogo`, `SonyLogo`, `ZerodhaLogo`, `PiChatLogo` | I0 |
 | `icons/index.ts`, `icons/type.ts` | `icons/public-api.ts`, `type.ts` | – | Barrel `@plane/blocks/icons`, `SvgIconProps` | I0 |
 
 ### 4.9 Web-eigene Icons (`WEB/components/icons/**`)
@@ -1013,18 +1018,18 @@ Ziel `BLKT/<gleicher Pfad>`; `*.tsx` → `*.component.ts` (+ `.html`, wenn Templ
 
 ### 4.11 Schriften, Bilder, Illustrationen, statische Dateien (`apps/*/public`, `apps/*/app/assets`)
 
-Kopie byte-identisch; Ziel-Unterordner gleichnamig unter `FE/apps/<app>/src/assets/` bzw. `FE/apps/<app>/public/` (Angular-`public`-Ordner wird unverändert an die Basis der App ausgeliefert).
+Kopie byte-identisch; Ziel-Unterordner gleichnamig unter `FE/apps/<app>/src/assets/` bzw. `FE/apps/<app>/public/` (Angular-`public`-Ordner wird unverändert an die Basis der App ausgeliefert). **Ausnahme Branding (ADR-009B):** Dateien mit Plane-Logo, -Wortmarke oder -Produktname werden nicht kopiert, sondern nach BR-06 aus `assets/funk_logo.svg` in Pixelgröße, Format und Dateiname des Originals erzeugt bzw. textlich ersetzt; die betroffenen Zeilen verweisen auf das Inventar §4.11.1.
 
 | Original | Dateien | Ziel | Hinweis | Inkr. | CE |
 |---|---|---|---|---|---|
-| `apps/web/public/favicon/*` (2 PNG), `icons/*` (3), `manifest.json`, `site.webmanifest.json`, `favicon/site.webmanifest` | 8 | `FE/apps/web/public/` | Manifeste: `start_url` je Base-Pfad unverändert `/`; Name „Plane“ bleibt (Produktname, ADR-005) | I0 | – |
+| `apps/web/public/favicon/*` (2 PNG), `icons/*` (3), `manifest.json`, `site.webmanifest.json`, `favicon/site.webmanifest` | 8 | `FE/apps/web/public/` | Manifeste: `start_url` je Base-Pfad unverändert `/`; `name`/`short_name` = „funk.“ (ADR-009B, `BRAND-UI-01`); Favicons/App-Icons aus `assets/funk_logo.svg` (`BRAND-UI-02`) | I0 | – |
 | `apps/web/public/sw.js`, `sw.js.map`, `workbox-9f2f79cf.js`, `workbox-9f2f79cf.js.map` | 4 | – | **entfallen**: im Original nirgends registriert (kein `serviceWorker.register`), Build-Reste | – | – |
-| `apps/admin/public/favicon/*` (2), `site.webmanifest.json` | 3 | `FE/apps/admin/public/` | – | I0 | – |
+| `apps/admin/public/favicon/*` (2), `site.webmanifest.json` | 3 | `FE/apps/admin/public/` | funk.-Branding wie Web (`BRAND-UI-01`, `BRAND-UI-02`) | I0 | – |
 | `apps/admin/public/.well-known/appspecific/com.chrome.devtools.json` | 1 | – | entfällt (Dev-Hilfe) | – | – |
-| `apps/space/public/favicon/*` (2), `site.webmanifest.json` | 3 | `FE/apps/space/public/` | – | I0 | – |
-| `apps/web/app/assets/favicon/*` | 4 | `FE/apps/web/src/assets/favicon/` | `<link rel="icon">` wie `WEB/app/root.tsx` | I0 | – |
-| `apps/web/app/assets/icons/*` | 2 | `…/web/src/assets/icons/` | Apple-Touch-Icon | I0 | – |
-| `apps/web/app/assets/images/logo-spinner-{light,dark}.gif` | 2 | `…/web/src/assets/images/` | Web-`LogoSpinner` (`resolvedTheme === "dark"`-Muster) | I0 | CE-I18N-026 |
+| `apps/space/public/favicon/*` (2), `site.webmanifest.json` | 3 | `FE/apps/space/public/` | funk.-Branding wie Web (`BRAND-UI-01`, `BRAND-UI-02`) | I0 | – |
+| `apps/web/app/assets/favicon/*` | 4 | `FE/apps/web/src/assets/favicon/` | `<link rel="icon">` wie `WEB/app/root.tsx`; funk.-Varianten (`BRAND-UI-02`) | I0 | – |
+| `apps/web/app/assets/icons/*` | 2 | `…/web/src/assets/icons/` | Apple-Touch-Icon; funk.-Varianten (`BRAND-UI-02`) | I0 | – |
+| `apps/web/app/assets/images/logo-spinner-{light,dark}.gif` | 2 | `…/web/src/assets/images/` | Web-`LogoSpinner` (`resolvedTheme === "dark"`-Muster); funk.-Variante gleicher Größe und Bildfolge-Länge (`BRAND-UI-03`) | I0 | CE-I18N-026 |
 | `apps/web/app/assets/auth/*` | 8 | `…/web/src/assets/auth/` | `background-pattern{,-dark}.svg` auch im Keycloak-Theme (`deploy/keycloak/themes/plane/login/resources/img/bg/`, `05` §3.16.1); `gradient-*.webp` nur, falls ein Theme-Template sie nutzt; `*-not-authorized.svg`, `access-denied.svg`, `unauthorized.svg` für Zugriffsseiten | I0 | CE-AUTH-001, CE-UIX-010 |
 | `apps/web/app/assets/logos/*` (gitea, github ×4, gitlab, google) | 7 | – | **entfallen** (OAuth-Login und GitHub/GitLab-Integration entfallen, ADR-007/-008) | – | – |
 | `apps/web/app/assets/services/*` (csv, excel, json, github, jira, slack) | 6 | `…/web/src/assets/services/` nur `csv.svg`, `excel.svg`, `json.svg` | Export-Formate (CE-EXP); `github.png`, `jira.svg`, `slack.png` entfallen (Importer/Integrationen nicht CE, F7–F11 nicht gewählt) | I6 | CE-EXP |
@@ -1034,27 +1039,43 @@ Kopie byte-identisch; Ziel-Unterordner gleichnamig unter `FE/apps/<app>/src/asse
 | `apps/web/app/assets/onboarding/*.webp` | 6 | `…/web/src/assets/onboarding/` | – | I1 | CE-WS |
 | `apps/web/app/assets/workspace/*.png` | 2 | `…/web/src/assets/workspace/` | `workspace-creation-disabled.png`, `workspace-not-available.png` | I0 | CE-WS-001 |
 | `apps/web/app/assets/workspace-active-cycles/cta-*.webp` | 6 | – | entfällt mit Upsell U12 (B4 bringt die echte Seite ohne CTA-Bilder) | – | – |
-| `apps/web/app/assets/instance/maintenance-mode-{light,dark}.svg`, `instance-setup-done.webp`, `instance-not-ready.webp`, `plane-takeoff.png` | 5 | `…/web/src/assets/instance/` bzw. Wurzel | Instanzzustände | I0 | CE-INST-006 |
+| `apps/web/app/assets/instance/maintenance-mode-{light,dark}.svg`, `instance-setup-done.webp`, `instance-not-ready.webp`, `plane-takeoff.png` | 5 | `…/web/src/assets/instance/` bzw. Wurzel | Instanzzustände; Dateien mit Plane-Logo/-Schriftzug nach §4.11.1 (`BRAND-UI-06`) | I0 | CE-INST-006 |
 | `apps/web/app/assets/users/*` | 3 | `…/web/src/assets/users/` | Default-Avatare/Profil-Cover | I1 | CE-PROF |
-| `apps/web/app/assets/scribble/*`, `emoji/project-emoji.svg`, `user.png`, `mac-command.svg`, `404.svg`, `og-image.png` | 7 | `…/web/src/assets/` | `og-image.png` auch als OG-Fallback im Gateway | I0 | CE-UIX-010 |
+| `apps/web/app/assets/scribble/*`, `emoji/project-emoji.svg`, `user.png`, `mac-command.svg`, `404.svg`, `og-image.png` | 7 | `…/web/src/assets/` | `og-image.png` auch als OG-Fallback im Gateway – als funk.-Variante gleicher Größe (`BRAND-UI-06`, `14` §3.7) | I0 | CE-UIX-010 |
 | `apps/web/app/assets/fonts/inter/*.ttf` | 18 | `src/documents/Plane.Documents.Pdf/Fonts/` | nur für PDF (→ `07`, ADR-029) | I4 | CE-PAGE-011 |
-| `apps/admin/app/assets/favicon/*` | 4 | `FE/apps/admin/src/assets/favicon/` | – | I0 | – |
-| `apps/admin/app/assets/images/*` (404.svg, logo-spinner ×2, plane-takeoff.png) | 4 | `…/admin/src/assets/images/` | Admin-`LogoSpinner` mit **inverser** Benennung (`A13a` §3.5) | I0 | CE-INST |
+| `apps/admin/app/assets/favicon/*` | 4 | `FE/apps/admin/src/assets/favicon/` | funk.-Varianten (`BRAND-UI-02`) | I0 | – |
+| `apps/admin/app/assets/images/*` (404.svg, logo-spinner ×2, plane-takeoff.png) | 4 | `…/admin/src/assets/images/` | Admin-`LogoSpinner` mit **inverser** Benennung (`A13a` §3.5); `logo-spinner-*` als funk.-Variante (`BRAND-UI-03`), `plane-takeoff.png` nach §4.11.1 (`BRAND-UI-06`) | I0 | CE-INST |
 | `apps/admin/app/assets/instance/instance-failure{,-dark}.svg` | 2 | `…/admin/src/assets/instance/` | – | I0 | CE-INST |
-| `apps/admin/app/assets/logos/*` (gitea, github ×2, gitlab, google, takeoff-icon ×2) | 7 | nur `takeoff-icon-{light,dark}.svg` | Provider-Logos entfallen (CE-INST-020…-024) | I6 | CE-INST |
-| `apps/space/app/assets/favicon/*` | 5 | `FE/apps/space/src/assets/favicon/` | – | I0 | – |
+| `apps/admin/app/assets/logos/*` (gitea, github ×2, gitlab, google, takeoff-icon ×2) | 7 | nur `takeoff-icon-{light,dark}.svg` | Provider-Logos entfallen (CE-INST-020…-024); `takeoff-icon-*` nach §4.11.1 (`BRAND-UI-06`) | I6 | CE-INST |
+| `apps/space/app/assets/favicon/*` | 5 | `FE/apps/space/src/assets/favicon/` | funk.-Varianten (`BRAND-UI-02`) | I0 | – |
 | `apps/space/app/assets/{404,project-not-published,something-went-wrong,user-logged-in}.svg` | 4 | `…/space/src/assets/` | – | I6 | CE-SPACE-014, -031 |
 | `apps/space/app/assets/robots.txt` | 1 | `FE/apps/space/public/robots.txt` | – | I6 | – |
 | `apps/space/app/assets/auth/background-pattern{,-dark}.svg` | 2 | `…/space/src/assets/auth/` + Keycloak-Theme | – | I0 | CE-AUTH-001 |
-| `apps/space/app/assets/instance/*` (failure ×2, intake-sent ×2, instance-not-ready, takeoff) | 6 | `…/space/src/assets/instance/` | – | I6 | CE-SPACE-015 |
-| `apps/space/app/assets/images/logo-spinner-{light,dark}.gif` | 2 | `…/space/src/assets/images/` | – | I0 | – |
+| `apps/space/app/assets/instance/*` (failure ×2, intake-sent ×2, instance-not-ready, takeoff) | 6 | `…/space/src/assets/instance/` | Dateien mit Plane-Logo/-Schriftzug nach §4.11.1 (`BRAND-UI-06`) | I6 | CE-SPACE-015 |
+| `apps/space/app/assets/images/logo-spinner-{light,dark}.gif` | 2 | `…/space/src/assets/images/` | funk.-Variante (`BRAND-UI-03`) | I0 | – |
 | `apps/space/app/assets/logos/*` (gitea, github ×4, gitlab, google) | 7 | – | entfallen (CE-SPACE-011) | – | – |
-| `PROPEL/components/logo-spinner/logo-spinner-{light,dark}.gif`, `…-still.png` | 4 | `PRP/components/logo-spinner/assets/` (über `angular.json`-Assets der Galerie; in die Apps erst, wenn ein Screen Propel-`LogoSpinner` nutzt) | Propel-`LogoSpinner` (im Original von keiner App importiert) | I7 | – |
-| `BLK/empty-state/assets/**` (59 SVG-Komponenten) | 59 | §4.7 | – | I1 | CE-I18N-018 |
+| `PROPEL/components/logo-spinner/logo-spinner-{light,dark}.gif`, `…-still.png` | 4 | `PRP/components/logo-spinner/assets/` (über `angular.json`-Assets der Galerie; in die Apps erst, wenn ein Screen Propel-`LogoSpinner` nutzt) | Propel-`LogoSpinner` (im Original von keiner App importiert); GIFs und `…-still.png` als funk.-Varianten (`BRAND-UI-03`) | I7 | – |
+| `BLK/empty-state/assets/**` (59 SVG-Komponenten) | 59 | §4.7 | Illustrationen mit Plane-Logo/-Schriftzug nach §4.11.1 (`BRAND-UI-06`) | I1 | CE-I18N-018 |
+
+#### 4.11.1 Brand-Inventar (ADR-009B, BR-06) – Abweichungen `BRAND-UI-*`
+
+Einzige Quelle ist `assets/funk_logo.svg` im Repository `funk.`; `frontend/tools/brand/render-brand-assets.mjs` (Eigentümer `08`/`01` §6.1) erzeugt jede Rastervariante **in Pixelgröße, Format und Dateiname der Original-Datei** und schreibt die Zuordnung Original-Datei → erzeugte Datei (Maße, Prüfsumme) nach `frontend/tools/brand/brand-assets.json`; daraus speist `capture-reference.ts` die `page.route`-Ersetzung der Referenz (§3.14.2, BR-13). Dateinamen, Konstantennamen (`PlaneLogo`, `PlaneLockup`) und Theme-Ordner bleiben interne Bezeichner (BR-02). Jede Ersetzung ist ein Eintrag in `ui-deviations.yaml` mit `kind: brand` (zusätzlich zu den Arten aus ABG-033) und erscheint im Gate G-BRAND (`15`, BR-14) nicht als Treffer.
+
+| ID | Gegenstand (Original) | Ziel | Verfahren | Katalog |
+|---|---|---|---|---|
+| `BRAND-UI-01` | Web-Manifeste `manifest.json`, `site.webmanifest.json`, `favicon/site.webmanifest` sowie Admin-/Space-`site.webmanifest.json`: `name`/`short_name` „Plane“, `description` „Plane helps you plan your issues, cycles, and product modules.“ | `name`/`short_name` = „funk.“, `description` = „funk. helps you plan your issues, cycles, and product modules.“; `start_url`, `icons`, Farben unverändert (BR-05) | Text, generiert aus `BRAND.productName` | – (Manifest-Test T-BRAND-01) |
+| `BRAND-UI-02` | Favicons (`favicon.ico`, `favicon-16x16.png`, `favicon-32x32.png`), `apple-touch-icon.png`, `android-chrome-{192,512}.png`, `icons/icon-{180,192,348,512}x….png` in Web/Admin/Space | funk.-Wortmarke/-Bildmarke in gleicher Pixelgröße und gleichem Format | `render-brand-assets.mjs` | alle (Tab-Icon nicht im Screenshot) |
+| `BRAND-UI-03` | `logo-spinner-{light,dark}.gif` (Web, Admin mit inverser Benennung, Space) und Propel `logo-spinner-{light,dark}.gif`, `…-still.png` | funk.-Variante gleicher Größe, gleicher Bildfolge-Länge und Bildrate; Benennung (auch die inverse im Admin) unverändert | `render-brand-assets.mjs` | A-001 `logo-spinner`, S-001 `logo-spinner`, Galerie `logo-spinner/*` |
+| `BRAND-UI-04` | Brand-Icons `BLK/icons/brand/plane-logo.tsx`, `plane-lockup.tsx` (Verwendung u. a. Auth-Header, Onboarding, Instanz-„not ready“, Space-Header, `powered-by.tsx`, Admin `components/common/plane-lockup.tsx`) und Keycloak-Theme `img/plane-lockup.svg` | `PlaneLogo`/`PlaneLockup` erhalten die Pfaddaten aus `assets/funk_logo.svg` (gleiche `viewBox`-Fläche, Farben über `currentColor` wie im Original); Golden der beiden Konstanten aus der funk.-Quelle statt aus `renderToStaticMarkup` | `port-icons.mjs --brand assets/funk_logo.svg` | Galerie `icons/brand`, W-Onboarding, K-001…K-004, S-002 |
+| `BRAND-UI-05` | Space-Badge CE-SPACE-032 „Powered by Plane Publish“ (`SPC/components/common/powered-by.tsx`) | „Powered by funk. Publish“ (BR-04) mit `PlaneLogo` nach `BRAND-UI-04`; Link-Ziel nach BR-12 (konfigurierbar oder entfällt) | Text + Icon | S-005 |
+| `BRAND-UI-06` | Raster und Illustrationen mit Plane-Logo oder -Schriftzug: Prüfliste I0 `og-image.png`, `plane-takeoff.png` (Web/Admin), `takeoff-icon-{light,dark}.svg`, `instance-setup-done.webp`, `instance-not-ready.webp` (Web/Space), `onboarding/*.webp`, `empty-state/**` und `BLK/empty-state/assets/**` (Treffer der Bildprüfung) | jede Datei mit Logo/Schriftzug wird mit derselben Fläche neu gerendert (Logo ersetzt) oder das Logo entfernt; Dateien ohne Branding bleiben byte-identisch; Ergebnis der Prüfung (Datei, Befund, Verfahren) in `brand-assets.json` | `render-brand-assets.mjs` bzw. Maske, wo die Referenz das Logo nicht separat ausliefert (§3.14.2) | betroffene Einträge §4.14 |
+| `BRAND-UI-07` | God-Mode-AI-Kontakt-Hinweis mit Link `plane.so/contact` (U23) | entfällt (BR-12) – geführt als `UI-DEV-017` | – | A-007 |
+
+Sichtbare UI-Texte und i18n-Strings mit „Plane“ (Seitentitel, Literale, 22 Locales) sind Eintragsbereich von `08` (`BRAND-WEB-*`, `BRAND-I18N-*`, BR-10/BR-11); D09 vergleicht sie über die Referenz mit ersetztem Branding (§3.14.2).
 
 ### 4.12 Upsell-Elemente (ADR-001) → Ersatz
 
-Vollständig nach `F20` §5 (U1–U22).
+Vollständig nach `F20` §5 (U1–U22), ergänzt um U23 aus `11` §3.17 (ABG-134).
 
 | # | Original | Ersatz in `funk.` | Abweichung |
 |---|---|---|---|
@@ -1074,6 +1095,7 @@ Vollständig nach `F20` §5 (U1–U22).
 | U20 | `MARKETING_PRICING_PAGE_LINK`, `MARKETING_CONTACT_US_PAGE_LINK`, `MARKETING_PLANE_ONE_PAGE_LINK` | entfernt | – |
 | U21 | `packages/constants/src/{subscription,payment}.ts`, `packages/utils/src/subscription.ts`, `packages/types/src/payment.ts` | nicht kopiert (`01` §6.2) | – |
 | U22 | Feature-Flag-Filter-Kommentare in `customize-navigation-dialog.tsx` | Filter auf fachliche Workspace-Feature-Toggles + `SIDEBAR_ITEMS`-Registry (§6.1) | – |
+| U23 | Hinweis-Kasten „If you have a preferred AI models vendor, please get in touch with us.“ mit Link `https://plane.so/contact` im God-Mode-AI-Formular (`ADM/app/(all)/(dashboard)/ai/form.tsx`) | entfällt ersatzlos (ADR-001 Kontakt-CTA, ADR-009B externe Plane-Links; ABG-134, Quelle `11` §3.17); das zusätzliche Feld „Base URL“ (`LLM_BASE_URL`, `11` D11-ADR-15) ist kein Upsell, steht aber als `UI-DEV-016` im Register | `UI-DEV-017` (A-007) |
 | – | Plan-Tokens `--txt-plans-*`, `--bg-plans-*` (`A13a` §1.4) | **bleiben** im vendored CSS (Kosten null, CSS-Diff-Gleichheit) | – |
 | – | i18n-Upsell-Schlüssel (`common.upgrade`, `sidebar.upgrade*`, `…empty_state.upgrade.*` u. a., `F20` §5) | bleiben in den Locale-Dateien (1:1-Kopie), werden aber nicht referenziert | – |
 
@@ -1153,7 +1175,7 @@ Routen-Quelle: `WEB/app/routes/core.ts` (67 `route()`-Einträge + Index), `ADM/a
 | W-028 | dto. Layout **Spreadsheet** | `base`, `column-menu-open`, `cell-select-open` (State/Priority/Assignee/Labels/Dates), `row-selected`, `sticky-scroll` | tf, wide | I2 | CE-LV |
 | W-029 | dto. Layout **Calendar** | `month`, `week`, `quick-add`, `overflow-more` | wide | I2 | CE-LV |
 | W-030 | dto. Layout **Gantt** | `base`, `bar-hover`, `sidebar-collapsed`, `drag-resize` | wide | I2 | CE-LV |
-| W-031 | `…/issues/{issue:WEB-1}` (Detail) | `base`, `sub-items-expanded`, `relations`, `activity-all`, `comments-only`, `comment-edit`, `attachments`, `links`, `description-edit`, `property-menus` (je Property), `delete-confirm` | tf | I2 | CE-WI |
+| W-031 | `…/issues/{issue:WEB-1}` (Detail) | `base`, `sub-items-expanded`, `relations`, `activity-all`, `comments-only`, `comment-edit`, `attachments`, `links`, `description-edit`, `description-slash-menu`, `description-bubble-menu`, `description-block-menu`, `description-table-column-dropdown`, `description-image-toolbar`, `description-callout-picker`, `description-code-hover`, `description-mention-suggestion`, `description-emoji-suggestion` (Seed: Beschreibung von `WEB-1` mit „alle Nodes“, ABG-117), `property-menus` (je Property), `delete-confirm` | tf | I2 | CE-WI |
 | W-032 | `/{ws:acme}/browse/{issue:WEB-1}` | `base` | – | I2 | CE-WI |
 | W-033 | Globale Modals (auf `/{ws:acme}/projects/{project:WEB}/issues`): Work Item anlegen, Work Item anlegen mit Fehlern, Bulk-Delete, Work-Item-Suche, Tastenkürzel-Übersicht, Toasts (success/error/warning/info/loading, mit Aktion „View“) | je `base` | – | I2 | CE-UIX-003, CE-WI-006, CE-I18N-021 |
 | W-034 | `/{ws:acme}/drafts` | `base`, `empty` | – | I2 | CE-WI |
@@ -1168,7 +1190,7 @@ Routen-Quelle: `WEB/app/routes/core.ts` (67 `route()`-Einträge + Index), `ADM/a
 | W-043 | `…/projects/{project:WEB}/intake` | `base` (pending), `item-detail`, `filters-open`, `accept-dialog`, `decline-confirm`, `snooze-open`, `duplicate-select`, `create-dialog`, `empty` | – | I3 | CE-INT |
 | W-044 | `…/archives/issues`, `…/archives/issues/{archived-issue:1}`, `…/archives/cycles`, `…/archives/modules`, `/{ws:acme}/projects/archives` | je `base`, `empty`; Detail `restore-confirm` | – | I3 (Projekte I1) | CE-WI, CE-CYC, CE-MOD, CE-PRJ |
 | W-045 | `…/projects/{project:WEB}/pages` | `public-tab`, `private-tab`, `archived-tab`, `create-dialog`, `quick-actions-open`, `empty`, `feature-off` | – | I4 | CE-PAGE |
-| W-046 | `…/pages/{page:all-nodes}` | `read`, `edit-focused`, `slash-menu`, `bubble-menu`, `block-menu`, `outline-pane`, `info-pane`, `version-history`, `locked`, `archived`, `lock-animation` (Endzustand), `mention-suggestion`, `emoji-suggestion` | tf | I4 | CE-PAGE, CE-RT |
+| W-046 | `…/pages/{page:all-nodes}` | `read`, `edit-focused`, `slash-menu`, `bubble-menu`, `block-menu`, `outline-pane`, `info-pane`, `version-history`, `locked`, `archived`, `lock-animation` (Endzustand), `mention-suggestion`, `emoji-suggestion`, `table-column-dropdown`, `image-toolbar`, `callout-picker`, `code-hover` (ABG-117) | tf | I4 | CE-PAGE, CE-RT |
 | W-047 | `/{ws:acme}` (Home-Inhalt) | `base` (Widgets), `new-user` (leerer Workspace), `quick-link-dialog`, `widget-manage`, `stickies-widget` | tf | I5 | CE-HOME |
 | W-048 | `/{ws:acme}/notifications` | `base`, `unread-only`, `archived`, `snoozed`, `peek-open`, `snooze-menu`, `empty` | – | I5 | CE-NOTIF |
 | W-049 | `/{ws:acme}/analytics/overview`, `/{ws:acme}/analytics/work-items` | je `base`, `empty`, `filters-open` | – | I5 | CE-ANA |
@@ -1203,7 +1225,7 @@ Routen-Quelle: `WEB/app/routes/core.ts` (67 `route()`-Einträge + Index), `ADM/a
 | S-002 | `/spaces/{ws:acme}/{project:WEB}` | `list` (Gruppen offen/zu), `kanban`, `navbar-anonymous`, `navbar-logged-in`, `navbar-menu-open`, `filters-popover`, `active-filters-bar`, `load-more`, `peek-side`, `peek-modal`, `peek-full`, `comments-empty`, `comments-full`, `composer`, `sign-in-hint`, `reaction-picker`, `votes-active`, `iframe` (CE-SPACE-029), `not-published`, `cross-app-theme-hc`, `cross-app-theme-custom` (O-D09-11) | I6 | CE-SPACE-017…-030 |
 | S-003 | `/spaces/issues/{anchor:WEB}` | `base` (Board mit Social-Meta) | I6 | CE-SPACE-017 |
 | S-004 | `/spaces/{unbekannt}` (404), Board-Fehler, Fehlerseite | je `base` | I6 | CE-SPACE-031 |
-| S-005 | „Powered by Plane Publish“-Badge (auf S-002) | `base` | I6 | CE-SPACE-032 |
+| S-005 | „Powered by funk. Publish“-Badge (auf S-002; Original „Powered by Plane Publish“, `BRAND-UI-05`) | `base` | I6 | CE-SPACE-032 |
 
 **Keycloak-Login-Theme**
 
@@ -1251,12 +1273,13 @@ Die Skelette legen Konventionen fest; sie sind nicht vollständig. Namen, Pfade 
 @import "./styles/power-k.css";
 @import "./styles/emoji.css";
 @import "../../../libs/shared/tailwind-config/overrides.css"; /* ergänzt: [data-pl-host]{display:contents} (UI-DEV-000); vor @plugin, weil @import vor allen anderen Regeln stehen muss */
+@import "../../../libs/shared/editor/styles/tiptap-core.css"; /* ergänzt: letzter Import, ohne layer(…) – außerhalb jeder @layer (ABG-115, 10 D10-ADR-13; injectCSS: false) */
 @source "./**/*.{html,ts}";                                  /* ergänzt (§3.2.3) */
 @source "../../../libs/web/**/*.{html,ts}";                  /* ergänzt */
 @source not "../../../{apps,libs}/**/*.spec.ts";             /* ergänzt */
 @source "../../../libs/shared/tailwind-config/reference-candidates/web.txt";   /* ergänzt (D09-ADR-02 c) */
 @plugin "@tailwindcss/typography";
-/* … Rest byte-identisch … ; admin/space analog (eigene Scope-Lib, eigene Kandidatendatei, overrides.css ebenfalls) */
+/* … Rest byte-identisch … ; space analog (eigene Scope-Lib, eigene Kandidatendatei, overrides.css und tiptap-core.css als letzter Import ebenfalls); admin analog, aber ohne Editor-Styles (kein tiptap-core.css, ABG-115) */
 ```
 
 ### 5.2 Generierte Varianten (`port-variants.mjs` → `variants.ts`)
@@ -1566,7 +1589,8 @@ export const PaletteOutline: PlIconDef = {
 ```
 
 ```ts
-// PRP/icons/svg-icon.component.ts – renders PlIconDef without innerHTML (Trusted Types safe)
+// PRP/components/svg-icon/svg-icon.component.ts – entry @plane/propel/components/svg-icon (ABG-116; icons/ stays data-only)
+// renders PlIconDef without innerHTML (Trusted Types safe)
 const SVG_NS = 'http://www.w3.org/2000/svg';
 @Component({ selector: 'svg[plSvgIcon]', template: '', encapsulation: ViewEncapsulation.None, changeDetection: ChangeDetectionStrategy.OnPush })
 export class PlSvgIcon {
@@ -1705,12 +1729,18 @@ export class PlBlkCard {
   entries: ["*"]
   approved_by: architecture
 - id: UI-DEV-001
-  kind: [pixel, dom]            # Liste zulässiger Werte (ABG-033): extra-css, extra-utility, pixel, dom, mask, route, behavior, asset
+  kind: [pixel, dom]            # Liste zulässiger Werte (ABG-033): extra-css, extra-utility, pixel, dom, mask, route, behavior, asset; zusätzlich brand (ADR-009B, BR-13)
   reason: "Editions-Badge 'Community' → nicht interaktives Versions-Badge (ADR-001, U3)"
   adr: ADR-001
   entries: [W-001]
   selector: "aside [class~='h-12'][class~='border-t']"
   approved_by: null            # wird bei Abnahme gesetzt
+- id: BRAND-UI-05
+  kind: brand                   # ADR-009B; Referenz mit vorab ersetztem Branding (BR-13), daher kein Pixel-/DOM-Ausnahmebereich nötig
+  reason: "Space-Badge 'Powered by Plane Publish' → 'Powered by funk. Publish' (BR-04), PlaneLogo mit funk.-Pfaddaten (BRAND-UI-04)"
+  adr: ADR-009B
+  entries: [S-005]
+  approved_by: null
 ```
 
 ```jsonc
@@ -2010,7 +2040,7 @@ Ebenen und Gates nach `15` (L0–L9, G0–G6). Alle Kriterien sind maschinell pr
 | AK-I0-01 | Kompiliertes CSS von `web`, `admin`, `space`: Layer `theme`/`base`/`components`, unlayered Regeln, `@keyframes`, `@property`, `@font-face` **identisch** zum Referenz-CSS; jede Utility des Originals vorhanden und in gleicher relativer Reihenfolge; zusätzliche Utilities im Report mit Herkunftsdatei (Gate nur für Paket-Libs, §3.2.5) | `css-diff` (T-CSS-01) | I0 |
 | AK-I0-02 | Vendored CSS ohne `@import`/`@source`/`@plugin`/`@reference`-Zeilen byte-gleich zum Original (SHA-256 aus `VENDORED.md`) | `vendor-css.spec.ts` (T-CSS-02) | I0 |
 | AK-I0-03 | `variants.ts` aller 57 Elemente und `internal/*.ts`: für **jede** Achsenkombination identischer Klassenstring zu `PROPEL/elements/*/variants.js` | `port-variants.spec.ts` (T-VAR-01) | I0 |
-| AK-I0-04 | 919 Propel-Icons, 17 lucide-1.34-Icons, alle lucide-0.469-Namen (181 genutzt + 157 Liste), Blocks-Icons: normalisiertes `outerHTML` = Golden aus `renderToStaticMarkup` | `icons.spec.ts` (T-ICON-01), Prüfsumme 919 | I0 |
+| AK-I0-04 | 919 Propel-Icons, 17 lucide-1.34-Icons, alle lucide-0.469-Namen (181 genutzt + 157 Liste), Blocks-Icons: normalisiertes `outerHTML` = Golden aus `renderToStaticMarkup` (Ausnahme `PlaneLogo`/`PlaneLockup`: Golden aus `assets/funk_logo.svg`, `BRAND-UI-04`) | `icons.spec.ts` (T-ICON-01), Prüfsumme 919 | I0 |
 | AK-I0-05 | **S10:** 10 Leit-Komponenten (Button, Input, Menu, Combobox/Select, Tooltip, Dialog, Tabs, Popover, Avatar, Toast) – DOM-Vertrag gleich, Visual ≤ 0,1 % in `light`, `dark`, `light-contrast`, `dark-contrast`; Tastatur-Szenarien gleich (`activeElement` + ARIA je Schritt) | `gallery-visual` (T-DOM-G, T-VIS-G, T-KBD) | I0 |
 | AK-I0-06 | Workspace-Shell W-001 alle Zustände `auto-green` und `accepted`, inkl. `UI-DEV-001` (Versions-Badge) | `screens-visual` (T-VIS-S) + Sichtabnahme | I0 |
 | AK-I0-07 | K-001…K-004 ≤ 1 % gegen Original-Sign-in (Masken nur laut `UI-DEV-011`); `css-diff --subset keycloak` grün | `keycloak`-Suite (T-KC-01) | I0 |
@@ -2022,6 +2052,7 @@ Ebenen und Gates nach `15` (L0–L9, G0–G6). Alle Kriterien sind maschinell pr
 | AK-I0-13 | Alle Andockstellen aus §6.1 mit Spalte „ab“ ≤ aktuelles Inkrement bestehen den Neutralitätstest (§6.6) | `extension-dom-neutrality.spec.ts` (T-EXT-01) | I0 … I4 |
 | AK-I0-14 | Host-Kontext-Regel §3.3.4: 0 Befunde `host-context` in allen Galerie-Stories und Katalog-Einträgen des Inkrements; kein Element mit `data-pl-host` als direktes Kind eines Containers mit `space-*`/`divide-*`/`*:`/`[&>…]`-Klassen; kein Trigger-Wrapper (`no-trigger-wrapper`) | T-HOST-01, T-LINT-01 | I0 ff. |
 | AK-I0-15 | `reference-candidates/<app>.txt` reproduzierbar aus `reference-css/<app>.css` erzeugt; Round-Trip-Prüfung (jeder Kandidat ergibt mit Tailwind 4.1.17 die Referenzregel) ohne Befund; Inline-Script = Funktion `M` aus next-themes 0.4.6 für alle Eingaben (inkl. ungültiger Wert, fehlender Wert, `localStorage`-Ausnahme) | T-CSS-03, T-THEME-01 | I0 |
+| AK-I0-16 | Brand-Inventar §4.11.1 (`BRAND-UI-01` … `-07`) umgesetzt: T-BRAND-01 grün, Referenzaufnahmen mit vorab ersetztem Branding (§3.14.2), keine G-BRAND-Treffer in den gebauten Apps außerhalb der Allowlist | T-BRAND-01, G-BRAND (`15`) | I0 |
 | AK-I1-01 | Alle I1-Komponenten (§1.4) mit Galerie-Stories, DOM-Vertrag gleich, Visual ≤ 0,1 % in allen sechs Web-Themes | `gallery-visual` | I1 |
 | AK-I1-02 | Theme-Laufzeit: HC- und Custom-Themes, Profil-Sync, Reload-Ablauf, Edge-Cases E-01…E-05, E-14, E-29…E-33 nachgebaut (je Edge-Case ein Test) | `theme-runtime.spec.ts` (T-THEME-02) | I1 |
 | AK-I1-03 | 59 Illustrationen: SVG-Golden gleich; Lazy-Load ohne Layout-Sprung (Fallback rendert nichts, wie Original) | `illustrations.spec.ts` (T-ILL-01) | I1 |
@@ -2075,6 +2106,7 @@ Ebenen und Gates nach `15` (L0–L9, G0–G6). Alle Kriterien sind maschinell pr
 | T-HOST-01 | Host-Kontext-Regel (§3.3.4 H2/H3) auf Galerie und Katalog | L8 | Befund `host-context` aus `normalizeDom` in `gallery.visual.spec.ts`/`catalog.visual.spec.ts` | G2 |
 | T-CAT-01 | Vollständigkeit Komponenten-Katalog | L0 | `FE/tools/gallery-stories/catalog-completeness.spec.ts` | G1 |
 | T-DRIFT-01 | Determinismus der Referenz (3 Aufnahmen, Toleranz 0) | L8 | Job `visual:drift` | G3, G4 |
+| T-BRAND-01 | Brand-Assets und Manifeste (§4.11.1): jede Datei aus `brand-assets.json` vorhanden, Pixelgröße/Format/Dateiname = Original, Manifeste `name`/`short_name` = „funk.“; Restvorkommen prüft G-BRAND (`15`, BR-14) | L1 | `frontend/tools/brand/brand-assets.spec.ts` | G1 |
 
 **CI-Jobs aus §3.14.10 ↔ Gates:** `css-diff` → G1; `gallery-visual` → G1 (betroffene Komponenten) und G2; `screens-visual` → G2; `screens-visual-full` → G4 und G5; `capture-reference` → G3 (Golden-Änderung, Label `golden-update`); `visual-report` → Artefakt aller Gates.
 
@@ -2103,8 +2135,12 @@ Ebenen und Gates nach `15` (L0–L9, G0–G6). Alle Kriterien sind maschinell pr
 | UI-DEV-013 | `dom` | Profil-Settings ohne Tab „Security“ (W-025) | ADR-008 | W-021 … W-024 |
 | UI-DEV-014 | `dom` | God-Mode-Authentifizierung zeigt nur Keycloak-Status (A-006), Provider-Seiten entfallen | ADR-008 | A-002, A-006 |
 | UI-DEV-015 | `asset` | Emoji-Daten lokal statt jsDelivr (E-22) – kein sichtbarer Unterschied, nur Netzwerk | ADR-004 | – |
+| UI-DEV-016 | `pixel`, `dom` | God-Mode AI: zusätzliches drittes Feld „Base URL“ (`LLM_BASE_URL`) im 3-Spalten-Raster; eigene Baseline statt Maske (Quelle `11` §3.17, D11-ADR-15; vormals `UI-DEV-D11-01`, ABG-134) | ADR-004 | A-007 |
+| UI-DEV-017 | `pixel`, `dom` | God-Mode AI: Kontakt-Hinweis mit Link `plane.so/contact` entfällt (U23; Quelle `11` §3.17; vormals `UI-DEV-D11-02`, ABG-134) | ADR-001, ADR-009B | A-007 |
 
 Weitere Einträge entstehen nur über PR mit Begründung; `UI-DEV-006` … `UI-DEV-009` sind für weitere ADR-001-Fundstellen reserviert, die bei der I1/I2-Abnahme auffallen.
+
+**Branding (ADR-009B, Art `brand`):** `BRAND-UI-01` … `BRAND-UI-07` laut §4.11.1 (Manifeste, Favicons/App-Icons, `logo-spinner-*`, `PlaneLogo`/`PlaneLockup`, Space-Badge „Powered by funk. Publish“, Illustrationen/Raster mit Plane-Logo, Kontakt-Hinweis U23); sie stehen in `ui-deviations.yaml` mit `kind: brand`. Text-Ersetzungen in Templates und Locales führt `08` (`BRAND-WEB-*`, `BRAND-I18N-*`).
 
 ---
 
@@ -2172,7 +2208,7 @@ Die Nummern 12 und 13 sind in `01` Anhang A nicht vergeben. Spalte **Status** = 
 | `08-frontend-angular-architektur.md` | `libs/shared/{tailwind-config,propel,blocks,icons-lucide,theme}`, `cn()`, Galerie, Lint-Regeln (Ergänzungen zu `@plane/eslint-rules`, §3.3.3), Host-Kontext-Regel §3.3.4, DOM-Neutralitäts-Regel und UI-Andockstellen (§6.1) | Workspace-/Lib-Struktur, Sheriff-Tags, Registries (`08` §6) inkl. `provideFakeExtensions()`, Profil-Sync des Themes, Power-K-Komponente `pl-command`, Domänen-Komponenten, Lint-Paket `FE/tools/eslint-rules/` | `FE/libs/web/extensions/src/*`, `index.html` je App | Abweichungen H-01, H-02, H-04, H-17 (O-D09-03, O-D09-15 c) |
 | `10-editor-angular.md` | Propel `menu`, `popover`, `preview-card` (ab I0/I2 fertig), `toolbar` (I4); `suggestion-menu` nutzt das Original-Editor-Paket nicht (Slash-/Mention-Menüs sind Editor-eigen), Import-Position der Editor-CSS (§3.2.2), Schwellwert Editor 0,5 % | Editor-CSS `FE/libs/shared/editor/styles/*` (1:1), NodeView-DOM | Katalog W-046, Galerie-Stories der Editor-Menüs | offen (10 noch nicht vorhanden) |
 | `11-suche-und-ai-basis.md` | – (Power-K-Optik über `power-k.css` + `08`) | – | – | keine Kopplung (G1–G3 nicht gewählt) |
-| `14-infrastruktur-deployment-betrieb.md` | Liste gebündelter Assets für den Airgap-Test (§3.8, §4.11; Emoji-Daten `assets/emojibase/…`), CSP-Hash-Datei `theme-script.sha256`, Anforderungen an Git LFS (§8.1 R-D09-08) | Gateway-Auslieferung von `public/`/`assets/` je Base-Path, gespiegelte npm-Registry (Propel-Tarball, Tailwind, `@tailwindcss/oxide`, Fontsource, `lucide`), gespiegeltes Playwright-Image, Spiegel der aus Quellen gebauten Original-Images (R-D09-07), Keycloak-Image `plane-keycloak` mit Themes | `deploy/keycloak/Dockerfile`, CI-Runner `parity` | Theme-Packaging abgestimmt (D14-ADR-04 folgt `05`); offen: Paritäts-Start §3.20 (O-D09-14) |
+| `14-infrastruktur-deployment-betrieb.md` | Liste gebündelter Assets für den Airgap-Test (§3.8, §4.11; Emoji-Daten `assets/emojibase/…`), CSP-Hash-Datei `theme-script.sha256`, Anforderungen an Git LFS (§8.1 R-D09-08) | Gateway-Auslieferung von `public/`/`assets/` je Base-Path, gespiegelte npm-Registry (Propel-Tarball, Tailwind, `@tailwindcss/oxide`, Fontsource, `lucide`), gespiegeltes Playwright-Image, Spiegel der aus Quellen gebauten Original-Images (R-D09-07), Keycloak-Image `funk-keycloak` mit Themes (Name nach 17 ABG-149) | `deploy/keycloak/Dockerfile`, CI-Runner `parity` | Theme-Packaging abgestimmt (D14-ADR-04 folgt `05`); offen: Paritäts-Start §3.20 (O-D09-14) |
 | `15-teststrategie-qualitaet-paritaet.md` | Katalog (§4.14), DOM-Normalisierung N1–N9 (§3.14.6, §5.12; von `15` §3.10.4 übernommen), Host-Kontext-Befund (§3.3.4), Schwellwerte (§3.14.5; `15` §3.10.3 übernimmt sie), Story-Format (§3.14.9), Abweichungsregister (§7.4), Testkatalog (§7.2), Pflichtumfang Seed-Fragment `visual` | Ebenen L0–L9, Gates G0–G6, Seed-Spezifikation und Lader (D15-ADR-16), Umgebung `parity` und `tools/parity/start-original.sh --from-source` (D15-ADR-20), Determinismus-Treiber `FE/apps/e2e/drivers/determinism.ts`, Quarantäne-Regel (D15-ADR-18), Anmeldung im Harness (§3.6.6) | `FE/apps/e2e/{visual,drivers}/**`, `tests/seed/parity-seed.yaml` | weitgehend abgestimmt (H-07, H-09, H-10, H-14 umgesetzt); offen H-06, H-08, H-13 (O-D09-04, O-D09-13) |
 | `16-erweiterungspunkte-bezahl-features.md` | §6 vollständig (UI-Andockstellen, Vorziehliste, Gestaltungsregeln G-01…G-20, Schablonen T-01…T-12, Abnahme neuer Screens, Asset-Inventar) | Paket-Liste und Wellen (`F30`), fachliche Andockstellen; `16` verweist auf D09 für `PlBlkStateSelect.allowedStateIds` (C1), Chart-Bausteine (B2) und den Paritätstest zu Stub S57 (`context-menu-item.tsx`, CE-Verhalten 1:1, E-26) | – | vorhanden, konsistent mit §6.1 |
 
@@ -2273,3 +2309,10 @@ Umgesetzt sind die verbindlichen Entscheidungen aus `17-abgleich-dokumentuebergr
 | ABG-008 | §3.1-Baum (`apps/gallery`, `tools/reference-gallery`), §3.14.9, H-08 | base href `"/gallery/"` → `"/__gallery/"`; Route `/gallery/<component>/<story>` → `/__gallery/<component>/<story>` (Vite-`base`); H-08 auf ABG-008 umgestellt (Name D09, Pfad D14) |
 | ABG-026 | §8.2 O-D09-01, H-01, H-12, Verbleibende Punkte | O-D09-01 als entschieden markiert (CDK nur a11y, Portal-Schicht + `@floating-ui/dom`, `no-cdk-overlay`) |
 | ABG-033 | §8.2 O-D09-04 und O-D09-13, H-06, H-13, H-14, §5-Skelett `ui-deviations.yaml`, §7.4 | O-D09-04 und O-D09-13 als entschieden markiert; `kind`-Werte auf die zulässige Liste (`pixel+dom` → `[pixel, dom]`) vereinheitlicht |
+| ABG-115 | §3.2.2 (Zeilen web, space), §5.1-Snippet | `FE/libs/shared/editor/styles/tiptap-core.css` als letzter Import von `styles.css` in Web und Space, außerhalb jeder `@layer` (10 D10-ADR-13, `injectCSS: false`); Admin ohne Editor-Styles |
+| ABG-116 | §3.1-Baum (`PRP/icons/` datenrein, neu `PRP/components/svg-icon/`), Sheriff-Absatz, D09-ADR-07, §3.3.3 (`no-component-styles` um `libs/shared/editor/**`, `libs/space/editor/**` erweitert; neue Regel `icons-data-only`; `icon-source`), §4.8 (Hand-Ports nach `BLKT/icon-components/`), §5.7 (Skelett-Pfad `PRP/components/svg-icon/svg-icon.component.ts`) | `@plane/propel/icons` und `@plane/blocks/icons` sind datenreine Einstiege ohne `@angular/*`; Render-Komponente `svg[plSvgIcon]` unter `@plane/propel/components/svg-icon` |
+| ABG-117 | §4.14 W-031, W-046; §3.14.4 (Pflichtumfang Seed) | W-031 um die neun `description-*`-Zustände, W-046 um `table-column-dropdown`, `image-toolbar`, `callout-picker`, `code-hover` ergänzt; Seed-Bedarf „Beschreibung alle Nodes“ für `WEB-1` vermerkt |
+| ABG-134 | §4.12 (U23), §7.4 (`UI-DEV-016`, `UI-DEV-017`) | Kontakt-Hinweis im God-Mode-AI-Formular entfällt (U23); `UI-DEV-D11-01/-02` aus `11` §3.17 als `UI-DEV-016`/`UI-DEV-017` übernommen |
+| ABG-148 | §1.3 (CE-SPACE-032), §3.8.3, §3.13, §3.14.1 (Diagramm), §3.14.2 (neue Zeile „Branding der Referenz“), §4.8 (Brand-Icons), §4.11 (Zeilen + neues §4.11.1 Brand-Inventar), §4.14 S-005, §5.10 (`ui-deviations.yaml`, `kind: brand`), §7.1 AK-I0-04/AK-I0-16, §7.2 T-BRAND-01, §7.4 | §4.11 „Name „Plane“ bleibt (Produktname, ADR-005)“ → `name`/`short_name` = „funk.“ (`BRAND-UI-01`); Favicons/App-Icons, `logo-spinner-{light,dark}.gif`, `PlaneLogo`/`PlaneLockup` (Daten aus `assets/funk_logo.svg`, Bezeichner bleiben), Space-Badge „Powered by funk. Publish“, Illustrationen mit Plane-Logo nach BR-06 (`BRAND-UI-02` … `-07`); Visual-/DOM-Verfahren nach BR-13 (Referenz mit vorab ersetztem Branding, Masken nur für Raster) |
+
+**Teil 2 (`_data/17-abgleich-teil2.json`, Stand 23.10.2026):** ABG-115, ABG-116, ABG-117, ABG-134 und ABG-148 umgesetzt (Zeilen oben). **Branding-Durchgang (ADR-009B, BR-01 … BR-14):** Alle Stellen, an denen dieses Dokument nach außen sichtbare Namen, Texte, Manifeste, Icons, Logos, Lade-Animationen, Illustrationen oder das Space-Badge der Zielplattform festlegt, zeigen jetzt „funk.“ (Inventar §4.11.1, `BRAND-UI-01` … `-07`); Verweise auf das Original (Pfade, Dateinamen, „Plane v1.4.2“, Lizenzherkunft) und interne Bezeichner (`@plane/*`, `PlaneLogo`/`PlaneLockup`, Theme-Ordner `themes/plane*`, `plane-login.css`) bleiben unverändert (BR-02).

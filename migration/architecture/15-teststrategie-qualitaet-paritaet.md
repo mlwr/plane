@@ -25,7 +25,7 @@
    - 3.12 Last- und Performancetests
    - 3.13 Sicherheitstests
    - 3.14 Testdaten
-   - 3.15 Quality-Gates, CI-Stufen und Definition of Done für KI-Agenten
+   - 3.15 Quality-Gates, CI-Stufen und Definition of Done für KI-Agenten (inkl. 3.15.5 Branding-Gate G-BRAND)
    - 3.16 Zuordnung zu Inkrementen (was wird wann gebraucht)
 4. [Vollständige Mapping-Tabellen Original → Ziel](#4-vollständige-mapping-tabellen-original--ziel)
 5. [Code-Skelette](#5-code-skelette)
@@ -111,6 +111,7 @@ Konsequenz: Das Original liefert wertvolle **Regressions- und Sicherheitsfälle*
 | D15-ADR-18 | Flaky-Tests | **Null-Toleranz mit Quarantäne**: ein als flaky erkannter Test (Retry nötig) wird mit `[Trait("quarantine","<ticket>")]` bzw. `test.fixme` + Ablaufdatum (max. 10 Arbeitstage) markiert; Quarantäne zählt **nicht** zur CE-Abdeckung; Retries nur in E2E/Visual (max. 1) und nur mit Report | Pauschale Retries; Ignorieren | Retries verdecken Nebenläufigkeitsfehler (Outbox, Realtime); Quarantäne macht Schuld sichtbar | – | I0 |
 | D15-ADR-19 | Abdeckungsmessung | **`coverlet.MTP`** (Coverlet-Erweiterung für Microsoft.Testing.Platform, MIT, Cobertura-Ausgabe) für .NET, `@vitest/coverage-v8` für Frontend; Gate auf **geänderte Zeilen** (Diff-Coverage ≥ 90 %) und Modul-Untergrenzen (Z5); Mutationstests (**Stryker.NET**, Apache-2.0) nur nightly für `Domain/`-Ordner, informativ | Globale Gesamtquote; keine Messung | Diff-Coverage ist für parallel arbeitende Agenten fair und wirksam; Original verlangte `--fail-under=90` (`apps/api/run_tests.py`) | MIT (`coverlet.MTP` 10.x), Stryker.NET Apache-2.0; **nicht** `Microsoft.Testing.Extensions.CodeCoverage` (proprietäre Microsoft-Lizenzdatei `License.txt` statt SPDX-Ausdruck, laut nuspec 18.12.0 – widerspricht der Lizenz-Hygiene, O-D15-02 entschieden) | I0 |
 | D15-ADR-20 | Testumgebungen | **Vier Umgebungen**: `local` (Agent/Entwickler, `aspire run` Profil `dev`), `ci-fast` (Testcontainers, kein AppHost), `ci-system` (AppHost Profil `test`, Images gebaut), `parity` (Original 1.4.2 per `tools/parity/start-original.sh` mit gepinnten `makeplane/*`-Images hinter Proxy `http://localhost:13000` (D14 §3.20) + `funk.` Profil `test` nebeneinander); dazu `airgap` ab I7 (Egress gesperrt) | Gemeinsame, langlebige Test-Instanz | Reproduzierbar, parallelisierbar, keine geteilten Zustände; Original-Umgebung nur, wo sie gebraucht wird | – | I0 |
+| D15-ADR-21 | Branding-Parität (ADR-009B) | **Vergleich gegen Referenzen mit vorab ersetztem Branding und Gate G-BRAND** (17 ABG-148, BR-13/BR-14): Der Referenz-Lauf gegen das unveränderte Original ersetzt sichtbaren Text nach BR-10/BR-03 („Plane“ → „funk.“) und liefert die BR-06-Assets (`frontend/tools/brand/brand-assets.json`) per `page.route` aus; G-MAIL-/G-PDF-Referenzen werden mit derselben Ersetzung abgelegt; Contract-Goldens ersetzen nur die in `BRAND-API-*` gelisteten Werte (N14). G-BRAND (§3.15.5) durchsucht alle gebauten, nach außen sichtbaren Artefakte nach Restvorkommen; erlaubt sind nur Einträge der Allowlist `frontend/tools/brand/allowlist.json` | (a) Original vor der Aufnahme umbranden (verletzt ADR-006 „Original unverändert“); (b) Branding-Unterschiede als Masken/Pixel-Ausnahmen (verdeckt echte Abweichungen, Hunderte Einträge) | Parität bleibt 1:1 messbar, obwohl „funk.“ überall sichtbar ist; Restvorkommen fallen maschinell auf statt im Review | – | I0 |
 
 ---
 ## 3. Detaildesign
@@ -177,11 +178,11 @@ funk./
 │   ├── Plane.Platform.Tests/                              # (01)
 │   ├── Plane.Gateway.Tests/                               # (01)
 │   ├── Plane.Migrator.Tests/                              # (01)
-│   ├── Plane.Worker.Tests/                          ★     # Cron-Registrierungen (13 Beat-Einträge, A01 §2.17), Cleanup-/Retention-Jobs, Leader-Lock
+│   ├── Plane.Worker.Tests/                          ★     # Cron-Registrierungen (11 übernommene Beat-Einträge, B3/B13 entfallen, 7 neu – 06 §4.2, ABG-138), Cleanup-/Retention-Jobs, Leader-Lock
 │   ├── Plane.Contracts.Tests/                       ★     # L5-Runner: lädt tests/contracts/** und spielt In-Process ab
 │   ├── Plane.Security.Tests/                        ★     # generierte Berechtigungsmatrix, Tenant-Isolation über alle Module, Header/Cookie-Regeln
 │   ├── Plane.BuildingBlocks.Testing.Tests/          ★     # Selbsttests der Test-Infrastruktur (Normalisierer, SeedKey, Respawn-Regeln) – §7.2
-│   ├── Plane.Tools.ParityHarness.Tests/             ★     # Selbsttests des Harness (N1–N13, Ausnahmekatalog, Determinismus) – §7.2
+│   ├── Plane.Tools.ParityHarness.Tests/             ★     # Selbsttests des Harness (N1–N14, Ausnahmekatalog, Determinismus) – §7.2
 │   ├── Plane.Tools.Gates.Tests/                     ★     # Selbsttests der Gate-Werkzeuge unter tools/ci/ (Fixture-Repos, Exit-Codes) – §7.2
 │   ├── Plane.ServiceDefaults.Tests/  Plane.Cli.Tests/  Plane.Tools.ForgejoInit.Tests/  deploy/*.sh   # (D14 §7.2)
 │   ├── Plane.Documents.Tests/  Plane.Documents.Pdf.Tests/  Plane.Collaboration.Tests/   # (01)
@@ -212,7 +213,7 @@ funk./
 │   ├── apps/gallery/                                ★     # Komponenten-Galerie (A13a §5.7 Punkt 2), base href /__gallery/ – nur in Test-Builds
 │   ├── apps/e2e/                                          # (01) Playwright
 │   │   ├── playwright.config.ts                           # Projekte web-chromium, admin-chromium, space-chromium, gallery-{chromium,firefox,webkit}, visual-*, a11y
-│   │   ├── drivers/{target.ts,auth-driver.original.ts,auth-driver.funk.ts,seed-manifest.ts,clock.ts,determinism.ts}
+│   │   ├── drivers/{target.ts,auth-driver.original.ts,auth-driver.funk.ts,seed-manifest.ts,clock.ts,determinism.ts,branding.ts}   # branding.ts: Referenz-Branding BR-13 (§3.10.1)
 │   │   ├── pages/                                         # Page-Objects (Dual-Target, Selektoren aus Original-DOM)
 │   │   ├── web/<domäne>/*.spec.ts  admin/*.spec.ts  space/*.spec.ts
 │   │   ├── visual/                                        # Ablage nach D09 §3.1 (ABG-033)
@@ -220,7 +221,7 @@ funk./
 │   │   │   ├── baselines/<app>/<entry-id>/<state-id>/<theme>-<viewport>.png       # aus dem Original aufgenommen (Git LFS)
 │   │   │   ├── baselines-new/<app>/<entry-id>/<state-id>/<theme>-<viewport>.png   # Selbst-Baselines neuer Screens (D09 §6.4)
 │   │   │   ├── dom-contracts/<app>/<entry-id>/<state-id>.dom.html   aria-contracts/<app>/<entry-id>/<state-id>.aria.yml
-│   │   │   ├── ui-deviations.yaml                         # einziges UI-Abweichungsregister (kind: extra-css|extra-utility|pixel|dom|mask|route|behavior|asset)
+│   │   │   ├── ui-deviations.yaml                         # einziges UI-Abweichungsregister (kind: extra-css|extra-utility|pixel|dom|mask|route|behavior|asset|brand – brand: ADR-009B, 09)
 │   │   │   └── {gallery,web,admin,space,editor,keycloak}/*.visual.ts  + __diff__/ (gitignored)
 │   │   └── a11y/baseline/{original}.json                  # axe-Baseline des Originals je Prüfpunkt
 │   ├── libs/{web,admin,space}/extensions/testing/         # (08) provideFakeExtensions / provideFakeAdminExtensions / provideFakeSpaceExtensions (config?) – Test-Erweiterungen (EP-T08, ABG-032)
@@ -231,6 +232,7 @@ funk./
 │   ├── gate.sh                                            # ./tools/ci/gate.sh g0|g1|…|g6 (§3.15)
 │   ├── ce-coverage-check/                           ★     # prüft Anhang-B-Matrix gegen Test-Tags/Traits
 │   ├── original-test-ledger/                        ★     # prüft ledger.yaml gegen Test-Assemblies und Vitest-Listen
+│   ├── brand-gate/                                  ★     # Gate G-BRAND (BR-14, §3.15.5): Restvorkommen „Plane“/„Плейн“/„플레인“/plane.so in gebauten Artefakten; Allowlist frontend/tools/brand/allowlist.json
 │   └── seed-manifest-diff/, acceptance-report/, k6-thresholds.mjs ★  # weitere Gate-Werkzeuge (§3.15.4, §3.12.2)
 └── tools/parity/                                    ★     # (D14 §3.20) Original v1.4.2 neben funk. betreiben
     ├── start-original.sh                                  # startet compose.original.yml, wartet auf Health, lädt Parity-Seed
@@ -269,7 +271,7 @@ funk./
 flowchart LR
   A["AssemblyFixture: PostgresContainerFixture<br/>(1 Container je Test-Assembly,<br/>pgvector/pgvector:pg17)"] --> B["TemplateDatabase<br/>plane_template: MigrateAsync + Basis-Seeds<br/>(einmal je Assembly)"]
   B --> C["ClassFixture: PlaneApiFactory<br/>DB = CREATE DATABASE t_<klasse> TEMPLATE plane_template"]
-  C --> D["IAsyncLifetime je Test:<br/>PlaneRespawner.ResetAsync (ohne Seed-/Referenztabellen)<br/>+ Seed-Szenario laden"]
+  C --> D["IAsyncLifetime je Test:<br/>PlaneRespawner.ResetAsync (ohne Referenztabellen)<br/>+ BaseSeeds.ApplyAsync + Seed-Szenario laden"]
   D --> E["Test: HttpClient (TestAuth) / ISender / IServiceScope"]
 ```
 
@@ -278,7 +280,7 @@ flowchart LR
 | `PostgresContainerFixture` | Image `pgvector/pgvector:pg17` (gleiches Tag wie AppHost), `max_connections=400`, Extensions `vector`, `pg_trgm`, `unaccent`; `tmpfs` für `/var/lib/postgresql/data` (wie Original-Test-Stack) |
 | `TemplateDatabase` | führt `PlaneDbContext.Database.MigrateAsync()` **und** die Basis-Seeds des Migrators (System-Rollen 20/15/5, Instanz-Datensatz, Relationstyp-Katalog A9, Event-Katalog) aus; danach `ALTER DATABASE plane_template IS_TEMPLATE true` |
 | Klon je Testklasse | `CREATE DATABASE "t_<hash(klasse)>" TEMPLATE plane_template` (≈ 0,1–0,4 s); **eine `PlaneApiFactory` je Testklasse** (gecacht in `ClassHosts`, nicht je Test – Host-Aufbau kostet 0,3–1 s); Löschen von DB und Factory beim Ende der Assembly-Fixture |
-| `PlaneRespawner` | Respawn 7 (7.0.0, Apache-2.0), `DbAdapter.Postgres`, `SchemasToInclude = ["public"]`, `TablesToIgnore` = `__EFMigrationsHistory`, `roles`, `work_item_relation_types`, `data_protection_keys`, `instances`, `event_types` (Basis-Seeds; endgültige Liste liefert D03, §9.3); Reset **vor** jedem Test (nicht danach – erleichtert Fehleranalyse) |
+| `PlaneRespawner` | Respawn 7 (7.0.0, Apache-2.0), `DbAdapter.Postgres`, `SchemasToInclude = ["public"]`, `TablesToIgnore` = `__EFMigrationsHistory`, `roles`, `work_item_relation_types`, `data_protection_keys`, `instances`, `instance_configurations`, `recurring_job_states` (Referenztabellen nach 03 §4.6, maschinenlesbar `_data/03-datenmodell.json` → `reference_tables[]`; eine Tabelle `event_types` gibt es nicht; ABG-139); Reset **vor** jedem Test (nicht danach – erleichtert Fehleranalyse); **nach jedem Reset** ruft `PlaneRespawner` `BaseSeeds.ApplyAsync` auf, damit u. a. der System-Bot (`users`/`profiles` sind keine Referenztabellen und werden geleert) wiederhergestellt wird (03 §3.14.1, ABG-104, ABG-139) |
 | Parallelität | Testklassen parallel (eigene DB), Tests innerhalb einer Klasse sequenziell; `xunit.runner.json`: `parallelizeTestCollections=true`, `maxParallelThreads = 2 × CPU` |
 | Zusatzcontainer | nur per `[Collection]`-Fixture, wenn Modul sie benötigt: `SeaweedFsFixture` (Assets, Exports, Pages), `MailpitFixture` (Notifications, Webhooks-Deaktivierungs-Mail, Instance-Test-Mail), `ValkeyFixture` (Caching, Rate-Limit, Collaboration-Fan-out), `KeycloakFixture` (nur Identity) |
 | Externe HTTP-Ziele | WireMock.Net (LLM-Provider, Unsplash, Webhook-Ziele, Link-Unfurl-Ziele, Forgejo-Simulation); **kein** realer Internetzugriff (Test schlägt fehl, wenn `SocketsHttpHandler` ein nicht registriertes Ziel anwählt – `DenyExternalNetworkHandler`) |
@@ -309,8 +311,8 @@ flowchart LR
 |---|---|---|
 | Outbox atomar | Rollback der Fach-Transaktion ⇒ keine Outbox-Zeile | `Plane.BuildingBlocks.Tests/Messaging` |
 | Dispatcher exakt-einmal-wirksam | 3 Dispatcher-Instanzen, 10 000 Nachrichten ⇒ jede Inbox-Zeile genau einmal; `kill -9` während Verarbeitung ⇒ kein Verlust (S12) | dto. |
-| Retry/Backoff/Dead-Letter | Webhook-Policy: 5 Versuche, Backoff ab 600 s mit Jitter (mit `FixedClock` gesteuert) | `Plane.Webhooks.Tests` |
-| Cron-Leader | 2 Worker, Leader-Kill ⇒ Übernahme < 30 s, kein Doppellauf; alle 13 Beat-Einträge des Originals registriert mit gleicher UTC-Zeit | `Plane.Worker.Tests` |
+| Retry/Backoff/Dead-Letter | Webhook-Policy: 6 Versuche (1 + 5 Retries), Wartezeit je Wiederholung zufällig 0…600 s (Full Jitter, 06 D06-ADR-06, 17 ABG-136; mit `FixedClock` und festem Zufalls-Seed gesteuert) | `Plane.Webhooks.Tests` |
+| Cron-Leader | 2 Worker, Leader-Kill ⇒ Übernahme < 30 s, kein Doppellauf; `CronRegistrationTests` (ABG-138): **11** übernommene Beat-Einträge des Originals mit identischer UTC-Zeit, **B3 und B13 als entfallen** (`DroppedBeatEntries`), **7** neue Einträge (`identity.expired_sessions_cleanup`, `identity.idp_user_state_sync`, `messaging.outbox_cleanup`, `messaging.inbox_cleanup`, `messaging.dead_letter_cleanup`, `cycles.completion_detection`, `indexing.reconcile`; 06 §4.2) | `Plane.Worker.Tests` |
 | SequenceAllocator | 100 parallele Creates ⇒ `sequence_id` lückenlos 1…100 (01 §7.6) | `Plane.WorkItems.Tests` |
 | Erst-Einrichtung atomar | 10 parallele Setup-Requests ⇒ genau eine Instanz-Initialisierung (S-16, GHSA-p548-28jp-wr4p) | `Plane.Instance.Tests` |
 
@@ -339,7 +341,7 @@ Das Profil `test` (01 §3.4: `Plane:Profile=test`) unterscheidet sich von `dev` 
 | Persistenz | keine Daten-Volumes (`WithDataVolume` entfällt), PostgreSQL mit `tmpfs` |
 | Zeit | `Plane__Testing__FixedUtcNow` optional (nur Visual/Parity-Läufe) – wirkt über `IClock`-Registrierung `ConfigurableClock`, die **nur** existiert, wenn `Plane:Profile=test` (Startfehler sonst) |
 | Ports | dynamisch, außer Gateway 3000 und Keycloak 8180 (Redirect-URIs); parallele Systemläufe auf einem Runner per `Plane__Testing__PortOffset` (Keycloak/Gateway +N) |
-| Images | aus gespiegeltem Registry-Präfix `Plane__Testing__ImageRegistry` (Airgap-CI) |
+| Images | Fremd-Images aus gespiegeltem Registry-Präfix `Plane__Testing__ImageRegistry` (Airgap-CI); die eigenen veröffentlichten Images heißen `${PLANE_REGISTRY}/funk-<dienst>:${PLANE_VERSION}` (`funk-gateway`, `funk-api`, `funk-worker`, `funk-realtime`, `funk-migrator`, `funk-aio`, `funk-cli`, `funk-keycloak`; ABG-149) – die Variablen `PLANE_*`/`Plane__*` bleiben interne Schlüssel (BR-02) |
 | Egress | im Job `airgap` (ab I7) per Netzwerk-Policy gesperrt; Test `NoExternalEgressTests` prüft, dass kein Container DNS-Anfragen außerhalb des Stacks stellt (P6) |
 
 #### 3.4.2 Systemtest-Fixture
@@ -351,7 +353,7 @@ Das Profil `test` (01 §3.4: `Plane:Profile=test`) unterscheidet sich von `dev` 
 | `ResourceHealthTests` | alle Ressourcen aus 01 §3.3 (Profil `test`) erreichen `Healthy` < 180 s; `/health/live`, `/health/ready`, `GET /` (Original-Health) und `/live/health/` liefern 200 | I0 |
 | `GatewayRoutingTests` | jede Pfadregel aus `A01` §2.8.1 inkl. 301 `/spaces`→`/spaces/`, `/god-mode`→`/god-mode/`, SPA-Fallback, 413-JSON bei Überschreitung von `FILE_SIZE_LIMIT`, Security-Header | I0 |
 | `OidcLoginFlowTests` | Login web/admin/space per `KeycloakHeadlessLogin`; Cookie `session-id` HttpOnly/SameSite=Lax/Secure-Regel; `next_path`-Weiterleitung inkl. Open-Redirect-Abwehr (S-10); RP-Logout; Back-Channel-Logout beendet Session < 2 s (S7); `email_verified=false` ⇒ kein Benutzer; Rolle `plane-instance-admin` ⇒ God-Mode-Zugriff | I0 |
-| `OutboxToMailTests` | Workspace-Einladung ⇒ Mailpit erhält Mail mit Original-Betreff/-Text (Golden) < 5 s | I1 |
+| `OutboxToMailTests` | Workspace-Einladung ⇒ Mailpit erhält Mail mit Betreff/Text des G-MAIL-Golden (Original mit Branding-Ersetzung, Absender-Default `funk. <noreply@<Host aus Plane:Urls:Web>>`; ABG-105) < 5 s | I1 |
 | `RealtimeSmokeTests` | WebSocket `/live/` über Gateway mit Session-Cookie: `Authenticated`; ohne Cookie: `PermissionDenied` | I4 (Hub-Smoke `/live/events/` I0) |
 | `ForgejoSsoSmokeTests` | Forgejo-Login über denselben Keycloak, gleiche `sub` (ADR-007/-008) | I0 |
 | `MigratorIdempotencyTests` | Migrator zweimal ⇒ keine Änderungen, Exit 0; Drift-Check `dotnet ef migrations has-pending-model-changes` = false | I0 |
@@ -519,6 +521,7 @@ Platzhalter: `{ws:<slug-key>}`, `{prj:<ws-key>/<identifier>}`, `{wi:<ws-key>/<ID
 | N11 Header | – | – | `content-type` (inkl. `charset`), `content-disposition`, `location` (normalisiert per N6), `x-ratelimit-*`, `retry-after`, `set-cookie` (Name + Attribute HttpOnly/SameSite/Path/Secure, Wert maskiert); alle übrigen ignoriert |
 | N12 Fehlerkörper | – | – | strikt (`error`, `detail`, `error_code`, `error_message`, Feldfehler-Listen, Texte wörtlich) |
 | N13 Gzip/Encoding | – | – | Vergleich nach Dekompression |
+| N14 Produktname (ADR-009B, BR-13) | „Plane …“ an den in 04 `BRAND-API-*` gelisteten Stellen (z. B. `instance.instance_name` „Plane Community Edition“ BRAND-API-05, Texte BRAND-API-02, OpenAPI-`info` BRAND-API-01) | „funk. …“ | **nur** an diesen JSONPaths wird im Golden vor dem Vergleich nach BR-10/BR-03 ersetzt (Liste `normalization.yaml` → `brand:` mit Verweis auf die `BRAND-API`-ID); alle übrigen Werte strikt, gespeicherte Daten-Strings (BR-02 Nr. 3) unverändert |
 
 #### 3.6.5 Ausnahmekatalog `tests/contracts/deviations.yaml`
 
@@ -578,14 +581,16 @@ Fünf Endpunkte mit je ≥ 3 Schritten (Erfolg, Berechtigungsfehler, Validierung
 
 | Korpus | Inhalt | Erzeugung aus dem Original (nur Dev-Zeit) | Ablage in `funk.` | Prüfung | Inkr. |
 |---|---|---|---|---|---|
-| **G-SCHEMA** Tiptap-Schema | `editor.schema.spec` als JSON (Nodes, Marks, Attribute inkl. Defaults, Content-Expressions, Gruppen) je Variante Rich, Lite, Document, Title sowie Server-Schema (`CoreEditorExtensionsWithoutProps`) | `tools/golden/generate.mjs schema` (importiert `packages/editor` des Originals per Node, ESM) | `tests/Plane.Documents.Tests/Golden/schema/<variante>.schema.json` | (a) C#-Schema von `Plane.Documents` serialisiert ⇒ identisch; (b) Vitest im Angular-Build serialisiert Browser-Schema ⇒ identisch (S5) | I2 |
+| **G-SCHEMA** Tiptap-Schema | `editor.schema.spec` als JSON (Nodes, Marks, Attribute inkl. Defaults, Content-Expressions, Gruppen) in zwei Sätzen (ABG-119): **Server** (Eigentümer 07 §7.5): `rich` = `CoreEditorExtensionsWithoutProps`, `document` = `+ DocumentEditorExtensionsWithoutProps`, `title` = `TitleExtensions` – **kein** `server.schema.json`; **Browser** (Eigentümer 10 §3.2.3): `browser/{rich,lite,document,collaborative,title}` | `tools/golden/generate.mjs schema` (importiert `packages/editor` des Originals per Node, ESM) | Server: `tests/Plane.Documents.Tests/Golden/schema/{rich,document,title}.schema.json`; Browser: `tests/Plane.Documents.Tests/Golden/schema/browser/{rich,lite,document,collaborative,title}.{schema,extensions,plugins}.json` | (a) C#-Schema von `Plane.Documents` serialisiert ⇒ identisch zu den Server-Goldens (die Mark-Rangfolge liest 07 aus `rich`/`document`); (b) Vitest im Angular-Build serialisiert die Browser-Varianten ⇒ identisch zu `browser/*` (S5) | I2 (Browser `collaborative`/`title`: I4) |
 | **G-DOC** Dokumente | ≥ 200 Dokumente (S2): je Node aus `A12` §2.5.1 (23 Nodes) und Mark aus §2.5.2 (8 Marks) mindestens 3 Fälle (Minimal, alle Attribute, verschachtelt), dazu 40 Mischdokumente aus `API/seeds/data/pages.json`, `issues.json` und realen Demo-Inhalten, 20 Fehlerfälle (ungültige Kinder, unbekannte Attribute, XSS-Vektoren) | `tools/golden/generate.mjs docs`: für jedes Eingabe-HTML erzeugt das Original-Tooling `generateJSON` → `*.pm.json`, `generateHTML` → `*.html`, `prosemirrorJSONToYDoc` → `*.yjs.bin`, `yXmlFragmentToProseMirrorRootNode` (Rückweg) → `*.roundtrip.json` | `tests/Plane.Documents.Tests/Golden/docs/<nnn>-<name>/{input.html,pm.json,output.html,state.yjs.bin,roundtrip.json}` | HTML: byte-gleich nach Normalisierung (Whitespace zwischen Block-Tags, Attribut-Reihenfolge) in ≥ 99 %, Rest nur dokumentierte Attribut-Reihenfolge; JSON: strukturgleich 100 %; Yjs: `state.yjs.bin` von .NET dekodiert ⇒ `roundtrip.json` gleich; .NET-erzeugter Yjs-State im Browser (Playwright, Original-`yjs`) dekodiert ⇒ gleiches PM-JSON | I2 (HTML↔JSON), I4 (Yjs) |
 | **G-SANITIZE** | Eingaben mit unerlaubten Tags/Attributen/URLs (`javascript:`, `data:`, `vbscript:` – GHSA-v2vv-7wq3-8w2j), Allowlist-Grenzfälle aus `API/utils/content_validator.py` | `tools/golden/original-render.py sanitize` im Original-API-Container (`nh3` mit Original-Konfiguration) | `tests/Plane.Platform.Tests/Golden/sanitize/*.{in,out}.html` | Ausgabe `HtmlSanitizer`-Profil = `nh3`-Ausgabe nach Normalisierung (S-07) | I2 |
-| **G-PDF** | 20 Referenz-Seiten (S3) + 21 Fälle aus `LIVE/tests/lib/pdf/pdf-rendering.test.ts` | Original-Live-Server `POST /live/pdf-export/` im Paritäts-Setup | `tests/Plane.Documents.Pdf.Tests/Golden/{cases,pages}/*.pdf` + `*.txt` | Textextraktion (PdfPig) identisch; Rasterung mit 150 dpi über PDFium (Paket `Docnet.Core`, MIT; PDFium BSD-3 ⚠ – Paketwahl und Lizenzprüfung in S3, nur Test-Abhängigkeit) und Pixel-Diff mit SkiaSharp ≤ 2 % je Seite | I4 |
-| **G-MAIL** | jedes Template aus `apps/api/templates/emails/**` mit Beispielkontext (Einladung Workspace/Projekt, Benachrichtigungs-Bündel, Webhook-Deaktivierung, Export-Link, Analytics-Export, Test-Mail, Magic-/Passwort-Mails entfallen nach ADR-008) | `tools/golden/original-render.py mail` (Django `render_to_string` + `html2text`-Pfad wie `T/unit/utils/test_email.py`) im Original-Container | `tests/Plane.Platform.Tests/Golden/mail/<template>.{html,txt,subject}` | Fluid-Rendering = Golden nach HTML-Normalisierung; Text-Teil byte-gleich | I1 (Einladung), I5 (Notifications), I6 (Webhook/Export) |
+| **G-PDF** | 20 Referenz-Seiten (S3) + 21 Fälle aus `LIVE/tests/lib/pdf/pdf-rendering.test.ts` | Original-Live-Server `POST /live/pdf-export/` im Paritäts-Setup | `tests/Plane.Documents.Pdf.Tests/Golden/{cases,pages}/*.pdf` + `*.txt` | Textextraktion (PdfPig) identisch; Rasterung mit 150 dpi über PDFium (Paket `Docnet.Core`, MIT; PDFium BSD-3 ⚠ – Paketwahl und Lizenzprüfung in S3, nur Test-Abhängigkeit) und Pixel-Diff mit SkiaSharp ≤ 2 % je Seite; Metadaten nach BR-13 gegen Referenzen mit ersetztem Branding (`Creator`/`Producer` = „funk.“, 07 `BRAND-DOC-01`) | I4 |
+| **G-PDF-web** (07 AK-07-30, ABG-111) | 20 Referenz-Seiten des Profils `web` (Formate A4 … Tabloid, „No images“) | `tools/golden/generate.mjs web-pdf` (`WEB/components/editor/pdf/document.tsx` + `use-parse-editor-content.ts`, `@react-pdf/renderer` in Node) | `tests/Plane.Documents.Pdf.Tests/Golden/web/<nnn>.pdf` | Rasterung wie G-PDF, Pixel-Diff ≤ 2 % je Seite; Metadaten nach BR-13 | I4 |
+| **G-MD** Markdown (07 AK-07-33, ABG-111) | 60 Fälle aus G-DOC-HTML | `tools/golden/generate.mjs markdown` (Original-`convertHTMLToMarkdown`, `PKG/utils/src/editor/markdown-parser`) | `tests/Plane.Documents.Tests/Golden/markdown/<nnn>.{html,md}` | `HtmlToMarkdownConverter` byte-gleich (Zeilenenden `\n`); `MarkdownRenderer` schema-gültig (`MarkdownGoldenTests`) | I4 |
+| **G-MAIL** | jedes Template aus `apps/api/templates/emails/**` mit Beispielkontext (Einladung Workspace/Projekt, Benachrichtigungs-Bündel, Webhook-Deaktivierung, Export-Link, Analytics-Export, Test-Mail, Magic-/Passwort-Mails entfallen nach ADR-008) | `tools/golden/original-render.py mail` (Django `render_to_string` + `html2text`-Pfad wie `T/unit/utils/test_email.py`) im Original-Container; die Referenz-Renderings des Originals werden mit **derselben Branding-Ersetzung** wie das Ziel abgelegt (ABG-105, BR-08/BR-13): Logo `logo-{white,dark}.png` gegen die funk.-Logos getauscht (`BRAND-MAIL-02`), Marketing- und Social-Bilder (`invite-hero.png`, `icon-*.png`, Social-Icons) samt ihrer nur dafür vorhandenen Tabellenzelle entfernt (`BRAND-MAIL-05`), „Plane“ in Betreff/Text/Absender → „funk.“ | `tests/Plane.Platform.Tests/Golden/mail/<template>.{html,txt,subject}` | Fluid-Rendering = Golden nach HTML-Normalisierung; Text-Teil byte-gleich; G-BRAND prüft die Ziel-Renderings auf Restvorkommen | I1 (Einladung), I5 (Notifications), I6 (Webhook/Export) |
 | **G-EXPORT** | CSV/XLSX/JSON-Export eines Seed-Projekts (alle Spalten aus `API/bgtasks/export_task.py`) inkl. Formel-Injection-Fälle (S-20) | Original-Export im Paritäts-Setup | `tests/modules/Plane.Exports.Tests/Golden/*.{csv,xlsx.json,json}` (XLSX als Zell-JSON gespeichert) | Spalten, Reihenfolge, Werte identisch | I6 |
 | **G-CSS** | kompiliertes CSS web/admin/space des Originals | Original-Build (`pnpm build`) im Paritäts-Setup | `frontend/tools/visual/reference-css/<app>.css` (kompiliertes Original-CSS, eingecheckt; Vergleich durch `frontend/tools/visual/css-diff.ts`, 09 §3.2.5) | Menge (Selektor, Deklaration) des Angular-Builds = Golden, Abweichungen nur als Eintrag `kind: extra-css`/`extra-utility` in `frontend/apps/e2e/visual/ui-deviations.yaml` (`A13a` §5.7 Punkt 5, ABG-033) | I0 (Shell), danach je Inkrement |
-| **G-I18N** | Schlüsselmenge je Locale aus `packages/i18n/src/locales` | Kopie | `frontend/libs/shared/i18n/locales/**` | `i18n-sync-check`: identische Schlüsselmenge zum Original-Commit, keine verwaisten Schlüssel (ausgenommen ADR-001/-008-Entfall, Liste `i18n-removed-keys.json`) | I0 |
+| **G-I18N** | Schlüsselmenge je Locale aus `packages/i18n/src/locales` | Kopie | `frontend/libs/shared/i18n/locales/**` | `i18n-sync-check`: identische Schlüsselmenge zum Original-Commit, Werte nach dem Branding-Schritt BR-10 (`frontend/tools/brand/brand-i18n.mjs`, Ausnahmetabellen je Locale; Restvorkommen prüft G-BRAND), keine verwaisten Schlüssel (ausgenommen ADR-001/-008-Entfall, Liste `i18n-removed-keys.json`) | I0 |
 | **G-ICONS** | 919 Propel-Icons (`A13a`) | `frontend/tools/propel-port/port-icons.mjs` (09 D09-ADR-07, ABG-027) | `frontend/libs/shared/propel/icons/__golden__/*.svg` | SVG-Markup der Angular-Komponente = Original-SVG | I0 |
 
 #### 3.7.2 Normalisierer (verbindlich, beidseitig angewendet)
@@ -595,7 +600,7 @@ Fünf Endpunkte mit je ≥ 3 Schritten (Erfolg, Berechtigungsfehler, Validierung
 | `HtmlNormalizer` | AngleSharp-Parse; Attribute alphabetisch; Klassenliste in Originalreihenfolge (Reihenfolge ist Teil der Parität, weil `tailwind-merge` sie bestimmt) – **nicht** sortiert; Whitespace-Knoten zwischen Block-Elementen entfernt; `style`-Deklarationen normalisiert (`;`-Ende, Leerzeichen); Entities ausgeschrieben |
 | `JsonNormalizer` | Schlüssel nicht sortiert vergleichen (Reihenfolge irrelevant), Arrays strikt; Zahlen per N9 |
 | `YjsNormalizer` | Vergleich nie binär, sondern über dekodiertes PM-JSON (Client-IDs/Clocks sind zufällig) |
-| `PdfNormalizer` | Text: Zeilen getrimmt, Seitenumbrüche markiert; Metadaten (`CreationDate`, `Producer`) ignoriert, `Author`/`Subject`/`Title` strikt |
+| `PdfNormalizer` | Text: Zeilen getrimmt, Seitenumbrüche markiert; Metadaten (`CreationDate`, `Producer`) im Vergleich ignoriert, `Author`/`Subject`/`Title` strikt; `Creator`/`Producer` der Ziel-PDFs müssen „funk.“ sein (07 `BRAND-DOC-01`) und werden von G-BRAND geprüft |
 
 #### 3.7.3 Verify-Konventionen
 
@@ -635,8 +640,8 @@ flowchart LR
 ```
 
 - **Ziel:** Ein Flow gilt als paritätisch, wenn dieselbe Spec gegen beide Targets grün ist. Gegen das Original wird nur im Paritäts-Setup gelaufen (nightly + bei Spec-Änderung); gegen `funk.` in der Merge-Queue.
-- **Selektor-Regel:** Page-Objects nutzen ausschließlich `getByRole`, `getByText` (Englisch, Original-Locale `en`), `getByPlaceholder`, `data-*`-Attribute **des Originals**. Neue `data-testid` sind verboten (würden DOM-Parität brechen); wo das Original keinen stabilen Anker hat, wird ein Locator über Struktur + Text verwendet und im Page-Object dokumentiert.
-- **Anmeldung:** `globalSetup` erzeugt je Seed-Benutzer einen `storageState` (`.auth/<target>/<user>.json`): Original per UI-Passwortlogin, `funk.` per UI-Login im Keycloak-Plane-Theme (prüft das Theme mit). Die Specs der Domäne `auth` nutzen frische Kontexte.
+- **Selektor-Regel:** Page-Objects nutzen ausschließlich `getByRole`, `getByText` (Englisch, Original-Locale `en`), `getByPlaceholder`, `data-*`-Attribute **des Originals**. Texte mit Produktnamen werden in der funk.-Form geschrieben („Welcome to funk.“); das Original-Target läuft dafür mit derselben Branding-Ersetzung wie die Referenzaufnahme (`drivers/branding.ts`, BR-13, §3.10.1 Regel 3). Neue `data-testid` sind verboten (würden DOM-Parität brechen); wo das Original keinen stabilen Anker hat, wird ein Locator über Struktur + Text verwendet und im Page-Object dokumentiert.
+- **Anmeldung:** `globalSetup` erzeugt je Seed-Benutzer einen `storageState` (`.auth/<target>/<user>.json`): Original per UI-Passwortlogin, `funk.` per UI-Login im Keycloak-Login-Theme (funk.-Branding; Theme-Ordner `themes/plane` bleibt interner Bezeichner; prüft das Theme mit). Die Specs der Domäne `auth` nutzen frische Kontexte.
 - **ADR-008-Unterschiede:** Specs, die nur in `funk.` gelten (Keycloak-Login, Back-Channel-Logout), tragen `@funk-only`; Specs nur für Original (keine) sind verboten. Vom Original entfallene Flows (Passwort, Magic-Code) haben **keine** Specs.
 - **Netzwerk:** `page.route('**/*')`-Wächter in `funk.`-Läufen: jede Anfrage an einen Host außerhalb der Base-URL ⇒ Testfehler (P6).
 
@@ -699,17 +704,17 @@ Jede nicht entfallene CE-ID mit Frontend-Anteil ist genau einer Spec-Datei zugeo
 | `web/pages/page-actions.spec.ts` | CE-PAGE-004 … -009, -012 | I4 |
 | `web/pages/page-export.spec.ts` | CE-PAGE-011 | I4 |
 | `web/pages/page-editor-shell.spec.ts` | CE-PAGE-013 … -020 | I4 |
-| `web/editor/editor-variants.spec.ts` | CE-PAGE-021, -022, -023 | I2/I4 |
-| `web/editor/editor-menus.spec.ts` | CE-PAGE-024, -025, -026 | I4 |
-| `web/editor/editor-blocks.spec.ts` | CE-PAGE-027 … -033 | I4 |
-| `web/editor/editor-inline.spec.ts` | CE-PAGE-034 … -038 | I2/I4 |
-| `web/editor/editor-config.spec.ts` | CE-PAGE-039, -040 | I4 |
+| `web/editor/editor-variants.spec.ts` | CE-PAGE-021, -022, -023 | I2 (Page-Fälle I4; ABG-114) |
+| `web/editor/editor-menus.spec.ts` | CE-PAGE-024, -025, -026 | I2 im Work-Item-Kontext (Page-Fälle I4; ABG-114) |
+| `web/editor/editor-blocks.spec.ts` | CE-PAGE-027 … -033 | I2 im Work-Item-Kontext (Page-Fälle I4; ABG-114) |
+| `web/editor/editor-inline.spec.ts` | CE-PAGE-034 … -038 | I2 (Page-Fälle I4; ABG-114) |
+| `web/editor/editor-config.spec.ts` | CE-PAGE-039, -040 | I2 im Work-Item-Kontext (Page-Fälle I4; ABG-114) |
 | `web/realtime/collaboration.spec.ts` | CE-RT-001 … -009 (Frontend-sichtbare Teile; Server-Teile in `Plane.Collaboration.Tests`) | I4 |
 | `web/analytics/analytics.spec.ts` | CE-ANA-001 … -009 | I5 |
 | `web/home/home.spec.ts` | CE-HOME-001 … -007 | I5 |
 | `web/home/stickies.spec.ts` | CE-HOME-008, -009, -010 | I5 |
 | `web/notifications/inbox.spec.ts` | CE-NOTIF-001 … -009 | I5 |
-| `web/search/search.spec.ts` | CE-SRCH-001, -002, -003 | I5 |
+| `web/search/search.spec.ts` | CE-SRCH-001, -002, -003 | I2 (Teil: Picker-/Mention-Fälle CE-SRCH-002/-003 für `user_mention`, `project`, `issue`; ABG-132), I5 (vollständig) |
 | `web/search/power-k.spec.ts` | CE-SRCH-004 … -009 | I5 |
 | `web/profile/profile-settings.spec.ts` | CE-PROF-001 … -006 | I1 |
 | `web/profile/your-work.spec.ts` | CE-PROF-008 … -011 | I5 |
@@ -761,7 +766,7 @@ Backend-only-CE-IDs (z. B. CE-API-*, CE-WH-007 … -011, CE-OPS-010 ff.) haben *
 ```mermaid
 flowchart TB
   subgraph Ref["Referenz-Aufnahme (Paritäts-Setup, nur bei Bedarf)"]
-    O1["Original 1.4.2 + Parity-Seed"] --> R1["playwright test --project=visual-* <br/>E2E_TARGET=original VISUAL_MODE=record"]
+    O1["Original 1.4.2 + Parity-Seed"] --> R1["playwright test --project=visual-* <br/>E2E_TARGET=original VISUAL_MODE=record<br/>+ Branding-Ersetzung BR-13 (drivers/branding.ts)"]
     OG["Referenz-Galerie (frontend/tools/reference-gallery, /__gallery/)"] --> R1
     R1 --> REF["visual/baselines/<app>/<entry-id>/<state-id>/<theme>-<viewport>.png<br/>+ visual/dom-contracts/…/<state-id>.dom.html + visual/aria-contracts/…/<state-id>.aria.yml<br/>+ a11y/baseline/original.json (axe)"]
   end
@@ -786,7 +791,8 @@ Regeln:
    - Fonts: Ausführung **im Container** `mcr.microsoft.com/playwright:v1.64.1-noble` (Tag = `@playwright/test`-Version, D15-ADR-10; gleiches Tag per Digest für Aufnahme und Vergleich), Inter/IBM Plex Mono/Material Symbols aus den App-Bundles, Emoji-Font `Noto Color Emoji` fest im Image (`A13a` §5.7 Punkt 4).
    - Warten auf Stabilität: `document.fonts.ready`, keine offenen Requests (`page.waitForLoadState('networkidle')` + App-eigener Idle-Indikator: keine aktiven Loader-Signals), zwei aufeinanderfolgende identische Screenshots (Playwright-Standard bei `toHaveScreenshot`).
    - Masken nur für Inhalte, die zwischen Systemen **fachlich** abweichen dürfen und anderweitig getestet sind: Laufzeit-IDs in URLs/Kopiertexten, Versionsnummer im Hilfe-Menü, QR/Secret-Anzeigen. Masken stehen **ausschließlich im Katalog** (`visual/catalog/<app>.catalog.yaml`, Feld `mask:`) und brauchen je einen Eintrag `kind: mask` in `visual/ui-deviations.yaml` (Review-Pflicht; D09 §3.14.3, ABG-033).
-3. **Browser/Viewport/Theme-Matrix:**
+3. **Branding der Referenz (ADR-009B, BR-13, D15-ADR-21):** Das Original bleibt unverändert (ADR-006). Jeder Lauf mit `E2E_TARGET=original` (Referenzaufnahme, Drift-Lauf, Dual-Target-E2E) aktiviert `drivers/branding.ts` = Verfahren 09 §3.14.2 Zeile „Branding der Referenz“: (a) ein Init-Script ersetzt in sichtbaren Textknoten, `title`, `alt`, `aria-label`, `placeholder`, `<title>` und Meta-Inhalten das ganze Wort „Plane“ sowie `Плейн`/`플레인` nach BR-10/BR-03 durch „funk.“ (Regeln und Ausnahmetabellen ausschließlich aus `frontend/tools/brand/`); (b) `page.route` liefert für alle Pfade aus `frontend/tools/brand/brand-assets.json` (Favicons, Manifest-Icons, `logo-spinner-*.gif`, Logos) die von `render-brand-assets.mjs` erzeugten funk.-Dateien aus, Manifeste mit `name`/`short_name` = „funk.“; (c) nur Raster, deren Logo nicht separat ausgeliefert wird (Illustrationen/`webp`), werden maskiert (`kind: mask`, 09 `BRAND-UI-06`). DOM-/ARIA-Verträge entstehen ebenfalls **nach** der Ersetzung. Jede Ersetzung hat ihren Eintrag `BRAND-<Bereich>-<nn>` beim Eigentümer (in `ui-deviations.yaml` als `kind: brand`); ein Branding-Unterschied ist nie ein Pixel- oder DOM-Ausnahmebereich.
+4. **Browser/Viewport/Theme-Matrix:**
 
 | Suite | Browser | Viewports | Themes | DPR |
 |---|---|---|---|---|
@@ -831,7 +837,7 @@ Eine Überschreitung ist nur mit Eintrag in `visual/ui-deviations.yaml` (`kind: 
 
 #### 3.10.4 DOM-Paritäts-Snapshot (`drivers/dom-parity.ts`)
 
-**Verbindlich sind die Normalisierungsregeln N1–N9 aus D09 §3.14.6** (`dom-normalize`, hier implementiert als `drivers/dom-parity.ts`, im Browser per `page.evaluate` für Referenz und Ziel identisch ausgeführt): Wurzeln inkl. Portal-Container (N1), Entfernen von Kommentaren/`<script>`/`<style>`/Angular-Artefakten `_ngcontent-*`, `_nghost-*`, `ng-version`, `ng-reflect-*`, `data-pl-host` (N2), Auspacken von `data-pl-host`-Hosts, `router-outlet`, `<ng-container>`-Resten (N3), ID-Umnummerierung inkl. ARIA-Referenzen (N4), **Klassen-Tokens dedupliziert und sortiert** (N5 – die Reihenfolge im `class`-Attribut beeinflusst das Rendering nicht; die *Menge* ist Vertrag, ihre Herkunft aus `tailwind-merge` prüft G-CSS), `style` sortiert/gerundet (N6), URLs ohne Origin mit Seed-Schlüsseln (N7), Whitespace-Normalisierung (N8), Attribute alphabetisch (N9). **D15-Zusatzregeln (ABG-033):** (Z1, **alle** Verträge) jedes verbleibende Custom-Element (Tagname mit `-`) mit berechnetem `display` ≠ `contents` ist ein Gate-Fehler „Host-Element sichtbar“ (01 §7.17); (Z2, **nur Seiten-Verträge** `web`/`admin`/`space`/`keycloak`) Inhalte von `<svg>` nur bis Tiefe 1 (Icons über G-ICONS geprüft) – Galerie-Verträge von Icons, State-Icons, Illustrationen und Charts vergleichen SVG vollständig (D09 H-14). Die normalisierten Verträge liegen unter `visual/dom-contracts/<app>/<entry-id>/<state-id>.dom.html`, ARIA-Snapshots unter `visual/aria-contracts/<app>/<entry-id>/<state-id>.aria.yml`; Ausnahmen nur über `ui-deviations.yaml` (`kind: dom`). Hinweis: Für **Editor-HTML-Goldens** (L4, `HtmlNormalizer` §3.7.2) bleibt die Klassenreihenfolge dagegen Teil des Vergleichs, weil dort byte-gleiche Server-Ausgabe verlangt ist.
+**Verbindlich sind die Normalisierungsregeln N1–N9 aus D09 §3.14.6** (`dom-normalize`, hier implementiert als `drivers/dom-parity.ts`, im Browser per `page.evaluate` für Referenz und Ziel identisch ausgeführt): Wurzeln inkl. Portal-Container (N1), Entfernen von Kommentaren/`<script>`/`<style>`/Angular-Artefakten `_ngcontent-*`, `_nghost-*`, `ng-version`, `ng-reflect-*`, `data-pl-host` (N2), Auspacken von `data-pl-host`-Hosts, `router-outlet`, `<ng-container>`-Resten (N3), ID-Umnummerierung inkl. ARIA-Referenzen (N4), **Klassen-Tokens dedupliziert und sortiert** (N5 – die Reihenfolge im `class`-Attribut beeinflusst das Rendering nicht; die *Menge* ist Vertrag, ihre Herkunft aus `tailwind-merge` prüft G-CSS), `style` sortiert/gerundet (N6), URLs ohne Origin mit Seed-Schlüsseln (N7), Whitespace-Normalisierung (N8), Attribute alphabetisch (N9). **D15-Zusatzregeln (ABG-033):** (Z1, **alle** Verträge) jedes verbleibende Custom-Element (Tagname mit `-`) mit berechnetem `display` ≠ `contents` ist ein Gate-Fehler „Host-Element sichtbar“ (01 §7.17); (Z2, **nur Seiten-Verträge** `web`/`admin`/`space`/`keycloak`) Inhalte von `<svg>` nur bis Tiefe 1 (Icons über G-ICONS geprüft) – Galerie-Verträge von Icons, State-Icons, Illustrationen und Charts vergleichen SVG vollständig (D09 H-14). Die normalisierten Verträge (aufgenommen nach der Branding-Ersetzung, §3.10.1 Regel 3) liegen unter `visual/dom-contracts/<app>/<entry-id>/<state-id>.dom.html`, ARIA-Snapshots unter `visual/aria-contracts/<app>/<entry-id>/<state-id>.aria.yml`; Ausnahmen nur über `ui-deviations.yaml` (`kind: dom`). Hinweis: Für **Editor-HTML-Goldens** (L4, `HtmlNormalizer` §3.7.2) bleibt die Klassenreihenfolge dagegen Teil des Vergleichs, weil dort byte-gleiche Server-Ausgabe verlangt ist.
 
 #### 3.10.5 Referenzpflege
 
@@ -878,7 +884,7 @@ Original-Verstöße werden nicht stillschweigend übernommen: Der Report „Orig
 | LT-18 | Viele Dokumente über 2 Realtime-Instanzen | 500 Pages × 2 Editoren | 1 000 Clients | p95 < 250 ms; Valkey-Fan-out konvergiert | S1, CE-RT-007 | I4 |
 | LT-19 | Reconnect-Sturm nach Neustart einer Realtime-Instanz | 200 Clients | – | alle wieder `Authenticated` + synchron < 15 s | CE-RT-002 | I4 |
 | LT-20 | Soak Realtime 1 h (LT-17-Last) | – | – | Speicherwachstum `realtime` < 5 %, keine nativen Abstürze (YDotNet), Persistenz ≤ 1 Schreibvorgang je 10 s je Dokument (Debounce) | S1, ADR-022 | I4 |
-| LT-21 | Kapazität Einzelknoten (AK-14-31): gemischte Last wie LT-08, Listen-Anteil 60 % | M | 50 VU, 60 min, **Einzelknoten 2 vCPU / 4 GB ohne Forgejo** (Compose-Profil `bundled-s3`) | p95 Listen-Endpunkte < 500 ms; RSS aller Plane-Container nach 60 min ≤ 110 % des Werts nach 10 min | D14 AK-14-31 | I7 |
+| LT-21 | Kapazität Einzelknoten (AK-14-31): gemischte Last wie LT-08, Listen-Anteil 60 % | M | 50 VU, 60 min, **Einzelknoten 2 vCPU / 4 GB ohne Forgejo** (Compose-Profil `bundled-s3`) | p95 Listen-Endpunkte < 500 ms; RSS aller `funk-*`-Container (ABG-149) nach 60 min ≤ 110 % des Werts nach 10 min | D14 AK-14-31 | I7 |
 
 Zielwerte gelten auf dem Referenz-Runner `perf` (8 vCPU, 16 GB RAM, lokale SSD; AppHost `prodlike`, Release-Build, je Host eine Instanz außer LT-08/LT-18). Abweichende Hardware ⇒ Werte nur informativ.
 
@@ -960,7 +966,7 @@ Zielwerte gelten auf dem Referenz-Runner `perf` (8 vCPU, 16 GB RAM, lokale SSD; 
 | Zeitanker | `T0 = 2026-02-01T10:00:00Z`; alle Zeitstempel relativ (`T0-30d`, `T0-2h`); `created_at < updated_at` |
 | ID-Schema | `id = UUIDv5(ns=a3c1f0c8-6d2e-5b7a-9e1f-0f00f00f0015, key)` mit Schlüsseln wie `user:member@acme`, `ws:acme`, `prj:acme/WEB`, `state:acme/WEB/In Progress`, `wi:acme/WEB-12`, `cycle:acme/WEB/Sprint 3` |
 | Instanz | `is_setup_done=true`, Instanz-Name `Parity`, SMTP auf Mailpit, KI-Schlüssel leer (WireMock bei Bedarf), Unsplash leer |
-| Benutzer (Plane + Keycloak-Realm-Test-Import, `sub` = Plane-UUID) | `owner@acme` (WS-Admin, Instanz-Admin), `admin@acme`, `member@acme`, `guest@acme`, `nonmember@acme` (WS-Member, in keinem Projekt), `deactivated@acme` (`is_active=false`, `last_logout_time` gesetzt), `outsider@globex` (WS-Admin `globex`), `bot@acme` (`is_bot=true`, Original-Bot „Plane“), `unverified@acme` (nur in Keycloak mit `emailVerified=false`; ein Plane-Benutzer entsteht nie – S-06-Ersatztest), `invited@acme` (nur ausstehende Workspace-Einladung, Fragment `visual`, §9.2), 20 weitere `user01…user20@acme` für Listen/Mentions; Passwort aller Testbenutzer aus `PLANE_DEV_USER_PASSWORD` (D05 §3.15.7; `seed_plane.py` liest dieselbe Variable für `set_password`, damit der Passwort-Login des Originals und der Keycloak-Login von `funk.` mit demselben Geheimnis arbeiten; nie im Repo) |
+| Benutzer (`funk.`-Datenbank + Keycloak-Realm-Test-Import, `sub` = `users.id`) | `owner@acme` (WS-Admin, Instanz-Admin), `admin@acme`, `member@acme`, `guest@acme`, `nonmember@acme` (WS-Member, in keinem Projekt), `deactivated@acme` (`is_active=false`, `last_logout_time` gesetzt), `outsider@globex` (WS-Admin `globex`), `bot@acme` (`is_bot=true`; Anzeigename im Original-Bot „Plane“, Ziel „funk.“ – BR-07, ABG-104), `unverified@acme` (nur in Keycloak mit `emailVerified=false`; ein Benutzer in `users` entsteht nie – S-06-Ersatztest), `invited@acme` (nur ausstehende Workspace-Einladung, Fragment `visual`, §9.2), 20 weitere `user01…user20@acme` für Listen/Mentions; Passwort aller Testbenutzer aus `PLANE_DEV_USER_PASSWORD` (D05 §3.15.7; `seed_plane.py` liest dieselbe Variable für `set_password`, damit der Passwort-Login des Originals und der Keycloak-Login von `funk.` mit demselben Geheimnis arbeiten; nie im Repo) |
 | Workspaces | `acme` (Haupt-Tenant), `globex` (Fremd-Tenant für Isolation) |
 | Projekte | `acme/WEB` (alle Features an, öffentlich, `guest_view_all_features=true`, veröffentlicht als Space-Board), `acme/API` (privat, `guest_view_all_features=false`, Intake an), `acme/OPS` (archiviert), `acme/E2E` (leer, für mutierende E2E-Specs, je Worker ein Unterprojekt `E2E<n>` zur Laufzeit), `globex/GLX` |
 | States/Labels/Estimates | Default-States des Originals (Backlog, Todo, In Progress, Done, Cancelled; Triage für Intake) + 2 eigene; Labels mit 2 Hierarchieebenen (10 Stück); Estimates: Punkte (`1,2,3,5,8,13`) in WEB, Kategorien in API |
@@ -984,7 +990,7 @@ Keycloak importiert je Realm **genau eine Datei** (`--import-realm` überspringt
 | Datei | Inhalt | Pflege |
 |---|---|---|
 | `deploy/keycloak/realms/plane-realm.json` | Profil `dev`: Realm, Clients `plane-web`/`plane-admin`/`plane-space`/`plane-forgejo` (ABG-003), Scopes, Mapper, Flows, D05-Testbenutzer `admin@plane.local` … (D05 §3.15.7) | D05 (von Hand) |
-| `tests/seed/keycloak/parity-users.json` | nur die Parity-Seed-Benutzer: `id` = Plane-UUID (UUIDv5 aus §3.14.1), `emailVerified=true` (außer `unverified@acme`, S-06-Ersatztest), Realm-Rolle `plane-instance-admin` für `owner@acme`, Gruppen `team-a`/`team-b` (E3-Vorbereitung, §6), Test-App-Client `plane-test-app` (Client-Credentials, nur für H1-Erweiterungstests, §6.2) | D15 (aus `parity-seed.yaml` generiert) |
+| `tests/seed/keycloak/parity-users.json` | nur die Parity-Seed-Benutzer: `id` = `users.id` (UUIDv5 aus §3.14.1), `emailVerified=true` (außer `unverified@acme`, S-06-Ersatztest), Realm-Rolle `plane-instance-admin` für `owner@acme`, Gruppen `team-a`/`team-b` (E3-Vorbereitung, §6), Test-App-Client `plane-test-app` (Client-Credentials, nur für H1-Erweiterungstests, §6.2) | D15 (aus `parity-seed.yaml` generiert) |
 | `tests/seed/keycloak/test-overrides.json` | Realm-Attribute für `test`: `accessTokenLifespan=60`, `bruteForceProtected=true` mit Test-Schwellen (`failureFactor=5`, `waitIncrementSeconds=5`), Back-Channel-Logout-URL `http://gateway/auth/oidc/backchannel-logout/` | D15 |
 | `deploy/keycloak/realms/plane-realm.test.json` | **generiert** = `plane-realm.json` ⊕ `test-overrides.json` ⊕ `parity-users.json` (Kommando `Plane.Tools.ParityHarness keycloak-test-realm --out deploy/keycloak/realms/plane-realm.test.json`); eingecheckt, damit der AppHost ohne Werkzeuglauf startet | nie von Hand |
 
@@ -999,7 +1005,7 @@ Prüfungen: `KeycloakRealmConfigTests.TestRealm_IsUpToDate` erzeugt die Datei ne
 | L | 1 Projekt mit 50 000 Items (S9) + M-Beiwerk | dto. | < 4 min |
 | XL | 20 Projekte, 200 000 Items, 500 Benutzer, 2 000 Pages (je 10 KB), 1 Mio. Activities | dto. | < 20 min; als PostgreSQL-Dump zwischengespeichert (`pg_dump -Fc`, Cache-Schlüssel = Hash von Schema-Migrationen + Profil) |
 
-Volumendaten sind **nicht** paritätsrelevant (kein Original-Gegenstück); sie gelten nur für L9 und CE-OPS-024 (`Plane.Cli create-dummy-data` nutzt denselben `VolumeSeeder`).
+Volumendaten sind **nicht** paritätsrelevant (kein Original-Gegenstück); sie gelten nur für L9 und CE-OPS-024 (`funk-cli create-dummy-data` – Projekt `src/tools/Plane.Cli`, ABG-149 – nutzt denselben `VolumeSeeder`).
 
 #### 3.14.4 Datenisolation je Ebene
 
@@ -1020,11 +1026,11 @@ Alle Gates sind lokal identisch ausführbar: `./tools/ci/gate.sh <g0|g1|g2|g3|g4
 |---|---|---|---|---|
 | **G0 Lokal/Pre-Commit** | vor jedem Commit (Agent) | `dotnet format --verify-no-changes`, `prettier --check`, `dotnet build -warnaserror`, ESLint/Sheriff der geänderten Libs, gitleaks (Arbeitsbaum), Visual-Referenz-Größenbudget | 0 Fehler, 0 Warnungen | < 2 min |
 | **G1 PR-Schnell** | jeder Push auf PR | L0 vollständig; L1/L2/L3/L4 der **betroffenen** Module/Libs (Abhängigkeitsgraph aus Solution + Sheriff); L5 In-Process der betroffenen Module; Diff-Coverage; Ledger-Strukturprüfung; `ce-coverage-check --structure`; Lizenz-Gate; `dotnet list package --vulnerable`; OpenAPI↔Types-Contract-Check | alle Tests grün; Diff-Coverage ≥ 90 % (Zeilen) auf `src/**` und `frontend/libs/**`; Modul-Untergrenzen Z5 nicht unterschritten; keine neue `deviations.yaml`-Zeile ohne `decision`; keine Quarantäne ohne Ticket/Ablaufdatum | < 15 min |
-| **G2 Merge-Queue** | vor Merge in `main` | Images bauen (inkl. `assert-no-node.sh`), Trivy; L6 System; L7 E2E für Tags der geänderten CE-IDs + `@smoke`-Satz (30 Specs); L8 Visual Chromium + a11y für dieselben Tags; L5 gegen AppHost für betroffene Module | alles grün; keine Visual-/a11y-Überschreitung ohne genehmigte Abweichung | < 40 min |
+| **G2 Merge-Queue** | vor Merge in `main` | Images `funk-*` bauen (inkl. `assert-no-node.sh`; ABG-149), Trivy; **G-BRAND** über alle gebauten Artefakte (§3.15.5); L6 System; L7 E2E für Tags der geänderten CE-IDs + `@smoke`-Satz (30 Specs); L8 Visual Chromium + a11y für dieselben Tags; L5 gegen AppHost für betroffene Module | alles grün; keine Visual-/a11y-Überschreitung ohne genehmigte Abweichung; 0 G-BRAND-Treffer außerhalb der Allowlist | < 40 min |
 | **G3 Golden-Änderung** | PR mit Label `golden-update` oder Änderungen unter `tests/contracts/golden/**`, `frontend/apps/e2e/visual/{baselines,baselines-new,dom-contracts,aria-contracts}/**`, `**/Golden/**` | Parity-Harness-Aufnahmeprotokoll (Artefakt aus Umgebung `parity`) mit bestandenem Determinismus-Check; Begründung je geänderter Datei; Review durch Paritäts-Agent **und** einen Menschen | Protokoll vorhanden, Commit/Images des Originals = Pin (`tools/parity/original.env`) | – |
 | **G4 Nightly** | täglich 02:00 UTC | L5 vollständig gegen AppHost; L7 vollständig **Dual-Target** (Original + funk.); L8 alle Browser/Themes/Viewports; Drift-Checks (`record`/`visual:drift`/a11y-Baseline); L9 (ab I2: LT-01…LT-07, LT-14/15; ab I4: LT-16…LT-20; ab I5: LT-09/11; ab I6: LT-10; ab I7: LT-08/13/21); ZAP Baseline; Stryker (informativ); Shard-Permutation | Rot ⇒ Ticket automatisch an Eigentümer-Modul (CODEOWNERS); zwei aufeinanderfolgende rote Nächte im selben Test ⇒ Merge-Sperre für das Modul | < 4 h |
 | **G5 Inkrement-Abnahme** | Ende eines Inkrements I0…I7 | `ce-coverage-check --inc <In> --strict`; `original-test-ledger --inc <In>`; Parity-Report (alle Szenarien des Inkrements, 0 ungenehmigte Abweichungen, `coverage` der Endpunkte des Inkrements 100 %); alle Visual-Prüfpunkte und a11y des Inkrements; Lastziele des Inkrements; Security-Report (Matrix 100 % für Endpunkte des Inkrements, ZAP); Demo-Skript als Playwright-Video (`--video on`) der Kern-Flows | alle Kriterien erfüllt; Abnahmebericht `docs/acceptance/<In>.md` generiert (`tools/ci/acceptance-report`) | – |
-| **G6 Release** | Release-Kandidat | G5 aller Inkremente; Lauf `airgap`; Upgrade-Test (Migrator auf Dump der Vorversion); Backup/Restore-Test (`Plane.Cli backup`/`restore`); SBOM; Lizenzbericht (`NOTICE`); Helm-/Compose-Smoke | keine Critical/High-CVE mit Fix; alle Smokes grün | – |
+| **G6 Release** | Release-Kandidat | G5 aller Inkremente; Lauf `airgap`; Upgrade-Test (Migrator auf Dump der Vorversion); Backup/Restore-Test (`funk-cli backup`/`restore`; ABG-149); SBOM; Lizenzbericht (`NOTICE`); Helm-/Compose-Smoke (Images `${PLANE_REGISTRY}/funk-*`, Chart `deploy/helm/funk`; ABG-149); G-BRAND inkl. Container-Labels (`org.opencontainers.image.title` = „funk. <Dienst>“) und Helm-`NOTES.txt` | keine Critical/High-CVE mit Fix; alle Smokes grün | – |
 
 #### 3.15.2 Arbeitsablauf eines KI-Agenten je Arbeitspaket (verbindlich)
 
@@ -1069,17 +1075,31 @@ Kann ein Agent Schritt 2 oder 6 nicht im Paritäts-Setup ausführen (fehlende Re
 | `tools/ci/ce-coverage-check` | `migration`-Kopie `docs/migration/features/_data/ce-features.json` (gespiegelt, 01 §5.1), `tests/ce-matrix.yaml` (maschinenlesbare Fassung von Anhang B), Trait-Listen aller Test-Assemblies per **Reflection** (`System.Reflection.MetadataLoadContext` über die gebauten Test-DLLs: `[Trait]`, `[Origin]` und eigene `ITraitAttribute`-Typen – unabhängig vom Runner; MTP-`--list-tests` liefert keine Traits, `--xunit-list` ist laut xUnit-4.0-Release-Notes noch eingeschränkt), Ergebnisse des letzten Laufs aus `--report-xunit` (xUnit-v2-XML inkl. Traits) bzw. `--report-junit` der xUnit-v3-MTP-Integration, Playwright `--list --reporter=json` + JSON-Reporter, Vitest `--reporter=json` | je CE-ID: geforderte Ebenen vorhanden und im letzten Lauf grün; entfallene IDs ohne Tests; Quarantäne zählt nicht | `artifacts/ce-coverage.{json,md}` |
 | `tools/ci/original-test-ledger` | `tests/original-tests/ledger.yaml`, Extrakt des gepinnten Original-Commits, Test-Listen | §3.5.1 Punkt 4 | `artifacts/ledger-report.md` |
 | `tools/ci/seed-manifest-diff` | `manifest.original.json`, `manifest.funk.json` | Schlüssel- und UUID-Gleichheit | Exit-Code |
-| `tools/ci/acceptance-report` | alle Reports eines G5-Laufs | Zusammenfassung je CE-ID, Abweichungsliste, Lastwerte, offene Quarantäne | `docs/acceptance/<In>.md` |
+| `tools/ci/acceptance-report` | alle Reports eines G5-Laufs | Zusammenfassung je CE-ID, Abweichungsliste (inkl. `BRAND-*`-Einträge), Lastwerte, offene Quarantäne | `docs/acceptance/<In>.md` |
+| `tools/ci/brand-gate` (G-BRAND) | gebaute Artefakte laut §3.15.5, Allowlist `frontend/tools/brand/allowlist.json` | Regex BR-14 außerhalb der Allowlist | `artifacts/brand-gate.{json,md}`, Exit-Code |
+
+#### 3.15.5 Branding-Gate G-BRAND (ADR-009B, BR-14, Eigentümer 15)
+
+Nach außen sichtbar ist nur „funk.“ (00 ADR-009B, 17 ABG-148); G-BRAND weist maschinell nach, dass kein Restvorkommen übrig ist.
+
+| Aspekt | Festlegung |
+|---|---|
+| Suchmuster | `(?<![\p{L}\p{N}_])Plane(?![\p{L}\p{N}_])`, `Плейн`, `플레인`, `plane\.so` (Unicode-Regex, Groß-/Kleinschreibung beachtet) |
+| Prüfobjekte | gebaute Frontend-Bundles web/admin/space inkl. `index.html`, Manifeste und `public/`-Texte (08 §3.16); Keycloak-Theme (`.ftl`, `messages_*.properties`, `theme.properties`, Ressourcen) und Realm-Export (05 §3.16); Mail-Renderings aller G-MAIL-Fälle (Betreff, HTML, Text, Absender); OpenAPI-Dokument und Doku-UI-Titel (04 `BRAND-API-01/-04`); Seeds (Instanzname, Bot-Anzeigenamen; 03/06); PDF-Metadaten der G-PDF-/G-PDF-web-Ausgaben (07 `BRAND-DOC-01`); Container-Labels der Images `funk-*`, Helm-`NOTES.txt`, Hilfetexte von `funk-cli` (14 `BRAND-OPS-*`, ABG-149) |
+| Allowlist | `frontend/tools/brand/allowlist.json` – nur BR-02-Fälle mit Begründung je Eintrag (Datei/Selektor, Muster, Regel BR-02 Nr. 1–5, z. B. Copyright-/AGPL-Herkunftshinweis in LICENSE/NOTICE und im About-Dialog, MIME-Typ `text/plane-editor-html`, Realm-/Client-/Cookie-Namen bis Z-110); interne Bezeichner in Quelltext/Konfiguration sind kein Prüfobjekt |
+| Ausführung | `tools/ci/brand-gate` (.NET-Konsole, §7.2); G2 (alle Artefakte einer Merge-Queue-Prüfung), G5 (Inkrement-Bericht), G6 (Release-Artefakte inkl. Images/Chart); lokal `./tools/ci/gate.sh g2 --only brand` |
+| Ergebnis | jeder Treffer außerhalb der Allowlist ⇒ **rot** (Datei, Fundstelle, Muster); ein ungenutzter Allowlist-Eintrag ⇒ rot (verhindert Altlasten, wie `deviations.yaml` §3.6.5) |
+| Abgrenzung | Paritätsvergleiche messen Branding nicht als Abweichung: Visual/DOM/E2E gegen Referenzen mit vorab ersetztem Branding (§3.10.1 Regel 3), G-MAIL/G-PDF-Referenzen mit derselben Ersetzung (§3.7.1), Contract-Goldens nur an `BRAND-API`-Pfaden (N14, §3.6.4) |
 
 ### 3.16 Zuordnung zu Inkrementen (was wird wann gebraucht)
 
 | Inkrement | Test-Infrastruktur, die **fertig** sein muss | Erstmals abgenommene Ebenen/Suiten | Gate-Erweiterungen |
 |---|---|---|---|
-| **I0 Walking Skeleton** | `Plane.BuildingBlocks.Testing` (PlaneApiFactory, TestAuth, PostgresContainerFixture, TemplateDatabase, Respawn, FixedClock, DeterministicIdGenerator, Golden-Settings, KeycloakHeadlessLogin, `[Origin]`), `Plane.ArchitectureTests` inkl. T1–T6, `Plane.AppHost.Tests` (Profil `test`), Parity-Harness mit `seed`/`record`/`replay` und den 5 I0-Endpunkten (§3.6.7), `parity-seed.yaml` (Basis: Instanz, Benutzer, 2 Workspaces, 2 Projekte, States), `seed_plane.py`, Ledger-Extraktion (alle 1 092 Einträge, Status-Vorschläge aus Anhang A), Playwright-Gerüst Dual-Target mit `AuthDriver` beider Targets, Galerie-Gerüst (web + Original), Visual-Pipeline (Shell, Keycloak-Theme), axe-Baseline-Mechanik, `ce-coverage-check`, `original-test-ledger`, `gate.sh` G0–G2, Lizenz-Gate, gitleaks, Trivy | L0, L1, L3 (Identity, Workspaces, Projects-Kern, Instance-Setup), L5 (5 Endpunkte), L6 (Health, Routing, OIDC, Forgejo-SSO-Smoke), L7 (`keycloak-login`, `create-workspace`, `create-project`, `workspace-shell` Grundzustand, `admin/instance-setup.spec.ts` Abschnitt `@I0`: Admin-Einstieg + Seite `general`, ABG-024), L8 (Galerie der ersten Primitive Button/Input/Menu/Tooltip/Avatar + Shell; S10) | G0, G1, G2, G3; G4 ohne Last |
+| **I0 Walking Skeleton** | `Plane.BuildingBlocks.Testing` (PlaneApiFactory, TestAuth, PostgresContainerFixture, TemplateDatabase, Respawn, FixedClock, DeterministicIdGenerator, Golden-Settings, KeycloakHeadlessLogin, `[Origin]`), `Plane.ArchitectureTests` inkl. T1–T6, `Plane.AppHost.Tests` (Profil `test`), Parity-Harness mit `seed`/`record`/`replay` und den 5 I0-Endpunkten (§3.6.7), `parity-seed.yaml` (Basis: Instanz, Benutzer, 2 Workspaces, 2 Projekte, States), `seed_plane.py`, Ledger-Extraktion (alle 1 092 Einträge, Status-Vorschläge aus Anhang A), Playwright-Gerüst Dual-Target mit `AuthDriver` beider Targets, Galerie-Gerüst (web + Original), Visual-Pipeline (Shell, Keycloak-Theme) mit Referenz-Branding (`drivers/branding.ts`, BR-13), axe-Baseline-Mechanik, `ce-coverage-check`, `original-test-ledger`, `gate.sh` G0–G2, G-BRAND (`tools/ci/brand-gate` + Allowlist, §3.15.5), Lizenz-Gate, gitleaks, Trivy | L0, L1, L3 (Identity, Workspaces, Projects-Kern, Instance-Setup), L5 (5 Endpunkte), L6 (Health, Routing, OIDC, Forgejo-SSO-Smoke), L7 (`keycloak-login`, `create-workspace`, `create-project`, `workspace-shell` Grundzustand, `admin/instance-setup.spec.ts` Abschnitt `@I0`: Admin-Einstieg + Seite `general`, ABG-024), L8 (Galerie der ersten Primitive Button/Input/Menu/Tooltip/Avatar + Shell; S10) | G0, G1, G2, G3; G4 ohne Last |
 | **I1 Workspace/Projekte/Konto** | MailpitFixture + MailpitClient, SeaweedFsFixture, ValkeyFixture, Permission-Matrix-Test-Gerüst + Tenant-Isolation, G-MAIL (Einladung), G-I18N, G-CSS je App, ZAP-Baseline-Job | alle CE-IDs I1 laut Anhang B; Ledger-Einträge `inc: I1` | G4 + ZAP |
 | **I2 Work Items & Layouts** | Volumen-Seeder S/M/L, k6-Gerüst + `perf`-Runner, `SqlPlanAssertions`, G-DOC (HTML↔JSON), G-SANITIZE, G-SCHEMA, DnD-Helfer, Perf-Trace-Helfer (LT-14/15), Vitest-Browser-Modus | LT-01…LT-07, LT-14, LT-15 | G4 + Last (Teil) |
 | **I3 Planung** | Chart-Visual-Prüfpunkte (S6), Zeit-Fixierung serverseitig (`FixedUtcNow`) für Cycle-Status | Visual Charts | – |
-| **I4 Pages & Realtime** | `Plane.Collaboration.Tests` mit Original-Provider im Browser (S1), `Plane.LoadTests.Collaboration`, G-DOC (Yjs), G-PDF, Multi-Instanz-Setup (2 × `realtime`) im Profil `test` | LT-16…LT-20 | G4 + Kollaborationslast |
+| **I4 Pages & Realtime** | `Plane.Collaboration.Tests` mit Original-Provider im Browser (`Browser/ProviderConformanceTests`, S1, ABG-111), `Plane.LoadTests.Collaboration`, G-DOC (Yjs), G-PDF, G-PDF-web, G-MD, Multi-Instanz-Setup (2 × `realtime`) im Profil `test` | LT-16…LT-20 | G4 + Kollaborationslast |
 | **I5 Überblick** | SignalR-Testclient (`Microsoft.AspNetCore.SignalR.Client`) für Zähler-Push, Volumenprofil XL | LT-09, LT-11 | – |
 | **I6 Außenwirkung & Admin** | ZAP-API-Scan, WireMock-Ziele für Webhooks/LLM/Unsplash, G-EXPORT, Space-Anonym-Kontexte | LT-10; D15-SEC-05 | G4 + DAST aktiv |
 | **I7 Härtung** | `airgap`-Umgebung, Upgrade-/Backup-Tests, Helm-/Compose-Smokes, vollständige Endpunkt-Abdeckung (`coverage --fail-under 100`) | LT-08, LT-13, LT-21; G6 | G6 |
@@ -1110,7 +1130,7 @@ Kann ein Agent Schritt 2 oder 6 nicht im Paritäts-Setup ausführen (fehlende Re
 | `PKG/services` Default-Vitest | Unit | Projekt `shared-node` | 1:1 |
 | `PKG/codemods` Vitest | Werkzeug-Tests | entfällt | entfällt |
 | `.github/workflows/*` (10 Workflows, keiner führt Tests aus; u. a. Copyright-Check mit `addlicense`, CodeQL, i18n-Sync, react-doctor) | CI | `tools/ci/gate.sh` G0–G6; `license-header-check` (AGPL-Header), `i18n-sync-check`; react-doctor → angular-eslint + Sheriff; CodeQL optional (Plattformwahl Dokument 14) | ersetzt |
-| `API/db/management/commands/create_dummy_data.py` (Faker) | Dummy-Daten (CE-OPS-024) | `Plane.Cli create-dummy-data` mit `VolumeSeeder` (Bogus) | angepasst |
+| `API/db/management/commands/create_dummy_data.py` (Faker) | Dummy-Daten (CE-OPS-024) | `funk-cli create-dummy-data` (Projekt `Plane.Cli`, ABG-149) mit `VolumeSeeder` (Bogus) | angepasst |
 | `API/seeds/data/*.json` (Demo-Seed CE-WS-002) | Demo-Inhalte | Migrator-Seeds; zugleich Eingabe für G-DOC (Beschreibungen) und Contract-Szenario `workspaces.demo-seed` | 1:1 Daten |
 
 ### 4.2 Original-Testdateien → Ziel-Testklassen
@@ -1132,7 +1152,7 @@ Jeder Spike hinterlässt seine Messung als dauerhaften Test (DoD Typ S):
 | Spike | Dauerhafter Test nach Spike-Ende | Ebene | Gate |
 |---|---|---|---|
 | S0 Toolchain | `Plane.AppHost.Tests/ResourceHealthTests`, `ToolchainVersionTests` (gepinnte Versionen = `Directory.Packages.props`/Catalog), TS-6-Kompilierung der kopierten Quellen (`pnpm check:types`), `Pgvector`-EF-10-Smoke (`Plane.Platform.Tests/Search/PgvectorSmokeTests`), SignalR-Backplane-Smoke | L0/L6 | G1/G2 |
-| S1 YDotNet + Hocuspocus | `Plane.Collaboration.Tests/Protocol/*` (Playwright .NET mit Original-`@hocuspocus/provider` 2.15.2: Auth, Sync, Awareness, Stateless, Close-Codes, lib0-Property-Tests), LT-17 … LT-20 | L6/L9 | G2/G4 |
+| S1 YDotNet + Hocuspocus | `Plane.Collaboration.Tests/Browser/ProviderConformanceTests` (Playwright .NET mit Original-`@hocuspocus/provider` 2.15.2, P-01…P-30: Auth, Sync, Awareness, Stateless, Close-Codes), `…/Browser/TwoClientConvergenceTests`, `…/Browser/YjsDecodeInBrowserTests` und `…/Protocol/*` (lib0/Codec/Wire inkl. Property-Tests, AK-07-44; ABG-111), LT-17 … LT-20 | L1/L6/L9 | G2/G4 |
 | S2 Yjs/JSON/HTML ohne Node | G-DOC-Korpus (≥ 200 Dokumente), Durchsatz-Benchmark (`BenchmarkDotNet`, ≥ 200 Dok./s) als `[Trait("speed","slow")]` | L4 | G1/G4 |
 | S3 PDF | G-PDF (20 Seiten + 21 Fälle), Renderzeit < 3 s | L4 | G1 |
 | S4 DnD | `kanban.spec.ts`/`gantt.spec.ts` + LT-15 | L7/L9 | G2/G4 |
@@ -1150,7 +1170,7 @@ Jeder Spike hinterlässt seine Messung als dauerhaften Test (DoD Typ S):
 | Analyse | Abschnitt | wird verwendet als |
 |---|---|---|
 | `A01` §2.8.1 | Proxy-Pfadregeln | Testfälle `GatewayRoutingTests` (eine `[InlineData]`-Zeile je Regel) |
-| `A01` §2.17 | 48 Celery-Tasks, 13 Beat-Einträge | `CronRegistrationTests` (13 Einträge mit Original-Zeit), Job-Tests je Task (Dokument 06 Task→Job-Tabelle) |
+| `A01` §2.17 | 48 Celery-Tasks, 13 Beat-Einträge (Original) | `CronRegistrationTests` (11 übernommen mit Original-Zeit, B3/B13 entfallen, 7 neu – 06 §4.2, ABG-138), Job-Tests je Task (Dokument 06 Task→Job-Tabelle) |
 | `A01` §2.25 | Test-Inventar | Anhang A |
 | `A02a`/`A02b` | Datenmodell (Modelle, `save()`-Logik, Signale, Soft-Delete, `FloatField`) | `seed_plane.py`-Kopfliste „save()-pflichtige Modelle“ (R-D15-02), `SoftDeleteCascadeRegistry`-Tests (E8), N9-Feldliste (R-D15-04) |
 | `A03`/`A04` | interne API (Views, URLs, Serializer, Query-Parameter) | Contract-Szenarien je Endpunkt (`tests/contracts/scenarios/<modul>/`), Pflichtfälle E1–E8, Platzhalter-Katalog §3.6.2; bis D04 vorliegt, ist A03/A04 die Soll-Liste für `ParityHarness coverage` |
@@ -1225,7 +1245,7 @@ public static class TemplateDatabase
         await using (var db = PlaneDbContextFactory.Create(cs))          // gleiche Modellkonfiguration wie Plane.Data
         {
             await db.Database.MigrateAsync(ct);                            // inkl. CREATE EXTENSION vector, pg_trgm, unaccent
-            await BaseSeeds.ApplyAsync(db, new FixedClock(SeedClock.T0), ct); // Rollen 20/15/5, Relationstyp-Katalog, Event-Katalog, Instanz
+            await BaseSeeds.ApplyAsync(db, new FixedClock(SeedClock.T0), ct); // Rollen 20/15/5, Relationstyp-Katalog, Instanz + -Konfiguration, System-Bot (03 §3.14.1)
         }
         NpgsqlConnection.ClearAllPools();
         await PgAdmin.ExecuteAsync(adminCs, $"""ALTER DATABASE "{name}" WITH IS_TEMPLATE true ALLOW_CONNECTIONS false""", ct);
@@ -1238,8 +1258,10 @@ using Respawn.Graph;
 
 public sealed class PlaneRespawner
 {
+    // Referenztabellen nach 03 §4.6 (_data/03-datenmodell.json → reference_tables[]; ABG-139) – event_types existiert nicht
     private static readonly Table[] Ignored =
-        ["__EFMigrationsHistory", "roles", "work_item_relation_types", "data_protection_keys", "instances", "event_types"];
+        ["__EFMigrationsHistory", "roles", "work_item_relation_types", "data_protection_keys", "instances",
+         "instance_configurations", "recurring_job_states"];
     private Respawner? _respawner;
 
     public async Task ResetAsync(string connectionString, CancellationToken ct)
@@ -1254,6 +1276,8 @@ public sealed class PlaneRespawner
             WithReseed = true,
         });
         await _respawner.ResetAsync(conn);
+        await using var db = PlaneDbContextFactory.Create(connectionString);
+        await BaseSeeds.ApplyAsync(db, new FixedClock(SeedClock.T0), ct);  // nach JEDEM Reset: System-Bot u. a. (ABG-104, ABG-139)
     }
 }
 ```
@@ -1546,7 +1570,7 @@ public sealed class ScenarioReplayer(IActorClientFactory clients, SeedManifest m
             var request = RequestTemplate.Resolve(step.Request, manifest, captures);   // {ws:acme}, {id:label1}, …
             using var client = await clients.ForAsync(step.As, ct);                    // TestAuth | KeycloakHeadlessLogin | ApiKey | anonym
             using var response = await client.SendAsync(request, ct);
-            var actual = await normalizer.NormalizeAsync(response, captures, step.Capture, ct);  // N1–N13
+            var actual = await normalizer.NormalizeAsync(response, captures, step.Capture, ct);  // N1–N14 (N14: nur BRAND-API-Pfade)
             var expected = golden.Load(scenario.Id, index, step.Name);
             var diff = JsonContractDiff.Compare(expected, actual, scenario.Compare);
             var unexplained = deviations.Filter(diff, scenario.Endpoint(step));       // genehmigte Abweichungen entfernen, Nutzung protokollieren
@@ -1638,11 +1662,21 @@ import { Page, expect } from '@playwright/test';
 export async function signIn(page: Page, email: string, password: string) {
   await page.goto('/');                                                   // geschützte Route ⇒ /auth/oidc/login/ ⇒ Keycloak
   await page.waitForURL(/\/realms\/plane\/protocol\/openid-connect\/auth/);
-  await page.getByLabel(/email/i).fill(email);                            // Plane-Theme behält Original-Labels
+  await page.getByLabel(/email/i).fill(email);                            // Login-Theme (funk.-Branding) behält Original-Labels
   await page.getByRole('button', { name: /continue/i }).click();          // Schritt 1: E-Mail (Browser-Flow plane-browser, D05-ADR-14)
   await page.getByLabel(/password/i).fill(password);                      // Schritt 2: Passwort
   await page.getByRole('button', { name: /continue|sign in|go to workspace/i }).click();
   await expect(page).toHaveURL(/\/(acme|create-workspace|onboarding)/);
+}
+
+// frontend/apps/e2e/drivers/branding.ts – Referenz-Branding nach BR-13 (nur E2E_TARGET=original; Original bleibt unverändert)
+import { Page } from '@playwright/test';
+import brandAssets from '../../../tools/brand/brand-assets.json';           // Original-Pfad → erzeugte funk.-Datei (09 §4.11.1)
+import { brandTextRules } from '../../../tools/brand/brand-i18n.mjs';       // dieselben Regeln wie der Locale-Port (BR-10/BR-03)
+export async function applyReferenceBranding(page: Page) {
+  await page.addInitScript(brandTextRules.browserReplacerSource);          // Textknoten, title/alt/aria-label/placeholder, <title>, Meta
+  for (const a of brandAssets.assets)
+    await page.route(`**${a.originalPath}`, (route) => route.fulfill({ path: a.generatedFile, contentType: a.contentType }));
 }
 
 // frontend/apps/e2e/drivers/determinism.ts
@@ -1914,7 +1948,7 @@ Die Kriterien gelten als erfüllt, wenn die genannte Messung im angegebenen Inkr
 | AK-15-10 | Berechtigungsmatrix: 100 % der Routen × 15 Akteur-Klassen mit Erwartungswert; alle Fälle grün; Tenant-Isolation für jede Route mit `{slug}` bzw. ID-Parameter grün | `Plane.Security.Tests` (`PermissionMatrixTests`, `TenantIsolationTests`), `artifacts/permission-matrix.md` | ab I1 je Modul, I7 vollständig |
 | AK-15-11 | Sicherheitsmechanismen S-01 … S-26 haben je ≥ 1 grünen Test laut §3.13.2; D15-SEC-01 … D15-SEC-11 grün | `ce-coverage-check --security` (liest Trait `security=S-xx`) | Inkrement laut Tabelle §3.13.2 |
 | AK-15-12 | ZAP-Baseline: 0 High/Medium außerhalb `baseline.rules.tsv`; ZAP-API-Scan ab I6: 0 High | G4-Report `artifacts/zap/*.html` | I1 / I6 |
-| AK-15-13 | Golden-Korpora vollständig: G-SCHEMA (4 Varianten + Server-Schema), G-DOC ≥ 200 Dokumente, G-PDF 20 Seiten + 21 Fälle, G-MAIL je Template, G-EXPORT 3 Formate, G-CSS je App, G-I18N alle Locales, G-ICONS 919 | `Plane.Documents.Tests`, `Plane.Documents.Pdf.Tests`, `Plane.Platform.Tests/Mail`, `Plane.Exports.Tests`, `frontend/tools/visual/css-diff.ts`, `i18n-sync-check` | I0 … I6 laut §3.7.1 |
+| AK-15-13 | Golden-Korpora vollständig: G-SCHEMA (Server `rich`/`document`/`title`, Browser `rich`/`lite`/`document`/`collaborative`/`title`; ABG-119), G-DOC ≥ 200 Dokumente, G-PDF 20 Seiten + 21 Fälle, G-PDF-web 20 Seiten, G-MD 60 Fälle (ABG-111), G-MAIL je Template (Referenz mit ersetztem Branding, ABG-105), G-EXPORT 3 Formate, G-CSS je App, G-I18N alle Locales, G-ICONS 919 | `Plane.Documents.Tests`, `Plane.Documents.Pdf.Tests`, `Plane.Platform.Tests/Mail`, `Plane.Exports.Tests`, `frontend/tools/visual/css-diff.ts`, `i18n-sync-check` | I0 … I6 laut §3.7.1 |
 | AK-15-14 | Editor-Konvertierung: JSON strukturgleich 100 %, HTML byte-gleich nach Normalisierung ≥ 99 %, Yjs-Roundtrip .NET ↔ Browser (Original-`yjs`) 100 % des G-DOC-Korpus | `Plane.Documents.Tests/Golden/*`, `editor-variants.spec.ts` (Browser-Roundtrip) | I2 (HTML/JSON), I4 (Yjs) |
 | AK-15-15 | Dual-Target-E2E: jede Spec aus §3.9.2 ist gegen **Original und `funk.`** grün (außer `@funk-only`); Anzahl `@funk-only`-Specs ≤ 5 (Keycloak-Login-Varianten, Back-Channel-Logout, Step-up, Ops-Smokes) | G4-Report `artifacts/e2e/dual-target.json` | je Inkrement für seine Specs |
 | AK-15-16 | Visuelle Parität: alle Pflicht-Prüfpunkte aus §3.10.2 des Inkrements unter den Schwellwerten §3.10.3; DOM-Parität 100 % für die Galerie | Visual-Report `artifacts/visual/<suite>.html` | I0 (Shell + 5 Primitive), je Inkrement |
@@ -1932,6 +1966,7 @@ Die Kriterien gelten als erfüllt, wenn die genannte Messung im angegebenen Inkr
 | AK-15-28 | Event-Katalog- und Permission-Key-Snapshots vorhanden; eine nicht-additive Änderung (Feld entfernt/umbenannt, Key entfernt) lässt G1 scheitern | `EventCatalogSnapshotTests`, `SystemRolePermissionsSnapshotTests` + Fixture-Test in `Plane.Tools.Gates.Tests` | I0 |
 | AK-15-29 | Upgrade- und Backup-Tests (D14 AK-14-27/-28) laufen als Teil von G6 und vergleichen Seed-Endpunkte per Contract-Replay | `tests/deploy/{backup-restore,upgrade}.sh` + `ParityHarness replay --target funk-system` | I7 |
 | AK-15-30 | Kapazität Einzelknoten (D14 AK-14-31) über LT-21 nachgewiesen | `tests/load/k6/capacity-single-node.js` | I7 |
+| AK-15-31 | Branding (ADR-009B): G-BRAND ohne Treffer außerhalb der Allowlist für alle Prüfobjekte des Inkrements (§3.15.5); Visual-/DOM-Referenzen, G-MAIL und G-PDF mit vorab ersetztem Branding aufgenommen (BR-13); kein `ui-deviations.yaml`-Eintrag `kind: pixel`/`dom` mit Grund „Branding“ | `artifacts/brand-gate.md`, Visual-Report, `ui-deviations.yaml`-Prüfung | I0, danach je Inkrement; G6 inkl. Images/Chart |
 
 ### 7.2 Selbsttests der Test-Infrastruktur („Tests der Tests“)
 
@@ -1941,15 +1976,17 @@ Die Werkzeuge, die Parität messen, sind selbst Code und brauchen Tests – sons
 |---|---|---|
 | `tests/Plane.BuildingBlocks.Testing.Tests` | `SeedKey`/`DeterministicIdGenerator` | UUIDv5-Vektoren aus `tests/seed/uuid5-vectors.json`, erzeugt mit Python `uuid.uuid5` (gleiche Namensraum-UUID wie `seed_plane.py`): C#-Ergebnis byte-gleich |
 | | `FixedClock`, `ConfigurableClock` | Zeitsprünge, Mikrosekunden-Rundung, Profil-Sperre (Start ohne `Plane:Profile=test` ⇒ Fehler) |
-| | `PlaneRespawner` | Referenztabellen aus `TablesToIgnore` bleiben gefüllt; alle übrigen Tabellen leer; neue Tabelle ohne Eintrag ⇒ wird geleert |
+| | `PlaneRespawner` | Referenztabellen aus `TablesToIgnore` bleiben gefüllt; alle übrigen Tabellen leer bis auf die von `BaseSeeds.ApplyAsync` wiederhergestellten Zeilen (System-Bot); neue Tabelle ohne Eintrag ⇒ wird geleert; `TablesToIgnore` = `reference_tables[]` aus `_data/03-datenmodell.json` (ABG-139) |
 | | `HtmlNormalizer`, `JsonNormalizer`, `YjsNormalizer`, `PdfNormalizer` | je Regel aus §3.7.2 ein Positiv- und ein Negativfall (z. B. Klassenreihenfolge **nicht** sortiert ⇒ vertauschte Klassen = Abweichung) |
 | | `TestAuthHandler` | Claims identisch zu den Claims nach echtem OIDC-Login (Vergleich mit `OidcLoginFlowTests`-Mitschnitt, Verify-Snapshot) |
-| `tests/Plane.Tools.ParityHarness.Tests` | Normalisierung N1 … N13 | je Regel ≥ 2 Fixture-Paare (gleich ⇒ grün, verletzt ⇒ rot mit verständlicher Diff-Meldung), insbesondere N9 (`65535.0` vs. `65535`) und N10 (`null` vs. fehlend) |
+| `tests/Plane.Tools.ParityHarness.Tests` | Normalisierung N1 … N14 | je Regel ≥ 2 Fixture-Paare (gleich ⇒ grün, verletzt ⇒ rot mit verständlicher Diff-Meldung), insbesondere N9 (`65535.0` vs. `65535`), N10 (`null` vs. fehlend) und N14 („Plane“ außerhalb eines `BRAND-API`-Pfads ⇒ Abweichung) |
 | | `DeviationCatalog` | ungenutzter Eintrag ⇒ Fehler; `kind: ignore` ohne `tested_by` ⇒ Fehler; `added-field` ohne `package` ⇒ Fehler (§6.3); EE-Bezug in I0–I7 ⇒ Fehler |
 | | Determinismus-Check | zwei Aufnahmen mit simuliertem Zeitstempel-Rauschen außerhalb von N4 ⇒ Abbruch |
 | | Szenario-Parser | alle Platzhalter (§3.6.2) aufgelöst; unbekannter Seed-Schlüssel ⇒ Fehler mit Pfad |
 | `tests/Plane.Tools.Gates.Tests` | `ce-coverage-check`, `original-test-ledger`, `seed-manifest-diff`, `acceptance-report`, `quarantine-check`, `k6-thresholds.mjs` (über Node nur als Dev-Werkzeug) | Fixture-Repositories unter `tests/Plane.Tools.Gates.Tests/Fixtures/<fall>/` (fehlender Trait, doppelter `[Origin]`, Ledger-Summe falsch, Quarantäne abgelaufen, entfallene CE-ID mit Test) ⇒ erwarteter Exit-Code und Meldungstext |
 | `frontend/apps/e2e/drivers/*.spec.ts` (Vitest, `node`) | `determinism.ts`, `dom-parity.ts`, Katalog-Lader (`visual/catalog/*.catalog.yaml`) | Mulberry32-Folge für Seed `0x504c414e` fest; DOM-Snapshot wendet D09 §3.14.6 N1–N9 an (je Regel Positiv-/Negativfall, u. a. Klassen sortiert, `data-pl-host` ausgepackt, ID-Umnummerierung konsistent), meldet sichtbare Host-Elemente (Z1, alle Verträge), kürzt SVG nur in Seiten-Verträgen (Z2); jede Katalog-Maske hat einen Eintrag `kind: mask` in `ui-deviations.yaml` (ABG-033) |
+| `tests/Plane.Tools.Gates.Tests` | `brand-gate` (G-BRAND) | Fixture-Artefakte: „Plane“ als ganzes Wort ⇒ rot; „Planen“/„Planejado“ ⇒ grün; `Плейн`/`플레인`/`plane.so` ⇒ rot; Treffer mit Allowlist-Eintrag ⇒ grün; ungenutzter Allowlist-Eintrag ⇒ rot |
+| `frontend/apps/e2e/drivers/branding.spec.ts` (Vitest, `jsdom`) | `branding.ts` | Init-Script ersetzt Textknoten, `title`/`alt`/`aria-label`/`placeholder` und `<title>` nach BR-10/BR-03 (Satzpunkt-Regel „Welcome to Plane.“ → „Welcome to funk.“), lässt Attributnamen, `data-*` und Wörter wie „Planen“ unverändert; jede Route aus `brand-assets.json` wird bedient |
 | `frontend/tools/visual/css-diff.ts` (Vitest) | Selektor-/Deklarations-Extraktion | bekannte CSS-Eingaben ⇒ erwartete Mengen; `ui-deviations.yaml`-Eintrag `kind: extra-css`/`extra-utility` ohne Begründung ⇒ Fehler (ABG-033) |
 
 Die Gate-Werkzeuge unter `tools/ci/<name>/` sind .NET-Konsolenprojekte (`tools/ci/<name>/<Name>.csproj`, Aufruf `dotnet run --project tools/ci/<name> -- …`), damit sie ohne Node lauffähig sind; Ausnahme ist `k6-thresholds.mjs` (Dev-Werkzeug, läuft im k6-Container-Kontext).
@@ -1985,6 +2022,7 @@ Die Gate-Werkzeuge unter `tools/ci/<name>/` sind .NET-Konsolenprojekte (`tools/c
 | R-D15-13 | **Keycloak-Theme erreicht 1 %-Schwelle nicht** (FreeMarker-Templates vs. React-Markup) | mittel / niedrig | S7 misst früh; Masken nur für systembedingte Unterschiede (D09 UI-DEV-011); sonst Theme-Korrektur | Visual-Suite `keycloak` in I0 |
 | R-D15-14 | **`@funk-only`-Wildwuchs**: Specs werden als `funk-only` markiert, um Dual-Target-Fehler zu umgehen | mittel / mittel | Obergrenze ≤ 5 `@funk-only`-Specs (AK-15-15), Liste in `frontend/apps/e2e/funk-only.allowlist`; Gate-Fehler bei neuem Eintrag ohne Freigabe | Zahl der Einträge |
 | R-D15-15 | **Dual-Target-Login des Originals** hängt vom Passwort-Login ab, den das Original in 1.4.2 per Instanz-Konfiguration auch deaktivieren kann | niedrig / mittel | Parity-Seed setzt `ENABLE_EMAIL_PASSWORD=1` in der Original-Instanzkonfiguration; `AuthDriverOriginal` prüft das vor Testbeginn | `globalSetup`-Fehler |
+| R-D15-16 | **Branding-Ersetzung verdeckt echte Textabweichungen** (das Referenz-Init-Script ersetzt mehr oder anders als der Locale-Port) | niedrig / mittel | eine Regelquelle `frontend/tools/brand/` für Locale-Port, Theme-Generator und Referenz (BR-10); Selbsttest `branding.spec.ts`; G-BRAND auf den Ziel-Artefakten | DOM-Diff nur in Textknoten mit „funk.“ |
 
 ### 8.2 Offene Punkte
 
@@ -1992,7 +2030,7 @@ Die Gate-Werkzeuge unter `tools/ci/<name>/` sind .NET-Konsolenprojekte (`tools/c
 |---|---|---|---|
 | O-D15-01 | CI-Plattform | **Entschieden** durch D14 §3.21: GitHub Actions im Repository `funk.` (`ci.yml`, `e2e.yml`, `parity.yml`, `images.yml`, `release.yml`); die Workflows rufen ausschließlich `tools/ci/gate.sh` auf (Zuordnung §9.2) | – |
 | O-D15-02 | Coverage-Paket: `Microsoft.Testing.Extensions.CodeCoverage` vs. `coverlet.MTP` | **Entschieden (Review):** `coverlet.MTP` (MIT, Cobertura); `Microsoft.Testing.Extensions.CodeCoverage` trägt eine proprietäre Microsoft-Lizenzdatei (nuspec 18.12.0) und scheidet nach Lizenz-Hygiene aus; Diff-Coverage über `ReportGenerator` (Apache-2.0) + `git diff` | – |
-| O-D15-03 | E-Mail-Änderung (CE-PROF-004) in Plane oder Keycloak | **Entschieden** durch D05-ADR-08: Keycloak; Ledger A-058 `obsolete` mit Ersatz `ProfileEmailChangeLinkTests` | – |
+| O-D15-03 | E-Mail-Änderung (CE-PROF-004) in `funk.` oder Keycloak | **Entschieden** durch D05-ADR-08: Keycloak; Ledger A-058 `obsolete` mit Ersatz `ProfileEmailChangeLinkTests` | – |
 | O-D15-04 | Ablage der Visual-Referenzen (`frontend/apps/e2e/visual/baselines/` und `baselines-new/`, ABG-033; Git LFS vs. OCI-Artefakte) in einer Airgap-fähigen Umgebung (17 Z-07) | Git LFS; Größenbudget 2 GB (§3.10.5); bei Überschreitung OCI-Artefakt je Inkrement im internen Registry | Ende I0 |
 | O-D15-05 | Firefox/WebKit als hartes Gate | informativ bis I7, ab I7 Gate für `gallery` und `@visual-xbrowser` (D09 §3.14.5) | Start I7 (Auftraggeber) |
 | O-D15-06 | Umgang mit a11y-Verstößen des Originals | je Inkrement Liste „Original-Baseline“ vorlegen; Standard: übernehmen (ADR-005), Korrektur nur auf Beschluss als Abweichung | je Inkrement-Abnahme |
@@ -2002,6 +2040,7 @@ Die Gate-Werkzeuge unter `tools/ci/<name>/` sind .NET-Konsolenprojekte (`tools/c
 | O-D15-10 | Reicht die additive Regel (§6.3) für alle Wellen, insbesondere A1 (Typ-spezifische Pflicht-Properties) und E5 (geänderte Default-Rechte)? | vor W2/W4 mit dem jeweiligen Detaildesign prüfen; Pflicht-Properties dürfen CE-Requests nicht ungültig machen (P-W3) | Detailplanung W2 / W4 |
 | O-D15-11 | Zeitanker `T0`: D09 nutzt `2026-01-15T10:00:00Z`, dieses Dokument `2026-02-01T10:00:00Z` | **erledigt (ABG-009):** verbindlich `T0 = 2026-02-01T10:00:00Z` für Server-Uhr (`Plane__Testing__FixedUtcNow`), Browser-Uhr und Seed (ein Seed, D15-ADR-16); Browser-Uhr ausschließlich per `page.clock.install({ time: new Date('2026-02-01T10:00:00Z') })`; D09 §3.14.3 hat übernommen | – |
 | O-D15-12 | Ob die Paritäts-Läufe nach W1 zusätzlich eine „CE-Sicht“ brauchen (technisches Abschalten von EE-Modulen nur im Profil `test`) | nein, solange §6.3 trägt; ein Schalter wäre kein Plan-Gating, erhöht aber die Testmatrix | Start W1 |
+| O-D15-13 | Gebeugte Produktnamen-Formen (tr, ko, uk/ru, en-Possessiv) in Ausnahmetabellen `libs/shared/i18n/brand/<locale>.json` (BR-10 Nr. 2) | G-BRAND und Visual-Referenz nutzen dieselben Tabellen; Freigabe im Übersetzungs-Review | vor Ende I0 (17 Z-113) |
 
 ---
 
@@ -2011,20 +2050,21 @@ Die Gate-Werkzeuge unter `tools/ci/<name>/` sind .NET-Konsolenprojekte (`tools/c
 
 | Dokument | liefert an D15 | erhält von D15 |
 |---|---|---|
-| `00-grundsatzentscheidungen.md` | ADR-001 (Upsell-Entfall ⇒ Masken/`removed-field`), ADR-004 (Airgap ⇒ Egress-Tests), ADR-005 (Visual-Parität), ADR-006 (Original als Referenz), ADR-007 (Forgejo-Container in Tests), ADR-008 (27 entfallene CE-IDs, Ersatztests), ADR-009 (Repository `funk.`, Step-up aus) | – (keine Änderung) |
+| `00-grundsatzentscheidungen.md` | ADR-001 (Upsell-Entfall ⇒ Masken/`removed-field`), ADR-004 (Airgap ⇒ Egress-Tests), ADR-005 (Visual-Parität), ADR-006 (Original als Referenz), ADR-007 (Forgejo-Container in Tests), ADR-008 (27 entfallene CE-IDs, Ersatztests), ADR-009 (Repository `funk.`, Step-up aus), ADR-009B (Produktname/Marke „funk.“ ⇒ Referenz-Branding BR-13, Gate G-BRAND) | – (keine Änderung) |
 | `01-zielarchitektur-und-tech-stack.md` | ADR-048 (Test-Stack), S0…S12, Prinzipien P1/P2/P5/P6/P7, Inkremente I0…I7 (§1.3), 🧱-Andockstellen (§1.4, §5.5, §6.4), Modulzuordnung aller CE-IDs (§5.4), Abhängigkeitsregeln R1–R10 | Ergänzung der Test-Projekte in §5.1 (Liste §3.2 ★), Testregeln T1–T6, Inventar `tests/extension-points.yaml` |
 | `02-backend-solution-und-konventionen.md` | Modul-Schablone inkl. Test-Ordner, `Plane.BuildingBlocks.Testing`-Inhalt, JSON-/Fehler-/Pagination-Konventionen, Architekturtests der Modul-Schablone, Erweiterungs-Tests je Andockstelle (D02 §6) | verbindliche Test-Bezeichner (§9.2), Pflichtfälle E1–E8 je Endpunkt, `ContractScenarioRunner`, Ledger-Ablage `Acceptance/Original/` |
 | `03-datenmodell-efcore.md` | Entitäten, Seeds (`BaseSeeds`), Referenztabellen für `TablesToIgnore`, `FloatField`-Liste (R-D15-04) | Anforderungen an deterministische IDs (UUIDv5 im Seed, UUIDv7 zur Laufzeit), `ParitySeedLoader` über Commands |
 | `04-api-design-und-endpunktkatalog.md` | Endpunktkatalog (`_data/endpoints.json`) als Soll-Liste für `coverage`, Entscheidungstabelle `DT-*` (Bugfix/Abweichung) | Golden-Pflicht je Endpunkt (P2), Ausnahmekatalog-Mechanik, Fehlertext-Katalog als Testquelle |
 | `05-auth-sicherheit-berechtigungen.md` | Permission-Katalog + Endpunkt-Matrix (`_data/05-permission-matrix.json`, Inhalt der Matrix-Tests), Realm-als-Code (`plane-realm.json`, Testbenutzer §3.15.7), Sicherheitsmechanismen, D05-ADR-08 (E-Mail in Keycloak) | Akteur-Klassen (§3.13.1, EP-T06), Quelldateien des generierten Test-Realms (`tests/seed/keycloak/{parity-users,test-overrides}.json` → `plane-realm.test.json`), Test-App-Client `plane-test-app` (nur Profil `test`), `KeycloakRealmConfigTests`, D15-SEC-01…D15-SEC-11 |
-| `06-hintergrundjobs-events-benachrichtigungen.md` | Task→Job-Tabelle, Cron-Zeiten (13 Beat-Einträge), Event-Katalog, Webhook-Policy (Retry/Backoff), E-Mail-Templates | `CronRegistrationTests`, `EventCatalogSnapshotTests` (EP-T11), G-MAIL, Exakt-einmal-/Kill-Tests (S12) |
-| `07-realtime-kollaboration-dokumente.md` | Hocuspocus-Protokoll, Close-Codes, Persistenz-Debounce, Konvertierungen, PDF-Renderer | Protokolltests mit Original-Provider, G-DOC/G-PDF-Korpora, LT-16…LT-20 |
+| `06-hintergrundjobs-events-benachrichtigungen.md` | Task→Job-Tabelle, Cron-Plan §4.2 (11 übernommene Beat-Einträge, B3/B13 entfallen, 7 neu; ABG-138), Event-Katalog, Webhook-Policy (Retry/Backoff), E-Mail-Templates | `CronRegistrationTests`, `EventCatalogSnapshotTests` (EP-T11), G-MAIL, Exakt-einmal-/Kill-Tests (S12) |
+| `07-realtime-kollaboration-dokumente.md` | Hocuspocus-Protokoll, Close-Codes, Persistenz-Debounce, Konvertierungen, PDF-Renderer, Provider-Konformitätsfälle P-01…P-30, Korpora G-MD/G-PDF-web (§7.5) | Ablage-Konvention `Plane.Collaboration.Tests/{Browser,Protocol}/` (ABG-111), G-DOC/G-PDF/G-PDF-web/G-MD-Korpora, LT-16…LT-20 |
 | `08-frontend-angular-architektur.md` | Workspace-Struktur, Store-Mapping, Registries, Vitest-/Playwright-Gerüst (D08-ADR-27) | Vitest-Projekte (§3.8.1), Pflicht-Testgegenstände (§3.8.2), Ort der Galerie (§9.2), Test-Provider `provideFakeExtensions(config?)` aus `frontend/libs/web/extensions/testing/` (+ Admin-/Space-Varianten, ABG-032) |
 | `09-ui-paritaet-designsystem.md` | Prüfkatalog/Zustände, Viewport-/Theme-Matrix, Pixel-Schwellwerte und Blob-Check (§3.14.5), DOM-Normalisierung (§3.14.6), Keycloak-Theme-Abweichungen (UI-DEV-*) | ein gemeinsamer Seed (Fragment `visual`), `T0`, Ablageorte der Referenzen und Werkzeuge (§9.2) |
-| `10-editor-angular.md` | Extension-Tabelle, NodeViews, Schema-Freeze (ADR-042) | G-SCHEMA (Browser + Server), Editor-Specs, LT-16 |
+| `10-editor-angular.md` | Extension-Tabelle, NodeViews, Schema-Freeze (ADR-042), Browser-Schema-Varianten (§3.2.3), Inkrement-Schnitt ED-1…ED-3 in I2 (§1.4) | G-SCHEMA (Server `rich`/`document`/`title` nach 07, Browser `browser/*` nach 10; ABG-119), Editor-Specs (ab I2, Page-Fälle I4; ABG-114), LT-16 |
 | `11-suche-und-ai-basis.md` | Such-Abstraktion, Indexierungs-Pipeline, AI-Provider (OpenAI-kompatibel), pgvector | LT-09, `IndexingPipelineTests`, `TestEmbeddingGenerator` (G1), WireMock-Vorlage LLM |
 | `12-…`, `13-…` | in 01 Anhang A nicht belegt | – |
 | `14-infrastruktur-deployment-betrieb.md` | AppHost-Profile (`dev`/`test`/`prodlike`), Original-Start `tools/parity/` (Port 13000), CI-Workflows, Airgap-/Backup-/Upgrade-Tests (AK-14-*), Test-Projekte `Plane.ServiceDefaults.Tests`, `Plane.Cli.Tests`, `Plane.Tools.ForgejoInit.Tests`, `tests/deploy/*.sh` | Gate-Stufen G0–G6 und `gate.sh`, Testumgebungen (§3.4.3), Inhalt und Generierung von `plane-realm.test.json` (§3.14.2; **keine** zusätzliche AppHost-Ressource), Mount `tests/seed` → `/parity`, LT-21 (AK-14-31), Laufzeitbudgets, Runner-Anforderungen (`perf`) |
+| `17-abgleich-dokumentuebergreifend.md` | verbindliche Abgleichsentscheidungen Teil 1 (ABG-001 …) und Teil 2 (ABG-101 …), Branding-Regeln BR-01 … BR-14 (Teil 2 §2.3) | Gate G-BRAND (BR-14), Referenz-Branding (BR-13), Abgleich-Protokoll |
 | `16-erweiterungspunkte-bezahl-features.md` | fachliche Andockstellen aller gewählten Pakete und der 🧱-Pakete C1/C3/G1 | Test-Vorkehrungen je Andockstelle (§6.2), EP-T01…T14, additive Regel §6.3, `tests/extension-points.yaml` |
 | `migration/plan/01-roadmap-ce.md`, `migration/plan/_data/wp-ce.json` | Arbeitspakete und Schnitte je Inkrement | DoD je Arbeitspaket-Typ (§3.15.3), Anhang B (Pflicht-Ebenen je CE-ID) als Abnahmekriterium jedes Schnitts |
 
@@ -2061,7 +2101,7 @@ Die Folgedokumente sind parallel entstanden und verwenden für Test-Bausteine te
 |---|---|
 | 01 | ~~§5.1 um die ★-Projekte aus §3.2 ergänzen (`Plane.Worker.Tests`, `Plane.Contracts.Tests`, `Plane.Security.Tests`, `Plane.BuildingBlocks.Testing.Tests`, `Plane.Tools.ParityHarness.Tests`, `Plane.Tools.Gates.Tests`, `tests/seed`, `tests/original-tests`, `tests/load`, `tests/security`, `frontend/apps/gallery`, `tools/parity`); §8.1 ergänzen: `FsCheck` 3.x (BSD-3-Clause, Property-Tests), `coverlet.MTP` 10.x (MIT, statt `Microsoft.Testing.Extensions.CodeCoverage`, proprietär), `ReportGenerator` (Apache-2.0); §8.2: `@playwright/test` von „1.5x“ auf **1.64.x** (gleich `Microsoft.Playwright` 1.64.x, gemeinsames Browser-Image), `@vitest/browser-playwright` 4.1.x; S11 in §9: Original-Start über `tools/parity/` statt `docker-compose-local.yml` (D14 §3.20)~~ – **erledigt** (ABG-004, ABG-005, ABG-006, ABG-007; §5.1-Baum um die ★-Projekte und `frontend/apps/gallery` ergänzt, Nachtrag Prüfung in 17 §7) |
 | 02 | ~~Bezeichner gemäß §9.2 angleichen (`PlaneApiFactory`, `PostgresContainerFixture`, `FixedClock`, Golden-Pfade)~~ – **Naming erledigt (ABG-050)**: 02 verwendet die Test-Bezeichner aus 15; `ScenarioBuilder` als Fassade dokumentieren |
-| 03 | Liste der `FloatField`-Felder mit Zieltyp und JSON-Ausgabe (R-D15-04) und Liste der Referenztabellen für `TablesToIgnore` liefern |
+| 03 | Liste der `FloatField`-Felder mit Zieltyp und JSON-Ausgabe (R-D15-04) liefern; ~~Liste der Referenztabellen für `TablesToIgnore` liefern~~ – **erledigt (ABG-139)**: 03 §4.6 bzw. `_data/03-datenmodell.json` → `reference_tables[]`, übernommen in §3.3.2 und §5.1 (`event_types` existiert nicht; `BaseSeeds.ApplyAsync` nach jedem Reset) |
 | 04 | `_data/endpoints.json` mit stabilen Endpunkt-Schlüsseln (Methode + Route-Template) als Eingabe für `coverage` und `EndpointCoverageTests` bereitstellen; Entscheidungs-IDs `DT-*` für `deviations.yaml` |
 | 05 | ~~Test-Realm-Verfahren §3.14.2 (generierte `plane-realm.test.json`) statt handgepflegter Override-Datei bestätigen; Test-Client `plane-test-app` (nur Test-Realm) aufnehmen~~ – **erledigt durch ABG-001** (eine generierte Datei, Härtungsprüfung D15-SEC-11 gegen `deploy/keycloak/config/00-plane-realm.json`); Akteur-Klassen der Matrix (§3.13.1) bestätigen; ~~Test-IDs dieses Dokuments heißen jetzt `D15-SEC-01…11`~~ – **erledigt (ABG-010)**: Präfix `D15-SEC-01…11`, unpräfixiertes `SEC-xx` bleibt 05 vorbehalten, alle 05-Verweise lösen korrekt auf |
 | 06 | Event-Katalog maschinenlesbar für `EventCatalogSnapshotTests`; Liste „Command → erwartetes Event“ für `EventEmissionTests` (§6.2 C3) |
@@ -2538,26 +2578,28 @@ Für jede CE-ID aus `F10` die **Mindest-Testebenen** (Pflicht für die Abnahme, 
 | CE-PAGE-018 | Assets-Panel | übernommen | Frontend-only | I4 | L2 L7 L8 | `web/pages/page-editor-shell.spec.ts` | – |
 | CE-PAGE-019 | Versionshistorie | übernommen | `Plane.Pages.Tests` | I4 | L1 L2 L3 L5 L7 L8 | `web/pages/page-editor-shell.spec.ts` | A-045 |
 | CE-PAGE-020 | Page-Anzeigeoptionen | übernommen | Frontend-only | I4 | L2 L7 L8 | `web/pages/page-editor-shell.spec.ts` | – |
-| CE-PAGE-021 | Rich-Text-Editor | übernommen | Frontend-only | I2/I4 | L2 L4 L7 L8 L9 (G-DOC/G-SCHEMA; LT-16) | `web/editor/editor-variants.spec.ts` | – |
-| CE-PAGE-022 | Lite-Text-Editor | übernommen | Frontend-only | I2/I4 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-variants.spec.ts` | – |
-| CE-PAGE-023 | Dokument-Editor (read-only, Versionen) | übernommen | Frontend-only | I2/I4 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-variants.spec.ts` | – |
-| CE-PAGE-024 | Slash-Command-Menü | übernommen | Frontend-only | I4 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-menus.spec.ts` | – |
-| CE-PAGE-025 | Bubble-Menü | übernommen | Frontend-only | I4 | L2 L4 L7 L8 (G-DOC) | `web/editor/editor-menus.spec.ts` | – |
-| CE-PAGE-026 | Drag-Handle, Block-Menü und Block-Drag&Drop | übernommen | Frontend-only | I4 | L2 L4 L7 L8 (G-DOC) | `web/editor/editor-menus.spec.ts` | – |
-| CE-PAGE-027 | Textstruktur | übernommen | Frontend-only | I4 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-blocks.spec.ts` | – |
-| CE-PAGE-028 | Listen (Aufzählung, Nummerierung, To-do) | übernommen | Frontend-only | I4 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-blocks.spec.ts` | – |
-| CE-PAGE-029 | Text-Formatierung und Farben | übernommen | Frontend-only | I4 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-blocks.spec.ts` | – |
-| CE-PAGE-030 | Code-Block mit Syntax-Highlighting | übernommen | Frontend-only | I4 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-blocks.spec.ts` | – |
-| CE-PAGE-031 | Tabellen | übernommen | Frontend-only | I4 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-blocks.spec.ts` | – |
-| CE-PAGE-032 | Bilder im Editor | übernommen | Frontend-only | I4 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-blocks.spec.ts` | – |
-| CE-PAGE-033 | Callouts | übernommen | Frontend-only | I4 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-blocks.spec.ts` | – |
-| CE-PAGE-034 | Nutzer-Mentions im Editor | übernommen | Frontend-only | I2/I4 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-inline.spec.ts` | – |
-| CE-PAGE-035 | Emojis | übernommen | Frontend-only | I2/I4 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-inline.spec.ts` | – |
-| CE-PAGE-036 | Links im Editor | übernommen | Frontend-only | I2/I4 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-inline.spec.ts` | – |
-| CE-PAGE-037 | Markdown-Funktionen | übernommen | Frontend-only | I2/I4 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-inline.spec.ts` | – |
-| CE-PAGE-038 | Platzhalter | übernommen | Frontend-only | I2/I4 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-inline.spec.ts` | – |
-| CE-PAGE-039 | Deep-Links zu Blöcken | übernommen | Frontend-only | I4 | L2 L4 L7 L8 (G-DOC) | `web/editor/editor-config.spec.ts` | – |
-| CE-PAGE-040 | Anzeige-Konfiguration des Editors | übernommen | Frontend-only | I4 | L2 L4 L7 L8 (G-DOC) | `web/editor/editor-config.spec.ts` | – |
+| CE-PAGE-021 | Rich-Text-Editor | übernommen | Frontend-only | I2 | L2 L4 L7 L8 L9 (G-DOC/G-SCHEMA; LT-16) | `web/editor/editor-variants.spec.ts` | – |
+| CE-PAGE-022 | Lite-Text-Editor | übernommen | Frontend-only | I2 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-variants.spec.ts` | – |
+| CE-PAGE-023 | Dokument-Editor (read-only, Versionen) | übernommen | Frontend-only | I2 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-variants.spec.ts` | – |
+| CE-PAGE-024 | Slash-Command-Menü | übernommen | Frontend-only | I2 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-menus.spec.ts` | – |
+| CE-PAGE-025 | Bubble-Menü | übernommen | Frontend-only | I2 | L2 L4 L7 L8 (G-DOC) | `web/editor/editor-menus.spec.ts` | – |
+| CE-PAGE-026 | Drag-Handle, Block-Menü und Block-Drag&Drop | übernommen | Frontend-only | I2 | L2 L4 L7 L8 (G-DOC) | `web/editor/editor-menus.spec.ts` | – |
+| CE-PAGE-027 | Textstruktur | übernommen | Frontend-only | I2 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-blocks.spec.ts` | – |
+| CE-PAGE-028 | Listen (Aufzählung, Nummerierung, To-do) | übernommen | Frontend-only | I2 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-blocks.spec.ts` | – |
+| CE-PAGE-029 | Text-Formatierung und Farben | übernommen | Frontend-only | I2 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-blocks.spec.ts` | – |
+| CE-PAGE-030 | Code-Block mit Syntax-Highlighting | übernommen | Frontend-only | I2 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-blocks.spec.ts` | – |
+| CE-PAGE-031 | Tabellen | übernommen | Frontend-only | I2 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-blocks.spec.ts` | – |
+| CE-PAGE-032 | Bilder im Editor | übernommen | Frontend-only | I2 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-blocks.spec.ts` | – |
+| CE-PAGE-033 | Callouts | übernommen | Frontend-only | I2 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-blocks.spec.ts` | – |
+| CE-PAGE-034 | Nutzer-Mentions im Editor | übernommen | Frontend-only | I2 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-inline.spec.ts` | – |
+| CE-PAGE-035 | Emojis | übernommen | Frontend-only | I2 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-inline.spec.ts` | – |
+| CE-PAGE-036 | Links im Editor | übernommen | Frontend-only | I2 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-inline.spec.ts` | – |
+| CE-PAGE-037 | Markdown-Funktionen | übernommen | Frontend-only | I2 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-inline.spec.ts` | – |
+| CE-PAGE-038 | Platzhalter | übernommen | Frontend-only | I2 | L2 L4 L7 L8 (G-DOC/G-SCHEMA) | `web/editor/editor-inline.spec.ts` | – |
+| CE-PAGE-039 | Deep-Links zu Blöcken | übernommen | Frontend-only | I2 | L2 L4 L7 L8 (G-DOC) | `web/editor/editor-config.spec.ts` | – |
+| CE-PAGE-040 | Anzeige-Konfiguration des Editors | übernommen | Frontend-only | I2 | L2 L4 L7 L8 (G-DOC) | `web/editor/editor-config.spec.ts` | – |
+
+Inkrement-Schnitt des Editors (ABG-114, 10 §1.4): CE-PAGE-021 … -040 (ohne -013 … -020) gehören zu **I2** – Rich-Text-Editor mit allen NodeViews/Menüs und Document-Editor (read-only) in Work-Item-Beschreibung, Modal, Peek und Beschreibungs-Versionen; die Editor-Specs laufen ab I2 im Work-Item-Kontext, die Page-Varianten derselben Fälle (kollaborativer Page-Editor, Titel-Editor, Page-Hüllen) ab I4; LT-16 (CE-PAGE-021) ab I4. Spike S5 ist Gate vor I2 (Restkriterium „NodeView-Rendering stabil mit Yjs“ vor I4).
 
 ### B.9 Realtime (9)
 
@@ -2621,14 +2663,16 @@ Für jede CE-ID aus `F10` die **Mindest-Testebenen** (Pflicht für die Abnahme, 
 | CE-ID | Feature | Status | Test-Projekt (Backend) | Inkr. | Pflicht-Ebenen | E2E-Spec | Orig. (Anhang A) |
 |---|---|---|---|---|---|---|---|
 | CE-SRCH-001 | Globale Suche | übernommen | `Plane.Search.Tests` | I5 | L1 L2 L3 L5 L7 L8 L9 (LT-09) | `web/search/search.spec.ts` | A-051 |
-| CE-SRCH-002 | Entity-Suche für Mentions und Picker | übernommen | `Plane.Search.Tests` | I5 | L1 L2 L3 L5 L7 L8 | `web/search/search.spec.ts` | A-051 |
-| CE-SRCH-003 | Work-Item-Picker-Suche | übernommen | `Plane.Search.Tests` | I5 | L1 L2 L3 L5 L7 L8 | `web/search/search.spec.ts` | – |
+| CE-SRCH-002 | Entity-Suche für Mentions und Picker | übernommen | `Plane.Search.Tests` | I2 (Teil), I5 (vollständig) | L1 L2 L3 L5 L7 L8 | `web/search/search.spec.ts` | A-051 |
+| CE-SRCH-003 | Work-Item-Picker-Suche | übernommen | `Plane.Search.Tests` | I2 (Teil), I5 (vollständig) | L1 L2 L3 L5 L7 L8 | `web/search/search.spec.ts` | – |
 | CE-SRCH-004 | Power-K Command Palette | übernommen | Frontend-only | I5 | L2 L7 L8 | `web/search/power-k.spec.ts` | – |
 | CE-SRCH-005 | Power-K-Navigationsbefehle | übernommen | Frontend-only | I5 | L2 L7 L8 | `web/search/power-k.spec.ts` | – |
 | CE-SRCH-006 | Power-K-Erstellbefehle | übernommen | Frontend-only | I5 | L2 L7 L8 | `web/search/power-k.spec.ts` | – |
 | CE-SRCH-007 | Power-K-Kontextbefehle | übernommen | Frontend-only | I5 | L2 L7 L8 | `web/search/power-k.spec.ts` | – |
 | CE-SRCH-008 | Power-K-Account-, Preferences- und Hilfebefehle | übernommen | Frontend-only | I5 | L2 L7 L8 | `web/search/power-k.spec.ts` | – |
 | CE-SRCH-009 | Tastatur-Shortcuts | übernommen | Frontend-only | I5 | L2 L7 L8 | `web/search/power-k.spec.ts` | – |
+
+Inkrement-Schnitt der Suche (ABG-132, 11 §1.3): Für CE-SRCH-002/-003 laufen die Contract-Szenarien `search.entity-*` für die Typen `user_mention`, `project` und `issue` sowie SR-02 und die Picker-/Mention-Fälle in `web/search/search.spec.ts` ab **I2**; übrige Entity-Typen ab I3/I4; der Gast-Scope-Ledger-Eintrag A-051 ist vollständig ab I5.
 
 ### B.14 Einstellungen/Profil (11)
 
@@ -2699,7 +2743,7 @@ Für jede CE-ID aus `F10` die **Mindest-Testebenen** (Pflicht für die Abnahme, 
 | CE-INST-012 | Konto-Menü mit Theme-Umschaltung | übernommen | `Plane.Instance.Tests` | I6 | L1 L2 L3 L5 L7 L8 | `admin/admin-shell.spec.ts` | – |
 | CE-INST-013 | Hilfe-Bereich der Admin-Sidebar | übernommen | `Plane.Instance.Tests` | I6 | L1 L2 L3 L5 L7 L8 | `admin/admin-shell.spec.ts` | – |
 | CE-INST-014 | Dialog für ungespeicherte Änderungen (God Mode) | übernommen | `Plane.Instance.Tests` | I6 | L1 L2 L3 L5 L7 L8 | `admin/admin-shell.spec.ts` | – |
-| CE-INST-015 | Kopierfelder für Plane-URLs | übernommen | `Plane.Instance.Tests` | I6 | L1 L2 L3 L5 L7 L8 | `admin/admin-shell.spec.ts` | – |
+| CE-INST-015 | Kopierfelder für Instanz-URLs (Original: „Plane-URLs“) | übernommen | `Plane.Instance.Tests` | I6 | L1 L2 L3 L5 L7 L8 | `admin/admin-shell.spec.ts` | – |
 | CE-INST-016 | 404-Seite und Fehlerbehandlung (God Mode) | übernommen | `Plane.Instance.Tests` | I6 | L1 L2 L3 L5 L7 L8 | `admin/admin-shell.spec.ts` | – |
 | CE-INST-017 | Allgemeine Instanzeinstellungen | übernommen | `Plane.Instance.Tests` | I6 | L1 L2 L3 L5 L7 L8 | `admin/admin-settings.spec.ts` | – |
 | CE-INST-018 | SMTP-Konfiguration | übernommen | `Plane.Instance.Tests` | I6 | L1 L2 L3 L5 L7 L8 | `admin/admin-settings.spec.ts` | – |
@@ -2751,7 +2795,7 @@ Für jede CE-ID aus `F10` die **Mindest-Testebenen** (Pflicht für die Abnahme, 
 | CE-SPACE-029 | iframe-Einbettung | übernommen | `Plane.PublicSpace.Tests` | I6 | L1 L2 L3 L5 L7 L8 | `space/board.spec.ts` | – |
 | CE-SPACE-030 | Mention-Darstellung (Space) | übernommen | `Plane.PublicSpace.Tests` | I6 | L1 L2 L3 L5 L7 L8 | `space/board.spec.ts` | – |
 | CE-SPACE-031 | Fehler- und 404-Seiten (Space) | übernommen | `Plane.PublicSpace.Tests` | I6 | L1 L2 L3 L5 L7 L8 | `space/board.spec.ts` | – |
-| CE-SPACE-032 | 'Powered by Plane Publish'-Badge | übernommen | `Plane.PublicSpace.Tests` | I6 | L1 L2 L3 L5 L7 L8 | `space/board.spec.ts` | – |
+| CE-SPACE-032 | 'Powered by funk. Publish'-Badge (Original „Powered by Plane Publish“, BR-04) | übernommen | `Plane.PublicSpace.Tests` | I6 | L1 L2 L3 L5 L7 L8 | `space/board.spec.ts` | – |
 
 ### B.18 Public API v1 (32)
 
@@ -2927,10 +2971,10 @@ Für jede CE-ID aus `F10` die **Mindest-Testebenen** (Pflicht für die Abnahme, 
 | RV-14 | ID-Kollision: D05 §9 fordert, die Test-IDs `SEC-01…11` dieses Dokuments als `D15-SEC-xx` zu führen. | niedrig | Global umbenannt (22 Stellen im Dokument, je 1 in beiden `_data`-JSONs). |
 | RV-15 | FsCheck wurde benutzt (S-19, D15-SEC-03, B6), stand aber weder im Test-Stack noch in 01 §8.1. | niedrig | D15-ADR-02 ergänzt (BSD-3); Rückmeldung an 01. |
 | RV-16 | `PlaneSystemFixture` wartete nicht auf `forgejo-bootstrap`/`forgejo-init` (Exit-Code-Ressourcen aus D14). Der Verweis in §3.4.2 zeigte auf §5.2 statt auf §5.5. | niedrig | §5.5 mit `RunToCompletion`-Liste; Verweis korrigiert. |
-| RV-17 | Die Basis-URL des Original-Targets stand in §5.9 auf `http://localhost`, verbindlich ist Port 13000 (D14). Das Keycloak-Login war einstufig, das Plane-Theme hat zwei Schritte (D05-ADR-14). `addStyleTag` vor der Navigation blieb wirkungslos. | niedrig | §5.9: Port 13000, zweistufiger Login, `stylePath`/`animations`/`caret` in `toHaveScreenshot`, CSS per `addInitScript`. |
+| RV-17 | Die Basis-URL des Original-Targets stand in §5.9 auf `http://localhost`, verbindlich ist Port 13000 (D14). Das Keycloak-Login war einstufig, das Login-Theme (funk.-Branding) hat zwei Schritte (D05-ADR-14). `addStyleTag` vor der Navigation blieb wirkungslos. | niedrig | §5.9: Port 13000, zweistufiger Login, `stylePath`/`animations`/`caret` in `toHaveScreenshot`, CSS per `addInitScript`. |
 | RV-18 | §4.6 deckte die Analyse-Dokumente unvollständig ab: `A02a/b`, `A03/A04`, `A05`, `A07`, `A08`, `A10a/b` fehlten. | niedrig | Zeilen ergänzt. |
 | RV-19 | Verwiesen wurde auf die Folgedokumente 03/04/06/07/10/11, die noch nicht existieren (etwa `_data/endpoints.json` für `coverage`). | mittel | Hinweis in §9.1 mit Übergangsquellen, darunter `tests/contracts/endpoints.interim.json` aus A03/A04/A05. |
-| RV-20 | §3.3.2 (`TablesToIgnore`) und das Skelett in §5.1 wichen voneinander ab: `event_types` fehlte in der Tabelle. | niedrig | §3.3.2 angeglichen (endgültige Liste liefert D03). |
+| RV-20 | §3.3.2 (`TablesToIgnore`) und das Skelett in §5.1 wichen voneinander ab: `event_types` fehlte in der Tabelle. | niedrig | §3.3.2 angeglichen (endgültige Liste liefert D03). Nachtrag: überholt durch ABG-139 – `event_types` existiert nicht, Liste nach 03 §4.6. |
 | RV-21 | Kürzel `LIVE/` weicht von 01 ab (`apps/live/src/`). | niedrig | Abweichung im Kopf begründet. |
 
 ### Geprüft und für korrekt befunden (Auswahl)
@@ -2964,3 +3008,19 @@ Umgesetzt sind die verbindlichen Entscheidungen aus `17-abgleich-dokumentuebergr
 | ABG-050 | §9.3 Zeile 02 | Den Punkt „Naming“ als erledigt markiert. |
 | ABG-052 | §6.2 F1 | Signatur ungültig: 401 `{"error": "Invalid signature"}`. Duplikat: 200 `{"status": "duplicate"}`. Annahme: 202 `{"status": "accepted"}` (16 AK-16-07, ab I0). |
 | ABG-056 | §6.2 C1 | Auto-Archive aus der Changer-Pfadliste von `StateChangeOriginTests` gestrichen. Neuer Negativfall: nur `archived_at`, kein Changer-Aufruf, kein `state_changed`-Event. |
+
+**Teil 2 (17 §2, `_data/17-abgleich-teil2.json`, Stand 23.10.2026):** Umgesetzt sind alle Aufträge aus 17 Teil 2 §2.5, deren Ziel dieses Dokument ist (ABG-105, ABG-111, ABG-114, ABG-119, ABG-132, ABG-138, ABG-139, ABG-148, ABG-149).
+
+| ABG | Umgesetzt in | Änderung |
+|---|---|---|
+| ABG-105 umgesetzt | §3.7.1 G-MAIL, §3.4.2 `OutboxToMailTests`, AK-15-13 | G-MAIL vergleicht gegen Referenz-Renderings des Originals mit derselben Ersetzung wie das Ziel: Logo getauscht (`BRAND-MAIL-02`), Marketing-/Social-Bilder samt nur dafür vorhandener Tabellenzelle entfernt (`BRAND-MAIL-05`), „Plane“ → „funk.“; Absender-Default `funk. <noreply@<Host aus Plane:Urls:Web>>`. |
+| ABG-111 umgesetzt | §4.5 Zeile S1, §3.7.1 (neue Zeilen G-PDF-web, G-MD), §3.16 I4, AK-15-13, §9.1 Zeile 07 | Provider-Konformität unter `Plane.Collaboration.Tests/Browser/ProviderConformanceTests` (P-01…P-30) + `TwoClientConvergenceTests`/`YjsDecodeInBrowserTests`, lib0-/Codec-/Wire-Tests unter `…/Protocol/*` (AK-07-44); Korpora G-PDF-web (20 Seiten, `generate.mjs web-pdf`) und G-MD (60 Fälle, `generate.mjs markdown`) aufgenommen. |
+| ABG-114 umgesetzt | §3.9.2 Spec-Inventar (`editor-*.spec.ts`), Anhang B.8 (CE-PAGE-021 … -040, Hinweis unter der Tabelle), §9.1 Zeile 10 | Editor-Specs ab I2 im Work-Item-Kontext, Page-Fälle ab I4; CE-PAGE-021 … -040 (ohne -013 … -020) Inkrement I2 wie 10 §1.4; S5 als Gate vor I2. |
+| ABG-119 umgesetzt | §3.7.1 G-SCHEMA, AK-15-13, §9.1 Zeile 10 | Server-Goldens `{rich,document,title}.schema.json` (07 §7.5, kein `server.schema.json`), Browser-Goldens `browser/{rich,lite,document,collaborative,title}.{schema,extensions,plugins}.json` (10 §3.2.3). |
+| ABG-132 umgesetzt | §3.9.2 (`web/search/search.spec.ts`), Anhang B.13 (CE-SRCH-002/-003, Hinweis unter der Tabelle) | Inkrement „I2 (Teil), I5 (vollständig)“; Picker-/Mention-Fälle (`user_mention`, `project`, `issue`) und SR-02 ab I2. |
+| ABG-138 umgesetzt | §3.2-Baum (`Plane.Worker.Tests`), §3.3.4 Cron-Leader, §4.6 Zeile `A01`, §9.1 Zeile 06 | `CronRegistrationTests`: 11 übernommene Beat-Einträge mit identischer UTC-Zeit, B3/B13 als entfallen (`DroppedBeatEntries`), 7 neue Einträge (06 §4.2). |
+| ABG-139 umgesetzt | §3.3.2 (Mermaid + `PlaneRespawner`-Zeile), §5.1 Skelett (`Ignored`, `BaseSeeds.ApplyAsync` nach Reset, Kommentar `TemplateDatabase`), §7.2 `PlaneRespawner`, §9.3 Zeile 03, RV-20 (Nachtrag) | `TablesToIgnore` = Liste 03 §4.6 (`…, instances, instance_configurations, recurring_job_states`; kein `event_types`); `PlaneRespawner` ruft nach jedem Reset `BaseSeeds.ApplyAsync`; Rückmeldung an 03 (Referenztabellen) erledigt. |
+| ABG-148 umgesetzt | neue D15-ADR-21, neuer §3.15.5 G-BRAND (+ TOC, §3.15.1 G2/G6, §3.15.4 Werkzeug `tools/ci/brand-gate`, §3.16 I0), §3.10.1 (Mermaid, neue Regel 3 „Branding der Referenz“), §3.10.4, §3.9.1 (Selektor-Regel, Anmeldung), §3.6.4 N14 (+ §5.6, §7.2), §3.7.1 (G-PDF, G-I18N), §3.7.2 `PdfNormalizer`, §3.2-Baum (`drivers/branding.ts`, `kind: brand`, `brand-gate/`), §5.9 Skelett (`applyReferenceBranding`, Kommentar Login-Theme), §3.14.1 Test-Bot, Anhang B (CE-INST-015, CE-SPACE-032), AK-15-31, §7.2, R-D15-16, O-D15-13, §9.1 Zeilen 00/17, RV-17 | Gate G-BRAND (BR-14) mit Allowlist `frontend/tools/brand/allowlist.json`; Visual-/DOM-/E2E-Verfahren nach BR-13 (Referenz mit vorab ersetztem Branding, Masken nur für Raster); „Plane-Theme“ → „Login-Theme (funk.-Branding)“ (§3.9.1, §5.9, RV-17); Test-Bot „Original-Bot „Plane“, Ziel „funk.““. |
+| ABG-149 umgesetzt | §3.4.1 Zeile Images, §3.14.3, §4.1 (`create_dummy_data`), §3.15.1 G2/G6, §3.12.1 LT-21 | Images `${PLANE_REGISTRY}/funk-<dienst>:${PLANE_VERSION}`, Chart `deploy/helm/funk`, CLI-Befehl `funk-cli` (`create-dummy-data`, `backup`/`restore`); Projekt-/Testprojektnamen `Plane.Cli`/`Plane.Cli.Tests` und `PLANE_*`/`Plane__*`-Schlüssel bleiben. |
+
+**Branding-Durchgang (ADR-009B, BR-01 … BR-14):** Alle Stellen, an denen dieses Dokument nach außen sichtbare Namen, Texte, Absender, Logos, Instanz-/Bot-Namen, Image-, Chart- oder CLI-Namen der Zielplattform festlegt oder als Testerwartung verwendet, zeigen jetzt „funk.“ bzw. `funk-*`; unverändert bleiben nach BR-02 Verweise auf das Original (Pfade `T/…`, `API/…`, `LIVE/…`, Original-Beat-Zahl, Original-Feature-Bezeichnungen als Klammerzusatz), interne Bezeichner (`Plane.*`-Projekte, `Plane:`/`Plane__*`/`PLANE_*`-Schlüssel, Realm-/Client-/Theme-Namen `plane*`, Policy-Scheme „Plane“, `plane_api_`-Präfix) und gespeicherte Daten-Strings.
