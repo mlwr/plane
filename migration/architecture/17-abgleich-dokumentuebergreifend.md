@@ -192,3 +192,14 @@ Erledigte Aufträge werden im Zieldokument im Review-Protokoll mit „ABG-0xx um
 **Weiterhin offen (keine Festlegung ohne Eigentümer möglich):**
 
 - `Plane__Worker__Queues` (benannte Worker-Pools) wird in 16 X9/§3.2.5 mit Verweis „D14 §6.1“ genannt, ist aber weder in 14 noch als Options-Klasse in 02 §3.15 definiert. Zuständig: 02 (Options-Klasse) mit 14 (Skalierung); bis dahin gilt die 16-Beschreibung als Arbeitsgrundlage.
+
+
+## Entscheidungen des Auftraggebers zu zurückgestellten Punkten (23.10.2026)
+
+| Punkt | Entscheidung | Wirkung |
+|---|---|---|
+| Z-09 / O-D05-02 | **Angenommen:** Harmonisierungen HARM-00, HARM-03, HARM-04, HARM-06 werden umgesetzt (WS-Admin-Override einheitlich; v1-Mitgliederliste für Gäste; v1-Einladungen für Mitglieder; v1-Projekt ändern/löschen für WS-Admins). | 05 §3.18 gilt ohne Vorbehalt; Contract-Abweichungen in `tests/contracts/deviations.yaml`. |
+| Z-12 / O-D09-07 | **Angenommen:** optisch 1:1, funktionale Fehler des Originals werden korrigiert, jede Abweichung wird dokumentiert (Abweichungsliste). | gilt für alle Dokumente und Arbeitspakete. |
+| Z-08 / O-D09-11 | **Ja:** Das Keycloak-Login-Theme übernimmt die in Plane gewählte Hell/Dunkel-Einstellung (same-origin `/idp`, `localStorage.theme`), Fallback `prefers-color-scheme`. | 05 §3.16, 09 §3.13. |
+| Z-10 / O-D15-05, O-D08-12 | **Nur Chromium.** Firefox/WebKit sind kein Gate, auch nicht ab I7. | 15 Gates, 08 §7.9, CI-Matrix in 14. |
+| Z-11 / O-D09-06, O-D09-10 | **OK:** Übernahme von AGPL-3.0-only-Quellen (Propel, CSS, Reference-Gallery); `funk.` steht unter AGPL-3.0. Forgejo-Logo darf verwendet werden. | Lizenzdatei und Hinweise in `funk.` ab I0. |
