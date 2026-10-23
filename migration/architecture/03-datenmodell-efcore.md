@@ -299,9 +299,9 @@ Summe: 89 Tabellen
 
 **Lesehilfe.** Je Tabelle: Kopfzeile mit Entität, Eigentümer, Basis, Inkrement, Status, CE-IDs; dann alle **fachlichen** Spalten in Original-Reihenfolge (Basis-Spalten nach §3.1.1 sind nicht wiederholt, außer bei Basis X). „Default“: DB-Default (`DEFAULT …` in der Migration); „C#:“ = nur im Code gesetzt; `JsonDefaults.*` = konstantes Literal (§3.8.2), zugleich DB-Default. FK-Angaben nennen das Lösch-Verhalten der **DB** (harte Löschung); das Soft-Delete-Verhalten steht in §3.5.4. Durchgestrichene Spalten entfallen. Zusätzlich gilt für alle Basen W/P der Scope-FK (D03-ADR-05) und für alle Basen A/W/P der Index `ix_<tabelle>_workspace_id`/`ix_<tabelle>_project_id`, den EF für FKs automatisch anlegt.
 
-### 3.4.1 Modul Identity (Benutzer, Sessions, API-Tokens)
+#### 3.4.1 Modul Identity (Benutzer, Sessions, API-Tokens)
 
-#### 3.4.1.1 `users` ← `User` (`M/user.py` Z. 56–197)
+##### 3.4.1.1 `users` ← `User` (`M/user.py` Z. 56–197)
 
 Entität `User` · `[OwnedBy("Identity")]` · Basis eigene Form (Spalten vollständig gelistet) · ab **I0** · Status **angepasst** · CE-IDs: CE-AUTH-012, CE-AUTH-024, CE-AUTH-027, CE-PROF-001, CE-PROF-003, CE-PROF-004, CE-PROF-005, CE-PROF-006
 
@@ -353,7 +353,7 @@ Entität `User` · `[OwnedBy("Identity")]` · Basis eigene Form (Spalten vollst�
 
 **Hinweise:** Kein Soft-Delete (Original `User` erbt nicht von `SoftDeleteModel`); Konten werden deaktiviert (`is_active=false`, CE-PROF-005). Benutzerzeilen werden **nie** hart gelöscht (D03-ADR-07). Implementiert nur `ITimestamped` (`created_at`/`updated_at`, keine `created_by_id`-Spalte, wie Original).
 
-#### 3.4.1.2 `profiles` ← `Profile` (`M/user.py` Z. 200–268)
+##### 3.4.1.2 `profiles` ← `Profile` (`M/user.py` Z. 200–268)
 
 Entität `Profile` · `[OwnedBy("Identity")]` · Basis eigene Form (Spalten vollständig gelistet) · ab **I0** · Status **angepasst** · CE-IDs: CE-PROF-001, CE-PROF-006, CE-AUTH-030, CE-HOME-003, CE-HOME-006
 
@@ -393,13 +393,13 @@ Entität `Profile` · `[OwnedBy("Identity")]` · Basis eigene Form (Spalten voll
 
 **Hinweise:** Basis Original `TimeAuditModel` → `ITimestamped` (`created_at`/`updated_at`), kein Soft-Delete, keine Audit-Benutzer.
 
-#### 3.4.1.3 `user_sessions` ← `Session` (`M/session.py` Z. 17–27)
+##### 3.4.1.3 `user_sessions` ← `Session` (`M/session.py` Z. 17–27)
 
 Entität `UserSession` · `[OwnedBy("Identity")]` · Basis eigene Form (Spalten vollständig gelistet) · ab **I0** · Status **ersetzt** · CE-IDs: CE-AUTH-022, CE-AUTH-023, CE-AUTH-024, CE-AUTH-025
 
 Spalten verbindlich aus D05 §3.4.1: `id varchar(64)` PK, `user_id uuid` FK `users` ON DELETE CASCADE, `app varchar(16)`, `keycloak_sid varchar(128)`, `keycloak_sub varchar(255)`, `ticket bytea` (DP-Zweck `Plane.Identity.SessionTicket.v1`), `device_info jsonb` (`SessionDeviceInfo`), `auth_time timestamptz NULL`, `created_at`, `last_seen_at`, `revalidated_at`, `expires_at` (alle `timestamptz NOT NULL` außer `auth_time`). Indizes `(user_id)`, `(keycloak_sid)`, `(keycloak_sub)`, `(expires_at)`. Kein Soft-Delete, keine Audit-Spalten. Check `ck_user_sessions_app` (`app IN ('web','admin','space')`).
 
-#### 3.4.1.4 `api_tokens` ← `APIToken` (`M/api.py` Z. 23–46)
+##### 3.4.1.4 `api_tokens` ← `APIToken` (`M/api.py` Z. 23–46)
 
 Entität `ApiToken` · `[OwnedBy("Identity")]` · Basis `AuditableEntity` (`id`, `created_at`, `updated_at`, `created_by_id`, `updated_by_id`, `deleted_at`) · ab **I1** · Status **angepasst** · CE-IDs: CE-WH-012, CE-WH-013, CE-WH-014, CE-API-001
 
@@ -421,7 +421,7 @@ Entität `ApiToken` · `[OwnedBy("Identity")]` · Basis `AuditableEntity` (`id`,
 
 **Checks:** `ck_api_tokens_user_type` CHECK (`user_type IN (0,1)`).
 
-#### 3.4.1.5 `api_activity_logs` ← `APIActivityLog` (`M/api.py` Z. 49–74)
+##### 3.4.1.5 `api_activity_logs` ← `APIActivityLog` (`M/api.py` Z. 49–74)
 
 Entität `ApiActivityLog` · `[OwnedBy("Identity")]` · Basis `AuditableEntity` (`id`, `created_at`, `updated_at`, `created_by_id`, `updated_by_id`, `deleted_at`) · ab **I6** · Status **angepasst** · CE-IDs: CE-API-003, CE-OPS-015
 
@@ -442,9 +442,9 @@ Entität `ApiActivityLog` · `[OwnedBy("Identity")]` · Basis `AuditableEntity` 
 
 **Hinweise:** Append-only; Hard-Delete durch Aufbewahrungs-Job (`ApiActivityLogCleanupJob`, D06). Soft-Delete-Spalte bleibt aus der Basis vorhanden, wird nie gesetzt.
 
-### 3.4.2 Modul Instance (Instanz, Admins, Konfiguration)
+#### 3.4.2 Modul Instance (Instanz, Admins, Konfiguration)
 
-#### 3.4.2.1 `instances` ← `Instance` (`API/license/models/instance.py` Z. 22–50)
+##### 3.4.2.1 `instances` ← `Instance` (`API/license/models/instance.py` Z. 22–50)
 
 Entität `Instance` · `[OwnedBy("Instance")]` · Basis `AuditableEntity` (`id`, `created_at`, `updated_at`, `created_by_id`, `updated_by_id`, `deleted_at`) · ab **I0** · Status **angepasst** · CE-IDs: CE-INST-001, CE-INST-003, CE-INST-005, CE-INST-006
 
@@ -471,7 +471,7 @@ Entität `Instance` · `[OwnedBy("Instance")]` · Basis `AuditableEntity` (`id`,
 
 **Hinweise:** Genau ein Datensatz; angelegt/aktualisiert durch `InstanceBootstrapper` (D14 §3.15 Schritt 6). Referenztabelle für `TablesToIgnore`.
 
-#### 3.4.2.2 `instance_admins` ← `InstanceAdmin` (`API/license/models/instance.py` Z. 53–69)
+##### 3.4.2.2 `instance_admins` ← `InstanceAdmin` (`API/license/models/instance.py` Z. 53–69)
 
 Entität `InstanceAdminMirror` · `[OwnedBy("Instance")]` · Basis `AuditableEntity` (`id`, `created_at`, `updated_at`, `created_by_id`, `updated_by_id`, `deleted_at`) · ab **I0** · Status **angepasst** · CE-IDs: CE-INST-004 (angepasst: Spiegel der Keycloak-Rolle)
 
@@ -488,7 +488,7 @@ Entität `InstanceAdminMirror` · `[OwnedBy("Instance")]` · Basis `AuditableEnt
 
 **Checks:** `ck_instance_admins_role` CHECK (`role = 20`).
 
-#### 3.4.2.3 `instance_configurations` ← `InstanceConfiguration` (`API/license/models/instance.py` Z. 72–83)
+##### 3.4.2.3 `instance_configurations` ← `InstanceConfiguration` (`API/license/models/instance.py` Z. 72–83)
 
 Entität `InstanceConfiguration` · `[OwnedBy("Instance")]` · Basis `AuditableEntity` (`id`, `created_at`, `updated_at`, `created_by_id`, `updated_by_id`, `deleted_at`) · ab **I0** · Status **angepasst** · CE-IDs: CE-INST-002, CE-INST-017, CE-INST-018, CE-INST-025, CE-INST-026, CE-INST-028
 
@@ -503,9 +503,9 @@ Entität `InstanceConfiguration` · `[OwnedBy("Instance")]` · Basis `AuditableE
 
 **Hinweise:** Seed nur fehlender Schlüssel durch `InstanceConfigurationSeeder` (D14 §3.15 Schritt 7). OAuth-/Passwort-Schlüssel entfallen (ADR-008).
 
-### 3.4.3 Modul Workspaces
+#### 3.4.3 Modul Workspaces
 
-#### 3.4.3.1 `workspaces` ← `Workspace` (`M/workspace.py` Z. 119–182)
+##### 3.4.3.1 `workspaces` ← `Workspace` (`M/workspace.py` Z. 119–182)
 
 Entität `Workspace` · `[OwnedBy("Workspaces")]` · Basis `AuditableEntity` (`id`, `created_at`, `updated_at`, `created_by_id`, `updated_by_id`, `deleted_at`) · ab **I0** · Status **angepasst** · CE-IDs: CE-WS-001, CE-WS-003, CE-WS-004, CE-WS-005, CE-INST-027, CE-INST-029
 
@@ -524,7 +524,7 @@ Entität `Workspace` · `[OwnedBy("Workspaces")]` · Basis `AuditableEntity` (`i
 
 **Hinweise:** Soft-Delete eines Workspace kaskadiert **Deferred** (D02-ADR-03). Das Slug-Suffix des Originals entfällt, weil der partielle Unique-Index den Slug sofort freigibt.
 
-#### 3.4.3.2 `workspace_members` ← `WorkspaceMember` (`M/workspace.py` Z. 198–231)
+##### 3.4.3.2 `workspace_members` ← `WorkspaceMember` (`M/workspace.py` Z. 198–231)
 
 Entität `WorkspaceMember` · `[OwnedBy("Workspaces")]` · Basis `AuditableEntity` (`id`, `created_at`, `updated_at`, `created_by_id`, `updated_by_id`, `deleted_at`) · ab **I0** · Status **angepasst** · CE-IDs: CE-WS-008, CE-WS-009, CE-WS-012, CE-LV-015, CE-PROF-008
 
@@ -547,7 +547,7 @@ Entität `WorkspaceMember` · `[OwnedBy("Workspaces")]` · Basis `AuditableEntit
 
 **Checks:** `ck_workspace_members_role` CHECK (`role IN (5,15,20)`).
 
-#### 3.4.3.3 `workspace_member_invites` ← `WorkspaceMemberInvite` (`M/workspace.py` Z. 234–258)
+##### 3.4.3.3 `workspace_member_invites` ← `WorkspaceMemberInvite` (`M/workspace.py` Z. 234–258)
 
 Entität `WorkspaceMemberInvite` · `[OwnedBy("Workspaces")]` · Basis `AuditableEntity` (`id`, `created_at`, `updated_at`, `created_by_id`, `updated_by_id`, `deleted_at`) · ab **I1** · Status **übernommen** · CE-IDs: CE-WS-010, CE-WS-011, CE-AUTH-028, CE-API-013
 
@@ -566,7 +566,7 @@ Entität `WorkspaceMemberInvite` · `[OwnedBy("Workspaces")]` · Basis `Auditabl
 
 **Checks:** `ck_workspace_member_invites_role` CHECK (`role IN (5,15,20)`).
 
-#### 3.4.3.4 `workspace_themes` ← `WorkspaceTheme` (`M/workspace.py` Z. 286–307)
+##### 3.4.3.4 `workspace_themes` ← `WorkspaceTheme` (`M/workspace.py` Z. 286–307)
 
 Entität `WorkspaceTheme` · `[OwnedBy("Workspaces")]` · Basis `AuditableEntity` (`id`, `created_at`, `updated_at`, `created_by_id`, `updated_by_id`, `deleted_at`) · ab **I1** · Status **übernommen** · CE-IDs: CE-WS-007
 
@@ -579,7 +579,7 @@ Entität `WorkspaceTheme` · `[OwnedBy("Workspaces")]` · Basis `AuditableEntity
 
 **Indizes/Unique:** `workspace_theme_unique_workspace_name_when_deleted_at_null` UNIQUE (`workspace_id`, `name`) WHERE `deleted_at IS NULL`.
 
-#### 3.4.3.5 `workspace_user_properties` ← `WorkspaceUserProperties` (`M/workspace.py` Z. 310–351)
+##### 3.4.3.5 `workspace_user_properties` ← `WorkspaceUserProperties` (`M/workspace.py` Z. 310–351)
 
 Entität `WorkspaceUserProperties` · `[OwnedBy("Workspaces")]` · Basis `AuditableEntity` (`id`, `created_at`, `updated_at`, `created_by_id`, `updated_by_id`, `deleted_at`) · ab **I1** · Status **übernommen** · CE-IDs: CE-LV-015, CE-WS-022
 
@@ -598,7 +598,7 @@ Entität `WorkspaceUserProperties` · `[OwnedBy("Workspaces")]` · Basis `Audita
 
 **Checks:** `ck_workspace_user_properties_nav_pref` CHECK (`navigation_control_preference IN ('ACCORDION','TABBED')`).
 
-#### 3.4.3.6 `workspace_user_preferences` ← `WorkspaceUserPreference` (`M/workspace.py` Z. 417–455)
+##### 3.4.3.6 `workspace_user_preferences` ← `WorkspaceUserPreference` (`M/workspace.py` Z. 417–455)
 
 Entität `WorkspaceUserPreference` · `[OwnedBy("Workspaces")]` · Basis `AuditableEntity` (`id`, `created_at`, `updated_at`, `created_by_id`, `updated_by_id`, `deleted_at`) · ab **I1** · Status **übernommen** · CE-IDs: CE-WS-021, CE-WS-022
 
@@ -612,7 +612,7 @@ Entität `WorkspaceUserPreference` · `[OwnedBy("Workspaces")]` · Basis `Audita
 
 **Indizes/Unique:** `workspace_user_preferences_unique_workspace_user_key_when_deleted_at_null` UNIQUE (`workspace_id`, `user_id`, `key`) WHERE `deleted_at IS NULL`.
 
-#### 3.4.3.7 `user_favorites` ← `UserFavorite` (`M/favorite.py` Z. 14–69)
+##### 3.4.3.7 `user_favorites` ← `UserFavorite` (`M/favorite.py` Z. 14–69)
 
 Entität `UserFavorite` · `[OwnedBy("Workspaces")]` · Basis `WorkspaceEntity` (Audit-Basis + `workspace_id` NOT NULL, `project_id` NULL) · ab **I1** · Status **übernommen** · CE-IDs: CE-WS-023, CE-CYC-015, CE-MOD-011, CE-LV-050, CE-PAGE-010
 
@@ -631,9 +631,9 @@ Entität `UserFavorite` · `[OwnedBy("Workspaces")]` · Basis `WorkspaceEntity` 
 
 **Hinweise:** Favoriten-Löschung ist im Original **hart** (`favorite.delete(soft=False)`); der Handler nutzt dafür `IHardDelete` (D02-ADR-03).
 
-### 3.4.4 Modul Projects (Projekte, Mitglieder, States, Labels, Estimates)
+#### 3.4.4 Modul Projects (Projekte, Mitglieder, States, Labels, Estimates)
 
-#### 3.4.4.1 `projects` ← `Project` (`M/project.py` Z. 68–227)
+##### 3.4.4.1 `projects` ← `Project` (`M/project.py` Z. 68–227)
 
 Entität `Project` · `[OwnedBy("Projects")]` · Basis `AuditableEntity` (`id`, `created_at`, `updated_at`, `created_by_id`, `updated_by_id`, `deleted_at`) · ab **I0** · Status **angepasst** · CE-IDs: CE-PRJ-001…CE-PRJ-010, CE-PRJ-016, CE-PRJ-018, CE-PRJ-019, CE-PRJ-022, CE-PRJ-026, CE-PRJ-039, CE-PRJ-040, CE-API-006…CE-API-008
 
@@ -676,7 +676,7 @@ Entität `Project` · `[OwnedBy("Projects")]` · Basis `AuditableEntity` (`id`, 
 
 **Hinweise:** Zeitzonenwechsel retimed Snoozes von `intake_work_items` in derselben Transaktion (`Project.ChangeTimezone`, `SELECT … FOR UPDATE`, 02a §3.4) über `IIntakeSnoozeRetimer` (Contracts von `Plane.Intake`, R5). Soft-Delete kaskadiert **Deferred**.
 
-#### 3.4.4.2 `project_identifiers` ← `ProjectIdentifier` (`M/project.py` Z. 314–331)
+##### 3.4.4.2 `project_identifiers` ← `ProjectIdentifier` (`M/project.py` Z. 314–331)
 
 Entität `ProjectIdentifier` · `[OwnedBy("Projects")]` · Basis eigene Form (Spalten vollständig gelistet) · ab **I0** · Status **übernommen** · CE-IDs: CE-PRJ-005
 
@@ -695,7 +695,7 @@ Entität `ProjectIdentifier` · `[OwnedBy("Projects")]` · Basis eigene Form (Sp
 
 **Hinweise:** Entität erbt **nicht** von `Entity` (eigener `long`-Schlüssel), implementiert `IAuditable`, `ISoftDeletable`, `IWorkspaceScoped`. `DELETE …/project-identifiers/` löscht soft wie Original.
 
-#### 3.4.4.3 `project_members` ← `ProjectMember` (`M/project.py` Z. 260–310)
+##### 3.4.4.3 `project_members` ← `ProjectMember` (`M/project.py` Z. 260–310)
 
 Entität `ProjectMember` · `[OwnedBy("Projects")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I0** · Status **angepasst** · CE-IDs: CE-PRJ-006, CE-PRJ-007, CE-PRJ-021, CE-API-012, CE-WS-008
 
@@ -717,7 +717,7 @@ Entität `ProjectMember` · `[OwnedBy("Projects")]` · Basis `ProjectEntity` (Au
 
 **Hinweise:** Anlage legt im selben Command eine `project_user_properties`-Zeile an (`ON CONFLICT DO NOTHING`, Sortierung `min − 10000`, 02a §3.5).
 
-#### 3.4.4.4 `project_member_invites` ← `ProjectMemberInvite` (`M/project.py` Z. 242–257)
+##### 3.4.4.4 `project_member_invites` ← `ProjectMemberInvite` (`M/project.py` Z. 242–257)
 
 Entität `ProjectMemberInvite` · `[OwnedBy("Projects")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I1** · Status **übernommen** · CE-IDs: CE-PRJ-010 (defekt, nur API – Vertrag erhalten)
 
@@ -733,7 +733,7 @@ Entität `ProjectMemberInvite` · `[OwnedBy("Projects")]` · Basis `ProjectEntit
 
 **Checks:** `ck_project_member_invites_role` CHECK (`role IN (5,15,20)`).
 
-#### 3.4.4.5 `project_user_properties` ← `ProjectUserProperty` (`M/project.py` Z. 392–423)
+##### 3.4.4.5 `project_user_properties` ← `ProjectUserProperty` (`M/project.py` Z. 392–423)
 
 Entität `ProjectUserProperty` · `[OwnedBy("Projects")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I0** · Status **übernommen** · CE-IDs: CE-PRJ-016, CE-LV-014, CE-PRJ-011, CE-PRJ-015
 
@@ -749,7 +749,7 @@ Entität `ProjectUserProperty` · `[OwnedBy("Projects")]` · Basis `ProjectEntit
 
 **Indizes/Unique:** `project_user_property_unique_user_project_when_deleted_at_null` UNIQUE (`user_id`, `project_id`) WHERE `deleted_at IS NULL`.
 
-#### 3.4.4.6 `states` ← `State` (`M/state.py` Z. 79–126)
+##### 3.4.4.6 `states` ← `State` (`M/state.py` Z. 79–126)
 
 Entität `State` · `[OwnedBy("Projects")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I0** · Status **angepasst** · CE-IDs: CE-PRJ-023…CE-PRJ-027, CE-INT-001, CE-API-009
 
@@ -772,7 +772,7 @@ Entität `State` · `[OwnedBy("Projects")]` · Basis `ProjectEntity` (Audit-Basi
 
 **Hinweise:** Implementiert `IScopedCatalogEntry` (A17; `project_id` bleibt NOT NULL, W6 lockert per Expand-Migration). Spaltenname `group`/`default` sind SQL-Schlüsselwörter → EF quotet automatisch; Raw-SQL muss `"group"`/`"default"` quoten.
 
-#### 3.4.4.7 `labels` ← `Label` (`M/label.py` Z. 11–57)
+##### 3.4.4.7 `labels` ← `Label` (`M/label.py` Z. 11–57)
 
 Entität `Label` · `[OwnedBy("Projects")]` · Basis `WorkspaceEntity` (Audit-Basis + `workspace_id` NOT NULL, `project_id` NULL) · ab **I1** · Status **angepasst** · CE-IDs: CE-PRJ-028…CE-PRJ-033, CE-WI-024, CE-API-010
 
@@ -790,7 +790,7 @@ Entität `Label` · `[OwnedBy("Projects")]` · Basis `WorkspaceEntity` (Audit-Ba
 
 **Hinweise:** Referenzimplementierung in D02 §5.2 (Entität, Konfiguration, Kaskaden). `IScopedCatalogEntry` (A17).
 
-#### 3.4.4.8 `estimates` ← `Estimate` (`M/estimate.py` Z. 18–40)
+##### 3.4.4.8 `estimates` ← `Estimate` (`M/estimate.py` Z. 18–40)
 
 Entität `Estimate` · `[OwnedBy("Projects")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I1** · Status **übernommen** · CE-IDs: CE-PRJ-034…CE-PRJ-038, CE-WI-027
 
@@ -805,7 +805,7 @@ Entität `Estimate` · `[OwnedBy("Projects")]` · Basis `ProjectEntity` (Audit-B
 
 **Checks:** `ck_estimates_type` CHECK (`type IN ('categories','points','time')`).
 
-#### 3.4.4.9 `estimate_points` ← `EstimatePoint` (`M/estimate.py` Z. 43–57)
+##### 3.4.4.9 `estimate_points` ← `EstimatePoint` (`M/estimate.py` Z. 43–57)
 
 Entität `EstimatePoint` · `[OwnedBy("Projects")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I1** · Status **übernommen** · CE-IDs: CE-PRJ-035…CE-PRJ-037, CE-WI-027
 
@@ -820,9 +820,9 @@ Entität `EstimatePoint` · `[OwnedBy("Projects")]` · Basis `ProjectEntity` (Au
 
 **Checks:** `ck_estimate_points_key` CHECK (`key >= 0`).
 
-### 3.4.5 Modul WorkItems
+#### 3.4.5 Modul WorkItems
 
-#### 3.4.5.1 `work_items` ← `Issue` (`M/issue.py` Z. 104–255)
+##### 3.4.5.1 `work_items` ← `Issue` (`M/issue.py` Z. 104–255)
 
 Entität `WorkItem` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I2** · Status **angepasst** · CE-IDs: CE-WI-001…CE-WI-049, CE-LV-005, CE-API-017…CE-API-019
 
@@ -857,7 +857,7 @@ M2M des Originals als explizite Join-Entitäten: `assignees` → `work_item_assi
 
 **Hinweise:** Basismengen (`IssueObjects`, `AllObjects`, …) sind **Query-Spezifikationen** (D02 §3.11.4), kein globaler Filter (Korrektur Q1). Soft-Delete kaskadiert Inline (§3.5).
 
-#### 3.4.5.2 `work_item_sequences` ← `IssueSequence` (`M/issue.py` Z. 557–571)
+##### 3.4.5.2 `work_item_sequences` ← `IssueSequence` (`M/issue.py` Z. 557–571)
 
 Entität `WorkItemSequence` · `[OwnedBy("WorkItems")]` · Basis eigene Form (Spalten vollständig gelistet) · ab **I2** · Status **ersetzt** · CE-IDs: CE-WI-002
 
@@ -874,7 +874,7 @@ Entität `WorkItemSequence` · `[OwnedBy("WorkItems")]` · Basis eigene Form (Sp
 
 **Hinweise:** Ersetzt die Zeile-je-Issue-Tabelle `issue_sequences` und den Advisory-Lock durch einen Zähler je Projekt (§3.6). Kein Soft-Delete, keine Audit-Spalten.
 
-#### 3.4.5.3 `work_item_assignees` ← `IssueAssignee` (`M/issue.py` Z. 345–368)
+##### 3.4.5.3 `work_item_assignees` ← `IssueAssignee` (`M/issue.py` Z. 345–368)
 
 Entität `WorkItemAssignee` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I2** · Status **übernommen** · CE-IDs: CE-WI-023, CE-LV-010
 
@@ -885,7 +885,7 @@ Entität `WorkItemAssignee` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity`
 
 **Indizes/Unique:** `issue_assignee_unique_issue_assignee_when_deleted_at_null` UNIQUE (`work_item_id`, `assignee_id`) WHERE `deleted_at IS NULL`; `ix_work_item_assignees_assignee` (`assignee_id`) WHERE `deleted_at IS NULL` – „Assigned to me“, Gruppierung `assignees__id`.
 
-#### 3.4.5.4 `work_item_labels` ← `IssueLabel` (`M/issue.py` Z. 543–554)
+##### 3.4.5.4 `work_item_labels` ← `IssueLabel` (`M/issue.py` Z. 543–554)
 
 Entität `WorkItemLabel` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I2** · Status **angepasst** · CE-IDs: CE-WI-024, CE-LV-010
 
@@ -896,7 +896,7 @@ Entität `WorkItemLabel` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (A
 
 **Indizes/Unique:** `ux_work_item_labels_work_item_label` UNIQUE (`work_item_id`, `label_id`) WHERE `deleted_at IS NULL` (neu; Original ohne Unique, 02b §2.7 d); `ix_work_item_labels_label` (`label_id`) WHERE `deleted_at IS NULL`.
 
-#### 3.4.5.5 `work_item_relations` ← `IssueRelation` (`M/issue.py` Z. 296–320)
+##### 3.4.5.5 `work_item_relations` ← `IssueRelation` (`M/issue.py` Z. 296–320)
 
 Entität `WorkItemRelation` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I2** · Status **angepasst** · CE-IDs: CE-WI-033, CE-LV-033, CE-API-024
 
@@ -912,7 +912,7 @@ Entität `WorkItemRelation` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity`
 
 **Hinweise:** `project_id`/`workspace_id` = Projekt des `work_item_id` (Original-Semantik). Eine Zeile je gerichtetem Paar; Gegenrichtung über `work_item_relation_types.reverse_key`.
 
-#### 3.4.5.6 `work_item_mentions` ← `IssueMention` (`M/issue.py` Z. 323–342)
+##### 3.4.5.6 `work_item_mentions` ← `IssueMention` (`M/issue.py` Z. 323–342)
 
 Entität `WorkItemMention` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I2** · Status **übernommen** · CE-IDs: CE-WI-044, CE-NOTIF-002
 
@@ -923,7 +923,7 @@ Entität `WorkItemMention` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` 
 
 **Indizes/Unique:** `issue_mention_unique_issue_mention_when_deleted_at_null` UNIQUE (`work_item_id`, `mention_id`) WHERE `deleted_at IS NULL`.
 
-#### 3.4.5.7 `work_item_subscribers` ← `IssueSubscriber` (`M/issue.py` Z. 574–597)
+##### 3.4.5.7 `work_item_subscribers` ← `IssueSubscriber` (`M/issue.py` Z. 574–597)
 
 Entität `WorkItemSubscriber` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I2** · Status **übernommen** · CE-IDs: CE-WI-043, CE-NOTIF-003
 
@@ -934,7 +934,7 @@ Entität `WorkItemSubscriber` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntit
 
 **Indizes/Unique:** `issue_subscriber_unique_issue_subscriber_when_deleted_at_null` UNIQUE (`work_item_id`, `subscriber_id`) WHERE `deleted_at IS NULL`; `ix_work_item_subscribers_subscriber` (`subscriber_id`) WHERE `deleted_at IS NULL`.
 
-#### 3.4.5.8 `work_item_links` ← `IssueLink` (`M/issue.py` Z. 371–384)
+##### 3.4.5.8 `work_item_links` ← `IssueLink` (`M/issue.py` Z. 371–384)
 
 Entität `WorkItemLink` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I2** · Status **übernommen** · CE-IDs: CE-WI-035, CE-API-020
 
@@ -947,7 +947,7 @@ Entität `WorkItemLink` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (Au
 
 **Indizes/Unique:** `ix_work_item_links_work_item_id` (`work_item_id`) WHERE `deleted_at IS NULL`.
 
-#### 3.4.5.9 `work_item_comments` ← `IssueComment` (`M/issue.py` Z. 451–540)
+##### 3.4.5.9 `work_item_comments` ← `IssueComment` (`M/issue.py` Z. 451–540)
 
 Entität `WorkItemComment` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I2** · Status **angepasst** · CE-IDs: CE-WI-037, CE-WI-044, CE-API-021, CE-SPACE-025
 
@@ -971,7 +971,7 @@ Entität `WorkItemComment` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` 
 
 **Checks:** `ck_work_item_comments_access` CHECK (`access IN ('INTERNAL','EXTERNAL')`).
 
-#### 3.4.5.10 `work_item_reactions` ← `IssueReaction` (`M/issue.py` Z. 600–624)
+##### 3.4.5.10 `work_item_reactions` ← `IssueReaction` (`M/issue.py` Z. 600–624)
 
 Entität `WorkItemReaction` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I2** · Status **übernommen** · CE-IDs: CE-WI-038, CE-SPACE-027
 
@@ -983,7 +983,7 @@ Entität `WorkItemReaction` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity`
 
 **Indizes/Unique:** `issue_reaction_unique_issue_actor_reaction_when_deleted_at_null` UNIQUE (`work_item_id`, `actor_id`, `reaction`) WHERE `deleted_at IS NULL`.
 
-#### 3.4.5.11 `work_item_comment_reactions` ← `CommentReaction` (`M/issue.py` Z. 627–651)
+##### 3.4.5.11 `work_item_comment_reactions` ← `CommentReaction` (`M/issue.py` Z. 627–651)
 
 Entität `WorkItemCommentReaction` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I2** · Status **übernommen** · CE-IDs: CE-WI-038, CE-SPACE-026
 
@@ -995,7 +995,7 @@ Entität `WorkItemCommentReaction` · `[OwnedBy("WorkItems")]` · Basis `Project
 
 **Indizes/Unique:** `comment_reaction_unique_comment_actor_reaction_when_deleted_at_null` UNIQUE (`comment_id`, `actor_id`, `reaction`) WHERE `deleted_at IS NULL`.
 
-#### 3.4.5.12 `work_item_votes` ← `IssueVote` (`M/issue.py` Z. 654–674)
+##### 3.4.5.12 `work_item_votes` ← `IssueVote` (`M/issue.py` Z. 654–674)
 
 Entität `WorkItemVote` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I6** · Status **übernommen** · CE-IDs: CE-SPACE-028
 
@@ -1011,7 +1011,7 @@ Entität `WorkItemVote` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (Au
 
 **Hinweise:** Geschrieben vom Modul `Plane.PublicSpace` über `IWorkItemCommands` (R5).
 
-#### 3.4.5.13 `work_item_activities` ← `IssueActivity` (`M/issue.py` Z. 415–448)
+##### 3.4.5.13 `work_item_activities` ← `IssueActivity` (`M/issue.py` Z. 415–448)
 
 Entität `WorkItemActivity` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I2** · Status **angepasst** · CE-IDs: CE-WI-039, CE-WI-040, CE-API-022, CE-PROF-010, CE-NOTIF-001
 
@@ -1034,7 +1034,7 @@ Entität `WorkItemActivity` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity`
 
 **Hinweise:** Wird ausschließlich vom `ActivityRecorder` im selben `SaveChanges` geschrieben (01 §7.8, D02-ADR-25). Append-only.
 
-#### 3.4.5.14 `work_item_description_versions` ← `IssueDescriptionVersion` (`M/issue.py` Z. 782–822)
+##### 3.4.5.14 `work_item_description_versions` ← `IssueDescriptionVersion` (`M/issue.py` Z. 782–822)
 
 Entität `WorkItemDescriptionVersion` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I2** · Status **übernommen** · CE-IDs: CE-WI-041
 
@@ -1052,7 +1052,7 @@ Entität `WorkItemDescriptionVersion` · `[OwnedBy("WorkItems")]` · Basis `Proj
 
 **Hinweise:** Merge-Regel: jüngste Version desselben Nutzers ≤ 600 s → überschreiben (02b §3.6). Aufbewahrung: je Work Item die 20 neuesten (Instanz-Einstellung `Plane:Retention:WorkItemDescriptionVersions`, Default 20), Hard-Delete-Job täglich 03:15 UTC.
 
-#### 3.4.5.15 `work_item_versions` ← `IssueVersion` (`M/issue.py` Z. 677–779)
+##### 3.4.5.15 `work_item_versions` ← `IssueVersion` (`M/issue.py` Z. 677–779)
 
 Entität `WorkItemVersion` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I2** · Status **korrigiert** · CE-IDs: CE-WI-042
 
@@ -1088,7 +1088,7 @@ Entität `WorkItemVersion` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` 
 
 **Hinweise:** Original schreibt nie Versionen (`log_issue_version` scheitert, Q11). Ziel: `WorkItemVersionRecorder` schreibt bei jeder Property-Änderung (Merge-Regel 600 s/gleicher Owner wie `issue_task`) – Korrektur (DEV-DM-06).
 
-#### 3.4.5.16 `draft_work_items` ← `DraftIssue` (`M/draft.py` Z. 16–136)
+##### 3.4.5.16 `draft_work_items` ← `DraftIssue` (`M/draft.py` Z. 16–136)
 
 Entität `DraftWorkItem` · `[OwnedBy("WorkItems")]` · Basis `WorkspaceEntity` (Audit-Basis + `workspace_id` NOT NULL, `project_id` NULL) · ab **I2** · Status **angepasst** · CE-IDs: CE-WI-049, CE-WI-007
 
@@ -1119,7 +1119,7 @@ M2M des Originals als explizite Join-Entitäten: `assignees` → `draft_work_ite
 
 **Hinweise:** Drafts verbrauchen **keine** `sequence_id`; bei Umwandlung in ein Work Item wird eine neue Nummer vergeben.
 
-#### 3.4.5.17 `draft_work_item_assignees` ← `DraftIssueAssignee` (`M/draft.py` Z. 139–162)
+##### 3.4.5.17 `draft_work_item_assignees` ← `DraftIssueAssignee` (`M/draft.py` Z. 139–162)
 
 Entität `DraftWorkItemAssignee` · `[OwnedBy("WorkItems")]` · Basis `WorkspaceEntity` (Audit-Basis + `workspace_id` NOT NULL, `project_id` NULL) · ab **I2** · Status **übernommen** · CE-IDs: CE-WI-049
 
@@ -1130,7 +1130,7 @@ Entität `DraftWorkItemAssignee` · `[OwnedBy("WorkItems")]` · Basis `Workspace
 
 **Indizes/Unique:** `draft_issue_assignee_unique_issue_assignee_when_deleted_at_null` UNIQUE (`draft_work_item_id`, `assignee_id`) WHERE `deleted_at IS NULL`.
 
-#### 3.4.5.18 `draft_work_item_labels` ← `DraftIssueLabel` (`M/draft.py` Z. 165–176)
+##### 3.4.5.18 `draft_work_item_labels` ← `DraftIssueLabel` (`M/draft.py` Z. 165–176)
 
 Entität `DraftWorkItemLabel` · `[OwnedBy("WorkItems")]` · Basis `WorkspaceEntity` (Audit-Basis + `workspace_id` NOT NULL, `project_id` NULL) · ab **I2** · Status **angepasst** · CE-IDs: CE-WI-049
 
@@ -1141,7 +1141,7 @@ Entität `DraftWorkItemLabel` · `[OwnedBy("WorkItems")]` · Basis `WorkspaceEnt
 
 **Indizes/Unique:** `ux_draft_work_item_labels` UNIQUE (`draft_work_item_id`, `label_id`) WHERE `deleted_at IS NULL` (neu).
 
-#### 3.4.5.19 `draft_work_item_modules` ← `DraftIssueModule` (`M/draft.py` Z. 179–198)
+##### 3.4.5.19 `draft_work_item_modules` ← `DraftIssueModule` (`M/draft.py` Z. 179–198)
 
 Entität `DraftWorkItemModule` · `[OwnedBy("WorkItems")]` · Basis `WorkspaceEntity` (Audit-Basis + `workspace_id` NOT NULL, `project_id` NULL) · ab **I3** · Status **übernommen** · CE-IDs: CE-WI-049
 
@@ -1152,7 +1152,7 @@ Entität `DraftWorkItemModule` · `[OwnedBy("WorkItems")]` · Basis `WorkspaceEn
 
 **Indizes/Unique:** `module_draft_issue_unique_issue_module_when_deleted_at_null` UNIQUE (`draft_work_item_id`, `module_id`) WHERE `deleted_at IS NULL`.
 
-#### 3.4.5.20 `draft_work_item_cycles` ← `DraftIssueCycle` (`M/draft.py` Z. 201–224)
+##### 3.4.5.20 `draft_work_item_cycles` ← `DraftIssueCycle` (`M/draft.py` Z. 201–224)
 
 Entität `DraftWorkItemCycle` · `[OwnedBy("WorkItems")]` · Basis `WorkspaceEntity` (Audit-Basis + `workspace_id` NOT NULL, `project_id` NULL) · ab **I3** · Status **übernommen** · CE-IDs: CE-WI-049
 
@@ -1163,7 +1163,7 @@ Entität `DraftWorkItemCycle` · `[OwnedBy("WorkItems")]` · Basis `WorkspaceEnt
 
 **Indizes/Unique:** `draft_issue_cycle_when_deleted_at_null` UNIQUE (`draft_work_item_id`, `cycle_id`) WHERE `deleted_at IS NULL`.
 
-#### 3.4.5.21 `work_item_types` ← `IssueType` (`M/issue_type.py` Z. 14–32)
+##### 3.4.5.21 `work_item_types` ← `IssueType` (`M/issue_type.py` Z. 14–32)
 
 Entität `WorkItemType` · `[OwnedBy("Properties")]` · Basis `WorkspaceEntity` (Audit-Basis + `workspace_id` NOT NULL, `project_id` NULL) · ab **I2** · Status **minimal** · CE-IDs: – (A1-Andockstelle; CE liest nur `NULL`)
 
@@ -1184,9 +1184,9 @@ Entität `WorkItemType` · `[OwnedBy("Properties")]` · Basis `WorkspaceEntity` 
 
 **Hinweise:** Minimal-Schema nach 01 §1.4 / D16 §5.1: `id`, `workspace_id`, `project_id` (nullable, A2), `name`, `is_default` + Audit. `[OwnedBy("Properties")]`; in der CE schreibt niemand (Tabelle leer). Original-Basis `BaseModel` + `workspace`; Ziel `WorkspaceEntity` (bringt `project_id` nullable mit).
 
-### 3.4.6 Modul Cycles
+#### 3.4.6 Modul Cycles
 
-#### 3.4.6.1 `cycles` ← `Cycle` (`M/cycle.py` Z. 60–101)
+##### 3.4.6.1 `cycles` ← `Cycle` (`M/cycle.py` Z. 60–101)
 
 Entität `Cycle` · `[OwnedBy("Cycles")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I3** · Status **übernommen** · CE-IDs: CE-CYC-001…CE-CYC-015, CE-API-026…CE-API-029, CE-ANA-008
 
@@ -1211,7 +1211,7 @@ Entität `Cycle` · `[OwnedBy("Cycles")]` · Basis `ProjectEntity` (Audit-Basis 
 
 **Checks:** `ck_cycles_dates` CHECK (`start_date IS NULL OR end_date IS NULL OR start_date <= end_date`).
 
-#### 3.4.6.2 `cycle_work_items` ← `CycleIssue` (`M/cycle.py` Z. 104–127)
+##### 3.4.6.2 `cycle_work_items` ← `CycleIssue` (`M/cycle.py` Z. 104–127)
 
 Entität `CycleWorkItem` · `[OwnedBy("Cycles")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I3** · Status **angepasst** · CE-IDs: CE-CYC-010, CE-CYC-011, CE-API-027, CE-WI-025
 
@@ -1222,7 +1222,7 @@ Entität `CycleWorkItem` · `[OwnedBy("Cycles")]` · Basis `ProjectEntity` (Audi
 
 **Indizes/Unique:** `cycle_issue_when_deleted_at_null` UNIQUE (`cycle_id`, `work_item_id`) WHERE `deleted_at IS NULL`; `ux_cycle_work_items_work_item` UNIQUE (`work_item_id`) WHERE `deleted_at IS NULL` (neu: höchstens ein aktiver Cycle je Work Item – fachliche Regel „Zuordnen verschiebt“, DEV-DM-08).
 
-#### 3.4.6.3 `cycle_user_properties` ← `CycleUserProperties` (`M/cycle.py` Z. 130–157)
+##### 3.4.6.3 `cycle_user_properties` ← `CycleUserProperties` (`M/cycle.py` Z. 130–157)
 
 Entität `CycleUserProperties` · `[OwnedBy("Cycles")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I3** · Status **übernommen** · CE-IDs: CE-LV-016
 
@@ -1237,9 +1237,9 @@ Entität `CycleUserProperties` · `[OwnedBy("Cycles")]` · Basis `ProjectEntity`
 
 **Indizes/Unique:** `cycle_user_properties_unique_cycle_user_when_deleted_at_null` UNIQUE (`cycle_id`, `user_id`) WHERE `deleted_at IS NULL`.
 
-### 3.4.7 Modul ProjectModules (Plane-„Modules“)
+#### 3.4.7 Modul ProjectModules (Plane-„Modules“)
 
-#### 3.4.7.1 `modules` ← `Module` (`M/module.py` Z. 67–127)
+##### 3.4.7.1 `modules` ← `Module` (`M/module.py` Z. 67–127)
 
 Entität `Module` · `[OwnedBy("ProjectModules")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I3** · Status **angepasst** · CE-IDs: CE-MOD-001…CE-MOD-011, CE-API-030…CE-API-032, CE-ANA-008
 
@@ -1266,7 +1266,7 @@ M2M des Originals als explizite Join-Entitäten: `members` → `module_members`.
 
 **Checks:** `ck_modules_status` CHECK (`status IN ('backlog','planned','in-progress','paused','completed','cancelled')`); `ck_modules_dates` CHECK (`start_date IS NULL OR target_date IS NULL OR start_date <= target_date`).
 
-#### 3.4.7.2 `module_members` ← `ModuleMember` (`M/module.py` Z. 130–149)
+##### 3.4.7.2 `module_members` ← `ModuleMember` (`M/module.py` Z. 130–149)
 
 Entität `ModuleMember` · `[OwnedBy("ProjectModules")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I3** · Status **übernommen** · CE-IDs: CE-MOD-006
 
@@ -1277,7 +1277,7 @@ Entität `ModuleMember` · `[OwnedBy("ProjectModules")]` · Basis `ProjectEntity
 
 **Indizes/Unique:** `module_member_unique_module_member_when_deleted_at_null` UNIQUE (`module_id`, `member_id`) WHERE `deleted_at IS NULL`.
 
-#### 3.4.7.3 `module_work_items` ← `ModuleIssue` (`M/module.py` Z. 152–171)
+##### 3.4.7.3 `module_work_items` ← `ModuleIssue` (`M/module.py` Z. 152–171)
 
 Entität `ModuleWorkItem` · `[OwnedBy("ProjectModules")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I3** · Status **übernommen** · CE-IDs: CE-MOD-008, CE-API-031, CE-WI-026
 
@@ -1288,7 +1288,7 @@ Entität `ModuleWorkItem` · `[OwnedBy("ProjectModules")]` · Basis `ProjectEnti
 
 **Indizes/Unique:** `module_issue_unique_issue_module_when_deleted_at_null` UNIQUE (`work_item_id`, `module_id`) WHERE `deleted_at IS NULL`; `ix_module_work_items_module` (`module_id`) WHERE `deleted_at IS NULL`.
 
-#### 3.4.7.4 `module_links` ← `ModuleLink` (`M/module.py` Z. 174–187)
+##### 3.4.7.4 `module_links` ← `ModuleLink` (`M/module.py` Z. 174–187)
 
 Entität `ModuleLink` · `[OwnedBy("ProjectModules")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I3** · Status **übernommen** · CE-IDs: CE-MOD-005
 
@@ -1299,7 +1299,7 @@ Entität `ModuleLink` · `[OwnedBy("ProjectModules")]` · Basis `ProjectEntity` 
 | `module_id` | `uuid` | nein | – | ModuleId: `Guid` | FK `modules` ON DELETE CASCADE |
 | `metadata` | `jsonb` | nein | `'{}'::jsonb` | Metadata: `JsonObject` | 1:1 |
 
-#### 3.4.7.5 `module_user_properties` ← `ModuleUserProperties` (`M/module.py` Z. 190–217)
+##### 3.4.7.5 `module_user_properties` ← `ModuleUserProperties` (`M/module.py` Z. 190–217)
 
 Entität `ModuleUserProperties` · `[OwnedBy("ProjectModules")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I3** · Status **übernommen** · CE-IDs: CE-LV-016
 
@@ -1314,9 +1314,9 @@ Entität `ModuleUserProperties` · `[OwnedBy("ProjectModules")]` · Basis `Proje
 
 **Indizes/Unique:** `module_user_properties_unique_module_user_when_deleted_at_null` UNIQUE (`module_id`, `user_id`) WHERE `deleted_at IS NULL`.
 
-### 3.4.8 Modul Views
+#### 3.4.8 Modul Views
 
-#### 3.4.8.1 `views` ← `IssueView` (`M/view.py` Z. 58–99)
+##### 3.4.8.1 `views` ← `IssueView` (`M/view.py` Z. 58–99)
 
 Entität `View` · `[OwnedBy("Views")]` · Basis `WorkspaceEntity` (Audit-Basis + `workspace_id` NOT NULL, `project_id` NULL) · ab **I3** · Status **angepasst** · CE-IDs: CE-LV-011, CE-LV-047…CE-LV-054
 
@@ -1343,9 +1343,9 @@ Entität `View` · `[OwnedBy("Views")]` · Basis `WorkspaceEntity` (Audit-Basis 
 
 **Hinweise:** Tabellenname `views` statt `issue_views` (D03-ADR-02; Alias für D16 §5.4). `query` ist bei jedem Speichern aus `filters` neu berechnet (02b §3.10).
 
-### 3.4.9 Modul Intake
+#### 3.4.9 Modul Intake
 
-#### 3.4.9.1 `intakes` ← `Intake` (`M/intake.py` Z. 16–39)
+##### 3.4.9.1 `intakes` ← `Intake` (`M/intake.py` Z. 16–39)
 
 Entität `Intake` · `[OwnedBy("Intake")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I3** · Status **übernommen** · CE-IDs: CE-INT-001, CE-API-025
 
@@ -1359,7 +1359,7 @@ Entität `Intake` · `[OwnedBy("Intake")]` · Basis `ProjectEntity` (Audit-Basis
 
 **Indizes/Unique:** `intake_unique_name_project_when_deleted_at_null` UNIQUE (`name`, `project_id`) WHERE `deleted_at IS NULL`; `ux_intakes_project_default` UNIQUE (`project_id`) WHERE `is_default AND deleted_at IS NULL` (neu).
 
-#### 3.4.9.2 `intake_work_items` ← `IntakeIssue` (`M/intake.py` Z. 54–110)
+##### 3.4.9.2 `intake_work_items` ← `IntakeIssue` (`M/intake.py` Z. 54–110)
 
 Entität `IntakeWorkItem` · `[OwnedBy("Intake")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I3** · Status **angepasst** · CE-IDs: CE-INT-002…CE-INT-012, CE-SPACE-006, CE-API-025
 
@@ -1380,9 +1380,9 @@ Entität `IntakeWorkItem` · `[OwnedBy("Intake")]` · Basis `ProjectEntity` (Aud
 
 **Checks:** `ck_intake_work_items_status` CHECK (`status IN (-2,-1,0,1,2)`); `ck_intake_work_items_source` CHECK (`source IS NULL OR source IN ('IN_APP','FORMS','EMAIL')`).
 
-### 3.4.10 Modul Pages
+#### 3.4.10 Modul Pages
 
-#### 3.4.10.1 `pages` ← `Page` (`M/page.py` Z. 23–77)
+##### 3.4.10.1 `pages` ← `Page` (`M/page.py` Z. 23–77)
 
 Entität `Page` · `[OwnedBy("Pages")]` · Basis eigene Form (Spalten vollständig gelistet) · ab **I4** · Status **angepasst** · CE-IDs: CE-PAGE-001…CE-PAGE-012, CE-PAGE-019, CE-RT-003, CE-RT-005
 
@@ -1419,7 +1419,7 @@ M2M des Originals als explizite Join-Entitäten: `labels` → `page_labels`, `pr
 
 **Hinweise:** Entität `Page : AuditableEntity, IWorkspaceScoped` (nicht `WorkspaceEntity`, weil das Original **kein** `project_id` an `pages` hat). Soft-Delete kaskadiert Inline auf `project_pages`, `page_labels`, `page_logs`, `page_versions`, `file_assets(page_id)`; Kind-Pages (`parent_id`) als **Deferred**-Eintrag vorbereitet (D16 §3.3.4 D2).
 
-#### 3.4.10.2 `project_pages` ← `ProjectPage` (`M/page.py` Z. 135–155)
+##### 3.4.10.2 `project_pages` ← `ProjectPage` (`M/page.py` Z. 135–155)
 
 Entität `ProjectPage` · `[OwnedBy("Pages")]` · Basis eigene Form (Spalten vollständig gelistet) · ab **I4** · Status **übernommen** · CE-IDs: CE-PAGE-001, CE-PAGE-003, CE-PAGE-009
 
@@ -1434,7 +1434,7 @@ Entität `ProjectPage` · `[OwnedBy("Pages")]` · Basis eigene Form (Spalten vol
 
 **Hinweise:** D1-Andockstelle: einzige Projektzuordnung von Pages (01 §1.4).
 
-#### 3.4.10.3 `page_labels` ← `PageLabel` (`M/page.py` Z. 120–132)
+##### 3.4.10.3 `page_labels` ← `PageLabel` (`M/page.py` Z. 120–132)
 
 Entität `PageLabel` · `[OwnedBy("Pages")]` · Basis eigene Form (Spalten vollständig gelistet) · ab **I4** · Status **übernommen** · CE-IDs: CE-PAGE-004
 
@@ -1447,7 +1447,7 @@ Entität `PageLabel` · `[OwnedBy("Pages")]` · Basis eigene Form (Spalten volls
 
 **Indizes/Unique:** `ux_page_labels_page_label` UNIQUE (`page_id`, `label_id`) WHERE `deleted_at IS NULL` (neu).
 
-#### 3.4.10.4 `page_logs` ← `PageLog` (`M/page.py` Z. 80–117)
+##### 3.4.10.4 `page_logs` ← `PageLog` (`M/page.py` Z. 80–117)
 
 Entität `PageLog` · `[OwnedBy("Pages")]` · Basis eigene Form (Spalten vollständig gelistet) · ab **I4** · Status **korrigiert** · CE-IDs: CE-PAGE-012
 
@@ -1465,7 +1465,7 @@ Entität `PageLog` · `[OwnedBy("Pages")]` · Basis eigene Form (Spalten vollst�
 
 **Hinweise:** Löschen verschwundener Komponenten **mit** `page_id`-Filter (Korrektur Q16). `transaction`/`entity_identifier` bleiben `uuid`; Nicht-UUID-Werte werden übersprungen statt den Batch abzubrechen.
 
-#### 3.4.10.5 `page_versions` ← `PageVersion` (`M/page.py` Z. 158–182)
+##### 3.4.10.5 `page_versions` ← `PageVersion` (`M/page.py` Z. 158–182)
 
 Entität `PageVersion` · `[OwnedBy("Pages")]` · Basis eigene Form (Spalten vollständig gelistet) · ab **I4** · Status **korrigiert** · CE-IDs: CE-PAGE-019
 
@@ -1486,9 +1486,9 @@ Entität `PageVersion` · `[OwnedBy("Pages")]` · Basis eigene Form (Spalten vol
 
 **Hinweise:** Original erzeugt wegen `page.description` nie Versionen (Q10) – Ziel schreibt sie (`PageVersionRecorder`, 600-s-Merge, Limit 20 je Page als Instanz-Einstellung `Plane:Retention:PageVersions`), DEV-DM-10.
 
-### 3.4.11 Modul Assets
+#### 3.4.11 Modul Assets
 
-#### 3.4.11.1 `file_assets` ← `FileAsset` (`M/asset.py` Z. 31–103)
+##### 3.4.11.1 `file_assets` ← `FileAsset` (`M/asset.py` Z. 31–103)
 
 Entität `FileAsset` · `[OwnedBy("Assets")]` · Basis eigene Form (Spalten vollständig gelistet) · ab **I1** · Status **angepasst** · CE-IDs: CE-OPS-012, CE-OPS-013, CE-WI-036, CE-PAGE-018, CE-SPACE-007, CE-API-015, CE-API-016
 
@@ -1518,9 +1518,9 @@ Entität `FileAsset` · `[OwnedBy("Assets")]` · Basis eigene Form (Spalten voll
 
 **Hinweise:** Hard-Delete löscht zusätzlich das Objekt im Speicher (`IObjectStorage`, Verbesserung 02a §5.2) über `FileAssetPurgeConsumer`.
 
-### 3.4.12 Modul Home
+#### 3.4.12 Modul Home
 
-#### 3.4.12.1 `workspace_home_preferences` ← `WorkspaceHomePreference` (`M/workspace.py` Z. 374–414)
+##### 3.4.12.1 `workspace_home_preferences` ← `WorkspaceHomePreference` (`M/workspace.py` Z. 374–414)
 
 Entität `WorkspaceHomePreference` · `[OwnedBy("Home")]` · Basis `AuditableEntity` (`id`, `created_at`, `updated_at`, `created_by_id`, `updated_by_id`, `deleted_at`) · ab **I5** · Status **übernommen** · CE-IDs: CE-HOME-001, CE-HOME-002
 
@@ -1535,7 +1535,7 @@ Entität `WorkspaceHomePreference` · `[OwnedBy("Home")]` · Basis `AuditableEnt
 
 **Indizes/Unique:** `workspace_user_home_preferences_unique_workspace_user_key_when_deleted_at_null` UNIQUE (`workspace_id`, `user_id`, `key`) WHERE `deleted_at IS NULL`.
 
-#### 3.4.12.2 `workspace_user_links` ← `WorkspaceUserLink` (`M/workspace.py` Z. 354–371)
+##### 3.4.12.2 `workspace_user_links` ← `WorkspaceUserLink` (`M/workspace.py` Z. 354–371)
 
 Entität `WorkspaceUserLink` · `[OwnedBy("Home")]` · Basis `WorkspaceEntity` (Audit-Basis + `workspace_id` NOT NULL, `project_id` NULL) · ab **I5** · Status **übernommen** · CE-IDs: CE-HOME-004
 
@@ -1548,7 +1548,7 @@ Entität `WorkspaceUserLink` · `[OwnedBy("Home")]` · Basis `WorkspaceEntity` (
 
 **Indizes/Unique:** `ix_workspace_user_links_workspace_owner` (`workspace_id`, `owner_id`) WHERE `deleted_at IS NULL`.
 
-#### 3.4.12.3 `user_recent_visits` ← `UserRecentVisit` (`M/recent_visit.py` Z. 22–39)
+##### 3.4.12.3 `user_recent_visits` ← `UserRecentVisit` (`M/recent_visit.py` Z. 22–39)
 
 Entität `UserRecentVisit` · `[OwnedBy("Home")]` · Basis `WorkspaceEntity` (Audit-Basis + `workspace_id` NOT NULL, `project_id` NULL) · ab **I5** · Status **angepasst** · CE-IDs: CE-HOME-005
 
@@ -1563,7 +1563,7 @@ Entität `UserRecentVisit` · `[OwnedBy("Home")]` · Basis `WorkspaceEntity` (Au
 
 **Hinweise:** Original lässt `created_by` immer `NULL` (02a §3.22 #9) – Ziel setzt den Akteur (ohne Vertragswirkung). Hartes Löschen über `IHardDelete` (D02-ADR-03).
 
-#### 3.4.12.4 `stickies` ← `Sticky` (`M/sticky.py` Z. 16–57)
+##### 3.4.12.4 `stickies` ← `Sticky` (`M/sticky.py` Z. 16–57)
 
 Entität `Sticky` · `[OwnedBy("Home")]` · Basis eigene Form (Spalten vollständig gelistet) · ab **I5** · Status **übernommen** · CE-IDs: CE-HOME-008…CE-HOME-010, CE-API-014
 
@@ -1584,9 +1584,9 @@ Entität `Sticky` · `[OwnedBy("Home")]` · Basis eigene Form (Spalten vollstän
 
 **Indizes/Unique:** `ix_stickies_workspace_owner` (`workspace_id`, `owner_id`) WHERE `deleted_at IS NULL`; GIN-Trigram `ix_stickies_description_stripped_trgm` (`description_stripped__icontains`).
 
-### 3.4.13 Modul Analytics
+#### 3.4.13 Modul Analytics
 
-#### 3.4.13.1 `analytic_views` ← `AnalyticView` (`M/analytic.py` Z. 11–26)
+##### 3.4.13.1 `analytic_views` ← `AnalyticView` (`M/analytic.py` Z. 11–26)
 
 Entität `AnalyticView` · `[OwnedBy("Analytics")]` · Basis eigene Form (Spalten vollständig gelistet) · ab **I5** · Status **angepasst** · CE-IDs: CE-ANA-009
 
@@ -1599,9 +1599,9 @@ Entität `AnalyticView` · `[OwnedBy("Analytics")]` · Basis eigene Form (Spalte
 | `query` | `jsonb` | nein | – | Query: `JsonObject` | Legacy, Ziel speichert nur noch, Abruf nutzt `query_dict` |
 | `query_dict` | `jsonb` | nein | `'{}'::jsonb` | QueryDict: `JsonObject` | Lesemodell `AnalyticQuery` |
 
-### 3.4.14 Modul Notifications
+#### 3.4.14 Modul Notifications
 
-#### 3.4.14.1 `notifications` ← `Notification` (`M/notification.py` Z. 13–69)
+##### 3.4.14.1 `notifications` ← `Notification` (`M/notification.py` Z. 13–69)
 
 Entität `Notification` · `[OwnedBy("Notifications")]` · Basis eigene Form (Spalten vollständig gelistet) · ab **I5** · Status **übernommen** · CE-IDs: CE-NOTIF-001…CE-NOTIF-007, CE-INT-012
 
@@ -1626,7 +1626,7 @@ Entität `Notification` · `[OwnedBy("Notifications")]` · Basis eigene Form (Sp
 
 **Indizes/Unique:** `notif_entity_identifier_idx` (`entity_identifier`); `notif_entity_name_idx` (`entity_name`); `notif_read_at_idx` (`read_at`); `notif_entity_idx` (`receiver_id`, `read_at`); `notif_receiver_status_idx` (`receiver_id`, `workspace_id`, `read_at`, `created_at`); `notif_receiver_entity_idx` (`receiver_id`, `workspace_id`, `entity_name`, `read_at`); `notif_receiver_state_idx` (`receiver_id`, `workspace_id`, `snoozed_till`, `archived_at`); `notif_receiver_sender_idx` (`receiver_id`, `workspace_id`, `sender`); `notif_entity_lookup_idx` (`workspace_id`, `entity_identifier`, `entity_name`).
 
-#### 3.4.14.2 `user_notification_preferences` ← `UserNotificationPreference` (`M/notification.py` Z. 81–118)
+##### 3.4.14.2 `user_notification_preferences` ← `UserNotificationPreference` (`M/notification.py` Z. 81–118)
 
 Entität `UserNotificationPreference` · `[OwnedBy("Notifications")]` · Basis `AuditableEntity` (`id`, `created_at`, `updated_at`, `created_by_id`, `updated_by_id`, `deleted_at`) · ab **I1** · Status **angepasst** · CE-IDs: CE-NOTIF-008, CE-NOTIF-009
 
@@ -1645,7 +1645,7 @@ Entität `UserNotificationPreference` · `[OwnedBy("Notifications")]` · Basis `
 
 **Hinweise:** Wird bei der JIT-Anlage eines Benutzers angelegt (`CreateUserStep`, Ersatz für das `post_save`-Signal, 02a §3.8).
 
-#### 3.4.14.3 `email_notification_logs` ← `EmailNotificationLog` (`M/notification.py` Z. 121–149)
+##### 3.4.14.3 `email_notification_logs` ← `EmailNotificationLog` (`M/notification.py` Z. 121–149)
 
 Entität `EmailNotificationLog` · `[OwnedBy("Notifications")]` · Basis `AuditableEntity` (`id`, `created_at`, `updated_at`, `created_by_id`, `updated_by_id`, `deleted_at`) · ab **I5** · Status **übernommen** · CE-IDs: CE-NOTIF-008, CE-OPS-015
 
@@ -1664,9 +1664,9 @@ Entität `EmailNotificationLog` · `[OwnedBy("Notifications")]` · Basis `Audita
 
 **Indizes/Unique:** `ix_email_notification_logs_unprocessed` (`receiver_id`, `created_at`) WHERE `processed_at IS NULL` – 5-Minuten-Bündelung; `ix_email_notification_logs_sent_at` (`sent_at`) – Aufbewahrung 7 Tage.
 
-### 3.4.15 Modul PublicSpace
+#### 3.4.15 Modul PublicSpace
 
-#### 3.4.15.1 `deploy_boards` ← `DeployBoard` (`M/deploy_board.py` Z. 19–57)
+##### 3.4.15.1 `deploy_boards` ← `DeployBoard` (`M/deploy_board.py` Z. 19–57)
 
 Entität `DeployBoard` · `[OwnedBy("PublicSpace")]` · Basis `WorkspaceEntity` (Audit-Basis + `workspace_id` NOT NULL, `project_id` NULL) · ab **I6** · Status **übernommen** · CE-IDs: CE-SPACE-001…CE-SPACE-005, CE-SPACE-017
 
@@ -1687,7 +1687,7 @@ Entität `DeployBoard` · `[OwnedBy("PublicSpace")]` · Basis `WorkspaceEntity` 
 
 **Checks:** `ck_deploy_boards_entity_name` CHECK (`entity_name IS NULL OR entity_name IN ('project','issue','module','cycle','page','view','intake')`).
 
-#### 3.4.15.2 `project_public_members` ← `ProjectPublicMember` (`M/project.py` Z. 370–389)
+##### 3.4.15.2 `project_public_members` ← `ProjectPublicMember` (`M/project.py` Z. 370–389)
 
 Entität `ProjectPublicMember` · `[OwnedBy("PublicSpace")]` · Basis `ProjectEntity` (Audit-Basis + `workspace_id`, `project_id` NOT NULL; Scope-FK) · ab **I6** · Status **übernommen** · CE-IDs: CE-SPACE-025, CE-SPACE-026, CE-SPACE-027, CE-SPACE-028
 
@@ -1699,9 +1699,9 @@ Entität `ProjectPublicMember` · `[OwnedBy("PublicSpace")]` · Basis `ProjectEn
 
 **Hinweise:** Tracking-Tabelle: Space-Kommentare/-Reaktionen/-Votes eines Nicht-Mitglieds legen idempotent eine Zeile an (`space/views/issue.py` Z. 327 ff.).
 
-### 3.4.16 Modul Webhooks
+#### 3.4.16 Modul Webhooks
 
-#### 3.4.16.1 `webhooks` ← `Webhook` (`M/webhook.py` Z. 34–62)
+##### 3.4.16.1 `webhooks` ← `Webhook` (`M/webhook.py` Z. 34–62)
 
 Entität `Webhook` · `[OwnedBy("Webhooks")]` · Basis eigene Form (Spalten vollständig gelistet) · ab **I6** · Status **angepasst** · CE-IDs: CE-WH-001…CE-WH-006, CE-WH-009, CE-WH-011
 
@@ -1725,7 +1725,7 @@ Entität `Webhook` · `[OwnedBy("Webhooks")]` · Basis eigene Form (Spalten voll
 
 **Hinweise:** Die Bool-Spalte `project` kollidiert namentlich mit der Konvention `<ziel>_id` nicht (kein `_id`-Suffix); C#-Property `ProjectEvents` mit `HasColumnName("project")`, analog `IssueEvents`, `ModuleEvents`, `CycleEvents`, `IssueCommentEvents`.
 
-#### 3.4.16.2 `webhook_logs` ← `WebhookLog` (`M/webhook.py` Z. 65–91)
+##### 3.4.16.2 `webhook_logs` ← `WebhookLog` (`M/webhook.py` Z. 65–91)
 
 Entität `WebhookLog` · `[OwnedBy("Webhooks")]` · Basis eigene Form (Spalten vollständig gelistet) · ab **I6** · Status **übernommen** · CE-IDs: CE-WH-007, CE-WH-010, CE-OPS-015
 
@@ -1745,9 +1745,9 @@ Entität `WebhookLog` · `[OwnedBy("Webhooks")]` · Basis eigene Form (Spalten v
 
 **Indizes/Unique:** `ix_webhook_logs_webhook_created` (`webhook_id`, `created_at` DESC); `ix_webhook_logs_created_at` (`created_at`) – Aufbewahrung 14 Tage.
 
-### 3.4.17 Modul Exports
+#### 3.4.17 Modul Exports
 
-#### 3.4.17.1 `exports` ← `ExporterHistory` (`M/exporter.py` Z. 24–67)
+##### 3.4.17.1 `exports` ← `ExporterHistory` (`M/exporter.py` Z. 24–67)
 
 Entität `ExportJob` · `[OwnedBy("Exports")]` · Basis eigene Form (Spalten vollständig gelistet) · ab **I6** · Status **angepasst** · CE-IDs: CE-EXP-001, CE-EXP-002
 

@@ -521,3 +521,114 @@ sequenceDiagram
 | `search.indexing` | `SearchIndexingConsumer` | `Plane.Search` (Detail `11`) | `indexing` | `plane.work_item.created/updated/deleted.v1`, `plane.work_item_comment.created/updated/deleted.v1`, `plane.page.created/updated/description_updated/deleted.v1` | I5 |
 
 Alle übrigen Events haben in der CE keinen Consumer (der Dispatcher markiert sie nur als versandt); sie sind trotzdem Pflicht, weil Pakete daran hängen (`16` §3.2.4) und `EventEmissionTests` (`15` §6.2 C3) sie je Produzenten-Command genau einmal erwarten. Die Liste „Command → erwartetes Event“ für diesen Test ist das Feld `producers` in `_data/06-event-catalog.json`.
+
+### 3.9 Activity-Pipeline
+
+#### 3.9.1 Vertrag (Präzisierung von `02` D02-ADR-25 / §3.19 „Activity“)
+
+`IActivityRecorder` (`Plane.WorkItems.Contracts/Services/IActivityRecorder.cs`) ist der **einzige** Weg, `work_item_activities` zu schreiben. Er wird von Command-Handlern der Module `WorkItems`, `Cycles`, `ProjectModules`, `Intake`, `Projects` (Estimate-Punkt löschen), `PublicSpace` (über `IWorkItemCommands`) und vom `AutoArchiveAndCloseJob` aufgerufen – immer **innerhalb** der offenen Command-Transaktion. Die Implementierung betritt für ihre Schreibzugriffe den Eigentümer-Scope `ModuleScope.Enter("WorkItems")` (Konvention für alle Contracts-Service-Implementierungen mit Schreibwirkung; Bestätigung der Guard-Mechanik durch `02`, O-D06-03).
+
+```text
+RecordAsync(ActivityRecordRequest r):
+  r.Type            ActivityType (27 Werte, §4.5; Original-Typstring z. B. "issue.activity.updated")
+  r.WorkItemId      Guid?   (null bei cycle.activity.* – die Work-Item-IDs stehen in RequestedData)
+  r.ProjectId       Guid
+  r.RequestedData   JsonObject?   (Request-Form wie Original requested_data; nur gesendete Felder)
+  r.CurrentInstance JsonObject?   (Vorher-Zustand wie Original current_instance)
+  r.Options         ActivityOptions(Notify, SubscribeActor, EmailEligible)   – je Aufrufstelle §4.4
+  r.Epoch           long?   (Default: IClock.UtcNow in Sekunden, wie int(timezone.now().timestamp()))
+```
+
+#### 3.9.2 Ablauf (Port von `issue_activity`, A07 §3.1.2)
+
+1. `ProjectId` muss existieren (sonst `InvalidOperationException` → Command scheitert; im Original stiller Abbruch, hier Programmierfehler).
+2. `WorkspaceId` aus dem Projekt.
+3. Ist `WorkItemId` gesetzt: `work_items.updated_at = now` (über den getrackten Eintrag, sonst `ExecuteUpdateAsync` nur auf `updated_at`) – **jede** Activity verschiebt `updated_at`, auch Reaktionen, Kommentare, Links und Votes (Grundlage für Sortierung „Last updated“ und Automationsfristen, A07 §5.7 Nr. 2).
+4. Typ-Handler aus `ActivityTypeHandlers` (§4.5) erzeugt `WorkItemActivity`-Entitäten; bei `issue.activity.updated` iteriert er über **alle Schlüssel von `RequestedData`** und ruft je Schlüssel den Feld-Tracker (§4.6); nicht abgebildete Schlüssel (`sort_order`, `type_id`, `is_draft`, `description_json`, `description_binary`, …) erzeugen keine Activity.
+5. Sonderfälle 1:1: A1 (`created the issue`) übernimmt `created_at := work_item.created_at` und `actor_id := work_item.created_by_id`; A3-Deduplizierung (jüngste Activity des Work Items ist `field = "description"` vom selben Akteur → nur `created_at = now` setzen, keine neue Zeile); `extract_ids`-Semantik (`label_ids`│`labels`, `assignee_ids`│`assignees`, `parent_id`│`parent`, `state_id`│`state`).
+6. **Subscriber/Mentions synchron** (in der CE ab I2 statt im Notification-Task, `DEV-NOTIF-007`): (a) neu hinzugefügte Assignees (A10) → `work_item_subscribers` (`ON CONFLICT DO NOTHING`, `created_by = updated_by = assignee` wie Original); (b) ist `Options.Notify && Options.SubscribeActor` und der Typ benachrichtigungsfähig (§4.5) → Akteur als Subscriber (`get_or_create`); (c) `description_html` geändert → `MentionExtractor` (AngleSharp, `mention-component[entity_name="user_mention"]`, Attribut `entity_identifier`, nur gültige UUIDs) berechnet `neu = Mentions(neu) − Mentions(alt)`; `work_item_mentions` wird auf die Mentions der neuen Fassung synchronisiert (neue anlegen, entfernte löschen, A07 §3.2.5); neu Erwähnte, die aktive Projektmitglieder und weder Subscriber noch Assignee noch Ersteller sind, werden Subscriber; (d) Kommentar-Activities: Mentions aus `comment_html` (neu minus alt) → Subscriber wie (c).
+7. Entitäten in den `PlaneDbContext` (geschrieben im einen `SaveChanges` des Commands, `02` D02-ADR-24).
+8. Event `WorkItemActivityRecordedV1` (immer, auch wenn `Notify = false`), Payload §3.8 – inkl. `NewDescriptionMentionIds` und `CommentMentions` aus Schritt 6, damit der Notification-Consumer nicht erneut parsen muss.
+9. Unterdrückung durch den Aufrufer wie Original: enthält ein PATCH `skip_activity: true` **und** `description_html`, rufen `UpdateWorkItemCommand` und `UpdateIntakeWorkItemCommand` weder den Recorder noch den Beschreibungs-Versionsdienst auf und erzeugen keine Events mit `Changes` (A07 §3.1.2 Nr. 8).
+
+#### 3.9.3 Tabelle `work_item_activities` (Vorgabe für `03`, Felder 1:1 aus `IssueActivity`)
+
+`id`, `work_item_id` (nullable, **ohne** Kaskade – Original `DO_NOTHING`), `verb` (Default `created`), `field` (nullable), `old_value` (text), `new_value` (text), `comment` (text), `attachments` (`text[]`, max. 10, ungenutzt), `work_item_comment_id` (nullable), `actor_id` (nullable, `SET NULL`), `old_identifier` (uuid), `new_identifier` (uuid), `epoch` (double) + `ProjectEntity`-Spalten. JSON-Namen im API-Vertrag bleiben `issue`, `issue_comment`, `issue_detail` (Serializer-Form `IssueActivitySerializer`, `04`). Indizes: `(work_item_id, created_at DESC)` (Detail-Zeitleiste, A3-Dedupe), `(workspace_id, actor_id, created_at DESC)` (Profil-Aktivität CE-PROF-010).
+
+#### 3.9.4 Feld-Tracker und Eigentümer der Anzeigewerte
+
+Die Tracker sind die in `02` §5.2.10 eingeführten `IActivityFieldResolver` (Feldname → `ActivityFieldChange`-Liste); jeder Resolver gehört dem Modul, das den Anzeigewert besitzt. Zuordnung, Original-Funktion und Varianten: §4.6. Reservierte Paket-Felder (`16` §3.2.3) dürfen nur von Paket-Resolvern erzeugt werden (`ReservationCollisionTests`).
+
+#### 3.9.5 Weitere synchrone Versionierung (gleiche Transaktion)
+
+| Original-Task | Ziel (synchron im Command) | Regel | Eigentümer |
+|---|---|---|---|
+| T23 `issue_description_version_task` | `WorkItemDescriptionVersionRecorder.RecordAsync(workItem, before, actor, isCreating)` in `UpdateWorkItemCommand`, `CreateWorkItemCommand`, `CreateIntakeWorkItemCommand`, `UpdateIntakeWorkItemCommand` | nur bei geändertem `description_html`; jüngste Version gleicher Besitzer und `now − last_saved_at ≤ 600 s` → überschreiben **inkl.** `last_saved_at = now` (gleitendes Fenster, 1:1); sonst neue Version; Begrenzung über Cron `maintenance.description_versions_cleanup` | `WorkItems` |
+| T31 `track_page_version` | `PageVersionRecorder` in `SavePageDescriptionCommand` | festes 10-min-Fenster ohne Aktualisierung von `last_saved_at` (1:1); > `PageVersionsKeep` (20) → älteste soft-löschen | `Pages` (Detail `07`) |
+| T30 `page_transaction` | `PageReferenceIndexer` in `CreatePageCommand`, `UpdatePageCommand` (nur mit `description_html`), `SavePageDescriptionCommand`, `DuplicatePageCommand` | Komponenten `mention-component`/`image-component` (A07 §2.15); Löschung **auf die Seite beschränkt** und nur UUID-`src` übernommen (Korrekturen, `DEV-OPS-004`) | `Pages` (Detail `07`) |
+
+### 3.10 In-App-Benachrichtigungen
+
+`ActivityNotificationConsumer.HandleAsync(WorkItemActivityRecordedV1 e)` – Port von `BG/notification_task.py` (A07 §3.2) mit den Korrekturen aus §4.10:
+
+1. `e.ActivityType` in der Ausschlussliste (`cycle.activity.*`, `module.activity.*`, `issue_reaction.activity.*`, `comment_reaction.activity.*`, `issue_vote.activity.*`, `issue_draft.activity.*`) **oder** `e.Notify = false` → Ende.
+2. Work Item laden **inkl.** soft-gelöschter (`IgnoreQueryFilters([soft_delete])`); ist es gelöscht (`issue.activity.deleted`), endet der Consumer ohne Notifications – das effektive Original-Verhalten (N2) bleibt bewusst erhalten, aber ohne Ausnahme (`DEV-NOTIF-003`).
+3. Activities des Batches laden (`e.ActivityIds`), nur die des **eigenen** Work Items (Relationen auf andere Work Items werden übersprungen, A07 §3.2.3 „Nie benachrichtigt“), ohne `field = "description"`.
+4. Aktive Projektmitglieder laden; Empfänger = Subscriber des Work Items ∩ aktive Projektmitglieder − Akteur − `e.NewDescriptionMentionIds` − alle `e.CommentMentions[*].NewMentionIds`.
+5. Je Empfänger Präferenzen laden (`user_notification_preferences`; fehlt die Zeile → alle Flags `true`, `DEV-NOTIF-002`); je Activity **eine** `notifications`-Zeile: `entity_name = "issue"`, `entity_identifier = work_item_id`, `title = activity.comment`, `message = NULL`, `sender` = `in_app:issue_activities:created` (Empfänger = Ersteller) │ `…:assigned` (Empfänger ist Assignee und der Ersteller ist kein Assignee) │ `…:subscribed`, `triggered_by_id = actor`, `receiver_id`, `project_id`, `workspace_id`, `data` (Subscriber-Variante A07 §2.8.3, alle Werte außer `old_identifier`/`new_identifier` über `PythonText.Str` – `null` → `"None"`; bei Kommentar-Activities `issue_activity.issue_comment = comment_stripped`).
+6. E-Mail-Log nur, wenn `e.EmailEligible` und `EmailPreferenceRules.ShouldEmail(field, newStateGroup, prefs)` (§4.10 `DEV-NOTIF-004`): `field == "state"` → `state_change` **oder** (`issue_completed` und neuer State in Gruppe `completed`); `field == "comment"` → `comment`; jedes andere Feld → `property_change`. `email_notification_logs.data` = Subscriber-Variante A07 §2.8.4 inkl. `activity_time` (ISO-8601 der Activity).
+7. Kommentar-Erwähnungen: je `CommentMentions[i].NewMentionIds` ∩ aktive Projektmitglieder − Akteur **eine** Notification (Korrektur N9) mit `sender = in_app:issue_activities:mentioned`, `title = ""`, `message = "<display_name> has mentioned you in a comment in issue <name>"`, `data` ohne `issue_comment`; E-Mail-Log bei `prefs.mention` (Feld `mention`, Empfänger = **Erwähnter**, Korrektur N1).
+8. Beschreibungs-Erwähnungen: je `NewDescriptionMentionIds` ∩ aktive Mitglieder − Akteur: ist die jüngste Activity des Work Items ein Beschreibungs-Edit desselben Akteurs (A3-Fall) → **eine** Notification mit `message = "You have been mentioned in the issue <name>"` und `issue_activity` aus dieser letzten Activity (inkl. korrekter `old_identifier`/`new_identifier`, Korrektur N8), sonst eine je Activity des Batches; E-Mail-Log bei `prefs.mention` mit `issue_activity.field = "mention"`, ohne `issue_comment` (Original-Form, `activity_time` hier im Python-Format `YYYY-MM-DD HH:MM:SS.ffffff+00:00` wie Original).
+9. `AddRange` aller Notifications und E-Mail-Logs (EF bündelt), `SaveChanges`; danach je (Empfänger, Workspace) ein Event `plane.notification.created.v1` (für den Push §3.12).
+10. Fehler (ungültige Mention-UUID, fehlende Benutzer) überspringen nur den betroffenen Eintrag und werden in `plane.worker` geloggt (Korrektur N4, N5, N7).
+
+**Präferenzen** (`user_notification_preferences`, A07 §2.9): werden bei `CreateUserStep` (`05` §3.7.3, Order 500) für jeden Nicht-Bot-Benutzer mit allen Flags `true` angelegt (ersetzt das `post_save`-Signal); API `GET|PATCH /api/users/me/notification-preferences/` bleibt (Detail `04`). Präferenzen steuern **nur** E-Mails; In-App-Benachrichtigungen entstehen immer.
+
+### 3.11 E-Mail-Benachrichtigungen (Bündelung)
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant S as Scheduler (Leader)
+  participant J as Worker: notifications.email_digest
+  participant E as Worker: notifications.send_email_digest (Queue emails)
+  participant DB as PostgreSQL
+  participant M as SMTP (Instanz-Konfiguration)
+  S->>DB: INSERT jobs cron:notifications.email_digest:{occ} (alle 5 min)
+  J->>DB: BEGIN; SELECT … FROM email_notification_logs WHERE processed_at IS NULL ORDER BY receiver_id, entity_identifier, created_at FOR UPDATE SKIP LOCKED
+  J->>DB: je (receiver, work_item): INSERT jobs send_email_digest {receiver_id, work_item_id, log_ids[]} dedupe "mail-digest:{receiver}:{item}:{hash(log_ids)}"
+  J->>DB: UPDATE … SET processed_at = now() WHERE id = ANY(gelesen); COMMIT
+  E->>DB: Logs (nur log_ids, sent_at IS NULL), Empfänger, Work Item, Akteure, Projekt, Workspace
+  E->>E: EmailDigestPayloadBuilder (create_payload) → Fluid issue-updates.liquid + Text-Teil
+  E->>M: SMTP senden (MailKit, Timeout 30 s)
+  alt Erfolg
+    E->>DB: UPDATE email_notification_logs SET sent_at = now() WHERE id = ANY(log_ids)
+  else SMTP-Fehler
+    E-->>E: JobResult.Retry (Default-Policy, 5 Versuche) → danach Dead-Letter
+  end
+```
+
+| Regel | Festlegung (Original-Bezug A07 §3.3) |
+|---|---|
+| Fenster | alles seit dem letzten Lauf, keine Mindestwartezeit (1:1) |
+| Gruppierung | eine Mail je **(Empfänger, Work Item)**, innerhalb der Mail je Akteur (`triggered_by_id`) |
+| `create_payload` | je Akteur je `field` deduplizierte Listen `old_value`/`new_value` (Strings; `"None"` ist gültig, 1:1); `comment` und `mention` werden als Kommentarblöcke herausgelöst; bei `mention` werden `mention-component`-Tags durch `@<display_name>` ersetzt (fehlender Benutzer → `@` + ursprüngliche ID, Korrektur EM4), bei `comment` nicht (1:1) |
+| `activity_time` | je Akteur die **jüngste** Änderungszeit (Korrektur des Tippfehlers `data.get("actor_id")`), Ausgabe `hh:mm tt` (12-h-Format, z. B. `02:05 PM`; Korrektur des Formats `%H:%M %p` → „14:05 PM“, `DEV-MAIL-004`) |
+| Betreff | `<IDENT>-<seq> <name ohne Steuerzeichen \x00–\x1F, \x7F–\x9F>` (1:1, M12) |
+| Template-Kontext | 1:1 A07 §3.3.4 (`data`, `summary` = `"Updates were made to the issue by"`, `actors_involved`, `issue{issue_identifier,name,issue_url}`, `receiver{email}`, `issue_url`, `project_url`, `workspace`, `project`, `user_preference`, `comments`, `entity_type = "issue"`); URLs aus `IPublicUrls.Web` (Korrektur EM1); Avatar-URL absolut über `IPublicUrls.Asset(...)` (Korrektur EM5) |
+| Kommentar-HTML | `{{ actor_comment \| raw }}` wie Original-`|safe`, aber Inhalt vorher durch `HtmlSanitizerProfile` (`05` §3.17.3) – Kommentare sind beim Speichern bereits bereinigt; Doppelprüfung schließt EM6 |
+| `sent_at` | nur für die `log_ids` **dieser** Gruppe (Korrektur EM2) |
+| SMTP nicht konfiguriert (`EMAIL_HOST` leer) | Job endet mit `JobResult.Success` ohne Versand, Logs bleiben `sent_at IS NULL`, Log `plane.worker` Information `"SMTP not configured, mail skipped"`; `ENABLE_SMTP` wird wie im Original **nicht** ausgewertet (A07 O4, Entscheidung: 1:1, weil „Disable email feature“ ohnehin `EMAIL_HOST` leert) |
+| Automationen | erzeugen keine E-Mail-Logs (`EmailEligible = false`, §4.4 C65/C66; Original erzeugt sie, versendet sie aber nie und löscht sie nie – EM1, `DEV-NOTIF-006`) |
+
+### 3.12 Echtzeit-Push (SignalR)
+
+| Element | Festlegung |
+|---|---|
+| Hub | `LiveEventsHub` unter `/live/events/` im Host `Plane.Realtime` (Modul `Plane.RealtimeEvents`, ABG-058); Authentisierung über das Session-Cookie; Client-Methoden `joinGroup(group)`, `leaveGroup(group)`; Server sendet immer die Methode `event` mit `LiveEvent { event, group, payload, occurred_at }` (`16` §5.12). Beim Verbindungsaufbau tritt der Server den Client automatisch der Gruppe `user:{user_id}` bei. |
+| Gruppen-Autorisierung | `IRealtimeGroupAuthorizer` je Präfix (`16` E-22): `user:` nur eigene ID; `ws:` aktives Workspace-Mitglied; `project:` Projektzugriff (`project.project_entity.read`); unbekanntes Präfix → abgelehnt. |
+| Publisher | `IRealtimePublisher` (01 §5.5) hat **zwei** Implementierungen: `HubRealtimePublisher` (nur Host `Plane.Realtime`, `IHubContext<LiveEventsHub>`) und `QueuedRealtimePublisher` (Api/Worker: reiht `realtime.push`-Job auf Queue `realtime` transaktional ein). Consumer der Queue `realtime` laufen ausschließlich im Realtime-Host (§3.5.6). |
+| Mehrinstanz | ab 2 Realtime-Replikas Valkey-Backplane `AddStackExchangeRedis` (`14` D14-ADR-21); jede Replika verarbeitet die Queue `realtime`, die Backplane verteilt an alle Verbindungen. |
+| CE-Event `notification.created` | Gruppe `user:{receiver_id}`, Payload `{"workspace_id": "<uuid>", "workspace_slug": "<slug>", "notification_ids": ["<uuid>", …], "unread": {"total_unread_notifications_count": <int>, "mention_unread_notifications_count": <int>}}`; die Zähler berechnet der `RealtimeFanOutConsumer` beim Senden mit **derselben** Query wie `GET /api/workspaces/{slug}/users/notifications/unread/` (`UnreadNotificationCountQuery` aus `Plane.Notifications.Contracts`), Form = `TUnreadNotificationsCount`. Frontend-Handler (`08` Store 49): ist `workspace_slug` der aktuelle Workspace → `setUnreadNotificationsCount(payload.unread)`, sonst ignorieren. |
+| Weitere CE-Events | `label.created│updated│deleted`, `state.created│updated│deleted` an `project:{project_id}` mit `{ "id": "<uuid>" }` (`02` §5.2.12); in der CE ohne Frontend-Handler (Andockstelle H6). |
+| Latenz | Ziel < 2 s vom Commit bis zum Client (AK-D08-35): Outbox-`NOTIFY` → Dispatcher → `NOTIFY plane_jobs realtime` → Realtime-JobRunner. |
