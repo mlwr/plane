@@ -2038,3 +2038,199 @@ cascade.NoSoftCascade<WorkItem, WorkItemActivity>(c => c.WorkItemId, reason: "Ve
 
 Die Job-Klassen, Queues und Fehlerbehandlung definiert `06-hintergrundjobs-events-benachrichtigungen.md`; Namen und Spalten hier sind verbindlich für die Indizes in §3.4.
 
+### 3.6 Nebenläufigkeitssichere Work-Item-Nummer (`sequence_id`)
+
+**Original** (`M/issue.py` Z. 180–214, A02b §3.2): `pg_advisory_xact_lock(convert_uuid_to_integer(project.id))`, dann `MAX(issue_sequences.sequence) + 1`, `INSERT issues`, `INSERT issue_sequences`. Kein Unique auf `(project_id, sequence_id)` (Q4); der Workspace-Seed legt doppelte Sequenzzeilen an (Q6); `fix_duplicate_sequences` repariert nachträglich.
+
+**Ziel** (D03-ADR-16): `ISequenceAllocator` in `Plane.BuildingBlocks.Persistence/Sequences/` (Signatur D02/01 §7.6), Implementierung `PostgresSequenceAllocator` in `Plane.Data`:
+
+```sql
+-- in derselben Transaktion wie das INSERT des Work Items (TransactionBehavior, D02-ADR-24)
+INSERT INTO work_item_sequences (project_id, last_value, updated_at)
+VALUES (@project_id, 1, @now)
+ON CONFLICT (project_id) DO UPDATE
+   SET last_value = work_item_sequences.last_value + 1, updated_at = EXCLUDED.updated_at
+RETURNING last_value;
+```
+
+| Eigenschaft | Nachweis |
+|---|---|
+| nebenläufigkeitssicher | `ON CONFLICT … DO UPDATE` sperrt die Zählerzeile bis zum Commit; parallele Transaktionen desselben Projekts warten (READ COMMITTED liest nach Freigabe den neuen Wert); Erstanlage-Wettlauf löst der Unique-Konflikt des PK |
+| lückenlos je Transaktion | Rollback setzt den Zähler zurück (wie Original-`issue_sequences`-Zeile) |
+| nie wiederverwendet | Zähler sinkt nie; Soft-/Hard-Delete ändern ihn nicht (Original: `issue_sequences` bleibt mit `issue_id = NULL`) |
+| Bulk | `AllocateRangeAsync(projectId, count)` → `last_value = last_value + @count RETURNING last_value` (für Bulk-Create der Public API und Seeds, eine Sperre statt n) |
+| Deadlock-Vermeidung | Commands, die in mehreren Projekten Nummern ziehen (z. B. Bulk über Projekte), allokieren in aufsteigender `project_id`-Reihenfolge |
+| Sicherheitsnetz | `ux_work_items_project_sequence_id`; Verletzung → `PlaneExceptionHandler` 500 + Log (Programmierfehler) |
+| Test | `SequenceAllocatorConcurrencyTests`: 100 parallele Creates in einem Projekt → Nummern 1…100 ohne Lücke/Duplikat; Rollback-Test; Bulk-Test (01 §7.6) |
+
+Der Workspace-Seed und der `ParitySeedLoader` nutzen denselben Allokator (Korrektur Q6). `fix_duplicate_sequences` entfällt (CE-OPS-020: Command nicht mehr nötig).
+
+### 3.7 Sortierfelder (`sort_order`, `sequence`)
+
+Alle Sortierfelder sind `double precision` mit Original-Default 65535 und Original-Lücken; das Frontend berechnet Zwischenwerte beim Drag & Drop. Die Anlage-Regeln liegen als reine Funktionen in `Domain/` des Eigentümer-Moduls (D02 §5.2.6) und werden im Command **vor** dem Insert berechnet (`SELECT max/min … WHERE …` in derselben Transaktion; kein Lock – Parität mit Original, das ebenfalls ohne Lock rechnet).
+
+| Tabelle.Spalte | Anlage-Regel (Original) | Domain-Funktion | Index |
+|---|---|---|---|
+| `work_items.sort_order` | `max(project, state) + 10000`, sonst 65535 | `WorkItemSortRules.NextForState` | `ix_work_items_project_state` |
+| `draft_work_items.sort_order` | `max(draft: project, state) + 10000` | `DraftSortRules.Next` | – |
+| `states.sequence` | `max(nicht-Triage, project) + 15000`; Triage fest 65000 (Korrektur Q12); Projekt-Anlage fest 15000…65000 | `StateSequenceRules.Next` | `ix_states_project_sequence` |
+| `labels.sort_order` | `max(project) + 10000` (Workspace-Labels: je Workspace, Korrektur Q7) | `LabelRules.NextSortOrder` (D02 §5.2.6) | `ix_labels_project_sort_order` |
+| `cycles.sort_order` | `min(project) − 10000` (neue Cycles oben) | `CycleSortRules.Next` | – |
+| `modules.sort_order` | `min(project) − 10000` | `ModuleSortRules.Next` | – |
+| `views.sort_order` | `max(project) + 10000` bzw. `max(workspace, project IS NULL) + 10000` | `ViewSortRules.Next` | – |
+| `pages.sort_order` | keine Regel (Default 65535) | – | – |
+| `user_favorites.sequence` | `min(user, workspace) − 10000` (A02a §3.6) | `FavoriteSortRules.Next` | – |
+| `project_user_properties.sort_order`, `project_members.sort_order` | `min(user, workspace) − 10000` | `ProjectSidebarSortRules.Next` | – |
+| `stickies.sort_order` | `max(owner, workspace) + 10000` | `StickySortRules.Next` | – |
+| `workspace_user_preferences.sort_order`, `workspace_home_preferences.sort_order` | Default 65535, Client setzt | – | – |
+| `estimate_points` | keine Spalte; Sortierung `value` alphabetisch (Q9, 1:1) | – | – |
+| `intakes` | Sortierung `name` | – | – |
+
+### 3.8 JSONB-Spalten: Lesemodelle und Defaults
+
+#### 3.8.1 Lesemodelle (`BE/data/Plane.Data/Json/`, `sealed record`, `[JsonExtensionData]` für unbekannte Schlüssel)
+
+| Lesemodell | Spalten | Struktur (Schlüssel) | Schreiber / Leser | Quelle |
+|---|---|---|---|---|
+| `LogoProps` | `projects`, `cycles`, `modules`, `views`, `pages`, `intakes`, `stickies` `.logo_props` | `in_use` (`emoji`\|`icon`), `emoji{value,url}`, `icon{name,color,background_color}` | Frontend; Seed | `PKG/types/src/common.ts` Z. 19–30 |
+| `ProfileTheme` | `profiles.theme` | `theme` (`system`, `light`, `dark`, `light-contrast`, `dark-contrast`, `custom`), `primary`, `background`, `darkPalette` | Frontend (ganzes Objekt) | A02a §2.5 |
+| `OnboardingSteps` / `MobileOnboardingSteps` | `profiles.onboarding_step` / `.mobile_onboarding_step` | `profile_complete`, `workspace_create`, `workspace_invite`, `workspace_join` (bool) | Onboarding | `M/user.py` Z. 25–39 |
+| `ProductTour` | `profiles.product_tour` | `work_items`, `cycles`, `modules`, `intake`, `pages` (bool) | Frontend | `M/user.py` Z. 42–49 |
+| `SessionDeviceInfo` | `user_sessions.device_info` | `user_agent`, `ip_address`, `domain` | Identity | D05 §3.4.1 |
+| `WorkspaceViewProps` | `workspace_members.view_props/default_props` | `filters{…9}`, `display_filters{…7}`, `display_properties{…13}` | Frontend | `M/workspace.py` Z. 22–59 |
+| `WorkspaceIssueProps` | `workspace_members.issue_props` | `subscribed`, `assigned`, `created`, `all_issues` | Frontend | `M/workspace.py` Z. 110 |
+| `ProjectViewProps` | `project_members.view_props/default_props` | `filters`, `display_filters` | Frontend | `M/project.py` Z. 39–61 |
+| `ProjectMemberPreferences` | `project_members.preferences`, `project_user_properties.preferences` | `pages.block_display`, `navigation.default_tab`, `navigation.hide_in_more_menu[]` | Frontend | `M/project.py` Z. 64–65 |
+| `LegacyIssueFilters` | `*_user_properties.filters`, `views.filters` | `priority`, `state`, `state_group`, `assignees`, `created_by`, `labels`, `start_date`, `target_date`, `subscriber` (Listen oder `null`) | Legacy-Filter-Parser (D02 §3.11) | `M/issue.py` Z. 39–50 |
+| `DisplayFilters` | `project_user_properties`, `cycle_user_properties`, `module_user_properties`, `views` `.display_filters` | `group_by`, `sub_group_by`, `order_by`, `type`, `sub_issue`, `show_empty_groups`, `layout`, `calendar{layout,show_weekends}`, `calendar_date_range` | Frontend | `M/issue.py` Z. 53–62 |
+| `DisplayProperties` | dto. `.display_properties` | 13 Bool-Schlüssel (+ Seed: `cycle`, `modules`, `issue_type`, `customer_count`, `customer_request_count` – unbekannte Schlüssel werden durchgereicht) | Frontend | `M/issue.py` Z. 65–80 |
+| `RichFilterNode` | `*.rich_filters` | Baum `{and\|or\|not: [...]}` mit Blättern `{"<feld>__<op>": "<wert>"}` | Rich-Filter-Parser → `FilterExpression` (D02 §3.11.2) | A04 §2.18.2 |
+| `LinkMetadata` | `work_item_links.metadata` | `title`, `favicon` (Data-URI), `url`, `favicon_url`, `error` | `WorkItemLinkCrawlJob` | `API/bgtasks/work_item_link_task.py` |
+| `CycleProgressSnapshot` | `cycles.progress_snapshot` | `total_issues`, `completed_issues`, `cancelled_issues`, `started_issues`, `unstarted_issues`, `backlog_issues`, `distribution{labels,assignees,completion_chart}`, `estimate_distribution{…}` | Cycle-Transfer/-Abschluss | `API/utils/cycle_transfer_issues.py` Z. 410–431 |
+| `PageViewProps` | `pages.view_props` | `full_width` (bool) | Frontend | `M/page.py` Z. 19–20 |
+| `ProseMirrorDoc` | `*.description_json`, `work_item_comments.comment_json`, `stickies.description` | `{type:"doc", content:[…]}` | `Plane.Documents` (ADR-031) | `PKG/editor` |
+| `FileAssetAttributes` | `file_assets.attributes` | `name`, `type`, `size` | Assets | `API/app/views/asset/v2.py` |
+| `StorageMetadata` | `file_assets.storage_metadata` | `ContentType`, `ContentLength`, `LastModified`, `ETag`, `Metadata{}` (Pascal-Schlüssel wie boto3) | `AssetMetadataJob` | `API/settings/storage.py` Z. 153–169 |
+| `NotificationData` | `notifications.data` | `issue{id,name,identifier,sequence_id,state_name,state_group}`, `issue_activity{id,verb,field,actor,new_value,old_value,issue_comment,old_identifier,new_identifier}` | `NotificationConsumer` | `API/bgtasks/notification_task.py` Z. 158–186 |
+| `EmailNotificationData` | `email_notification_logs.data` | wie `NotificationData` + `issue.project_id`, `issue.workspace_slug`, `issue_activity.activity_time` | `NotificationConsumer` → `EmailNotificationBatchJob` | dto. Z. 410–450 |
+| `PublishViewProps` | `deploy_boards.view_props` | `list`, `kanban`, `calendar`, `gantt`, `spreadsheet` (bool) | Publish-Einstellungen | `PKG/types/src/publish.ts` |
+| `AnalyticQuery` | `analytic_views.query_dict` | `x_axis`, `y_axis`, Filterparameter | Analytics | `API/app/views/analytic/base.py` Z. 196–232 |
+| `JsonNode` (String) | `notifications.message` | JSON-**String** (Mention-Text) | Notifications | A02b §2.6 |
+
+Frei/ungenutzt in der CE (Typ `JsonObject`, kein Lesemodell): `profiles.goals`, `workspace_members.getting_started_checklist`/`tips`/`explored_features`, `workspace_themes.colors`, `workspace_user_links.metadata`, `workspace_home_preferences.config`, `module_links.metadata`, `intakes.view_props`, `intake_work_items.extra`, `cycles.view_props`, `modules.view_props`, `projects.icon_prop`/`description_text`, `modules.description_text`, `views.query`, `analytic_views.query`, `work_item_versions.properties`/`meta`, `page_versions.sub_pages_data`, `exports.filters`.
+
+#### 3.8.2 Konstante Defaults (`BE/data/Plane.Data/Json/JsonDefaults.cs`, zugleich DB-Default-Literal)
+
+| Name | Literal | Verwendet in | Quelle |
+|---|---|---|---|
+| `LegacyFilters` | `{"priority":null,"state":null,"state_group":null,"assignees":null,"created_by":null,"labels":null,"start_date":null,"target_date":null,"subscriber":null}` | `workspace_user_properties.filters`, `project_user_properties.filters`, `cycle_user_properties.filters`, `module_user_properties.filters` | `M/issue.py` Z. 39–50 (identisch in `workspace.py`, `cycle.py`, `module.py`) |
+| `DisplayFilters` | `{"group_by":null,"order_by":"-created_at","type":null,"sub_issue":true,"show_empty_groups":true,"layout":"list","calendar_date_range":""}` | `project_user_properties`, `cycle_user_properties`, `module_user_properties`, `views` | `M/issue.py` Z. 53–62 |
+| `DisplayProperties` | 13 Schlüssel `assignee`, `attachment_count`, `created_on`, `due_date`, `estimate`, `key`, `labels`, `link`, `priority`, `start_date`, `state`, `sub_issue_count`, `updated_on` = `true` | dto. | `M/issue.py` Z. 65–80 |
+| `WorkspaceNestedDisplayFilters` | `{"display_filters": <DisplayFilters>}` (Original-Quirk A02a-#1, Vertrag) | `workspace_user_properties.display_filters` | `M/workspace.py` Z. 76–87 |
+| `WorkspaceNestedDisplayProperties` | `{"display_properties": <DisplayProperties>}` | `workspace_user_properties.display_properties` | `M/workspace.py` Z. 90–107 |
+| `WorkspaceViewProps` | `{"filters": <LegacyFilters>, "display_filters": <DisplayFilters>, "display_properties": <DisplayProperties>}` | `workspace_members.view_props/default_props` | `M/workspace.py` Z. 22–59 |
+| `ProjectViewProps` | `{"filters": <LegacyFilters>, "display_filters": <DisplayFilters>}` | `project_members.view_props/default_props` | `M/project.py` Z. 39–61 |
+| `WorkspaceIssueProps` | `{"subscribed":true,"assigned":true,"created":true,"all_issues":true}` | `workspace_members.issue_props` | `M/workspace.py` Z. 110 |
+| `ProjectPreferences` | `{"pages":{"block_display":true},"navigation":{"default_tab":"work_items","hide_in_more_menu":[]}}` | `project_members.preferences`, `project_user_properties.preferences` | `M/project.py` Z. 64–65 |
+| `Onboarding` | `{"profile_complete":false,"workspace_create":false,"workspace_invite":false,"workspace_join":false}` | `profiles.onboarding_step` | `M/user.py` Z. 25–31 |
+| `MobileOnboarding` | `{"profile_complete":false,"workspace_create":false,"workspace_join":false}` | `profiles.mobile_onboarding_step` | `M/user.py` Z. 34–39 |
+| `ProductTour` | `{"work_items":false,"cycles":false,"modules":false,"intake":false,"pages":false}` | `profiles.product_tour` | `M/user.py` Z. 42–49 |
+| `PageViewProps` | `{"full_width":false}` | `pages.view_props` | `M/page.py` Z. 19–20 |
+
+Ein Snapshot-Test (`JsonDefaultsSnapshotTests`) vergleicht jedes Literal mit dem Ergebnis der Python-Funktion des Originals (Golden-File, erzeugt mit `tools/golden/generate.mjs` bzw. einem einmaligen Python-Aufruf im Original-Container, D15 §3.14).
+
+### 3.9 Beschreibungsformate, Versionen, Yjs-Binärdaten
+
+#### 3.9.1 Formate je Entität
+
+| Tabelle | `*_html` (`text`, Default `<p></p>`) | `*_json` (`jsonb`) | `*_binary` (`bytea`) | `*_stripped` (`text`) | Editor-Schema | Kanonisch |
+|---|---|---|---|---|---|---|
+| `work_items` | `description_html` | `description_json` | `description_binary` | `description_stripped` | Rich-Text | HTML (Web schreibt nur HTML) |
+| `draft_work_items` | ✔ | ✔ | ✔ | ✔ | Rich-Text | HTML |
+| `work_item_description_versions` | ✔ | ✔ | ✔ | ✔ (Kopie) | Rich-Text | Snapshot |
+| `work_item_comments` | `comment_html` | `comment_json` | – | `comment_stripped` | Lite/Rich | HTML |
+| `pages` | ✔ | ✔ | ✔ | ✔ | Document | **Binary** (Yjs, Fragmente `default` + `title`) |
+| `page_versions` | ✔ | ✔ | ✔ | ✔ | Document | Snapshot |
+| `stickies` | `description_html` | `description` (Spaltenname wie Original) | `description_binary` | `description_stripped` | Lite | HTML |
+| `notifications` | `message_html` | `message` (JSON-String) | – | `message_stripped` | – | `message` |
+| `projects`, `modules` | `description_html` (`text`, Legacy) | `description_text` (`jsonb`, Legacy) | – | – | – | `description` (`text`) |
+
+Regeln: (1) `*_stripped` wird **in jedem Command**, das `*_html` setzt, mit `HtmlText.StripTags` berechnet (`NULL` bei leerem HTML, `""` bei `<p></p>`, Entities dekodiert); (2) HTML wird vor dem Speichern sanitisiert (ADR-030, Allowlist aus `API/utils/content_validator.py`); (3) `*_binary` wird geprüft: ≤ 10 MiB, ≥ 4 Byte, erste 200 Zeichen ohne `<html`, `<!doctype`, `<script`, `javascript:`, `data:`, `<iframe` (Original `validate_binary_data`) **und** zusätzlich als Yjs-Update dekodierbar (ADR-030, YDotNet); (4) keine Server-Synchronisation zwischen den Formaten außer bei Pages (Realtime-Host erzeugt alle drei) und Konvertierungspfaden (`Plane.Documents`, 07).
+
+#### 3.9.2 Versionen
+
+| Tabelle | Erzeugung (Recorder, im Command bzw. Consumer) | Merge-Regel | Limit | Lesen |
+|---|---|---|---|---|
+| `work_item_description_versions` | `WorkItemDescriptionVersionRecorder` bei Create (`is_creating`) und bei Update mit geändertem `description_html` | jüngste Version (nach `last_saved_at`) gleicher `owned_by_id` und ≤ 600 s → überschreiben, sonst neu | 20 je Work Item (Job §3.5.5) | `…/work-items/{id}/description-versions/[{pk}/]` (CE-WI-041) |
+| `work_item_versions` | `WorkItemVersionRecorder` bei jeder Property-Änderung (State, Priorität, Daten, Assignees, Labels, Cycle, Module, Parent, Estimate, Typ) – **Korrektur Q11** (Original schreibt nie, DEV-DM-06) | 600 s/gleicher Owner → überschreiben | 20 je Work Item (`Plane:Retention:WorkItemVersions`, neu) | `…/issues/{id}/versions/[{pk}/]` (CE-WI-042) |
+| `page_versions` | `PageVersionRecorder` nach jeder Beschreibungs-Persistenz (REST-PATCH `…/description/` und Realtime-Speicherung) – **Korrektur Q10** (DEV-DM-10) | 600 s/gleicher Owner → überschreiben, > 20 → älteste soft-löschen | 20 je Page | CE-PAGE-019 |
+
+Die 600-s-Grenze ist die Konstante `VersionMergeWindow = TimeSpan.FromSeconds(600)` in `Plane.WorkItems.Domain`/`Plane.Pages.Domain`; die Limits sind Instanz-Einstellungen mit großzügigem, aber **paritätsgleichem** Default 20 (ADR-001: kein Plan-Limit).
+
+#### 3.9.3 Yjs-Binärdaten im Lebenszyklus der Page
+
+| Schritt | Spalten | Eigentümer |
+|---|---|---|
+| Laden (`IPageDocumentStore.LoadAsync`) | `pages.description_binary`; fehlt sie, wird aus `description_html` + `name` per `Plane.Documents` ein Yjs-Dokument erzeugt (Original `getBinaryDataFromDocumentEditorHTMLString`) und **nicht** sofort gespeichert | `Plane.Pages` |
+| Speichern (Debounce 10 s, ADR-022) | `description_binary`, `description_html`, `description_json`, `description_stripped`, `name` (Titel-Sync aus Fragment `title`) in **einem** `UPDATE`; danach `page_logs`-Abgleich und `page_versions` | `Plane.Pages` über `IPageDocumentStore.SaveAsync` |
+| Sperre/Archiv | `pages.is_locked`/`archived_at` → Realtime-Server lehnt Schreiben ab (Fehlercodes 4701/4702) | `Plane.Pages` |
+
+### 3.10 Volltext- und Trigram-Suche
+
+#### 3.10.1 Trigram-Indizes (Parität `__icontains`, ab I2/I5)
+
+| Tabelle | Spalte(n) | Original-Nutzung | ab |
+|---|---|---|---|
+| `work_items` | `name` | Globale Suche, Entity-/Picker-Suche, Filter `name`, v1-Suche (`API/app/views/search/base.py`, `API/utils/issue_search.py`, `API/api/views/issue.py` Z. 2289) | I2 |
+| `projects` | `name`, `identifier` | Globale Suche | I2 |
+| `workspaces` | `name` | Globale Suche | I2 |
+| `cycles`, `modules`, `views`, `pages` | `name` | Globale Suche, Entity-Suche | I5 |
+| `users` | `first_name`, `last_name`, `display_name` | Mention-Suche (`member__*__icontains`) | I5 |
+| `stickies` | `description_stripped` | Sticky-Suche | I5 |
+| `search_documents` | `title` | Ranking-Suche | I5 |
+
+Suchen auf `sequence_id` (`CAST(sequence_id AS text) ILIKE …`) und `project__identifier` benötigen keinen eigenen Index (Projektbezug + B-Tree reichen bei CE-Volumen; Messung LT-09, D15). LINQ: `EF.Functions.ILike(x.Name, "%" + EscapeLike(q) + "%")` – das Escaping (`%`, `_`, `\`) ist Pflicht (Original-`icontains` escapet ebenfalls).
+
+#### 3.10.2 `search_documents` und `plane_unaccent`
+
+```sql
+-- Migration …_Platform_Extensions (I0)
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS unaccent;
+CREATE EXTENSION IF NOT EXISTS vector;       -- pgvector; in der CE ohne Spalten (G1)
+CREATE OR REPLACE FUNCTION plane_unaccent(text) RETURNS text
+  LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
+  AS $$ SELECT public.unaccent('public.unaccent'::regdictionary, $1) $$;
+```
+
+`unaccent(text)` ist nur `STABLE`; Generated Columns und Ausdrucksindizes verlangen `IMMUTABLE` – daher der Wrapper mit explizitem Wörterbuch (bekanntes PostgreSQL-Muster). Ranking: `ts_rank_cd(search_vector, websearch_to_tsquery('simple', plane_unaccent(@q)))`; Treffer laufen immer durch `SearchVisibilityFilter` (D05 §3.14). Die Befüllung (`IIndexingPipeline` als `IEventConsumer` der Work-Item-/Page-/Kommentar-Events) und die Abfrage gehören zu `11-suche-und-ai-basis.md`.
+
+### 3.11 Enums und Check-Constraints
+
+| C#-Enum (`Plane.Data/Enums/` bzw. Contracts) | Werte (DB) | Spalte(n) | DB-Typ | Check |
+|---|---|---|---|---|
+| `SystemRoleLevel` | `Guest = 5`, `Member = 15`, `Admin = 20` | `workspace_members.role`, `project_members.role`, `*_member_invites.role`, `instance_admins.role`, `roles.level` | `smallint` | `IN (5,15,20)` (Instanz: `= 20`) |
+| `ProjectNetwork` | `Secret = 0`, `Public = 2` | `projects.network` | `smallint` | `IN (0,2)` |
+| `WorkItemPriority` | `urgent`, `high`, `medium`, `low`, `none` | `work_items.priority`, `draft_work_items.priority`, `work_item_versions.priority` | `varchar(30)` | `IN (…)` |
+| `StateGroup` | `backlog`, `unstarted`, `started`, `completed`, `cancelled`, `triage` | `states."group"` | `varchar(20)` | `IN (…)` |
+| `EstimateType` | `categories`, `points`, `time` | `estimates.type` | `varchar(255)` | `IN (…)` |
+| `ModuleStatus` | `backlog`, `planned`, `in-progress`, `paused`, `completed`, `cancelled` | `modules.status` | `varchar(20)` | `IN (…)` |
+| `CommentAccess` | `INTERNAL`, `EXTERNAL` | `work_item_comments.access` | `varchar(100)` | `IN (…)` |
+| `VoteValue` | `Down = -1`, `Up = 1` | `work_item_votes.vote` | `integer` | `IN (-1,1)` |
+| `IntakeStatus` | `Pending = -2`, `Rejected = -1`, `Snoozed = 0`, `Accepted = 1`, `Duplicate = 2` | `intake_work_items.status` | `integer` | `IN (-2,-1,0,1,2)` |
+| `IntakeSource` | `IN_APP`, `FORMS`, `EMAIL` | `intake_work_items.source` | `varchar(255)` | `IN (…)` oder `NULL` |
+| `ViewAccess` | `Private = 0`, `Public = 1` | `views.access` | `smallint` | `IN (0,1)` |
+| `PageAccess` | `Public = 0`, `Private = 1` (**invertiert** ggü. `ViewAccess`, Q8) | `pages.access` | `smallint` | `IN (0,1)` |
+| `ApiTokenUserType` | `Human = 0`, `Bot = 1` | `api_tokens.user_type` | `smallint` | `IN (0,1)` |
+| `NavigationControlPreference` | `ACCORDION`, `TABBED` | `workspace_user_properties.navigation_control_preference` | `varchar(25)` | `IN (…)` |
+| `NotificationViewMode` | `full`, `compact` | `profiles.notification_view_mode` | `varchar(255)` | `IN (…)` |
+| `StartOfWeek` | `Sunday = 0` … `Saturday = 6` | `profiles.start_of_the_week` | `smallint` | `BETWEEN 0 AND 6` |
+| `ExportProvider` / `ExportStatus` | `json`, `csv`, `xlsx` / `queued`, `processing`, `completed`, `failed` | `exports.provider` / `.status` | `varchar(50)` | `IN (…)` |
+| `PublishEntityName` | `project`, `issue`, `module`, `cycle`, `page`, `view`, `intake` | `deploy_boards.entity_name` | `varchar(30)` | `IN (…)` oder `NULL` |
+| `RelationCategory` | `Relation = 0`, `Dependency = 1`, `Implementation = 2` | `work_item_relation_types.category` | `smallint` | `IN (0,1,2)` |
+| `RoleNamespace` | `workspace`, `project`, `instance`, `teamspace` | `roles.namespace` | `varchar(20)` | `IN (…)` |
+| `JobStatus` | `Pending = 0` … `DeadLetter = 4` | `jobs.status` | `smallint` | `BETWEEN 0 AND 4` |
+| `PrincipalKind` | `User = 0`, `ApiKey = 1`, `App = 2`, `Bot = 3` | `outbox_messages.actor_kind` | `smallint` | – (Erweiterung durch H1) |
+
+Weitere Checks (Datumsreihenfolge, Größen, Selbstreferenzen, Monatsgrenzen `archive_in`/`close_in`, `point` 0–12, Kleinschreibung E-Mail, Großschreibung Identifier) stehen je Tabelle in §3.4. Wertelisten ohne Check: D03-ADR-14.
+

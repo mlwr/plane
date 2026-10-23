@@ -98,7 +98,7 @@ Spalte „ab“ = Inkrement der ersten Umsetzung. Alle Entscheidungen präzisier
 | **D06-ADR-17** | Exporte | Job `exports.work_items` (Queue `exports`, Heartbeat für lange Läufe), Spalten/Reihenfolge/Kopfzeilen/Formel-Schutz wie `API/utils/porters/**`; CSV mit `CsvHelper`, XLSX mit `ClosedXML` (Sheet `Sheet`), JSON mit `System.Text.Json` (Einrückung 2); ZIP über `System.IO.Compression`; Ablage über `IObjectStorage` (privat, kein `public-read`), Download-Link presigned 7 Tage bzw. HMAC-signierte Dateisystem-URL (`14` §3.7.6); Exporttypen über `IExportTypeProvider` (`16` E-16). | EPPlus (kommerziell), MiniExcel | ADR-028; Lizenz-Hygiene; Paritätsgate G-EXPORT (`15`). | I6 |
 | **D06-ADR-18** | Cleanup/Retention | Batch-Löschungen per `ExecuteDeleteAsync` in Blöcken à 500 IDs (Server-Cursor wie `process_cleanup_task`), Fristen aus `PlaneRetentionOptions` (`02` §3.15); Hard-Delete löscht zusätzlich die **Objektspeicher-Dateien** hart gelöschter `file_assets` (Korrektur „S3-Objekte werden nie gelöscht“, `DEV-OPS-002`). | Datenbank-Partitionierung; TTL-Index | Original-Kriterien bleiben 1:1, Speicherwachstum wird begrenzt. | I1 |
 | **D06-ADR-19** | Automationen | Auto-Archive setzt nur `archived_at` (kein State-Wechsel, ABG-056); **Auto-Close** läuft über `IWorkItemStateChanger` mit `StateChangeOrigin.AutoClose` und erzeugt die Original-Activity-Variante A13; Close-State-Fallback **projektbezogen** (erster State der Gruppe `cancelled` **desselben Projekts**, sonst Projekt überspringen + Warnung; Korrektur `DEV-AUTO-001`); Auswahl per `NOT EXISTS`-Semantik ohne Doppeltreffer und ohne gelöschte Zuordnungen (`DEV-AUTO-002`). | Original-Fallback `State.objects.filter(group="cancelled").first()` (beliebiges Projekt) | Vom Auftraggeber verlangte Korrektur; State-Change-Pipeline ist C1-Andockstelle (`16` §5.9). | I3 |
-| **D06-ADR-20** | Akteur und Audit im Hintergrund | Jeder Job/Consumer läuft in einem DI-Scope mit `ICurrentActor` aus `EventContext`/Job-Spalten (`actor_id`, `actor_kind`); Jobs ohne fachlichen Akteur (Cron) laufen als **System-Bot** der Instanz (`users.is_bot = true`, `bot_type = "system"`, angelegt vom Migrator); Automationen behalten den Original-Akteur `project.created_by`. Audit-Felder werden nie implizit `NULL` (Korrektur A07 §3.8 Punkt 5, `DEV-JOB-003`). | Audit `NULL` im Worker wie Original | `AuditInterceptor` (`02` §3.2.2) braucht immer einen Akteur; `16` D16-ADR-12 (Bot-Akteure). | I0 |
+| **D06-ADR-20** | Akteur und Audit im Hintergrund | Jeder Job/Consumer läuft in einem DI-Scope mit `ICurrentActor` aus `EventContext`/Job-Spalten (`actor_id`, `actor_kind`); Jobs ohne fachlichen Akteur (Cron) laufen als **System-Bot** der Instanz (`users.is_bot = true`, `bot_type = "SYSTEM"` als neuer Wert neben dem Original-Wert `WORKSPACE_SEED` aus `BotTypeEnum`, `username = "plane_system_bot"`, angelegt vom Migrator); Automationen behalten den Original-Akteur `project.created_by`. Audit-Felder werden nie implizit `NULL` (Korrektur A07 §3.8 Punkt 5, `DEV-JOB-003`). | Audit `NULL` im Worker wie Original | `AuditInterceptor` (`02` §3.2.2) braucht immer einen Akteur; `16` D16-ADR-12 (Bot-Akteure). | I0 |
 | **D06-ADR-21** | Kausaltiefe | `EventContext.CausationDepth`: Commands aus HTTP-Requests und Cron-Jobs = 0; jedes von einem Consumer/Job ausgelöste Event = Tiefe des auslösenden Kontexts + 1; `> 5` wird **nicht** in die Outbox geschrieben, sondern verworfen + Warnung `plane.worker` + Metrik `plane.outbox.dropped{reason="causation_depth"}` (ABG-053). | keine Begrenzung | Schutz gegen Endlosschleifen späterer Automationen (C3) und Sync-Echos (F2). | I0 |
 | **D06-ADR-22** | Payload-Disziplin | Integration-Events tragen IDs, `Operation`, `ChangedFields` und – nur wo Webhooks/Audit es brauchen – `Changes` (Feldname, alter und neuer JSON-Wert der Request-Form), **nie** Entitäten oder Secrets. Jobs tragen ihre Parameter als JSON; personenbezogene Daten nur, wo der Job sie zwingend braucht (Empfänger-E-Mail wird **zur Laufzeit** geladen, nicht gespeichert). | ganze DTOs im Event | `01` §7.15, `16` §3.2.4; Datenschutz; Payload-Größe. | I0 |
 | **D06-ADR-23** | Ungenutzter Original-Code | **Nicht portiert:** T2 `export_analytics_to_csv_email`, T24 `issue_task`, T33 `project_invitation` (Template wird für G-MAIL portiert, kein Auslöser wie im Original), T21/T22/T25/T26 Backfills (ADR-003), T47 Telemetrie (ADR-004), `issue_draft.activity.*`-Handler (A35–A37), `restore_related_objects`, `ProjectWebhook`, `Webhook.is_internal`, `EmailNotificationLog.entity/old_value/new_value`. `Webhook.version` (`"v1"`) bleibt als Spalte (H3). | alles portieren | A07 O6; Greenfield. | – |
@@ -768,3 +768,117 @@ Spalten (Reihenfolge = `IssueExportSerializer.Meta.fields`): §4.12. Die drei Z�
 #### 3.15.2 Analytics-Export per E-Mail (CE-ANA-009)
 
 `POST /api/workspaces/{slug}/export-analytics/` validiert Achsen (Texte 1:1 A07 §3.6) und reiht `ExportAnalyticsEmailJob(workspaceId, userId, request)` (Queue `exports`) ein; Antwort `{"message": "Once the export is ready it will be emailed to you at <email>"}`. Der Job nutzt dieselbe Distribution wie die Analytics-API (`IAnalyticsPlotQuery` aus `Plane.Analytics.Contracts`), erzeugt CSV (`QUOTE_ALL`, Formel-Schutz, Spaltenköpfe `row_mapping` A07 §2.13) und reiht die Mail M11 (`emails/exports/analytics.liquid`, Anhang `<slug>-analytics.csv`, `text/csv`) ein. Korrekturen: Segment nach Modul verwendet `module_details` (`DEV-EXP-004`); Segmentspalten in stabiler Reihenfolge (sortiert nach Anzeigename, statt Mengen-Reihenfolge).
+
+### 3.16 Cleanup, Retention, Hard-Delete
+
+Alle Jobs dieses Abschnitts laufen auf Queue `maintenance` (Concurrency 1), Policy `Maintenance`, löschen in Blöcken à 500 IDs (`process_cleanup_task`-Semantik: ID-Cursor, je Block eigene Transaktion, fehlerhafter Block → Log + weiter; Abschluss-Log `"<job> cleanup task completed"` mit `total_records_deleted`, `total_batches`) und lesen ihre Fristen aus `PlaneRetentionOptions` (`02` §3.15; ungültige/negative Werte → Default, `_retention_days`-Semantik). Tabellennamen sind Vorgaben für `03`.
+
+| Job (`job_type`) | Kriterium | Löschart | Option (Default) | Original |
+|---|---|---|---|---|
+| `maintenance.hard_delete` (`HardDeleteJob`) | (1) `file_assets` mit `deleted_at < now − HardDeleteDays`: Objektspeicher-Dateien per `IObjectStorage.DeleteManyAsync` (Blöcke à 1 000), dann Zeilen; (2) in Original-Reihenfolge `workspaces`, `projects`, `cycles`, `modules`, `work_items`, `pages`, `views` (IssueView), `labels`, `states`, `work_item_activities`, `work_item_comments`, `work_item_links`, `work_item_reactions`, `user_favorites`, `module_work_items`, `cycle_work_items`, `estimates`, `estimate_points`; (3) danach **jede** weitere Tabelle mit `deleted_at` (Liste generiert aus dem EF-Modell: alle `ISoftDeletable`-Entitäten, `HardDeleteTableRegistry`) | hart (DB-Kaskaden laut Modell, `03`) | `HardDeleteDays` (60) | T10 `hard_delete`; Objektspeicher-Bereinigung neu (`DEV-OPS-002`) |
+| `assets.soft_delete_unuploaded` | `file_assets.is_uploaded = false AND created_at < now − UnuploadedAssetDays` | soft (`deleted_at`, `is_deleted`); Datei fällt mit Hard-Delete | `UnuploadedAssetDays` (7) | T16 |
+| `maintenance.api_activity_logs_cleanup` | `api_activity_logs.created_at <= now − ApiActivityLogDays` | hart | `ApiActivityLogDays` (14) | T3 |
+| `maintenance.email_notification_logs_cleanup` | `sent_at <= now − EmailLogDays` **und** (neu) `sent_at IS NULL AND processed_at <= now − UnsentEmailLogDays` | hart | `EmailLogDays` (7), `UnsentEmailLogDays` (30, Nachtrag) | T4; unversendete Logs blieben im Original für immer (`DEV-MAIL-007`) |
+| `maintenance.page_versions_cleanup` | `ROW_NUMBER() OVER (PARTITION BY page_id ORDER BY created_at DESC) > PageVersionsKeep` | hart | `PageVersionsKeep` (20) | T5 |
+| `maintenance.description_versions_cleanup` | `ROW_NUMBER() OVER (PARTITION BY work_item_id ORDER BY created_at DESC) > DescriptionVersionsKeep` | hart | `DescriptionVersionsKeep` (20) | T6 |
+| `maintenance.webhook_logs_cleanup` | `webhook_logs.created_at <= now − WebhookLogDays` | hart | `WebhookLogDays` (14) | T7 |
+| `exports.expire_links` (Queue `exports`) | `export_histories.url IS NOT NULL AND created_at <= now − ExportLinkDays` | Objekt löschen, `url = NULL` (Zeile bleibt) | `ExportLinkDays` (8) | T15 (B6; B13 entfällt) |
+| `identity.expired_sessions_cleanup` | `user_sessions.expires_at < now()` | hart | – | `05` SEC-45 |
+| `messaging.outbox_cleanup` | `outbox_messages.dispatched_at < now − Outbox.RetentionHours` | hart | `Plane:Worker:Outbox:RetentionHours` (24) | neu |
+| `messaging.inbox_cleanup` | `inbox_messages.processed_at < now − InboxRetentionDays` | hart | `Plane:Worker:InboxRetentionDays` (7) | neu |
+| `messaging.dead_letter_cleanup` | `jobs.status = 4 AND dead_at < now − DeadLetterRetentionDays` | hart | `Plane:Worker:DeadLetterRetentionDays` (30) | neu |
+
+**Soft-Delete-Kaskade (Deferred):** `SoftDeleteCascadeJob(RootEntity, RootId, DeletedAt)` (`02` D02-ADR-03, Queue `default`, `Transactional = true`) setzt für Wurzeln `Workspace`/`Project` die Kaskade aus `SoftDeleteCascadeRegistry` rekursiv per `ExecuteUpdateAsync … WHERE deleted_at IS NULL` (idempotent). Ersetzt T9 `soft_delete_related_objects` (für alle übrigen Wurzeln inline, `DEV-OPS-001`).
+
+### 3.17 Automationen
+
+#### 3.17.1 Auto-Archive und Auto-Close (`work_items.auto_archive_close`, Cron `0 1 * * *`, B5)
+
+`AutoArchiveAndCloseJob` (Modul `WorkItems`, Queue `maintenance`, Akteur je Projekt = `project.created_by`, Origin `worker`): zuerst Archiv-, dann Close-Teil (Reihenfolge wie `archive_and_close_old_issues`); je Projekt eine eigene Transaktion (ein fehlerhaftes Projekt blockiert die anderen nicht, wie die Original-`try`-Blöcke je Teilfunktion).
+
+Gemeinsame Auswahl (`AutomationCandidateQuery`, Basis `WorkItemBaseSets.IssueObjects` aus `02` §3.11.4 = ohne Drafts, Archiv, Triage-Intake, archivierte Projekte):
+
+```sql
+-- @months = projects.archive_in bzw. projects.close_in (1…12), @groups je Teil
+SELECT wi.id FROM work_items wi
+JOIN states s ON s.id = wi.state_id
+WHERE wi.project_id = @project AND wi.archived_at IS NULL AND wi.deleted_at IS NULL
+  AND wi.updated_at <= now() - make_interval(days => @months * 30)
+  AND s."group" = ANY(@groups)
+  AND NOT EXISTS (SELECT 1 FROM cycle_work_items cw JOIN cycles c ON c.id = cw.cycle_id
+                  WHERE cw.work_item_id = wi.id AND cw.deleted_at IS NULL AND c.deleted_at IS NULL
+                    AND (c.end_date IS NULL OR c.end_date >= now()))
+  AND NOT EXISTS (SELECT 1 FROM module_work_items mw JOIN modules m ON m.id = mw.module_id
+                  WHERE mw.work_item_id = wi.id AND mw.deleted_at IS NULL AND m.deleted_at IS NULL
+                    AND (m.target_date IS NULL OR m.target_date >= current_date))
+  AND (NOT EXISTS (SELECT 1 FROM intake_work_items iw WHERE iw.work_item_id = wi.id AND iw.deleted_at IS NULL)
+       OR EXISTS (SELECT 1 FROM intake_work_items iw WHERE iw.work_item_id = wi.id AND iw.deleted_at IS NULL AND iw.status IN (1, -1, 2)))
+ORDER BY wi.id;
+```
+
+Abweichung zur Original-Join-Auswertung (A07 §3.7 Edge-Cases): Ein Work Item qualifiziert sich nur, wenn **keine** aktive Cycle-/Modul-Zuordnung mehr läuft; gelöschte Zuordnungen zählen nicht; jedes Work Item erscheint genau einmal (keine doppelten Activities) – `DEV-AUTO-002`.
+
+| Teil | Bedingung | Aktion | Activity (Variante) | Optionen | Events |
+|---|---|---|---|---|---|
+| Archiv | `projects.archive_in > 0`, `@groups = {completed, cancelled}` | `archived_at = heute (UTC-Datum, DateOnly)`; **kein** State-Wechsel, `IWorkItemStateChanger` wird **nicht** aufgerufen (ABG-056) | A12b `Plane has archived the issue` (`requested_data = {"archived_at": "<yyyy-MM-dd>", "automation": true}`, `current_instance = {"archived_at": null}`) | Notify, kein SubscribeActor, **kein** EmailEligible | `plane.work_item.archived.v1` (Origin `worker`) |
+| Close | `projects.close_in > 0`, `@groups = {backlog, unstarted, started}` | Ziel-State = `projects.default_state_id`; ist er `NULL`: erster State der Gruppe `cancelled` **desselben Projekts** (`ORDER BY sequence, created_at`); gibt es keinen → Projekt überspringen, Warnung `plane.worker` `"auto-close skipped: project {id} has no cancelled state"` (`DEV-AUTO-001`); je Work Item `IWorkItemStateChanger.ChangeAsync(id, state, StateChangeOrigin.AutoClose)` (Guards/Hooks laufen, `completed_at`-Regel greift – Original umging sie per `bulk_update`, `DEV-AUTO-003`) | A13 `Plane updated the state to ` (`field = "state"`, `old_value = NULL`, `old_identifier = NULL`, `new_value` = State-Name, `new_identifier` = State-ID) – der Changer wählt diese Variante für `Origin = AutoClose` | wie Archiv | `plane.work_item.state_changed.v1` (Origin `AutoClose`) |
+
+Batching: je Projekt höchstens 500 Work Items je Transaktion (Folgeblöcke in weiteren Transaktionen); `updated_at` wird durch die Activity auf `now` gesetzt (1:1), dadurch qualifiziert sich ein Work Item frühestens nach erneutem Ablauf der Frist.
+
+#### 3.17.2 Intake-Unsnooze (`intake.unsnooze`, Cron `*/5 * * * *`, B2)
+
+`UnsnoozeIntakeWorkItemsJob` (Modul `Intake`, Queue `maintenance`): `UPDATE intake_work_items SET status = -2, snoozed_till = NULL, updated_at = now() WHERE status = 0 AND snoozed_till <= now() AND deleted_at IS NULL RETURNING id, work_item_id, project_id, workspace_id` (1:1, `snoozed_till` ist bereits der Weckzeitpunkt in Projekt-Zeitzone, CE-INT-008); **keine** Activity (1:1); je Zeile `plane.intake_work_item.status_changed.v1` (`OldStatus = 0`, `NewStatus = -2`, additiv); Log `plane.worker` `"unsnooze_expired_intake_issues: returned {n} intake issues to pending"`.
+
+#### 3.17.3 Projekt-Einstellungen (Quelle der Automationen)
+
+`projects.archive_in` (0…12, 0 = aus), `projects.close_in` (0…12), `projects.default_state_id` (Close-State; UI `WEB/components/automation/auto-{archive,close}-automation.tsx`) – Eigentümer `Projects`, Änderung über `UpdateProjectCommand` (`Operation = update`, damit Webhook `project`/`updated` wie Original-PATCH). Validierung 0…12 (Original UI-Begrenzung, Backend-Regel aus `04`).
+
+#### 3.17.4 Cycle-Abschluss-Erkennung (`cycles.completion_detection`, Cron `*/15 * * * *`, neu)
+
+`CycleCompletionDetectionJob` (Modul `Cycles`, Queue `maintenance`): `UPDATE cycles SET completion_published_at = now() WHERE end_date IS NOT NULL AND end_date < now() AND completion_published_at IS NULL AND deleted_at IS NULL RETURNING …` → je Zeile `plane.cycle.completed.v1`. `UpdateCycleCommand` setzt `completion_published_at = NULL`, wenn `end_date` in die Zukunft verschoben wird. Neue Spalte `cycles.completion_published_at timestamptz NULL` (Nachtrag `03`). Grund: `16` §3.2.4 verlangt das Event, das Original kennt keinen Auslöser (Cycle-Status ist im Original rein datumsberechnet).
+
+### 3.18 Weitere Jobs
+
+| Job (`job_type`, Klasse) | Modul | Auslöser (transaktional, außer markiert) | Queue | Idempotenz / Dedupe | Verhalten (Original-Bezug) | ab |
+|---|---|---|---|---|---|---|
+| `workspaces.seed` (`WorkspaceSeedJob`) | Workspaces | `CreateWorkspaceCommand` | `default` | `Transactional`; Abbruch, wenn Bot `bot_user_<workspace_id>` existiert | T46 in **einer** Transaktion (Original ohne Transaktion, Teildaten bei Fehler, `DEV-OPS-005`); Bot-User (`username = bot_user_<ws_id>`, `display_name = first_name = "Plane"`, `is_bot = true`, `bot_type = "WORKSPACE_SEED"`, `email = bot_user_<ws_id>@<Host aus Plane:Urls:Web>`, kein Passwort – Keycloak-Login unmöglich, `05`) über `IBotUserProvisioner` (Identity); Inhalte aus eingebetteten JSON-Dateien `Plane.Workspaces/Seeds/Data/{projects,states,labels,cycles,modules,issues,views,pages}.json` (Kopie von `API/seeds/data/*.json`), ausgeführt durch `IWorkspaceSeedContributor` je Eigentümer-Modul (Projects → Projekt/States/Labels/Mitglieder/`ProjectUserProperty`, Cycles, ProjectModules, WorkItems → 7 Work Items inkl. Sequenz + Activity A1, Views, Pages) in fester Reihenfolge; externe URLs ersetzt: Unsplash-Cover → gebündelte Datei als `PROJECT_COVER`-Asset, jsDelivr-Emoji → `logo_props` mit Unicode-Emoji (`DEV-OPS-005`) | I1 |
+| `work_items.crawl_link` (`CrawlWorkItemLinkJob`) | WorkItems | `CreateWorkItemLinkCommand`, `UpdateWorkItemLinkCommand` (nur URL geändert) | `default` | Dedupe `link-crawl:{link_id}` | T44 1:1: Client `link-preview` (`05`: 1 s Seite, 2 s `HEAD /favicon.ico`, 5 Redirects je Hop SSRF-geprüft, max. 2 MiB), Browser-User-Agent wie Original, `<title>` getrimmt, Favicon-Reihenfolge `icon`, `shortcut icon`, `apple-touch-icon`, `apple-touch-icon-precomposed`, sonst `/favicon.ico`, als `data:`-URI; jeder Fehler → Default-Icon (lucide `link`, Base64-SVG des Originals); `metadata = {title, favicon, url, favicon_url}`. Neu: `Plane:LinkPreview:Enabled` (Default `true`, Airgap-Bundle `false`) – aus → sofort Default-Metadaten ohne Netzaufruf | I2 |
+| `assets.read_metadata` (`ReadAssetMetadataJob`) | Assets | Upload-Bestätigungen (alle 10 Aufrufstellen A07 §2.16.6), nur wenn `storage_metadata` leer | `default` | Dedupe `asset-meta:{asset_id}` | T35: `IObjectStorage.HeadAsync` → `{ContentType, ContentLength, LastModified (ISO), ETag, Metadata}`; Objekt fehlt → still beenden | I1 |
+| `pages.copy_assets` (`CopyPageAssetsJob`) | Pages | `DuplicatePageCommand` | `default` | `Transactional` | T8: `image-component[src]` (UUID) sammeln, Assets im Workspace **und Projekt der Quell-Page** (Korrektur der Schleifenvariable, `DEV-OPS-006`) kopieren (`IObjectStorage.CopyAsync`, neuer Key `<workspace_id>/<uuid32>-<name>`), `src` umschreiben, `description_json`/`description_binary` über `Plane.Documents` in-process (ADR-031, kein `/convert-document/`-HTTP-Aufruf); Detail `07` | I4 |
+| `home.record_visit` (`RecordRecentVisitJob`) | Home | Query-Handler der Detail-Endpunkte (`project`, `issue`, `module`, `cycle`, `view`, `page` – Aufrufstellen A07 §3.15) – **außerhalb** einer Transaktion | `default` | Dedupe `recent:{user}:{entity_name}:{entity_id}` | T34 1:1: vorhandener Eintrag → `visited_at = now`; sonst bei genau 20 Einträgen je (User, Workspace) ältesten (`created_at`) soft-löschen, dann anlegen | I5 |
+| `identity.write_api_activity_log` (`WriteApiActivityLogJob`) | Identity | `ApiActivityLogMiddleware` (`05` §3.12.2) – außerhalb einer Transaktion | `default` | keine (jede Anfrage) | T27: `api_activity_logs` mit `token_identifier = token_hash`, Header als JSON (redigiert), Body-Regeln wie `MW/logger.py` | I6 |
+| `identity.download_avatar` (`DownloadAvatarJob`) | Identity | `CreateUserStep` (`05` §3.7.3) | `default` | Dedupe `avatar:{user_id}` | Client `avatar-import` (`05`), Upload als `USER_AVATAR` | I0 |
+| `identity.idp_user_state_sync` (`IdpUserStateSyncJob`) | Identity | Cron `*/15 * * * *` | `maintenance` | – | `05` §3.10 (Keycloak-Status ↔ API-Tokens) | I1 |
+| `emails.workspace_invitation` (`SendWorkspaceInvitationEmailJob`) | Workspaces | `CreateWorkspaceInvitationsCommand` (je neu angelegter Einladung) | `emails` | `Transactional`; Dedupe `mail-ws-invite:{invitation_id}` | T45/M5; speichert den Klartext der Mail in `workspace_member_invites.message` (1:1); Einladung gelöscht → still beenden | I1 |
+| `emails.project_addition` (`SendProjectAdditionEmailJob`) | Projects | `AddProjectMembersCommand` (je neu hinzugefügtem Mitglied) | `emails` | Dedupe `mail-prj-add:{project_member_id}` | T32/M7 | I1 |
+| `emails.user_activation` (`SendUserActivationEmailJob`) | Identity | `AccountStateGuardStep` (Aktivierung vorprovisionierter Konten, `05` §3.7.3) | `emails` | Dedupe `mail-activate:{user_id}:{epoch}` | T36/M8 | I1 |
+| `emails.user_deactivation` (`SendUserDeactivationEmailJob`) | Identity | `DeactivateAccountCommand` | `emails` | Dedupe `mail-deactivate:{user_id}:{epoch}` | T37/M9 (`login_url = <web>/login` 1:1; Link führt auf die Keycloak-Einstiegsseite) | I1 |
+| `emails.webhook_deactivated` (`SendWebhookDeactivationEmailJob`) | Webhooks | `DeliverWebhookJob` (6. Fehlschlag) | `emails` | Dedupe `mail-wh-off:{webhook_id}:{delivery_id}` | T40/M10 | I6 |
+| `notifications.send_email_digest` (`SendEmailDigestJob`) | Notifications | `StackEmailNotificationsJob` | `emails` | Dedupe `mail-digest:{receiver}:{work_item}:{hash}`; `sent_at` je Log | T13/M12 (§3.11) | I5 |
+| `exports.analytics_email` (`ExportAnalyticsEmailJob`) | Analytics | `ExportAnalyticsCommand` | `exports` | – | T1/M11 (§3.15.2) | I5 |
+| `messaging.consume` (`ConsumeEventJob`) | Messaging | Outbox-Dispatcher | Queue des Consumers | Dedupe `evt:{message_id}:{consumer}` + Inbox | §3.4 | I0 |
+| `realtime.push` (`RealtimePushJob`) | RealtimeEvents | `QueuedRealtimePublisher` | `realtime` | – (Push ist idempotent für den Client) | §3.12 | I0 |
+| `maintenance.soft_delete_cascade` (`SoftDeleteCascadeJob`) | Persistence (`02`) | `SoftDeleteInterceptor` (Deferred) | `default` | `Transactional`, `WHERE deleted_at IS NULL` | §3.16 | I1 |
+
+### 3.19 Skalierung
+
+| Thema | Festlegung |
+|---|---|
+| Worker horizontal | beliebig viele `worker`-Replikas; Claims per `FOR UPDATE SKIP LOCKED`, Dispatcher parallel, Scheduler genau ein Leader. **Valkey ist für den Worker nicht nötig** (alle Sperren in PostgreSQL; Korrektur der Formulierung in `14` §3.18 „Notification-Locks bzw. PG-Locks“, Änderungsauftrag §9). |
+| Realtime | Queue `realtime` von allen Realtime-Replikas verarbeitet; ab 2 Replikas Valkey-Backplane Pflicht (`14` D14-ADR-21). |
+| Verbindungsbudget | Worker `MaxPoolSize = 20` (`02` §3.15): 1 dedizierte `LISTEN`-Verbindung, 1 Leader-Verbindung, Rest für Dispatcher und Handler. Handler halten Verbindungen nur während DB-Arbeit; HTTP-/SMTP-Arbeit (Webhook, Crawl, Mail) läuft **ohne** offene Transaktion. `PlaneWorkerOptionsValidator` warnt, wenn die Summe der Concurrency **transaktionaler** Queues (`notifications`, `maintenance`, `default`, Consumer-Queues) `MaxPoolSize − 4` übersteigt. |
+| Durchsatzziele (S12, Nachweis vor I1) | 1 000 Jobs/s mit 3 Worker-Instanzen ohne Doppelverarbeitung; Outbox-Latenz p95 < 500 ms; Leader-Failover < 30 s; Kill -9 ohne Nachrichtenverlust. |
+| Lastprofil CE | Spitzen: Bulk-Operationen (z. B. 100 Work Items × Felder → Webhook-Fan-out `Webhooks × Changes`), E-Mail-Digest alle 5 min, Hard-Delete nachts. Gegenmaßnahmen: eigene Queues, Concurrency je Queue, Batch-Größen, nächtliche Cron-Zeiten wie Original. |
+| Pools (`16` X9) | `integrations`, `importers`, `automations` (Pakete) und `webhooks`, `exports` (CE) können per `Plane__Worker__Queues` auf eigene Replikas gelegt werden (§3.5.6); Helm: zusätzliche `worker.pools[]` mit eigener `queues`-Liste (Nachtrag `14` §3.12). |
+| Einzelknoten/AIO | ein Prozess verarbeitet alle Queues inkl. `realtime` (`HostRole.AllInOne`), Scheduler und Dispatcher aktiv. |
+
+### 3.20 Monitoring
+
+| Signal | Festlegung |
+|---|---|
+| Metriken (Meter `Plane.Messaging`, Namen verbindlich nach `14` §3.19.2) | `plane.outbox.pending`, `plane.outbox.dispatch.duration{event_type}`, `plane.jobs.executed{queue,job,outcome=success│retry│dead_letter}`, `plane.jobs.duration{queue,job}`, `plane.jobs.queue_depth{queue}`, `plane.scheduler.leader{instance}`; **Nachtrag** (additiv): `plane.outbox.lag` (Histogramm ms), `plane.outbox.dropped{reason}`, `plane.jobs.oldest_pending_age_seconds{queue}`, `plane.mail.sent{template,outcome}`, `plane.webhooks.deliveries{event,outcome=delivered│retry│deactivated│rejected}`, `plane.notifications.created{sender}`, `plane.scheduler.fired{name}`. Die in `02` §3.14 genannten `plane.outbox.lag_ms`/`plane.jobs.failed` werden durch diese Namen ersetzt (Änderungsauftrag §9). |
+| Logs | Kategorie `plane.worker` (Start/Ende je Cron-Lauf, Cleanup-Zusammenfassungen, übersprungene Einträge), `plane.exception` (Dead-Letter, unerwartete Ausnahmen mit `job_id`, `job_type`, `queue`, `attempt`, Trace-ID), `plane.external` (ausgehende HTTP-Aufrufe Webhook/Crawl), keine PII/Secrets (`02` §3.14 Redaktion; Webhook-Secrets und SMTP-Passwörter nie im Log). |
+| Traces | `ActivitySource "Plane.Messaging"`: Spans `outbox.dispatch`, `job.execute {job_type}` (Elternkontext aus `traceparent`, dadurch Request → Event → Consumer → Mail in einem Trace), `scheduler.tick`. |
+| Health (`/health/ready`, Management-Port, ABG-014) | Worker: PostgreSQL, Schema-Gate, Data-Protection-Key-Ring; zusätzlich Check `messaging` = `Degraded` (nicht blockierend), wenn die eigene Runner-Schleife > 60 s nicht gelaufen ist oder `plane.outbox.pending > 10 000`. |
+| Alarme (`14` §3.19.4, Ergänzung) | `plane.outbox.pending > 1 000` für 10 min; `plane.jobs.executed{outcome="dead_letter"} > 0` je Stunde; `plane.jobs.oldest_pending_age_seconds > 600` (Queue ohne Verarbeiter); kein Leader (`sum(plane.scheduler.leader) == 0`) > 2 min; `plane.webhooks.deliveries{outcome="deactivated"}` > 0. |
+| Betrieb | `plane-cli jobs list --status dead [--queue]`, `plane-cli jobs requeue --id <id>│--type <job_type>`, `plane-cli jobs purge-dead --older-than <tage>`, `plane-cli scheduler status` (Leader, nächste Termine) – Nachtrag `14` §3.22. |

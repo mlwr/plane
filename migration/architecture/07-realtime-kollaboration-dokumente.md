@@ -803,3 +803,180 @@ Die Endpunkte gehören dem Modul `Plane.Pages` (Katalog in `04`); dieses Dokumen
 | `PATCH {P}/pages/{page_id}/` (`name`) | unverändert; zusätzlich Signal `content` nicht nötig (Titel-Fragment ist führend; REST-Umbenennung außerhalb des Editors ändert das Fragment nicht – Original-Verhalten, CE-Client benennt nur über den Titel-Editor um) | – | CE-PAGE-004 |
 | `POST/DELETE {P}/pages/{page_id}/lock/`, `…/archive/`, `…/access/`, `DELETE …/pages/{page_id}/` | unverändert (04); zusätzlich Signal `access` bzw. `deleted` (§3.10.4) im selben Commit | Ergänzung | CE-PAGE-005 … -008 |
 
+### 3.12 `Plane.Documents`: Schema, PM-JSON, HTML, Yjs
+
+#### 3.12.1 Öffentliche Schnittstelle
+
+```csharp
+public enum DocumentVariant { Rich, Document }          // "rich" | "document" (TConvertDocumentRequestBody.variant)
+
+public interface IDocumentConverter
+{
+    // Port EDITOR/helpers/yjs-utils.ts – Namen in Klammern = Original-Funktion
+    ReadOnlyMemory<byte> CreateRichTextState(string? html);                                    // getBinaryDataFromRichTextEditorHTMLString
+    ReadOnlyMemory<byte> CreateDocumentState(string? html, string? title, Guid? deterministicFor = null); // getBinaryDataFromDocumentEditorHTMLString
+    DocumentFormats FromRichTextState(ReadOnlySpan<byte> state);                              // getAllDocumentFormatsFromRichTextEditorBinaryData
+    DocumentFormats FromDocumentState(ReadOnlySpan<byte> state, bool includeTitle = true);     // getAllDocumentFormatsFromDocumentEditorBinaryData
+    DocumentPayload ConvertHtmlToAllFormats(string documentHtml, DocumentVariant variant);    // convertHTMLDocumentToAllFormats
+    PmNode ParseHtml(string html, DocumentVariant variant);                                   // generateJSON
+    string RenderHtml(PmNode doc, DocumentVariant variant);                                    // generateHTML
+    ReadOnlyMemory<byte> Merge(ReadOnlySpan<byte> a, ReadOnlySpan<byte> b);                   // applyUpdates
+}
+public sealed record DocumentFormats(ReadOnlyMemory<byte> ContentBinary, JsonObject ContentJson, string ContentHtml, string? TitleHtml, string? TitleText);
+public sealed record DocumentPayload(JsonObject DescriptionJson, string DescriptionHtml, string DescriptionBinaryBase64);   // TDocumentPayload (snake_case im JSON)
+```
+
+Semantik je Funktion (Original-Verhalten, Prüfung über G-DOC):
+
+| Funktion | Ablauf |
+|---|---|
+| `CreateRichTextState(html)` | `ParseHtml(html ?? "<p></p>", Rich)` → `YjsUpdateWriter.WriteFragment("default", doc)` |
+| `CreateDocumentState(html, title)` | `ParseHtml(html ?? "<p></p>", Document)` → Fragment `default`; wenn `title != null`: `TitleDocuments.Create(title)` (`{type:"doc",content:[{type:"heading",attrs:{level:1},content:[{type:"text",text}]}]}`, bei leerem Titel ohne `content` des Headings) als Fragment `title` im **selben** Update (Original merged zwei Docs; Ergebnis identisch, da disjunkte Fragmente). `deterministicFor` setzt `ClientIds.ContentMigration(id)`/`ClientIds.TitleMigration(id)` |
+| `FromRichTextState` | Fragment `default` → `YjsProseMirrorMapper.ToPm(Rich)` → JSON + `RenderHtml` |
+| `FromDocumentState(includeTitle)` | wie oben mit Variante `Document`; Titel: Fragment `title` → PM (Title-Schema) → HTML → `TitleText = HtmlTextExtractor.ExtractText(html).Trim()` (Original `extractTextFromHTML` = sanitize + trim) |
+| `ConvertHtmlToAllFormats` | `Create*State` → `From*State` (Roundtrip normalisiert HTML auf das Schema); ungültige Variante → `ArgumentException("Invalid variant provided: …")` |
+| `Merge(a, b)` | neues Doc, `ApplyV1(a)`, `ApplyV1(b)`, `StateDiffV1(empty)` |
+
+Weitere öffentliche Bausteine: `HtmlTextExtractor` (`Strip(html)` = Django `strip_tags`-Äquivalent für `description_stripped`; `ExtractText(html)`), `DocumentReferenceExtractor` (liefert `mention-component[entity_identifier, entity_name, id]`, `image-component[src]`, `issue-embed-component[entity_identifier]` aus HTML – Vertrag aus `A12` §4.2 für PageLog/Activity), `DocumentAssetRewriter.Rewrite(PmNode, IReadOnlyDictionary<string,string> oldToNew)` (`imageComponent.src`), `YjsUpdateValidator.Validate(ReadOnlySpan<byte>) : bool` (05 §3.17.3: Update lässt sich in leeres Doc anwenden, keine Exception, keine Fremd-Fragmente außer `default`/`title`).
+
+#### 3.12.2 Schema-Modell
+
+```csharp
+public interface IDocumentNodeSpec
+{
+    string Name { get; }                                  // "paragraph"
+    int Priority => 100;                                  // Tiptap-Extension-Priorität (Reihenfolge der Parse-Regeln!)
+    SchemaVariants Variants { get; }                      // Rich | Document | Title (Flags)
+    string? Group { get; } string? Content { get; }       // "block", "inline*"
+    bool Inline { get; } bool Atom { get; } bool Code { get; } bool Defining { get; } bool Isolating { get; }
+    string? Marks { get; }                                // "" = keine Marks (codeBlock), null = Default
+    WhitespaceMode Whitespace { get; }                     // Normal | Pre (codeBlock: preserveWhitespace "full")
+    IReadOnlyList<AttributeSpec> Attributes { get; }      // inkl. globaler Attribute (textAlign) nach Registrierungsreihenfolge
+    IReadOnlyList<ParseRule> ParseRules { get; }          // parseHTML()
+    DomOutputSpec Render(PmNode node, AttributeMap renderedAttributes); // renderHTML({node, HTMLAttributes})
+    string? RenderText(PmNode node) => null;              // renderText (mention, emoji, hardBreak "\n")
+}
+public sealed record AttributeSpec(string Name, JsonNode? Default, bool Rendered = true,
+    Func<IElement, JsonNode?>? ParseHtml = null, Func<AttributeMap, AttributeMap>? RenderHtml = null, AttributeKind Kind = AttributeKind.Any);
+public enum AttributeKind { Any, String, Number, Boolean, NumberArray }   // steuert AttributeCoercion (§3.12.6)
+```
+
+Regeln, die 1:1 aus `@tiptap/core` 2.27.3 portiert werden (Quelldatei im Original-`node_modules`, Port-Datei in `Plane.Documents`):
+
+| Original (`@tiptap/core/src/…`) | Port | Inhalt |
+|---|---|---|
+| `helpers/getAttributesFromExtensions.ts` | `Schema/DocumentSchema.Build` | globale Attribute zuerst (in Extension-Reihenfolge), dann Node-Attribute |
+| `helpers/getRenderedAttributes.ts` | `Html/TiptapAttributeMerger.GetRendered` | nur `rendered != false`; ohne `renderHTML` → `{name: value}`; Ergebnisse per `mergeAttributes` vereinigt |
+| `utilities/mergeAttributes.ts` | `Html/TiptapAttributeMerger.Merge` | `class`: Leerzeichen-getrennt, neue Klassen ohne Duplikate angehängt; `style`: Deklarationen nach Eigenschaft zusammengeführt, spätere gewinnen, Ausgabe `"a: b; c: d"`; sonst überschreiben |
+| `helpers/injectExtensionAttributesToParseRule.ts` | `Html/ParseRule.ApplyAttributes` | je Attribut `parseHTML(el)` oder `fromString(el.getAttribute(name))`; `null`/`undefined` → Default bleibt |
+| `utilities/fromString.ts` | `Html/TiptapValueParser.FromString` | `^[+-]?(?:\d*\.)?\d+$` → Zahl; `"true"`/`"false"` → bool; sonst String |
+| `helpers/getSchemaByResolvedExtensions.ts` | `Schema/DocumentSchema` | Priorität, `parseHTML`-Regeln je Extension, `topNode` `doc` |
+| `@tiptap/html` `generateHTML`/`generateJSON` (2.26.2) | `HtmlSerializer`/`HtmlParser` | `Node.fromJSON(schema, json)` → `DOMSerializer.serializeFragment` → `zeed-dom`-Serialisierung; `DOMParser.fromSchema(schema).parse(zeedDom(html))` |
+
+Aus `prosemirror-model` 1.25.12 portiert: `DOMSerializer.renderSpec` (Attribute in Einfügereihenfolge, `null`/`undefined` ausgelassen, Loch `0`), Mark-Verschachtelung (äußerer Mark = früher im Schema-Rang), `DOMParser` (Regel-Priorität 50 Default, Tag-/Style-Regeln, `getAttrs`/`getContent`, `preserveWhitespace`, Block/Inline-Kontext, „findPlace“ mit Content-Expression-Automaten und Wrapping), `ContentMatch` (Content-Expressions, `fillBefore` für fehlende Pflicht-Kinder), `Node.check()`.
+
+#### 3.12.3 HTML-Serialisierung (`HtmlSerializer` + `ZeedDomWriter`)
+
+| Regel | Wert (zeed-dom 0.15.1, maßgeblich bleibt Golden-File) |
+|---|---|
+| Void-Elemente | `area, base, br, col, embed, hr, img, input, link, meta, param, source, track, wbr` → `<br>`, `<img …>` (ohne `/`) |
+| Text-Escaping | `&` → `&amp;`, `<` → `&lt;`, `>` → `&gt;` (Anführungszeichen unverändert) |
+| Attribut-Escaping | `&` → `&amp;`, `"` → `&quot;`; Attribut ohne Wert (leerer String) → `name=""` |
+| Benutzerdefinierte Elemente | `<image-component …></image-component>`, `<mention-component …></mention-component>` (nie selbstschließend) |
+| Reihenfolge | Attribute in Einfügereihenfolge aus `mergeAttributes` |
+| Whitespace | keinerlei Einrückung/Zeilenumbrüche |
+
+#### 3.12.4 HTML-Parsing (`HtmlParser`)
+
+AngleSharp `HtmlParser` (Fragment-Modus wie `zeed-dom` `parseHTML`), danach ProseMirror-`DOMParser`-Port. Besonderheiten, die explizit getestet werden (G-DOC-Fehlerfälle): Whitespace-Kollaps außerhalb `pre` (ProseMirror-Regel: Folgen von Leerraum → ein Leerzeichen, führend/abschließend in Blöcken entfernt), `preserveWhitespace: "full"` für `codeBlock`, unbekannte Tags → Inhalt übernehmen (`ignore` nur für `script`, `style`), ungültige Kinder → Umhüllen/Verschieben gemäß Content-Expression, Mark-Regeln mit `style` (`font-weight`, `font-style`, `text-decoration`), Link-Protokollfilter (`isAllowedUri`: erlaubt `http`, `https`, `ftp`, `ftps`, `mailto`, `tel`, `callto`, `sms`, `cid`, `xmpp` + relative URLs; Plane: Protokolle `http`/`https` zusätzlich registriert; gefährlich → Mark ohne `href` bzw. `href=""` beim Rendern, `EDITOR/extensions/custom-link/*`).
+
+#### 3.12.5 Yjs ⇄ ProseMirror (`YjsProseMirrorMapper`, Port `y-prosemirror` 1.3.7)
+
+| Richtung | Regel (Original-Funktion) |
+|---|---|
+| Y → PM (`yXmlFragmentToProseMirrorRootNode`) | Fragment-Kinder in Reihenfolge; `XmlElement` → Node mit `type = Tag`, `attrs = Attribute` (nach `AttributeCoercion`, unbekannte verworfen, Defaults ergänzt); `XmlText` → Text-Nodes je Delta-Chunk, Formatierungsattribute → Marks (`key` = Mark-Name; Schlüssel `name--hash` → Name vor `--`; Wert-Objekt = Mark-Attrs; `ychange` ignoriert); ungültiger Node (Content-Expression verletzt, unbekannter Typ) → **weglassen** (y-prosemirror löscht ihn im Quelldoc – das Ziel verändert den Quellzustand **nicht**, DEV-07-08) |
+| PM → Y (`prosemirrorJSONToYDoc`/`updateYFragment`) | ausschließlich über `YjsUpdateWriter` (D07-ADR-09): Node → `XmlElement(type)` mit allen Attributen ≠ `null` **typisiert** (Zahl/Bool/Array/String/Objekt als `ContentAny`); benachbarte Text-Nodes → **ein** `XmlText` mit Formatierungs-Runs (Marks als Attribute-Objekt, beendet mit `null`-Format wie Yjs `insert` mit Attributen); Mark-Schlüssel = Mark-Name (alle CE-Marks schließen sich selbst aus → kein `--hash`) |
+| Fragmente | `default` (Inhalt), `title` (Titel) – feste Namen in `FragmentNames` |
+
+#### 3.12.6 Typ-Rückwandlung beim Lesen (`AttributeCoercion`)
+
+YDotNet liefert Element-Attribute als `string` (D07-ADR-09). Rückwandlung nach `AttributeSpec.Kind`:
+
+| Kind | Eingangs-String (Darstellung von yrs, **in S2 bestätigen**) | Ergebnis |
+|---|---|---|
+| `Number` | `"1"`, `"1.5"` | `JsonValue` Zahl (ganzzahlig → `long`) |
+| `Boolean` | `"true"`/`"false"` | bool |
+| `NumberArray` | `"[150]"`, `"[150,200]"` | `JsonArray` von Zahlen |
+| `String` | beliebig | String |
+| `Any` | JSON-Literal → typisiert, sonst String | – |
+| fehlt | – | Default aus `AttributeSpec` |
+
+Kann ein Wert nicht zurückgewandelt werden (z. B. ein Browser-Client hat einen String geschrieben), gilt der Wert unverändert als String (wie y-prosemirror: Attribute werden ungeprüft übernommen). Abbruchkriterium S2-K6: Wenn YDotNet für typisierte Attribute **nicht** reproduzierbar eine dieser Darstellungen liefert, greift Fallback F-S2-2 (§7.6).
+
+### 3.13 Node-/Mark-Inventar mit exakter HTML-Serialisierung
+
+Server-Schema = `CoreEditorExtensionsWithoutProps` (Varianten `Rich` und `Document`) + `DocumentEditorExtensionsWithoutProps` (nur `Document`: `issue-embed-component`); Titel-Schema = `TITLE_EDITOR_EXTENSIONS` (`doc` mit `content: "heading"`, `heading` Level 1, `text`). Quelle der Spalten: `A12` §2.5 + Original-Dateien (Spalte „Datei“). „Ausgabe“ zeigt das vollständige HTML mit Beispielwerten; Attribute in exakt dieser Reihenfolge.
+
+#### 3.13.1 Nodes
+
+| # | Node (C#-Klasse) | Schema | Attribute (Default; Kind) | parseHTML | Ausgabe (renderHTML → HTML) | Datei (Original) | Var. |
+|---|---|---|---|---|---|---|---|
+| 1 | `doc` (`DocNodeSpec`) | `content: block+` (Titel: `heading`) | – | – | (Wurzel, kein Element) | `EDITOR/extensions/starter-kit.ts`, `title-extension.ts` | R D T |
+| 2 | `paragraph` (`ParagraphNodeSpec`) | `group: block`, `content: inline*` | `textAlign` (`left`; String, global) | `p` | `<p class="editor-paragraph-block">…</p>`; mit `textAlign ≠ left`: `<p class="editor-paragraph-block" style="text-align: center">…</p>` | `starter-kit.ts`, `text-align.ts` | R D |
+| 3 | `text` (`TextNodeSpec`) | `group: inline` | – | – | escapter Text | StarterKit | R D T |
+| 4 | `heading` (`HeadingNodeSpec`) | `content: inline*`, `group: block`, `defining` | `level` (1; Number), `textAlign` (`left`) | `h1`…`h6` → `level` | `<h2 class="editor-heading-block">…</h2>`, mit Ausrichtung `… style="text-align: right"`; Titel-Schema: `<h1>…</h1>` (ohne Klasse) | `starter-kit.ts` | R D T |
+| 5 | `blockquote` (`BlockquoteNodeSpec`) | `content: block+`, `group: block`, `defining` | – | `blockquote` | `<blockquote>…</blockquote>` | `quote.ts` | R D |
+| 6 | `bulletList` (`BulletListNodeSpec`) | `content: listItem+`, `group: block list` | – | `ul` (Priorität so, dass `ul[data-type=taskList]` vorher greift) | `<ul class="list-disc pl-7 space-y-(--list-spacing-y)">…</ul>` | `starter-kit.ts` | R D |
+| 7 | `orderedList` (`OrderedListNodeSpec`) | `content: listItem+`, `group: block list` | `start` (1; Number; parse `start`-Attribut), `type` (null; String) | `ol` | `<ol class="list-decimal pl-7 space-y-(--list-spacing-y)">…</ol>`; `start ≠ 1` → `… start="3"` (Tiptap: `start === 1` wird ausgelassen) | `starter-kit.ts` | R D |
+| 8 | `listItem` (`ListItemNodeSpec`) | `content: paragraph block*`, `defining` | – | `li` | `<li class="not-prose space-y-2">…</li>` | `starter-kit.ts` | R D |
+| 9 | `taskList` (`TaskListNodeSpec`) | `content: taskItem+`, `group: block list` | – | `ul[data-type="taskList"]` (Priorität 51) | `<ul class="not-prose pl-2 space-y-2" data-type="taskList">…</ul>` | `core-without-props.ts` | R D |
+| 10 | `taskItem` (`TaskItemNodeSpec`) | `content: paragraph block*`, `defining`, `nested: true` | `checked` (false; Boolean; parse `data-checked === "true"`, render `data-checked`) | `li[data-type="taskItem"]` (Priorität 51) | `<li class="flex" data-checked="false" data-type="taskItem"><label><input type="checkbox"><span></span></label><div>…</div></li>`; checked: `data-checked="true"` und `<input type="checkbox" checked="checked">` | `core-without-props.ts`, `@tiptap/extension-task-item` | R D |
+| 11 | `codeBlock` (`CodeBlockNodeSpec`) | `content: text*`, `marks: ""`, `group: block`, `code`, `defining`, Whitespace `full` | `language` (null; String; `rendered: false`; parse: `class` des ersten Kindes `language-*`) | `pre` (`preserveWhitespace: "full"`) | `<pre><code>…</code></pre>`; mit Sprache `<pre><code class="language-ts">…</code></pre>` | `code/without-props.tsx`, `code/code-block.ts` | R D |
+| 12 | `horizontalRule` (`HorizontalRuleNodeSpec`) | `group: block` | – | `div[data-type="horizontalRule"]`, `hr` | `<div class="py-4 border-strong-1" data-type="horizontalRule"><div></div></div>` | `horizontal-rule.ts` | R D |
+| 13 | `hardBreak` (`HardBreakNodeSpec`) | `inline`, `group: inline`, `selectable: false` | – | `br` | `<br>`; `renderText` = `"\n"` | StarterKit | R D |
+| 14 | `image` (`ImageNodeSpec`, Legacy) | `group: block`, `inline: false`, `draggable` | `src` (null), `alt` (null), `title` (null), `width` (`35%`), `height` (null), `aspectRatio` (null; Number), `alignment` (`left`) | `img[src]` außer `src^="data:"` | `<img src="…" width="35%" alignment="left">` (null-Attribute entfallen) | `image/extension-config.tsx` | R D |
+| 15 | `imageComponent` (`ImageComponentNodeSpec`) | `group: block`, `atom` | `src` (null), `alt` (null), `title` (null), `id` (null), `width` (`35%`), `height` (`auto`), `aspectRatio` (null; Number), `alignment` (`left`), `status` (`pending`) | `image-component` | `<image-component src="<assetId>" id="…" width="300px" height="200px" aspectRatio="1.5" alignment="left" status="uploaded"></image-component>` | `custom-image/extension-config.tsx`, `custom-image/types.ts` | R D |
+| 16 | `table` (`TableNodeSpec`) | `content: tableRow+`, `group: block`, `isolating`, `tableRole: table` | – (CE ohne UniqueID) | `table` | `<table><tbody>…</tbody></table>` (`renderHTML` = `["table", mergeAttributes(options.HTMLAttributes, HTMLAttributes), ["tbody", 0]]`; `colgroup` entsteht nur in der Browser-NodeView `TableView`) | `table/table/table.ts` | R D |
+| 17 | `tableRow` (`TableRowNodeSpec`) | `content: (tableCell \| tableHeader)*`, `tableRole: row` | `background` (null), `textColor` (null) | `tr` | `<tr>…</tr>`; mit `background`: `<tr background="#f00" textColor="#fff" style="background-color: #f00; color: #fff">` | `table/table-row.ts` | R D |
+| 18 | `tableHeader` (`TableHeaderNodeSpec`) | `content: block+`, `isolating`, `tableRole: header_cell` | `colspan` (1; Number), `rowspan` (1; Number), `colwidth` ([150]; NumberArray; parse nur **erster** Wert, E15), `background` (`none`) | `th` | `<th colspan="1" rowspan="1" colwidth="150" background="none" style="background-color: none;">…</th>` | `table/table-header.ts` | R D |
+| 19 | `tableCell` (`TableCellNodeSpec`) | `content: block+`, `isolating`, `tableRole: cell` | `colspan` (1), `rowspan` (1), `colwidth` ([150]), `background` (null), `textColor` (null) | `td` | `<td colspan="1" rowspan="1" colwidth="150" style="background-color: null; color: null;">…</td>` (wörtlich `null`, E17, D07-ADR-13) | `table/table-cell.ts` | R D |
+| 20 | `mention` (`MentionNodeSpec`) | `inline`, `group: inline`, `atom`, `selectable` | `id` (null), `entity_identifier` (null), `entity_name` (null) | `mention-component` | `<mention-component id="…" entity_identifier="<userId>" entity_name="user_mention"></mention-component>`; `renderText` = `@{display_name ‖ id ‖ entity_identifier}` (Server: kein Display-Name → `@{id}`) | `mentions/extension-config.ts` | R D |
+| 21 | `emoji` (`EmojiNodeSpec`) | `inline`, `group: inline`, `selectable: false` | `name` (null; render `data-name`) | `span[data-type="emoji"]` | `<span data-type="emoji" data-name="smile">😄</span>`; unbekannter Name → `:name:` als Inhalt; `renderText` = Unicode | `emoji/emoji.ts`, `emoji/extension.ts` (Emoji-Daten `emojibase`-Liste wie Original, gebündelt) | R D |
+| 22 | `calloutComponent` (`CalloutNodeSpec`) | `group: block`, `content: block+`, `selectable`, `draggable` | `id` (null), `data-icon-color` (undef.), `data-icon-name` (undef.), `data-emoji-unicode` (`128161`; Any → nach `fromString` Zahl), `data-emoji-url` (`https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f4a1.png`, E21 – nur gespeichert, nie geladen), `data-logo-in-use` (`emoji`), `data-background` (undef.), `data-block-type` (`callout-component`) | `div[data-block-type="callout-component"]` | `<div id="…" data-emoji-unicode="128161" data-emoji-url="…" data-logo-in-use="emoji" data-background="gray" data-block-type="callout-component">…</div>` (Reihenfolge = `ECalloutAttributeNames`) | `callout/extension-config.ts`, `callout/types.ts`, `callout/utils.ts` | R D |
+| 23 | `issue-embed-component` (`WorkItemEmbedNodeSpec`) | `group: block`, `atom`, `selectable`, `draggable` | `entity_identifier`, `project_identifier`, `workspace_identifier`, `id`, `entity_name` (alle undef.) | `issue-embed-component` | `<issue-embed-component entity_identifier="…" project_identifier="…" workspace_identifier="…" id="…" entity_name="issue"></issue-embed-component>` | `work-item-embed/extension-config.ts` | D |
+
+#### 3.13.2 Marks (Rangfolge = Registrierungsreihenfolge im Schema, bestimmt die Verschachtelung)
+
+| Mark (C#-Klasse) | Attribute | parseHTML | Ausgabe | Besonderheit | Datei |
+|---|---|---|---|---|---|
+| `link` (`LinkMarkSpec`) | `href` (null), `target` (`_blank`), `rel` (`noopener noreferrer nofollow`), `class` (`text-accent-secondary underline underline-offset-[3px] hover:text-accent-primary transition-colors cursor-pointer`) | `a[href]` ohne gefährliches Protokoll | `<a target="_blank" rel="noopener noreferrer nofollow" class="…" href="https://…">` (gefährlich → `href=""`) | `priority: 1000`, `inclusive: false` | `custom-link/extension.tsx` |
+| `bold` (`BoldMarkSpec`) | – | `strong`, `b` (nicht `font-weight: normal`), `style font-weight` (400 < Gewicht) | `<strong>` | – | StarterKit |
+| `italic` (`ItalicMarkSpec`) | – | `em`, `i` (nicht `font-style: normal`), `style font-style=italic` | `<em>` | – | StarterKit |
+| `strike` (`StrikeMarkSpec`) | – | `s`, `del`, `strike`, `style text-decoration` enthält `line-through` | `<s>` | – | StarterKit |
+| `underline` (`UnderlineMarkSpec`) | – | `u`, `style text-decoration` enthält `underline` | `<u>` | – | `@tiptap/extension-underline` |
+| `textStyle` (`TextStyleMarkSpec`) | – | `span` mit `style` (nur wenn Attribute vorhanden) | `<span>` | Träger-Mark | `@tiptap/extension-text-style` |
+| `code` (`CodeInlineMarkSpec`) | – | `code` | `<code class="rounded-sm bg-layer-3 px-[6px] py-[1.5px] font-code font-medium text-(--extended-color-orange-600) border-[0.5px] border-subtle" spellcheck="false">` | `excludes: "_"` | `code-inline/index.tsx` |
+| `customColor` (`CustomColorMarkSpec`) | `color` (null; parse `data-text-color`), `backgroundColor` (null; parse `data-background-color`) | `span` (matcht **jedes** `span`, E16) | `<span data-text-color="gray">`; Nicht-Listenwert zusätzlich `style="color: …"`; Hintergrund analog `data-background-color`/`style="background-color: …"` | Liste = `COLORS_LIST`-Keys | `custom-color.ts` |
+
+Die exakte Rangfolge (und damit z. B. `<a><strong>` vs. `<strong><a>`) wird aus dem G-SCHEMA-Snapshot (`tests/Plane.Documents.Tests/Golden/schema/server.schema.json`, Feld `marks` in Reihenfolge) generiert; die Tabelle oben ist nicht maßgeblich für die Reihenfolge.
+
+#### 3.13.3 Konstanten, die in `Plane.Documents` gespiegelt werden
+
+| Konstante | Original | Ziel |
+|---|---|---|
+| `CORE_EXTENSIONS` (Namen) | `EDITOR/constants/extension.ts` | `Schema/CoreExtensionNames.cs` (Snapshot-Test gegen Original) |
+| `COLORS_LIST` (8 Keys) | `EDITOR/constants/common.ts` | `Schema/EditorColors.cs` (für `customColor`-Listenprüfung, PDF-Farbauflösung) |
+| `DEFAULT_CALLOUT_BLOCK_ATTRIBUTES`, `ECalloutAttributeNames` | `EDITOR/extensions/callout/utils.ts`, `types.ts` | `Schema/Nodes/CalloutDefaults.cs` |
+| `EMentionComponentAttributeNames` | `EDITOR/extensions/mentions/types.ts` | `Schema/Nodes/MentionAttributeNames.cs` |
+| `DocumentCollaborativeEvents` | `EDITOR/constants/document-collaborative-events.ts` | `Plane.Collaboration/Stateless/StatelessEventMap.cs` |
+
+### 3.14 Markdown
+
+| Baustein | Richtung | Regeln (Port) | Nutzer |
+|---|---|---|---|
+| Browser (unverändert) | HTML → Markdown | `convertHTMLToMarkdown` (`PKG/utils/src/editor/markdown-parser/root.ts`): optional `<h1>{name}</h1>` voran; `rehype-parse` → `addSpacesToCheckboxes` → `rehype-remark` mit Handlern (`image-component` → `![name](url)`, `img` → `![alt](src)`, `mention-component` `user_mention` → `[@display_name](url) `, sonst `[@]() `, `u` → Text, `i`/`em` → `_text_`) → `remark-gfm` → `remark-stringify` | Copy as Markdown, Markdown-Export (CE-PAGE-037, CE-PAGE-011), Clipboard |
+| `HtmlToMarkdownConverter` (Server) | HTML → GFM | dieselben Handler und Ausgaberegeln (Listen `-`, `1.`, Task `- [ ]`/`- [x]`, Tabellen GFM, Code-Fences ```` ``` ````, Escaping wie `mdast-util-to-markdown`); Metadaten (Asset-URLs, Display-Namen) über `MarkdownContext` | W1 (Forgejo-Issue-Beschreibung/Kommentare ausgehend), D5 |
+| `MarkdownRenderer` (Server, Markdig 0.4x, `UseAdvancedExtensions` ohne `UseAutoIdentifiers`) | Markdown → HTML | danach `HtmlParser` (Schema `Rich`) → `HtmlSerializer` → Sanitizer; Task-Listen → `taskList`/`taskItem` | W1 (Forgejo eingehend), Importer |
+
+Golden-Korpus `G-MD` (neu, 60 Fälle): `tools/golden/generate.mjs markdown` erzeugt aus G-DOC-HTML mit dem Original-`convertHTMLToMarkdown` die erwartete Ausgabe; `HtmlToMarkdownConverter` muss byte-gleich sein (Zeilenenden `\n`).
+

@@ -840,3 +840,907 @@ ENV: `OPENAI_API_BASE`, `OPENAI_API_KEY` werden **nicht** gelesen (14 §4.7 Klas
 | `DEV-UI-D11-01` | God-Mode AI: zusätzliches Feld „Base URL“ | Visual-Baseline A-007 neu aufgenommen (Maske über drittes Feld nicht nötig, eigene Baseline) | §3.17 |
 | `DEV-UI-D11-02` | God-Mode AI: Kontakt-Hinweis entfällt (ADR-001) | dto. | §3.17 |
 
+---
+
+## 5. Code-Skelette
+
+> Skelette legen Namen, Signaturen und Kernlogik fest. Typen aus anderen Dokumenten (`Result<T>`, `PlaneErrors`, `IRequestScope`, `ICurrentActor`, `IVisibilityFilter<T>`, `IJobScheduler`, `IEventConsumer<T>`, `EventContext`) sind dort definiert (02, 05, 16); Entitäts- und DbSet-Namen (`WorkItems`, `ProjectMembers`, …) sind Arbeitsnamen bis `03-datenmodell-efcore.md`. `IJob`/Job-Handler folgen der in 02/06 festgelegten Form; hier angenommen: Job-Record `: IJob` + `IJobHandler<TJob>.ExecuteAsync(TJob, JobContext, CancellationToken)`.
+
+### 5.1 `Plane.Platform.Search` – Abstraktionen
+
+```csharp
+// BE/platform/Plane.Platform.Search/Abstractions/SearchProfile.cs
+namespace Plane.Platform.Search;
+
+public enum SearchProfile
+{
+    Global = 1,              // SR-01
+    Entity = 2,              // SR-03
+    WorkItemPicker = 3,      // SR-02
+    PublicApiWorkItems = 4,  // v1 issues/search, work-items/search
+    // >= 100 reserviert für Pakete: AdvancedWorkItems = 100 (B6), Semantic = 110 (G1)
+}
+
+public static class SearchEntityTypes
+{
+    public const string Workspace = "workspace", Project = "project", Issue = "issue", Cycle = "cycle",
+                        Module = "module", IssueView = "issue_view", Page = "page", Intake = "intake",
+                        UserMention = "user_mention";
+    public static readonly IReadOnlyList<string> GlobalOrder = [Workspace, Project, Issue, Cycle, Module, IssueView, Page, Intake];
+    public static readonly IReadOnlyList<string> EntityTypes = [UserMention, Project, Issue, Cycle, Module, Page];
+}
+
+public static class SearchProviderKeys
+{
+    public const string Parity = "parity";
+    public const string Advanced = "advanced";   // reserviert B6
+    public const string Semantic = "semantic";   // reserviert G1
+    public const string Hybrid = "hybrid";       // reserviert B6 + G1
+}
+
+public sealed record SearchFilter(string ParserName, string Expression);   // B6: IFilterParser.Name + Text (z. B. PQL)
+
+public sealed record SearchQuery(
+    SearchProfile Profile,
+    PlanePrincipal Principal,
+    Guid WorkspaceId,
+    string? Text,                                         // bereits normalisiert (SearchText.Normalize)
+    IReadOnlyList<string> EntityTypes,
+    Guid? ProjectId,
+    bool WorkspaceWide,
+    int? Limit,
+    IReadOnlyDictionary<string, string> Options,          // profilabhängige Rohparameter (String-Vergleiche wie Original)
+    SearchFilter? Filter = null);
+
+public readonly record struct SearchHit(string EntityType, Guid Id, double Score);
+
+public sealed record SearchResult(
+    IReadOnlyDictionary<string, IReadOnlyList<SearchHit>> Hits,   // Einfügereihenfolge = EntityTypes
+    IReadOnlySet<string> Truncated);
+
+// 01 §5.5 – unverändert
+public interface ISearchProvider { ValueTask<SearchResult> SearchAsync(SearchQuery query, CancellationToken ct); }
+```
+
+```csharp
+// BE/platform/Plane.Platform.Search/Indexing/IIndexingPipeline.cs – 01 §5.5 / 16 §5.14, unverändert
+public interface IIndexingPipeline
+{
+    ValueTask IndexAsync(IndexDocument doc, CancellationToken ct);
+    ValueTask RemoveAsync(string entityType, Guid id, CancellationToken ct);
+}
+public sealed record IndexDocument(string EntityType, Guid Id, Guid WorkspaceId, Guid? ProjectId, string Title, string? Body,
+                                   IReadOnlyDictionary<string, string> Facets, DateTimeOffset UpdatedAt);
+// E-24 (16): Pakete hängen Daten an (A1-Properties als Facetten, G1-Embeddings über eigene Tabelle)
+public interface IIndexDocumentEnricher { string EntityType { get; } ValueTask EnrichAsync(IndexDocument doc, CancellationToken ct); }
+
+public static class IndexEntityTypes
+{
+    public const string WorkItem = "work_item", WorkItemComment = "work_item_comment", Page = "page", Project = "project",
+                        Cycle = "cycle", Module = "module", IssueView = "issue_view";
+    public static readonly IReadOnlyList<string> All = [WorkItem, WorkItemComment, Page, Project, Cycle, Module, IssueView];
+    public const string FacetIdentifier = "identifier";      // Identifier wird als Facette transportiert (IndexDocument unverändert)
+}
+```
+
+> Hinweis zu `IndexDocument.Facets` (`IReadOnlyDictionary<string, string>`, 16 unverändert): Arrays (z. B. `project_ids`) werden als JSON-Text-Wert übergeben (`"[\"…\",\"…\"]"`) und vom `IndexingPipeline` als JSON in `facets` geschrieben; der Schlüssel `identifier` wird in die Spalte `identifier` übernommen und nicht in `facets` gespeichert.
+
+### 5.2 Text-Helfer
+
+```csharp
+// BE/platform/Plane.Platform.Search/Text/SearchText.cs
+public static class SearchText
+{
+    /// Port von `query or None`: leer → null; NUL entfernt (DEV-SRCH-004); > maxLength gekürzt (DEV-SRCH-015). Kein Trim (1:1).
+    public static string? Normalize(string? raw, int maxLength)
+    {
+        if (string.IsNullOrEmpty(raw)) return null;
+        var s = raw.Contains('\0') ? raw.Replace("\0", string.Empty, StringComparison.Ordinal) : raw;
+        if (s.Length == 0) return null;
+        return s.Length > maxLength ? s[..maxLength] : s;
+    }
+}
+
+// BE/platform/Plane.Platform.Search/Text/LikePattern.cs
+public static class LikePattern
+{
+    public static string Escape(string value) => value.Replace(@"\", @"\\").Replace("%", @"\%").Replace("_", @"\_");
+    public static string Contains(string value) => "%" + Escape(value) + "%";   // Django icontains
+}
+
+// BE/platform/Plane.Platform.Search/Text/SequenceIdExtractor.cs
+public static partial class SequenceIdExtractor
+{
+    [GeneratedRegex("(?<![0-9A-Za-z_])[0-9]+(?![0-9A-Za-z_])", RegexOptions.CultureInvariant)]
+    private static partial Regex WholeNumber();
+
+    /// Port von re.findall(r"\b\d+\b", q); maxQueryLength = 20 für SR-02 (search_issues), sonst null.
+    /// Liefert null, wenn die Sequenzsuche für diese Eingabe nicht greift (SR-02: Länge > 20 → Text-ILIKE auf sequence_id).
+    public static IReadOnlyList<int>? Extract(string text, int? maxQueryLength = null)
+    {
+        if (maxQueryLength is { } max && text.Length > max) return null;
+        var result = new List<int>();
+        foreach (var m in WholeNumber().EnumerateMatches(text))
+            if (int.TryParse(text.AsSpan(m.Index, m.Length), NumberStyles.None, CultureInfo.InvariantCulture, out var n))
+                result.Add(n);                                                   // Überlauf → ignoriert (DEV-SRCH-003)
+        return result.Distinct().ToArray();
+    }
+}
+```
+
+```csharp
+// BE/platform/Plane.Platform.Search/Text/DrfSearchFilter.cs – Port rest_framework.filters.SearchFilter (DRF 3.17.2)
+public static class DrfSearchFilter
+{
+    public static IQueryable<T> Apply<T>(IQueryable<T> source, string? search, bool requiresDistinct,
+                                         params Expression<Func<T, string?>>[] fields)
+    {
+        var terms = DrfSearchTerms.Split(search);
+        if (terms.Count == 0 || fields.Length == 0) return source;
+        var p = Expression.Parameter(typeof(T), "x");
+        Expression? all = null;
+        foreach (var term in terms)
+        {
+            var pattern = Expression.Constant(LikePattern.Contains(term));
+            Expression? any = null;
+            foreach (var f in fields)
+            {
+                var member = new ReplaceParameter(f.Parameters[0], p).Visit(f.Body)!;
+                var ilike = Expression.Call(typeof(NpgsqlDbFunctionsExtensions), nameof(NpgsqlDbFunctionsExtensions.ILike),
+                                            Type.EmptyTypes, Expression.Constant(EF.Functions), member, pattern);
+                any = any is null ? ilike : Expression.OrElse(any, ilike);
+            }
+            all = all is null ? any : Expression.AndAlso(all, any!);
+        }
+        var filtered = source.Where(Expression.Lambda<Func<T, bool>>(all!, p));
+        return requiresDistinct ? filtered.Distinct() : filtered;
+    }
+}
+
+// BE/platform/Plane.Platform.Search/Text/DrfSearchTerms.cs – Port search_smart_split
+public static class DrfSearchTerms
+{
+    public static IReadOnlyList<string> Split(string? search)
+    {
+        if (string.IsNullOrEmpty(search)) return [];
+        var s = search.Replace("\0", string.Empty, StringComparison.Ordinal);
+        // Leerraum und Kommas trennen; "…"-Phrasen bleiben zusammen, Anführungszeichen werden entfernt.
+        // Exakte Regeln (inkl. Escape-Sequenzen in Phrasen) per Golden drf-search-terms.golden.json (§3.2.3).
+        return DrfSmartSplit.Split(s).Where(t => t.Length > 0).ToArray();
+    }
+}
+```
+
+Verwendung (Beispiel `Plane.Workspaces`, W-17):
+
+```csharp
+var members = DrfSearchFilter.Apply(db.WorkspaceMembers.Where(m => m.WorkspaceId == scope.Workspace.WorkspaceId),
+                                    search, requiresDistinct: false,
+                                    m => m.Member.DisplayName, m => m.Member.FirstName);
+```
+
+### 5.3 Such-Quellen und Provider (`Plane.Search`)
+
+```csharp
+// BE/modules/Search/Plane.Search/Application/Sources/ISearchEntitySource.cs
+internal interface ISearchEntitySource
+{
+    string EntityType { get; }
+    bool Supports(SearchProfile profile);
+    ValueTask<IReadOnlyList<SearchHit>> SelectAsync(SearchQuery query, int? limit, CancellationToken ct);
+    ValueTask<IReadOnlyList<JsonObject>> HydrateAsync(SearchProfile profile, IReadOnlyList<SearchHit> hits, SearchQuery query, CancellationToken ct);
+}
+
+// BE/modules/Search/Plane.Search/Application/Services/ParitySearchProvider.cs
+internal sealed class ParitySearchProvider(IEnumerable<ISearchEntitySource> sources, IOptions<PlaneSearchOptions> options)
+    : ISearchProvider
+{
+    private readonly Dictionary<(string, SearchProfile), ISearchEntitySource> _map =
+        sources.SelectMany(s => Enum.GetValues<SearchProfile>().Where(s.Supports).Select(p => (s, p)))
+               .ToDictionary(x => (x.s.EntityType, x.p), x => x.s);
+
+    public async ValueTask<SearchResult> SearchAsync(SearchQuery q, CancellationToken ct)
+    {
+        var hits = new Dictionary<string, IReadOnlyList<SearchHit>>();   // Einfügereihenfolge bleibt erhalten
+        var truncated = new HashSet<string>();
+        foreach (var type in q.EntityTypes)                               // sequenziell: ein DbContext je Request
+        {
+            if (hits.ContainsKey(type) || !_map.TryGetValue((type, q.Profile), out var source)) continue;
+            var limit = LimitFor(q, type);
+            var list = await source.SelectAsync(q, limit is null ? null : limit + 1, ct);   // +1 erkennt Kappung
+            if (limit is { } l && list.Count > l) { truncated.Add(type); list = list.Take(l).ToArray(); }
+            hits[type] = list;
+        }
+        return new SearchResult(hits, truncated);
+    }
+
+    private int? LimitFor(SearchQuery q, string type) => q.Profile switch
+    {
+        SearchProfile.Global when type is SearchEntityTypes.Issue or SearchEntityTypes.Intake => 100,
+        SearchProfile.Global => options.Value.MaxUnboundedResults is 0 ? null : options.Value.MaxUnboundedResults,
+        SearchProfile.WorkItemPicker => 100,
+        _ => q.Limit,                                                      // Entity: count, PublicApi: limit
+    };
+}
+
+// BE/modules/Search/Plane.Search/Application/Services/SearchProviderSelector.cs
+internal sealed class SearchProviderSelector(IServiceProvider sp, IOptions<PlaneSearchOptions> options)
+{
+    public ISearchProvider Resolve(SearchProfile profile)
+        => sp.GetRequiredKeyedService<ISearchProvider>(
+               options.Value.Routing.TryGetValue(profile, out var key) ? key : SearchProviderKeys.Parity);
+}
+```
+
+```csharp
+// BE/modules/Search/Plane.Search/Application/Sources/WorkItemSearchSource.cs (Ausschnitt: Profil Global)
+internal sealed class WorkItemSearchSource(PlaneDbContext db, IVisibilityFilter<WorkItem> visibility, IClock clock)
+    : ISearchEntitySource
+{
+    public string EntityType => SearchEntityTypes.Issue;
+    public bool Supports(SearchProfile p) => p is SearchProfile.Global or SearchProfile.Entity
+                                                 or SearchProfile.WorkItemPicker or SearchProfile.PublicApiWorkItems;
+
+    public async ValueTask<IReadOnlyList<SearchHit>> SelectAsync(SearchQuery q, int? limit, CancellationToken ct)
+    {
+        var scope = ScopeRef.ForWorkspace(q.WorkspaceId);
+        IQueryable<WorkItem> items = db.WorkItems.AsNoTracking()
+            .Where(WorkItemPredicates.IssueObjects)                        // Plane.Data/Queries (Triage, Archiv, Draft, Projekt archiviert)
+            .Where(w => w.WorkspaceId == q.WorkspaceId);
+        items = visibility.Apply(items, q.Principal, scope);              // aktive, nicht gelöschte Mitgliedschaft + Gast-Regel
+
+        if (q.ProjectId is { } pid && ProjectRestricted(q)) items = items.Where(w => w.ProjectId == pid);
+        if (q.Profile is SearchProfile.WorkItemPicker) items = WorkItemPickerExclusions.Apply(items, q, db);
+
+        IReadOnlyList<int>? seq = null;
+        if (q.Text is { } text)
+        {
+            var pattern = LikePattern.Contains(text);
+            seq = SequenceIdExtractor.Extract(text, q.Profile is SearchProfile.WorkItemPicker ? 20 : null);
+            items = seq is null                                                     // SR-02 mit > 20 Zeichen
+                ? items.Where(w => EF.Functions.ILike(w.Name, pattern) || EF.Functions.ILike(w.Project.Identifier, pattern)
+                                   || EF.Functions.ILike(w.SequenceId.ToString(), pattern))
+                : items.Where(w => EF.Functions.ILike(w.Name, pattern) || EF.Functions.ILike(w.Project.Identifier, pattern)
+                                   || seq.Contains(w.SequenceId));
+        }
+
+        var ordered = RelevanceOrdered(q, items, seq);                    // D11-ADR-03 bzw. -created_at (Entity-Profil)
+        var page = limit is { } l ? ordered.Take(l) : ordered;
+        return await page.Select(x => new SearchHit(EntityType, x.Id, x.Score)).ToListAsync(ct);
+    }
+
+    private static bool ProjectRestricted(SearchQuery q) => q.Profile switch
+    {
+        SearchProfile.Entity => true,                                     // SR-03: project_id beschränkt immer
+        _ => !q.WorkspaceWide,                                            // SR-01/SR-02/v1: workspace_search == "false"
+    };
+
+    private static IQueryable<(Guid Id, double Score)> RelevanceOrdered(SearchQuery q, IQueryable<WorkItem> items, IReadOnlyList<int>? seq)
+        => q.Profile is SearchProfile.Entity
+            ? items.OrderByDescending(w => w.CreatedAt).ThenByDescending(w => w.Id).Select(w => ValueTuple.Create(w.Id, 0d))
+            : q.Text is null
+                ? items.OrderByDescending(w => w.CreatedAt).ThenByDescending(w => w.Id).Select(w => ValueTuple.Create(w.Id, 0d))
+                : items.Select(w => new { w.Id, w.CreatedAt,
+                                          Exact = seq != null && seq.Contains(w.SequenceId),
+                                          Sim = EF.Functions.TrigramsSimilarity(w.Name, q.Text) })   // Npgsql-Trigrams-Plugin ⚠ S0
+                       .OrderByDescending(x => x.Exact).ThenByDescending(x => x.Sim)
+                       .ThenByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id)
+                       .Select(x => ValueTuple.Create(x.Id, (double)x.Sim));
+
+    public async ValueTask<IReadOnlyList<JsonObject>> HydrateAsync(SearchProfile profile, IReadOnlyList<SearchHit> hits,
+                                                                   SearchQuery q, CancellationToken ct)
+    {
+        var ids = hits.Select(h => h.Id).ToArray();
+        var visible = visibility.Apply(db.WorkItems.AsNoTracking().Where(w => ids.Contains(w.Id)), q.Principal,
+                                       ScopeRef.ForWorkspace(q.WorkspaceId));                            // zweite Prüfung
+        var rows = profile switch
+        {
+            SearchProfile.Global or SearchProfile.PublicApiWorkItems => await visible.Select(w => new JsonObject
+            {
+                ["name"] = w.Name, ["id"] = w.Id.ToString(), ["sequence_id"] = w.SequenceId,
+                ["project__identifier"] = w.Project.Identifier, ["project_id"] = w.ProjectId.ToString(),
+                ["workspace__slug"] = w.Workspace.Slug,
+            }).ToListAsync(ct),
+            // Entity: + priority, state_id, type_id; WorkItemPicker: start_date, project__name, state__* (§3.5, §3.6)
+            _ => throw new UnreachableException(),
+        };
+        return OrderBy(rows, ids);                                       // Hit-Reihenfolge erhalten
+    }
+}
+```
+
+> Hinweis: Die Projektion in `JsonObject` ist hier zur Kürze gezeigt; in der Umsetzung projiziert EF auf ein anonymes Objekt bzw. einen Record und der Hydrator baut daraus die `JsonObject`-Zeilen mit **genau** der Feldreihenfolge des Originals (`.values(...)`-Reihenfolge; Golden-Vergleich ist reihenfolgeunabhängig, die Serialisierung trotzdem stabil).
+
+### 5.4 Endpunkt und Query SR-01
+
+```csharp
+// BE/modules/Search/Plane.Search/Endpoints/App/GlobalSearchEndpoints.cs
+internal static class GlobalSearchEndpoints
+{
+    public static void Map(PlaneEndpointRouteBuilder e)
+    {
+        e.App("workspaces/{slug}/search").WithTags("Search")
+         .MapGet("", Search)
+         .RequirePermission(SearchPermissions.WorkspaceSearchRead)
+         .WithOriginalContract("SR-01");
+    }
+
+    private static async Task<IResult> Search(IRequestScope scope, HttpRequest request, ISender sender, CancellationToken ct)
+    {
+        var q = request.Query;   // Rohwerte: String-Vergleiche wie Original
+        return (await sender.Send(new GlobalSearchQuery(scope.Workspace, q["search"], q["entities"],
+                                                        q["workspace_search"].ToString() is { Length: > 0 } ws ? ws : "false",
+                                                        q["project_id"]), ct)).ToOk();
+    }
+}
+
+// BE/modules/Search/Plane.Search/Application/Queries/GlobalSearch/GlobalSearchQuery.cs
+internal sealed record GlobalSearchQuery(WorkspaceScope Scope, string? Search, string? Entities, string WorkspaceSearch, string? ProjectId)
+    : IQuery<Result<GlobalSearchResponse>>;
+
+internal sealed class GlobalSearchHandler(SearchProviderSelector selector, GlobalSearchHydrator hydrator,
+                                          ICurrentActor actor, IOptions<PlaneSearchOptions> options)
+    : IQueryHandler<GlobalSearchQuery, Result<GlobalSearchResponse>>
+{
+    public async ValueTask<Result<GlobalSearchResponse>> Handle(GlobalSearchQuery c, CancellationToken ct)
+    {
+        Guid? projectId = null;
+        if (!string.IsNullOrEmpty(c.ProjectId))
+        {
+            if (!Guid.TryParse(c.ProjectId, out var pid)) return PlaneErrors.Plain(400, "Please provide valid detail");
+            projectId = pid;
+        }
+        var types = string.IsNullOrEmpty(c.Entities)
+            ? SearchEntityTypes.GlobalOrder
+            : c.Entities.Split(',').Select(t => t.Trim()).Where(t => t.Length > 0 && SearchEntityTypes.GlobalOrder.Contains(t))
+                        .Distinct().ToArray();
+        var query = new SearchQuery(SearchProfile.Global, actor.Principal, c.Scope.WorkspaceId,
+                                    SearchText.Normalize(c.Search, options.Value.MaxQueryLength), types, projectId,
+                                    WorkspaceWide: !(c.WorkspaceSearch == "false" && projectId is not null),
+                                    Limit: null, Options: ImmutableDictionary<string, string>.Empty);
+        var result = await selector.Resolve(SearchProfile.Global).SearchAsync(query, ct);
+        return await hydrator.HydrateAsync(query, result, ct);       // GlobalSearchResponse { Results: OrderedDictionary<string, JsonArray> }
+    }
+}
+```
+
+### 5.5 Picker-Ausschlüsse SR-02
+
+```csharp
+// BE/modules/Search/Plane.Search/Domain/WorkItemPickerExclusions.cs
+internal static class WorkItemPickerExclusions
+{
+    public static IQueryable<WorkItem> Apply(IQueryable<WorkItem> items, SearchQuery q, PlaneDbContext db)
+    {
+        var o = q.Options;
+        Guid? issueId = o.TryGetValue("issue_id", out var raw) && raw.Length > 0 ? ParseOrThrow(raw) : null;   // 400 bei ungültiger UUID
+
+        if (Is(o, "parent") && issueId is { } p)
+        {
+            var target = db.WorkItems.Where(WorkItemPredicates.IssueObjects).Where(w => w.Id == p).Select(w => new { w.Id, w.ParentId });
+            items = items.Where(w => !target.Any(t => t.Id == w.Id || t.ParentId == w.Id) && w.ParentId != p);
+        }
+        if (Is(o, "issue_relation") && issueId is { } r
+            && db.WorkItems.Where(WorkItemPredicates.IssueObjects).Any(w => w.Id == r))          // nur bei gefundenem Issue (1:1)
+        {
+            var related = db.WorkItemRelations.Where(x => x.WorkItemId == r || x.RelatedWorkItemId == r)
+                            .SelectMany(x => new[] { x.WorkItemId, x.RelatedWorkItemId });
+            items = items.Where(w => w.Id != r && !related.Contains(w.Id));
+        }
+        if (Is(o, "sub_issue") && issueId is { } s)
+        {
+            var target = db.WorkItems.Where(WorkItemPredicates.IssueObjects).Where(w => w.Id == s).Select(w => w.ParentId);
+            if (target.Any())                                                                     // unbekannt → keine Filterung (DEV-SRCH-006)
+                items = items.Where(w => w.Id != s && w.ParentId == null && !target.Contains(w.Id));
+        }
+        if (Is(o, "cycle")) items = items.Where(w => !w.CycleLinks.Any(c => c.DeletedAt == null));
+        if (o.TryGetValue("module", out var module) && module.Length > 0)
+        {
+            var mid = ParseOrThrow(module);
+            items = items.Where(w => !w.ModuleLinks.Any(m => m.ModuleId == mid && m.DeletedAt == null));
+        }
+        if (o.TryGetValue("target_date", out var td) && td == "none") items = items.Where(w => w.TargetDate == null);
+        return items;
+    }
+
+    private static bool Is(IReadOnlyDictionary<string, string> o, string key) => o.TryGetValue(key, out var v) && v == "true";
+    private static Guid ParseOrThrow(string raw)
+        => Guid.TryParse(raw, out var g) ? g : throw new PlaneValidationException("Please provide valid detail");  // → 400 {"error": …}
+}
+```
+
+> Hinweis: `ParseOrThrow` nutzt die in 02 §3.8.2 definierte Abbildung von Validierungsausnahmen auf `{"error": "Please provide valid detail"}` (Port `django.core.exceptions.ValidationError`); falls 02 dafür keinen Ausnahmetyp vorsieht, validiert der Handler vorab und liefert `PlaneErrors.Plain(400, …)`.
+
+### 5.6 `search_documents` – Entität, Konfiguration, Pipeline
+
+```csharp
+// BE/data/Plane.Data/Entities/Search/SearchDocument.cs
+[OwnedBy("Search"), TechnicalTable]
+public sealed class SearchDocument
+{
+    public Guid Id { get; set; }
+    public Guid WorkspaceId { get; set; }
+    public Guid? ProjectId { get; set; }
+    public string EntityType { get; set; } = "";
+    public Guid EntityId { get; set; }
+    public string Title { get; set; } = "";
+    public string? Body { get; set; }
+    public string? Identifier { get; set; }
+    public JsonDocument Facets { get; set; } = JsonDocument.Parse("{}");
+    public byte[] ContentHash { get; set; } = [];
+    public DateTimeOffset SourceUpdatedAt { get; set; }
+    public DateTimeOffset IndexedAt { get; set; }
+    public NpgsqlTsVector SearchVector { get; private set; } = null!;     // generiert
+}
+
+// BE/data/Plane.Data/Configurations/Search/SearchDocumentConfiguration.cs
+internal sealed class SearchDocumentConfiguration : IEntityTypeConfiguration<SearchDocument>
+{
+    public const string VectorSql =
+        "setweight(to_tsvector('simple', plane_unaccent(coalesce(identifier, '') || ' ' || title)), 'A') || " +
+        "setweight(to_tsvector('simple', plane_unaccent(coalesce(body, ''))), 'B')";
+
+    public void Configure(EntityTypeBuilder<SearchDocument> b)
+    {
+        b.ToTable("search_documents");
+        b.HasIndex(x => new { x.EntityType, x.EntityId }).IsUnique().HasDatabaseName("uq_search_documents_entity");
+        b.Property(x => x.EntityType).HasMaxLength(32);
+        b.Property(x => x.Identifier).HasMaxLength(64);
+        b.Property(x => x.Facets).HasColumnType("jsonb");
+        b.Property(x => x.SearchVector).HasComputedColumnSql(VectorSql, stored: true);
+        b.HasIndex(x => x.SearchVector).HasMethod("gin").HasDatabaseName("ix_search_documents_search_vector");
+        b.HasIndex(x => x.Title).HasMethod("gin").HasOperators("gin_trgm_ops").HasDatabaseName("ix_search_documents_title_trgm");
+        b.HasIndex(x => new { x.WorkspaceId, x.EntityType }).HasDatabaseName("ix_search_documents_workspace");
+        b.HasIndex(x => x.ProjectId).HasFilter("project_id IS NOT NULL").HasDatabaseName("ix_search_documents_project");
+        b.HasIndex(x => x.Facets).HasMethod("gin").HasOperators("jsonb_path_ops").HasDatabaseName("ix_search_documents_facets");
+        b.HasOne<Workspace>().WithMany().HasForeignKey(x => x.WorkspaceId).OnDelete(DeleteBehavior.Cascade);
+        b.HasOne<Project>().WithMany().HasForeignKey(x => x.ProjectId).OnDelete(DeleteBehavior.Cascade);
+    }
+}
+```
+
+```csharp
+// BE/modules/Search/Plane.Search/Application/Consumers/SearchIndexingConsumer.cs
+internal sealed class SearchIndexingConsumer(IJobScheduler jobs, IClock clock, IOptions<PlaneSearchOptions> options)
+    : IEventConsumer<WorkItemCreatedV1>, IEventConsumer<WorkItemUpdatedV1>, IEventConsumer<WorkItemStateChangedV1>,
+      IEventConsumer<WorkItemArchivedV1>, IEventConsumer<WorkItemUnarchivedV1>, IEventConsumer<WorkItemRestoredV1>,
+      IEventConsumer<WorkItemParentChangedV1>, IEventConsumer<WorkItemDeletedV1>,
+      IEventConsumer<WorkItemCommentCreatedV1>, IEventConsumer<WorkItemCommentUpdatedV1>, IEventConsumer<WorkItemCommentDeletedV1>,
+      IEventConsumer<IntakeWorkItemCreatedV1>, IEventConsumer<IntakeWorkItemStatusChangedV1>,
+      IEventConsumer<PageCreatedV1>, IEventConsumer<PageUpdatedV1>, IEventConsumer<PageDescriptionUpdatedV1>,
+      IEventConsumer<PageArchivedV1>, IEventConsumer<PageDeletedV1>,
+      IEventConsumer<ProjectCreatedV1>, IEventConsumer<ProjectUpdatedV1>, IEventConsumer<ProjectArchivedV1>, IEventConsumer<ProjectDeletedV1>,
+      IEventConsumer<CycleCreatedV1>, IEventConsumer<CycleUpdatedV1>, IEventConsumer<CycleCompletedV1>, IEventConsumer<CycleDeletedV1>,
+      IEventConsumer<ModuleCreatedV1>, IEventConsumer<ModuleUpdatedV1>, IEventConsumer<ModuleDeletedV1>,
+      IEventConsumer<ViewCreatedV1>, IEventConsumer<ViewUpdatedV1>, IEventConsumer<ViewDeletedV1>
+{
+    public ValueTask HandleAsync(WorkItemUpdatedV1 e, EventContext ctx, CancellationToken ct) => Index(IndexEntityTypes.WorkItem, e.WorkItemId, ct);
+    public ValueTask HandleAsync(WorkItemDeletedV1 e, EventContext ctx, CancellationToken ct) => Remove(IndexEntityTypes.WorkItem, e.WorkItemId, ct);
+    public async ValueTask HandleAsync(ProjectUpdatedV1 e, EventContext ctx, CancellationToken ct)
+    {
+        await Index(IndexEntityTypes.Project, e.ProjectId, ct);
+        if (e.ChangedFields.Contains("identifier"))
+            await jobs.EnqueueAsync(new SearchIndexRebuildJob(null, e.ProjectId, null), dedupeKey: $"indexing:rebuild:{e.ProjectId}", ct: ct);
+    }
+    // … übrige Handler analog Tabelle §3.10.3
+
+    private ValueTask Index(string type, Guid id, CancellationToken ct)
+        => options.Value.IndexingEnabled
+            ? jobs.EnqueueAsync(new IndexEntityJob(type, id),
+                                runAt: clock.UtcNow.AddMilliseconds(options.Value.IndexingDebounceMilliseconds),
+                                dedupeKey: $"indexing:{type}:{id}", ct: ct)
+            : ValueTask.CompletedTask;
+    private ValueTask Remove(string type, Guid id, CancellationToken ct)
+        => jobs.EnqueueAsync(new RemoveIndexEntryJob(type, id), dedupeKey: $"indexing:{type}:{id}", ct: ct);
+}
+
+// BE/modules/Search/Plane.Search/Application/Jobs/IndexEntityJob.cs
+[JobQueue("indexing")]
+internal sealed record IndexEntityJob(string EntityType, Guid EntityId) : IJob;
+
+internal sealed class IndexEntityJobHandler(IEnumerable<IIndexDocumentBuilder> builders, IEnumerable<IIndexDocumentEnricher> enrichers,
+                                            IIndexingPipeline pipeline) : IJobHandler<IndexEntityJob>
+{
+    public async ValueTask ExecuteAsync(IndexEntityJob job, JobContext ctx, CancellationToken ct)
+    {
+        var builder = builders.Single(b => b.EntityType == job.EntityType);
+        var doc = await builder.BuildAsync(job.EntityId, ct);                 // null = Quelle fehlt/soft-gelöscht
+        if (doc is null) { await pipeline.RemoveAsync(job.EntityType, job.EntityId, ct); return; }
+        foreach (var e in enrichers.Where(x => x.EntityType == job.EntityType)) await e.EnrichAsync(doc, ct);
+        await pipeline.IndexAsync(doc, ct);
+    }
+}
+
+// BE/modules/Search/Plane.Search/Indexing/IndexingPipeline.cs
+internal sealed class IndexingPipeline(PlaneDbContext db, IIdGenerator ids, IClock clock) : IIndexingPipeline
+{
+    public async ValueTask IndexAsync(IndexDocument d, CancellationToken ct)
+    {
+        var (identifier, facetsJson) = IndexFacets.Split(d.Facets);           // "identifier" → Spalte, Rest → jsonb
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes($"{d.Title}\u001f{d.Body}\u001f{identifier}\u001f{facetsJson}"));
+        await db.Database.ExecuteSqlInterpolatedAsync($"""
+            INSERT INTO search_documents (id, workspace_id, project_id, entity_type, entity_id, title, body, identifier,
+                                          facets, content_hash, source_updated_at, indexed_at)
+            VALUES ({ids.Next()}, {d.WorkspaceId}, {d.ProjectId}, {d.EntityType}, {d.Id}, {d.Title}, {d.Body}, {identifier},
+                    {facetsJson}::jsonb, {hash}, {d.UpdatedAt}, {clock.UtcNow})
+            ON CONFLICT (entity_type, entity_id) DO UPDATE SET
+                workspace_id = EXCLUDED.workspace_id, project_id = EXCLUDED.project_id, title = EXCLUDED.title,
+                body = EXCLUDED.body, identifier = EXCLUDED.identifier, facets = EXCLUDED.facets,
+                content_hash = EXCLUDED.content_hash, source_updated_at = EXCLUDED.source_updated_at, indexed_at = EXCLUDED.indexed_at
+            WHERE search_documents.content_hash <> EXCLUDED.content_hash
+               OR search_documents.source_updated_at < EXCLUDED.source_updated_at
+            """, ct);
+    }
+
+    public async ValueTask RemoveAsync(string entityType, Guid id, CancellationToken ct)
+        => await db.SearchDocuments.Where(x => x.EntityType == entityType && x.EntityId == id).ExecuteDeleteAsync(ct);
+}
+```
+
+### 5.7 `Plane.Platform.Ai`
+
+```csharp
+// BE/platform/Plane.Platform.Ai/Configuration/LlmSettingsResolver.cs
+public enum LlmProviderKind { OpenAi, OpenAiCompatible, Anthropic, Gemini }
+public enum LlmUnusableReason { UnsupportedProvider, MissingApiKey, MissingModel, MissingBaseUrl, InvalidBaseUrl }
+
+public sealed record LlmRawSettings(string? ApiKey, string? Provider, string? Model, string? BaseUrl);
+public sealed record LlmSettings(bool IsUsable, LlmUnusableReason? Reason, LlmProviderKind? Provider,
+                                 Uri? Endpoint, string? Model, string? ApiKey, string Fingerprint)
+{
+    public static LlmSettings Unusable(LlmUnusableReason r) => new(false, r, null, null, null, null, "");
+}
+
+public static class LlmSettingsResolver
+{
+    private static readonly Dictionary<string, (LlmProviderKind Kind, string? Endpoint, string? DefaultModel)> Providers =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["openai"]            = (LlmProviderKind.OpenAi, "https://api.openai.com/v1", "gpt-4o-mini"),
+            ["openai-compatible"] = (LlmProviderKind.OpenAiCompatible, null, null),
+            ["anthropic"]         = (LlmProviderKind.Anthropic, "https://api.anthropic.com/v1", "claude-3-sonnet-20240229"),
+            ["gemini"]            = (LlmProviderKind.Gemini, "https://generativelanguage.googleapis.com/v1beta/openai", "gemini-pro"),
+        };
+
+    public static LlmSettings Resolve(LlmRawSettings raw)
+    {
+        var providerKey = string.IsNullOrWhiteSpace(raw.Provider) ? "openai" : raw.Provider.Trim();
+        if (!Providers.TryGetValue(providerKey, out var p)) return LlmSettings.Unusable(LlmUnusableReason.UnsupportedProvider);
+
+        var baseUrl = raw.BaseUrl?.Trim();
+        Uri? endpoint;
+        if (!string.IsNullOrEmpty(baseUrl))
+        {
+            if (!Uri.TryCreate(baseUrl.TrimEnd('/'), UriKind.Absolute, out endpoint)
+                || endpoint.Scheme is not ("http" or "https") || endpoint.UserInfo.Length > 0
+                || endpoint.Query.Length > 0 || endpoint.Fragment.Length > 0)
+                return LlmSettings.Unusable(LlmUnusableReason.InvalidBaseUrl);
+        }
+        else if (p.Endpoint is null) return LlmSettings.Unusable(LlmUnusableReason.MissingBaseUrl);
+        else endpoint = new Uri(p.Endpoint);
+
+        var key = string.IsNullOrWhiteSpace(raw.ApiKey) ? null : raw.ApiKey.Trim();
+        if (key is null && string.IsNullOrEmpty(baseUrl) && p.Kind is not LlmProviderKind.OpenAiCompatible)
+            return LlmSettings.Unusable(LlmUnusableReason.MissingApiKey);
+
+        var model = string.IsNullOrWhiteSpace(raw.Model) ? p.DefaultModel : raw.Model.Trim();
+        if (model is null) return LlmSettings.Unusable(LlmUnusableReason.MissingModel);
+
+        var keyHash = key is null ? "" : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(key)));
+        var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"{endpoint}|{model}|{keyHash}")));
+        return new LlmSettings(true, null, p.Kind, endpoint, model, key, fingerprint);
+    }
+}
+
+public interface ILlmSettingsSource { ValueTask<LlmSettings> GetAsync(CancellationToken ct); }
+public sealed class LlmNotConfiguredException(LlmUnusableReason reason) : Exception($"LLM configuration unusable: {reason}")
+{ public LlmUnusableReason Reason { get; } = reason; }
+```
+
+```csharp
+// BE/platform/Plane.Platform.Ai/Chat/OpenAiCompatibleChatClientFactory.cs
+public interface IChatClientFactory { IChatClient GetOrCreate(LlmSettings settings); }
+
+internal sealed class OpenAiCompatibleChatClientFactory(IHttpClientFactory http, ILoggerFactory loggers, IOptions<PlaneAiOptions> options)
+    : IChatClientFactory, IDisposable
+{
+    private readonly ConcurrentDictionary<string, IChatClient> _cache = new();
+
+    public IChatClient GetOrCreate(LlmSettings s) => _cache.GetOrAdd(s.Fingerprint, _ =>
+    {
+        TrimCache();
+        var clientOptions = new OpenAIClientOptions
+        {
+            Endpoint = s.Endpoint,
+            Transport = new HttpClientPipelineTransport(http.CreateClient("llm")),   // SSRF-geschützt (05 §3.17.2)
+            RetryPolicy = new ClientRetryPolicy(maxRetries: 0),                      // keine automatischen Wiederholungen
+            NetworkTimeout = TimeSpan.FromSeconds(options.Value.RequestTimeoutSeconds),
+        };
+        IChatClient inner = new OpenAIClient(new ApiKeyCredential(s.ApiKey ?? "unused"), clientOptions)
+            .GetChatClient(s.Model!)
+            .AsIChatClient();
+        return new ChatClientBuilder(inner)
+            .UseLogging(loggers)
+            .UseOpenTelemetry(loggers, sourceName: "Plane.Ai", configure: c => c.EnableSensitiveData = false)
+            .Build();
+    });
+
+    private void TrimCache()
+    {
+        while (_cache.Count >= options.Value.ClientCacheSize && _cache.Keys.FirstOrDefault() is { } k)
+            if (_cache.TryRemove(k, out var old)) old.Dispose();
+    }
+    public void Dispose() { foreach (var c in _cache.Values) c.Dispose(); }
+}
+
+// BE/platform/Plane.Platform.Ai/Chat/DynamicChatClient.cs
+internal sealed class DynamicChatClient(ILlmSettingsSource source, IChatClientFactory factory) : IChatClient
+{
+    public async Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null,
+                                                     CancellationToken cancellationToken = default)
+        => await (await InnerAsync(cancellationToken)).GetResponseAsync(messages, options, cancellationToken);
+
+    public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null,
+                                                     [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var inner = await InnerAsync(cancellationToken);
+        await foreach (var u in inner.GetStreamingResponseAsync(messages, options, cancellationToken)) yield return u;
+    }
+
+    public object? GetService(Type serviceType, object? serviceKey = null) => serviceType == typeof(DynamicChatClient) ? this : null;
+    public void Dispose() { }   // innere Clients gehören der Factory
+
+    private async ValueTask<IChatClient> InnerAsync(CancellationToken ct)
+    {
+        var s = await source.GetAsync(ct);
+        return s.IsUsable ? factory.GetOrCreate(s) : throw new LlmNotConfiguredException(s.Reason!.Value);
+    }
+}
+
+// BE/platform/Plane.Platform.Ai/Embeddings/NullEmbeddingGenerator.cs – 16 §5.14, unverändert
+internal sealed class NullEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>>
+{
+    public Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(IEnumerable<string> values, EmbeddingGenerationOptions? options = null,
+                                                                     CancellationToken ct = default)
+        => Task.FromResult(new GeneratedEmbeddings<Embedding<float>>());
+    public object? GetService(Type serviceType, object? serviceKey = null) => null;
+    public void Dispose() { }
+}
+
+// BE/platform/Plane.Platform.Ai/AiServiceCollectionExtensions.cs
+public static class AiServiceCollectionExtensions
+{
+    public static IServiceCollection AddPlaneAi(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<PlaneAiOptions>().Bind(configuration.GetSection("Plane:Ai")).ValidateDataAnnotations().ValidateOnStart();
+        services.AddSsrfSafeHttpClient("llm", (sp, policy) =>                     // Signatur laut 05 §3.17.2
+        {
+            var o = sp.GetRequiredService<IOptions<PlaneAiOptions>>().Value;
+            policy.Timeout = TimeSpan.FromSeconds(o.RequestTimeoutSeconds);
+            policy.MaxRedirects = 0;
+            policy.MaxResponseBytes = 8 * 1024 * 1024;
+            policy.AllowedHosts = o.AllowedInternalHosts;
+        });
+        services.AddSingleton<IChatClientFactory, OpenAiCompatibleChatClientFactory>();
+        services.AddScoped<IChatClient, DynamicChatClient>();
+        services.TryAddSingleton<IEmbeddingGenerator<string, Embedding<float>>, NullEmbeddingGenerator>();   // G1 ersetzt per Replace
+        return services;
+    }
+}
+```
+
+### 5.8 `Plane.Assistant` – KI-Assistent und Unsplash
+
+```csharp
+// BE/modules/Assistant/Plane.Assistant/Endpoints/App/AiAssistantEndpoints.cs
+internal static class AiAssistantEndpoints
+{
+    public static void Map(PlaneEndpointRouteBuilder e)
+    {
+        e.App("workspaces/{slug}/ai-assistant").WithTags("Assistant")
+         .MapPost("", Run)
+         .RequirePermission(AssistantPermissions.WorkspaceAiAssistantUse)
+         .WithOriginalContract("EXT-03");
+    }
+    private static async Task<IResult> Run(IRequestScope scope, JsonObject? body, ISender sender, CancellationToken ct)
+        => (await sender.Send(new RunAiAssistantTaskCommand(scope.Workspace, body?["task"], body?["prompt"]), ct)).ToOk();
+}
+
+// BE/modules/Assistant/Plane.Assistant/Application/Commands/RunAiAssistantTask/RunAiAssistantTaskCommand.cs
+internal sealed record RunAiAssistantTaskCommand(WorkspaceScope Scope, JsonNode? Task, JsonNode? Prompt)
+    : ICommand<Result<AiAssistantResponseDto>>;   // kein DB-Schreibzugriff; TransactionBehavior ohne SaveChanges-Wirkung
+
+internal sealed class RunAiAssistantTaskHandler(ILlmSettingsSource settings, IChatClient chat, ILogger<RunAiAssistantTaskHandler> log)
+    : ICommandHandler<RunAiAssistantTaskCommand, Result<AiAssistantResponseDto>>
+{
+    public async ValueTask<Result<AiAssistantResponseDto>> Handle(RunAiAssistantTaskCommand c, CancellationToken ct)
+    {
+        var s = await settings.GetAsync(ct);
+        if (!s.IsUsable)
+        {
+            log.LogWarning("LLM configuration unusable: {Reason}", s.Reason);
+            return PlaneErrors.Plain(400, "LLM provider API key and model are required");
+        }
+        if (!PythonTruthiness.IsTruthy(c.Task)) return PlaneErrors.Plain(400, "Task is required");
+        var task = PythonTruthiness.AsText(c.Task!);
+        var prompt = PythonTruthiness.IsTruthy(c.Prompt) ? PythonTruthiness.AsText(c.Prompt!) : "";   // DEV-AI-003
+
+        try
+        {
+            var response = await chat.GetResponseAsync([new ChatMessage(ChatRole.User, task + "\n" + prompt)], options: null, ct);
+            var text = response.Text ?? "";                                                            // DEV-AI-004
+            return new AiAssistantResponseDto(text, AiResponseFormatter.ToHtml(text));
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
+        {
+            log.LogError("LLM request failed: {ErrorType} {Status}", ex.GetType().Name, (ex as ClientResultException)?.Status);
+            return PlaneErrors.Plain(500, "An internal error has occurred.");
+        }
+    }
+}
+
+// BE/modules/Assistant/Plane.Assistant/Domain/AiResponseFormatter.cs
+internal static class AiResponseFormatter
+{
+    public static string ToHtml(string text)
+        => text.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;").Replace("\n", "<br/>");   // DEV-AI-005
+}
+```
+
+```csharp
+// BE/modules/Assistant/Plane.Assistant/Application/Services/UnsplashClient.cs
+internal sealed class UnsplashClient(IHttpClientFactory http, IOptions<PlaneUnsplashOptions> options)
+{
+    public async ValueTask<(int Status, JsonNode? Body)> GetAsync(string accessKey, string? query, string page, string perPage, CancellationToken ct)
+    {
+        var baseUrl = options.Value.ApiBaseUrl;                                           // https://api.unsplash.com/
+        var path = string.IsNullOrEmpty(query)
+            ? $"photos/?page={Uri.EscapeDataString(page)}&per_page={Uri.EscapeDataString(perPage)}"
+            : $"search/photos/?query={Uri.EscapeDataString(query)}&page={Uri.EscapeDataString(page)}&per_page={Uri.EscapeDataString(perPage)}";
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri(new Uri(baseUrl), path));
+        request.Headers.Authorization = new AuthenticationHeaderValue("Client-ID", accessKey);  // DEV-AI-007
+        using var response = await http.CreateClient("unsplash").SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+        await using var stream = await response.Content.ReadAsStreamAsync(ct);                // MaxResponseBytes erzwingt der SSRF-Handler
+        return ((int)response.StatusCode, await JsonNode.ParseAsync(stream, cancellationToken: ct));   // Nicht-JSON → Ausnahme → 500
+    }
+}
+```
+
+### 5.9 Frontend (TypeScript)
+
+```ts
+// FE/libs/web/power-k/components/ui/modal/search-menu.component.ts
+@Component({
+  selector: 'pl-power-k-modal-search-menu',
+  templateUrl: './search-menu.component.html',   // Markup 1:1 aus search-menu.tsx (h5, Klassen, Texte)
+  imports: [PowerKModalNoSearchResultsCommandComponent, PowerKModalSearchResultsComponent],
+})
+export class PowerKModalSearchMenuComponent {
+  readonly activePage = input<TPowerKPageType | null>(null);
+  readonly context = input.required<TPowerKContext>();
+  readonly isWorkspaceLevel = input(false);
+  readonly searchTerm = input('');
+  readonly updateSearchTerm = output<string>();
+  readonly searchMenuClose = output<void>();
+
+  private readonly router = inject(RouterStore);
+  private readonly powerK = inject(PowerKStore);
+  private readonly workspaceService = inject(WorkspaceService);
+
+  protected readonly results = signal<IWorkspaceSearchResults>(WORKSPACE_DEFAULT_SEARCH_RESULT);
+  protected readonly resultsCount = signal(0);
+  protected readonly isSearching = signal(false);
+  protected readonly debouncedSearchTerm = debounceSignal(this.searchTerm, 500);
+
+  constructor() {
+    effect((onCleanup) => {
+      const activePage = this.activePage();
+      const workspaceSlug = this.router.workspaceSlug();
+      const projectId = this.router.projectId();
+      const term = this.debouncedSearchTerm();
+      const isWorkspaceLevel = this.isWorkspaceLevel();
+      if (activePage || !workspaceSlug) return;
+      this.isSearching.set(true);
+      if (!term) { this.results.set(WORKSPACE_DEFAULT_SEARCH_RESULT); this.isSearching.set(false); return; }
+
+      const abort = new AbortController();                                    // D11-ADR-17: veraltete Antworten verwerfen
+      onCleanup(() => abort.abort());
+      this.workspaceService
+        .searchWorkspace(workspaceSlug, {
+          ...(projectId ? { project_id: projectId } : {}),
+          search: term,
+          workspace_search: !projectId ? true : isWorkspaceLevel,
+        }, { signal: abort.signal })
+        .then((res) => {
+          this.results.set(res);
+          this.resultsCount.set(Object.keys(res.results).reduce(
+            (acc, key) => res.results[key as keyof typeof res.results]?.length + acc, 0));
+        })
+        .catch((err) => {
+          if (abort.signal.aborted) return;                                   // Abbruch ist kein Fehler
+          this.results.set(WORKSPACE_DEFAULT_SEARCH_RESULT);
+          this.resultsCount.set(0);
+        })
+        .finally(() => { if (!abort.signal.aborted) this.isSearching.set(false); });
+    });
+  }
+
+  protected closePalette(): void {
+    this.searchMenuClose.emit();
+    this.powerK.togglePowerKModal(false);
+  }
+}
+```
+
+```ts
+// FE/libs/web/extensions/src/search.ts (Registry-Typ, 08 §6)
+export interface SearchResultRendererDefinition<TItem = any> {
+  entityType: TPowerKSearchResultsKeys | (string & {});
+  title: string;                                             // Gruppenüberschrift (Original hart codiert, englisch)
+  icon?: Type<unknown>;                                      // Propel-Icon-Komponente
+  label: Type<{ item: InputSignal<TItem> }>;                 // rendert itemName(item)
+  path: (item: TItem, projectId: string | undefined) => string;
+}
+export const SEARCH_RESULT_RENDERERS = new InjectionToken<SearchResultRendererDefinition[]>('SEARCH_RESULT_RENDERERS');
+
+// FE/libs/web/power-k/components/ui/modal/search-results-map.ts – CE-Defaults (provideWebExtensions registriert sie)
+export const CE_SEARCH_RESULT_RENDERERS: SearchResultRendererDefinition[] = [
+  { entityType: 'cycle', title: 'Cycles', icon: CyclesOutlineIcon, label: ProjectPrefixedNameLabel,
+    path: (c: IWorkspaceDefaultSearchResult) => `/${c?.workspace__slug}/projects/${c?.project_id}/cycles/${c?.id}` },
+  { entityType: 'issue', title: 'Work items', label: WorkItemSearchLabel,
+    path: (w: IWorkspaceIssueSearchResult) => generateWorkItemLink({ workspaceSlug: w?.workspace__slug, projectId: w?.project_id,
+      issueId: w?.id, projectIdentifier: w.project__identifier, sequenceId: w?.sequence_id }) },
+  // issue_view, module, page, project, workspace analog Tabelle §3.11
+];
+```
+
+```ts
+// FE/apps/admin/src/pages/(all)/(dashboard)/ai/form.component.ts (Feldliste)
+protected readonly aiFormFields: TControllerInputFormField<AIFormValues>[] = [
+  { key: 'LLM_MODEL', type: 'text', label: 'LLM Model', description: LLM_MODEL_DESCRIPTION, placeholder: 'gpt-4o-mini', required: false },
+  { key: 'LLM_API_KEY', type: 'password', label: 'API key', description: LLM_API_KEY_DESCRIPTION,
+    placeholder: 'sk-asddassdfasdefqsdfasd23das3dasdcasd', required: false },
+  { key: 'LLM_BASE_URL', type: 'text', label: 'Base URL',                                      // DEV-UI-D11-01
+    description: 'Optional. Leave empty to use OpenAI. Enter the base URL of an OpenAI-compatible server such as Ollama, vLLM or LocalAI to use a self-hosted model.',
+    placeholder: 'http://localhost:11434/v1', required: false },
+];
+```
+
+### 5.10 Test-Skelette
+
+```csharp
+// T/modules/Plane.Search.Tests/Contract/GlobalSearchContractTests.cs
+public sealed class GlobalSearchContractTests(PlaneApiFactory api) : IClassFixture<PlaneApiFactory>
+{
+    [Theory]
+    [InlineData("member", "search=Login", "global-search.member.login")]
+    [InlineData("guest", "search=Login", "global-search.guest.login")]              // A-051: Gast sieht nur Eigenes
+    [InlineData("member", "search=12&entities=issue,page", "global-search.member.sequence")]
+    [InlineData("member", "search=Web&workspace_search=false&project_id={P1}", "global-search.member.project")]
+    public async Task Matches_original(string actor, string query, string golden)
+    {
+        var response = await api.As(actor).GetAsync($"/api/workspaces/parity/search/?{api.Expand(query)}");
+        await ContractAssert.MatchesGolden(response, $"search/{golden}.golden.json",
+                                           unorderedPaths: ["$.results.issue"]);     // DEV-SRCH-001
+    }
+}
+
+// T/modules/Plane.Assistant.Tests/Integration/AssistantEndpointTests.cs
+public sealed class AssistantEndpointTests(PlaneApiFactory api, WireMockFixture llm) : IClassFixture<PlaneApiFactory>, IClassFixture<WireMockFixture>
+{
+    [Fact]
+    public async Task Sends_single_user_message_and_formats_html()
+    {
+        llm.Given(Request.Create().WithPath("/v1/chat/completions").UsingPost()
+                  .WithBody(new JsonPartialMatcher("""{"model":"llama3.1","messages":[{"role":"user","content":"Summarize\nHello"}]}""")))
+           .RespondWith(Response.Create().WithBodyFromFile("wiremock/llm-openai-compatible/ok-multiline.json"));
+        await api.SetInstanceConfiguration(new() { ["LLM_PROVIDER"] = "openai-compatible", ["LLM_BASE_URL"] = $"{llm.Url}/v1",
+                                                    ["LLM_MODEL"] = "llama3.1", ["LLM_API_KEY"] = "" },
+                                           allowedInternalHosts: [llm.Host]);
+        var res = await api.As("member").PostAsJsonAsync("/api/workspaces/parity/ai-assistant/", new { task = "Summarize", prompt = "Hello" });
+        res.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await res.Content.ReadFromJsonAsync<JsonObject>())!["response_html"]!.GetValue<string>().ShouldBe("a &lt;b&gt;<br/>c");
+    }
+}
+```
+

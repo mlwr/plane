@@ -658,3 +658,178 @@ Jede korrigierte Abweichung erhält einen Eintrag in `FE/apps/e2e/visual/ui-devi
 3. **Sanitizer-Vertrag (D05 §3.17.3):** Der Editor erzeugt ausschließlich die Tags/Attribute aus §4.1 (Spalte „renderHTML“). Erweiterungen erfordern die Schritte 4–5 aus §3.2.5.
 4. **localStorage:** Callout-Logo wird beim Lesen über `sanitizeHTML` gefiltert (1:1).
 5. **Mention-Suche** nur über die berechtigten Endpunkte (`searchEntity`, Berechtigungsprüfung serverseitig nach D05); keine clientseitige Rechteentscheidung.
+
+---
+
+## 4. Mapping-Tabellen Original → Ziel
+
+**Legende Umsetzung:** **A** = Kern-Quelltext 1:1 (`ED/core`, K1/K2); **NV** = Extension 1:1 im Kern, NodeView als Angular-Komponente über den UI-Port; **V** = Vanilla-DOM (NodeView/Widget/Plugin) 1:1 im Kern; **W** = React-Widget/-Popup → Angular-Komponente über `uiRender`; **neu** = in `funk.` hinzugefügt. **Varianten:** R = rich, L = lite, D = document, C = collaborative, T = title, S = server, SD = server-document (§3.2.3). **Server-Spec:** Klassennamen-Vorschlag für `BE/documents/Plane.Documents/Schema/` (E-11, Eigentümer D07; eine Klasse je Tiptap-Extension, D01 ADR-031).
+
+### 4.1 Extension-Inventar → Angular-Umsetzung (vollständig, A12 §2.5)
+
+#### 4.1.1 Nodes (23)
+
+| # | Node (`CORE_EXTENSIONS`) | Original-Datei(en) (`ED0/`) | Varianten | Umsetzung | Angular-Artefakt | Server-Spec | CE-IDs |
+|---|---|---|---|---|---|---|---|
+| 1 | `doc` | `extensions/starter-kit.ts` (StarterKit `Document`), `extensions/title-extension.ts` (`content: "heading"`) | R L D C T S SD | A | – | `DocNodeSpec` (+ Variante Titel) | CE-PAGE-021…023 |
+| 2 | `paragraph` | `extensions/starter-kit.ts` | R L D C S SD | A | – | `ParagraphNodeSpec` | CE-PAGE-027 |
+| 3 | `text` | StarterKit | R L D C T S SD | A | – | `TextNodeSpec` | – |
+| 4 | `heading` | `extensions/starter-kit.ts`, `title-extension.ts` (`levels: [1]`) | R L D C T S SD | A | – | `HeadingNodeSpec` | CE-PAGE-027 |
+| 5 | `blockquote` | `extensions/quote.ts` | R L D C S SD | A | – | `BlockquoteNodeSpec` | CE-PAGE-027 |
+| 6 | `bulletList` | `extensions/starter-kit.ts` | R L D C S SD | A | – | `BulletListNodeSpec` | CE-PAGE-028 |
+| 7 | `orderedList` | `extensions/starter-kit.ts` | R L D C S SD | A | – | `OrderedListNodeSpec` | CE-PAGE-028 |
+| 8 | `listItem` | `extensions/starter-kit.ts` | R L D C S SD | A | – | `ListItemNodeSpec` | CE-PAGE-028 |
+| 9 | `taskList` | `extensions/extensions.ts`, `core-without-props.ts` (`@tiptap/extension-task-list`) | R L D C S SD | A | – | `TaskListNodeSpec` | CE-PAGE-028 |
+| 10 | `taskItem` | dto. (`@tiptap/extension-task-item`, `nested: true`; Runtime-Klasse `relative`, Server `flex`) | R L D C S SD | V (Tiptap-Default-NodeView) | – | `TaskItemNodeSpec` | CE-PAGE-028 |
+| 11 | `codeBlock` | `extensions/code/{code-block,code-block-lowlight,index,without-props,code-block-node-view}.ts(x)`, `lowlight-plugin.ts` | R L D C S SD | NV (`code-block`) | `PlEdCodeBlockNodeView` | `CodeBlockNodeSpec` | CE-PAGE-030 |
+| 12 | `horizontalRule` | `extensions/horizontal-rule.ts` | R L D C S SD | A | – | `HorizontalRuleNodeSpec` | CE-PAGE-027 |
+| 13 | `hardBreak` | StarterKit | R L D C S SD | A | – | `HardBreakNodeSpec` | CE-PAGE-022 |
+| 14 | `image` (Legacy) | `extensions/image/{extension,extension-config}.tsx` | R L D C (wenn `"image"` nicht deaktiviert) S SD | NV (`custom-image`) | `PlEdCustomImageNodeView` | `ImageNodeSpec` | CE-PAGE-032 |
+| 15 | `imageComponent` | `extensions/custom-image/**` | R L D C (dto.) S SD | NV (`custom-image`) | `PlEdCustomImageNodeView` + Unterkomponenten §3.10 | `ImageComponentNodeSpec` | CE-PAGE-032, CE-UIX-009 |
+| 16 | `table` | `extensions/table/table/{table,table-view,index,icons}.ts(x)`, `utilities/*` | R L D C S SD | V (`TableView`) | – (Widgets siehe Plugins) | `TableNodeSpec` | CE-PAGE-031 |
+| 17 | `tableRow` | `extensions/table/table-row.ts` | R L D C S SD | A | – | `TableRowNodeSpec` | CE-PAGE-031 |
+| 18 | `tableHeader` | `extensions/table/table-header.ts` | R L D C S SD | A | – | `TableHeaderNodeSpec` | CE-PAGE-031 |
+| 19 | `tableCell` | `extensions/table/table-cell.ts` | R L D C S SD | A | – | `TableCellNodeSpec` | CE-PAGE-031 |
+| 20 | `mention` | `extensions/mentions/{extension-config,extension,mention-node-view,mentions-list-dropdown,utils,types}.ts(x)` | R L D C S SD | NV (`mention`) + W (`mentions-list-dropdown`) | `PlEdMentionNodeView`, `PlEdMentionsListDropdown` | `MentionNodeSpec` | CE-PAGE-034, CE-WI-044 |
+| 21 | `emoji` | `extensions/emoji/{emoji,extension,suggestion}.ts`, `components/emojis-list.tsx` | R L D C S SD | A + W (`emojis-list-dropdown`) | `PlEdEmojisListDropdown` | `EmojiNodeSpec` | CE-PAGE-035 |
+| 22 | `calloutComponent` | `extensions/callout/**` | R L D C S SD | NV (`callout-block`) | `PlEdCalloutBlock`, `PlEdCalloutLogoSelector`, `PlEdCalloutColorSelector` | `CalloutComponentNodeSpec` | CE-PAGE-033 |
+| 23 | `issue-embed-component` | `extensions/work-item-embed/{extension-config,types}.ts` | SD (Runtime in CE nicht registriert) | A (nur Config) | – (D6) | `IssueEmbedComponentNodeSpec` | CE-PAGE-023 (Schema) |
+
+#### 4.1.2 Marks (8)
+
+| # | Mark | Original-Datei | Varianten | Umsetzung | Server-Spec | CE-IDs |
+|---|---|---|---|---|---|---|
+| 1 | `bold` | StarterKit | R L D C S SD | A | `BoldMarkSpec` | CE-PAGE-029 |
+| 2 | `italic` | StarterKit | R L D C S SD | A | `ItalicMarkSpec` | CE-PAGE-029 |
+| 3 | `strike` | StarterKit | R L D C S SD | A | `StrikeMarkSpec` | CE-PAGE-029 |
+| 4 | `underline` | `@tiptap/extension-underline` (`extensions/extensions.ts`) | R L D C S SD | A | `UnderlineMarkSpec` | CE-PAGE-029 |
+| 5 | `code` | `extensions/code-inline/index.tsx` | R L D C S SD | A | `CodeMarkSpec` | CE-PAGE-029 |
+| 6 | `link` | `extensions/custom-link/**` | R L D C S SD | A | `LinkMarkSpec` | CE-PAGE-036 |
+| 7 | `textStyle` | `@tiptap/extension-text-style` | R L D C S SD | A | `TextStyleMarkSpec` | CE-PAGE-029 |
+| 8 | `customColor` | `extensions/custom-color.ts` | R L D C S SD | A | `CustomColorMarkSpec` | CE-PAGE-029, CE-I18N-010 |
+
+Globale Attribute: `textAlign` (`CustomTextAlignExtension`, Typen `heading`, `paragraph`, Server-Spec `TextAlignAttributeSpec`); `id` (`UniqueID`, nur Runtime, Typen `BLOCK_NODE_TYPES` + Block-Registry).
+
+#### 4.1.3 Funktionale Extensions (ohne eigene Nodes/Marks)
+
+| # | Extension (Name) | Original-Datei | Varianten | Umsetzung | Angular-Artefakt / Hinweis | CE-IDs |
+|---|---|---|---|---|---|---|
+| 1 | `dropCursor`, `gapCursor` (StarterKit) | `extensions/starter-kit.ts` | R L D C S SD | A | Dropcursor-Klasse 1:1 | CE-PAGE-026 |
+| 2 | `history` (StarterKit) | dto. | R L D S SD (nicht C: `enableHistory:false`) | A | – | CE-PAGE-021 |
+| 3 | `uniqueID` (Priorität 10000) | `extensions/unique-id/{extension,plugin,utils}.ts` | R L D C | A | IDs nach `synced` bei Provider; Block-Typen aus Registry (R-ED-12) | CE-PAGE-039 |
+| 4 | `textAlign` | `extensions/text-align.ts` | R L D C S SD | A | – | CE-PAGE-027 |
+| 5 | `characterCount` | `@tiptap/extension-character-count` | R L D C | A | `getDocumentInfo()` | CE-PAGE-017 |
+| 6 | `placeholder` | `extensions/placeholder.ts` (Titel: Tiptap-`Placeholder` „Untitled“) | R L D C T | A | – | CE-PAGE-038 |
+| 7 | `markdown` (`tiptap-markdown`) | `extensions/extensions.ts` | R L D C | A | – | CE-PAGE-037 |
+| 8 | `typography` | `extensions/typography/{index,inputRules}.ts` | R L D C | A | – | CE-PAGE-029 |
+| 9 | `customKeymap` | `extensions/keymap.ts` | R L D C | A | Mod-a zweistufig, `ordered-list-merging` | CE-PAGE-028 |
+| 10 | `listKeymap` | `extensions/custom-list-keymap/**` | R L D C | A | `tabIndex` aus Input | CE-PAGE-028 |
+| 11 | `utility` (Priorität 1000) | `extensions/utility.ts` | R L D C | A | Storage `assetsList`, `assetsUploadStatus`, `uploadInProgress`, `activeDropbarExtensions`, `isTouchDevice`; Plugins §4.2 | CE-PAGE-032 |
+| 12 | `CoreEditorAdditionalExtensions` | `extensions/core/{extensions,without-props}.ts` | R L D C (S: `…WithoutProps`) | A | liefert Beiträge der Block-Registry (CE: `[]`) | – |
+| 13 | `slash-command` | `extensions/slash-commands/**`, `additional-slash-command-options.tsx` | R D C | A + W (`slash-commands-menu`) | `PlEdSlashCommandsMenu`, `PlEdSlashCommandMenuItem` | CE-PAGE-024 |
+| 14 | `enterKey` | `extensions/enter-key.ts` | L | A | `editorEnterKeyPress` | CE-PAGE-022, CE-WI-037 |
+| 15 | `editorSideMenu` | `extensions/side-menu.ts`, `plugins/{drag-handle,ai-handle}.ts` | R D C | V | `PlEdBlockMenu` reagiert auf `#drag-handle` | CE-PAGE-026 |
+| 16 | `headingsList` | `extensions/headings-list.ts` | D C | A (E12 korrigiert) | `getHeadings()`, `onHeadingChange()` | CE-PAGE-016 |
+| 17 | `collaboration` | `@tiptap/extension-collaboration` 2.26.1 | C (`field: "default"`), T (`field: "title"`) | A | `CollaborativeEditorInstance`, `TitleEditorInstance` | CE-RT-002 |
+| 18 | `titleEditorNavigation`, `mainEditorNavigation` (Priorität 10) | `hooks/use-editor-navigation.ts` | T, C | A (reine Funktionen) | `ED/core/src/hooks/editor-navigation.ts` | CE-PAGE-013 |
+| 19 | `trailingNode` | `extensions/trailing-node.ts` | – (exportiert, nirgends registriert) | A | Export beibehalten | – |
+| 20 | `planeUiPort` | – | R L D C T | **neu** | `PlaneUiPortExtension` (§3.4); vom Golden-Serialisierer ausgefiltert | – |
+| 21 | `collaborationCursor` | – (CE deaktiviert) | C (nur wenn Flag aktiv) | **neu (Flag)** | `@tiptap/extension-collaboration-cursor` 2.26.1 | CE-RT-002 (FE-ED-01) |
+
+### 4.2 ProseMirror-Plugins → Umsetzung (vollständig, A12 §2.6)
+
+| PluginKey | Original-Datei | Registriert durch | Umsetzung | Hinweis |
+|---|---|---|---|---|
+| `codeBlockVSCodeHandlerCustom` | `extensions/code/code-block.ts` | `codeBlock` | A | – |
+| `lowlight` | `extensions/code/lowlight-plugin.ts` | `CodeBlockLowlight` | A | `lowlight` 3.3.0 `common` + `ts` |
+| `autolink` | `extensions/custom-link/helpers/autolink.ts` | `link` | A | – |
+| `handleClickLink` | `extensions/custom-link/helpers/clickHandler.ts` | `link` | A | – |
+| `handlePasteLink` | `extensions/custom-link/helpers/pasteHandler.ts` | `link` | A | – |
+| `emojiSuggestion` | `extensions/emoji/emoji.ts` + `suggestion.ts` | `emoji` (nicht Touch) | A + W | `PlEdEmojisListDropdown` |
+| `emoji` | `extensions/emoji/emoji.ts` | `emoji` (nicht Touch) | A | – |
+| `suggestion` (Slash) | `extensions/slash-commands/root.tsx` | `slash-command` | A + W | `PlEdSlashCommandsMenu` |
+| `mention` (Tiptap-Default-Key) | `@tiptap/extension-mention` + `extensions/mentions/utils.ts` | `mention` | A + W | `PlEdMentionsListDropdown` |
+| `heading-list` | `extensions/headings-list.ts` | `headingsList` | A | – |
+| `ordered-list-merging` | `extensions/keymap.ts` | `customKeymap` | A | – |
+| `sideMenu` | `extensions/side-menu.ts` | `editorSideMenu` | V | – |
+| `uniqueID` | `extensions/unique-id/plugin.ts` | `uniqueID` | A | ignoriert `y-sync$`-Transaktionen |
+| `tableDragState` | `extensions/table/plugins/drag-state.ts` | `table` | A | Decoration `content-hidden` |
+| `table-insert` | `extensions/table/plugins/insert-handlers/plugin.ts` | `table` | V | „+“-Buttons, Drag-Marker |
+| `tableColumnHandlerDecorationPlugin` | `extensions/table/plugins/drag-handles/column/plugin.ts` | `table` | A + W | `PlEdTableColumnDragHandle` |
+| `tableRowDragHandlePlugin` | `extensions/table/plugins/drag-handles/row/plugin.ts` | `table` | A + W | `PlEdTableRowDragHandle` |
+| `table-cell-selection-outline` | `extensions/table/plugins/selection-outline/plugin.ts` | `tableCell` | A | – |
+| `tableEditing`, `columnResizing` | `prosemirror-tables` 1.7.1 via `extensions/table/table/table.ts` | `table` | A | nur editierbar |
+| `delete-utility` | `plugins/file/delete.ts` | `utility` | A | ruft `fileHandler.delete` |
+| `restore-utility` | `plugins/file/restore.ts` | `utility` | A | `restorePublicImages` beim Erstellen |
+| `prosemirror-codemark` | `extensions/utility.ts` | `utility` | A | CSS `.fake-cursor`, `.no-cursor` |
+| `markdownClipboard` | `plugins/markdown-clipboard.ts` | `utility` | A | – |
+| `drop-handler-plugin` | `plugins/drop.ts` | `utility` | A | Attachment-Zweig über Block-Registry (D9) |
+| `nodeHighlight` | `plugins/highlight.ts` | nicht registriert | A | E22 beibehalten |
+| `placeholder`, `characterCount`, `dropcursor`, `gapcursor`, `history` | Tiptap | – | A | – |
+| `y-sync`, `y-undo` | `y-prosemirror` 1.3.7 via `Collaboration` | C, T | A | – |
+| `bubbleMenu` | `@tiptap/extension-bubble-menu` 2.26.3 | `PlEdEditorBubbleMenu` (über `[plEdBubbleMenu]`) | W | im Original durch `@tiptap/react` `BubbleMenu` registriert |
+| tiptap-markdown-Plugins | `tiptap-markdown` 0.8.10 | `markdown` | A | – |
+| `yCursorPlugin` (Awareness) | `y-prosemirror` via `collaborationCursor` | C (Flag) | neu (Flag) | FE-ED-01 / D4 |
+
+### 4.3 React-Komponenten → Angular-Komponenten (Übersicht; Datei-genau in Anhang A)
+
+| Gruppe | Original (`ED0/`) | Angular (`ED/components/src/`) | Selektor |
+|---|---|---|---|
+| Varianten | `components/editors/{rich-text,lite-text,document}/editor.tsx`, `document/collaborative-editor.tsx` | `PlEdRichTextEditor`, `PlEdLiteTextEditor`, `PlEdDocumentEditor`, `PlEdCollaborativeDocumentEditor` | `pl-ed-rich-text-editor`, `pl-ed-lite-text-editor`, `pl-ed-document-editor`, `pl-ed-collaborative-document-editor` |
+| Hülle | `editor-wrapper.tsx`, `editor-container.tsx`, `editor-content.tsx`, `document/page-renderer.tsx`, `document/loader.tsx`, `link-container.tsx`, `link-view-container.tsx`, `document-editor-side-effects.ts` | `PlEdEditorWrapper`, `PlEdEditorContainer`, `PlEdEditorContentWrapper`, `PlEdPageRenderer`, `PlEdDocumentContentLoader`, `PlEdLinkContainer`, `PlEdLinkViewContainer`, `PlEdDocumentEditorSideEffects` (+ intern `PlEdTitleEditor`) | `pl-ed-editor-wrapper`, `div[plEdEditorContainer]`, `div[plEdEditorContentWrapper]`, `div[plEdPageRenderer]`, `pl-ed-document-content-loader`, `pl-ed-link-container`, `pl-ed-link-view-container`, `pl-ed-document-editor-side-effects`, `pl-ed-title-editor` |
+| Links | `components/links/{link-view,link-preview,link-edit-view}.tsx` | `PlEdLinkView`, `PlEdLinkPreview`, `PlEdLinkEditView` | `pl-ed-link-view`, `div[plEdLinkPreview]`, `div[plEdLinkEditView]` |
+| Menüs | `components/menus/bubble-menu/{root,node-selector,link-selector,color-selector,alignment-selector}.tsx`, `block-menu.tsx`, `floating-menu/root.tsx` | `PlEdEditorBubbleMenu`, `PlEdBubbleMenuNodeSelector`, `PlEdBubbleMenuLinkSelector`, `PlEdBubbleMenuColorSelector`, `PlEdBubbleMenuAlignmentSelector`, `PlEdBlockMenu`, `PlEdFloatingMenuRoot` | `pl-ed-editor-bubble-menu`, `pl-ed-bubble-menu-*`, `pl-ed-block-menu`, `pl-ed-floating-menu-root` |
+| Suggestions | `extensions/slash-commands/{command-menu,command-menu-item}.tsx`, `extensions/mentions/mentions-list-dropdown.tsx`, `extensions/emoji/components/emojis-list.tsx` | `PlEdSlashCommandsMenu`, `PlEdSlashCommandMenuItem`, `PlEdMentionsListDropdown`, `PlEdEmojisListDropdown` | Host `div.react-renderer` (über `AngularRenderer`), `button[plEdSlashCommandMenuItem]` |
+| NodeViews | `extensions/callout/{block,logo-selector,color-selector}.tsx`, `extensions/code/code-block-node-view.tsx`, `extensions/custom-image/components/**`, `extensions/mentions/mention-node-view.tsx` | `PlEdCalloutBlock`, `PlEdCalloutLogoSelector`, `PlEdCalloutColorSelector`, `PlEdCodeBlockNodeView`, `PlEdCustomImageNodeView`, `PlEdImageBlock`, `PlEdImageUploader`, `PlEdImageUploadStatus`, `PlEdImageToolbarRoot`, `PlEdImageDownloadAction`, `PlEdImageAlignmentAction`, `PlEdImageFullScreenAction`, `PlEdImageFullScreenModal`, `PlEdMentionNodeView` | Wrapper-Attribut `[plEd…]` (§3.5.1) |
+| Tabellen-Widgets | `extensions/table/plugins/drag-handles/{column,row}/{drag-handle,dropdown}.tsx`, `color-selector.tsx` | `PlEdTableColumnDragHandle`, `PlEdTableRowDragHandle`, `PlEdTableColumnDropdown`, `PlEdTableRowDropdown`, `PlEdTableDragHandleColorSelector` | Host `div.react-renderer` bzw. `pl-ed-table-*` |
+| Entfällt | `components/menus/ai-menu.tsx`, `extensions/work-item-embed/extension.tsx` | – | G3 nicht gewählt / Paket D6 |
+
+### 4.4 Konsumenten im Original → Ziel (wer bindet den Editor ein)
+
+| Original | Nutzung | Ziel (Hülle) | Inkr. | CE-IDs |
+|---|---|---|---|---|
+| `WEB/components/issues/issue-modal/{form,components/description-editor,context/issue-modal-context}.tsx` | Rich (Beschreibung), Ref `setEditorValue`, `isEditorReadyToDiscard` | `PlWebRichTextEditor` in `FE/libs/web/work-items/components/issues/issue-modal/**` | I2 | CE-WI-001 |
+| `WEB/components/issues/{peek-overview/issue-detail,peek-overview/view,issue-detail/main-content}.tsx` | `PlWebDescriptionInput`, Ref | `FE/libs/web/work-items/components/issues/**` | I2 | CE-WI-005 |
+| `WEB/components/comments/{comment-create,card/root,card/edit-form,card/display}.tsx` | Lite (Erstellen/Bearbeiten), Lite read-only (Anzeige) | `FE/libs/web/work-items/components/comments/**` | I2 | CE-WI-037 |
+| `WEB/components/core/description-versions/modal.tsx` | Document read-only | `FE/libs/web/core/components/core/description-versions/**` | I2 | CE-WI-041 |
+| `WEB/components/inbox/{content/issue-root,modals/create-modal/create-root,modals/create-modal/issue-description}.tsx` | Rich | `FE/libs/web/intake/components/inbox/**` | I3 | CE-INT-004, -005, -010 |
+| `WEB/components/pages/editor/{page-root,editor-body}.tsx` | Collaborative + Titel, Stateless, Fallback | `FE/libs/web/pages/components/pages/editor/**` | I4 | CE-PAGE-013 |
+| `WEB/components/pages/version/editor.tsx` | Document read-only | `FE/libs/web/pages/components/pages/version/**` | I4 | CE-PAGE-019 |
+| `WEB/components/pages/navigation-pane/tab-panels/{assets,info/document-info}.tsx` | `editorAssetChange`, `getDocumentInfo`/`onDocumentInfoChange` | `FE/libs/web/pages/components/pages/navigation-pane/**` | I4 | CE-PAGE-017, -018 |
+| `WEB/components/pages/modals/export-page-modal.tsx` | `getMarkDown`, `getDocument` (PDF serverseitig, D10-ADR-21) | `FE/libs/web/pages/components/pages/modals/**` | I4 | CE-PAGE-011 |
+| `WEB/components/pages/editor/toolbar/*`, `summary/*` | `executeMenuItemCommand`, `isMenuItemActive`, `onStateChange`, `getHeadings`, `scrollSummary` | `FE/libs/web/pages/components/pages/editor/{toolbar,summary}/**` | I4 | CE-PAGE-014, -016 |
+| `WEB/components/stickies/sticky/inputs.tsx` | Sticky-Editor | `FE/libs/web/stickies/components/stickies/sticky/**` | I5 | CE-HOME-010 |
+| `WEB/components/core/modals/gpt-assistant-popover.tsx` | Rich (Prompt/Antwort), `setEditorValue` | `FE/libs/web/core/components/core/modals/**` | I6 | CE-AI-001 |
+| `WEB/hooks/use-collaborative-page-actions.tsx`, `use-realtime-page-events.tsx`, `use-page-fallback.ts` | `emitRealTimeUpdate`, `listenToRealTimeUpdate`, `setProviderDocument`, `getDocument` | `CollaborativePageActionsService`, `RealtimePageEventsService`, `PageFallbackService` (D08) | I4 | CE-RT-003, -004 |
+| `SPC/components/issues/**` (Peek, Kommentare) | Space-Hüllen | `FE/libs/space/issues/**` | I6 | CE-SPACE-024, -025 |
+
+### 4.5 CE-ID → Baustein → Inkrement → Test (Editor-Teil; Spec-Namen aus D15 Anhang B.8)
+
+| CE-ID | Editor-Baustein(e) | Inkr. | Spec / Golden |
+|---|---|---|---|
+| CE-PAGE-013 | `PlEdCollaborativeDocumentEditor`, `PlEdTitleEditor`, `CollaborationSession` | I4 | `web/pages/page-editor-shell.spec.ts`, `web/editor/editor-variants.spec.ts` (collab) |
+| CE-PAGE-014 | `TOOLBAR_ITEMS`, `executeMenuItemCommand`, `isMenuItemActive`, `onStateChange` | I4 | `web/pages/page-editor-shell.spec.ts` |
+| CE-PAGE-016 | `HeadingListExtension`, `getHeadings`, `onHeadingChange`, `scrollSummary` | I2 (Extension) / I4 (Outline) | `page-editor-shell.spec.ts`, Kern-Spec `headings-list.spec.ts` |
+| CE-PAGE-017 | `getDocumentInfo`, `onDocumentInfoChange` | I4 | `page-editor-shell.spec.ts` |
+| CE-PAGE-018 | `editorAssetChange`, `utility.assetsList` | I4 | `page-editor-shell.spec.ts` |
+| CE-PAGE-020 | `displayConfig` (`wideLayout`), `copyMarkdownToClipboard` | I4 | `page-editor-shell.spec.ts` |
+| CE-PAGE-021 | `PlEdRichTextEditor`, `EditorInstance` | I2 | `web/editor/editor-variants.spec.ts`, G-SCHEMA `rich`, LT-16 |
+| CE-PAGE-022 | `PlEdLiteTextEditor`, `EnterKeyExtension` | I2 | `editor-variants.spec.ts`, G-SCHEMA `lite` |
+| CE-PAGE-023 | `PlEdDocumentEditor`, `PlEdPageRenderer` | I2 | `editor-variants.spec.ts`, G-SCHEMA `document` |
+| CE-PAGE-024 | Slash-Commands | I2 | `web/editor/editor-menus.spec.ts` |
+| CE-PAGE-025 | Bubble-Menü | I2 | `editor-menus.spec.ts` |
+| CE-PAGE-026 | Side-Menü, Drag-Handle, Block-Menü, Block-DnD | I2 | `editor-menus.spec.ts` |
+| CE-PAGE-027 … -033 | Nodes/Marks §4.1, NodeViews §3.10, Tabellen §3.13, Bilder §3.14 | I2 | `web/editor/editor-blocks.spec.ts`, G-DOC |
+| CE-PAGE-034 … -038 | Mentions, Emoji, Links, Markdown, Platzhalter | I2 | `web/editor/editor-inline.spec.ts`, G-DOC |
+| CE-PAGE-039, -040 | Deep-Link (`EditorContainer`), Anzeige-Konfiguration | I2 | `web/editor/editor-config.spec.ts` |
+| CE-RT-002 | `CollaborationSession`, `CollaborationProviderFactory`, IndexedDB | I4 | `web/realtime/collaboration.spec.ts`, Vitest `collaboration-session.spec.ts` |
+| CE-RT-003 | `setProviderDocument`, `getDocument` (Schnittstelle für `PageFallbackService`) | I4 | `page-fallback.service.spec.ts` (D08) |
+| CE-RT-004 | `emitRealTimeUpdate`, `listenToRealTimeUpdate` | I4 | `realtime-page-events.service.spec.ts` (D08) |
+| CE-WI-001, -005 | Rich + `PlWebDescriptionInput` | I2 | Spec des Work-Item-Moduls (D15 B.x) + `editor-variants.spec.ts` |
+| CE-WI-037 | Lite + Kommentar-Toolbars | I2 | Spec Kommentare (D15) |
+| CE-WI-041 | Document read-only | I2 | Spec Beschreibungs-Versionen (D15) |
+| CE-WI-044 | `mention`-Node, `mention-component`-HTML | I2 | G-DOC + Backend `page_transaction`/IssueMention-Tests |
+| CE-HOME-010 | Sticky-Hülle | I5 | Spec Stickies (D15) |
+| CE-SPACE-024, -025, -030 | Space-Hüllen | I6 | Space-Specs (D15) |
+| CE-I18N-010 | `ED/styles/variables.css`, `COLORS_LIST` | I0 (CSS) / I2 | G-CSS |
+| CE-UIX-009 | Upload-Fortschritt im Editor (`PlEdImageUploadStatus`) | I2 | `editor-blocks.spec.ts` |
