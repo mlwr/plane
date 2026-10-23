@@ -2,6 +2,7 @@
 
 > **Status:** verbindlich für alle Backend-Arbeitspakete (Fachdokument zu `01-zielarchitektur-und-tech-stack.md`, Anhang A: ADR-010 … ADR-016, ADR-019 … ADR-021, ADR-034 … ADR-038, ADR-050).
 > **Rangfolge:** `00-grundsatzentscheidungen.md` > `01-zielarchitektur-und-tech-stack.md` > **dieses Dokument** > eigene Präferenzen. Bei Widerspruch gilt 01; wo dieses Dokument 01 präzisiert, ist das ausdrücklich als „Präzisierung zu 01 §…“ markiert, wo es einen Änderungsantrag an 01 stellt, steht er in §8 (offene Punkte).
+> **Abgrenzung zu 05 (nach Review 23.10.2026):** Für **Inhalt und Semantik der Autorisierung** (Permission-Keys, Rollen-Grants, Evaluator-Reihenfolge, Regeln `C:`/`OWN`/`SELF`/`VIS`/`PAGE`/`BOARD`/`WSA|PA`, WS-Admin-Override HARM-00, Sicherheitskorrekturen `SEC-*`) sowie für **Auth-/Session-Optionen** ist `05-auth-sicherheit-berechtigungen.md` (§3.2, §3.13, §4.4, Anhang A/B) maßgeblich. Dieses Dokument liefert die **Mechanik** (Typen, Filter, Platzierung in der Pipeline, Deskriptor-Format, Fehlerkörper). Wo beide Dokumente dieselbe Sache unterschiedlich benennen, gilt 05; offene Widersprüche stehen im Review-Protokoll (Ende des Dokuments).
 > **Repository:** Alle Zielpfade sind relativ zur Wurzel des neuen Repositorys **`funk.`** (ADR-009). Der in 01 §5.1 noch verwendete Arbeitstitel `plane-net/` ist durch `funk.` ersetzt; Projekt-, Assembly- und Namespace-Präfix bleibt `Plane.*` (01 §5), die Solution heißt `Plane.slnx`.
 > **Stand:** 23.10.2026 · **Sprache:** Fließtext Deutsch, Bezeichner Englisch.
 > **Kürzel:** `API/` = `apps/api/plane/` im Original-Repo (`/home/user/plane`), `A01` … `A13b` = Analyse-Dokumente in `migration/analysis/`, `CE-…` = Feature-IDs aus `migration/features/10-ce-feature-katalog.md`, `D02-ADR-nn` = Entscheidungen dieses Dokuments.
@@ -84,7 +85,8 @@ Das vollständige Referenzmodul **„Labels“** (Teil von `Plane.Projects`, 01 
 | Caching (§3.12) | I1 | Instanz-Konfiguration ab I0 ohne L2 (nur L1) |
 | Rate Limiting (§3.13) | I1 (Policy `anon` ab I0) | CE-API-002 in I6 |
 | Logging/Tracing (§3.14) | **I0** | ServiceDefaults |
-| Options-Klassen (§3.15) | **I0** (alle Klassen angelegt, Werte bei Erstnutzung validiert) | – |
+| DbContext-Registrierung ohne Pooling, Execution-Strategy-Kapselung, Mediator-Konfiguration (§3.2.4, D02-ADR-26/-27) | **I0** | Spike S0 prüft `internal`-Handler-Registrierung |
+| Options-Klassen (§3.15) | **I0** (alle Klassen angelegt; `ValidateOnStart` für alle, Pflichtfelder nur bei Klassen, deren Modul im Host-Katalog steht – sonst würde I0 an Werten späterer Inkremente scheitern) | – |
 | Instanz-Konfiguration (§3.16) | **I0** (Store + Seed), God-Mode-Formulare I6 | CE-INST-002/-003 |
 | Health (§3.17) | **I0** | Aspire-Health, Gateway |
 | OpenAPI (§3.18) | I0 intern (Contract-Check), I6 öffentlich | CE-API-004 |
@@ -102,7 +104,7 @@ Spalte „ab“ = Inkrement der ersten Umsetzung. Alle Entscheidungen sind Präz
 | **D02-ADR-02** | Entity-Basistypen (ADR-037) | Flache Vererbung mit drei abstrakten Basisklassen `Entity` → `AuditableEntity` → `WorkspaceEntity` / `ProjectEntity`, ergänzt um **Marker-Interfaces** (`ISoftDeletable`, `IAuditable`, `IWorkspaceScoped`, `IProjectScoped`, `IExternallyReferenced`, `ISortable`, `IHasDomainEvents`). Audit-Semantik **wie Original** (`BaseModel.save`): bei Anlage `created_by_id = Akteur`, `updated_by_id = NULL`; bei Änderung nur `updated_by_id = Akteur`. | Ein „God-Base“ mit allen Feldern; reine Interfaces ohne Basisklassen; EF-Owned-Types für Audit | Spiegelt `BaseModel`/`AuditModel`/`WorkspaceBaseModel`/`ProjectBaseModel` (`API/db/models/base.py`, `API/db/mixins.py`) 1:1 → Golden-Files bleiben vergleichbar (`updated_by: null` nach Anlage). Interfaces erlauben Interceptors ohne Typprüfung auf Basisklassen. | I0 |
 | **D02-ADR-03** | Soft-Delete (01 §7.7) | `SoftDeleteInterceptor` wandelt `EntityState.Deleted` für `ISoftDeletable` in ein Update von `deleted_at` um und wertet die **`SoftDeleteCascadeRegistry`** aus. Kaskadenmodus je Beziehung: `Inline` (Set-basiertes `ExecuteUpdateAsync` in derselben Transaktion; Default) oder `Deferred` (Job `SoftDeleteCascadeJob` über die Job-Queue; nur für Wurzeln mit potenziell sehr vielen Kindern: Workspace, Project). Hartes Löschen ausschließlich über `IHardDelete`-Pfad (Hard-Delete-Job, explizite Fachfälle wie `UserRecentVisit`). | Kaskade immer asynchron wie Original (`soft_delete_related_objects.delay`); Datenbank-Trigger | Inline-Kaskade beseitigt das Original-Zeitfenster, in dem Kinder eines gelöschten Objekts noch sichtbar sind (dokumentierte Abweichung `DEV-OPS-001` in `tests/contracts/deviations.yaml`); für große Wurzeln bleibt das asynchrone Original-Verhalten. | I0 |
 | **D02-ADR-04** | Tenant-Auflösung (ADR-038) | `ScopeBindingFilter` löst `{slug}` (und `{project_id}`) **ohne eigenen 404** auf: ein unbekannter Slug ergibt einen `WorkspaceScope` mit `Exists = false`; die nachfolgende Permission-Prüfung liefert dann die **Original-Ablehnung** (403 in der Form des jeweiligen Prüfmechanismus). Nur Endpunkte, die im Original per `Workspace.objects.get(...)` 404 liefern, deklarieren `.ResolveWorkspaceOrNotFound()`. | Middleware, die bei unbekanntem Slug sofort 404 liefert | Original prüft Mitgliedschaft über `workspace__slug=…` → unbekannter Slug = „keine Mitgliedschaft“ = 403 (`A03` §2.4.2). 404 würde zudem die Existenz fremder Workspaces offenlegen. | I0 |
-| **D02-ADR-05** | Permission-Deklaration (ADR-019, 01 §7.10) | Je Route **genau ein** `.RequirePermission(<Permission>)`; die Permission ist im Katalog als **`PermissionDescriptor`** hinterlegt: Schlüssel, Scope-Ebene, `DenyStyle` (`Error` = `{"error": "You don't have the required permissions."}` wie `allow_permission`, `Detail` = `{"detail": "You do not have permission to perform this action."}` wie DRF-Permission-Klassen), optionale **Vorbedingungen** (geordnete Liste weiterer Permissions – bildet „Permission-Klasse **und** Decorator“ ab) und benannte **Regeln** (`WorkspaceAdminOverride`, `CreatorBypass<TEntity>`, `GuestViewAllFeatures`, `InstanceAdmin`, `Owner<TEntity>`). | Mehrere `.RequirePermission`-Aufrufe je Route; ASP.NET-Policies je Rolle; Prüfung im Handler | Erfüllt 01 §7.10 („genau eine Angabe“) und reproduziert trotzdem die zweistufigen Original-Prüfungen (z. B. Labels: `ProjectBasePermission` **und** `allow_permission([ADMIN])`) inklusive der jeweils unterschiedlichen Fehlerkörper. E5 tauscht nur den `IRoleDefinitionProvider`. | I0 |
+| **D02-ADR-05** | Permission-Deklaration (ADR-019, 01 §7.10, D05-ADR-17/-20) | Je Route **genau ein** `.RequirePermission(<PermissionDescriptor>, params PermissionRule[] rules)` (Signatur aus 05 §3.13.7); der **Deskriptor** (generiert aus `05-permission-matrix.json`, 05 §5.8) trägt Schlüssel, Ebene, Rollenmenge, `ApiScope` und den Default-`DenyStyle` (`Error` = `{"error": "You don't have the required permissions."}` wie `allow_permission`, `Detail` = `{"detail": "You do not have permission to perform this action."}` wie DRF-Permission-Klassen). **Regeln** werden am Endpunkt angehängt (05-Notation `C:<Model>`, `OWN`, `SELF`, `VIS`, `PAGE`, `BOARD`, `WSA\|PA`) und zusätzlich – Ergänzung dieses Dokuments – die Regel **`PermissionRule.Prerequisite(<Deskriptor>)`**: eine vorgeschaltete Prüfung mit **eigenem** `DenyStyle`, die die Original-Kombination „Permission-Klasse **und** Decorator“ (`WS(A,M) ∧ PRJ⁺(A)` in 05 Anhang B) mit den jeweils unterschiedlichen Fehlerkörpern reproduziert. `.WithDenyStyle(...)` überschreibt den Default je Endpunkt. | Mehrere `.RequirePermission`-Aufrufe je Route; ASP.NET-Policies je Rolle; Prüfung im Handler; Vorbedingungen fest im Deskriptor (verworfen im Review, weil derselbe Key an Endpunkten mit und ohne Vorbedingung vorkommt, z. B. `project.label.create` an L2 und L7) | Erfüllt 01 §7.10 („genau eine Angabe“) und D05-ADR-20 („Körper je Prüfmechanismus wie Original“). E5 tauscht nur den `IRoleDefinitionProvider`. | I0 |
 | **D02-ADR-06** | Oberflächen (ADR-011) | Sechs typisierte **Oberflächen** (`ApiSurface`): `App` (`/api/`), `V1` (`/api/v1/`), `Space` (`/api/public/`), `Instance` (`/api/instances/`), `Auth` (`/auth/`), `Integrations` (`/api/integrations/`), dazu `Root` (`/`, `/robots.txt`). Jede Oberfläche ist eine `RouteGroupBuilder`-Hülle (`PlaneEndpointRouteBuilder.App(...)`, `.V1(...)`, `.Space(...)`, `.Instance(...)`, `.Auth(...)`, `.Integrations(...)`, `.Root(...)`) mit festem Authentifizierungsschema, CSRF-/Origin-Regel, Rate-Limit-Policy, Fehlerprofil und OpenAPI-Dokument. | Ein globales Präfix mit Attributen je Endpunkt | Das Original unterscheidet genau diese Bereiche (`A01` §2.14) mit unterschiedlicher Auth, Cookies und Throttles; Fehlkonfiguration einzelner Endpunkte wird so unmöglich. | I0 |
 | **D02-ADR-07** | Trailing Slash (01 §7.11) | `TrailingSlashMiddleware` **vor** `UseRouting` entfernt genau einen abschließenden `/` aus `Request.Path` (außer bei `/`), ohne Redirect und für alle Methoden. Routen-Templates enthalten nie einen abschließenden Slash. | Doppelte Registrierung je Route; `APPEND_SLASH`-Redirect; Vertrauen auf implizites Routing-Verhalten | Deterministisch und unabhängig von Routing-Interna; kein 301 auf POST/PATCH (Original würde bei fehlendem Slash und POST einen Fehler werfen). Ein Routing-Test über alle Endpunkte prüft beide Varianten. | I0 |
 | **D02-ADR-08** | Fehlerbehandlung (ADR-016, 01 §7.4) | **Zwei Wege, eine Fabrik:** (a) erwartbare Fehler als `Result`/`Result<T>` mit `PlaneError` aus `PlaneErrors` (kein Exception-Control-Flow); (b) unerwartete Ausnahmen über `PlaneExceptionHandler : IExceptionHandler`, der die Abbildung von `BaseViewSet.handle_exception` 1:1 reproduziert (`DbUpdateException` mit Unique-Verletzung → 400 `{"error": "The payload is not valid"}`, `EntityNotFoundException` → 404 `{"error": "The required object does not exist."}`, `RequiredKeyMissingException` → 400 `{"error": "The required key does not exist."}`, sonst 500 `{"error": "Something went wrong please try again later"}` + Log `plane.exception`). RFC-9457-ProblemDetails nur für `/health/*` und interne Fehler des Gateways. | Exceptions für alle Fehler; ProblemDetails überall | Erwartete Fehler sind Teil des Vertrags und müssen testbar ohne Exceptions sein; unerwartete Fehler brauchen die exakten Original-Texte, weil das Frontend sie als Toast anzeigt. | I0 |
@@ -114,15 +116,17 @@ Spalte „ab“ = Inkrement der ersten Umsetzung. Alle Entscheidungen sind Präz
 | **D02-ADR-14** | Filter-AST als einzige Abfragesprache (01 §1.4 B6, CE-LV-006) | Legacy-Query-Parameter (`issue_filters`) und Rich-Filter-JSON (`filters`) werden von **zwei Parsern** in **denselben** `FilterExpression`-AST übersetzt, dann von einem **Compiler** über eine **Feld-Registry** (`IFilterFieldProvider` + `IWorkItemFilterTranslator`) in `Expression<Func<WorkItem,bool>>`. Kein Parser erzeugt SQL oder LINQ direkt. | Zwei getrennte Filterpfade wie Original; Dynamic-LINQ-Strings | Ein Ausdrucksbaum ist Voraussetzung für B6 (PQL als dritter Parser) und A1 (Custom-Property-Felder als weitere Registry-Einträge). | I2 |
 | **D02-ADR-15** | Gruppierte Abfragen (S9, `A04` §5.2) | Zweiphasig: Phase 1 ermittelt per **SQL-Baustein** (`GroupedPageSqlBuilder`, CTE mit `ROW_NUMBER() OVER (PARTITION BY …)`, nur allowlist-geprüfte Ausdrücke aus der Group-Key-Registry, Ausführung über `Database.SqlQuery<GroupedRow>`) die Tupel `(issue_id, group_key, sub_group_key, rn)` sowie Gruppensummen; Phase 2 projiziert die Issue-Felder per EF (`WHERE id = ANY(@ids)`) und ID-Arrays per zweiter Abfrage (`array_agg`). Die gefilterte Basismenge gelangt entweder als materialisiertes ID-Array (Variante A) oder als aus demselben AST erzeugtes, parametrisiertes SQL-Prädikat (Variante B) in den CTE (§3.11.6). | Alles in LINQ (EF übersetzt Window-Functions nicht); `linq2db` | Performance-Ziele aus S9; ein schmaler, gut testbarer SQL-Baustein statt vieler handgeschriebener Queries. | I2 |
 | **D02-ADR-16** | Caching (ADR-021) | Fassade **`IPlaneCache`** über `HybridCache` mit Schlüssel-Präfix `plane:`, Tag-Invalidierung und **knotenübergreifender L1-Invalidierung** über Valkey-Pub/Sub-Kanal `plane:cache:invalidate` (HybridCache invalidiert L1 nur auf dem eigenen Knoten). **Berechtigungen/Mitgliedschaften werden nicht request-übergreifend gecacht** (nur Memoisierung pro Request). Kein generisches Response-Caching; gecacht werden benannte Lesemodelle (§3.12). | `@cache_response`-Nachbau (Schlüssel = Pfad+User); Output-Caching | Original-Invalidierungen treffen ihre Schlüssel nicht (`A03` §2.1.6) → Tags lösen das korrekt; Rechteänderungen müssen sofort wirken (Sicherheit). | I1 |
-| **D02-ADR-17** | Rate Limiting (ADR-034) | Benannte Policies `anon`, `authentication`, `email_verification`, `asset_duplicate`, `api_key`, gebunden an Oberflächen bzw. Endpunkte; Raten im Original-Format `n/period`; Partitionierung exakt wie Original (IP, User, Asset-ID, API-Key-**Hash**); Ablehnung 429 `{"error_code": 5900, "error_message": "RATE_LIMIT_EXCEEDED"}` + `Retry-After`; `/api/v1/` zusätzlich `X-RateLimit-Remaining`/`X-RateLimit-Reset` auf **jeder** Antwort. Algorithmus Sliding Window (DRF-History-Semantik). | Token Bucket; nur Gateway-Limit | Paritätsvertrag CE-API-002; API-Key nicht im Klartext als Schlüssel (Korrektur gegenüber `api_key:<key>`, Sicherheitskorrektur nach 01 §7.20). | I1 |
-| **D02-ADR-18** | Logging/Tracing (ADR-035, 01 §7.16) | `ILogger<T>` mit **festen Kategorien** über `PlaneLogCategories` (`plane.api.request`, `plane.api`, `plane.worker`, `plane.realtime`, `plane.exception`, `plane.external`, `plane.authentication`, `plane.migrations`); `RequestLoggingMiddleware` schreibt eine Zeile pro Request (`"{Method} {Path} {StatusCode}"` + Felder wie Original), nicht für `GET /` und `/health/*`; `ActivitySource`-Namen `Plane.Api`, `Plane.Worker`, `Plane.Realtime`, `Plane.Messaging`, `Plane.Query`; Redaktion über `Microsoft.Extensions.Compliance.Redaction` für Felder mit `[PersonalData]`/`[SecretData]`. | Serilog; freie Kategorien | Betreiber-Dashboards/Alerts des Originals bleiben übertragbar; keine PII in Logs. | I0 |
+| **D02-ADR-17** | Rate Limiting (ADR-034) | Benannte Policies `anon`, `authentication`, `email_verification`, `asset_duplicate`, `api_key`, gebunden an Oberflächen bzw. Endpunkte; Raten im Original-Format `n/period`; Partitionierung exakt wie Original (IP, User, Asset-ID, API-Key → **`token_hash`**, D05-ADR-16); Ablehnung 429 `{"error_code": 5900, "error_message": "RATE_LIMIT_EXCEEDED"}` + `Retry-After`; `/api/v1/` zusätzlich `X-RateLimit-Remaining`/`X-RateLimit-Reset` auf **jeder** Antwort. Algorithmus Sliding Window (DRF-History-Semantik). | Token Bucket; nur Gateway-Limit | Paritätsvertrag CE-API-002; API-Key nicht im Klartext als Schlüssel (Korrektur gegenüber `api_key:<key>`, Sicherheitskorrektur nach 01 §7.20). | I1 |
+| **D02-ADR-18** | Logging/Tracing (ADR-035, 01 §7.16) | `ILogger<T>` mit **festen Kategorien** über `PlaneLogCategories` (`plane.api.request`, `plane.api`, `plane.worker`, `plane.realtime`, `plane.exception`, `plane.external`, `plane.authentication`, `plane.migrations`, `plane.query`, `plane.config`); `RequestLoggingMiddleware` schreibt eine Zeile pro Request (`"{Method} {Path} {StatusCode}"` + Felder wie Original), nicht für `GET /` und `/health/*`; `ActivitySource`-Namen `Plane.Api`, `Plane.Worker`, `Plane.Realtime`, `Plane.Messaging`, `Plane.Query`; Redaktion über `Microsoft.Extensions.Compliance.Redaction` für Felder mit `[PersonalData]`/`[SecretData]`. | Serilog; freie Kategorien | Betreiber-Dashboards/Alerts des Originals bleiben übertragbar; keine PII in Logs. | I0 |
 | **D02-ADR-19** | Konfiguration (ADR-036, 01 §7.13) | Eine Options-Klasse je Bereich `Plane<Bereich>Options` unter `Plane:<Bereich>`; **ENV-Aliase** der Original-Variablen über die Konfigurationsquelle `LegacyEnvironmentConfigurationSource` (Tabelle §4.9), die vor den Standard-ENV-Variablen geladen wird (`Plane__…` hat Vorrang); Validierung per `IValidateOptions<T>` + `ValidateOnStart`; Raten-Strings (`60/minute`) per `RateExpression.Parse`. | Direktes Lesen von `Environment.GetEnvironmentVariable`; nur neue Namen | Betreiber können vorhandene `.env`-Dateien des Originals weiterverwenden; ungültige Werte fallen beim Start auf, nicht beim ersten Request. | I0 |
 | **D02-ADR-20** | Instanz-Konfiguration (ADR-036, CE-INST-002) | Tabelle `instance_configurations` (Key, Value, Category, IsEncrypted), Zugriff nur über **`IInstanceConfigurationStore`** (`Plane.Instance.Contracts`); geheime Werte mit **ASP.NET Core Data Protection** (Purpose `Plane.InstanceConfiguration.v1`, Key-Ring in PostgreSQL); Seed **nur fehlender** Keys aus ENV beim Migrator-Lauf (`configure_instance`-Semantik); Lesemodus `Database` (Default, `SKIP_ENV_VAR=1`) oder `Environment`; Key-Katalog als Code (`InstanceConfigurationKeys`) – OAuth-/Passwort-Keys entfallen (ADR-008). | Fernet-Nachbau mit `SECRET_KEY`; Speicherung im Klartext | Key-Rotation eingebaut, kein selbst gebautes Krypto; Greenfield erlaubt neuen Verschlüsselungsweg (ADR-003). | I0 |
 | **D02-ADR-21** | Request-Zeitzone (`TimezoneMixin`) | `IRequestTimeZone` (scoped) wird nach der Authentifizierung aus `users.user_timezone` gesetzt (anonym: UTC). Datumskomponenten-Vergleiche (`__date`, `TruncDate`, Analytics-Gruppierung) nutzen ausschließlich `IRequestTimeZone` bzw. explizit die Projekt-Zeitzone; „heute“ in Legacy-Datumsfiltern bleibt **UTC-Datum** (Original-Verhalten `A04` §3.2). | Thread-statische Zeitzone; Konvertierung im Frontend | Exakte Parität der Filter- und Analytics-Ergebnisse; R8 (kein `DateTime.UtcNow`) bleibt erhalten (`IClock`). | I0 |
 | **D02-ADR-22** | Read-Replica (CE-OPS-010) | Endpunkt-Metadatum `.UseReadReplica()` (nur GET/HEAD/OPTIONS); Query-Handler beziehen `PlaneReadDbContext` (gleiches Modell, `QueryTrackingBehavior.NoTracking`, Connection-String `plane-replica`) über `IReadDbContextAccessor`, der ohne Replica bzw. bei anderen Methoden auf die Primary fällt. Liste der Replica-Endpunkte wie Original (`A03` §2.1.1). | Middleware-Routing über `DbConnection`-Tausch | Expliziter, testbarer Pfad; keine Schreibzugriffe auf die Replica möglich. | I1 |
 | **D02-ADR-23** | Handler-Stil (ADR-011/012) | Endpunkte als `internal static class <Ding>Endpoints` mit `Map(PlaneEndpointRouteBuilder)` und statischen lokalen Handler-Methoden; Handler geben `IResult` über die Erweiterungen `Result<T>.ToOk()/ToCreated()/ToNoContent()/ToStatus(int)` zurück; Commands/Queries per Mediator (`ISender`). Kein Controller, kein MVC. | MVC-Controller; Lambdas inline in `Map*` | Eine Datei je Ressource, kleine Diffs, OpenAPI-Metadaten zentral; Regel R4 (kein `PlaneDbContext` in Endpunkten) maschinell prüfbar. | I0 |
-| **D02-ADR-24** | Transaktionsgrenze (ADR-012/020) | Genau **ein** `SaveChangesAsync` pro Command im `TransactionBehavior` (expliziter `BeginTransactionAsync` nur, wenn ein Handler `ISequenceAllocator` oder `ExecuteUpdate`-Kaskaden nutzt – dann `IsolationLevel.ReadCommitted` wie Django); Domain-Events werden vor dem Commit dispatcht (in-process), Integration-Events landen über den `OutboxInterceptor` im selben Commit. Queries laufen ohne Transaktion, `AsNoTracking`. | Unit-of-Work-Klasse je Modul; `TransactionScope` | Gleiche Atomarität wie Django-`transaction.atomic` + `on_commit`; keine verteilten Transaktionen. | I0 |
+| **D02-ADR-24** | Transaktionsgrenze (ADR-012/020) | Jeder Command läuft im `TransactionBehavior` in einer **expliziten** Transaktion (`BeginTransactionAsync(IsolationLevel.ReadCommitted)` wie Django; Präzisierung im Review: immer, nicht nur bei `ISequenceAllocator`, weil Inline-Soft-Delete-Kaskaden per `ExecuteUpdateAsync` sonst außerhalb der SaveChanges-Transaktion liefen). Ablauf: Handler → **Domain-Event-Schleife** (`DomainEventDispatcher` dispatcht `IDomainEvent`s aller getrackten Entitäten in-process, wiederholt bis keine neuen Events entstehen, max. 5 Runden) → genau **ein** `SaveChangesAsync` (Interceptors §3.2.2, Integration-Events über `OutboxInterceptor` im selben Commit) → `CommitAsync` → Post-Commit-Aktionen. Domain-Events werden bewusst **nicht** in einem Interceptor dispatcht, weil von Handlern angelegte/geänderte Entitäten sonst Audit-, Soft-Delete- und Ownership-Interceptor verpassen würden. Synchrones `SaveChanges()` ist verboten (Banned-API). Queries laufen ohne Transaktion, `AsNoTracking`. | Unit-of-Work-Klasse je Modul; `TransactionScope`; Dispatch im `SavingChanges`-Interceptor | Gleiche Atomarität wie Django-`transaction.atomic` + `on_commit`; keine verteilten Transaktionen. | I0 |
 | **D02-ADR-25** | Activity-Aufzeichnung (01 §7.8) | Fachhistorie ausschließlich über **`IActivityRecorder`** (`Plane.WorkItems.Contracts`, Implementierung in `Plane.WorkItems`), synchron im selben Commit; Module liefern **Feld-Resolver** (`IActivityFieldResolver`, z. B. `LabelActivityFieldResolver` für Feld `labels`), die IDs in Anzeigewerte (`old_value`/`new_value`) übersetzen. Keine Activity-Logik in Endpunkten. | Celery-Nachbau (asynchron, wie Original `issue_activity.delay`) | Konsistenz (Activity existiert genau dann, wenn die Änderung committet ist); asynchrone Folgen (Notifications, Webhooks) bleiben über Outbox asynchron. | I1 (Gerüst), I2 (Work Items) |
+| **D02-ADR-26** | DbContext-Registrierung (ADR-037, Review-Ergänzung) | `PlaneDbContext` und `PlaneReadDbContext` werden **ohne Pooling** registriert: `services.AddDbContext<PlaneDbContext>((sp, o) => o.UseNpgsql(cs).UseSnakeCaseNamingConvention().AddInterceptors(sp.GetServices<IPlaneSaveChangesInterceptor>()))` mit **scoped** Interceptors, danach `builder.EnrichNpgsqlDbContext<PlaneDbContext>()` (Aspire: Health-Check, Tracing, Retries). `builder.AddNpgsqlDbContext<T>()` ist verboten (Architekturtest), weil es Pooling aktiviert. | `AddNpgsqlDbContext` (gepoolt) + `IDbContextFactory` mit Tenant-Setter | Bei Pooling werden in den Kontext injizierte scoped Dienste (hier `IWorkspaceContext` für den Filter `workspace_tenant`, `ICurrentActor` in Interceptors) nur einmal aus dem ersten Scope aufgelöst (Microsoft Learn, `AddDbContextPool` Remarks) → Tenant-Leck zwischen Requests. Pooling-Gewinn ist laut Microsoft gering. | I0 |
+| **D02-ADR-27** | Mediator-Konfiguration (ADR-012, Review-Ergänzung) | Jeder Host ruft genau einmal `services.AddMediator(o => { o.ServiceLifetime = ServiceLifetime.Scoped; o.GenerateTypesAsInternal = true; o.Assemblies = [<alle Modul-Assemblies des Host-Katalogs>]; o.PipelineBehaviors = [typeof(LoggingBehavior<,>), typeof(ModuleScopeBehavior<,>), typeof(ValidationBehavior<,>), typeof(TransactionBehavior<,>)]; })`. Weil der Source-Generator den Registrierungscode **im Host-Assembly** erzeugt und Handler/Commands nach R9 `internal` sind, trägt jedes Modul-Assembly `[assembly: InternalsVisibleTo("Plane.Api")]`, `("Plane.Worker")`, `("Plane.Realtime")` und `("Plane.<M>.Tests")` (zentral über `Directory.Build.targets` aus der Property `PlaneInternalsVisibleTo`). | Default-Lifetime `Singleton` (fängt scoped `PlaneDbContext` ein → Laufzeitfehler); Handler `public` (bricht R9) | Spike S0 prüft mit einem `internal`-Handler in einem Modul-Assembly, dass der Generator ihn im Host registriert; scheitert das, gilt Fallback „Commands/Handler `public`, R9 nur für übrige Typen“ (Änderungsantrag an 01 R9, O-D02-09). | I0 |
 
 ---
 ## 3. Detaildesign
@@ -211,6 +215,8 @@ flowchart LR
 
 Reihenfolge in `ModuleCatalog.All` (verbindlich, weil Permission-Katalog und Activity-Resolver in Registrierungsreihenfolge gesammelt werden): `Identity`, `Authorization`, `Instance`, `Workspaces`, `Projects`, `WorkItems`, `Views`, `Cycles`, `ProjectModules`, `Intake`, `Pages`, `Assets`, `Analytics`, `Home`, `Notifications`, `Search`, `PublicSpace`, `PublicApi`, `Webhooks`, `Exports`, `Assistant`, `RealtimeEvents` (nur Contracts-Publisher), danach Extension-Module der Wellen (W1: `Integrations`, `Forgejo`, `Apps`). Ein Modul, das noch nicht implementiert ist, steht **nicht** im Katalog (01 §7.19).
 
+**Kataloge je Host (Review-Ergänzung):** `Plane.Api/ModuleCatalog.cs` = obige Liste ohne `Collaboration`; `Plane.Worker/ModuleCatalog.cs` = dieselben Module, aber `MapEndpoints` wird nicht aufgerufen (nur `AddServices` + `RegisterMessaging`); `Plane.Realtime/ModuleCatalog.cs` = `Identity`, `Authorization`, `Workspaces`, `Projects`, `Pages`, `Collaboration` (01 §5.1, Hocuspocus-Protokoll), `RealtimeEvents` (SignalR-Hub). Architekturtest: jedes `Plane.<M>`-Assembly steht in mindestens einem Katalog, `Collaboration` nur im Realtime-Katalog, die Reihenfolge der gemeinsamen Module ist in allen Katalogen identisch.
+
 ### 3.2 Persistenz-Basisklassen (Entity, Audit, Soft-Delete, Scoping)
 
 #### 3.2.1 Typen
@@ -233,13 +239,14 @@ Reihenfolge in `ModuleCatalog.All` (verbindlich, weil Permission-Katalog und Act
 | # | Interceptor | Aufgabe | Testfall (Pflicht) |
 |---|---|---|---|
 | 1 | `OwnershipGuardInterceptor` | wirft `OwnershipViolationException`, wenn im aktuellen `ModuleScope` eine fremde `[OwnedBy]`-Entität Added/Modified/Deleted ist (aktiv in `Development`, `Test`; in Produktion nur Log-Warnung) | `Labels` darf `WorkItem` nicht ändern |
-| 2 | `SoftDeleteInterceptor` | Deleted → Modified mit `deleted_at`; Kaskaden aus `SoftDeleteCascadeRegistry` (`Inline`: `ExecuteUpdateAsync` auf abhängige Tabellen nach dem Hauptupdate in derselben Transaktion; `Deferred`: `IJobScheduler.EnqueueAsync(new SoftDeleteCascadeJob(...))` über Outbox) | Label löschen → Kind-Labels, `issue_labels`, `page_labels` haben `deleted_at` |
+| 2 | `SoftDeleteInterceptor` | `SavingChangesAsync`: Deleted → Modified mit `deleted_at` (und `updated_at`/`updated_by_id` wie `SoftDeleteModel.delete` → `save()`), sammelt Kaskaden-Aufträge aus `SoftDeleteCascadeRegistry`. `SavedChangesAsync` (noch **vor** `CommitAsync`, innerhalb der expliziten Transaktion aus D02-ADR-24): `Inline` → set-basiertes `ExecuteUpdateAsync(s => s.SetProperty(x => x.DeletedAt, now).SetProperty(x => x.UpdatedAt, now))` auf die abhängigen Tabellen, **rekursiv** über die Registry (Kind-Labels → deren `issue_labels`), weil `ExecuteUpdate` keine Interceptors auslöst; `Deferred` → `IJobScheduler.EnqueueAsync(new SoftDeleteCascadeJob(...))` (Outbox-Zeile im selben Commit). Ohne offene Transaktion wirft der Interceptor `InvalidOperationException` (Schutz gegen Aufrufe außerhalb des `TransactionBehavior`). | Label löschen → Kind-Labels, `issue_labels`, `page_labels` haben `deleted_at`; Rollback des Commands → keine Kaskade |
 | 3 | `AuditInterceptor` | Audit-Felder (§3.2.1) | `updated_by_id` bleibt nach Create `null` |
 | 4 | `ScopeConsistencyInterceptor` | `workspace_id` aus Projekt ableiten; wirft bei Widerspruch | Label mit fremder `workspace_id` |
-| 5 | `DomainEventDispatchInterceptor` | sammelt `IDomainEvent`s aller getrackten Entitäten und dispatcht sie **vor** dem Commit an `IDomainEventHandler<T>` (in-process, gleicher Scope) | – |
-| 6 | `OutboxInterceptor` | wandelt `IIntegrationEvent`s in `outbox_messages`-Zeilen (Typ, Payload, `traceparent`, `occurred_at`) | Event-Zeile existiert genau bei Commit |
+| 5 | `OutboxInterceptor` | entnimmt `IIntegrationEvent`s aller getrackten Entitäten (`IHasDomainEvents.DequeueIntegrationEvents()`) und schreibt `outbox_messages`-Zeilen (Typ, Payload, `traceparent`, `occurred_at`) | Event-Zeile existiert genau bei Commit |
 
-`SoftDeleteCascadeRegistry` wird je Modul in `IModule.AddServices` befüllt (`registry.Cascade<Label, IssueLabel>(l => l.LabelId, CascadeMode.Inline)`). Ein Architekturtest prüft, dass **jede** FK-Beziehung mit `OnDelete(Cascade)` auf eine `ISoftDeletable`-Entität einen Registry-Eintrag oder einen expliziten `NoSoftCascade`-Vermerk hat (entspricht `soft_delete_related_objects`, das alle Reverse-Relationen mit `CASCADE` bzw. `SET_NULL` durchläuft).
+Domain-Events (`IDomainEvent`) werden **nicht** in dieser Kette, sondern vorher im `TransactionBehavior` dispatcht (D02-ADR-24); so durchlaufen auch von Domain-Event-Handlern erzeugte Änderungen die Interceptors 1–5. Alle Interceptors implementieren das Marker-Interface `IPlaneSaveChangesInterceptor` und sind **scoped** registriert (D02-ADR-26); die Reihenfolge der Registrierung in `AddPlaneData` ist die Tabellenreihenfolge (EF ruft mehrere Interceptors in Registrierungsreihenfolge auf).
+
+`SoftDeleteCascadeRegistry` wird je Modul in `IModule.AddServices` befüllt (`registry.Cascade<Label, WorkItemLabel>(l => l.LabelId, CascadeMode.Inline)`). Ein Architekturtest prüft, dass **jede** FK-Beziehung mit `OnDelete(Cascade)` auf eine `ISoftDeletable`-Entität einen Registry-Eintrag oder einen expliziten `NoSoftCascade`-Vermerk hat (entspricht `soft_delete_related_objects`, das alle Reverse-Relationen mit `CASCADE` bzw. `SET_NULL` durchläuft).
 
 #### 3.2.3 Modellkonventionen (`PlaneModelConventions`, angewendet in `PlaneDbContext.ConfigureConventions`/`OnModelCreating`)
 
@@ -254,6 +261,34 @@ Reihenfolge in `ModuleCatalog.All` (verbindlich, weil Permission-Katalog und Act
 | Filter | `HasQueryFilter(QueryFilterNames.SoftDelete, e => e.DeletedAt == null)` für alle `ISoftDeletable`; `HasQueryFilter(QueryFilterNames.WorkspaceTenant, …)` für alle `IWorkspaceScoped` (EF-10 benannte Filter, belegt: Microsoft Learn „Named query filters“) |
 | IDs | `ValueGeneratedNever()` für `Id` |
 | Concurrency | keine Row-Version (Original hat keine); Lost-Update-Semantik bewusst wie Original |
+| Audit-FKs | `created_by_id`/`updated_by_id` → `users.id` `ON DELETE SET NULL` werden **nicht** in `PlaneEntityConfiguration<T>` (BuildingBlocks kennt `User` nicht), sondern in `Plane.Data/Configurations/AuditForeignKeyConvention.cs` für alle `IAuditable`-Entitätstypen in `PlaneDbContext.OnModelCreating` gesetzt (nach `ApplyConfigurationsFromAssembly`) |
+
+#### 3.2.4 DbContext-Registrierung (`Plane.Data/PlaneDataServiceCollectionExtensions.AddPlaneData`, D02-ADR-26)
+
+```csharp
+public static IHostApplicationBuilder AddPlaneData(this IHostApplicationBuilder builder)
+{
+    var s = builder.Services;
+    s.AddScoped<IPlaneSaveChangesInterceptor, OwnershipGuardInterceptor>();   // Reihenfolge = §3.2.2
+    s.AddScoped<IPlaneSaveChangesInterceptor, SoftDeleteInterceptor>();
+    s.AddScoped<IPlaneSaveChangesInterceptor, AuditInterceptor>();
+    s.AddScoped<IPlaneSaveChangesInterceptor, ScopeConsistencyInterceptor>();
+    s.AddScoped<IPlaneSaveChangesInterceptor, OutboxInterceptor>();
+    s.AddDbContext<PlaneDbContext>((sp, o) => o
+        .UseNpgsql(builder.Configuration.GetConnectionString("plane"), n => n.UseVector())     // pgvector (ADR-000)
+        .UseSnakeCaseNamingConvention()
+        .AddInterceptors(sp.GetServices<IPlaneSaveChangesInterceptor>()));
+    builder.EnrichNpgsqlDbContext<PlaneDbContext>();                                         // Aspire: Health, Tracing, Retry
+    s.AddDbContext<PlaneReadDbContext>((sp, o) => o
+        .UseNpgsql(builder.Configuration.GetConnectionString("plane-replica") ?? builder.Configuration.GetConnectionString("plane"))
+        .UseSnakeCaseNamingConvention().UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));
+    builder.EnrichNpgsqlDbContext<PlaneReadDbContext>();
+    s.AddScoped<IReadDbContextAccessor, ReadDbContextAccessor>();
+    return builder;
+}
+```
+
+Hinweise: (1) Die Retry-Strategie von `EnrichNpgsqlDbContext` (`NpgsqlRetryingExecutionStrategy`) verbietet benutzerinitiierte Transaktionen ohne `CreateExecutionStrategy().ExecuteAsync(...)`; der `TransactionBehavior` kapselt deshalb Handler + `SaveChanges` + Commit in `db.Database.CreateExecutionStrategy().ExecuteAsync(...)` (Handler müssen dafür wiederholbar sein – sie sind es, weil vor `SaveChanges` keine Seiteneffekte außerhalb der DB entstehen; Post-Commit-Aktionen laufen erst nach erfolgreichem Commit). Alternativ `DisableRetry = true` in `Aspire:Npgsql:EntityFrameworkCore:PostgreSQL` – Entscheidung im Spike S0, Default: Execution-Strategy-Kapselung. (2) `PlaneReadDbContext` erhält keine Schreib-Interceptors; ein `SaveChanges` darauf wirft (`ReadOnlyContextGuard`). (3) Ob `UseVector()` im Read-Kontext nötig ist, hängt von 11 ab (Vektorsuche nur über Primary, Default).
 
 ### 3.3 Endpunkt-Konventionen (Oberflächen, Präfixe, Routen, Statuscodes)
 
@@ -266,7 +301,7 @@ Reihenfolge in `ModuleCatalog.All` (verbindlich, weil Permission-Katalog und Act
 | `Space` | `/api/public/` | `e.Space("anchor/{anchor}/…")` | `Session` optional (anonym erlaubt) | `session-id` | wie App | `anon` | `App` | `internal` | `plane.space` | I6 |
 | `Instance` | `/api/instances/` | `e.Instance("…")` | `Session` (Instanz-Admin aus Keycloak-Rolle; kein separates `admin-session-id`-Cookie, ADR-008) | `session-id` | wie App | `anon` | `App` | `internal` | `plane.license` | I0 (Kern) |
 | `Auth` | `/auth/` | `e.Auth("oidc/…")` | `Session` + OIDC-Challenge | `session-id` | Formular-Endpunkte: Antiforgery-Token (`GET /auth/get-csrf-token/`) | `authentication` | `Auth` (Redirect mit `error_code`/`error_message`-Query, `A06` §2.12) | – | `plane.authentication` | I0 |
-| `Integrations` | `/api/integrations/` | `e.Integrations("{provider}/webhooks/{connection_id}")` | keine (Signaturprüfung per `IWebhookSignatureVerifier`) | – | keine | eigene Policy `integration_webhook` (W1) | `Plain` (nur Statuscode + `{"error"}`) | – | – (F1) | Route I0 (liefert 404 ohne Provider), W1 |
+| `Integrations` | `/api/integrations/` | `e.Integrations("{provider}/webhooks/{connection_id:guid}")` (16 §3.4) | Webhook-Routen: keine (Signaturprüfung per `IWebhookSignatureVerifier`); OAuth-Callback-Routen der Pakete (`forgejo/oauth/callback`, `forgejo/oauth/user-callback`, 16 D16-ADR-09) opt-in `.WithSessionAuthentication()` (Schema `Session`, ohne Origin-Check, weil Top-Level-Redirect von Forgejo) | – | keine | eigene Policy `integration_webhook` (W1) | `Plain` (nur Statuscode + `{"error"}`) | – | – (F1) | Route I0 (liefert 404 ohne Provider), W1 |
 | `Root` | `/` | `e.Root(...)` | keine | – | – | keine | – | – | `plane.web` | I0 |
 
 Regeln:
@@ -283,7 +318,9 @@ Regeln:
 
 | Erweiterung | Wirkung | Pflicht |
 |---|---|---|
-| `.RequirePermission(Permission p)` | registriert `PermissionMetadata(p)`; `PermissionEndpointFilter` prüft | genau eine von beiden |
+| `.RequirePermission(PermissionDescriptor d, params PermissionRule[] rules)` | registriert `PermissionMetadata(d, rules)`; `PermissionEndpointFilter` prüft (Signatur 05 §3.13.7; Regeln einschließlich `PermissionRule.Prerequisite(...)`, D02-ADR-05) | genau eine von beiden |
+| `.WithDenyStyle(DenyStyle s)` | überschreibt den Default-`DenyStyle` des Deskriptors für diesen Endpunkt (D05-ADR-20) | optional |
+| `.WithSessionAuthentication()` | nur Oberfläche `Integrations`: Session-Schema für OAuth-Callbacks (F1/F2) | optional |
 | `.AllowAnonymous()` (Plane-Variante `AllowAnonymousOnSurface()`) | keine Prüfung; Prinzipal optional | dto. |
 | `.Validate<TRequest>()` | `ValidationEndpointFilter<TRequest>` | bei Requests mit Körper |
 | `.ResolveWorkspaceOrNotFound()` / `.ResolveProjectOrNotFound()` | unbekannter Slug/Projekt → 404 mit Original-Text der Route (Parameter) statt Permission-Ablehnung | nur wo Original 404 |
@@ -306,9 +343,9 @@ flowchart TB
   D --> E[ResponseCompression gzip]
   E --> F[TrailingSlashMiddleware]
   F --> G[RequestLoggingMiddleware plane.api.request]
-  G --> H[CORS]
-  H --> I[UseRouting]
-  I --> J[UseAuthentication Policy-Scheme je Oberfläche]
+  G --> I[UseRouting explizit]
+  I --> H[UseCors]
+  H --> J[UseAuthentication Policy-Scheme je Oberfläche]
   J --> K[OriginCheckMiddleware]
   K --> L[RequestTimeZoneMiddleware]
   L --> M[UseRateLimiter]
@@ -319,19 +356,19 @@ flowchart TB
 | # | Komponente | Verhalten (Original-Bezug) | ab |
 |---|---|---|---|
 | 1 | `UseForwardedHeaders` | `X-Forwarded-For/-Proto/-Host`; `ForwardLimit` aus `NUM_PROXIES`, `KnownNetworks` aus `Plane:ForwardedHeaders` (`A01` §3.5) | I0 |
-| 2 | `UseExceptionHandler` + `PlaneExceptionHandler` | Abbildung `handle_exception` (§3.8.2) | I0 |
+| 2 | `UseExceptionHandler` + `PlaneExceptionHandler` | Abbildung `handle_exception` (§3.8.2). Registrierung `services.AddExceptionHandler<PlaneExceptionHandler>(); services.AddProblemDetails();` – ohne `AddProblemDetails` (oder `ExceptionHandlingPath`) wirft `app.UseExceptionHandler()` beim Start; ProblemDetails wird nur für `/health/*` verwendet | I0 |
 | 3 | `StatusCodeBodiesMiddleware` | ergänzt leere 404/405-Antworten des Routings um Original-Körper (§3.3.1 Regel 5) | I0 |
 | 4 | `RequestBodyLimitMiddleware` | `FILE_SIZE_LIMIT` als `MaxRequestBodySize`; Überschreitung → 413 `{"error": "REQUEST_BODY_TOO_LARGE", "detail": "The size of the request body exceeds the maximum allowed size."}` (`API/middleware/request_body_size.py`) | I0 |
 | 5 | `UseResponseCompression` | gzip für `application/json` (Original `GZipMiddleware`) | I0 |
-| 6 | `TrailingSlashMiddleware` | D02-ADR-07 | I0 |
+| 6 | `TrailingSlashMiddleware` | D02-ADR-07; legt den **unveränderten** Pfad (inkl. Slash und Query) als `IOriginalPathFeature` ab – Request-Log (Nr. 7) und API-Activity-Log (Nr. 14) protokollieren diesen Original-Pfad wie Django `get_full_path()` | I0 |
 | 7 | `RequestLoggingMiddleware` | `"{METHOD} {full_path} {status}"` mit `path, method, status_code, duration_ms, remote_addr, user_agent, user_id` – nicht für `GET /`, `/health/*` (`API/middleware/logger.py`) | I0 |
-| 8 | `UseCors` | Policy `plane`: Origins aus `Plane:Cors:AllowedOrigins` (leer = nur eigene Origins aus `Plane:Urls`, Korrektur von `CORS_ALLOW_ALL_ORIGINS=True`, `A01` E-10), `AllowCredentials`, Header-Default + `X-API-Key` | I0 |
-| 9 | `UseRouting` | – | I0 |
+| 8 | `UseRouting` | **explizit** aufrufen: ohne expliziten Aufruf setzt `WebApplication` `UseRouting` an den Anfang der Pipeline, dann wirkt die Pfadänderung aus Nr. 6 nicht auf das Matching | I0 |
+| 9 | `UseCors` | nach `UseRouting`, vor `UseAuthentication` (Microsoft-Vorgabe für Endpoint-Routing); Policy `plane`: Origins aus `Plane:Cors:AllowedOrigins` (leer = nur eigene Origins aus `Plane:Urls`, Korrektur von `CORS_ALLOW_ALL_ORIGINS=True`, `A01` E-10, SEC-30 in 05), `AllowCredentials`, Header-Default + `X-API-Key` | I0 |
 | 10 | `UseAuthentication` | Policy-Scheme `Plane` wählt je Oberfläche: App/Space/Instance/Auth → `Session`; V1 → `ApiKey`, bei `Authorization: Bearer` und aktivem H1-Schalter → `Bearer`. Ergebnis: `PlanePrincipal` im `HttpContext.Features` (`IPlanePrincipalFeature`) | I0 |
-| 11 | `OriginCheckMiddleware` | Port `BaseSessionAuthentication.enforce_csrf` (`A01` §2.14): nur bei Cookie-Auth und Methode ∉ {GET, HEAD, OPTIONS, TRACE}; kein `Origin` → erlaubt; `Origin: null`/unparsebar → 403 `{"detail": "CSRF Failed: origin not allowed"}`; gleicher `host[:port]` → erlaubt; sonst Allowlist aus `Plane:Urls:*` ∪ `Plane:Cors:AllowedOrigins` | I0 |
+| 11 | `OriginCheckMiddleware` | Port `BaseSessionAuthentication.enforce_csrf` (`A01` §2.14): nur bei Cookie-Auth und Methode ∉ {GET, HEAD, OPTIONS, TRACE}; kein `Origin` → erlaubt; `Origin: null`/unparsebar → 403 `{"detail": "CSRF Failed: origin not allowed"}`; gleicher `host[:port]` → erlaubt; sonst Allowlist aus `Plane:Urls:*` ∪ `Plane:Cors:AllowedOrigins` ∪ `Plane:Security:TrustedOrigins`; Härtung aus D05-ADR-06: fehlt `Origin` und ist `Sec-Fetch-Site: cross-site` → 403 | I0 |
 | 12 | `RequestTimeZoneMiddleware` | setzt `IRequestTimeZone` (D02-ADR-21) | I0 |
 | 13 | `UseRateLimiter` | D02-ADR-17, §3.13 | I0 (`anon`), I1 |
-| 14 | `ApiActivityLogMiddleware` | nur V1 und nur mit `X-Api-Key`: puffert Request/Response (max. 64 KiB je Körper, Binärsignaturen → `[Binary Content]`), redigiert `x-api-key`, `authorization`, `cookie` → `[REDACTED]`, enqueued `ApiActivityLogJob` mit `token_identifier = HMAC-SHA256(Plane:Security:ApiLogHmacKey, api_key)` (CE-API-003) | I6 |
+| 14 | `ApiActivityLogMiddleware` | nur V1 und nur mit `X-Api-Key`: puffert Request/Response (max. 64 KiB je Körper, Binärsignaturen → `[Binary Content]`), redigiert `x-api-key`, `authorization`, `cookie` → `[REDACTED]`, enqueued `ApiActivityLogJob` mit `token_identifier = token_hash` (SHA-256 des Tokens, 05 §3.12.2 / D05-ADR-16; der im Erstentwurf vorgesehene HMAC-Schlüssel `Plane:Security:ApiLogHmacKey` entfällt) (CE-API-003) | I6 |
 | 15 | Endpoints | Endpoint-Filter §3.4.2 | I0 |
 
 #### 3.4.2 Endpoint-Filter-Kette (in dieser Reihenfolge, angefügt durch die Oberfläche bzw. die Metadaten)
@@ -339,12 +376,14 @@ flowchart TB
 | # | Filter | Aufgabe | Fehlerantwort |
 |---|---|---|---|
 | 1 | `AuthenticatedFilter` (implizit, wenn nicht `AllowAnonymous`) | kein Prinzipal → 401 | `{"detail": "Authentication credentials were not provided."}` (Original `auth_exception_handler`) |
-| 2 | `ScopeBindingFilter` | bindet `WorkspaceScope`/`ProjectScope` (§3.5) als Handler-Parameter | nur bei `.Resolve…OrNotFound()` 404 |
+| 2 | `ScopeBindingFilter` | löst `WorkspaceScope`/`ProjectScope` (§3.5) auf und legt sie im scoped Halter `IRequestScope` ab (Handler lesen `scope.Workspace`/`scope.Project`; kein Parameter-Binding, weil Minimal-API-Parameter vor Endpoint-Filtern gebunden werden, §5) | nur bei `.Resolve…OrNotFound()` 404 |
 | 3 | `PermissionEndpointFilter` | `IPermissionEvaluator` (§3.6) | 403 gemäß `DenyStyle` |
 | 4 | `ValidationEndpointFilter<TRequest>` | Stufe-1-Validierung (§3.7) | 400 Feldfehler |
 | 5 | Handler | `ISender.Send(...)` | `Result` → `IResult` |
 
 **Begründung der Reihenfolge Permission vor Validierung:** DRF prüft Permissions in `initial()` vor dem Serializer (`A03` §2.1.2). Ein Gast erhält deshalb auch bei ungültigem Körper 403, nicht 400 – Contract-Tests prüfen das.
+
+**Grenze (Review):** Minimal APIs binden Parameter – auch den JSON-Körper – **vor** den Endpoint-Filtern. Syntaktisch ungültiges JSON (400 `{"detail": "JSON parse error - …"}`) und falscher `Content-Type` (415) werden deshalb **vor** der Permission-Prüfung beantwortet; DRF parst `request.data` erst lazy im View und hätte einem Gast 403 geliefert. Das betrifft nur fehlerhafte Clients und wird als `DEV-JSON-002` geführt. Formal gültiges JSON mit Feldfehlern bleibt in der Original-Reihenfolge (403 vor 400), weil die Feldprüfung im `ValidationEndpointFilter` nach dem `PermissionEndpointFilter` läuft. Falls der Paritäts-Harness einen Client-relevanten Fall findet, wird ein `PlaneBody<T>`-Parameter mit `BindAsync` (nur Buffering, Deserialisierung im `ValidationEndpointFilter`) nachgerüstet – ohne Änderung der Handler-Signaturen außer dem Parametertyp.
 
 ### 3.5 Tenant-Auflösung über den Workspace-Slug
 
@@ -368,7 +407,7 @@ public sealed record ProjectMembership(Guid MemberId, int Role, bool IsActive, G
    - Unbekannter Slug → `WorkspaceScope(Guid.Empty, slug, Exists: false, "UTC", null)`.
 2. Routenwert `project_id` vorhanden → `IProjectScopeResolver`: Projekt muss zu `WorkspaceId` gehören, sonst `Exists=false`; lädt `guest_view_all_features`, `archived_at`, `timezone`, Projektmitgliedschaft (`project_members … deleted_at IS NULL`).
 3. Sonderquellen: `anchor` (Space) → `IDeployBoardResolver` (Projekt + Workspace über `deploy_boards.anchor`); API-Key → Workspace des Tokens (`api_tokens.workspace_id`), ein Slug in der URL muss dazu passen (sonst 403 wie Original-`allow_permission`).
-4. Ergebnis wird in `HttpContext.Items` und dem scoped `IWorkspaceContext` abgelegt; Handler erhalten `WorkspaceScope`/`ProjectScope` als Parameter (Binding über `BindAsync`).
+4. Ergebnis wird im scoped Halter `IRequestScope` (Eigenschaften `Workspace`, `Project`, `Current`) und im scoped `IWorkspaceContext` (bindet den Tenant-Filter, §3.5.4) abgelegt; Handler erhalten `IRequestScope` per DI-Parameter und lesen den Scope erst bei Ausführung. Zugriff auf `scope.Project` ohne gebundenes Projekt wirft `InvalidOperationException` (Programmierfehler, 500).
 
 #### 3.5.3 Validierungsregeln Slug (bei Anlage/Änderung, nicht bei Auflösung)
 
@@ -380,104 +419,92 @@ Regex `^[a-zA-Z0-9_-]+$`, Länge ≤ 48, nicht in `RestrictedWorkspaceSlugs` (vo
 
 ### 3.6 Permission-Katalog und CE-Rollen-Mapping (Port von `allow_permission`)
 
+**Normative Quelle (Review):** Keys, Rollenmengen, Regeln je Endpunkt und die Evaluator-Reihenfolge legt **05 §3.13 + Anhang A/B** fest (generiert aus `migration/architecture/_data/05-permission-matrix.json` durch `tools/Plane.PermissionGen`, 05 §5.8). Dieser Abschnitt beschreibt die **Mechanik** (Typen, Ort, Filter, Fehlerkörper) und ergänzt genau eine Regel (`Prerequisite`), die 05 für die „∧“-Zeilen von Anhang B braucht. Ein Agent schreibt **keine** Deskriptoren von Hand; er nutzt die generierten `<M>Permissions.g.cs`-Konstanten.
+
 #### 3.6.1 Bausteine
 
 | Typ | Projekt | Aufgabe |
 |---|---|---|
-| `Permission(string Key, ScopeLevel Scope, string? ApiScope)` | `Plane.BuildingBlocks/Security` (Signatur 01 §5.5) | Schlüssel |
-| `PermissionDescriptor(Permission Permission, DenyStyle Deny, IReadOnlyList<Permission> Prerequisites, IReadOnlyList<PermissionRule> Rules, string OriginalCheck)` | `Plane.Authorization.Contracts` | Katalogeintrag; `OriginalCheck` dokumentiert die Original-Prüfung (z. B. `"PBP+AP[A]"`) |
-| `enum DenyStyle { Error, Detail }` | dto. | Fehlerkörper (D02-ADR-05) |
-| `abstract record PermissionRule` mit `WorkspaceAdminOverride`, `CreatorBypass(Type Entity, string RouteParam, bool RequireMembership)`, `OwnerBypass(Type Entity, string RouteParam)`, `InstanceAdminOnly`, `AnyAuthenticated`, `ActiveWorkspaceMember`, `ActiveProjectMember` | dto. | Sonderregeln des Originals |
-| `IPermissionCatalog` | dto. | alle Deskriptoren (aus `IModule.Permissions`), Lookup per Key; Startprüfung: Keys eindeutig, jede Vorbedingung existiert, keine Zyklen |
-| `RoleDefinition(Guid Id, string Name, ScopeLevel Scope, int LegacyValue, bool IsSystem, IReadOnlySet<string> PermissionKeys)` | dto. | Rolle als Permission-Menge |
-| `IRoleDefinitionProvider` | dto. (Signatur 01 §5.5) | CE: `SystemRoleProvider` |
+| `Permission(string Key, ScopeLevel Scope, string? ApiScope)` | `Plane.BuildingBlocks/Security` (Signatur 01 §5.5) | Schlüssel; `ScopeLevel` ∈ {`Anonymous`, `Authenticated`, `Instance`, `User`, `Workspace`, `Project`, `Public`, `Teamspace` (B1, in CE ungenutzt)} – entspricht den 05-Ebenen `ANON`, `AUTH`, `INST`, `user`, `WS`, `PRJ`, `public` |
+| `PermissionDescriptor(Permission Permission, IReadOnlySet<SystemRoleLevel> Roles, DenyStyle Deny, string OriginalCheck)` mit Fabriken `PermissionDescriptor.Workspace(key, roles, denyStyle, apiScope)`, `.Project(…)`, `.Instance(…)`, `.Authenticated(…)`, `.User(…)`, `.Public(…)` | `Plane.Authorization.Contracts` | Katalogeintrag (generiert); `OriginalCheck` = Spalte „Original-Prüfung“ aus 05 Anhang B (z. B. `"WS(A,M) ∧ PRJ⁺(A)"`) |
+| `enum DenyStyle { Error, Detail }` | dto. | Fehlerkörper (D02-ADR-05, D05-ADR-20) |
+| `enum SystemRoleLevel { Guest = 5, Member = 15, Admin = 20 }` + `static class SystemRoles` (feste UUIDv7 der sechs System-Rollen) | dto. (Namen aus 05 §3.13.3) | einziger Ort mit Rollenzahlen (Analyzer `PLANE0001`) |
+| `abstract record PermissionRule` mit `Creator<TEntity>(routeParam = "pk")`, `Own`, `Self`, `GuestVisibility`, `PageAccess`, `Board`, `WorkspaceAdminOrProjectAdmin`, `ProjectMemberOfBody` (05 §5.8) **+** `Prerequisite(PermissionDescriptor)` (dieses Dokument) | dto. | Endpunkt-Regeln |
+| `IPermissionCatalog` | dto. | alle Deskriptoren (aus `IModule.Permissions`), Lookup per Key; Startprüfung: Keys eindeutig, jede `Prerequisite` referenziert einen Katalog-Key, keine Zyklen |
+| `RoleDefinition(Guid Id, string Namespace, string Slug, int Level, bool IsSystem, IReadOnlySet<string> Grants)` | dto. (Signatur 05 §5.8; ersetzt die Erstfassung `…Name, ScopeLevel Scope, int LegacyValue…`) | Rolle als Grant-Menge; `Level` = 20/15/5 für die API-Ausgabe `role` |
+| `IRoleDefinitionProvider` | dto. (Signatur 01 §5.5 / 05 §5.8) | CE: `SystemRoleProvider`; Erweiterung der System-Grants durch Pakete über `ISystemRoleGrantContributor` (16 E-09) |
 | `IPermissionEvaluator` | dto. (Signatur 01 §5.5) | CE: `PermissionEvaluator` in `Plane.Authorization` |
-| `IVisibilityFilter<TEntity>` | dto. | Gast-Sichtbarkeit als Query-Prädikat (01 §5.5) |
-| Tabelle `roles` | `Plane.Data/Entities/Authorization/Role.cs` | Seeds: je Scope (Workspace, Project) drei System-Rollen `admin` (20), `member` (15), `guest` (5), `is_system = true`, feste UUIDs (`SystemRoleIds`) |
+| `IVisibilityFilter<TEntity>` | dto. | Gast-Sichtbarkeit als Query-Prädikat (01 §5.5); komponierbar (`CompositeVisibilityFilter<T>`, B1) |
+| Tabelle `roles` | `Plane.Data/Entities/Authorization/Role.cs` | Spalten und Seeds **wie 05 §3.13.3** (`id`, `workspace_id` NULL = System, `namespace`, `slug`, `name`, `level`, `is_system`, `sort_order`); `role_permissions` (CE leer, E5) |
 
-#### 3.6.2 Auswertungsalgorithmus `PermissionEvaluator.HasAsync` (exakte Reihenfolge)
+#### 3.6.2 Auswertungsalgorithmus
+
+Verbindlich ist **05 §3.13.4** (Schritte 1–10, inkl. HARM-00 „aktiver WS-Admin mit aktiver Projektmitgliedschaft = Projekt-Admin für alle `PRJ`-Keys“, D05-ADR-18). Dieses Dokument ergänzt zwei Schritte, die **vor** Schritt 5 von 05 laufen:
 
 ```text
-Eingabe: principal, descriptor d, scope (WorkspaceScope/ProjectScope), routeValues
-0. (H1, in der CE inaktiv) principal.Kind ∈ {App, Bot} und d.Permission.ApiScope gesetzt:
-      Token-Scope enthält ApiScope nicht → Ablehnung mit d.Deny; sonst weiter mit 1 (Rolle des Bot-Users gilt zusätzlich)
-1. Für jede Vorbedingung p in d.Prerequisites (in Reihenfolge):
-      wenn !Evaluate(p) → Ablehnung mit DenyStyle von p          // „Permission-Klasse vor Decorator“
-2. Regeln mit Vorrang:
-   a) InstanceAdminOnly    → erlaubt gdw. principal.IsInstanceAdmin (Keycloak-Rolle, ADR-008)
-   b) AnyAuthenticated     → erlaubt gdw. principal authentifiziert
-   c) CreatorBypass(E, param, requireMembership):
-        - aktives WS-Mitglied (scope.Workspace.Membership?.IsActive) sonst Ablehnung (DenyStyle d)
-        - wenn d.Permission.Scope == Project: aktives Projektmitglied sonst Ablehnung
-        - existiert E mit Id = routeValues[param] UND created_by_id = principal.UserId (soft_delete-Filter aktiv)
-              → erlaubt (Rest übersprungen)
-   d) OwnerBypass(E, param) analog über owned_by_id (Pages)
-3. Rollenprüfung:
-   - Scope Workspace: aktive WS-Mitgliedschaft m; role = RoleProvider.Get(m.RoleId); erlaubt gdw. role.PermissionKeys ∋ d.Key
-   - Scope Project:   aktive Projektmitgliedschaft pm; role = RoleProvider.Get(pm.RoleId); erlaubt gdw. ∋ d.Key
-                      sonst wenn Regel WorkspaceAdminOverride: pm aktiv (beliebige Rolle) UND aktive WS-Mitgliedschaft
-                      mit einer Rolle, die die Workspace-Permission `workspace.admin_override` enthält (CE: nur Admin 20) → erlaubt
-4. sonst Ablehnung mit d.Deny
+0. (H1, in der CE inaktiv) principal.Kind ∈ {App, Bot} und descriptor.Permission.ApiScope gesetzt:
+      principal.ApiScopes enthält ApiScope nicht → Ablehnung (DenyStyle des Deskriptors); sonst weiter (Rolle des Bot-Users gilt zusätzlich)
+P. Für jede Regel Prerequisite(p) des Endpunkts (in Deklarationsreihenfolge):
+      Evaluate(p) == false → Ablehnung mit DenyStyle von p        // „Permission-Klasse vor Decorator“, DRF initial() vor Methode
+→ weiter mit 05 §3.13.4 Schritt 5 ff. für den Haupt-Deskriptor; Ablehnung dort mit .WithDenyStyle(...) ?? descriptor.Deny
 ```
 
-Ablehnung ohne Prinzipal → immer 401 (Filter 1). Alle Mitgliedschaftsprüfungen verlangen `is_active = true` **und** `deleted_at IS NULL` (Korrektur der Original-Fallgrube „Soft-Delete-Manager greift über Relationen nicht“, `A03` §2.4.4; Abweichung `DEV-PERM-001`).
+Ablehnung ohne Prinzipal → immer 401 (`AuthenticatedFilter`, §3.4.2). Alle Mitgliedschaftsprüfungen verlangen `is_active = true` **und** `deleted_at IS NULL` (Korrektur der Original-Fallgrube „Soft-Delete-Manager greift über Relationen nicht“, `A03` §2.4.4; Abweichung `DEV-PERM-001`). Mitgliedschaften werden je Request einmal geladen (`MembershipCache`, 05 §3.13.4 Schritt 5), nie request-übergreifend gecacht (D02-ADR-16).
 
-#### 3.6.3 Original-Prüfmechanismen als Deskriptor-Vorlagen (`PermissionTemplates`)
+#### 3.6.3 Original-Prüfmechanismen → 05-Notation (Lesehilfe für Generator und Review)
 
-Jede Original-Permission-Klasse (`API/app/permissions/*.py`, `A06` §2.10) und jede `allow_permission`-Variante wird zu einer **Vorlage**, aus der die Module ihre Deskriptoren bauen. Die Rollenzuordnung (welche Systemrolle die Permission besitzt) ergibt sich aus der Methodenmatrix.
+Jede Original-Permission-Klasse (`API/app/permissions/*.py`, `A06` §2.10) und jede `allow_permission`-Variante entspricht einer 05-Notation; der Generator setzt daraus `Roles`, `Deny` und – bei „∧“ – die `Prerequisite`-Regel.
 
-| Vorlage | Original | Scope | DenyStyle | Systemrollen mit Permission (Admin 20 / Member 15 / Guest 5) | Regeln |
-|---|---|---|---|---|---|
-| `WorkspaceBase.Read` | `WorkSpaceBasePermission` GET | – | Detail | jeder Authentifizierte | `AnyAuthenticated` |
-| `WorkspaceBase.Create` | `WorkSpaceBasePermission` POST | – | Detail | jeder Authentifizierte | `AnyAuthenticated` |
-| `WorkspaceBase.Write` | `WorkSpaceBasePermission` PUT/PATCH/DELETE | Workspace | Detail | A | – |
-| `WorkspaceOwner.Any` | `WorkspaceOwnerPermission` | Workspace | Detail | A | – |
-| `WorkspaceAdmin.Any` | `WorkSpaceAdminPermission` (alle Methoden) | Workspace | Detail | A, M | – |
-| `WorkspaceEntity.Read` / `.Write` | `WorkspaceEntityPermission` | Workspace | Detail | Read: A, M, G · Write: A, M | – |
-| `WorkspaceViewer.Read` / `.Write` | `WorkspaceViewerPermission` | Workspace | Detail | Read: A, M, G · Write: A, M | – |
-| `WorkspaceUser.Read` / `.Write` | `WorkspaceUserPermission` | Workspace | Detail | Read: A, M, G · Write: A, M | – |
-| `WorkspaceMember.Read` / `.Write` | `WorkspaceMemberPermission` | Workspace | Detail | Read: A, M, G · Write: A, M | – |
-| `ProjectBase.Read` | `ProjectBasePermission` GET | Workspace | Detail | A, M, G (WS-Rolle) | – |
-| `ProjectBase.Create` | `ProjectBasePermission` POST | Workspace | Detail | A, M (WS-Rolle) | – |
-| `ProjectBase.Write` | `ProjectBasePermission` PUT/PATCH/DELETE | Project | Detail | A (Projektrolle) | `WorkspaceAdminOverride` |
-| `ProjectMember.Read` / `.Write` | `ProjectMemberPermission` | Project | Detail | Read: A, M, G · Write: A, M | – |
-| `ProjectEntity.Read` / `.Write` | `ProjectEntityPermission` | Project | Detail | Read: A, M, G · Write: A, M | – |
-| `ProjectAdmin.Any` | `ProjectAdminPermission` | Project | Detail | A | `WorkspaceAdminOverride` |
-| `ProjectLite.Any` | `ProjectLitePermission` | Project | Detail | A, M, G | – |
-| `ProjectPage.*` | `ProjectPagePermission` | Project | Detail | Create/Update: A, M · Read: A, M, G · Delete: A | `OwnerBypass(Page, "page_id")`, Gast-Regel, Page-Link-Prüfung (Detail in 05) |
-| `InstanceAdmin.Any` | `InstanceAdminPermission` | Instance | Detail | – | `InstanceAdminOnly` |
-| `AP(roles)` | `allow_permission(roles)` (Projekt) | Project | Error | gemäß `roles` | `WorkspaceAdminOverride` |
-| `APW(roles)` | `allow_permission(roles, level="WORKSPACE")` | Workspace | Error | gemäß `roles` | – |
-| `APC(roles, Entity)` | `allow_permission(roles, creator=True, model=Entity)` | Project | Error | gemäß `roles` | `CreatorBypass(Entity, "pk")`, `WorkspaceAdminOverride` |
-| `APWC(roles, Entity)` | dto. mit `level="WORKSPACE"` | Workspace | Error | gemäß `roles` | `CreatorBypass(Entity, "pk")` |
-| `APC([], Entity)` | `allowed_roles=[]` (nur Ersteller, Stickies/Views) | Project/Workspace | Error | keine | `CreatorBypass` |
+| Original | 05-Notation (Ziel) | DenyStyle | Systemrollen (Admin 20 / Member 15 / Guest 5) | Regeln am Endpunkt |
+|---|---|---|---|---|
+| `WorkSpaceBasePermission` GET/POST | `AUTH` | Detail | jeder Authentifizierte | – |
+| `WorkSpaceBasePermission` PUT/PATCH/DELETE | `WS(A)` | Detail | A | – |
+| `WorkspaceOwnerPermission` | `WS(A)` | Detail | A | – |
+| `WorkSpaceAdminPermission` (alle Methoden) | `WS(A,M)` | Detail | A, M | – |
+| `WorkspaceEntityPermission`, `WorkspaceViewerPermission`, `WorkspaceUserPermission`, `WorkspaceMemberPermission` | Lesen `WS(A,M,G)`, Schreiben `WS(A,M)` | Detail | Read: A, M, G · Write: A, M | – |
+| `ProjectBasePermission` GET | `WS(A,M,G)` | Detail | A, M, G (WS-Rolle) | – |
+| `ProjectBasePermission` POST | `WS(A,M)` | Detail | A, M (WS-Rolle) | – |
+| `ProjectBasePermission` PUT/PATCH/DELETE | `PRJ(A)` | Detail | A (Projektrolle, Override HARM-00) | – |
+| `ProjectMemberPermission`, `ProjectEntityPermission` | Lesen `PRJ(A,M,G)`, Schreiben `PRJ(A,M)` | Detail | Read: A, M, G · Write: A, M | ggf. `VIS` |
+| `ProjectAdminPermission` | `PRJ(A)` | Detail | A | – |
+| `ProjectLitePermission` | `PRJ(A,M,G)` | Detail | A, M, G | – |
+| `ProjectPagePermission` | `PRJ(…)+PAGE` | Detail | Create/Update: A, M · Read: A, M, G · Delete: A | `PageAccess` (05 §3.13.5) |
+| `InstanceAdminPermission` | `INST` | Detail | – | – |
+| `allow_permission(roles)` (Projekt) | `PRJ⁺(roles)` → `PRJ(roles)` | Error | gemäß `roles` | – (Override ist in HARM-00 enthalten) |
+| `allow_permission(roles, level="WORKSPACE")` | `WS(roles)` | Error | gemäß `roles` | – |
+| `allow_permission(roles, creator=True, model=E)` | `PRJ(roles)+C:E` | Error | gemäß `roles` | `Creator<E>()` |
+| dto. mit `level="WORKSPACE"` | `WS(roles)+C:E` | Error | gemäß `roles` | `Creator<E>()` |
+| `allowed_roles=[]` mit `creator=True` (Stickies, Views) | `…+OWN` bzw. `C:E` ohne Rollen | Error | keine | `Own` bzw. `Creator<E>()` |
+| **Klasse ∧ Decorator** (z. B. `LabelViewSet.create`: `ProjectBasePermission` POST ∧ `allow_permission([ADMIN])`) | `WS(A,M) ∧ PRJ⁺(A)` → `PRJ(A)` + Vorbedingung | Haupt: Error, Vorbedingung: Detail | Haupt: A | `Prerequisite(<Deskriptor der Klasse>)` |
 
-**Kombination:** Original-Endpunkte mit Permission-Klasse **und** Decorator erhalten **einen** Deskriptor mit der Klasse als Vorbedingung: Beispiel Labels-Create `project.label.create` = `AP([A])` mit Vorbedingung `ProjectBase.Create` (Workspace-Rolle A/M, Detail-Stil). Ergebnis exakt wie Original: WS-Gast → 403 Detail-Text; WS-Member, aber Projekt-Member → 403 Error-Text; Projekt-Admin oder WS-Admin mit Projektmitgliedschaft → erlaubt.
+**Kombination (Beispiel Labels):** `POST {P}/issue-labels/` = `.RequirePermission(ProjectsPermissions.ProjectLabelCreate, PermissionRule.Prerequisite(StandardPermissions.WorkspaceProjectBaseCreate))`. Ergebnis wie Original: WS-Gast → 403 Detail-Text; WS-Member und Projekt-Member → 403 Error-Text; Projekt-Admin oder WS-Admin mit aktiver Projektmitgliedschaft → erlaubt. `POST {P}/bulk-create-labels/` nutzt **denselben** Key ohne Vorbedingung (Original: `BaseAPIView` mit `IsAuthenticated` + `allow_permission([ADMIN])`).
 
-#### 3.6.4 CE-Rollen-Mapping (Seed `SystemRoleProvider`)
+`StandardPermissions` (`Plane.Authorization.Contracts/StandardPermissions.cs`, generiert) enthält je Original-Klasse × Methodengruppe genau einen Deskriptor für die Verwendung als Vorbedingung: `WorkspaceProjectBaseRead` (`workspace.project_base.read`, WS(A,M,G), Detail), `WorkspaceProjectBaseCreate` (`workspace.project_base.create`, WS(A,M), Detail), `ProjectProjectBaseWrite` (`project.project_base.write`, PRJ(A), Detail), `ProjectEntityRead`/`ProjectEntityWrite`, `ProjectMemberRead`/`ProjectMemberWrite`, `WorkspaceEntityRead`/`WorkspaceEntityWrite`, `InstanceAdmin`. Diese Keys sind reine Vorbedingungs-Keys (in 05 Anhang A als „intern“ zu führen, siehe Review-Protokoll K-04).
 
-Die Systemrollen erhalten ihre Permission-Mengen **nicht** von Hand, sondern werden beim Start aus den Deskriptoren berechnet: Jede Vorlage aus §3.6.3 trägt die Menge der Systemrollen (Spalte „Systemrollen“); `SystemRoleProvider` bildet daraus für jede der sechs Systemrollen (`workspace.admin/member/guest`, `project.admin/member/guest`) die Menge der Keys. Die Tabelle `roles` speichert nur Kopfzeilen (Name, Scope, `legacy_value`, `is_system`); die Zuordnung `role_permissions` existiert im Schema (leer für Systemrollen, E5 befüllt sie für Custom Roles). Ein Snapshot-Test (`SystemRolePermissionsSnapshotTests`) friert die berechneten Mengen als Golden-File ein – jede Änderung ist im Review sichtbar.
+#### 3.6.4 CE-Rollen-Mapping (`SystemRoleProvider`)
 
-Zusätzliche Workspace-Permission `workspace.admin_override` (nur `workspace.admin`): steuert `WorkspaceAdminOverride`; E5 kann sie Custom Roles geben.
+Die Grant-Mengen der sechs System-Rollen (`workspace.admin/member/guest`, `project.admin/member/guest`) entstehen **beim Build** aus der Matrix-Datei (Generator-Ausgabe `SystemRoleGrants.g.cs`, 05 §3.13.3) – nicht von Hand und nicht zur Laufzeit aus Vorlagen. Pakete ergänzen Grants für ihre neuen Keys über `ISystemRoleGrantContributor` (16 E-09), ohne `SystemRoleProvider` zu ändern. Die Tabelle `roles` speichert nur Kopfzeilen; `role_permissions` existiert im Schema (leer für Systemrollen, E5 befüllt sie für Custom Roles). Ein Snapshot-Test (`SystemRolePermissionsSnapshotTests`) friert die Mengen als Golden-File ein und vergleicht sie mit `05-permission-matrix.json`.
+
+Der Workspace-Admin-Override wird nicht als eigener Key modelliert, sondern ist nach HARM-00 fester Bestandteil des Evaluators (05 §3.13.4 Schritt 8: `ws.level == 20`). Für E5 (Custom Roles) ist das eine bekannte Grenze: Ein Custom-Workspace-Role kann den Override nur über `Level = 20` erhalten (Paketplanung E5 entscheidet, ob daraus ein Grant wird).
 
 #### 3.6.5 Gast-Sichtbarkeit und fachliche Prädikate
 
 | Prädikat (Original, `A03` §2.4.4) | Ziel | Ort |
 |---|---|---|
-| `_visible_issues_q` | `WorkItemVisibilityFilter : IVisibilityFilter<WorkItem>` – aktive, nicht gelöschte Projektmitgliedschaft **und** (Rolle mit `project.work_item.read_all` **oder** `guest_view_all_features` **oder** `created_by_id = user`) in **einem** `Any(...)` | `Plane.WorkItems/Application/Services` |
+| `_visible_issues_q` | `WorkItemVisibilityFilter : IVisibilityFilter<WorkItem>` – aktive, nicht gelöschte Projektmitgliedschaft **und** (`pm.level > 5` **oder** `guest_view_all_features` **oder** `created_by_id = user`) in **einem** `Any(...)`; vollständige Liste der Filter (Kommentare, Versionen, Intake, Views) in 05 §3.14 | `Plane.Authorization/Visibility/` (05 §3.14; Erstfassung `Plane.WorkItems/Application/Services` korrigiert) |
 | Gast-Filter `IssueViewSet.list` | dasselbe Prädikat auf Projekt-Ebene vor Zählung und Pagination | dto. |
 | `is_sole_admin_of_any_project` | `ProjectMembershipRules.IsSoleAdminOfAnyProject` (Zählung wie Original **inkl.** inaktiver und gelöschter Zeilen – fachliche Parität, `A03` §2.4.4) | `Plane.Projects/Domain` |
-| `can_write_project` | Permission `project.work_item.create` (AP[A,M] + Override) | `Plane.WorkItems` |
+| `can_write_project` | Permission `project.work_item.create` (`PRJ(A,M)`, Override HARM-00) | `Plane.WorkItems` |
 | `get_favorite_entities` | `IFavoriteVisibility` je Entitätstyp | `Plane.Workspaces` |
-| `ProjectPagePermission` Link-Prüfung | Regel `PageLinkedToProject` | `Plane.Pages` (05) |
+| `ProjectPagePermission` Link-Prüfung | Regel `PermissionRule.PageAccess` (05 §3.13.5) | `Plane.Authorization/Rules/PageAccessRule.cs` |
 
-Die Systemrolle `project.guest` besitzt `project.work_item.read_all` **nicht**; Admin/Member besitzen sie. So bleibt „Rolle > 5“ ohne Zahlenvergleich im Fachcode abbildbar (01 §7.10).
+Der Vergleich `pm.level > 5` steht ausschließlich in `Plane.Authorization/Visibility/*` (Analyzer `PLANE0001` erlaubt Rollenzahlen nur dort und in `SystemRoles`). Der Key `project.work_item.read_all` ist in der CE **reserviert** und unbenutzt (05 `ReservedPermissionKeys`); E5 ersetzt das Level-Prädikat später durch „Rolle hat Grant `project.work_item.read_all`“ (Korrektur der Erstfassung, die den Key schon in der CE vergab).
 
 ### 3.7 Validierung
 
 | Aspekt | Regel |
 |---|---|
-| Stufe 1 (Form) | `AbstractValidator<TRequest>` in `Plane.<M>/Validation/`, registriert per `services.AddValidatorsFromAssemblyContaining<<M>Module>(ServiceLifetime.Singleton, includeInternalTypes: true)`; nur synchron, kein DB-Zugriff |
+| Stufe 1 (Form) | `AbstractValidator<TRequest>` in `Plane.<M>/Validation/`, registriert per `services.AddValidatorsFromAssemblyContaining<<M>Module>(ServiceLifetime.Scoped, includeInternalTypes: true)` (ein Aufruf je Modul registriert Stufe 1 **und** Stufe 2; `Scoped`, weil Stufe-2-Validatoren `PlaneDbContext` injizieren – `Singleton` würde den scoped Kontext einfangen, Korrektur im Review); nur synchron, kein DB-Zugriff |
 | Stufe 2 (Kontext) | `AbstractValidator<TCommand>` neben dem Handler; `ValidationBehavior<TCommand,TResult>` ruft `ValidateAsync`; darf `PlaneDbContext` (read-only) nutzen |
 | Fehlerform | `PlaneError.Fields(IReadOnlyDictionary<string, IReadOnlyList<string>>)` → 400 `{"<feld>": ["<meldung>", …]}`; Property-Name per `JsonNamingPolicy.SnakeCaseLower` bzw. `OverridePropertyName("label_ids")`; objektübergreifende Fehler unter `non_field_errors` |
 | Meldungstexte | ausschließlich aus `DrfMessages` (DRF 3.17, Original-Version `djangorestframework==3.17.2`) oder Original-Fehlercodes (`"LABEL_NAME_ALREADY_EXISTS"`): `Required = "This field is required."`, `Null = "This field may not be null."`, `Blank = "This field may not be blank."`, `MaxLength(n) = "Ensure this field has no more than {n} characters."`, `MinLength(n) = "Ensure this field has at least {n} characters."`, `InvalidUuid = "Must be a valid UUID."`, `InvalidChoice(v) = "\"{v}\" is not a valid choice."`, `InvalidInteger = "A valid integer is required."`, `InvalidNumber = "A valid number is required."`, `InvalidBoolean = "Must be a valid boolean."`, `InvalidDate = "Date has wrong format. Use one of these formats instead: YYYY-MM-DD."`, `InvalidDateTime = "Datetime has wrong format. Use one of these formats instead: YYYY-MM-DDThh:mm[:ss[.uuuuuu]][+HH:MM\|-HH:MM\|Z]."`, `PkDoesNotExist(v) = "Invalid pk \"{v}\" - object does not exist."`, `NotAList(t) = "Expected a list of items but got type \"{t}\"."`, `InvalidEmail = "Enter a valid email address."`, `InvalidUrl = "Enter a valid URL."`, `MaxValue(n) = "Ensure this value is less than or equal to {n}."`, `MinValue(n) = "Ensure this value is greater than or equal to {n}."` |
@@ -512,6 +539,7 @@ Die Systemrolle `project.guest` besitzt `project.work_item.read_all` **nicht**; 
 | `RequiredKeyMissingException` | `KeyError` | 400 `{"error": "The required key does not exist."}` | Info |
 | `BadHttpRequestException` (413) | `RequestDataTooBig` | 413 Body wie §3.4.1 Nr. 4 | – |
 | `JsonException` beim Binding | DRF `ParseError` | 400 `{"detail": "JSON parse error - …"}` | – |
+| `PlaneErrorException(PlaneError)` (nur in Building Blocks, die keinen `Result` zurückgeben können, z. B. `CursorPaginator`, `PaginationQuery.Bind`) | DRF `ParseError`/`APIException` | Körper gemäß `PlaneError` (§5.1.4) | – |
 | `OperationCanceledException` bei abgebrochener Verbindung | – | 499 (kein Körper), kein Error-Log | Debug |
 | alle anderen | `Exception` | 500 `{"error": "Something went wrong please try again later"}` | Error `plane.exception` mit Exception + Trace-ID |
 
@@ -605,7 +633,7 @@ total_pages = ceil(total / limit); count = results.Count; total_results = total_
 
 #### 3.10.4 `GlobalPaginator` (`ENV-GLOBAL`, `API/utils/global_paginator.py`)
 
-Cursor `"<page_size>:<page>:<offset>"`, Default `1000:0:0`, `page_size = min(value, 1000)`; Antwort `prev_cursor` (`"{size}:{page-1}:0"`), `cursor`, `next_cursor` (`null`, wenn letzte Seite), `prev_page_results`, `next_page_results`, `page_count`, `total_results`, `total_pages`, `results`. Genutzt von `GET {P}/v2/issues/` (I5) und weiteren Endpunkten laut 04.
+Cursor `"<page_size>:<page>:<offset>"`, Default `1000:0:0`, `page_size = min(value, 1000)`; Antwort `prev_cursor` (`"{size}:{page-1}:0"`), `cursor`, `next_cursor` (`null`, wenn letzte Seite), `prev_page_results`, `next_page_results`, `page_count`, `total_results`, `total_pages`, `results`. Genutzt von `GET {P}/v2/issues/` (ab **I2**, Delta-Sync des Work-Item-Stores; die Erstfassung nannte hier widersprüchlich I5) und weiteren Endpunkten laut 04.
 
 ### 3.11 Filter-, Grouping- und Ordering-Engine für Work Items
 
@@ -826,6 +854,7 @@ public interface IPlaneCache                                   // Plane.Platform
     ValueTask<T> GetOrCreateAsync<T>(CacheKey key, Func<CancellationToken, ValueTask<T>> factory, CacheEntryPolicy policy, CancellationToken ct);
     ValueTask InvalidateTagsAsync(IEnumerable<string> tags, CancellationToken ct);   // lokal + L2 + Pub/Sub an alle Knoten
     ValueTask RemoveAsync(CacheKey key, CancellationToken ct);
+    ValueTask ClearAsync(CancellationToken ct);                                        // Plane.Cli clear-cache (CE-OPS-020)
 }
 public readonly record struct CacheKey(string Value);          // immer mit Präfix "plane:" erzeugt über CacheKeys.*
 public sealed record CacheEntryPolicy(TimeSpan Expiration, TimeSpan LocalExpiration, IReadOnlyList<string> Tags);
@@ -858,20 +887,21 @@ public sealed record CacheEntryPolicy(TimeSpan Expiration, TimeSpan LocalExpirat
 | `authentication` | `10/minute` (`Plane:RateLimits:Authentication`, Alias `AUTHENTICATION_RATE_LIMIT`) | Client-IP (auch angemeldet) | `GET /auth/oidc/login/`, `GET /auth/oidc/callback/`, E-Mail-Änderungs-Endpunkte (falls in 05 beibehalten) | `AuthenticationThrottle` | I0 |
 | `email_verification` | `3/hour` | User-ID | E-Mail-Verifizierungscode (falls beibehalten) | `EmailVerificationThrottle` | I1 |
 | `asset_duplicate` | `5/minute` | Quell-Asset-ID (Routenwert `asset_id`), ohne ID kein Limit | `POST {W}/assets/v2/duplicate/…` | `AssetRateThrottle` | I1 |
-| `api_key` | `60/minute` (`Plane:RateLimits:ApiKey`, Alias `API_KEY_RATE_LIMIT`) | SHA-256 des API-Keys (nicht Klartext) | Oberfläche V1 | `ApiKeyRateThrottle` | I6 |
+| `api_key` | `60/minute` (`Plane:RateLimits:ApiKey`, Alias `API_KEY_RATE_LIMIT`) | `token_hash` (SHA-256 des API-Keys, D05-ADR-16; nicht Klartext) | Oberfläche V1 (inkl. Einladungen/Stickies, 05 B-04) | `ApiKeyRateThrottle` | I6 |
 | `integration_webhook` | `600/minute` | `connection_id` | Oberfläche Integrations | – (F1) | W1 |
 
 Mechanik:
 - `RateExpression.Parse("60/minute")` akzeptiert `s|sec|second`, `m|min|minute`, `h|hour`, `d|day` (DRF `parse_rate` nutzt den ersten Buchstaben) – ungültig → Start-Validierungsfehler.
 - Algorithmus: `SlidingWindowRateLimiter` mit `SegmentsPerWindow = 6` (Annäherung an DRF-Zeitstempel-Historie; exakte Historie wird nicht nachgebaut, `DEV-RL-001`); bei Valkey verteilt über `RedisRateLimiting.AspNetCore` (Sliding Window), sonst lokal.
-- Ablehnung: 429, Körper `{"error_code": 5900, "error_message": "RATE_LIMIT_EXCEEDED"}`, `Retry-After` (Sekunden bis Fensterende). V1 zusätzlich bei **jeder** Antwort `X-RateLimit-Remaining` und `X-RateLimit-Reset` (Unix-Sekunden `now + window`), wie `finalize_response`.
+- Ablehnung: 429, Körper `{"error_code": 5900, "error_message": "RATE_LIMIT_EXCEEDED"}` (geschrieben in `RateLimiterOptions.OnRejected`, `RejectionStatusCode = 429`), `Retry-After` aus `lease.TryGetMetadata(MetadataName.RetryAfter, …)`; fehlt das Metadatum, wird die Fensterlänge verwendet. V1 zusätzlich bei **jeder erfolgreichen** Antwort `X-RateLimit-Remaining` und `X-RateLimit-Reset` (Unix-Sekunden `now + window`), wie `finalize_response`; bei 429 **ohne** diese Header (05 §3.12.2 Nr. 5).
+- Umsetzung der V1-Header: Das eingebaute `RateLimitingMiddleware` gibt die verbleibenden Permits nicht an den Endpunkt weiter. Die Policy `api_key` wird deshalb als eigene `IRateLimiterPolicy<string>` (`ApiKeyRateLimiterPolicy`) implementiert, die den `PartitionedRateLimiter` hält; der Endpoint-Filter `RateLimitHeadersFilter` (nur Oberfläche V1) liest `limiter.GetStatistics(token_hash)?.CurrentAvailablePermits` und setzt die Header über `Response.OnStarting`. Bei verteiltem Betrieb (`RedisRateLimiting.AspNetCore`) liefert dessen Sliding-Window-Limiter die Statistik analog; Test AK-15 läuft in beiden Profilen.
 - Gateway: zusätzliches Limit `300/minute` je IP für statische Frontend-Auslieferung (Caddy-Parität, Detail 14).
 
 ### 3.14 Logging, Tracing, Metriken
 
 | Aspekt | Regel |
 |---|---|
-| Kategorien | `PlaneLogCategories.ApiRequest = "plane.api.request"`, `Api = "plane.api"`, `Worker = "plane.worker"`, `Realtime = "plane.realtime"`, `Exception = "plane.exception"`, `External = "plane.external"` (ausgehende HTTP-Aufrufe: Webhooks, Forgejo, LLM, Unsplash), `Authentication = "plane.authentication"`, `Migrations = "plane.migrations"`, `Query = "plane.query"` (Engine-Diagnose, Debug) |
+| Kategorien | `PlaneLogCategories.ApiRequest = "plane.api.request"`, `Api = "plane.api"`, `Worker = "plane.worker"`, `Realtime = "plane.realtime"`, `Exception = "plane.exception"`, `External = "plane.external"` (ausgehende HTTP-Aufrufe: Webhooks, Forgejo, LLM, Unsplash), `Authentication = "plane.authentication"`, `Migrations = "plane.migrations"`, `Query = "plane.query"` (Engine-Diagnose, Debug), `Config = "plane.config"` (ENV-Alias-Warnungen, 14 §3.9.2) |
 | Logger-Erzeugung | `ILoggerFactory.CreateLogger(PlaneLogCategories.X)` über `[LoggerMessage]`-Source-Generator je Modul (`<Modul>Log.cs`); keine String-Interpolation in Log-Aufrufen |
 | Request-Log | eine Zeile je Request, Level Information (4xx Information, 5xx Error), Template `"{Method} {Path} {StatusCode}"`, Felder `path`, `method`, `status_code`, `duration_ms`, `remote_addr`, `user_agent`, `user_id`; ausgenommen `GET /`, `GET /robots.txt`, `/health/*` |
 | Format | JSON-Console (`AddJsonConsole`, UTC-Zeitstempel) in Produktion; OTLP-Export nur, wenn `OTEL_EXPORTER_OTLP_ENDPOINT` gesetzt (ServiceDefaults; Default aus, ADR-004) |
@@ -888,12 +918,17 @@ Mechanik:
 
 | Options-Klasse | Abschnitt | Eigenschaften (Typ = Default) | Projekt | ab |
 |---|---|---|---|---|
-| `PlaneUrlsOptions` | `Plane:Urls` | `Web` (Uri?), `App` (Uri?), `Admin` (Uri?), `AdminPath` = `/god-mode/`, `Space` (Uri?), `SpacePath` = `/spaces/`, `Live` (Uri?), `LivePath` = `/live/`, `Api` (Uri?), `ApiPath` = `""` | BuildingBlocks | I0 |
+| `PlaneUrlsOptions` | `Plane:Urls` | `Web` (Uri, Pflicht; Fallback `App`), `App` (Uri?), `Admin` (Uri? = `Web`), `AdminPath` = `/god-mode/`, `Space` (Uri? = `Web`), `SpacePath` = `/spaces/`, `Live` (Uri? = `Web`), `LivePath` = `/live/`, `Api` (Uri? = `Web`), `ApiPath` = `""`, `Idp` (Uri? = `Web` + `/idp`; Nachtrag aus 14 §3.9.1) | BuildingBlocks | I0 |
 | `PlaneCorsOptions` | `Plane:Cors` | `AllowedOrigins` (string[] = []) | BuildingBlocks.Web | I0 |
-| `PlaneForwardedHeadersOptions` | `Plane:ForwardedHeaders` | `ForwardLimit` (int? = null), `KnownNetworks` (string[] = []), `KnownProxies` (string[] = []) | BuildingBlocks.Web | I0 |
-| `PlaneSessionOptions` | `Plane:Session` | `CookieName` = `session-id`, `CookieDomain` (string?), `LifetimeSeconds` = 604800, `Sliding` = false, `SecureCookie` (bool? = null → automatisch wie `_cookies_secure`) | Identity | I0 |
-| `PlaneAuthOptions` | `Plane:Auth` | `Authority`, `Realm` = `plane`, `Clients` (web/admin/space: `ClientId`, `ClientSecret`), `InstanceAdminRole` = `plane-instance-admin`, `AdminStepUpMaxAgeSeconds` = 0, `BearerEnabled` = false, `BearerAudience` = `plane-api` | Identity | I0 |
-| `PlaneDatabaseOptions` | `Plane:Database` | `ReadReplicaEnabled` = false, `CommandTimeoutSeconds` = 30, `EnableSensitiveDataLogging` = false | Data | I0 |
+| `PlaneForwardedHeadersOptions` | `Plane:ForwardedHeaders` | `ForwardLimit` (int = 1; Wertebereich 1–999 wie `NUM_PROXIES`-Regel; Angleichung an 14 – `null` hieße in ASP.NET „unbegrenzt“), `KnownNetworks` (CIDR[] = Container-Netz aus 14), `KnownProxies` (string[] = []) | BuildingBlocks.Web | I0 |
+| `PlaneAuthOptions` | `Plane:Auth` | **Felder und Defaults verbindlich in 05 §3.2/§4.4** (Session: `SessionCookieName` = `session-id`, `SessionLifetimeSeconds` = 604800, `SlidingSession` = false, `CookieDomain`; Keycloak: `Oidc:Authority`, `Oidc:RequireHttpsMetadata`, `Oidc:UsePar`, `Oidc:CaCertificatePath`, `Oidc:AccountConsoleUrl`, `Oidc:DisplayName`, Clients web/admin/space; `InstanceAdminRole` = `plane-instance-admin`, `InstanceAdminGroup`, `RequiredRole`, `SyncProfileOnLogin` = false, `AutoRedirect` = true, `RevalidateIntervalSeconds` = 300, `AdminStepUpMaxAgeSeconds` = 0, `Bearer:Enabled` = false, `Bearer:Audience` = `plane-api`, `IdpUserSync:Enabled` = true). Die Erstfassung führte Session-Werte getrennt als `PlaneSessionOptions` unter `Plane:Session` – entfällt zugunsten 05. | Identity | I0 |
+| `PlaneAntiforgeryOptions` | `Plane:Antiforgery` | `FormFieldName` = `csrfmiddlewaretoken`, `HeaderName` = `X-CSRFToken`, `Cookie.Name` = `csrftoken` (05 S-12) | BuildingBlocks.Web | I0 |
+| `PlaneDatabaseOptions` | `Plane:Database` | `ReadReplicaEnabled` = false, `CommandTimeoutSeconds` = 30, `EnableSensitiveDataLogging` = false, `MaxPoolSize` (je Host: Api 50, Worker 20, Realtime 30, Migrator 5; Nachtrag aus 14 §3.9.1, wird als `Maximum Pool Size` in den Connection-String geschrieben) | Data | I0 |
+| `PlaneValkeyOptions` | `Plane:Valkey` | `Enabled` (abgeleitet aus `ConnectionStrings:valkey`), `SslCertificateValidation` = `required` (`required`\|`none`), `CaCertificatePath`, `KeyPrefix` = `plane:` (14 §3.9.1) | Platform.Caching | I1 |
+| `PlaneScaleOptions` | `Plane:Scale` | `ExpectMultipleInstances` = false (mit `true` ist Valkey Pflicht, Startprüfung; 14 D14-ADR-21) | ServiceDefaults | I1 |
+| `PlaneDataProtectionOptions` | `Plane:DataProtection` | `CertificatePath`, `CertificatePassword`, `PreviousCertificatePaths`, `AllowUnencryptedKeys` = false (Key-Ring in PostgreSQL, Schutz per Zertifikat; 14 §3.9.1) | Platform.Security | I0 |
+| `PlaneTelemetryOptions` | `Plane:Telemetry` | `TraceSampleRatio` = 1.0, `LogFormat` = `json` (`json`\|`simple`) (14 §3.9.1) | ServiceDefaults | I0 |
+| `PlaneGatewayOptions`, `PlaneTlsOptions` | `Plane:Gateway`, `Plane:Tls` | nur `Plane.Gateway`; Felder verbindlich in 14 §3.9.1 (hier nur gelistet, damit die Options-Liste vollständig ist) | Gateway | I0 |
 | `PlaneStorageOptions` | `Plane:Storage` | `Provider` = `S3` (`S3`\|`FileSystem`), `Bucket` = `uploads`, `Region` = `""`, `InternalEndpoint`, `PublicEndpoint`, `AccessKey`, `SecretKey`, `ForcePathStyle` = true, `PresignExpirySeconds` = 3600, `UploadMode` = `Direct`, `FileSystemRoot` | Platform.Storage | I1 |
 | `PlaneUploadsOptions` | `Plane:Uploads` | `MaxFileSizeBytes` = 5242880, `AttachmentMimeTypes` (Liste `A01` §2.12), `InlineSafeMimeTypes` = `image/jpeg, image/jpg, image/png, image/gif, image/webp` | Platform.Storage | I1 |
 | `PlaneRateLimitOptions` | `Plane:RateLimits` | `Anon` = `30/minute`, `Authentication` = `10/minute`, `EmailVerification` = `3/hour`, `AssetDuplicate` = `5/minute`, `ApiKey` = `60/minute`, `IntegrationWebhook` = `600/minute` | BuildingBlocks.Web | I0 |
@@ -903,7 +938,7 @@ Mechanik:
 | `PlaneInstanceOptions` | `Plane:Instance` | `ConfigurationSource` = `Database` (`Database`\|`Environment`), `ChangelogUrl` = `""`, `AppVersion` (aus Assembly), `IsTest` = false | Instance | I0 |
 | `PlaneJsonOptions` | `Plane:Json` | `DateTimeOutputZone` = `Utc` | BuildingBlocks.Web | I0 |
 | `PlaneQueryOptions` | `Plane:Query` | `EmulateZeroGroupCountQuirk` = true, `GroupedPageStrategy` = `IdArray`, `MaxFilterDepth` = 5, `MaxIdArraySize` = 50000 | WorkItems | I2 |
-| `PlaneSecurityOptions` | `Plane:Security` | `ApiLogHmacKey` (Secret; Default: abgeleitet aus Data-Protection-Purpose), `SsrfBlockPrivateNetworks` = true | Platform.Security | I0 |
+| `PlaneSecurityOptions` | `Plane:Security` | `SsrfBlockPrivateNetworks` = true, `TrustedOrigins` (string[] = [], Alias `CSRF_TRUSTED_ORIGINS`, zusätzliche Origin-Allowlist 05 §3.5), `MaskInstanceSecrets` = true (05), `SigningKey` (Secret, Base64 ≥ 32 Byte; nur falls 14 D14-ADR-09 ihn weiterhin braucht). `ApiLogHmacKey` **entfällt** (05: `token_identifier = token_hash`) | Platform.Security | I0 |
 | `PlaneCacheOptions` | `Plane:Cache` | `DefaultLocalExpirationSeconds` = 30, `InvalidationChannel` = `plane:cache:invalidate` | Platform.Caching | I1 |
 | `PlaneRealtimeOptions` | `Plane:Realtime` | `DebounceMilliseconds` = 10000, `InternalSecret` (optional), `CompressionLevel` = 6, `CompressionThresholdBytes` = 5000 | Realtime | I4 |
 | `PlaneAiOptions` | `Plane:Ai` | `EmbeddingDimensions` = 1536, `Enabled` = false (Instanz-Keys `LLM_*` bleiben in der Instanz-Konfiguration) | Platform.Ai | I5 |
@@ -955,8 +990,8 @@ Regeln: OpenAPI-Version 3.1 (Default .NET 10); Transformer `PlaneOpenApiTransfor
 | Element | Regel |
 |---|---|
 | Mediator-Pipeline (Reihenfolge) | `LoggingBehavior` → `ModuleScopeBehavior` (setzt `ModuleScope` aus dem Assembly des Handlers, R3) → `ValidationBehavior` → `TransactionBehavior` (nur `ICommand`) |
-| `TransactionBehavior` | Handler ausführen; bei `Result.IsFailure` **kein** `SaveChanges` und Rollback; sonst `SaveChangesAsync` (Interceptors §3.2.2), Commit, danach Cache-Invalidierungen (§3.12.1) und `IPostCommitAction`s (z. B. Realtime-Hinweise, nur in-process) |
-| Domain-Event | `IDomainEvent` (in-process, gleiche Transaktion), Handler `IDomainEventHandler<T>` im **eigenen** Modul; modulübergreifend nur Integration-Events (R5) |
+| `TransactionBehavior` | innerhalb `db.Database.CreateExecutionStrategy().ExecuteAsync(...)` (§3.2.4): `BeginTransactionAsync(ReadCommitted)` → Handler ausführen → bei `IsFailure` **kein** `SaveChanges`, Rollback, `ChangeTracker.Clear()` → sonst Domain-Event-Schleife (D02-ADR-24) → `SaveChangesAsync` (Interceptors §3.2.2) → `CommitAsync`; Unique-Verletzung (`23505`) mit Constraint-Name aus `IUniqueViolationMap` → endpunktspezifischer `PlaneError` statt Exception (§3.8.2); danach Cache-Invalidierungen (§3.12.1) und `IPostCommitAction`s (z. B. Realtime-Hinweise, nur in-process). Verschachtelte Commands (ein Handler sendet einen weiteren Command) laufen in derselben Transaktion (Behavior erkennt `Database.CurrentTransaction != null`) |
+| Domain-Event | `IDomainEvent` (in-process, gleiche Transaktion, dispatcht vom `TransactionBehavior` **vor** `SaveChanges`), Handler `IDomainEventHandler<T>` im **eigenen** Modul; modulübergreifend nur Integration-Events (R5) |
 | Integration-Event | `record <Ding><Ereignis>V1(...) : IIntegrationEvent` in `*.Contracts/Events`; Payload: IDs + geänderte Felder (keine Entitäten); unveränderlich nach Merge (01 §7.15) |
 | Consumer | `IEventConsumer<T>` in `Application/Consumers`, Registrierung in `IModule.RegisterMessaging`; idempotent über Inbox |
 | Activity | `IActivityRecorder.Record(ActivityEntry)` im Handler; Einträge werden im selben `SaveChanges` geschrieben; Feldwerte für Anzeige über `IActivityFieldResolver` (Modul, das den Feldwert besitzt, liefert ihn; z. B. Projects → Feld `labels`, `state`, `estimate_point`) |
@@ -1009,7 +1044,7 @@ Status-Legende: **1:1** = Verhalten identisch portiert · **angepasst** = Verhal
 | 9 | `crum.CurrentRequestUserMiddleware` | `ICurrentActor` (scoped) | angepasst |
 | 10 | `GZipMiddleware` | `UseResponseCompression` | 1:1 |
 | 11 | `RequestBodySizeLimitMiddleware` | `RequestBodyLimitMiddleware` | 1:1 |
-| 12 | `APITokenLogMiddleware` | `ApiActivityLogMiddleware` + `ApiActivityLogJob` | 1:1 (HMAC-Schlüssel neu) |
+| 12 | `APITokenLogMiddleware` | `ApiActivityLogMiddleware` + `ApiActivityLogJob` | angepasst (`token_identifier = token_hash`, 05 §3.12.2) |
 | 13 | `RequestLoggerMiddleware` | `RequestLoggingMiddleware` | 1:1 |
 | 14 | `ReadReplicaRoutingMiddleware` | `.UseReadReplica()` | angepasst |
 | 15 | `DebugToolbarMiddleware` | entfällt (Aspire-Dashboard) | entfällt |
@@ -1089,7 +1124,7 @@ Vollständige Abbildung in §3.6.3 (Vorlagen). Zusätzlich:
 | DRF `ValidationError` (Serializer) | `PlaneError.Fields` | 1:1 |
 | DRF `ParseError` (Pagination) | `PaginationQuery.Bind` | 1:1 |
 | DRF `MethodNotAllowed` | `StatusCodeBodiesMiddleware` 405 | 1:1 |
-| `csrf_failure` (HTML) | Antiforgery-Fehler → 403 `{"detail": "CSRF Failed: …"}` (keine HTML-Seite, Formular-Flows entfallen weitgehend durch ADR-008) | angepasst |
+| `csrf_failure` (HTML) | Antiforgery-Fehler der verbleibenden Formular-Endpunkte (`POST /auth/sign-out/`, `/auth/spaces/sign-out/`, `/api/instances/admins/sign-out/`) → HTML `csrf_failure.html` 1:1 wie 05 §3.5 (CE-AUTH-016; Erstfassung „403 JSON“ korrigiert) | 1:1 |
 
 ### 4.6 Sortier- und Gruppier-Allowlists (`API/utils/order_queryset.py`)
 
@@ -1123,7 +1158,7 @@ Spalte „Ziel“: Konfigurationsschlüssel (ENV-Form `Plane__Bereich__Feld`); d
 | Original-ENV | Ziel | Bemerkung |
 |---|---|---|
 | `DJANGO_SETTINGS_MODULE` | entfällt | `ASPNETCORE_ENVIRONMENT`/`DOTNET_ENVIRONMENT` |
-| `SECRET_KEY` | entfällt | Data-Protection-Key-Ring (ADR-036); `Plane:Security:ApiLogHmacKey` separat; kritischer Start-Log, falls ein Betreiber noch `SECRET_KEY=change-this-key-on-deployment` setzt (Hinweis „wird ignoriert“) |
+| `SECRET_KEY` | entfällt | Data-Protection-Key-Ring (ADR-036); Warnung `plane.config` „wird ignoriert“, falls gesetzt (05 §4.4, 14 §3.9.2 Regel 3) |
 | `DEBUG` | entfällt | `ASPNETCORE_ENVIRONMENT=Development` |
 | `ALLOWED_HOSTS` | `AllowedHosts` | ASP.NET-Standard |
 | `WEBHOOK_ALLOWED_IPS` | `Plane:Webhooks:AllowedNetworks` | ungültige Einträge → Warnung, übersprungen |
@@ -1153,10 +1188,11 @@ Spalte „Ziel“: Konfigurationsschlüssel (ENV-Form `Plane__Bereich__Feld`); d
 | `LIVE_BASE_URL`, `LIVE_BASE_PATH` | `Plane:Urls:Live`, `:LivePath` | – |
 | `LIVE_SERVER_SECRET_KEY` | `Plane:Realtime:InternalSecret` | nur falls interne Aufrufe (In-Process-Persistenz macht ihn i. d. R. überflüssig) |
 | `RABBITMQ_HOST/_PORT/_USER/_PASSWORD/_VHOST`, `AMQP_URL` | entfällt | PostgreSQL-Job-Queue (ADR-020) |
-| `SESSION_COOKIE_AGE` | `Plane:Session:LifetimeSeconds` | – |
-| `SESSION_COOKIE_NAME` | `Plane:Session:CookieName` | – |
-| `COOKIE_DOMAIN` | `Plane:Session:CookieDomain` | – |
-| `SESSION_SAVE_EVERY_REQUEST` | `Plane:Session:Sliding` | – |
+| `SESSION_COOKIE_AGE` | `Plane:Auth:SessionLifetimeSeconds` | 05 §3.2 |
+| `SESSION_COOKIE_NAME` | `Plane:Auth:SessionCookieName` | 05 §3.2 |
+| `COOKIE_DOMAIN` | `Plane:Auth:CookieDomain` | 05 §3.2 |
+| `SESSION_SAVE_EVERY_REQUEST` | `Plane:Auth:SlidingSession` | `"1"` → true (05 §3.2) |
+| `CSRF_TRUSTED_ORIGINS` (im Original aus anderen Werten abgeleitet, als ENV nicht gesetzt) | `Plane:Security:TrustedOrigins` | zusätzliche Origin-Allowlist (05 §4.4) |
 | `ADMIN_SESSION_COOKIE_AGE` | entfällt | kein Admin-Cookie (ADR-008); Step-up `Plane:Auth:AdminStepUpMaxAgeSeconds` |
 | `HARD_DELETE_AFTER_DAYS` | `Plane:Retention:HardDeleteDays` | – |
 | `API_ACTIVITY_LOG_RETENTION_DAYS` | `Plane:Retention:ApiActivityLogDays` | ungültig/negativ → Default |
@@ -1243,8 +1279,8 @@ Ergebnis CE: **14 Keys** (13 übernommen: Nr. 4, 24–34 ohne 35, 36 + neu `LLM_
 | CE-ID | Feature | Baustein (Abschnitt) | Inkrement |
 |---|---|---|---|
 | CE-WS-008 | Rollen- und Berechtigungsmodell | Permission-Katalog, Vorlagen, `SystemRoleProvider` (§3.6) | I0 |
-| CE-PRJ-022 | Gastzugriff (`guest_view_all_features`) | `IVisibilityFilter`, `project.work_item.read_all` (§3.6.5) | I2 |
-| CE-PRJ-028 … CE-PRJ-033 | Labels | Referenzmodul (§5.3) | I1 |
+| CE-PRJ-022 | Gastzugriff (`guest_view_all_features`) | `IVisibilityFilter` (§3.6.5, 05 §3.14) | I2 |
+| CE-PRJ-028 … CE-PRJ-033 | Labels | Referenzmodul (§5.2) | I1 |
 | CE-LV-005 | Work-Item-Liste mit Gruppierung/Paginierung (Backend) | Query-Engine (§3.11), Pagination (§3.10) | I2 |
 | CE-LV-006 | Rich-Filter AND/OR/NOT | `RichFilterParser`, AST (§3.11.2–3) | I2 |
 | CE-LV-010 | Filterfelder | `CoreWorkItemFilterFields` (§3.11.3) | I2 |
@@ -1264,6 +1300,8 @@ Ergebnis CE: **14 Keys** (13 übernommen: Nr. 4, 24–34 ohne 35, 36 + neu `LLM_
 | CE-OPS-014 | Soft-Delete und Hard-Delete | §3.2 | I0 (Soft), I1 (Job) |
 | CE-OPS-015 | Aufbewahrung | `PlaneRetentionOptions` | I1 |
 | CE-OPS-017 | Sanitizing | Validierung §3.7 (Aufruf), ADR-030 | I2 |
+| CE-OPS-018 | SSRF-sichere ausgehende Requests | `PlaneSecurityOptions.SsrfBlockPrivateNetworks`, `PlaneWebhookOptions` (Allow-/Blocklisten), Log-Kategorie `plane.external`; Handler selbst in 05 §5.9 | I1 (Avatar/Link-Vorschau), I6 (Webhooks) |
+| CE-OPS-020 | Betriebs-CLI `clear_cache` | `IPlaneCache.ClearAsync` (= `HybridCache.RemoveByTagAsync("*")`, Wildcard-Tag, + Pub/Sub an alle Knoten, §3.12.1); übrige Kommandos in 14 | I1 |
 | CE-OPS-019 | Strukturiertes Request-Logging | §3.14 | I0 |
 | CE-OPS-021 … CE-OPS-023 | Dev-Umgebung, Test-Stack, CI | Modul-Schablone, Testprojekte, Architekturtests (§3.1, §7) | I0 |
 
@@ -1295,15 +1333,23 @@ public interface ISortable { double SortOrder { get; set; } }
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class OwnedByAttribute(string module) : Attribute { public string Module { get; } = module; }
 
+public interface IHasDomainEvents
+{
+    IReadOnlyList<IDomainEvent> DequeueDomainEvents();            // TransactionBehavior (Domain-Event-Schleife, D02-ADR-24)
+    IReadOnlyList<IIntegrationEvent> DequeueIntegrationEvents();  // OutboxInterceptor (§3.2.2 Nr. 5)
+}
+
 public abstract class Entity : IHasDomainEvents
 {
-    private List<object>? _events;
+    private List<IDomainEvent>? _domain;
+    private List<IIntegrationEvent>? _integration;
     protected Entity(Guid id) => Id = id;
     protected Entity() { }                                   // nur für EF
     public Guid Id { get; private set; }
-    public void Raise(IDomainEvent e) => (_events ??= []).Add(e);
-    public void Raise(IIntegrationEvent e) => (_events ??= []).Add(e);
-    IReadOnlyList<object> IHasDomainEvents.DequeueEvents() { var l = _events ?? []; _events = null; return l; }
+    public void Raise(IDomainEvent e) => (_domain ??= []).Add(e);
+    public void Raise(IIntegrationEvent e) => (_integration ??= []).Add(e);
+    IReadOnlyList<IDomainEvent> IHasDomainEvents.DequeueDomainEvents() { var l = (IReadOnlyList<IDomainEvent>?)_domain ?? []; _domain = null; return l; }
+    IReadOnlyList<IIntegrationEvent> IHasDomainEvents.DequeueIntegrationEvents() { var l = (IReadOnlyList<IIntegrationEvent>?)_integration ?? []; _integration = null; return l; }
 }
 
 public abstract class AuditableEntity : Entity, IAuditable, ISoftDeletable
@@ -1377,8 +1423,8 @@ public abstract class PlaneEntityConfiguration<T> : IEntityTypeConfiguration<T> 
         {
             b.Property<DateTimeOffset>(nameof(IAuditable.CreatedAt)).HasPrecision(6);
             b.Property<DateTimeOffset>(nameof(IAuditable.UpdatedAt)).HasPrecision(6);
-            b.HasOne(typeof(User)).WithMany().HasForeignKey(nameof(IAuditable.CreatedById)).OnDelete(DeleteBehavior.SetNull);
-            b.HasOne(typeof(User)).WithMany().HasForeignKey(nameof(IAuditable.UpdatedById)).OnDelete(DeleteBehavior.SetNull);
+            // FKs created_by_id/updated_by_id → users: NICHT hier (Plane.BuildingBlocks.Persistence kennt Plane.Data.User nicht),
+            // sondern AuditForeignKeyConvention in Plane.Data (§3.2.3, Zeile „Audit-FKs“).
         }
         ConfigureEntity(b);
     }
@@ -1393,6 +1439,24 @@ public abstract class PlaneEntityConfiguration<T> : IEntityTypeConfiguration<T> 
 
 Der Tenant-Filter `workspace_tenant` wird nicht in der Basis-Konfiguration, sondern zentral in `PlaneDbContext.OnModelCreating` für alle `IWorkspaceScoped` angewendet, weil er das Feld `_tenant` des Kontexts referenziert.
 
+```csharp
+// src/data/Plane.Data/Configurations/AuditForeignKeyConvention.cs – aufgerufen am Ende von PlaneDbContext.OnModelCreating
+internal static class AuditForeignKeyConvention
+{
+    public static void Apply(ModelBuilder mb)
+    {
+        foreach (var et in mb.Model.GetEntityTypes().Where(t => typeof(IAuditable).IsAssignableFrom(t.ClrType) && t.BaseType is null))
+        {
+            var b = mb.Entity(et.ClrType);
+            b.HasOne(typeof(User)).WithMany().HasForeignKey(nameof(IAuditable.CreatedById)).OnDelete(DeleteBehavior.SetNull);
+            b.HasOne(typeof(User)).WithMany().HasForeignKey(nameof(IAuditable.UpdatedById)).OnDelete(DeleteBehavior.SetNull);
+        }
+    }
+}
+```
+
+**Benannte Filter und `IgnoreQueryFilters`:** Mit EF-10-benannten Filtern deaktiviert `IgnoreQueryFilters([QueryFilterNames.SoftDelete])` nur den Soft-Delete-Filter; `IgnoreQueryFilters()` ohne Argument deaktiviert **beide** (also auch `workspace_tenant`) und ist außerhalb von `Plane.Data`, Migrator und Tests per Banned-API verboten.
+
 #### 5.1.4 Ergebnis- und Fehlertypen – `src/building-blocks/Plane.BuildingBlocks/Results/`
 
 ```csharp
@@ -1402,11 +1466,24 @@ public sealed record PlaneError(int Status, PlaneErrorKind Kind, string? Message
                                 IReadOnlyDictionary<string, IReadOnlyList<string>>? FieldErrors = null,
                                 IReadOnlyDictionary<string, object?>? Extra = null);
 
+public readonly struct Result
+{
+    private Result(PlaneError? error) => Error = error;
+    public PlaneError? Error { get; }
+    public bool IsSuccess => Error is null;
+    public bool IsFailure => Error is not null;
+    public static readonly Result Success = new(null);
+    public static implicit operator Result(PlaneError error) => new(error);
+}
+
+public sealed class PlaneErrorException(PlaneError error) : Exception(error.Message) { public PlaneError Error { get; } = error; }  // nur Building Blocks (§3.8.2)
+
 public readonly struct Result<T>
 {
     private Result(T? value, PlaneError? error) { Value = value; Error = error; }
     public T? Value { get; } public PlaneError? Error { get; }
     public bool IsSuccess => Error is null;
+    public bool IsFailure => Error is not null;
     public static implicit operator Result<T>(T value) => new(value, null);
     public static implicit operator Result<T>(PlaneError error) => new(default, error);
 }
@@ -1479,61 +1556,73 @@ internal sealed class TrailingSlashMiddleware(RequestDelegate next)
 // Program.cs: app.UseMiddleware<TrailingSlashMiddleware>(); app.UseRouting();   ← Reihenfolge verbindlich
 ```
 
-#### 5.1.7 Permission-Deskriptoren, Vorlagen, Filter – `Plane.Authorization.Contracts` / `Plane.BuildingBlocks.Web/Permissions`
+#### 5.1.7 Permission-Deskriptoren, Regeln, Filter – `Plane.Authorization.Contracts` / `Plane.BuildingBlocks.Web/Permissions`
+
+Abgestimmt mit 05 §5.8 (Namen `SystemRoleLevel`, `PermissionDescriptor.Project(...)`, `PermissionRule.Creator<T>()`, `RoleDefinition`); die Deskriptoren selbst erzeugt `tools/Plane.PermissionGen` aus `05-permission-matrix.json`.
 
 ```csharp
 namespace Plane.Authorization.Contracts;
 
 public enum DenyStyle { Error, Detail }
-public enum SystemRole { Admin = 20, Member = 15, Guest = 5 }
+public enum SystemRoleLevel { Guest = 5, Member = 15, Admin = 20 }
 
-public abstract record PermissionRule;
-public sealed record WorkspaceAdminOverride : PermissionRule;
-public sealed record CreatorBypass(Type Entity, string RouteParam) : PermissionRule;
-public sealed record OwnerBypass(Type Entity, string RouteParam) : PermissionRule;
-public sealed record InstanceAdminOnly : PermissionRule;
-public sealed record AnyAuthenticated : PermissionRule;
-
-public sealed record PermissionDescriptor(Permission Permission, DenyStyle Deny, IReadOnlyList<Permission> Prerequisites,
-                                          IReadOnlyList<PermissionRule> Rules, IReadOnlySet<SystemRole> SystemRoles, string OriginalCheck);
-
-/// Vorlagen aus §3.6.3 – Module bauen ihre Deskriptoren ausschließlich hierüber.
-public static class PermissionTemplates
+public sealed record PermissionDescriptor(Permission Permission, IReadOnlySet<SystemRoleLevel> Roles, DenyStyle Deny, string OriginalCheck)
 {
-    // allow_permission(roles) – Projekt-Ebene, inkl. WS-Admin-Override
-    public static PermissionDescriptor AP(string key, SystemRole[] roles, params Permission[] prerequisites)
-        => new(new(key, ScopeLevel.Project), DenyStyle.Error, prerequisites, [new WorkspaceAdminOverride()],
-               roles.ToHashSet(), $"AP[{string.Join(',', roles.Select(r => r.ToString()[0]))}]");
-    // allow_permission(roles, level="WORKSPACE")
-    public static PermissionDescriptor APW(string key, SystemRole[] roles, params Permission[] prerequisites)
-        => new(new(key, ScopeLevel.Workspace), DenyStyle.Error, prerequisites, [], roles.ToHashSet(), "APW");
-    // allow_permission(roles, creator=True, model=E)
-    public static PermissionDescriptor APC<TEntity>(string key, SystemRole[] roles, string routeParam = "pk")
-        => new(new(key, ScopeLevel.Project), DenyStyle.Error, [], [new CreatorBypass(typeof(TEntity), routeParam), new WorkspaceAdminOverride()],
-               roles.ToHashSet(), "APC");
-    // DRF-Permission-Klassen (Detail-Stil)
-    public static PermissionDescriptor Klass(string key, ScopeLevel scope, SystemRole[] roles, string original, params PermissionRule[] rules)
-        => new(new(key, scope), DenyStyle.Detail, [], rules, roles.ToHashSet(), original);
+    public static PermissionDescriptor Project(string key, SystemRoleLevel[] roles, DenyStyle denyStyle, string? apiScope = null, string original = "")
+        => new(new(key, ScopeLevel.Project, apiScope), roles.ToHashSet(), denyStyle, original);
+    public static PermissionDescriptor Workspace(string key, SystemRoleLevel[] roles, DenyStyle denyStyle, string? apiScope = null, string original = "")
+        => new(new(key, ScopeLevel.Workspace, apiScope), roles.ToHashSet(), denyStyle, original);
+    public static PermissionDescriptor Instance(string key, string original = "INST")
+        => new(new(key, ScopeLevel.Instance, null), new HashSet<SystemRoleLevel>(), DenyStyle.Detail, original);
+    public static PermissionDescriptor Authenticated(string key, DenyStyle denyStyle = DenyStyle.Detail, string original = "AUTH")
+        => new(new(key, ScopeLevel.Authenticated, null), new HashSet<SystemRoleLevel>(), denyStyle, original);
 }
 
-/// Gemeinsame Vorbedingungen (eine Permission je Original-Klasse × Methodengruppe).
-public static class StandardPermissions
+public abstract record PermissionRule
 {
-    public static readonly PermissionDescriptor ProjectBaseRead   = PermissionTemplates.Klass("workspace.project_base.read",  ScopeLevel.Workspace, [SystemRole.Admin, SystemRole.Member, SystemRole.Guest], "ProjectBasePermission.GET");
-    public static readonly PermissionDescriptor ProjectBaseCreate = PermissionTemplates.Klass("workspace.project_base.create", ScopeLevel.Workspace, [SystemRole.Admin, SystemRole.Member], "ProjectBasePermission.POST");
-    public static readonly PermissionDescriptor ProjectBaseWrite  = PermissionTemplates.Klass("project.project_base.write",  ScopeLevel.Project,   [SystemRole.Admin], "ProjectBasePermission.PUT/PATCH/DELETE", new WorkspaceAdminOverride());
-    public static readonly PermissionDescriptor ProjectEntityRead = PermissionTemplates.Klass("project.project_entity.read",  ScopeLevel.Project,   [SystemRole.Admin, SystemRole.Member, SystemRole.Guest], "ProjectEntityPermission.SAFE");
-    public static readonly PermissionDescriptor ProjectEntityWrite= PermissionTemplates.Klass("project.project_entity.write", ScopeLevel.Project,   [SystemRole.Admin, SystemRole.Member], "ProjectEntityPermission.UNSAFE");
-    public static readonly PermissionDescriptor InstanceAdmin     = PermissionTemplates.Klass("instance.admin", ScopeLevel.Instance, [], "InstanceAdminPermission", new InstanceAdminOnly());
-    public static readonly PermissionDescriptor WorkspaceAdminOverrideGrant = PermissionTemplates.Klass("workspace.admin_override", ScopeLevel.Workspace, [SystemRole.Admin], "allow_permission WS-Admin-Override");
-    // … vollständige Liste aller Vorlagen aus §3.6.3 in StandardPermissions.cs
-    public static IEnumerable<PermissionDescriptor> All => [ProjectBaseRead, ProjectBaseCreate, ProjectBaseWrite, ProjectEntityRead, ProjectEntityWrite, InstanceAdmin, WorkspaceAdminOverrideGrant];
+    public static PermissionRule Creator<TEntity>(string routeParam = "pk") where TEntity : class => new CreatorRuleSpec(typeof(TEntity), routeParam);
+    public static readonly PermissionRule Own = new OwnRuleSpec();
+    public static readonly PermissionRule Self = new SelfRuleSpec();
+    public static readonly PermissionRule GuestVisibility = new VisibilityRuleSpec();
+    public static readonly PermissionRule PageAccess = new PageRuleSpec();
+    public static readonly PermissionRule Board = new BoardRuleSpec();
+    public static readonly PermissionRule WorkspaceAdminOrProjectAdmin = new WsaOrPaRuleSpec();
+    public static readonly PermissionRule ProjectMemberOfBody = new ProjectMembershipRuleSpec();
+    /// Ergänzung D02 (D02-ADR-05): vorgeschaltete Prüfung mit eigenem DenyStyle („Klasse ∧ Decorator“).
+    public static PermissionRule Prerequisite(PermissionDescriptor descriptor) => new PrerequisiteRuleSpec(descriptor);
+}
+public sealed record CreatorRuleSpec(Type Entity, string RouteParam) : PermissionRule;
+public sealed record PrerequisiteRuleSpec(PermissionDescriptor Descriptor) : PermissionRule;
+// OwnRuleSpec, SelfRuleSpec, VisibilityRuleSpec, PageRuleSpec, BoardRuleSpec, WsaOrPaRuleSpec, ProjectMembershipRuleSpec: leere sealed records (Auswerter in Plane.Authorization/Rules, 05 §3.13)
+
+public sealed record PermissionMetadata(PermissionDescriptor Descriptor, IReadOnlyList<PermissionRule> Rules, DenyStyle? DenyOverride);
+public sealed record PermissionDecision(bool Allowed, DenyStyle DenyStyle);
+
+/// Vorbedingungs-Deskriptoren (§3.6.3) – Generator-Ausgabe, hier nur Auszug.
+public static partial class StandardPermissions
+{
+    private static readonly SystemRoleLevel[] AMG = [SystemRoleLevel.Admin, SystemRoleLevel.Member, SystemRoleLevel.Guest];
+    private static readonly SystemRoleLevel[] AM = [SystemRoleLevel.Admin, SystemRoleLevel.Member];
+    public static readonly PermissionDescriptor WorkspaceProjectBaseRead   = PermissionDescriptor.Workspace("workspace.project_base.read",   AMG, DenyStyle.Detail, original: "ProjectBasePermission.GET");
+    public static readonly PermissionDescriptor WorkspaceProjectBaseCreate = PermissionDescriptor.Workspace("workspace.project_base.create", AM,  DenyStyle.Detail, original: "ProjectBasePermission.POST");
+    public static readonly PermissionDescriptor ProjectProjectBaseWrite    = PermissionDescriptor.Project("project.project_base.write", [SystemRoleLevel.Admin], DenyStyle.Detail, original: "ProjectBasePermission.PUT/PATCH/DELETE");
+    // … ProjectEntityRead/Write, ProjectMemberRead/Write, WorkspaceEntityRead/Write, InstanceAdmin
 }
 ```
 
 ```csharp
+// src/building-blocks/Plane.BuildingBlocks.Web/Permissions/RequirePermissionExtensions.cs
+public static class RequirePermissionExtensions
+{
+    public static TBuilder RequirePermission<TBuilder>(this TBuilder b, PermissionDescriptor d, params PermissionRule[] rules)
+        where TBuilder : IEndpointConventionBuilder
+        => b.WithMetadata(new PermissionMetadata(d, rules, null));
+    public static TBuilder WithDenyStyle<TBuilder>(this TBuilder b, DenyStyle style) where TBuilder : IEndpointConventionBuilder
+        => b.Add(eb => { var m = eb.Metadata.OfType<PermissionMetadata>().Single(); eb.Metadata.Remove(m); eb.Metadata.Add(m with { DenyOverride = style }); });
+}
+
 // src/building-blocks/Plane.BuildingBlocks.Web/Permissions/PermissionEndpointFilter.cs
-internal sealed class PermissionEndpointFilter(IPermissionCatalog catalog, IPermissionEvaluator evaluator, IRequestScope scope) : IEndpointFilter
+internal sealed class PermissionEndpointFilter(IPermissionEvaluator evaluator, IRequestScope scope) : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext ctx, EndpointFilterDelegate next)
     {
@@ -1542,7 +1631,7 @@ internal sealed class PermissionEndpointFilter(IPermissionCatalog catalog, IPerm
         var meta = endpoint.Metadata.GetMetadata<PermissionMetadata>()
                    ?? throw new InvalidOperationException($"Route {endpoint.DisplayName} has no RequirePermission (01 §7.10).");
         var principal = ctx.HttpContext.GetPlanePrincipal();                // AuthenticatedFilter lief bereits
-        var decision = await evaluator.EvaluateAsync(principal, catalog.Get(meta.Permission), scope.Current, ctx.HttpContext.GetRouteData().Values, ctx.HttpContext.RequestAborted);
+        var decision = await evaluator.EvaluateAsync(principal, meta, scope.Current, ctx.HttpContext.GetRouteData().Values, ctx.HttpContext.RequestAborted);
         return decision.Allowed
             ? await next(ctx)
             : new PlaneErrorResult(decision.DenyStyle == DenyStyle.Error ? PlaneErrors.PermissionDeniedError : PlaneErrors.PermissionDeniedDetail);
@@ -1550,7 +1639,7 @@ internal sealed class PermissionEndpointFilter(IPermissionCatalog catalog, IPerm
 }
 ```
 
-`PermissionEvaluator.EvaluateAsync` implementiert §3.6.2 (Rückgabe `PermissionDecision(bool Allowed, DenyStyle DenyStyle)`, `HasAsync` aus 01 §5.5 ist `EvaluateAsync(...).Allowed`).
+`PermissionEvaluator.EvaluateAsync` implementiert §3.6.2 (Schritte 0 und P) und danach 05 §3.13.4. Die Ablehnung trägt den `DenyStyle` der fehlgeschlagenen Stufe: Vorbedingung → `Prerequisite.Descriptor.Deny`; Hauptprüfung → `meta.DenyOverride ?? meta.Descriptor.Deny`. `HasAsync` aus 01 §5.5 ist `EvaluateAsync(...).Allowed`.
 
 #### 5.1.8 JSON-Converter (Auszug) – `src/building-blocks/Plane.BuildingBlocks.Web/Json/`
 
@@ -1619,6 +1708,8 @@ public sealed class CursorPaginator
                            .ThenByDescending(e => e.CreatedAt)
                            .ThenByDescending(e => e.Id);       // D02-ADR-13
         var rows = await ordered.Skip((int)offset).Take(limit + 1).Select(projection).ToListAsync(ct);
+        if (page.Cursor.IsPrev && page.Cursor.Value != limit)                 // Original-Quirk: results[-(limit + 1):]
+            rows = rows.Skip(Math.Max(0, rows.Count - (limit + 1))).ToList();
         var total = await (totalCountQuery ?? query).LongCountAsync(ct);
 
         return new PaginatedResponse<IReadOnlyList<TDto>>
@@ -1664,13 +1755,19 @@ internal static class LegacyEnvironmentMap
 
 | ID | Methode + Pfad | Permission (Deskriptor) | Antwort | Port |
 |---|---|---|---|---|
-| L1 | `GET /api/workspaces/{slug}/projects/{project_id}/issue-labels/` | `project.label.read` = `ProjectBaseRead` (WS-Mitglied, Detail) | 200 `LabelDto[]` nach `sort_order` ASC; leer, wenn Nutzer kein Projektmitglied | ja |
-| L2 | `POST …/issue-labels/` | `project.label.create` = `AP([A])` + Vorbedingung `ProjectBaseCreate` | 201 `LabelDto` | ja |
-| L3 | `GET …/issue-labels/{pk}/` | `project.label.read` | 200 `LabelDto`; 404 `{"detail": "No Label matches the given query."}` | ja |
-| L4 | `PUT …/issue-labels/{pk}/` | – | – | **nein** (tote Route, `A04` §5.1) |
-| L5 | `PATCH …/issue-labels/{pk}/` | `project.label.update` = `AP([A])` + Vorbedingung `ProjectBaseWrite` | 200 `LabelDto` | ja |
-| L6 | `DELETE …/issue-labels/{pk}/` | `project.label.delete` = `AP([A])` + Vorbedingung `ProjectBaseWrite` | 204 | ja |
-| L7 | `POST …/bulk-create-labels/` | `project.label.bulk_create` = `AP([A])` | 201 `{"labels": LabelDto[]}` | ja |
+Permissions gemäß 05 Anhang A Nr. 48–51 / Anhang B (Keys `project.label.*`, Konstanten `ProjectsPermissions.ProjectLabel*`):
+
+| ID | Methode + Pfad | Original-Prüfung → Ziel (05) | Deklaration am Endpunkt | Antwort | Port |
+|---|---|---|---|---|---|
+| L1 | `GET /api/workspaces/{slug}/projects/{project_id}/issue-labels/` | `WS(A,M,G)` → `PRJ(A,M,G)` (**SEC-21**) | `.RequirePermission(ProjectLabelRead)` (Detail) | 200 `LabelDto[]` nach `sort_order` ASC; Nicht-Projektmitglied → 403 Detail (Original: leere Liste) | ja |
+| L2 | `POST …/issue-labels/` | `WS(A,M) ∧ PRJ⁺(A)` → `PRJ(A)` | `.RequirePermission(ProjectLabelCreate, Prerequisite(WorkspaceProjectBaseCreate))` | 201 `LabelDto` | ja |
+| L3 | `GET …/issue-labels/{pk}/` | `WS(A,M,G)` → `PRJ(A,M,G)` (SEC-21) | `.RequirePermission(ProjectLabelRead)` | 200 `LabelDto`; 404 `{"detail": "No Label matches the given query."}` | ja |
+| L4 | `PUT …/issue-labels/{pk}/` | – | – | – | **nein** (tote Route, `A04` §5.1; Anhang B von 05 führt sie noch mit `project.label.update` – siehe Review-Protokoll K-05) |
+| L5 | `PATCH …/issue-labels/{pk}/` | `PRJ⁺(A) ∧ PRJ⁺(A)` → `PRJ(A)` | `.RequirePermission(ProjectLabelUpdate, Prerequisite(ProjectProjectBaseWrite))` | 200 `LabelDto` | ja |
+| L6 | `DELETE …/issue-labels/{pk}/` | `PRJ⁺(A) ∧ PRJ⁺(A)` → `PRJ(A)` | `.RequirePermission(ProjectLabelDelete, Prerequisite(ProjectProjectBaseWrite))` | 204 | ja |
+| L7 | `POST …/bulk-create-labels/` | `PRJ⁺(A)` → `PRJ(A)` | `.RequirePermission(ProjectLabelCreate)` (gleicher Key wie L2, ohne Vorbedingung; Erstfassung nutzte einen eigenen Key `project.label.bulk_create`, den 05 nicht kennt) | 201 `{"labels": LabelDto[]}` | ja |
+
+Die Vorbedingung bei L5/L6 ändert nur den Fehlerkörper: Ein Projekt-Member erhält wie im Original `{"detail": …}` (ProjectBasePermission lehnt vor dem Decorator ab), nicht `{"error": …}`.
 
 #### 5.2.1 Entität – `src/data/Plane.Data/Entities/Projects/Label.cs`
 
@@ -1779,23 +1876,20 @@ public sealed record LabelUpdatedV1(Guid LabelId, Guid WorkspaceId, Guid? Projec
 public sealed record LabelDeletedV1(Guid LabelId, Guid WorkspaceId, Guid? ProjectId, Guid? ActorId) : IIntegrationEvent
 { public static string EventType => "plane.label.deleted.v1"; }
 
-// Permissions/ProjectsPermissions.cs (Label-Ausschnitt)
-public static class ProjectsPermissions
+// Permissions/ProjectsPermissions.g.cs (Label-Ausschnitt) – GENERIERT von tools/Plane.PermissionGen aus 05-permission-matrix.json (05 §5.8), nicht von Hand ändern
+public static partial class ProjectsPermissions
 {
-    private static readonly SystemRole[] A = [SystemRole.Admin];
+    private static readonly SystemRoleLevel[] A = [SystemRoleLevel.Admin];
+    private static readonly SystemRoleLevel[] AMG = [SystemRoleLevel.Admin, SystemRoleLevel.Member, SystemRoleLevel.Guest];
 
-    public static readonly PermissionDescriptor LabelRead = StandardPermissions.ProjectBaseRead with
-        { Permission = new("project.label.read", ScopeLevel.Workspace), OriginalCheck = "ProjectBasePermission.GET + Queryset(Projektmitglied)" };
-    public static readonly PermissionDescriptor LabelCreate =
-        PermissionTemplates.AP("project.label.create", A, StandardPermissions.ProjectBaseCreate.Permission);
-    public static readonly PermissionDescriptor LabelUpdate =
-        PermissionTemplates.AP("project.label.update", A, StandardPermissions.ProjectBaseWrite.Permission);
-    public static readonly PermissionDescriptor LabelDelete =
-        PermissionTemplates.AP("project.label.delete", A, StandardPermissions.ProjectBaseWrite.Permission);
-    public static readonly PermissionDescriptor LabelBulkCreate =
-        PermissionTemplates.AP("project.label.bulk_create", A);
+    /// PRJ(A,M,G) · Original: ProjectBasePermission.GET (WS(A,M,G)) · SEC-21 · DenyStyle.Detail
+    public static readonly PermissionDescriptor ProjectLabelRead   = PermissionDescriptor.Project("project.label.read",   AMG, DenyStyle.Detail, "projects.labels:read",  "WS(A,M,G)");
+    /// PRJ(A) · Original: allow_permission([ADMIN]) (+ ProjectBasePermission bei L2) · DenyStyle.Error
+    public static readonly PermissionDescriptor ProjectLabelCreate = PermissionDescriptor.Project("project.label.create", A,   DenyStyle.Error,  "projects.labels:write", "PRJ⁺(A)");
+    public static readonly PermissionDescriptor ProjectLabelUpdate = PermissionDescriptor.Project("project.label.update", A,   DenyStyle.Error,  "projects.labels:write", "PRJ⁺(A)");
+    public static readonly PermissionDescriptor ProjectLabelDelete = PermissionDescriptor.Project("project.label.delete", A,   DenyStyle.Error,  "projects.labels:write", "PRJ⁺(A)");
 
-    public static IEnumerable<PermissionDescriptor> All => [LabelRead, LabelCreate, LabelUpdate, LabelDelete, LabelBulkCreate /*, States, Estimates, Projekte … */];
+    public static IEnumerable<PermissionDescriptor> All => [ProjectLabelRead, ProjectLabelCreate, ProjectLabelUpdate, ProjectLabelDelete /*, States, Estimates, Projekte … */];
 }
 
 // Services/ILabelCatalog.cs – Signatur aus 01 §5.5 (A17-Andockstelle), plus Lookup für andere Module
@@ -1833,6 +1927,15 @@ internal sealed class UpdateLabelRequestValidator : AbstractValidator<UpdateLabe
             RuleFor(x => x.Color.Value!).MaximumLength(Label.ColorMaxLength).WithMessage(DrfMessages.MaxLength(Label.ColorMaxLength))
                                         .OverridePropertyName("color"));
     }
+}
+
+// BulkCreateIssueLabelsEndpoint hat keinen Serializer: nur Strukturprüfung (Architekturregel „Validator für jeden Request-Typ mit Körper“).
+// label_data kein Array → Original 500 (AttributeError); Ziel 400 {"label_data": ["Expected a list of items but got type \"<t>\"."]} (DEV-LBL-06).
+internal sealed class BulkCreateLabelsRequestValidator : AbstractValidator<BulkCreateLabelsRequest>
+{
+    public BulkCreateLabelsRequestValidator()
+        => RuleForEach(x => x.LabelData).ChildRules(i => i.RuleFor(x => x.Name).MaximumLength(Label.NameMaxLength)
+                                                    .WithMessage(DrfMessages.MaxLength(Label.NameMaxLength)));
 }
 ```
 
@@ -1956,7 +2059,7 @@ internal sealed class BulkCreateLabelsHandler(PlaneDbContext db, IIdGenerator id
                 LabelRules.RandomBulkColor(Random.Shared), parentId: null, sortOrder: Label.DefaultSortOrder,
                 description: item.Description ?? "Migrated Issue"));   // bulk_create: kein sort_order-Hochzählen
         }
-        db.Labels.AddRange(created);
+        db.Labels.AddRange(created);   // Original bulk_create setzt updated_by = request.user; AuditInterceptor setzt NULL (DEV-LBL-05, nicht im LabelSerializer sichtbar)
         foreach (var l in created) l.Raise(new LabelCreatedV1(l.Id, l.WorkspaceId, l.ProjectId, actor.UserId));
         cache.Invalidate(CacheTags.WorkspaceLabels(c.Scope.Workspace.WorkspaceId));
         return new BulkCreateLabelsResponse(created.Select(LabelMapper.ToDto).ToList());   // DEV-LBL-03: nur tatsächlich angelegte
@@ -2032,14 +2135,20 @@ internal static class LabelEndpoints
     {
         var g = e.App("workspaces/{slug}/projects/{project_id:guid}/issue-labels").WithTags("Labels");
 
-        g.MapGet("", List).RequirePermission(ProjectsPermissions.LabelRead.Permission).WithOriginalContract("L1");
-        g.MapPost("", Create).RequirePermission(ProjectsPermissions.LabelCreate.Permission).Validate<CreateLabelRequest>().WithOriginalContract("L2");
-        g.MapGet("{pk:guid}", Get).RequirePermission(ProjectsPermissions.LabelRead.Permission).WithOriginalContract("L3");
-        g.MapPatch("{pk:guid}", Update).RequirePermission(ProjectsPermissions.LabelUpdate.Permission).Validate<UpdateLabelRequest>().WithOriginalContract("L5");
-        g.MapDelete("{pk:guid}", Delete).RequirePermission(ProjectsPermissions.LabelDelete.Permission).WithOriginalContract("L6");
+        g.MapGet("", List).RequirePermission(ProjectsPermissions.ProjectLabelRead).WithOriginalContract("L1");
+        g.MapPost("", Create)
+         .RequirePermission(ProjectsPermissions.ProjectLabelCreate, PermissionRule.Prerequisite(StandardPermissions.WorkspaceProjectBaseCreate))
+         .Validate<CreateLabelRequest>().WithOriginalContract("L2");
+        g.MapGet("{pk:guid}", Get).RequirePermission(ProjectsPermissions.ProjectLabelRead).WithOriginalContract("L3");
+        g.MapPatch("{pk:guid}", Update)
+         .RequirePermission(ProjectsPermissions.ProjectLabelUpdate, PermissionRule.Prerequisite(StandardPermissions.ProjectProjectBaseWrite))
+         .Validate<UpdateLabelRequest>().WithOriginalContract("L5");
+        g.MapDelete("{pk:guid}", Delete)
+         .RequirePermission(ProjectsPermissions.ProjectLabelDelete, PermissionRule.Prerequisite(StandardPermissions.ProjectProjectBaseWrite))
+         .WithOriginalContract("L6");
 
         e.App("workspaces/{slug}/projects/{project_id:guid}/bulk-create-labels").WithTags("Labels")
-         .MapPost("", BulkCreate).RequirePermission(ProjectsPermissions.LabelBulkCreate.Permission).WithOriginalContract("L7");
+         .MapPost("", BulkCreate).RequirePermission(ProjectsPermissions.ProjectLabelCreate).Validate<BulkCreateLabelsRequest>().WithOriginalContract("L7");
     }
 
     static async Task<IResult> List(IRequestScope scope, ISender sender, CancellationToken ct)
@@ -2164,7 +2273,7 @@ public sealed class CreateLabelTests(PlaneAppFactory app)
     [Fact]
     public async Task Creates_label_with_max_plus_10000_and_null_updated_by()
     {
-        var s = await app.Scenario().Workspace("ws").Project("P").Member("admin", ws: SystemRole.Admin, project: SystemRole.Admin).BuildAsync();
+        var s = await app.Scenario().Workspace("ws").Project("P").Member("admin", ws: SystemRoleLevel.Admin, project: SystemRoleLevel.Admin).BuildAsync();
         await app.Client(s.User("admin")).PostJsonAsync($"/api/workspaces/ws/projects/{s.ProjectId}/issue-labels/", new { name = "Bug", color = "#ff0000" });
         var resp = await app.Client(s.User("admin")).PostJsonAsync($"/api/workspaces/ws/projects/{s.ProjectId}/issue-labels", new { name = "Feature" }); // ohne Slash
         resp.StatusCode.ShouldBe(HttpStatusCode.Created);
@@ -2176,7 +2285,7 @@ public sealed class CreateLabelTests(PlaneAppFactory app)
     [Fact]
     public async Task Duplicate_name_case_insensitive_yields_field_error()
     {
-        var s = await app.Scenario().Workspace("ws").Project("P").Member("admin", ws: SystemRole.Admin, project: SystemRole.Admin).Label("Bug").BuildAsync();
+        var s = await app.Scenario().Workspace("ws").Project("P").Member("admin", ws: SystemRoleLevel.Admin, project: SystemRoleLevel.Admin).Label("Bug").BuildAsync();
         var resp = await app.Client(s.User("admin")).PostJsonAsync($"/api/workspaces/ws/projects/{s.ProjectId}/issue-labels/", new { name = "bug" });
         resp.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
         (await resp.Content.ReadAsStringAsync()).ShouldBe("""{"name":["LABEL_NAME_ALREADY_EXISTS"]}""");
@@ -2185,7 +2294,7 @@ public sealed class CreateLabelTests(PlaneAppFactory app)
     [Fact]
     public async Task Delete_soft_deletes_children_and_work_item_links()
     {
-        var s = await app.Scenario().Workspace("ws").Project("P").Member("admin", ws: SystemRole.Admin, project: SystemRole.Admin)
+        var s = await app.Scenario().Workspace("ws").Project("P").Member("admin", ws: SystemRoleLevel.Admin, project: SystemRoleLevel.Admin)
                          .Label("Parent").Label("Child", parent: "Parent").WorkItem("W1", labels: ["Child"]).BuildAsync();
         (await app.Client(s.User("admin")).DeleteAsync($"/api/workspaces/ws/projects/{s.ProjectId}/issue-labels/{s.LabelId("Parent")}/"))
             .StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -2197,20 +2306,26 @@ public sealed class CreateLabelTests(PlaneAppFactory app)
 // Permissions/LabelPermissionMatrixTests.cs – erwartete Antworten = Original (aufgezeichnet)
 public sealed class LabelPermissionMatrixTests(PlaneAppFactory app) : PermissionMatrixTest(app)
 {
-    public static TheoryData<string, SystemRole?, SystemRole?, int, string?> CreateCases => new()
+    public static TheoryData<string, SystemRoleLevel?, SystemRoleLevel?, int, string?> CreateCases => new()
     {   // Fall, WS-Rolle, Projektrolle, Status, Körper
-        { "ws-guest",                       SystemRole.Guest,  SystemRole.Guest,  403, """{"detail":"You do not have permission to perform this action."}""" },
-        { "ws-member/project-member",       SystemRole.Member, SystemRole.Member, 403, """{"error":"You don't have the required permissions."}""" },
-        { "ws-member/project-admin",        SystemRole.Member, SystemRole.Admin,  201, null },
-        { "ws-admin/project-guest",         SystemRole.Admin,  SystemRole.Guest,  201, null },   // WorkspaceAdminOverride
-        { "ws-admin/no-project-membership", SystemRole.Admin,  null,              403, """{"error":"You don't have the required permissions."}""" },
+        { "ws-guest",                       SystemRoleLevel.Guest,  SystemRoleLevel.Guest,  403, """{"detail":"You do not have permission to perform this action."}""" },
+        { "ws-member/project-member",       SystemRoleLevel.Member, SystemRoleLevel.Member, 403, """{"error":"You don't have the required permissions."}""" },
+        { "ws-member/project-admin",        SystemRoleLevel.Member, SystemRoleLevel.Admin,  201, null },
+        { "ws-admin/project-guest",         SystemRoleLevel.Admin,  SystemRoleLevel.Guest,  201, null },   // allow_permission-WS-Admin-Override (= HARM-00)
+        { "ws-admin/no-project-membership", SystemRoleLevel.Admin,  null,              403, """{"error":"You don't have the required permissions."}""" },
         { "non-member",                     null,              null,              403, """{"detail":"You do not have permission to perform this action."}""" },
-        { "foreign-slug",                   SystemRole.Admin,  SystemRole.Admin,  403, """{"detail":"You do not have permission to perform this action."}""" },
+        { "foreign-slug",                   SystemRoleLevel.Admin,  SystemRoleLevel.Admin,  403, """{"detail":"You do not have permission to perform this action."}""" },
     };
     [Theory, MemberData(nameof(CreateCases))]
-    public Task Create(string @case, SystemRole? ws, SystemRole? project, int status, string? body)
+    public Task Create(string @case, SystemRoleLevel? ws, SystemRoleLevel? project, int status, string? body)
         => AssertAsync(HttpMethod.Post, "/api/workspaces/{slug}/projects/{project_id}/issue-labels/", new { name = $"L-{@case}" }, ws, project, status, body);
-    // analog: List, Get, Update, Delete, BulkCreate; anonym → 401 {"detail":"Authentication credentials were not provided."}
+    public static TheoryData<string, SystemRoleLevel?, SystemRoleLevel?, int, string?> ListCases => new()
+    {   // SEC-21 (05): Nicht-Projektmitglied erhält 403 statt leerer Liste – Golden-File mit Abweichungsvermerk
+        { "ws-member/no-project-membership", SystemRoleLevel.Member, null, 403, """{"detail":"You do not have permission to perform this action."}""" },
+        { "ws-guest/project-guest",          SystemRoleLevel.Guest,  SystemRoleLevel.Guest, 200, null },
+    };
+    // analog: Get, Update (project-member → 403 Detail wegen Prerequisite), Delete, BulkCreate (ws-guest/project-admin → 201, keine Vorbedingung);
+    // anonym → 401 {"detail":"Authentication credentials were not provided."}
 }
 
 // Contract/LabelContractTests.cs – Golden-Files aus dem Parity-Harness (tests/contracts/projects/labels/*.golden.json)
@@ -2240,14 +2355,14 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 | **B6** Erweiterte Filter/PQL (W5) | AST ist die einzige Abfragesprache (D02-ADR-14); ein `PqlParser` wird als dritter Parser in `Plane.WorkItems/Query/Parsing` registriert (`IFilterParser`-Interface: `Name`, `TryParse(string, out FilterExpression, out PlaneError)`); Operator-Katalog `FilterOperator` erweiterbar (Enum + Compiler-Switch mit `default → NotSupported`-Fehler `invalid_filterset`); `ISearchProvider` für Volltext (11) | Parser `legacy`, `rich` | `IFilterParser`-Liste enthält genau zwei Einträge; unbekannter Operator → 400 | I2 |
 | **C1** Workflows (nicht gewählt) | Alle State-Wechsel-Commands rufen `IWorkItemStateChanger` (01 §5.5); `StateChangeOrigin` wird aus der Oberfläche abgeleitet (`App` → `User`, `V1` → `PublicApi`, Worker-Jobs explizit) – Konvention in `TransactionBehavior`-Kontext `ICommandOrigin` | Guard erlaubt alles, Hook schreibt nichts | Architekturtest: kein Schreibzugriff auf `WorkItem.StateId` außerhalb `WorkItemStateChanger` | I2 |
 | **C3** Automation-Engine (nicht gewählt) | Integration-Events je Command (Namensschema §3.1.2), Outbox im selben Commit (§3.2.2 Nr. 6), `IEventConsumer`-Registrierung über `IModule.RegisterMessaging`, `IRecurringJobRegistry` | Consumer der CE | Event-Katalog-Test (01 §7.15) | I0 |
-| **D1** Wiki & Collections (W3) | `pages.workspace_id` ohne Projektpflicht, Permission-Vorlage `ProjectPage.*` als eigene Deskriptoren (später Workspace-Scope-Varianten `workspace.page.*`), `OwnerBypass` als generische Regel | nur Projekt-Pages | – (Detail 07/16) | I4 |
+| **D1** Wiki & Collections (W3) | `pages.workspace_id` ohne Projektpflicht, Keys `project.page.*` mit Regel `PermissionRule.PageAccess` (05 §3.13.5, CE-Default `IPageAccessExtension` = `false` für private Pages); Präfix `workspace.page.` reserviert (05 `ReservedPermissionKeys`) | nur Projekt-Pages | – (Detail 07/16) | I4 |
 | **D2** Nested Pages (W3) | `IPageHierarchy` (01 §5.5); Soft-Delete-Kaskade `Page → Page (parent_id)` als **Deferred**-Eintrag vorbereitet (Original hängt Kinder beim Löschen ab, Archiv rekursiv – `A04` §5.3 Nr. 18) | flach | – | I4 |
 | **E3** IdP Group Sync (W4) | `PlanePrincipal.Groups` wird in `PermissionEvaluator` nicht ausgewertet, steht aber im Prinzipal; `IUserProvisioningStep`-Kette (Identity, 05) | JIT + Einladungen | – (05) | I0 |
-| **E5** Rollenmodell (W4) | `IRoleDefinitionProvider` austauschbar (Systemrollen werden aus Deskriptoren berechnet, §3.6.4); Tabelle `roles` + `role_permissions`; Mitgliedschaften referenzieren `role_id`; API liefert `role: 20/15/5` aus `RoleDefinition.LegacyValue`; Permission-Keys sind stabil und in Snapshot-Test eingefroren; Workspace-Permission `workspace.admin_override` steuert den Override | `SystemRoleProvider` | `SystemRolePermissionsSnapshotTests`, Permission-Matrix-Tests | I0 |
-| **F1** Integrations-Framework (W1) | Oberfläche `Integrations` (`/api/integrations/{provider}/webhooks/{connection_id}`) mit eigener Rate-Limit-Policy `integration_webhook`, ohne Session/CSRF, Körper roh (für HMAC) über `EnableBuffering`; `IWebhookSignatureVerifier`-Registry nach `Provider`; Inbox-Idempotenz | Route liefert 404 `{"error": "Page not found."}` für unbekannten Provider | Route registriert, 404 ohne Verifier | I0 |
+| **E5** Rollenmodell (W4) | `IRoleDefinitionProvider` austauschbar (System-Grants generiert aus der 05-Matrix, §3.6.4); `ISystemRoleGrantContributor` (16 E-09); Tabelle `roles` + `role_permissions`; Mitgliedschaften referenzieren `role_id`; API liefert `role: 20/15/5` aus `RoleDefinition.Level`; Permission-Keys sind stabil und in Snapshot-Test eingefroren; reservierter Key `project.work_item.read_all` für die Gast-Sichtbarkeit (§3.6.5); WS-Admin-Override hängt in der CE an `Level = 20` (§3.6.4) | `SystemRoleProvider` | `SystemRolePermissionsSnapshotTests`, Permission-Matrix-Tests | I0 |
+| **F1** Integrations-Framework (W1) | Oberfläche `Integrations` (`/api/integrations/{provider}/webhooks/{connection_id:guid}`, 16 §3.4) mit eigener Rate-Limit-Policy `integration_webhook`, ohne Session/CSRF, Körper roh (für HMAC) über `EnableBuffering`; `IWebhookSignatureVerifier`-Registry nach `Provider`; `IWebhookIngress` (16 E-25); Inbox-Idempotenz; opt-in `.WithSessionAuthentication()` für OAuth-Callbacks (`/api/integrations/forgejo/oauth/callback`, `…/user-callback`) | Route liefert 404 `{"error": "Page not found."}` für unbekannten Provider | Route registriert, 404 ohne Verifier | I0 |
 | **F2** Forgejo (W1) | Activity-Felder `forgejo_branch`, `forgejo_commit`, `forgejo_pull_request` im Activity-Katalog reserviert (`IActivityFieldResolver` registrierbar); Options `PlaneForgejoOptions` (AppHost); `StateChangeOrigin.Integration` | keine Resolver | Katalog enthält reservierte Namen | I0 |
 | **G1** AI-Basis (nicht gewählt) | Integration-Events aller indexrelevanten Aggregate (Work Item, Page, Kommentar) bilden die Indexierungsquelle (`IEventConsumer` in `Plane.Search`); Options `PlaneAiOptions.EmbeddingDimensions` | `NullEmbeddingGenerator` | – (11) | I5 |
-| **H1** OAuth-App-Plattform (W1) | Policy-Scheme der Oberfläche `V1` enthält `Bearer` (Keycloak-JWT, `Plane:Auth:BearerEnabled=false`); `Permission.ApiScope` (z. B. `projects:labels:write`) wird für Bearer-Prinzipale zusätzlich zur Rolle geprüft (Schritt 0 in §3.6.2: `principal.Kind ∈ {App, Bot}` → Scope-Prüfung, sonst übersprungen); `PrincipalKind` im Request-Log | Bearer aus; ApiScopes in CE nicht gesetzt | Bearer-Schema registriert, deaktiviert → 401 | I0 |
+| **H1** OAuth-App-Plattform (W1) | Policy-Scheme der Oberfläche `V1` enthält `Bearer` (Keycloak-JWT, `Plane:Auth:Bearer:Enabled=false`, 05 D05-ADR-15); `Permission.ApiScope` (z. B. `projects.labels:write`, 05 Anhang A) wird für Bearer-Prinzipale zusätzlich zur Rolle geprüft (Schritt 0 in §3.6.2: `principal.Kind ∈ {App, Bot}` → Scope-Prüfung, sonst übersprungen); `PrincipalKind` im Request-Log | Bearer aus; ApiScopes in CE nicht gesetzt | Bearer-Schema registriert, deaktiviert → 401 | I0 |
 | **H6** Realtime-Event-Server (W1) | Integration-Events je Command (Labels: §5.2.12) sind die Quelle; `IPostCommitAction` für latenzkritische Hinweise; Gruppenschema `ws:{id}`, `project:{id}`, `user:{id}` | Hub ohne Konsumenten bis I5 | – (01 §1.4) | I0/I5 |
 
 **Weitere gewählte, nicht 🧱-Pakete mit Berührung dieses Dokuments (nur Hinweis):** H3 (API v2, W9) – Oberfläche `V2` (`/api/v2/`) ist als Enum-Wert **nicht** angelegt; sie wird mit H3 hinzugefügt, ohne bestehende Oberflächen zu ändern (Präfix kollidiert mit keiner CE-Route, Prüfung per Routing-Test). E6 (Audit/Activity-Logs, W4) – nutzt die Integration-Events (C3-Andockstelle) und `ICurrentActor`; keine zusätzliche CE-Andockstelle nötig.
@@ -2265,8 +2380,8 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 | AK-03 | Unbekannter Pfad unter `/api/` → 404 `{"error": "Page not found."}`; falsche Methode → 405 `{"detail": "Method \"X\" not allowed."}` | `StatusCodeBodiesTests` | I0 |
 | AK-04 | Fehlerkörper aller Fabrikmethoden byte-gleich zu den Original-Beispielen (§3.8) | `PlaneErrorsGoldenTests` | I0 |
 | AK-05 | `PlaneExceptionHandler` bildet die fünf Original-Fälle (IntegrityError, ValidationError, ObjectDoesNotExist, KeyError, sonstige) exakt ab; 500 loggt in `plane.exception` mit Trace-ID | `ExceptionMappingTests` | I0 |
-| AK-06 | Permission-Evaluator reproduziert `allow_permission` für alle Kombinationen (WS-Rolle ∈ {A, M, G, keine, inaktiv} × Projektrolle ∈ {A, M, G, keine, inaktiv} × creator ∈ {ja, nein}) – 50 Fälle – inkl. DenyStyle | `AllowPermissionPortTests` (Erwartung aus Original-Aufzeichnung) | I0 |
-| AK-07 | Jede Original-Permission-Klasse aus §3.6.3 hat einen Deskriptor; Methodenmatrix je Klasse (anonym/GET/POST/PATCH/DELETE) stimmt mit `A06` §2.10 überein | `PermissionTemplateTests` | I0 |
+| AK-06 | Permission-Evaluator reproduziert `allow_permission` für alle Kombinationen (WS-Rolle ∈ {A, M, G, keine, inaktiv} × Projektrolle ∈ {A, M, G, keine, inaktiv} × creator ∈ {ja, nein}) – 50 Fälle – inkl. DenyStyle; Abweichungen nur dort, wo 05 sie als `HARM-00`/`SEC-*` führt; Vorbedingungs-Fälle (`Prerequisite`) liefern den Körper der fehlgeschlagenen Stufe | `AllowPermissionPortTests` (Erwartung aus Original-Aufzeichnung + 05-Abweichungsliste) | I0 |
+| AK-07 | Jede Original-Permission-Klasse aus §3.6.3 hat einen Vorbedingungs-Deskriptor in `StandardPermissions`; Methodenmatrix je Klasse (anonym/GET/POST/PATCH/DELETE) stimmt mit `A06` §2.10 überein; jede „∧“-Zeile aus 05 Anhang B trägt eine `Prerequisite`-Regel | `PermissionTemplateTests` | I0 |
 | AK-08 | Fremder oder unbekannter Workspace-Slug liefert nie Daten und nie 404 (außer `.Resolve…OrNotFound()`-Routen) | `TenantIsolationTests` je Modul | I0 |
 | AK-09 | JSON: `snake_case`, `null` ausgegeben, UUID lowercase, Datum-Zeit DRF-Format (inkl. 0-µs-Fall), `65535.0`, Enum-Werte original | `JsonConventionTests` + Snapshot je DTO | I0 |
 | AK-10 | PATCH ändert nur gesendete Felder; `null` gesendet ≠ nicht gesendet | `OptionalBindingTests` | I0 |
@@ -2274,7 +2389,7 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 | AK-12 | Query-Engine: für 120 aufgezeichnete Original-Requests (`IssueViewSet.list` mit Legacy-, Rich-Filtern, allen 11 `group_by`-Werten, 25 Sub-Gruppen-Kombinationen, allen 14 `order_by`-Werten ±) sind `results`-IDs, Gruppenschlüssel, `total_results` je Gruppe und Envelope-Felder identisch (Reihenfolge innerhalb gleicher `created_at` ausgenommen) | `WorkItemQueryParityTests` (Golden-Files) | I2 |
 | AK-13 | Rich-Filter-Strukturfehler liefern alle 20 Original-Codes mit identischem `message`-Text | `RichFilterParserTests` | I2 |
 | AK-14 | Performance S9: gruppierte Liste (state, Sub-Gruppe priority, 50 000 Work Items) p95 < 300 ms, Spreadsheet 100 Zeilen p95 < 200 ms, AND/OR/NOT mit 6 Bedingungen p95 < 400 ms | `Plane.Benchmarks` (k6/BenchmarkDotNet) gegen Testcontainer | I2 |
-| AK-15 | Rate Limits: `anon` 30/min nur anonym, `api_key` 60/min mit Headern `X-RateLimit-Remaining`/`-Reset` auf jeder V1-Antwort, 429-Körper coded 5900 + `Retry-After` | `RateLimitTests` (FakeTimeProvider) | I1/I6 |
+| AK-15 | Rate Limits: `anon` 30/min nur anonym, `api_key` 60/min (Partition `token_hash`) mit Headern `X-RateLimit-Remaining`/`-Reset` auf jeder erfolgreichen V1-Antwort, 429-Körper coded 5900 + `Retry-After` (ohne X-RateLimit-Header); in beiden Profilen (lokal, Valkey) | `RateLimitTests` (FakeTimeProvider) | I1/I6 |
 | AK-16 | Cache: Label-Änderung invalidiert `GET {W}/labels/` auf **zwei** API-Instanzen innerhalb 1 s | `CacheInvalidationTests` (Aspire-Testing, 2 Replikas + Valkey) | I1 |
 | AK-17 | Options: jede Original-ENV aus §4.9 mit Status ≠ „entfällt“ wirkt als Alias; ungültige Werte brechen den Start mit Meldung (außer Original-Toleranzfälle) | `LegacyEnvironmentMapTests`, `OptionsValidationTests` | I0 |
 | AK-18 | Instanz-Konfiguration: Seed legt nur fehlende Keys an; verschlüsselte Keys sind in der DB nicht im Klartext; Entschlüsselung nach Key-Rotation funktioniert; falscher Key-Ring → `""` + Warnung | `InstanceConfigurationStoreTests` | I0 |
@@ -2282,16 +2397,21 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 | AK-20 | Referenzmodul Labels: Golden-Contract-Tests L1–L3, L5–L7 grün; Permission-Matrix (§5.2.13) grün; Kaskade (Kind-Labels, `issue_labels`, `page_labels`) | `Plane.Projects.Tests` | I1 |
 | AK-21 | Kein Log-Eintrag enthält API-Keys, Cookies, Passwörter oder E-Mail-Adressen im Klartext | `LogRedactionTests` | I0 |
 | AK-22 | OpenAPI `v1` enthält nur `/api/v1/`-Pfade, 14 Tags, Security-Schema `X-Api-Key`; Scalar lädt ohne Internet | `OpenApiDocumentTests` + Airgap-E2E | I6 |
+| AK-23 | Tenant-Isolation über DbContext-Lebenszyklus: 200 parallele Requests abwechselnd für zwei Workspaces liefern nie Zeilen des anderen Workspace; Architekturtest verbietet `AddNpgsqlDbContext`/`AddDbContextPool` (D02-ADR-26) | `DbContextTenantIsolationTests` (Api-Host, Testcontainers) | I0 |
+| AK-24 | Mediator: für **jeden** `ICommand`/`IQuery`-Typ aller Modul-Assemblies des Host-Katalogs ist im Host ein Handler registriert (Reflection-Test gegen den generierten Mediator), Handler bleiben `internal`; Lifetime `Scoped` | `MediatorRegistrationTests` je Host | I0 |
+| AK-25 | Domain-Event-Handler, die Entitäten anlegen/ändern, erzeugen korrekte Audit-Felder, Ownership-Prüfung und Outbox-Zeilen; ein fehlschlagender Command hinterlässt weder Zeilen noch Kaskaden noch Outbox-Einträge | `TransactionBehaviorTests` | I0 |
+| AK-26 | Unveränderter Original-Pfad (mit Slash) erscheint im Request-Log und im API-Activity-Log | `RequestLoggingTests` | I0/I6 |
 
 ### 7.2 Testprojekte und Zuständigkeiten (Ergänzung zu 01 §5.1)
 
 | Testprojekt | Inhalte aus diesem Dokument |
 |---|---|
 | `tests/Plane.BuildingBlocks.Tests` | Converter (AK-09), `Optional<T>` (AK-10), `CursorPaginator`/`GlobalPaginator` (AK-11), `PlaneErrors` (AK-04), `RateExpression`, `TrailingSlashMiddleware`, `SoftDeleteInterceptor` + Registry, `AuditInterceptor`, `OwnershipGuardInterceptor` |
-| `tests/Plane.Authorization.Tests` (Modul-Testprojekt) | AK-06, AK-07, `SystemRolePermissionsSnapshotTests` |
+| `tests/modules/Plane.Authorization.Tests` (Modul-Testprojekt, Pfad nach 01 §5.1) | AK-06, AK-07, `SystemRolePermissionsSnapshotTests` |
 | `tests/modules/Plane.WorkItems.Tests` | AK-12 … AK-14, `LegacyFilterParserTests` (alle Parameter aus §3.11.3 inkl. Datumsgrammatik mit `FakeClock`), `GroupedPageStrategyEquivalenceTests` |
 | `tests/modules/Plane.Projects.Tests` | AK-20 |
-| `tests/Plane.AppHost.Tests` | AK-02, AK-03, AK-16, AK-19 (gegen laufenden Api-Host) |
+| `tests/Plane.AppHost.Tests` | AK-02, AK-03, AK-16, AK-19, AK-23, AK-24, AK-26 (gegen laufenden Api-Host) |
+| `tests/Plane.BuildingBlocks.Tests` (Ergänzung) | AK-25 (`TransactionBehavior`, Domain-Event-Schleife, Execution-Strategy) |
 | `tests/Plane.ArchitectureTests` | AK-01 |
 | `tests/contracts/` | Golden-Files (Parity-Harness S11), `deviations.yaml` mit allen `DEV-*`-IDs dieses Dokuments |
 
@@ -2306,9 +2426,14 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 | `DEV-FLT-002` | Legacy-`None`-Filter = „keine aktive Zuordnung“ | §3.11.2 |
 | `DEV-GRP-001` … `DEV-GRP-005` | Gruppierungs-Quirks | §3.11.6 |
 | `DEV-JSON-001` | Text der JSON-Parse-Fehlermeldung | §3.7 |
+| `DEV-JSON-002` | ungültiges JSON / falscher Content-Type → 400/415 vor Permission-Prüfung (Minimal-API-Binding) | §3.4.2 |
 | `DEV-RL-001` | Sliding Window statt DRF-Zeitstempel-Historie | §3.13 |
 | `DEV-LBL-03` | Bulk-Labels: nur angelegte Labels in der Antwort; Farbe ≤ `#FFFFFF` | §5.2.7 |
 | `DEV-LBL-04` | Unique-Index Workspace-Labels je Workspace statt instanzweit | §5.2.2 |
+| `DEV-LBL-05` | Bulk-Labels: `updated_by_id` nach Anlage `NULL` statt Akteur (ohne Vertragswirkung) | §5.2.7 |
+| `DEV-LBL-06` | Bulk-Labels: `label_data` kein Array → 400 Feldfehler statt 500 | §5.2.5 |
+| `SEC-21` (aus 05) | Label-Liste/-Detail nur für Projektmitglieder (403 statt leerer Liste) | §5.2 |
+| `HARM-00` (aus 05) | WS-Admin-Override einheitlich für alle `PRJ`-Keys | §3.6.2 |
 | `DEV-CORS-001` | kein Allow-All bei leerer CORS-Liste (Sicherheitskorrektur) | §3.4.1 |
 | `DEV-RL-002` | Rate-Limit-Schlüssel API-Key gehasht (Sicherheitskorrektur) | D02-ADR-17 |
 
@@ -2328,6 +2453,10 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 | R-D02-06 | Mediator-Source-Generator und viele Module verlängern Build-Zeiten | mittel / niedrig | Module als eigene Projekte, inkrementeller Build; Messung in S0 |
 | R-D02-07 | DRF-Standardtexte unvollständig katalogisiert → Frontend zeigt andere Feldfehler | mittel / niedrig | `DrfMessages` aus DRF-3.17-Quelltext (`rest_framework/fields.py`, `relations.py`) ergänzen; Contract-Tests vergleichen Feldfehler wörtlich |
 | R-D02-08 | Optional<T> + Source-Generated JSON (`PlaneJsonContext`) – Converter-Factory für generische Structs muss im Kontext registriert werden | niedrig / niedrig | S0-Smoke-Test „PATCH mit Optional<T> im Source-Gen-Kontext“ |
+| R-D02-09 | Mediator-Source-Generator registriert `internal` Handler aus Modul-Assemblies nicht im Host (D02-ADR-27) | mittel / hoch | `InternalsVisibleTo` je Modul; AK-24 in S0; Fallback „Commands/Handler `public`“ (O-D02-09) |
+| R-D02-10 | Aspire-Retry-Strategie (`NpgsqlRetryingExecutionStrategy`) kollidiert mit expliziten Transaktionen | hoch (ohne Gegenmaßnahme sicher) / hoch | Kapselung in `CreateExecutionStrategy().ExecuteAsync` (§3.2.4); Handler wiederholbar halten (keine externen Seiteneffekte vor Commit) |
+| R-D02-11 | Rate-Limit-Header `X-RateLimit-Remaining` mit verteiltem Limiter ungenau (Statistik nur lokal bzw. je Valkey-Roundtrip) | mittel / niedrig | Contract-Test prüft Header-Existenz und Monotonie, nicht exakte Werte über Instanzen |
+| R-D02-12 | Zwei Quellen für Permission-Semantik (02/05) driften auseinander | mittel / mittel | Abgrenzung im Kopf dieses Dokuments; Generator als einzige Quelle der Deskriptoren; Review-Protokoll K-01…K-08 |
 
 ### 8.2 Offene Punkte
 
@@ -2340,7 +2469,9 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 | O-D02-05 | CE-PRJ-032 nennt „entfernt das Label … aus View-Filtern“; im Original-Code (`label.py`, `deletion_task.py`, `label.store.ts`) ist keine Bereinigung von View-Filtern auffindbar | im Paritäts-Harness prüfen; ohne Nachweis **nicht** implementieren (gespeicherte Views behalten die ID, Filter trifft dann nichts) | I1 |
 | O-D02-06 | OpenAPI 3.1 (Default .NET 10) vs. 3.0.3 (drf-spectacular) für `v1` | 3.1; falls externe Generatoren der Betreiber 3.0 verlangen, Option `Plane:OpenApi:Version` | I6 |
 | O-D02-07 | Rate-Limit-Algorithmus: Sliding Window mit 6 Segmenten statt exakter DRF-Historie | akzeptieren (`DEV-RL-001`); Contract-Test prüft nur Grenzwert ±1 | I1 |
-| O-D02-08 | E-Mail-Änderungs-/Verifizierungs-Endpunkte (`UserEndpoint.generate_email_verification_code`, `update_email`) bei Keycloak-Login | 05: entfallen (E-Mail wird in Keycloak gepflegt); dann entfallen Policy `email_verification` und Codes 5005/5010 | Ende S7 |
+| O-D02-08 | E-Mail-Änderungs-/Verifizierungs-Endpunkte (`UserEndpoint.generate_email_verification_code`, `update_email`) bei Keycloak-Login | **entschieden durch 05 (D05-ADR-08):** entfallen; Policy `email_verification` und Codes 5005/5010 werden **nicht** angelegt | erledigt |
+| O-D02-09 | Fallback, falls `InternalsVisibleTo` für Mediator nicht greift (R-D02-09) | Commands/Queries/Handler `public sealed`, R9 (01 §5.2) um Ausnahme ergänzen | Ende S0 |
+| O-D02-10 | Widersprüche zu 05/14 bei ENV-Zielschlüsseln (`SKIP_ENV_VAR`, `FILE_SIZE_LIMIT`, `WEBHOOK_*`, `SigningKey`) – Review-Protokoll K-06/K-07 | 02-Schlüssel beibehalten (14 erklärt 02 für maßgeblich); 05 §4.4 nachziehen | Start I0 |
 
 ---
 
@@ -2352,7 +2483,7 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 | `01-zielarchitektur-und-tech-stack.md` | bindend | Präzisierungen (markiert), Änderungsanträge O-D02-01/-02 | Solution-Struktur §5, ADR-010 … ADR-052, Querschnitt §7 |
 | `03-datenmodell-efcore.md` | nutzt | Basistypen, Interceptors, Konventionen, `PlaneEntityConfiguration<T>`, Soft-Delete-Registry, Label-Entität als Vorlage | alle Entitäten/Indizes/Seeds nach dieser Konvention; Tabellen `roles`, `role_permissions`, `instance_configurations` |
 | `04-api-design-und-endpunktkatalog.md` | nutzt | Oberflächen, Pfad-/Status-/Fehlerkonventionen, Pagination, Engine-Fassade | je Endpunkt: Oberfläche, Permission-Deskriptor, Golden-Files, tote Routen, Sicherheitskorrekturen |
-| `05-auth-sicherheit-berechtigungen.md` | nutzt/liefert | Permission-Mechanik, Vorlagen, Evaluator, Origin-Check, Rate-Limit-Mechanik | Keycloak-Realm, Session/BFF, vollständige Permission-Matrix je Endpunkt, Entscheidungen O-D02-03/-08 |
+| `05-auth-sicherheit-berechtigungen.md` | nutzt/liefert | Permission-Mechanik (Typen, Filter, `Prerequisite`-Regel, Fehlerkörper), Origin-Check-Platzierung, Rate-Limit-Mechanik, Options-Mechanik | **maßgeblich** für Keys/Grants/Evaluator (§3.13, Anhang A/B, Generator §5.8), Regeln `C:`/`OWN`/`SELF`/`VIS`/`PAGE`/`BOARD`/`WSA\|PA`, HARM-00, SEC-21, `PlaneAuthOptions`, `token_hash` (D05-ADR-16), CSRF (D05-ADR-06), Keycloak-Realm, Session/BFF; Entscheidungen O-D02-03 (14 Keys, feste `config`-Werte) und O-D02-08 (erledigt) |
 | `06-hintergrundjobs-events-benachrichtigungen.md` | nutzt | Event-Namensschema, Transaktions-/Outbox-Grenze, `IActivityRecorder`/Resolver-Konvention, Retention-Options | Event-Katalog, Activity-Inhalte, Job-Tabelle (Hard-Delete, Retention) |
 | `07-realtime-kollaboration-dokumente.md` | nutzt | Options `PlaneRealtimeOptions`, Health `/live/health/`, Logging-Kategorie `plane.realtime` | – |
 | `08-frontend-angular-architektur.md` | Vertragspartner | JSON-/Fehler-/Pagination-Formen, Trailing-Slash-Toleranz, Runtime-Config-Quellen | Interceptor normalisiert auf Slash; Auswertung `error`/`detail`/`error_code` wie Original |
@@ -2360,7 +2491,7 @@ Architekturtests, die das Modul automatisch prüfen (`tests/Plane.ArchitectureTe
 | `10-editor-angular.md` | indirekt | Sanitizing-Aufrufpunkte (§3.7) | – |
 | `11-suche-und-ai-basis.md` | nutzt | `IFilterParser`/AST (B6), Integration-Events als Indexquelle (G1), `PlaneAiOptions` | `ISearchProvider` |
 | `12-…`, `13-…` | – (in 01 Anhang A nicht vergeben) | – | – |
-| `14-infrastruktur-deployment-betrieb.md` | nutzt | Options-Klassen + ENV-Alias-Tabelle (§4.9), Health-Endpunkte, Log-/Metrik-Namen | Gateway-Optionen, AppHost-Ressourcennamen (`plane`, `plane-replica`, `valkey`, `objectstore`) |
+| `14-infrastruktur-deployment-betrieb.md` | nutzt | Options-Klassen + ENV-Alias-Tabelle (§4.9), Health-Endpunkte, Log-/Metrik-Namen | Gateway-/TLS-/Valkey-/DataProtection-/Telemetry-/Scale-Optionen (Felder 14 §3.9.1, in §3.15 gelistet), AppHost-Ressourcennamen (`plane`, `plane-replica`, `valkey`, `objectstore`), Kategorie `plane.config` |
 | `15-teststrategie-qualitaet-paritaet.md` | nutzt | Akzeptanzkriterien §7, Testprojekte, `deviations.yaml`-Einträge | Parity-Harness (S11), Golden-File-Format |
 | `16-erweiterungspunkte-bezahl-features.md` | nutzt | §6 (Andockstellen in den D02-Bausteinen) | Paket-Skizzen; keine Rückwirkung auf CE-Bausteine |
 | `migration/plan/01-roadmap-ce.md`, `plan/_data/wp-ce.json` | nutzt | Inkrement-Zuordnung §1.3 | Arbeitspakete für I0 (Building Blocks), I1 (Labels-Referenzmodul als erster Schnitt nach I0), I2 (Engine) |

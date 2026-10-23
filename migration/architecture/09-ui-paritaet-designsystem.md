@@ -74,12 +74,13 @@ Gleiches CSS und gleiches DOM ergeben gleiche Pixel. Der Pixelvergleich (§3.14.
 | CE-I18N-023 | Animationen | §3.4.3 |
 | CE-I18N-024 | Maßsystem, Elevation und Scrollbars | Token-CSS 1:1, `scroll-area` §4.2 |
 | CE-I18N-025 | Avatare und Farbwähler | §4.2 (`avatar`, `avatar-group`), §4.7 (`common/color-*`) |
-| CE-I18N-026 | Lade-Indikatoren und Navigations-Progressbar | §4.2 (`logo-spinner`), §4.7 (`spinner`, `skeleton`), §3.2 (bprogress-CSS) |
+| CE-I18N-026 | Lade-Indikatoren und Navigations-Progressbar | §4.11 (GIFs der App-eigenen LogoSpinner in Web/Admin/Space; Komponente → `08`), §4.7 (`spinner`, `skeleton`), §4.2 (`circular-progress`, `linear-progress`), §3.2 (bprogress-CSS); Propel-`logo-spinner` nur Galerie (I7) |
 | CE-UIX-001 | Seiten-Header und Breadcrumbs | §4.7 (`layout`, `breadcrumb`) |
 | CE-UIX-002 | Leerzustände und Skeletons | §4.7 (`empty-state`, `skeleton`) |
 | CE-UIX-003 | Globale Modal-Hosts | §3.5 (Portal-Schicht), Hosts selbst → `08` |
 | CE-UIX-004 | Dialog- und Dropdown-Verhalten | §3.5, §4.2 (`dialog`, `menu`, `popover`, `combobox`) |
 | CE-UIX-005 | Tab-Reihenfolge in Formularen | §3.6, Test `property-select/tab-index` |
+| CE-UIX-008 | Warnung bei ungespeicherten Änderungen | §4.2 (`dialog` mit `discard`, Discard-AlertDialog), §3.5.2 (Escape-Regel) |
 | CE-UIX-009 | Image-Picker und Uploads mit Fortschritt | Assets `cover-images` §4.11, `linear-progress` |
 | CE-UIX-010 | 404-, Fehler- und Zugriffsseiten (Web) | Assets §4.11, Screenshot-Katalog §3.14 |
 | CE-UIX-013 | Link-Icons und URL-Erkennung | Icons §4.6 |
@@ -89,6 +90,8 @@ Gleiches CSS und gleiches DOM ergeben gleiche Pixel. Der Pixelvergleich (§3.14.
 | CE-SPACE-032 | „Powered by Plane Publish“-Badge | §4.11 (Logos), Katalog Space |
 | CE-AUTH-001 (angepasst) | Sign-in-Seite → Keycloak-Login-Theme | D09-ADR-14, §3.13 |
 
+**Bewusst nicht hier** (Zuständigkeit `08`): CE-I18N-001…-004 (Sprache, Übersetzung, Datum/Zeit, Zeitzonen – D09 liefert nur Calendar-Klassen und Locale-Daten für `PlCalendar`), CE-UIX-006 (synchronisierte LocalStorage-Präferenzen), CE-UIX-007 (Zwischenablage/CSV – Toast-Optik über §3.10), CE-UIX-011 (Stale-Chunk-Reload), CE-UIX-012 (Legacy-Redirects, Routing-Tests §4.14).
+
 Alle übrigen CE-Screens (CE-WS, CE-PRJ, CE-WI, CE-LV, CE-CYC, CE-MOD, CE-INT, CE-PAGE, CE-HOME, CE-NOTIF, CE-ANA, CE-SRCH, CE-PROF, CE-INST, CE-SPACE) konsumieren das Designsystem. Für sie liefert dieses Dokument das **Verifikationsverfahren** (Screenshot-Katalog, §3.14, Katalog-Einträge §4.14).
 
 ### 1.4 Inkrement-Zuordnung (welcher Teil wird wann gebraucht)
@@ -97,14 +100,14 @@ Grundsatz: Ein Baustein wird in dem Inkrement **fertig** (Code + Galerie-Story +
 
 | Inkrement | Was aus D09 fertig sein muss (abnahmerelevant) | Gate |
 |---|---|---|
-| **I0 Walking Skeleton** | Tailwind-Pipeline + CSS 1:1 + CSS-Diff-Test (§3.2); Schriften, Favicons, Manifeste; `ThemeService` + Inline-Script (Light/Dark/System); `cn()`; Icon-Codegen (Propel 919, lucide ×2, Blocks-Icons); Präsenz-/Portal-/Positionierungs-Schicht (§3.4, §3.5); Propel: `button`, `icon-button`, `icon`, `tooltip`, `menu`, `input`, `input-field`, `field`, `text-area`, `avatar`, `workspace-avatar`, `scroll-area`, `collapsible`, `breadcrumb`, `dialog`, `combobox`, `popover`, `tabs`, `toast`, `shortcut`, `separator`, `logo-spinner`; Blocks: `layout`, `breadcrumb`, `select` (Engine-Kern), `toast`, `skeleton`, `spinner`, `portal`, `utils`, `types`, `icons`; Keycloak-Login-Theme-CSS (§3.13); Galerie Original + Angular (Gerüst, Leit-Komponenten); Referenzumgebung + Screenshot-Katalog für 5 Seiten (S11) | **S10** (10 Leit-Komponenten + Workspace-Shell, DOM gleich, Visual-Diff ≤ 0,1 %), **S11** |
-| **I1 Workspace, Projekte, Konto** | Propel: `alert-dialog`, `switch`, `checkbox`, `checkbox-field`, `radio`, `badge`, `banner`, `anchor-button`, `avatar-group`, `table`, `select`, `pill`, `context-menu`, `text-area-field`, `toggle`; Blocks: `dialog` (ConfirmDialog), `empty-state` (+ 59 Illustrationen), `emoji-icon-picker` (inkl. offline Emojibase), `common` (ColorPicker, ColorSwatchPicker, FavoriteStar, DragHandle, DropIndicator, Sortable), `context-menu`, `card`, `pill-button`, `property-select/member-select`, `virtual-list`; Theme: HC-Varianten, Custom-Theme, Theme-Wechsel mit Reload; Raster-Assets (Empty-States, Onboarding, Cover-Images) | Katalog-Einträge I1 grün (§7) |
-| **I2 Work Items & Layouts** | Propel: `calendar`, `circular-progress`, `linear-progress`, `suggestion-menu`, `toolbar`, `preview-card`; Blocks: alle `property-select/*`, `emoji-reaction`, Select-Varianten `pill-*`, `icon-*`, `table-cell`, `search-input`, `avatar-group-*`; State-/Priority-/Cycle-/Module-Icons; Web-Icons (Attachment) | Katalog I2 |
+| **I0 Walking Skeleton** | Tailwind-Pipeline + CSS 1:1 + CSS-Diff-Test (§3.2); Schriften, Favicons, Manifeste; `ThemeService` + Inline-Script (Light/Dark/System); `cn()`; Icon-Codegen (Propel 919, lucide ×2, Blocks-Icons); Präsenz-/Portal-/Positionierungs-Schicht (§3.4, §3.5); Propel: `button`, `icon-button`, `icon`, `tooltip`, `menu`, `input`, `input-field`, `field`, `text-area`, `avatar`, `workspace-avatar`, `scroll-area`, `collapsible`, `breadcrumb`, `dialog`, `combobox`, `popover`, `tabs`, `toast`, `shortcut` (von `tooltip` intern genutzt); Blocks: `layout`, `breadcrumb`, `select` (Engine-Kern), `toast`, `skeleton`, `spinner`, `portal`, `utils`, `types`, `icons`; Keycloak-Login-Theme-CSS (§3.13); Galerie Original + Angular (Gerüst, Leit-Komponenten); Referenzumgebung + Screenshot-Katalog für 5 Seiten (S11) | **S10** (10 Leit-Komponenten + Workspace-Shell, DOM gleich, Visual-Diff ≤ 0,1 %), **S11** |
+| **I1 Workspace, Projekte, Konto** | Propel: `alert-dialog`, `switch`, `checkbox`, `checkbox-field`, `badge`, `banner`, `anchor-button`, `avatar-group`, `table`, `select`, `pill`, `context-menu`, `text-area-field`; Blocks: `dialog` (ConfirmDialog), `empty-state` (+ 59 Illustrationen), `emoji-icon-picker` (inkl. offline Emojibase), `common` (ColorPicker, ColorSwatchPicker, FavoriteStar, DragHandle, DropIndicator, Sortable), `context-menu`, `card`, `pill-button`, `property-select/member-select`, `virtual-list`; Theme: HC-Varianten, Custom-Theme, Theme-Wechsel mit Reload; Raster-Assets (Empty-States, Onboarding, Cover-Images) | Katalog-Einträge I1 grün (§7) |
+| **I2 Work Items & Layouts** | Propel: `calendar`, `circular-progress`, `linear-progress`, `preview-card`; Blocks: alle `property-select/*`, `emoji-reaction`, Select-Varianten `pill-*`, `icon-*`, `table-cell`, `search-input`, `avatar-group-*`; State-/Priority-/Cycle-/Module-Icons; Web-Icons (Attachment) | Katalog I2 |
 | **I3 Planung** | Blocks `charts/*` (6) nach S6, Burndown-Bausteine (→ `08`) | **S6** |
-| **I4 Pages & Realtime** | Editor-Hüllen nutzen `toolbar`, `menu`, `popover`, `suggestion-menu`, `preview-card` (bereits fertig); Page-Lock-Animationen aus `WEB/styles/globals.css` | **S5** (Editor-Visual ≤ 0,5 %) |
+| **I4 Pages & Realtime** | Propel `toolbar` (einzige Nutzer im Original: `WEB/components/pages/editor/toolbar/*`); Editor-Hüllen nutzen außerdem `menu`, `popover`, `preview-card` (bereits fertig); Page-Lock-Animationen aus `WEB/styles/globals.css` | **S5** (Editor-Visual ≤ 0,5 %) |
 | **I5 Überblick** | `power-k.css` + `cmdk`-Attribut-DOM (Komponente → `08`), `animate-notification-bell-ring`, Stickies-Optik | Katalog I5 |
 | **I6 Außenwirkung & Administration** | Admin- und Space-Kataloge vollständig (Admin: light/dark; Space: light/dark), OG-Bilder | Katalog I6 |
-| **I7 Härtung** | Restliche, im Original nicht importierte Propel-Komponenten (`accordion`, `autocomplete`, `autocomplete-field`, `button-group`, `checkbox-group`, `checkbox-group-field`, `combobox-field`, `csp-provider`, `direction-provider`, `drawer`, `expandable-search`, `fieldset`, `form`, `icon-split-button`, `list`, `navigation-menu`, `number-field`, `otp-field`, `pagination`, `radio-group-field`, `select-field`, `skeleton`, `slider`, `split-button`, `switch-field`); Browser-Matrix Firefox/WebKit; Abnahme **aller** Katalog-Einträge | Gesamtabnahme ADR-005 |
+| **I7 Härtung** | Restliche, im Original nicht importierte Propel-Komponenten (`A13a` §2.30, per Quelltext von Propel 0.7.3 nachgeprüft: auch nicht von anderen Propel-Komponenten genutzt, außer `radio` durch `radio-group-field`) – `logo-spinner` (die Apps nutzen eigene LogoSpinner, §4.11), `radio`, `separator`, `suggestion-menu`, `toggle`, `accordion`, `autocomplete`, `autocomplete-field`, `button-group`, `checkbox-group`, `checkbox-group-field`, `combobox-field`, `csp-provider`, `direction-provider`, `drawer`, `expandable-search`, `fieldset`, `form`, `icon-split-button`, `list`, `navigation-menu`, `number-field`, `otp-field`, `pagination`, `radio-group-field`, `select-field`, `skeleton`, `slider`, `split-button`, `switch-field`); Browser-Matrix Firefox/WebKit; Abnahme **aller** Katalog-Einträge | Gesamtabnahme ADR-005 |
 | **W1…W9** | Gestaltungsregeln §6.2, Erweiterungspunkte §6.1; neue Screens ohne Original-Referenz werden gegen die Screen-Schablonen (§6.3) abgenommen | je Welle |
 
 ---
@@ -128,7 +131,7 @@ Grundsatz: Ein Baustein wird in dem Inkrement **fertig** (Code + Galerie-Story +
 | **D09-ADR-13** | Originalfehler in der Optik | **1:1 nachbauen**, nicht reparieren: tote Klassen bleiben im Markup (`A13a` §2.32), Edge-Cases E-01…E-34 gemäß Spalte „Empfehlung“ von `A13a` §3.10. Einzige Korrekturen: E-22 (Emoji-CDN → lokal, ADR-004), Upsell-Ersatz (ADR-001, D09-ADR-15), Login-Varianten (ADR-008). Jede Abweichung steht in `FE/apps/e2e/visual/ui-deviations.yaml` | Fehler korrigieren | ADR-005; reparierte Klassen erzeugen sichtbare Abweichungen; Korrekturen später als eigene Change-Requests | I0 |
 | **D09-ADR-14** | Keycloak-Login-Theme | Das Login-Theme `deploy/keycloak/themes/plane/` (Struktur und Templates laut `05` §3.16) bekommt sein CSS aus **denselben Tailwind-Eingaben mit demselben Compiler** (`TWT/index.css` + `TWT/propel-styles/*`, `@tailwindcss/cli` 4.1.17; Werkzeug `tools/keycloak-theme/build-css.mjs` laut `05` §3.16.3, Ausgabe `deploy/keycloak/themes/plane/login/resources/css/plane-login.css`); FreeMarker-Templates bilden das DOM der Original-Sign-in-Seite (`WEB/app/(home)/page.tsx` + `BLK/auth/*`) nach; Fonts aus demselben Paket | Keycloakify (React, Build-Zeit-Node, Fallback laut S7); eigenes CSS | Ein Token-System für App und Login; Visual-Diff ≤ 1 % (S7) | I0 |
 | **D09-ADR-15** | Upsell-Elemente (ADR-001) | Upgrade-Badges, Upgrade-Modals, Billing-Seite, „Talk to Sales“, Pro-Icons **entfallen ersatzlos**; wo ein Upsell-Screen eine Funktion bewirbt, erscheint die echte Funktion **erst mit ihrem Paket** (bis dahin ist die Route nicht registriert, Rahmen §7.19); das Sidebar-Editions-Badge wird zu einem nicht interaktiven Versions-Badge. Vollständige Tabelle §4.12 | Upsell-Screens als Platzhalter behalten | ADR-001; keine Platzhalter in abgenommenen Inkrementen (`01` §7.19) | I0 |
-| **D09-ADR-16** | Referenz für Pixel und DOM | **Das laufende Original** ist die Referenz: (a) Seiten-Screenshots aus einer per Docker Compose gestarteten Original-Instanz mit deterministischem Seed (Seed-Spezifikation `tests/seed/parity-seed.yaml`, Profil `visual`, D15-ADR-16; S11), (b) Komponenten-Screenshots und DOM-Verträge aus einer **Referenz-Galerie** (`funk./frontend/tools/reference-gallery/`, React 19 + `@makeplane/propel@0.7.3` + `packages/blocks` aus dem Original-Repo, nur Dev). Beide Galerien lesen **dieselben Story-Definitionen** (`funk./frontend/tools/gallery-stories/*.stories.json`) | Figma; handgemachte Referenzbilder; Storybook | Objektiv, wiederholbar, deckt alle Varianten-Kombinationen ab | I0 |
+| **D09-ADR-16** | Referenz für Pixel und DOM | **Das laufende Original** ist die Referenz: (a) Seiten-Screenshots aus einer per Docker Compose gestarteten Original-Instanz mit deterministischem Seed (Seed-Spezifikation `tests/seed/parity-seed.yaml`, Fragmente `base` + `visual`, D15-ADR-16; Start `tools/parity/start-original.sh --from-source`; S11), (b) Komponenten-Screenshots und DOM-Verträge aus einer **Referenz-Galerie** (`funk./frontend/tools/reference-gallery/`, React 19 + `@makeplane/propel@0.7.3` + `packages/blocks` aus dem Original-Repo, nur Dev). Beide Galerien lesen **dieselben Story-Definitionen** (`funk./frontend/tools/gallery-stories/*.stories.json`) | Figma; handgemachte Referenzbilder; Storybook | Objektiv, wiederholbar, deckt alle Varianten-Kombinationen ab | I0 |
 | **D09-ADR-17** | Visueller Vergleich | **Playwright** (`@playwright/test` 1.5x, ein gepinntes Container-Image für Referenz- **und** Ziel-Aufnahmen, Chromium als Gate, Firefox/WebKit ab I7) mit `toHaveScreenshot` gegen importierte Original-Baselines; zusätzlich normalisierter **DOM-Snapshot-Vergleich** und **ARIA-Snapshot-Vergleich** (`locator.ariaSnapshot()`), axe-core als Ratchet. Schwellwerte §3.14.5 | Percy/Chromatic (SaaS, ADR-004); BackstopJS; reine Pixel-Diffs | Lokal/airgapped, Standard-Tooling aus ADR-048; DOM-/ARIA-Vergleich findet Ursachen statt Symptome | I0 |
 | **D09-ADR-18** | Charts | Gemäß ADR-044: D3-Module + Angular-SVG; DOM-Vertrag = SVG-Markup und Klassen von `recharts` 2.15.4 in den sechs Blocks-Charts (`recharts-*`-Klassen, Gruppenstruktur), Referenzbilder aus der Referenz-Galerie (Stories mit festen Datensätzen) | ECharts | Parität; S6 entscheidet | I3 |
 | **D09-ADR-19** | Gestaltung neuer Bezahl-Screens ohne Original-Referenz | Neue Screens werden **ausschließlich** aus vorhandenen Propel-/Blocks-Bausteinen, vorhandenen Tokens, vorhandenen Icons und Illustrationen und den vorhandenen EE-i18n-Schlüsseln komponiert und gegen **Screen-Schablonen** (§6.3) abgenommen. Neue Tokens, neue Farben und neue Basiskomponenten nur per ADR-Änderung | Freies Design je Paket | Konsistenz mit dem 1:1-Rest, kein Designsystem-Drift (§6.2) | W1 |
@@ -146,7 +149,7 @@ funk./
 │   ├── .postcssrc.json                         # { "plugins": { "@tailwindcss/postcss": {} } }  (wie TWC/postcss.config.js)
 │   ├── apps/
 │   │   ├── web/src/
-│   │   │   ├── index.html                      # Theme-Inline-Script (§5.8), Font-Preload, Favicons, Manifeste
+│   │   │   ├── index.html                      # Theme-Inline-Script (§5.8), Font-Preload, Favicons, Manifeste, div#context-menu-portal, div#editor-portal, <app-root data-pl-host>
 │   │   │   ├── styles.css                      # Einstieg = Kopie von WEB/styles/globals.css (nur Import-/Source-Zeilen umgeschrieben, §5.1)
 │   │   │   ├── styles/emoji.css                # 1:1 WEB/styles/emoji.css
 │   │   │   ├── styles/power-k.css              # 1:1 WEB/styles/power-k.css
@@ -156,7 +159,7 @@ funk./
 │   │   ├── gallery/                            # Angular-Komponenten-Katalog (nur Dev/CI, nicht ausgeliefert), base href "/gallery/" (H-08)
 │   │   └── e2e/
 │   │       ├── visual/                         # Screenshot-Katalog, Baselines, Diff-Reports (§3.14)
-│   │       │   ├── catalog/{web,admin,space,gallery}.catalog.yaml
+│   │       │   ├── catalog/{web,admin,space,gallery,keycloak}.catalog.yaml
 │   │       │   ├── catalog/acceptance/<app>.acceptance.yaml            # Abnahme-Register (§3.14.8)
 │   │       │   ├── baselines/<app>/<entry-id>/<state-id>/<theme>-<viewport>.png   # aus dem Original importiert (Git LFS)
 │   │       │   ├── baselines-new/<app>/<entry-id>/<state-id>/<theme>-<viewport>.png  # Selbst-Baselines neuer Screens (§6.4)
@@ -202,7 +205,6 @@ funk./
 │           ├── extract-reference-candidates.mjs  # Referenz-CSS → reference-candidates/<app>.txt (§3.2.3)
 │           ├── reference-css/<app>.css         # kompiliertes Original-CSS (Artefakt, eingecheckt)
 │           ├── capture-reference.ts            # Playwright: Baselines aus Original-Instanz + Referenz-Galerie
-│           ├── dom-normalize.ts                # gemeinsame Normalisierung (§3.14.6)
 │           ├── template-frame-check.ts         # Rahmen-DOM-Vergleich neuer Screens (§6.4)
 │           └── report/                         # HTML-Diff-Report + Abnahme-Export (§3.14.8)
 └── tools/
@@ -282,7 +284,7 @@ Damit sind die offenen Punkte `A13a` O-01/O-02 (welche Utilities 4.1.17 tatsäch
 | `render={<a href/>}` / `nativeButton={false}` | Konsument setzt den Selektor direkt auf das gewünschte Element; Komponente erkennt `nativeButton` über `host.tagName` | `<a plButton href="…">` |
 | Kompositum ohne eigenes Element, dessen sichtbarer Teil **nur der Trigger** ist (Original: `render={children}`/`render={<Trigger/>}`; Tooltip, PreviewCard, Popover-/Menu-Trigger am Konsumenten-Element) | **Attribut-Direktive am Trigger-Element** (kein Wrapper), Popup über Portal (§3.5) | `<button plIconButton [plTooltip]="…">` |
 | Kompositum ohne eigenes Element und ohne Trigger am Ort (kontrolliert geöffnete Dialoge/Drawer/AlertDialogs, Toast-Viewport-Inhalte) | **Direktive auf `<ng-container>`** (erzeugt nur einen Kommentarknoten, der für Selektoren unsichtbar ist); Popup-Struktur wird beim Öffnen per `ViewContainerRef.createComponent` in den Portal-Container gerendert, der Konsumenten-Inhalt per `<ng-template>` | `<ng-container plDialog [(open)]="open">` + `<ng-template plDialogContent>` |
-| Kompositum ohne eigenes Element mit In-Place-Kindern (Provider, Gruppen-Roots wie `Menu`-Root mit Trigger **und** Content als Geschwister) | Element-Selektor `pl-<name>` mit Host-Attribut `data-pl-host` (→ `display: contents`), **nur** zulässig, wenn die Host-Kontext-Regel §3.3.4 (H2/H3) am Einsatzort erfüllt ist; sonst Variante „Direktive am Trigger“ | `<pl-tooltip-provider>`, `<pl-blk-plane-toast-provider>` im App-Root |
+| Kompositum ohne eigenes Element mit In-Place-Kindern und ohne Trigger-Funktion (Provider, Kontext-Gruppen) | Element-Selektor `pl-<name>` mit Host-Attribut `data-pl-host` (→ `display: contents`), **nur** zulässig, wenn die Host-Kontext-Regel §3.3.4 (H2/H3) am Einsatzort erfüllt ist; sonst Variante „Direktive am Trigger“ | `<pl-tooltip-provider>`, `<pl-blk-plane-toast-provider>` im App-Root |
 | Inhalt, der erst bei Öffnen existiert (Popup, Portal) | `<ng-template pl<Name>Content>` + Portal (§3.5) | `<ng-template plMenuContent>` |
 | Props (`variant`, `size`, …) | `input()` mit gleichem Namen; Achsen ohne `defaultVariants` → `input.required()` (Propel `StrictVariantProps`) | `variant = input.required<ButtonVariant>()` |
 | kontrolliert/unkontrolliert (`value`/`defaultValue`/`onValueChange`, `useControllableState`) | `model()` + `defaultValue = input()`; Helfer `controllableState()` in `PRP/hooks/` | `open = model<boolean>()`, `[(open)]` |
@@ -290,7 +292,7 @@ Damit sind die offenen Punkte `A13a` O-01/O-02 (welche Utilities 4.1.17 tatsäch
 | `icon` als Komponente oder Node | `input<PlIconSource>()` (`PlIconDef \| TemplateRef<unknown>`) | `[icon]="PaletteOutline"` |
 | `label`, `title`, `description` als String **oder** ReactNode | String-Input; für Nodes zusätzlich Template-Input `labelTemplate` | – |
 | `children` | `<ng-content>` (Reihenfolge der Slots wie Original-JSX) | – |
-| `className` (nur Blocks) | Input `className`, verarbeitet mit `cn()` am Wurzel-Element (tailwind-merge-Semantik) | `<pl-card className="p-2">` |
+| `className` (nur Blocks) | Input `className`, verarbeitet mit `cn()` am Wurzel-Element (tailwind-merge-Semantik) | `<div plBlkCard className="p-2">` |
 | `className` per `render` an Propel (Base UI `mergeProps` = Verkettung) | `class`-Attribut am Host des Attribut-Selektors (Angular verkettet, keine Merge-Semantik – identisch zu `mergeProps`) | `<button plButton class="w-full">` |
 | `createXxxHandle()` (imperative Handles) | Klasse `PlXxxHandle` (`open()`, `close()`, `isOpen` Signal), per `[handle]` verbunden | `PlMenuHandle` |
 | React-Context (`FieldOptionSizeProvider`, `MenuRadioMarkerContext`, Dialog-Kontext) | `InjectionToken` + `providers` auf Komposita, gelesen per `inject(…, { optional: true })` | `PL_FIELD_OPTION_SIZE` |
@@ -301,16 +303,21 @@ Damit sind die offenen Punkte `A13a` O-01/O-02 (welche Utilities 4.1.17 tatsäch
 
 Regel: Exportierter React-Teil `X` → Angular-Klasse `PlX`, Selektor `[plX]` bzw. `pl-x` (kebab-case). Element-Direktiven erhalten das Suffix `El` (`PlButtonEl`, `[plButtonEl]`), wenn eine gleichnamige Komponente existiert; sonst ohne Suffix. Dateinamen kebab-case wie Original (`menu-item.component.ts`). Jede Lib exportiert nur über `public-api.ts`; Unterpfad-Importe wie im Original (`@plane/propel/components/menu`, `@plane/blocks/toast`) werden über `tsconfig.base.json`-Pfade abgebildet.
 
-#### 3.3.3 Lint-Regeln (ESLint, `FE/eslint.config.js`)
+#### 3.3.3 Lint-Regeln (Paket `@plane/eslint-rules`, `FE/tools/eslint-rules/`, `08` §7.6)
 
-| Regel-ID | Inhalt |
-|---|---|
-| `pl/no-component-styles` | `styles`/`styleUrl(s)` in `@Component` verboten in `libs/shared/{propel,blocks}` und `libs/web/**` |
-| `pl/encapsulation-none` | `encapsulation: ViewEncapsulation.None` Pflicht in `libs/shared/{propel,blocks}` |
-| `pl/no-generated-edit` | Dateien mit Header `// GENERATED` dürfen nur vom Generator geändert werden (CI vergleicht Neu-Generierung mit Repo-Stand) |
-| `pl/no-plan-gating` | Bezeichner `isPro`, `plan`, `subscription`, `upgrade`, `UpgradeBadge`, `ProIcon` verboten (Rahmen §7.18, ADR-001) |
-| `pl/icon-source` | `<svg>` mit Inline-Pfaden in Templates verboten außer in generierten Dateien und `state-icons/` (Icons nur über `svg[plSvgIcon]`) |
-| `pl/no-cdk-overlay` | Import von `@angular/cdk/overlay` verboten (D09-ADR-10/-11) |
+Die Regeln sind Teil des in `08` §7.6 festgelegten Pakets (gleiche Ablage, gleiche L0-Einbindung, Präfix `@plane/eslint-rules/`). Bereits in `08` definierte Regeln werden **nicht** doppelt angelegt; D09 ergänzt nur die mit „neu“ markierten.
+
+| Regel | Inhalt | Herkunft |
+|---|---|---|
+| `no-component-styles` | `styles`/`styleUrl(s)` in `@Component` verboten in `libs/shared/{propel,blocks}` und `libs/web/**`; `encapsulation: ViewEncapsulation.None` Pflicht in `libs/shared/{propel,blocks}` | `08` §7.6 (D09-ADR-03) |
+| `no-plan-identifiers` | Plan-/Upsell-Bezeichner und i18n-Schlüssel (`upgrade`, `billing`, `plan`, `subscription`, `is_paid`, `trial`, `isPro`, `UpgradeBadge`, `ProIcon`) verboten; D09 ergänzt die Allow-List-freien Präfixe `plans-` (Tokens `text-plans-*`, `bg-plans-*`) und die Upsell-Schlüssel aus G-13 | `08` §7.6, Rahmen §7.18, ADR-001 |
+| `no-test-ids` | keine neuen `data-testid` (DOM-Parität) | `08` §7.6, `15` §3.9.1 |
+| `no-generated-edit` (neu) | Dateien mit Header `// GENERATED` dürfen nur vom Generator geändert werden (CI vergleicht Neu-Generierung mit Repo-Stand, T-GEN-01) | D09-ADR-05/-07 |
+| `icon-source` (neu) | `<svg>` mit Inline-Pfaden in Templates verboten außer in generierten Dateien, `state-icons/` und `BLKT/icons/**` (Hand-Ports §4.8); Icons nur über `svg[plSvgIcon]` bzw. `span[plIcon]` | D09-ADR-07 |
+| `no-cdk-overlay` (neu) | Import von `@angular/cdk/overlay` verboten | D09-ADR-10/-11, H-01 |
+| `no-trigger-wrapper` (neu) | Komponenten-Selektoren `pl-tooltip`, `pl-preview-card`, `pl-popover`, `pl-menu-trigger`, `pl-dialog-trigger` … verboten; Trigger-Komposita nur als Attribut-Direktive (§3.3.4 H1) | D09-ADR-03 |
+| `ee-no-arbitrary-values` (neu) | in `libs/web/<paket>/**` keine Arbitrary Values für Farben, Abstände, Radien, Schatten, Schriftgrößen (G-02) | D09-ADR-19 |
+| `ee-no-removed-brand-icons` (neu) | Importe `Github*`, `Gitlab*`, `Bitbucket*`, `Slack*`, `Jira*` außerhalb der Galerie verboten (G-05) | ADR-007 |
 
 #### 3.3.4 Host-Kontext-Regel (`data-pl-host`-Elemente)
 
@@ -321,7 +328,7 @@ Ein Element mit `data-pl-host` ist im DOM vorhanden, auch wenn es keine Box erze
 | H1 | Trigger-Komposita (Tooltip, PreviewCard, Popover-, Menu-, ContextMenu-, Select-/Combobox-Trigger, Dialog-/AlertDialog-/Drawer-Trigger) sind **Attribut-Direktiven am Trigger** (`[plTooltip]`, `[plPreviewCardTrigger]`, `[plPopoverTrigger]`, `[plMenuTrigger]` …) mit Verweis auf ein `<ng-template>` für den Popup-Inhalt; ihr Root-Zustand liegt in einem Service, den die Direktive bereitstellt (`providers`). Ein `pl-<name>`-Wrapper um den Trigger ist verboten. Komposita ohne Trigger am Ort nutzen eine Direktive auf `<ng-container>` (§3.3.1). Die Teilnamen aus §4.2 bleiben gültig (`PlMenuTrigger` = Direktive, `PlMenuContent` = `<ng-template plMenuContent>`, `PlMenu` = Zustands-Service + optionaler `pl-menu`-Host nur nach H2/H3). |
 | H2 | Ein `data-pl-host`-Element darf nicht direktes Kind eines Elements sein, dessen Klassenliste Kind-Selektor-Utilities trägt: `space-x-*`, `space-y-*`, `divide-*`, `*:…`, `**:…`, `[&>…]`, `has-[>…]`; und es darf nicht selbst Geschwister eines Elements mit `peer`-Klasse sein, dessen `peer-*`-Gegenstück es umhüllt. |
 | H3 | Kinder eines `data-pl-host`-Elements, die `first:`/`last:`/`only:`/`odd:`/`even:`/`nth-*`-Varianten tragen, müssen im Original dieselbe Geschwisterposition haben (der Host darf keine Geschwister „verstecken“). |
-| Prüfung | `dom-normalize.ts` meldet vor dem Auspacken (N3) jede Verletzung von H2/H3 als Befund `host-context` (Selektor-Pfad + verletzende Klasse); Test **T-HOST-01** läuft auf allen Galerie-Stories und Katalog-Einträgen und ist ab I0 Gate (G2). Gleichzeitig verlangt `15` §3.10.4, dass jedes nicht ausgepackte Custom-Element als Fehler „Host-Element sichtbar“ zählt. |
+| Prüfung | `normalizeDom` (`FE/apps/e2e/drivers/dom-parity.ts`, §3.14.6) meldet vor dem Auspacken (N3) jede Verletzung von H2/H3 als Befund `host-context` (Selektor-Pfad + verletzende Klasse); Test **T-HOST-01** läuft auf allen Galerie-Stories und Katalog-Einträgen und ist ab I0 Gate (G2). Gleichzeitig verlangt `15` §3.10.4, dass jedes nicht ausgepackte Custom-Element als Fehler „Host-Element sichtbar“ zählt. |
 
 ### 3.4 Zustandsvertrag (`data-*`, ARIA, CSS-Variablen) und Präsenz
 
@@ -480,7 +487,7 @@ Subset-Abdeckung für die 22 Locales (`A13a` O-05) wird automatisch geprüft: E2
 | Ebene | Ziel | Regel |
 |---|---|---|
 | Propel `toast` | `PRP/components/toast/` | `PlToastManager` (Äquivalent `createToastManager`): `add/update/close/promise`; `data.variant` Pflicht (sonst Fehler); danger/warning → `priority: 'high'`, `timeout: 8000`; Stapel-Variablen (`--toast-index`, `--toast-offset-y`, `--toast-height`, `--toast-frontmost-height`), Attribute (`data-behind`, `data-limited`, `data-expanded`, `data-swipe-direction`, `data-visible`), Expand bei Hover, Swipe-to-dismiss, `aria-live`-Region wie Base UI; max. 2 linke Aktionen + 1 `primaryAction`; `progress` → `PlLinearProgress size="sm" variant="brand"` |
-| Blocks-Fassade | `BLKT/toast/toast-manager.ts` (+ `PlPlaneToastProvider` als `<pl-plane-toast-provider>` im App-Root) | API **identisch**: `setToast`, `updateToast`, `setPromiseToast`, `dismissToast`, `toastManager`, Typen `ToastType`, `SetToastProps`, `ToastActionItem`, `PromiseToastOptions`; Typ-Mapping `success→success`, `error→danger`, `warning→warning`, `info→info`, `loading`/`loading-toast`→`neutral` mit `timeout: 0`, Titel-Default „Loading...“ |
+| Blocks-Fassade | `BLKT/toast/toast-manager.ts` (+ `PlBlkPlaneToastProvider` als `<pl-blk-plane-toast-provider data-pl-host>` im App-Root an derselben Stelle wie im Original-Provider-Baum) | API **identisch**: `setToast`, `updateToast`, `setPromiseToast`, `dismissToast`, `toastManager`, Typen `ToastType`, `SetToastProps`, `ToastActionItem`, `PromiseToastOptions`; Typ-Mapping `success→success`, `error→danger`, `warning→warning`, `info→info`, `loading`/`loading-toast`→`neutral` mit `timeout: 0`, Titel-Default „Loading...“ |
 | Test | `toast-manager.spec.ts` | 1:1 Port von `BLK/toast/toast-manager.test.ts`; Visual-Stories je Variante × mit/ohne Aktionen × Stapel 1/3/5 |
 
 ### 3.11 Blocks-Select-Engine
@@ -491,7 +498,8 @@ Die Select-Engine (`BLK/select/**`) ist der größte Einzelbaustein (Basis aller
 2. **Lazy-Mount:** bis zur ersten Aktivierung nur `<button aria-haspopup="listbox" aria-expanded="false">` mit identischer Optik; Aktivierung mountet die Combobox und öffnet in einem Schritt. `variant="search-input"`, `defaultOpen` und kontrolliertes `open` mounten sofort.
 3. **Unterbau:** Propel-`PlCombobox*` (Komponenten + Elemente) statt Base-UI-`Combobox`; Virtualisierung mit `@tanstack/virtual-core` (`overscan: 8`, Zeilenhöhen wie oben); Infinite-Loading mit Generation-Zähler und IntersectionObserver-Sentinel; Skip-Disabled-Replay (`use-skip-disabled-rows.ts` → `skip-disabled-rows.ts`).
 4. **Trigger-Chrome-Varianten** (`pill-{sm,md,lg}`, `icon-{sm,md,lg}`, `select-{md,lg,xl,2xl}`, `select-ghost-{md,lg,xl,2xl}`, `table-cell`, `breadcrumb`, `search-input`, `avatar-group-{sm,md,lg}`, Fallback `pill-sm`) mit wortgleichen Klassen aus `BLK/select/utils.ts` / `trigger-chrome.tsx` (Tabelle `A13a` §2.26).
-5. **Tests als Spezifikation:** `select.test.tsx`, `menu-search-input.test.tsx`, `nested-submenu.dismissal.test.tsx`, `property-select/{tab-index,member-select,outside-click,date-select}.test.tsx` werden als `*.spec.ts` mit `@testing-library/angular` portiert; alle müssen grün sein, bevor I2 abgenommen wird.
+5. **Host-Form (§3.3.4):** Die Select-Familie (`PlBlkSelect`, alle `property-select/*`) rendert im Original am Einsatzort genau den Trigger (Lazy-Mount-Button bzw. nach Aktivierung den Combobox-Trigger; Popup im Portal). Zielform ist daher ein **Attribut-Selektor am Trigger-Element** (`button[plBlkStateSelect]`, `button[plBlkMemberSelect]` …), solange der DOM-Vertrag für alle Trigger-Chrome-Varianten genau ein In-Place-Element zeigt; Varianten mit anderem Wurzel-Tag (`search-input` → `input`/`div`) bekommen je Tag einen eigenen Selektor (`input[plBlkSelect]`). Ein `pl-blk-…`-Host ist nur Übergangslösung, wenn T-HOST-01 am Einsatzort grün ist; Entscheidung je Variante im S10-Ergebnisbericht (O-D09-16).
+6. **Tests als Spezifikation:** `select.test.tsx`, `menu-search-input.test.tsx`, `nested-submenu.dismissal.test.tsx`, `property-select/{tab-index,member-select,outside-click,date-select}.test.tsx` werden als `*.spec.ts` mit `@testing-library/angular` portiert; alle müssen grün sein, bevor I2 abgenommen wird.
 
 ### 3.12 Charts
 
@@ -515,12 +523,12 @@ Die sechs Blocks-Charts (`bar`, `area`, `line`, `pie`, `radar`, `tree-map`) werd
 ```mermaid
 flowchart LR
   subgraph REF["Referenz (Original v1.4.2, unverändert)"]
-    O1["compose.reference.yml<br/>web/admin/space/api/live/proxy"] --> O2["seed_plane.py<br/>parity-seed.yaml (Profil visual) + normalize.sql"]
+    O1["tools/parity/start-original.sh --from-source<br/>web/admin/space/api/live/proxy :13000"] --> O2["seed_plane.py<br/>parity-seed.yaml (Fragmente base + visual)"]
     O2 --> O3["capture-reference.ts<br/>Screenshots · DOM · ARIA"]
     G1["reference-gallery<br/>(React + Propel 0.7.3 + Blocks)"] --> O3
   end
   subgraph TGT["Ziel (funk.)"]
-    T1["aspire run / compose"] --> T2["ParitySeedLoader<br/>(gleiches Profil)"]
+    T1["AppHost Profil test"] --> T2["ParitySeedLoader<br/>(gleiche Fragmente)"]
     T2 --> T3["visual.spec.ts<br/>Screenshots · DOM · ARIA · axe"]
     G2["apps/gallery (Angular)"] --> T3
   end
@@ -533,30 +541,33 @@ flowchart LR
 
 #### 3.14.2 Referenzumgebung (Original)
 
+Eigentümer von Umgebung, Start und Seed ist `15` (D15-ADR-16, D15-ADR-20, §3.4.3, §3.14.1); D09 legt nur fest, was die **visuelle** Aufnahme zusätzlich braucht.
+
 | Punkt | Festlegung |
 |---|---|
-| Quelle | Original-Repo, Commit des Plans (Tag `v1.4.2`, SHA in `FE/tools/visual/reference-env/ORIGINAL_SHA`); Pfad über `PLANE_ORIGINAL_DIR` |
-| Start | `docker compose -f FE/tools/visual/reference-env/compose.reference.yml up -d --build`: baut die Original-Images aus den Dockerfiles des Original-Repos (`apps/web`, `apps/admin`, `apps/space`, `apps/api`, `apps/live`, Proxy) und startet sie mit `plane-db`, `plane-redis`, `plane-mq`, `plane-minio` wie `docker-compose.yml` des Originals; Proxy auf `http://localhost:8091`; alle Images per Digest gepinnt und für Airgap-CI in die interne Registry gespiegelt |
-| Umgebung | `TZ=UTC`, Telemetrie aus, Instanz-Konfiguration per Seed (SMTP aus, Unsplash aus, LLM aus), `ENABLE_SIGNUP=1` nur während des Seeds |
-| Start-Einstieg | einziger Einstieg ist `tools/ci/parity/start-original.sh` (Eigentümer `15` §3.4, Umgebung `parity`); `compose.reference.yml` ist dessen Overlay für die **gebauten** Original-Frontends + Proxy (§9.2, Punkt H-07) |
-| Seed | kanonische Seed-Spezifikation `tests/seed/parity-seed.yaml` (D15-ADR-16, Schlüssel-basiert, UUIDv5, feste Zeitstempel) mit dem **Profil `visual`** (Pflichtumfang §3.14.4); Original-Lader `seed_plane.py` (Django-ORM im Original-Container), Ziel-Lader `ParitySeedLoader` (EF Core) laut `15`. Das Profil legt Instanz-Admin, 5 Benutzer, Workspace `acme`, Projekte, Work Items, Cycles, Modules, Pages, Views, Intake, Stickies, Kommentare, Reaktionen, Benachrichtigungen, veröffentlichtes Board an (Inhalt §3.14.4); Avatare/Cover aus `FE/tools/visual/fixtures/` |
-| Zeit-Normalisierung | alle Zeitstempel des Profils sind relativ zu **T0 = 2026-01-31T11:00:00Z** festgelegt (Browser-Uhr = T0 + 23 h = `2026-02-01T10:00:00Z`, identisch zu `15` §3.10.1); nur Felder, die ein Lader nicht direkt setzen kann (`auto_now`-Felder im Original), korrigiert danach `psql -f FE/tools/visual/seed/normalize-original.sql` bzw. `normalize-funk.sql`, damit relative Zeitangaben („2 days ago“) stabil sind |
-| ID-Abbildung | Harness schreibt `seed-map.original.json` (semantischer Schlüssel → UUID/Slug/Anchor), z. B. `project:WEB → 3f…`; Katalog-Routen verwenden nur semantische Schlüssel |
-| Ziel | identisches Profil gegen `funk.` (`ParitySeedLoader`, AppHost-Profil `test` mit `Plane__Testing__FixedUtcNow`), Normalisierung `normalize-funk.sql`, Keycloak-Benutzer mit denselben E-Mail-Adressen im Test-Realm (`deploy/keycloak/realms/plane-realm.test.json`) |
+| Quelle | Original-Repo am `ORIGINAL_SHA` (Tag `v1.4.2`), festgehalten in `tools/parity/original.env` (Image-Digests **und** `ORIGINAL_SHA`, `15` §3.2); Pfad des Checkouts über `PLANE_ORIGINAL_DIR` |
+| Start | einziger Einstieg `tools/parity/start-original.sh` (Umgebung `parity`, Proxy `http://localhost:13000`, `15` D15-ADR-20). Für Visual-Aufnahmen **immer** mit `--from-source` (baut `apps/web`, `apps/admin`, `apps/space`, `apps/api`, `apps/live` und Proxy aus den Original-Dockerfiles am `ORIGINAL_SHA`, `15` §9.2), damit Seiten-Baselines, `reference-css/<app>.css` und Referenz-Galerie nachweislich aus **demselben** Commit stammen; gebaute Images per Digest in die interne Registry gespiegelt (Airgap-CI, R-D09-07) ⚠ `14` §3.20 nennt abweichend `tools/ci/parity/start-original.sh` + `docker-compose-local.yml` (O-D09-14) |
+| Umgebung | `TZ=UTC`, Telemetrie aus, Instanz-Konfiguration aus dem Seed (`15` §3.14.1: SMTP auf Mailpit, Unsplash leer, KI-Schlüssel leer) |
+| Seed | kanonische Seed-Spezifikation `tests/seed/parity-seed.yaml` (D15-ADR-16, Schlüssel-basiert, UUIDv5, feste Zeitstempel) mit den Fragmenten `base` **und** `visual` (`15` EP-T03; Pflichtumfang des Fragments `visual` §3.14.4); Original-Lader `seed_plane.py` (Django-ORM im Original-Container, setzt Zeitstempel per `QuerySet.update`), Ziel-Lader `ParitySeedLoader` (EF Core), Manifest-Abgleich `tools/ci/seed-manifest-diff`; Avatare/Cover aus `tests/seed/files/` |
+| Zeitanker | **T0 = `2026-02-01T10:00:00Z`** (`15` §3.14.1, O-D15-11 verbindlich); alle Zeitstempel relativ zu T0; Server-Uhr = T0 (`Plane__Testing__FixedUtcNow` im AppHost-Profil `test`), Browser-Uhr = T0 (§3.14.3). Felder, die das Original **während** der Aufnahme selbst fortschreibt (z. B. `last_active`, `last_workspace_id`, `updated_at` nach Login), setzt `FE/tools/visual/seed/normalize-original.sql` bzw. `normalize-funk.sql` nach dem Login je Rolle auf den Seed-Wert zurück, damit relative Zeitangaben („2 days ago“) stabil sind |
+| ID-Abbildung | `manifest.original.json`/`manifest.funk.json` (`15` §3.14.1: semantischer Schlüssel → UUID/Slug/Anchor); `capture-reference.ts` leitet daraus `seed-map.<target>.json` für die DOM-Normalisierung (N7) ab; Katalog-Routen verwenden nur semantische Schlüssel (`{ws:acme}`, `{project:WEB}`, `{issue:WEB-1}`) |
+| Ziel | dieselben Fragmente gegen `funk.` (`ParitySeedLoader`, AppHost-Profil `test`), Keycloak-Benutzer laut `15` §3.14.2 (`deploy/keycloak/realms/parity-users.partial.json`, Partial Import über die Ressource `keycloak-test-users`) |
 
 #### 3.14.3 Determinismus der Aufnahmen
 
+Gemeinsame Implementierung mit `15` §3.10.1 (`FE/apps/e2e/drivers/determinism.ts`); die folgenden Punkte sind die Vereinigung beider Listen (H-10).
+
 | Maßnahme | Wert |
 |---|---|
-| Browser-Container | **ein** Image für Referenz und Ziel: `mcr.microsoft.com/playwright:v1.5x.y-noble` (Digest gepinnt ⚠ zum I0-Start) + `fonts-noto-color-emoji` (gepinnte Version) + feste Monospace-Systemschrift (E-23); Hardware-Beschleunigung aus (`--disable-gpu`), `--font-render-hinting=none` |
+| Browser-Container | **ein** Image für Referenz und Ziel: `mcr.microsoft.com/playwright:v1.5x.y-noble` (Digest gepinnt ⚠ zum I0-Start, O-D09-08) + `fonts-noto-color-emoji` (gepinnte Version) + feste Monospace-Systemschrift (E-23); Hardware-Beschleunigung aus (`--disable-gpu`), `--font-render-hinting=none` |
 | Kontext | `locale: 'en-US'`, `timezoneId: 'UTC'`, `deviceScaleFactor: 1` (Gate; Stichprobe `2` im Nightly), `reducedMotion: 'reduce'`, `colorScheme` passend zum Theme |
-| Uhr | `page.clock.setFixedTime(new Date('2026-02-01T10:00:00Z'))` (T0 + 23 h) vor jeder Navigation |
+| Uhr | `page.clock.install({ time: new Date('2026-02-01T10:00:00Z') })` (= T0, `15` §3.10.1) vor jeder Navigation |
 | Zufall | `Math.random` per `addInitScript` durch Mulberry32 (Seed `0x504c414e`) ersetzt – übernommen aus `15` §3.10.1 |
-| Externe Daten | Anfragen an `cdn.jsdelivr.net/npm/emojibase-data@*` (nur Original) per `page.route` aus den gepinnten Dateien (§3.8.2); jede andere Anfrage an fremde Origins schlägt die Aufnahme fehl (Netzwerk-Allowlist = Original-Proxy bzw. Gateway); externe URLs in Editor-Knotenattributen (Callout-Default `EMOJI_URL` auf jsDelivr, `packages/editor/src/extensions/callout/utils.ts` Z. 20) behandelt `10`, Umleitung nach demselben Muster |
-| Animationen | `toHaveScreenshot({ animations: 'disabled', caret: 'hide' })`; zusätzlich Style-Injection `*{scroll-behavior:auto!important}` |
-| Warten | `document.fonts.ready`; kein Element mit `[aria-busy="true"]` außer im Zustand gewollt; `networkidle`; zwei `requestAnimationFrame`; zustandsspezifische `wait`-Selektoren aus dem Katalog |
+| Externe Daten | Anfragen an `cdn.jsdelivr.net/npm/emojibase-data@*` (nur Original) per `page.route` aus den gepinnten Dateien (§3.8.2); jede andere Anfrage an fremde Origins lässt die Aufnahme fehlschlagen (Netzwerk-Allowlist = Original-Proxy bzw. Gateway); externe URLs in Editor-Knotenattributen (Callout-Default `EMOJI_URL` auf jsDelivr, `packages/editor/src/extensions/callout/utils.ts` Z. 20) behandelt `10`, Umleitung nach demselben Muster |
+| Animationen | `toHaveScreenshot({ animations: 'disabled', caret: 'hide' })`; zusätzlich CSS-Override aus `15` §3.10.1 (`animation-duration`/`-delay`, `transition-duration` = 0 s, `caret-color: transparent`) und `*{scroll-behavior:auto!important}`; Ausnahme: Motion-Stories (R-D09-06) ohne Override |
+| Warten | `document.fonts.ready`; kein Element mit `[aria-busy="true"]` außer im Zustand gewollt; `networkidle`; zwei `requestAnimationFrame`; zustandsspezifische `wait`-Anker aus dem Katalog – nur Anker, die im Original-DOM existieren (Rolle, Text, Original-`id`/`data-*`; **keine** neuen `data-testid`, `15` §3.9.1, `08` `no-test-ids`) |
 | Masken | nur explizit im Katalog (`mask:`) und nur für Inhalte, die zwischen Original und Ziel fachlich verschieden sein **müssen** (z. B. Versionsnummer, Keycloak-Texte); jede Maske braucht einen Eintrag in `ui-deviations.yaml` |
-| Anmeldung | Original: `POST /auth/sign-in/` mit Seed-Passwort → `storageState` je Rolle; Ziel: Keycloak-UI-Login je Rolle einmal pro Worker → `storageState` |
+| Anmeldung | wie `15` §3.6.6: Original per Passwort-Login des Seed-Benutzers (`PLANE_DEV_USER_PASSWORD`) → `storageState` je Rolle; Ziel per Keycloak-UI-Login (`KeycloakHeadlessLogin`) je Rolle einmal pro Worker → `storageState` |
 
 #### 3.14.4 Screenshot-Katalog
 
@@ -566,9 +577,9 @@ Ein Katalog-Eintrag beschreibt **eine Route in einem fachlichen Zustand**. Jeder
 |---|---|---|
 | Themes | Web: `light`, `dark`; zusätzlich `light-contrast`, `dark-contrast`, `custom-light`, `custom-dark` für Einträge mit Tag `theme-full`; Admin/Space: `light`, `dark` | `theme-full` tragen: Workspace-Shell, Home, Projektliste, Work-Item-Liste, Kanban, Spreadsheet, Work-Item-Detail, Cycle-Liste, Page-Editor, Profil-Preferences, Workspace-Settings General (11 Einträge) |
 | Viewports | `mobile-390` (390×844), `tablet-768` (768×1024), `laptop-1024` (1024×768), `desktop-1440` (1440×900), `wide-1920` (1920×1080) | Grundzustand jeder Route (`state: base`) in `mobile-390`, `tablet-768`, `laptop-1024`, `desktop-1440`; interaktive Zustände nur `desktop-1440`; `wide-1920` zusätzlich für Kanban, Spreadsheet, Gantt, Kalender |
-| Rollen | `admin` (WS-Admin 20), `member` (15), `guest` (5), `anonymous` (Space), `instance-admin` (God Mode) | Standard `admin`; Rollen-Varianten nur, wo sich die Oberfläche unterscheidet (Tag `role-variant`) |
+| Rollen (Seed-Benutzer `15` §3.14.1) | `admin` = `owner@acme` (WS-Admin 20 + Instanz-Admin), `member` = `member@acme` (15), `guest` = `guest@acme` (5), `anonymous` (Space ohne Login), `instance-admin` = `owner@acme` im God Mode | Standard `admin`; Rollen-Varianten nur, wo sich die Oberfläche unterscheidet (Tag `role-variant`) |
 
-Seed-Inhalt Profil `visual` in `tests/seed/parity-seed.yaml` (Pflichtumfang): Benutzer `ada@acme.test` (Instanz-Admin, WS-Admin), `bob@acme.test` (Member), `cyd@acme.test` (Guest), `dee@acme.test` (Member, gesperrt/deaktiviert), `eve@acme.test` (eingeladen, nicht beigetreten); Workspace `acme` „Acme Corp“ mit Logo; Projekte `WEB` (alle Features an, Emoji-Logo, 60 Work Items über alle State-Gruppen/Prioritäten/Labels/Assignees, 3 Ebenen Sub-Items, Relationen aller Typen, Kommentare mit Reaktionen, Links, Anhänge), `MOB` (Material-Icon-Logo, 12 Work Items), `EMPTY` (keine Inhalte, für Empty-States), `OFF` (alle Projekt-Features aus); Cycles in `WEB`: current, upcoming, completed, draft; Modules in allen 6 Status; 5 Labels-Hierarchien mit 20 Labels; Estimates (Punkte); 3 Projekt-Views, 2 Workspace-Views; 6 Pages (öffentlich, privat, gesperrt, archiviert, mit allen Node-Typen aus `A12` §2.5); 5 Intake-Items (pending, accepted, declined, snoozed, duplicate); 3 Stickies; 10 Benachrichtigungen (gelesen/ungelesen/archiviert/snoozed); 2 Drafts; 3 archivierte Work Items/Cycles/Modules; veröffentlichtes Board für `WEB` (Kommentare, Reaktionen, Votes an) mit festem Anchor; 2 Webhooks; 2 API-Tokens; 1 Export.
+Pflichtumfang für die Visual-Aufnahmen = Fragment `base` (`15` §3.14.1: u. a. `acme/WEB` mit 120 Work Items über alle State-Gruppen × Prioritäten, 3-stufige Sub-Items, je Relationstyp ein Paar, Kommentare mit Reaktionen, Links, Anhänge; Cycles abgeschlossen/laufend/kommend/Entwurf; Module in allen 6 Status; Intake pending/accepted/declined/snoozed/duplicate; Pages öffentlich/privat/gesperrt/archiviert/„alle Nodes“/mit Versionen; Views; Stickies; Notifications; Webhook; API-Tokens; Export; veröffentlichtes Board `acme/WEB`) **plus** Fragment `visual` (D09-Pflicht, in `15` §9.2 als Fragment übernommen): Workspace-Logo „Acme Corp“; Projekte `acme/MOB` (Material-Icon-Logo, 12 Work Items), `acme/EMPTY` (keine Inhalte, für Empty-States), `acme/OFF` (alle Projekt-Features aus); Emoji-Logo für `acme/WEB`; Labels in 5 Hierarchien (zusammen 20); 3 Projekt-Views, 2 Workspace-Views; 3 archivierte Work Items/Cycles/Modules; 10 Benachrichtigungen (gelesen/ungelesen/archiviert/gesnoozed); 2 Drafts; 2 Webhooks; Board-Einstellungen Kommentare/Reaktionen/Votes an mit festem Anchor; Benutzer `deactivated@acme` (Member, deaktiviert) und `invited@acme` (ausstehende Einladung) sind Teil von `base`. Katalog-Platzhalter `{user:…}` nutzen diese Namen (`{user:owner}`, `{user:guest}`).
 
 Vollständige Liste der Katalog-Einträge: §4.14.
 
@@ -589,11 +600,11 @@ Ein Eintrag ist **pixel-grün**, wenn alle Theme×Viewport-Bilder die Schwellwer
 
 #### 3.14.6 DOM-Snapshot-Vergleich
 
-`FE/tools/visual/dom-normalize.ts` (gemeinsam für Referenz und Ziel, im Browser per `page.evaluate` ausgeführt):
+`FE/apps/e2e/drivers/dom-parity.ts` (Funktion `normalizeDom`; Ort laut `15` §3.2/§3.10.4, der die Regeln N1–N9 dieses Abschnitts verbindlich übernimmt; gemeinsam für Referenz und Ziel, im Browser per `page.evaluate` ausgeführt):
 
 | Nr. | Normalisierung |
 |---|---|
-| N1 | Wurzeln: App-Wurzel (`#root` bzw. `app-root` › erstes Kind) **und** alle Portal-Container am Ende von `<body>` in DOM-Reihenfolge |
+| N1 | Wurzel ist `<body>` mit allen Kindern in DOM-Reihenfolge (Original-`Layout` in `WEB/app/root.tsx` rendert direkt in `<body>`: `div#context-menu-portal`, `div#editor-portal`, App-Inhalt, danach Portal-Container); im Ziel trägt `<app-root data-pl-host>` (statisch in `index.html`) das Host-Attribut und wird nach N3 ausgepackt; `index.html` enthält `div#context-menu-portal` und `div#editor-portal` als statische Elemente **vor** `<app-root>` (Admin/Space analog zu deren `root.tsx`) |
 | N2 | Entfernen: Kommentar-Knoten, `<script>`, `<style>`, `<link>`, Attribute `ng-version`, `_ngcontent-*`, `_nghost-*`, `ng-reflect-*`, `data-pl-host` |
 | N3 | Auspacken (Kinder an die Stelle des Elements): Elemente mit `data-pl-host`, `router-outlet` + Geschwister-Kommentar, `<ng-container>`-Reste |
 | N4 | IDs: Werte von `id`, `for`, `aria-controls`, `aria-labelledby`, `aria-describedby`, `aria-activedescendant`, `aria-owns`, `aria-errormessage`, `headers`, `list` → `id-1…n` in Reihenfolge des ersten Auftretens (Referenzen konsistent) |
@@ -672,7 +683,7 @@ Spaltenlegende: **Inkr.** = Inkrement, in dem der Baustein fertig sein muss (§1
 
 ### 4.2 Propel-Komponenten (68) → Angular
 
-Ziel jeweils `PRP/components/<name>/`; Klassen-/Selektor-Regel §3.3.2 (Teil `X` → `PlX` / `[plX]`; Komposita ohne eigenes Element → `pl-<name>` + `data-pl-host`); Tag je Teil laut DOM-Vertrag (§3.4.1). „Unterbau“ nennt die Headless-Basis (§3.5, D09-ADR-10).
+Ziel jeweils `PRP/components/<name>/`; Klassen-/Selektor-Regel §3.3.2 (Teil `X` → `PlX` / `[plX]`); Komposita ohne eigenes Element nach §3.3.1/§3.3.4: Trigger-Teile als Attribut-Direktive am Trigger, Popup-Inhalte als `<ng-template pl<Name>Content>`, Roots ohne Trigger als Direktive auf `<ng-container>`, `pl-<name>` + `data-pl-host` nur für Provider; Tag je Teil laut DOM-Vertrag (§3.4.1). „Unterbau“ nennt die Headless-Basis (§3.5, D09-ADR-10).
 
 | # | Propel (`PROPEL/components/…`) | Angular-Teile | Unterbau | Inkr. | CE |
 |---|---|---|---|---|---|
@@ -713,7 +724,7 @@ Ziel jeweils `PRP/components/<name>/`; Klassen-/Selektor-Regel §3.3.2 (Teil `X`
 | 35 | `input` | `PlInput` (`input[plInput]`), `PlInputGroup` | CVA/Signal Forms | I0 | – |
 | 36 | `linear-progress` | `PlLinearProgress` (`role="progressbar"`) | – | I2 | CE-UIX-009, CE-I18N-026 |
 | 37 | `list` | `PlList`, `PlListItem` (`level` 1–5, `density`), `PlListItemButton`, `PlListItemCounter`, `PlListItemDisclosureTrigger`, `PlListItemLabel`, `PlListItemLink`, `PlListSection`, `PlListSectionHeading`, `PlListSectionPanelContent`, `PlListSectionTrigger` | `PlComposite` (Roving-Tabindex), Collapsible | I7 (vorgezogen durch D2, §6.1) | – |
-| 38 | `logo-spinner` | `PlLogoSpinner` (`size` sm\|md\|fluid, 4 Bilder, CSS wählt Theme × Motion; GIF/PNG aus `PROPEL/components/logo-spinner/*.{gif,png}` als Assets) | – | I0 | CE-I18N-026 |
+| 38 | `logo-spinner` | `PlLogoSpinner` (`size` sm\|md\|fluid, 4 Bilder, CSS wählt Theme × Motion; GIF/PNG aus `PROPEL/components/logo-spinner/*.{gif,png}` als Assets) | – | I7 (vorziehbar) | CE-I18N-026 |
 | 39 | `menu` | `PlMenu`, `PlMenuCheckboxItem`, `PlMenuCheckboxItemIndicator`, `PlMenuContent` (`side` bottom, `sideOffset` 6, `collisionPadding` 8, `sizing` auto, `heightBehavior` fit), `PlMenuFooter`, `PlMenuGroup`, `PlMenuHandle`, `PlMenuItem` (`variant`, `icon`, `label`, `description`, `secondaryText`, `trailing`, `selected` → `menuitemradio`), `PlMenuItemContent`, `PlMenuItemControl`, `PlMenuItemDescription`, `PlMenuItemIndicator`, `PlMenuItemSecondaryText`, `PlMenuItemTitle`, `PlMenuItemTitleRow`, `PlMenuItemTrailing`, `PlMenuLabel`, `PlMenuLabelMeta`, `PlMenuLabelTitle`, `PlMenuLinkItem`, `PlMenuPopup`, `PlMenuRadioGroup`, `PlMenuRadioItem`, `PlMenuRadioItemIndicator`, `PlMenuSearch`, `PlMenuSearchInput`, `PlMenuSeparator`, `PlMenuSubmenu`, `PlMenuSubmenuContent`, `PlMenuSubmenuTrigger`, `PlMenuTrigger`, `PlMenuViewport`; Typ `MenuRadioMarker` | Angular-Aria-Menu-Tastaturmodell (Typeahead, Pfeiltasten, Submenü →/←), Floating (`fit`-Seitenwahl), Portal, Hover-Intent, Hold-Width | I0 | CE-UIX-004 |
 | 40 | `navigation-menu` | `PlNavigationMenu`, `PlNavigationMenuContent`, `PlNavigationMenuContentList`, `PlNavigationMenuIcon`, `PlNavigationMenuItem`, `PlNavigationMenuLink` (`appearance`), `PlNavigationMenuLinkDescription`, `PlNavigationMenuLinkTitle`, `PlNavigationMenuList`, `PlNavigationMenuPanel`, `PlNavigationMenuTrigger`, `PlNavigationMenuTriggerLabel`, `PlNavigationMenuViewport` | Eigenbau (Viewport `--popup-width/height`), Floating | I7 | – |
 | 41 | `number-field` | `PlNumberField`, `PlNumberFieldGroup`, `PlNumberFieldInput`, `PlNumberFieldScrubArea`, `PlNumberFieldScrubAreaCursor`; Konstante `numberFieldStepperSize` | Eigenbau (`Intl.NumberFormat`, Pointer-Lock für Scrub) | I7 (vorgezogen durch A1) | – |
@@ -723,16 +734,16 @@ Ziel jeweils `PRP/components/<name>/`; Klassen-/Selektor-Regel §3.3.2 (Teil `X`
 | 45 | `popover` | `PlPopover` (`modal` false), `PlPopoverBody`, `PlPopoverClose`, `PlPopoverContent` (`variant` rich\|text, `side` bottom, `align` start, `sideOffset` 4, `collisionPadding` 5), `PlPopoverDescription`, `PlPopoverHandle`, `PlPopoverTitle`, `PlPopoverTrigger` | Floating, Portal, Dismiss, optional `FocusTrap` | I0 | CE-UIX-004 |
 | 46 | `preview-card` | `PlPreviewCard`, `PlPreviewCardBody`, `PlPreviewCardContent`, `PlPreviewCardDescription`, `PlPreviewCardEyebrow`, `PlPreviewCardEyebrowLabel`, `PlPreviewCardHandle`, `PlPreviewCardImage`, `PlPreviewCardMeta`, `PlPreviewCardPropertyGroup`, `PlPreviewCardTitle`, `PlPreviewCardTrigger` (Attribut-Direktive am Trigger, §3.3.4 H1; Inhalt per `<ng-template plPreviewCardContent>`) | Floating, Hover-Delays | I2 | CE-UIX-013 |
 | 47 | `radio-group-field` | `PlRadioGroupField`, `PlRadioGroupFieldOption` | Fieldset | I7 | – |
-| 48 | `radio` | `PlRadio`, `PlRadioGroup` (`density`), `PlRadioIndicator`, `PlRadioRing` | `FocusKeyManager` (Roving) | I1 | – |
+| 48 | `radio` | `PlRadio`, `PlRadioGroup` (`density`), `PlRadioIndicator`, `PlRadioRing` | `FocusKeyManager` (Roving) | I7 (vorziehbar) | – |
 | 49 | `scroll-area` | `PlScrollArea` (`orientation` Pflicht, `visibility`, `size`) | Eigenbau nach Base-UI-Logik (Thumb-Größe, `data-scrolling`, `data-hovering`, `data-overflow-*`) | I0 | CE-I18N-024 |
 | 50 | `select-field` | `PlSelectField`, Typ `SelectFieldOption` | wie 51 + Field | I7 | – |
 | 51 | `select` | `PlSelect`, `PlSelectContent`, `PlSelectField`, `PlSelectGroup`, `PlSelectGroupLabel`, `PlSelectItem`, `PlSelectItemIndicator`, `PlSelectLabel`, `PlSelectList`, `PlSelectTrigger` (`variant`, `size`; `min-w-72`) | Angular-Aria-Select/Listbox, Floating mit `alignItemWithTrigger` | I1 | – |
-| 52 | `separator` | `PlSeparator` (`orientation`, `decorative` Pflicht) | – | I0 | – |
+| 52 | `separator` | `PlSeparator` (`orientation`, `decorative` Pflicht) | – | I7 (vorziehbar) | – |
 | 53 | `shortcut` | `PlShortcut` (`keys`, `size`; `aria-hidden`) | – | I0 | – |
 | 54 | `skeleton` | `PlSkeleton` (`aria-label` Pflicht, `role="status"`), `PlSkeletonItem` | – | I7 | CE-UIX-002 |
 | 55 | `slider` | `PlSlider`, `PlSliderControl`, `PlSliderHeader`, `PlSliderIndicator`, `PlSliderLabel`, `PlSliderThumb`, `PlSliderTrack`, `PlSliderValue` | Eigenbau (Pointer-Capture, Tastatur-Schritte) | I7 | – |
 | 56 | `split-button` | `PlSplitButton` | Button + MenuTrigger | I7 | – |
-| 57 | `suggestion-menu` | `PlSuggestionMenu`, `PlSuggestionMenuGroup`, `PlSuggestionMenuItem`; Typ `SuggestionMenuActions` (`handleKeyDown`) | Eigenbau (Fokus bleibt im Eingabefeld, `loopFocus`) | I2 | – |
+| 57 | `suggestion-menu` | `PlSuggestionMenu`, `PlSuggestionMenuGroup`, `PlSuggestionMenuItem`; Typ `SuggestionMenuActions` (`handleKeyDown`) | Eigenbau (Fokus bleibt im Eingabefeld, `loopFocus`) | I7 (vorziehbar) | – |
 | 58 | `switch-field` | `PlSwitchField` | Field | I7 | – |
 | 59 | `switch` | `PlSwitch` (`role="switch"`, `size` Pflicht), `PlSwitchThumb`, `PlSwitchTrack` | CVA/Signal Forms | I1 | – |
 | 60 | `table` | `PlTable` (`variant` Pflicht), `PlTableActionCell`, `PlTableBody`, `PlTableCell`, `PlTableEditableCell`, `PlTableHead`, `PlTableHeadSort`, `PlTableHeader`, `PlTableRow`, `PlTableSelectCell`, `PlTableSelectHead`, `PlTableSkeletonBody`, `PlTableSkeletonCell` | ScrollArea, Sticky/Pinned-Schatten | I1 | – |
@@ -740,8 +751,8 @@ Ziel jeweils `PRP/components/<name>/`; Klassen-/Selektor-Regel §3.3.2 (Teil `X`
 | 62 | `text-area-field` | `PlTextAreaField` | Field | I1 | CE-UIX-005 |
 | 63 | `text-area` | `PlTextArea` (`textarea[plTextArea]`; `autoResize`, `maxRows`), `PlTextAreaGroup` | – | I0 | – |
 | 64 | `toast` | `PlToast`, `PlToastActionPart`, `PlToastActionButton`, `PlToastActionGroup`, `PlToastActions`, `PlToastCloseGroup`, `PlToastContent`, `PlToastDescription`, `PlToastElement`, `PlToastList`, `PlToastProvider` (`close`), `PlToastStatusIcon`, `PlToastTextGroup`, `PlToastTitle`, `PlToastViewport`; `PlToastManager` (= `createToastManager`), `injectToast()` (= `useToast`), `injectToastManager()` (= `useToastManager`); Typen `ToastAction`, `ToastData` | §3.10 | I0 | CE-I18N-021, CE-WI-006 |
-| 65 | `toggle` | `PlToggle`, `PlIconToggle`, `PlToggleLabel` (`data-pressed`) | – | I1 | – |
-| 66 | `toolbar` | `PlToolbar` (`size`, `elevation` Pflicht), `PlToolbarButton`, `PlToolbarGroup`, `PlToolbarInput`, `PlToolbarItemLabel`, `PlToolbarLink`, `PlToolbarMenuTrigger`, `PlToolbarMenuTriggerButton`, `PlToolbarMenuTriggerLabel`, `PlToolbarSeparator`, `PlToolbarToggle`, `PlToolbarToggleGroup` | Angular-Aria-Toolbar (Roving Focus) | I2 | – |
+| 65 | `toggle` | `PlToggle`, `PlIconToggle`, `PlToggleLabel` (`data-pressed`) | – | I7 (vorziehbar) | – |
+| 66 | `toolbar` | `PlToolbar` (`size`, `elevation` Pflicht), `PlToolbarButton`, `PlToolbarGroup`, `PlToolbarInput`, `PlToolbarItemLabel`, `PlToolbarLink`, `PlToolbarMenuTrigger`, `PlToolbarMenuTriggerButton`, `PlToolbarMenuTriggerLabel`, `PlToolbarSeparator`, `PlToolbarToggle`, `PlToolbarToggleGroup` | Angular-Aria-Toolbar (Roving Focus) | I4 | – |
 | 67 | `tooltip` | `PlTooltip` (**Attribut-Direktive** `[plTooltip]` am Trigger, §3.3.4 H1; Inputs `plTooltip` (= `label`), `plTooltipDisabled`, `plTooltipShortcut`, `plTooltipLayout`, `plTooltipSide` (Default top), `plTooltipSideOffset` (8), `plTooltipAlign`, `plTooltipShowArrow`, `plTooltipDelay`, `plTooltipSticky`; Präfix vermeidet Kollision mit Inputs der Trigger-Komponente, z. B. `disabled` von `PlButton`), `PlTooltipArrow`, `PlTooltipHandle`, `PlTooltipPopup` (`role="tooltip"`, intern per Portal), `PlTooltipProvider` (`pl-tooltip-provider`, App-Root) | Floating (`hide` → `data-anchor-hidden:invisible`), Delay-Gruppe, `aria-describedby` am Trigger nur solange Popup gemountet | I0 | – |
 | 68 | `workspace-avatar` | `PlWorkspaceAvatar` (Fallback-Icon lucide 1.34 `Building2`) | wie Avatar | I0 | – |
 
@@ -780,7 +791,7 @@ Ziel `PRP/elements/<name>/`: `variants.ts` (**generiert**, D09-ADR-05) + je Teil
 | `input` | `PlInputEl`, `PlInputGroupEl` | `size` | I0 |
 | `linear-progress` | `PlLinearProgressEl`, `PlLinearProgressIndicator`, `PlLinearProgressLabel`, `PlLinearProgressTrack`, `PlLinearProgressValue` | Track `size`, `variant` | I2 |
 | `list` | `PlListEl`, `PlListItemEl`, `PlListItemButtonEl`, `PlListItemCounterEl`, `PlListItemDisclosureTriggerEl`, `PlListItemLabelEl`, `PlListItemLinkEl`, `PlListSectionHeadingEl`, `PlListSectionPanelContentEl`, `PlListSectionTriggerEl` | Item `level`, `density` | I7 |
-| `logo-spinner` | `PlLogoSpinnerEl`, `PlLogoSpinnerImage` | Image `size` | I0 |
+| `logo-spinner` | `PlLogoSpinnerEl`, `PlLogoSpinnerImage` | Image `size` | I7 (vorziehbar) |
 | `menu` | `PlMenuCheckboxItemEl`, `…CheckboxItemIndicatorEl`, `PlMenuFooterEl`, `PlMenuItemEl`, `PlMenuItemContentEl`, `PlMenuItemControlEl`, `PlMenuItemDescriptionEl`, `PlMenuItemIndicatorEl`, `PlMenuItemSecondaryTextEl`, `PlMenuItemTitleEl`, `PlMenuItemTitleRowEl`, `PlMenuItemTrailingEl`, `PlMenuLabelEl`, `PlMenuLabelMetaEl`, `PlMenuLabelTitleEl`, `PlMenuLinkItemEl`, `PlMenuPopupEl`, `PlMenuRadioItemEl`, `PlMenuRadioItemCheck`, `PlMenuRadioItemIndicatorEl`, `PlMenuSearchEl`, `PlMenuSearchInputEl`, `PlMenuSeparatorEl`, `PlMenuSubmenuTriggerEl` | Item `layout`, `variant`; Popup `elevation` | I0 |
 | `navigation-menu` | `PlNavigationMenuContentListEl`, `…IconEl`, `…LinkEl`, `…LinkDescriptionEl`, `…LinkTitleEl`, `…ListEl`, `…Popup`, `…TriggerEl`, `…TriggerLabelEl`, `…ViewportEl` | Link `appearance` | I7 |
 | `number-field` | `PlNumberFieldEl`, `PlNumberFieldGroupEl`, `PlNumberFieldInputEl`; `numberFieldStepperSize` | `size` | I7 |
@@ -789,14 +800,14 @@ Ziel `PRP/elements/<name>/`: `variants.ts` (**generiert**, D09-ADR-05) + je Teil
 | `pill` | `PlIconPillEl`, `PlPillEl`, `PlPillGroupEl`, `PlPillLabelEl` | Pill `size`, `variant` | I1 |
 | `popover` | `PlPopoverBodyEl`, `PlPopoverPopup`, `PlPopoverTitleEl` | Popup `variant` | I0 |
 | `preview-card` | `PlPreviewCardBodyEl`, `…EyebrowEl`, `…EyebrowLabelEl`, `…ImageEl`, `…MetaEl`, `…Popup`, `…PropertyGroupEl`, `…TitleEl` | – | I2 |
-| `radio` | `PlRadioEl`, `PlRadioGroupEl`, `PlRadioIndicatorEl` | Group `density` | I1 |
+| `radio` | `PlRadioEl`, `PlRadioGroupEl`, `PlRadioIndicatorEl` | Group `density` | I7 (vorziehbar) |
 | `scroll-area` | `PlScrollAreaEl`, `PlScrollAreaCorner`, `PlScrollAreaScrollbar`, `PlScrollAreaThumb`, `PlScrollAreaViewport` | Scrollbar `visibility`, `size` | I0 |
 | `select` | `PlSelectFieldEl`, `PlSelectItemIndicatorEl`, `PlSelectLabelEl`, `PlSelectTriggerEl`, `PlSelectValue` | Trigger `variant`, `size` | I1 |
-| `separator` | `PlSeparatorEl` | – | I0 |
+| `separator` | `PlSeparatorEl` | – | I7 (vorziehbar) |
 | `skeleton` | `PlSkeletonEl`, `PlSkeletonItemEl`; `skeletonFrameProps`, `skeletonItemFrameProps` | Frame `layout`, `stretch`; Item `variant` | I7 |
 | `slider` | `PlSliderEl`, `PlSliderControlEl`, `PlSliderHeaderEl`, `PlSliderIndicatorEl`, `PlSliderLabelEl`, `PlSliderThumbEl`, `PlSliderTrackEl`, `PlSliderValueEl` | Control/Thumb `size` | I7 |
 | `split-button` | `PlSplitButtonEl` | `variant`, `size` | I7 |
-| `suggestion-menu` | `PlSuggestionMenuEl`, `PlSuggestionMenuGroupEl`, `PlSuggestionMenuItemEl`, `PlSuggestionMenuItemIcon`, `PlSuggestionMenuItemTitle`, `PlSuggestionMenuItemTrailing`, `PlSuggestionMenuLabel` | – | I2 |
+| `suggestion-menu` | `PlSuggestionMenuEl`, `PlSuggestionMenuGroupEl`, `PlSuggestionMenuItemEl`, `PlSuggestionMenuItemIcon`, `PlSuggestionMenuItemTitle`, `PlSuggestionMenuItemTrailing`, `PlSuggestionMenuLabel` | – | I7 (vorziehbar) |
 | `swatch` | `PlSwatch` (nur Element, `--swatch-fill`) | – | I1 |
 | `switch` | `PlSwitchEl`, `PlSwitchThumbEl` | `size` | I1 |
 | `table` | `PlTableEl`, `PlTableBodyEl`, `PlTableCellEl`, `PlTableCellContent`, `PlTableCellLayout`, `PlTableCellTrigger`, `PlTableCellTriggerIndicator`, `PlTableCellTriggerLabel`, `PlTableHeadEl`, `PlTableHeadSortIndicator`, `PlTableHeadSortTrigger`, `PlTableHeadTitle`, `PlTableHeaderEl`, `PlTableRowEl`, `PlTableScrollArea`, `PlTableScrollAreaViewport`, `PlTableSelectLayout`, `PlTableSkeletonBodyEl` | Row `selected`, `interactive`, `section`; Head `variant` | I1 |
@@ -804,8 +815,8 @@ Ziel `PRP/elements/<name>/`: `variants.ts` (**generiert**, D09-ADR-05) + je Teil
 | `text-area-field` | `PlTextAreaFieldEl` | – | I1 |
 | `text-area` | `PlTextAreaEl`, `PlTextAreaGroupEl` | Group `resize`; `size`, `surface` | I0 |
 | `toast` | `PlToastEl`, `PlToastActionEl`, `PlToastActionButtonEl`, `PlToastActionGroupEl`, `PlToastActionsEl`, `PlToastCloseGroupEl`, `PlToastContentEl`, `PlToastDescriptionEl`, `PlToastStatusIconEl`, `PlToastTextGroupEl`, `PlToastTitleEl`, `PlToastViewportEl` | StatusIcon `variant` | I0 |
-| `toggle` | `PlIconToggleEl`, `PlToggleEl`, `PlToggleLabelEl` | IconToggle `variant`, `size` | I1 |
-| `toolbar` | `PlToolbarEl`, `PlToolbarButtonEl`, `PlToolbarGroupEl`, `PlToolbarInputEl`, `PlToolbarItemLabelEl`, `PlToolbarLinkEl`, `PlToolbarMenuTriggerButtonEl`, `PlToolbarMenuTriggerLabelEl`, `PlToolbarSeparatorEl`, `PlToolbarToggleGroupEl` | `elevation`, `size` | I2 |
+| `toggle` | `PlIconToggleEl`, `PlToggleEl`, `PlToggleLabelEl` | IconToggle `variant`, `size` | I7 (vorziehbar) |
+| `toolbar` | `PlToolbarEl`, `PlToolbarButtonEl`, `PlToolbarGroupEl`, `PlToolbarInputEl`, `PlToolbarItemLabelEl`, `PlToolbarLinkEl`, `PlToolbarMenuTriggerButtonEl`, `PlToolbarMenuTriggerLabelEl`, `PlToolbarSeparatorEl`, `PlToolbarToggleGroupEl` | `elevation`, `size` | I4 |
 | `tooltip` | `PlTooltipArrowEl`, `PlTooltipPopupEl` | Popup `layout` | I0 |
 | `workspace-avatar` | `PlWorkspaceAvatarEl`, `PlWorkspaceAvatarFallbackEl`, `PlWorkspaceAvatarImageEl` | `size`, Fallback `variant` | I0 |
 
@@ -1038,7 +1049,7 @@ Kopie byte-identisch; Ziel-Unterordner gleichnamig unter `FE/apps/<app>/src/asse
 | `apps/space/app/assets/instance/*` (failure ×2, intake-sent ×2, instance-not-ready, takeoff) | 6 | `…/space/src/assets/instance/` | – | I6 | CE-SPACE-015 |
 | `apps/space/app/assets/images/logo-spinner-{light,dark}.gif` | 2 | `…/space/src/assets/images/` | – | I0 | – |
 | `apps/space/app/assets/logos/*` (gitea, github ×4, gitlab, google) | 7 | – | entfallen (CE-SPACE-011) | – | – |
-| `PROPEL/components/logo-spinner/logo-spinner-{light,dark}.gif`, `…-still.png` | 4 | `PRP/components/logo-spinner/assets/` (über `angular.json`-Assets je App) | Propel-`LogoSpinner` | I0 | CE-I18N-026 |
+| `PROPEL/components/logo-spinner/logo-spinner-{light,dark}.gif`, `…-still.png` | 4 | `PRP/components/logo-spinner/assets/` (über `angular.json`-Assets der Galerie; in die Apps erst, wenn ein Screen Propel-`LogoSpinner` nutzt) | Propel-`LogoSpinner` (im Original von keiner App importiert) | I7 | – |
 | `BLK/empty-state/assets/**` (59 SVG-Komponenten) | 59 | §4.7 | – | I1 | CE-I18N-018 |
 
 ### 4.12 Upsell-Elemente (ADR-001) → Ersatz
@@ -1047,7 +1058,7 @@ Vollständig nach `F20` §5 (U1–U22).
 
 | # | Original | Ersatz in `funk.` | Abweichung |
 |---|---|---|---|
-| U1 | `WEB/components/workspace/upgrade-badge.tsx` (`UpgradeBadge`) | entfällt (Lint `pl/no-plan-gating`) | – |
+| U1 | `WEB/components/workspace/upgrade-badge.tsx` (`UpgradeBadge`) | entfällt (Lint `no-plan-identifiers`) | – |
 | U2 | `WEB/components/common/pro-icon.tsx` (`ProIcon`) | entfällt | – |
 | U3 | `WEB/components/workspace/edition-badge.tsx` (Button „Community“ → Upgrade-Modal) in der Sidebar-Fußzeile (`sidebar-wrapper.tsx` Z. 85) | Fußzeile `flex h-12 items-center justify-between border-t border-subtle bg-surface-1 p-3` bleibt; statt Button ein **nicht interaktives** `PlBadge size="md" variant="neutral"` mit Label `v{app_version}` (Runtime-Config), umhüllt von `PlTooltip` „Version: v{app_version}“ (Tooltip deaktiviert auf Mobil wie Original) | `UI-DEV-001` (Pixel + DOM in `sidebar-footer`) |
 | U4–U10 | `WEB/components/license/modal/**` (`PaidPlanUpgradeModal`, `FreePlanCard`, `PlanUpgradeCard`, `TalkToSalesCard`, `BasePaidPlanCard`, `PlanCheckoutButton`, `DiscountInfo`) | entfallen ersatzlos | – |
@@ -1161,7 +1172,7 @@ Routen-Quelle: `WEB/app/routes/core.ts` (67 `route()`-Einträge + Index), `ADM/a
 | W-047 | `/{ws:acme}` (Home-Inhalt) | `base` (Widgets), `new-user` (leerer Workspace), `quick-link-dialog`, `widget-manage`, `stickies-widget` | tf | I5 | CE-HOME |
 | W-048 | `/{ws:acme}/notifications` | `base`, `unread-only`, `archived`, `snoozed`, `peek-open`, `snooze-menu`, `empty` | – | I5 | CE-NOTIF |
 | W-049 | `/{ws:acme}/analytics/overview`, `/{ws:acme}/analytics/work-items` | je `base`, `empty`, `filters-open` | – | I5 | CE-ANA |
-| W-050 | `/{ws:acme}/profile/{user:ada}` (Summary), `…/{user:ada}/assigned`, `/created`, `/subscribed`, `/activity` | je `base`, `empty` (`{user:cyd}`) | – | I5 | CE-PROF-008…-011 |
+| W-050 | `/{ws:acme}/profile/{user:owner}` (Summary), `…/{user:owner}/assigned`, `/created`, `/subscribed`, `/activity` | je `base`, `empty` (`{user:guest}`) | – | I5 | CE-PROF-008…-011 |
 | W-051 | `/{ws:acme}/stickies` | `base`, `empty`, `editing`, `color-palette-open` | – | I5 | CE-HOME |
 | W-052 | Power-K (`Cmd+K` auf `/{ws:acme}`) | `root`, `search-results`, `theme-page`, `no-results` | – | I5 | CE-SRCH |
 | W-053 | Projekt veröffentlichen (Modal auf `…/projects/{project:WEB}/issues`) | `unpublished`, `published`, `settings-open` | – | I6 | CE-SPACE-001, -002 |
@@ -1174,7 +1185,7 @@ Routen-Quelle: `WEB/app/routes/core.ts` (67 `route()`-Einträge + Index), `ADM/a
 | ID | Route | Zustände | Inkr. | CE |
 |---|---|---|---|---|
 | A-001 | `/god-mode/` (Home) | `redirect-to-keycloak` (nicht fotografiert), `instance-not-ready`, `instance-failure`, `logo-spinner` | I0 | CE-INST-006 |
-| A-002 | `/god-mode/general` | `base`, `sidebar-collapsed`, `mobile-overlay`, `help-popover`, `account-dropdown` (Theme-Umschalter E-33) | I6 | CE-INST, CE-INST-012 |
+| A-002 | `/god-mode/general` | `base`, `sidebar-collapsed`, `mobile-overlay`, `help-popover`, `account-dropdown` (Theme-Umschalter E-33), `cross-app-theme-hc`, `cross-app-theme-custom` (O-D09-11) | I6 | CE-INST, CE-INST-012 |
 | A-003 | `/god-mode/workspace` | `base`, `skeleton`, `load-more`, `empty` | I6 | CE-INST |
 | A-004 | `/god-mode/workspace/create` | `base`, `validation-errors`, `slug-taken` | I6 | CE-INST |
 | A-005 | `/god-mode/email` | `smtp-off`, `smtp-on-form`, `skeleton`, `test-dialog-step-1`, `…-2`, `…-3` | I6 | CE-INST |
@@ -1189,7 +1200,7 @@ Routen-Quelle: `WEB/app/routes/core.ts` (67 `route()`-Einträge + Index), `ADM/a
 | ID | Route | Zustände | Inkr. | CE |
 |---|---|---|---|---|
 | S-001 | `/spaces/` | `logged-in-view` (CE-SPACE-014), `instance-failure`, `logo-spinner` | I6 | CE-SPACE-014, -015 |
-| S-002 | `/spaces/{ws:acme}/{project:WEB}` | `list` (Gruppen offen/zu), `kanban`, `navbar-anonymous`, `navbar-logged-in`, `navbar-menu-open`, `filters-popover`, `active-filters-bar`, `load-more`, `peek-side`, `peek-modal`, `peek-full`, `comments-empty`, `comments-full`, `composer`, `sign-in-hint`, `reaction-picker`, `votes-active`, `iframe` (CE-SPACE-029), `not-published` | I6 | CE-SPACE-017…-030 |
+| S-002 | `/spaces/{ws:acme}/{project:WEB}` | `list` (Gruppen offen/zu), `kanban`, `navbar-anonymous`, `navbar-logged-in`, `navbar-menu-open`, `filters-popover`, `active-filters-bar`, `load-more`, `peek-side`, `peek-modal`, `peek-full`, `comments-empty`, `comments-full`, `composer`, `sign-in-hint`, `reaction-picker`, `votes-active`, `iframe` (CE-SPACE-029), `not-published`, `cross-app-theme-hc`, `cross-app-theme-custom` (O-D09-11) | I6 | CE-SPACE-017…-030 |
 | S-003 | `/spaces/issues/{anchor:WEB}` | `base` (Board mit Social-Meta) | I6 | CE-SPACE-017 |
 | S-004 | `/spaces/{unbekannt}` (404), Board-Fehler, Fehlerseite | je `base` | I6 | CE-SPACE-031 |
 | S-005 | „Powered by Plane Publish“-Badge (auf S-002) | `base` | I6 | CE-SPACE-032 |
@@ -1672,16 +1683,16 @@ export class PlBlkCard {
   ce: [CE-LV-001, CE-LV-002, CE-WI-001]
   tags: [theme-full, wide, layouts]
   setup:
-    localStorage: { "issue_layout_{project:WEB}": "list" }   # Layout per Display-Filter-API im Seed gesetzt
+    displayFilters: { layout: list, group_by: state }       # Benutzer-Display-Filter des Seed-Benutzers (Fragment visual, serverseitig)
   states:
     - id: base
-      wait: ["[data-testid='issue-list-root']"]
+      wait: [{ text: "WEB-1" }, "[id^='issue-']"]          # nur Anker aus dem Original-DOM (kein data-testid, 15 §3.9.1)
     - id: display-props-popover
-      steps: [{ click: "button:has-text('Display')" }]
+      steps: [{ click: { role: button, name: "Display" } }]
       wait: ["[role='dialog'][data-side]"]
     - id: peek-side
-      steps: [{ click: "text=WEB-1" }]
-      wait: ["#issue-peek-overview"]
+      steps: [{ click: { text: "WEB-1" } }]
+      wait: [{ text: "WEB-1", nth: 1 }]                     # zweites Vorkommen = Identifier im Peek-Kopf; Anker je Zustand bei der Referenzaufnahme prüfen
   compare: { pixel: page, dom: true, aria: true, axe: true }
 ```
 
@@ -1739,7 +1750,8 @@ export default defineConfig({
 // FE/apps/e2e/visual/specs/catalog.visual.spec.ts
 import { expect, test } from '@playwright/test';
 import { loadCatalog, resolveRoute, applyTheme, runSteps, waitStable } from '../support/catalog';
-import { normalizeDom } from '../../../../tools/visual/dom-normalize';
+import { applyDeterminism } from '../../drivers/determinism';
+import { normalizeDom } from '../../drivers/dom-parity';
 import { readContract } from '../support/contracts';
 
 for (const entry of loadCatalog(process.env.CATALOG ?? 'web')) {
@@ -1747,7 +1759,7 @@ for (const entry of loadCatalog(process.env.CATALOG ?? 'web')) {
     for (const { theme, viewport } of entry.matrix(state)) {
       test(`${entry.id} ${state.id} ${theme} ${viewport.name}`, async ({ page }) => {
         await page.setViewportSize(viewport);
-        await page.clock.setFixedTime(new Date('2026-02-01T10:00:00Z'));
+        await applyDeterminism(page);   // page.clock.install(T0 = 2026-02-01T10:00:00Z), Mulberry32, CSS-Override, page.route für emojibase (§3.14.3, 15 §3.10.1)
         await applyTheme(page, theme);
         await page.goto(resolveRoute(entry.route, 'funk'));
         await runSteps(page, state.steps);
@@ -1768,9 +1780,9 @@ for (const entry of loadCatalog(process.env.CATALOG ?? 'web')) {
 ### 5.12 DOM-Normalisierung (Auszug)
 
 ```ts
-// funk./frontend/tools/visual/dom-normalize.ts – läuft identisch gegen Original und Ziel (page.evaluate)
+// funk./frontend/apps/e2e/drivers/dom-parity.ts – läuft identisch gegen Original und Ziel (page.evaluate)
 export function normalizeDom(opts: { seedMap: 'original' | 'funk' }): string {
-  const roots = [document.querySelector('#root, app-root')!, ...Array.from(document.body.children).filter(isPortal)];
+  const roots = Array.from(document.body.children);   // N1: ganzer <body>; app-root trägt data-pl-host und wird in walk() ausgepackt
   const ids = new Map<string, string>();
   const ID_ATTRS = ['id', 'for', 'aria-controls', 'aria-labelledby', 'aria-describedby', 'aria-activedescendant', 'aria-owns', 'aria-errormessage', 'headers', 'list'];
   const out: string[] = [];
@@ -1793,7 +1805,6 @@ export function normalizeDom(opts: { seedMap: 'original' | 'funk' }): string {
 }
 // normalizeValue: N4 (IDs → id-n), N5 (class sortiert), N6 (style sortiert/gerundet), N7 (URLs/Seed-IDs/Hashes)
 declare function normalizeValue(name: string, value: string, ids: Map<string, string>, idAttrs: string[], o: { seedMap: string }): string;
-declare function isPortal(el: Element): boolean;
 ```
 
 ---
@@ -1807,7 +1818,7 @@ declare function isPortal(el: Element): boolean;
 2. **Gestaltungsregeln** für Screens, die es im Original-CE-Repo nicht gibt (§6.2), und **Screen-Schablonen** als Ersatz für die fehlende Original-Referenz (§6.3).
 3. Ein **Abnahmeverfahren** für solche Screens (§6.4) und das **Inventar** der Assets, die für Bezahl-Features bereits mit der CE gebündelt werden (§6.5).
 
-**DOM-Neutralitäts-Regel (verbindlich, CE-Pflicht).** Eine Andockstelle darf das DOM der CE **nicht** verändern: Erweiterungen hängen sich über `<ng-content select="…">`-Slots, `@if`-Blöcke **ohne** Wrapper-Element, Inputs mit CE-Default (`null`/leer) oder `NgComponentOutlet` an Positionen ein, die im CE-Fall **kein** Element erzeugen. Nachweis: die DOM-Verträge der CE (§3.14.6) bleiben byte-gleich, wenn eine leere Erweiterung registriert ist (Test `extension-dom-neutrality.spec.ts`, je Andockstelle ein Fall).
+**DOM-Neutralitäts-Regel (verbindlich, CE-Pflicht).** Eine Andockstelle darf das DOM der CE **nicht** verändern: Erweiterungen hängen sich über Registry-Ausgänge (`@for` über ein Token aus `08` §6 + `NgComponentOutlet`, **ohne** Wrapper-Element), `@if`-Blöcke ohne Wrapper und Inputs mit CE-Default (`null`/leer) an Positionen ein, die im CE-Fall **kein** Element erzeugen. `<ng-content select>`-Slots sind nur zulässig, wo das Paket den Aufrufer selbst stellt (eigene Paket-Seite), weil Pakete CE-Templates nicht ändern dürfen (`08` §6). Eingefügte Paket-Elemente unterliegen der Host-Kontext-Regel §3.3.4. Nachweis: die DOM-Verträge der CE (§3.14.6) bleiben byte-gleich, wenn eine leere Erweiterung registriert ist (Test `extension-dom-neutrality.spec.ts`, je Andockstelle ein Fall).
 
 ### 6.1 UI-Andockstellen für die 🧱-Pakete (vollständig)
 
@@ -1815,7 +1826,7 @@ Spalten: **Andockstelle** = was in der CE gebaut wird (Baustein, Input, Slot); *
 
 | Paket (Welle) | Andockstelle im Designsystem (CE-Pflicht) | Bausteine für spätere Paket-Screens | Assets (bereits gebündelt) | Nachweis in der CE | ab |
 |---|---|---|---|---|---|
-| **A1** Work-Item-Types & Custom Properties (W2) | (a) Blocks-Select-Engine (`PlBlkSelect`, §3.11) bleibt **generisch** über `SelectOption<T>` (keine fest verdrahteten Property-Typen in `select/*`); alle Trigger-Chrome-Varianten (`pill-*`, `icon-*`, `select-*`, `select-ghost-*`, `table-cell`) sind öffentlich exportiert, damit `PROPERTY_RENDERERS`/`SPREADSHEET_COLUMNS` (`08` §6.1) dieselbe Optik wie eingebaute Properties erzeugen; (b) Identifier-Baustein der Work Items (`08`: `IssueIdentifier`) erhält den leeren Slot `[plIdentifierLeading]` für ein Typ-Icon; (c) `PlBlkLogo` (`emoji-icon-picker/logo`) rendert beliebige `TLogoProps` – Typ-Icons nutzen ihn unverändert | `PlNumberField` (#41), `PlCheckbox`, `PlInput`, `PlTextArea`, `PlBlkDateSelect`, `PlBlkMemberSelect`, `PlTable` (Property-Verwaltung), `PlDialog`, `PlSwitch` | Icons `Properties{Outline,Filled}`, `Dropdown{Outline,Filled}`, `BooleanOutline`, `Hash{Outline,Filled}`, `MultiTag{Outline,Filled}`; Illustrationen `custom-properties` (horizontal), `property` (vertikal) | `property-renderer-host.spec.ts`: Fake-Renderer mit `table-cell`-Chrome ergibt dieselben Klassen wie die eingebaute Priority-Zelle (DOM-Vergleich der Zelle); Slot-Neutralität | I2 |
+| **A1** Work-Item-Types & Custom Properties (W2) | (a) Blocks-Select-Engine (`PlBlkSelect`, §3.11) bleibt **generisch** über `SelectOption<T>` (keine fest verdrahteten Property-Typen in `select/*`); alle Trigger-Chrome-Varianten (`pill-*`, `icon-*`, `select-*`, `select-ghost-*`, `table-cell`) sind öffentlich exportiert, damit `PROPERTY_RENDERERS`/`SPREADSHEET_COLUMNS` (`08` §6.1) dieselbe Optik wie eingebaute Properties erzeugen; (b) Identifier-Baustein der Work Items (`WEB/components/issues/issue-detail/issue-identifier.tsx` → `FE/libs/web/work-items/components/issues/issue-detail/issue-identifier.component.ts`, Mapping-Regel `01` §6.2) erhält innerhalb seines `div.flex.shrink-0.items-center.space-x-2` vor `IdentifierText` einen Registry-Ausgang für ein Typ-Icon: `@for` über das Multi-Token `WORK_ITEM_IDENTIFIER_DECORATORS` (Vorschlag an `08` §6, O-D09-15) mit `NgComponentOutlet` **ohne** Wrapper (CE: leere Liste ⇒ kein Element; ein Paket-Element steht dann korrekt im `space-x-2`-Kontext). Ein `<ng-content>`-Slot reicht nicht, weil Pakete die CE-Templates der Aufrufer nicht ändern dürfen; (c) `PlBlkLogo` (`emoji-icon-picker/logo`) rendert beliebige `TLogoProps` – Typ-Icons nutzen ihn unverändert | `PlNumberField` (#41), `PlCheckbox`, `PlInput`, `PlTextArea`, `PlBlkDateSelect`, `PlBlkMemberSelect`, `PlTable` (Property-Verwaltung), `PlDialog`, `PlSwitch` | Icons `Properties{Outline,Filled}`, `Dropdown{Outline,Filled}`, `BooleanOutline`, `Hash{Outline,Filled}`, `MultiTag{Outline,Filled}`; Illustrationen `custom-properties` (horizontal), `property` (vertikal) | `property-renderer-host.spec.ts`: Fake-Renderer mit `table-cell`-Chrome ergibt dieselben Klassen wie die eingebaute Priority-Zelle (DOM-Vergleich der Zelle); Slot-Neutralität | I2 |
 | **A2** Workspace-Types, Hierarchie, Roll-ups (W6) | wie A1; zusätzlich zeigen Options-Zeilen der Select-Engine einen optionalen Scope-Hinweis über das vorhandene Menüzeilen-Feld `secondaryText`/`trailing` (`PlMenuItem`, Propel #39) – CE: leer | `PlCircularProgress`, `PlLinearProgress` (Roll-up-Anzeige), `PlBadge` | Icons `Hierarchy{Outline,Filled}`, `Parent{Outline,Filled}`, `SubWorkItems{Outline,Filled}` | Story `select/option-with-trailing` in beiden Galerien (Original nutzt `trailing` bereits) | I2 |
 | **A9** Relationen & Abhängigkeiten (W2) | (a) Relationstyp-Darstellung nur über `RELATION_TYPES` (`08`): `icon` ist `PlIconSource`, Klassen aus der Registry; kein Literal-Vergleich in Templates; (b) Gantt-Chart enthält die leere SVG-Ebene `<g plGanttDependencyLayer>` **nur**, wenn `TIMELINE_FLAGS.isDependencyEnabled` gesetzt ist (CE: Element fehlt, DOM wie Original); Linienfarben später ausschließlich aus vorhandenen Rahmen-/Text-Tokens (§6.2 G-02) | `PlBlkProjectSelect` (projektübergreifende Relationen), `PlCombobox`, `PlTooltip` | Icons `Dependency{Outline,Filled}`, `Relations{Outline,Filled}`, `RelatesTo{Outline,Filled}`, `DuplicateOf{Outline,Filled}`, `Implements{Outline,Filled}`, `ImplementedBy{Outline,Filled}`; Blocks `BlockedIcon`, `BlockerIcon`, `CalendarAfterIcon`, `CalendarBeforeIcon` | Relations-Widget mit CE-Registry = DOM-Vertrag W-031 `relations`; Gantt W-030 ohne Dependency-Ebene | I2 |
 | **A17** Governance States/Labels (W6) | `PlBlkStateSelect`/`PlBlkLabelSelect` beziehen Optionen **nur** über Inputs bzw. die Paginations-Callbacks (`SelectPaginationParams`), nie über eigene Store-Zugriffe; State-/Label-Listen der Projekt-Settings (W-017/W-018) sind als Komponenten mit Input `scope: ScopeLevel` gebaut (CE: immer `project`, keine sichtbare Wirkung) | `PlBlkColorSwatchPicker`, `PlBlkSortable`, `PlBlkStateGroupIcon` | – (vorhandene State-/Label-Icons) | Settings-Listen mit `scope='project'` = DOM-Vertrag W-017/W-018 | I1 |
@@ -1825,12 +1836,12 @@ Spalten: **Andockstelle** = was in der CE gebaut wird (Baustein, Input, Slot); *
 | **C3** Automation-Engine (nicht gewählt) | keine eigene UI-Andockstelle; Activity-Zeilen zusätzlicher Aktoren rendern über `ACTIVITY_RENDERERS` (`08`) mit der vorhandenen Activity-Zeilen-Komponente | – | Icons `Automations{Outline,Filled}`, `AutoArchive{Outline,Filled}`, `AutoClose{Outline,Filled}` | – (über `08` abgedeckt) | – |
 | **D1** Wiki & Collections (W3) | (a) Workspace-Layout enthält den App-Rail-Container **nur**, wenn `APP_RAIL_ENABLED` (`08`) `true` ist (CE: kein Element); (b) Page-Listen-Komponenten nehmen den Store per `injectPageStore(type)` (`08`) – Optik der Liste (W-045) bleibt für Workspace-Pages gleich | `PlList` (#37, vorgezogen), `PlCollapsible`, `PlBlkEmptyState` | Icon `Wiki` (sub-brands), `Pages{Outline,Filled}`; Illustration `page`; Raster `assets/empty-state/wiki/*` (16 Dateien, §4.11) | Workspace-Shell W-001 ohne App-Rail-Element | I4 |
 | **D2** Nested Pages (W3) | Page-Baum später mit Propel `list` (`PlListItem` `level` 1–5, `PlListItemDisclosureTrigger`) + `PlBlkDragHandle`/`PlBlkDropIndicator` (pragmatic-dnd) – deshalb ist `list` als einzige I7-Komponente mit **Pflicht-Story „5 Ebenen + Disclosure + Drop-Indikator“** in der Galerie; Breadcrumb-Kollaps (s. B1) trägt tiefe Pfade | `PlList`, `PlDialog` + `PlCombobox` (Verschiebe-Dialog), `PlBlkBreadcrumbs` | Icons `FolderOpen{Outline,Filled}`, `LinkPage{Outline,Filled}`, `AddPage{Outline,Filled}` | Galerie-Story `list/nested-5-levels` DOM gleich zur Referenz-Galerie | I4 (Story ab I4 vorgezogen) |
-| **E3** IdP Group Sync (W4) | Mitglieder-Zeilen (W-009, W-015) haben den leeren Slot `[plMemberRowDecorator]` hinter der Rollen-Spalte (`MEMBER_ROW_DECORATORS`, `08`); God-Mode-Settings-Seiten werden über `ADMIN_SETTINGS_PAGES` mit derselben Admin-Seitenhülle gerendert (Schablone T-08) | `PlBadge`, `PlTooltip`, `PlTable`, `PlSwitch` | Icons `GroupSync{Outline,Filled}`, `Sync{Outline,Filled}`; Illustration `group-syncing` (horizontal); Marken `Oidc`, `Saml` (nur Anzeige in Keycloak-Status-Seite) | Mitglieder-Liste mit leerem Decorator = DOM-Vertrag W-009 | I1 |
+| **E3** IdP Group Sync (W4) | Mitglieder-Zeilen (W-009, W-015) haben hinter der Rollen-Spalte einen Registry-Ausgang für `MEMBER_ROW_DECORATORS` (`08` §6, Multi-Token, CE leer; `NgComponentOutlet` ohne Wrapper); God-Mode-Settings-Seiten werden über `ADMIN_SETTINGS_PAGES` mit derselben Admin-Seitenhülle gerendert (Schablone T-08) | `PlBadge`, `PlTooltip`, `PlTable`, `PlSwitch` | Icons `GroupSync{Outline,Filled}`, `Sync{Outline,Filled}`; Illustration `group-syncing` (horizontal); Marken `Oidc`, `Saml` (nur Anzeige in Keycloak-Status-Seite) | Mitglieder-Liste mit leerem Decorator = DOM-Vertrag W-009 | I1 |
 | **E5** Rollenmodell (W4) | Rollen-Auswahlen (Workspace-/Projekt-Mitglieder, Einladungen) rendern Optionen aus `ROLE_OPTIONS` (`08`) generisch mit `PlMenuRadioItem`/Select-Engine; **keine** fest drei Zeilen im Template; Disabled-Zustand und Tooltip-Begründung kommen aus dem `PermissionService` | `PlTable` + `PlCheckbox`/`PlCheckboxGroup` (Rechte-Matrix), `PlAlertDialog`, `PlSelect` | Icons `AccessAndRoles{Outline,Filled}`, `Shield{Outline,Filled}`, `UserCogOutline`, `Key{Outline,Filled}` | Rollenmenü mit CE-Rollenliste = DOM-Vertrag W-009 `role-menu-open` | I1 |
 | **F1** Integrations-Framework (W1) | (a) Settings-Seiten über `SETTINGS_PAGES` erhalten automatisch die Settings-Hülle (Header, Sidebar-Eintrag, Mobile-Navigation) wie W-008; (b) Link-Vorschauen (`INTEGRATION_LINK_PREVIEWS`) rendern **ausschließlich** über `PlPreviewCard` (#46) mit dessen Teilen (`Eyebrow`, `Title`, `Meta`, `PropertyGroup`); (c) Detail-Widgets (`WORK_ITEM_DETAIL_WIDGETS`) nutzen die Widget-Hülle der CE-Widgets (Collapsible-Header + Zähler wie Links/Attachments) | `PlBlkCard`, `PlBanner`, `PlSwitch`, `PlBadge`, `PlDialog`, `PlTable`, `PlAnchorButton` | Icons `Integrations{Outline,Filled}`, `Connections{Outline,Filled}`, `Webhooks{Outline,Filled}`; Illustrationen `webhook`, `link`, `token` (horizontal) | Fake-Widget erscheint mit identischer Hülle wie CE-Widget „Links“ (DOM-Vergleich Kopfzeile); Fake-Link-Preview = Story `preview-card/basic` | I2 |
 | **F2** Forgejo (W1) | wie F1; zusätzlich (a) Quick-Actions (`WORK_ITEM_ACTIONS`, `08`) rendern als `PlMenuItem` mit `icon` + optional `PlShortcut`; (b) „In Zwischenablage kopiert“ ausschließlich über Blocks-Toast (`setToast`, Typ `success`) wie `copyUrlToClipboard` im Original; (c) Forgejo-Markenlogo wird als **einzige** neue Marken-Grafik über den Icon-Generator (`port-icons.mjs --source extra-brands`, §6.2 G-05) aufgenommen | `PlCollapsible`, `PlBadge` (Zustände Draft/Open/Review/Merged/Closed → vorhandene `variant`-Werte, Zuordnung legt die W1-Planung fest), `PlIconButton`, `PlTooltip`, `PlBlkMemberSelect` (Nutzer-Mapping) | Icons `GitBranch{Outline,Filled}`, `GitCommit{Outline,Filled}`, `GitMerge{Outline,Filled}`, `GitPullRequest{Outline,Filled}`, `Merge{Outline,Filled}`, `Copy{Outline,Filled}`; Forgejo-Logo **fehlt** (W1, Lizenz prüfen, O-D09-10) | Fake-Quick-Action erscheint im „…“-Menü (DOM gleich zu CE-Eintrag) | I2 |
 | **G1** AI-Basis (nicht gewählt) | keine UI-Andockstelle im Designsystem über `08` hinaus (`DUPLICATE_DETECTION`, `EDITOR_FLAGS`); AI-Icons werden generiert, aber nicht verwendet (§6.2 G-13) | – | Icons `PlaneAi`, `PlaneAiAlt`, `PlaneAiTwo`, `AiStar*`, `AiSummary*`, `AiFilter*`; Illustrationen `ai-skills`, `ai-agents`, `memory` | – | – |
-| **H1** OAuth-App-Plattform (W1) | (a) Avatar-Bausteine (`PlAvatar`, `PlAvatarGroup`, `PlBlkMemberSelect`) zeigen Bot-Nutzer (`is_bot`, Original-Feld) mit dem im Original vorhandenen Verhalten (keine neue Optik in der CE); (b) Editor-Mention-Liste (`EDITOR_MENTION_TYPES`, `08`/`10`) rendert zusätzliche Typen mit `PlSuggestionMenuItem` | `PlTable`, `PlDialog`, `PlCheckbox` (Scopes), `PlBanner` (Secret einmalig anzeigen, wie W-024 `token-shown`) | Icons `Agent{Outline,Filled}`, `AgentAlt{Outline,Filled}`, `Key{Outline,Filled}`; Illustration `token` | Mention-Liste mit CE-Typen = DOM-Vertrag W-046 `mention-suggestion` | I2 / I4 |
+| **H1** OAuth-App-Plattform (W1) | (a) Avatar-Bausteine (`PlAvatar`, `PlAvatarGroup`, `PlBlkMemberSelect`) zeigen Bot-Nutzer (`is_bot`, Original-Feld) mit dem im Original vorhandenen Verhalten (keine neue Optik in der CE); (b) Editor-Mention-Liste (`EDITOR_MENTION_TYPES`, `08`/`10`) rendert zusätzliche Typen mit derselben Zeilen-Komponente wie die CE-Typen (Editor-eigene Mention-Liste, `10`; Propel `suggestion-menu` wird im Original nicht genutzt) | `PlTable`, `PlDialog`, `PlCheckbox` (Scopes), `PlBanner` (Secret einmalig anzeigen, wie W-024 `token-shown`) | Icons `Agent{Outline,Filled}`, `AgentAlt{Outline,Filled}`, `Key{Outline,Filled}`; Illustration `token` | Mention-Liste mit CE-Typen = DOM-Vertrag W-046 `mention-suggestion` | I2 / I4 |
 | **H6** Realtime-Event-Server (W1) | keine sichtbare Andockstelle; Live-Aktualisierungen ändern nur Store-Zustände (`LIVE_EVENT_HANDLERS`, `08`). Präsenz-/Übergangs-Animationen beim Einfügen fremder Objekte nutzen **nur** vorhandene Animationen (§3.4.3), z. B. `@keyframes highlight` aus `WEB/styles/globals.css` | – | – | – | I0 / I5 |
 
 #### 6.1.1 Vorziehliste (I7-Komponenten, die Pakete früher brauchen können)
@@ -1842,11 +1853,11 @@ Wellen dürfen beginnen, sobald die nötigen CE-Teile stehen (`F30` „Priorisie
 | `list` (#37) | D1, D2, B1 | Start W3 bzw. W5; Story `list/nested-5-levels` schon ab I4 |
 | `number-field` (#41) | A1 (Zahl-Properties), A10 (Worklogs), A11 (Zeit-Schätzungen) | Start W2 |
 | `pagination` (#43) | E6 (Audit-/Activity-Logs), E7 (User-Management) | Start W4 |
-| `autocomplete`, `autocomplete-field` (#4, #5) | B6 (PQL-Eingabe) | Start W5 |
+| `autocomplete`, `autocomplete-field` (#4, #5), `suggestion-menu` (#57) | B6 (PQL-Eingabe) | Start W5 |
 | `checkbox-group`, `checkbox-group-field` (#15, #16) | E5 (Rechte-Matrix), H1 (Scopes) | Start W1 (H1) |
 | `split-button`, `icon-split-button` (#56, #32) | F2 (Branch-/PR-Aktionen, falls die W1-Planung sie wählt) | Start W1 |
 | `drawer` (#26) | A3/A4/A7 (Detail-Panels, falls die Paketplanung sie wählt) | Start der jeweiligen Welle |
-| `navigation-menu` (#40), `accordion` (#1), `slider` (#55), `otp-field` (#42), `fieldset` (#29), `form` (#30), `select-field` (#50), `radio-group-field` (#47), `switch-field` (#58), `combobox-field` (#20), `expandable-search` (#27), `button-group` (#11) | kein konkreter Bedarf bekannt | I7 (wie §1.4) |
+| `navigation-menu` (#40), `accordion` (#1), `slider` (#55), `otp-field` (#42), `fieldset` (#29), `form` (#30), `select-field` (#50), `radio-group-field` (#47), `switch-field` (#58), `combobox-field` (#20), `expandable-search` (#27), `button-group` (#11), `logo-spinner` (#38), `radio` (#48), `separator` (#52), `toggle` (#65) | kein konkreter Bedarf bekannt | I7 (wie §1.4) |
 
 ### 6.2 Gestaltungsregeln für Bezahl-Screens ohne Original-Referenz
 
@@ -1855,18 +1866,18 @@ Gilt für jeden Screen, jedes Panel und jeden Dialog eines Pakets, für den es i
 | ID | Regel | Prüfung |
 |---|---|---|
 | G-01 | **Nur vorhandene Bausteine:** Komposition ausschließlich aus Propel (§4.2/§4.3), Blocks (§4.7), den Domänen-Komponenten der CE (`08`) und den Registries (`08` §6). Eine neue **Basis**komponente (Propel-/Blocks-Ebene) braucht eine Änderung von D09-ADR-19 (Begründung: kein vorhandener Baustein deckt das Muster ab) und dieselbe Abnahme wie ein Port (Galerie, DOM-Vertrag gegen Selbst-Baseline §6.4) | Review + Sheriff (Paket-Libs `FE/libs/web/<paket>/` dürfen `libs/shared/{propel,blocks}` nur über `public-api.ts` importieren) |
-| G-02 | **Nur vorhandene Tokens und Utilities:** keine Arbitrary Values für Farben, Abstände, Radien, Schatten, Schriftgrößen (`bg-[#…]`, `p-[13px]`, `shadow-[…]`); keine neuen CSS-Variablen; keine Komponenten-Styles (D09-ADR-03 gilt weiter) | **auto:** ESLint `pl/ee-no-arbitrary-values` in `libs/web/<paket>/**`; **auto:** `css-diff` meldet jede Utility, die nicht im Referenz-CSS des Originals vorkommt, als `extra-utility` → nur mit Eintrag `kind: extra-utility` in `ui-deviations.yaml` (Begründung: Utility ist eine Tailwind-Standard-Utility auf vorhandenem Token) |
+| G-02 | **Nur vorhandene Tokens und Utilities:** keine Arbitrary Values für Farben, Abstände, Radien, Schatten, Schriftgrößen (`bg-[#…]`, `p-[13px]`, `shadow-[…]`); keine neuen CSS-Variablen; keine Komponenten-Styles (D09-ADR-03 gilt weiter) | **auto:** `@plane/eslint-rules/ee-no-arbitrary-values` in `libs/web/<paket>/**`; **auto:** `css-diff --attribute-extras` meldet jede Utility, die nicht im Referenz-CSS des Originals vorkommt und ausschließlich aus `libs/web/<paket>/**` stammt, als `extra-utility` → nur mit Eintrag `kind: extra-utility` in `ui-deviations.yaml` (Begründung: Utility ist eine Tailwind-Standard-Utility auf vorhandenem Token) |
 | G-03 | **Flächenhierarchie** nach `DESIGN-RULES.md` (`A13a` §1.3): `bg-canvas` nie in Paket-Screens; Seiten-Inhalt auf `bg-surface-1`; Stapelung `layer-1…3` mit passendem `-hover`/`-active`/`-selected`; Formularelemente in Dialogen eine Ebene höher (`bg-layer-2`); Rahmen nur `border-subtle`, `border-subtle-1`, `border-strong`, `border-strong-1` | Review; Galerie-Story des Screens in allen Themes |
 | G-04 | **Typografie:** nur die Typografie-Presets aus `variables.css` (`A13a` §2.12) und die im Original für gleichartige Elemente genutzten Klassen (Seitentitel, Abschnittstitel, Labels, Metadaten); Textfarben `text-primary` (Inhalt), `text-secondary`, `text-tertiary` (Labels/Metadaten), `text-placeholder`; Schreibweise der Texte wie Original (Sentence case in Buttons/Menüs) | Review |
-| G-05 | **Icons:** Reihenfolge (1) vorhandene Propel-Icons inkl. der bereits gebündelten Bezahl-Icons (§6.5), (2) lucide 0.469.0 (App-Version), (3) Material Symbols **nur** für benutzerwählbare Logos. Neue SVGs nur für **Marken Dritter** (einziger bekannter Fall: Forgejo, W1) über `port-icons.mjs --source extra-brands` aus `FE/tools/propel-port/extra-brands/*.svg` (Lizenz in `VENDORED.md`); Icons von entfallenen Integrationen (`Github`, `Gitlab`, `Bitbucket`, `Slack`, `Jira`, …, ADR-007) werden generiert, aber **nicht** verwendet | **auto:** `pl/icon-source` (§3.3.3); **auto:** ESLint `pl/ee-no-removed-brand-icons` (verbietet Importe `Github*`, `Gitlab*`, `Bitbucket*` außerhalb der Galerie) |
+| G-05 | **Icons:** Reihenfolge (1) vorhandene Propel-Icons inkl. der bereits gebündelten Bezahl-Icons (§6.5), (2) lucide 0.469.0 (App-Version), (3) Material Symbols **nur** für benutzerwählbare Logos. Neue SVGs nur für **Marken Dritter** (einziger bekannter Fall: Forgejo, W1) über `port-icons.mjs --source extra-brands` aus `FE/tools/propel-port/extra-brands/*.svg` (Lizenz in `VENDORED.md`); Icons von entfallenen Integrationen (`Github`, `Gitlab`, `Bitbucket`, `Slack`, `Jira`, …, ADR-007) werden generiert, aber **nicht** verwendet | **auto:** `icon-source` (§3.3.3); **auto:** `ee-no-removed-brand-icons` (verbietet Importe `Github*`, `Gitlab*`, `Bitbucket*`, `Slack*`, `Jira*` außerhalb der Galerie) |
 | G-06 | **Illustrationen:** vorhandene Registry-Schlüssel (§6.5) und Raster-Empty-States aus `assets/empty-state/**`; neue Illustrationen nur als Registry-Eintrag mit ausschließlich `var(--illustration-*)`-Farben (theme-fähig wie die 59 vorhandenen) | Review; Story in allen Themes |
 | G-07 | **Seitenaufbau = Schablone:** jeder neue Screen wählt genau eine Schablone aus §6.3 und übernimmt deren Rahmen (Header mit `PlBlkHeader`/`PlBlkBreadcrumbs`, `PlBlkContentWrapper`, Settings-Hülle, Peek-Hülle …) unverändert; nur die Inhaltsregion ist frei komponiert | **auto:** Rahmen-DOM-Vergleich (§6.4 Schritt 2) |
-| G-08 | **Interaktionsmuster wie Original:** destruktive Aktionen über `PlBlkConfirmDialog` (`variant="danger"`) bzw. `PlAlertDialog`; Ergebnisse über Blocks-Toast (`setToast`/`setPromiseToast`, Typen wie Original); Überlauf-Aktionen über `PlMenu` („…“-Trigger mit `PlIconButton`); Property-Auswahl über die Select-Engine; Tooltips über `PlTooltip` mit Default-Delays; ungespeicherte Änderungen über `PlDialog` `discard`; **keine** eigenen Popups, Overlays oder Positionierungen | Review; `pl/no-cdk-overlay` |
+| G-08 | **Interaktionsmuster wie Original:** destruktive Aktionen über `PlBlkConfirmDialog` (`variant="danger"`) bzw. `PlAlertDialog`; Ergebnisse über Blocks-Toast (`setToast`/`setPromiseToast`, Typen wie Original); Überlauf-Aktionen über `PlMenu` („…“-Trigger mit `PlIconButton`); Property-Auswahl über die Select-Engine; Tooltips über `PlTooltip` mit Default-Delays; ungespeicherte Änderungen über `PlDialog` `discard`; **keine** eigenen Popups, Overlays oder Positionierungen | Review; `no-cdk-overlay` |
 | G-09 | **Texte & i18n:** zuerst vorhandene EE-Schlüssel der 1:1 kopierten Locale-Dateien nutzen (1 875 Schlüssel in 22 Sprachen, Namespaces `automation`, `editor`, `integration`, `template`, `tour`, `update`, `wiki`, `work-item-type`, `workflow` u. a., `F20` §7/Anhang A); neue Schlüssel nur mit allen 22 Locales (Skill `translate`, Fallback `en`) und unter dem Namespace des Pakets | **auto:** i18n-Sync-Check (L0, `15`); Review |
 | G-10 | **Themes:** jeder neue Screen funktioniert in allen Web-Themes (`light`, `dark`, `light-contrast`, `dark-contrast`, `custom-light`, `custom-dark`), Admin/Space in `light`/`dark`; theme-abhängige Raster-Assets nur über `isLightStrict`/`isDarkStrict`/`resolveGeneralTheme` (§3.8.3) | **auto:** Visual in allen Themes (§6.4) |
 | G-11 | **Responsiveness:** gleiche Breakpoints und gleiches Mobilverhalten wie der Schablonen-Screen (Settings-Mobile-Navigation, Sidebar-Overlay, Peek → Vollbild); Viewports wie §3.14.4 | **auto:** Viewport-Matrix |
 | G-12 | **Barrierefreiheit:** Tastaturmodell der verwendeten Propel-Bausteine nicht überschreiben; jedes Icon-only-Element mit `aria-label`; Formulare mit `PlField`/`PlFieldLabel`; axe ohne `critical`/`serious` | **auto:** axe (§3.14.7) – für neue Screens absolut (kein Original-Ratchet) |
-| G-13 | **Kein Upsell, kein Plan-Look:** keine Plan-Badges, „Pro“-Kennzeichen, Upgrade-Texte; Plan-Tokens (`text-plans-*`, `bg-plans-*`) und Upsell-i18n-Schlüssel (`common.upgrade`, `sidebar.upgrade*`, `*.empty_state.upgrade.*`) sind in Paket-Code verboten; AI-Icons/-Texte nicht verwenden, solange G1–G3 nicht gewählt sind | **auto:** `pl/no-plan-gating` (§3.3.3) erweitert um `plans-` und die genannten Schlüssel-Präfixe |
+| G-13 | **Kein Upsell, kein Plan-Look:** keine Plan-Badges, „Pro“-Kennzeichen, Upgrade-Texte; Plan-Tokens (`text-plans-*`, `bg-plans-*`) und Upsell-i18n-Schlüssel (`common.upgrade`, `sidebar.upgrade*`, `*.empty_state.upgrade.*`) sind in Paket-Code verboten; AI-Icons/-Texte nicht verwenden, solange G1–G3 nicht gewählt sind | **auto:** `no-plan-identifiers` (`08` §7.6, §3.3.3) erweitert um `plans-` und die genannten Schlüssel-Präfixe |
 | G-14 | **Settings-Seiten:** Aufbau wie vorhandene Workspace-/Projekt-Settings (Seitentitel, Abschnitte mit Titel + Beschreibung, Zeilen mit `PlSwitch`/Feld rechts, Speichern-Verhalten wie die Vorbildseite); Registrierung nur über `SETTINGS_PAGES`/`ADMIN_SETTINGS_PAGES` | Rahmen-DOM-Vergleich |
 | G-15 | **Listen & Tabellen:** administrative Tabellen mit `PlTable` (inkl. `PlTableSkeletonBody` beim Laden, `PlTableHeadSort` für Sortierung); Work-Item-artige Objektlisten (Epics, Initiatives, Customers) wiederverwenden die Layout-Komponenten der CE (`08`), nicht neue Listen | Review |
 | G-16 | **Lade- und Leerzustände:** Skeletons mit `PlBlkLoader`/`PlBlkSkeleton` in der Form des späteren Inhalts (wie die Schablone); `PlLogoSpinner` nur auf App-Ebene; Leerzustände mit `PlBlkEmptyState` (`detailed` für Seiten, `simple`/compact für Abschnitte) und Registry-Illustration | Visual-Zustände `loading`, `empty` Pflicht (§6.4) |
@@ -1925,11 +1936,11 @@ Dasselbe Verfahren gilt **bereits in der CE** für die durch ADR-008 entstandene
 
 ```ts
 // BLKT/property-select/state-select.component.ts (Auszug) – C1-Andockstelle, 1:1 zum Original-Prop
+// Host-Form nach §3.11 Punkt 5: Attribut-Selektor am Trigger (kein Wrapper-Element am Einsatzort)
 @Component({
-  selector: 'pl-blk-state-select',
+  selector: 'button[plBlkStateSelect]',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  host: { 'data-pl-host': '' },
   templateUrl: './state-select.component.html',
 })
 export class PlBlkStateSelect {
@@ -1944,17 +1955,27 @@ export class PlBlkStateSelect {
 ```
 
 ```html
-<!-- libs/web/work-items/components/issue-identifier/issue-identifier.component.html (Auszug) – A1-Andockstelle -->
-<!-- leerer Slot erzeugt im CE-Fall kein Element ⇒ DOM-Vertrag unverändert -->
-<ng-content select="[plIdentifierLeading]" />
-<span [class]="identifierClasses()">{{ projectIdentifier() }}-{{ sequenceId() }}</span>
+<!-- FE/libs/web/work-items/components/issues/issue-detail/issue-identifier.component.html (Auszug) – A1-Andockstelle -->
+<!-- Original: <div className="flex shrink-0 items-center space-x-2"><IdentifierText … /></div> -->
+@if (shouldRenderIssueId()) {
+  <div class="flex shrink-0 items-center space-x-2">
+    @for (d of identifierDecorators; track d.key) {               <!-- inject(WORK_ITEM_IDENTIFIER_DECORATORS, { optional: true }) ?? [] -->
+      @if (d.visible(issue())) { <ng-container *ngComponentOutlet="d.component; inputs: { issue: issue() }" /> }
+    }                                                                <!-- CE: leere Liste ⇒ kein Element ⇒ DOM-Vertrag unverändert -->
+    <span plIdentifierText [identifier]="identifier()" [variant]="variant()" [size]="size()"
+          [enableClickToCopyIdentifier]="enableClickToCopyIdentifier()"></span>
+  </div>
+}
 ```
 
 ```ts
 // FE/apps/e2e/visual/specs/extension-dom-neutrality.spec.ts – Pflichttest je Andockstelle (§6 Grundsatz)
-for (const point of EXTENSION_POINTS) {                      // Liste aus §6.1, Spalte „Nachweis in der CE“
+// Läuft gegen den Build `ng build web --configuration=extension-neutrality`: app.config registriert dort zusätzlich
+// provideFakeExtensions({ mode: 'empty' }) aus FE/libs/web/extensions/testing (08 AK-D08-36) – leere Fake-Einträge in jeder Registry.
+for (const point of EXTENSION_POINTS) {                      // Liste aus §6.1, Spalte „Nachweis in der CE“ (Datei extension-points.ts)
   test(`neutral: ${point.id}`, async ({ page }) => {
-    await page.goto(point.route + '?__extensions=empty');    // registriert leere Fake-Erweiterungen (nur Test-Build)
+    await applyDeterminism(page);
+    await page.goto(resolveRoute(point.route, 'funk'));
     await waitStable(page, point.wait);
     expect(await page.evaluate(normalizeDom, { seedMap: 'funk' })).toBe(readContract('dom', point.contractKey));
   });
@@ -1986,7 +2007,7 @@ Ebenen und Gates nach `15` (L0–L9, G0–G6). Alle Kriterien sind maschinell pr
 
 | ID | Kriterium (messbar) | Nachweis | Inkr. |
 |---|---|---|---|
-| AK-I0-01 | Kompiliertes CSS von `web`, `admin`, `space`: Layer `theme`/`base`/`components`, unlayered Regeln, `@keyframes`, `@property`, `@font-face` **identisch** zum Referenz-CSS; jede Utility des Originals vorhanden; zusätzliche Utilities nur mit `ui-deviations.yaml`-Eintrag | `css-diff` (T-CSS-01) | I0 |
+| AK-I0-01 | Kompiliertes CSS von `web`, `admin`, `space`: Layer `theme`/`base`/`components`, unlayered Regeln, `@keyframes`, `@property`, `@font-face` **identisch** zum Referenz-CSS; jede Utility des Originals vorhanden und in gleicher relativer Reihenfolge; zusätzliche Utilities im Report mit Herkunftsdatei (Gate nur für Paket-Libs, §3.2.5) | `css-diff` (T-CSS-01) | I0 |
 | AK-I0-02 | Vendored CSS ohne `@import`/`@source`/`@plugin`/`@reference`-Zeilen byte-gleich zum Original (SHA-256 aus `VENDORED.md`) | `vendor-css.spec.ts` (T-CSS-02) | I0 |
 | AK-I0-03 | `variants.ts` aller 57 Elemente und `internal/*.ts`: für **jede** Achsenkombination identischer Klassenstring zu `PROPEL/elements/*/variants.js` | `port-variants.spec.ts` (T-VAR-01) | I0 |
 | AK-I0-04 | 919 Propel-Icons, 17 lucide-1.34-Icons, alle lucide-0.469-Namen (181 genutzt + 157 Liste), Blocks-Icons: normalisiertes `outerHTML` = Golden aus `renderToStaticMarkup` | `icons.spec.ts` (T-ICON-01), Prüfsumme 919 | I0 |
@@ -1995,10 +2016,12 @@ Ebenen und Gates nach `15` (L0–L9, G0–G6). Alle Kriterien sind maschinell pr
 | AK-I0-07 | K-001…K-004 ≤ 1 % gegen Original-Sign-in (Masken nur laut `UI-DEV-011`); `css-diff --subset keycloak` grün | `keycloak`-Suite (T-KC-01) | I0 |
 | AK-I0-08 | Kein Netzwerkzugriff außerhalb des Gateway-Origins beim Laden von Shell, Login-Theme und Galerie (Fonts, Icons, Bilder) | Airgap-E2E (T-FONT-01) | I0 |
 | AK-I0-09 | Kein Theme-Flash: beim ersten `DOMContentLoaded` trägt `<html>` bereits `data-theme` (und `style.color-scheme` für `light`/`dark`); Theme-Wechsel über `storage`-Event in zweitem Tab < 100 ms | `theme-runtime.spec.ts` (T-THEME-01) | I0 |
-| AK-I0-10 | Referenzumgebung startet, seedet (Profil `visual`) und nimmt den I0-Katalog in ≤ 90 min auf; drei aufeinanderfolgende Aufnahmen ohne Pixeldifferenz (Determinismus) | `capture-reference` + `visual:drift` (T-DRIFT-01) | I0 |
+| AK-I0-10 | Referenzumgebung startet, seedet (Fragmente `base` + `visual`) und nimmt den I0-Katalog in ≤ 90 min auf; drei aufeinanderfolgende Aufnahmen ohne Pixeldifferenz (Determinismus) | `capture-reference` + `visual:drift` (T-DRIFT-01) | I0 |
 | AK-I0-11 | Lint-Regeln §3.3.3 und §6.2 aktiv, 0 Verstöße; Generatoren reproduzierbar (Neu-Generierung = Repo-Stand) | L0 (T-LINT-01, T-GEN-01) | I0 |
 | AK-I0-12 | Positionierung: 24 Kollisionsfälle Abweichung ≤ 0,5 px gegen Referenz-Galerie; Präsenz: `data-starting-style`/`data-ending-style`-Folge und Unmount-Zeitpunkt wie Base UI (mit und ohne `reducedMotion`) | `floating.spec.ts` (T-FLOAT-01), `presence.spec.ts` (T-PRES-01) | I0 |
 | AK-I0-13 | Alle Andockstellen aus §6.1 mit Spalte „ab“ ≤ aktuelles Inkrement bestehen den Neutralitätstest (§6.6) | `extension-dom-neutrality.spec.ts` (T-EXT-01) | I0 … I4 |
+| AK-I0-14 | Host-Kontext-Regel §3.3.4: 0 Befunde `host-context` in allen Galerie-Stories und Katalog-Einträgen des Inkrements; kein Element mit `data-pl-host` als direktes Kind eines Containers mit `space-*`/`divide-*`/`*:`/`[&>…]`-Klassen; kein Trigger-Wrapper (`no-trigger-wrapper`) | T-HOST-01, T-LINT-01 | I0 ff. |
+| AK-I0-15 | `reference-candidates/<app>.txt` reproduzierbar aus `reference-css/<app>.css` erzeugt; Round-Trip-Prüfung (jeder Kandidat ergibt mit Tailwind 4.1.17 die Referenzregel) ohne Befund; Inline-Script = Funktion `M` aus next-themes 0.4.6 für alle Eingaben (inkl. ungültiger Wert, fehlender Wert, `localStorage`-Ausnahme) | T-CSS-03, T-THEME-01 | I0 |
 | AK-I1-01 | Alle I1-Komponenten (§1.4) mit Galerie-Stories, DOM-Vertrag gleich, Visual ≤ 0,1 % in allen sechs Web-Themes | `gallery-visual` | I1 |
 | AK-I1-02 | Theme-Laufzeit: HC- und Custom-Themes, Profil-Sync, Reload-Ablauf, Edge-Cases E-01…E-05, E-14, E-29…E-33 nachgebaut (je Edge-Case ein Test) | `theme-runtime.spec.ts` (T-THEME-02) | I1 |
 | AK-I1-03 | 59 Illustrationen: SVG-Golden gleich; Lazy-Load ohne Layout-Sprung (Fallback rendert nichts, wie Original) | `illustrations.spec.ts` (T-ILL-01) | I1 |
@@ -2010,10 +2033,14 @@ Ebenen und Gates nach `15` (L0–L9, G0–G6). Alle Kriterien sind maschinell pr
 | AK-I2-03 | Katalog W-026…W-034 `accepted`; Layouts auch in `wide-1920` | `screens-visual-full` + Sichtabnahme | I2 |
 | AK-I2-04 | Toasts: alle Typen × mit/ohne Aktionen × Stapel 1/3/5 gleich; `toast-manager.spec.ts` grün | T-TOAST-01 | I2 |
 | AK-I3-01 | **S6:** sechs Charts + Burndown ≤ 0,5 % (hell/dunkel), SVG-Struktur gleich (`recharts-*`-Gruppen), Tooltip/Legende-Hover gleich | `gallery-visual` (Charts), W-035…W-038 | I3 |
+| AK-I3-02 | Katalog-Einträge mit `increment: I3` (W-020, W-035…W-044) `accepted` bzw. `deviation`+`accepted`; Blocks-Selects `intake-state-select`, Module-/Cycle-Icons mit DOM-Vertrag gleich | `screens-visual-full` + Sichtabnahme, `gallery-visual` | I3 |
 | AK-I4-01 | **S5:** Editor-Seiten W-046 ≤ 0,5 %; Lock-/Unlock-Animationen im Endzustand gleich | `screens-visual` (Editor) | I4 |
 | AK-I4-02 | Andockstellen D1/D2: Story `list/nested-5-levels` gleich; Shell ohne App-Rail-Element | T-EXT-01 | I4 |
+| AK-I4-03 | Katalog-Einträge mit `increment: I4` (W-045, W-046) `accepted`; Propel `toolbar` mit DOM-Vertrag gleich, Visual ≤ 0,1 % | `screens-visual-full`, `gallery-visual` | I4 |
 | AK-I5-01 | Power-K: `cmdk`-Attribut-DOM gleich (W-052), `power-k.css` unverändert wirksam | `screens-visual` | I5 |
+| AK-I5-02 | Katalog-Einträge mit `increment: I5` (W-023, W-047…W-052) `accepted` | `screens-visual-full` + Sichtabnahme | I5 |
 | AK-I6-01 | Admin- und Space-Kataloge (A-001…A-009, S-001…S-005) `accepted`; A-006 per Selbst-Baseline (§6.4) | `screens-visual-full` + Sichtabnahme | I6 |
+| AK-I6-02 | Theme-Teilung über Apps (O-D09-11): Katalog-Zustände `cross-app-theme-hc`/`cross-app-theme-custom` in A-002 und S-002 pixel- und DOM-gleich zum Original | `screens-visual-full` | I6 |
 | AK-I7-01 | Alle 68 Komponenten, 57 Elemente, alle Blocks-Module mit Galerie-Stories und gleichem DOM-Vertrag; Komponenten-Katalog vollständig (Prüfsumme gegen §4.2/§4.3/§4.7) | `gallery-visual` + `catalog-completeness.spec.ts` (T-CAT-01) | I7 |
 | AK-I7-02 | Firefox und WebKit als Gate: Schwellwerte §3.14.5 Zeile „Firefox/WebKit“ | `screens-visual-full` (Browser-Matrix) | I7 |
 | AK-I7-03 | **Gesamtabnahme ADR-005:** alle Katalog-Einträge `accepted`; jede Abweichung in `ui-deviations.yaml` mit `adr` und `approved_by`; axe-Ratchet ohne Verschlechterung | `visual-report` + Sichtabnahme | I7 |
@@ -2026,11 +2053,12 @@ Ebenen und Gates nach `15` (L0–L9, G0–G6). Alle Kriterien sind maschinell pr
 |---|---|---|---|---|
 | T-CSS-01 | CSS-Diff Original ↔ Ziel je App (+ Subset `keycloak`) | L4 | `FE/tools/visual/css-diff.ts`, Referenz `FE/tools/visual/reference-css/<app>.css` | G1 |
 | T-CSS-02 | Vendoring byte-gleich | L1 | `FE/libs/shared/tailwind-config/vendor-css.spec.ts` | G1 |
+| T-CSS-03 | Kandidatenliste aus Referenz-CSS: Reproduzierbarkeit + Round-Trip (§3.2.3) | L1 | `FE/tools/visual/extract-reference-candidates.spec.ts` | G1 |
 | T-VAR-01 | Varianten-Gleichheit aller `cva`-Achsen | L1 | `FE/tools/propel-port/port-variants.spec.ts` | G1 |
 | T-GEN-01 | Generatoren reproduzierbar (`variants`, `icons`, `illustrations`, `propel-dist-classes.txt`) | L0 | CI-Schritt `propel-port:verify` | G1 |
 | T-ICON-01 | Icon-Golden (Propel, Solid, lucide ×2, Blocks, Web) | L4 | `PRP/icons/icons.spec.ts`, Golden `icons.golden.json` | G1 |
 | T-ILL-01 | Illustrations-Golden (59) | L4 | `BLKT/empty-state/assets/illustrations.spec.ts` | G1 |
-| T-LINT-01 | ESLint `pl/*` (§3.3.3, §6.2) | L0 | `FE/eslint.config.js` | G0/G1 |
+| T-LINT-01 | `@plane/eslint-rules` (Regeln §3.3.3, §6.2) | L0 | `FE/tools/eslint-rules/`, eingebunden in `FE/eslint.config.js` | G0/G1 |
 | T-FLOAT-01 | 24 Kollisionsfälle Positionierung | L2 + L8 | `PRP/headless/floating.spec.ts`, Galerie-Story `floating/collisions` | G1/G2 |
 | T-PRES-01 | Präsenz/Transitions | L2 | `PRP/headless/presence.spec.ts` | G1 |
 | T-THEME-01/-02 | Inline-Script, `ThemeService`, Custom-Theme, Edge-Cases | L1 + L7 | `FE/libs/shared/theme/src/*.spec.ts`, `FE/apps/e2e/web/theme.e2e.ts` | G1/G2 |
@@ -2042,8 +2070,9 @@ Ebenen und Gates nach `15` (L0–L9, G0–G6). Alle Kriterien sind maschinell pr
 | T-VIS-G | Visual Galerie (alle Themes) | L8 | dto. | G2 |
 | T-KBD | Tastatur-Szenarien (`activeElement` + ARIA je Schritt) | L8 | `FE/apps/e2e/visual/specs/gallery.keyboard.spec.ts` | G2 |
 | T-VIS-S | Seiten-Katalog Pixel + DOM + ARIA + axe | L8 | `FE/apps/e2e/visual/specs/catalog.visual.spec.ts` (§5.11) | G2 (betroffene + `smoke`), G4/G5 (voll) |
-| T-KC-01 | Keycloak-Login-Theme gegen Original-Sign-in | L8 | `FE/apps/e2e/visual/specs/keycloak.visual.spec.ts` | G2 |
+| T-KC-01 | Keycloak-Login-Theme gegen Original-Sign-in (Einträge K-001…K-004 aus `FE/apps/e2e/visual/catalog/keycloak.catalog.yaml`, Schwellwerte §3.14.5, Normalisierung §3.14.6) | L8 | **eine** Spec: `tools/keycloak-theme/visual.spec.ts` (Ort laut `05` §3.16.3/`14` §3.3.4); D09 liefert Katalog, Schwellwerte, Masken | G2 |
 | T-EXT-01 | DOM-Neutralität der Andockstellen | L8 | `FE/apps/e2e/visual/specs/extension-dom-neutrality.spec.ts` | G2 |
+| T-HOST-01 | Host-Kontext-Regel (§3.3.4 H2/H3) auf Galerie und Katalog | L8 | Befund `host-context` aus `normalizeDom` in `gallery.visual.spec.ts`/`catalog.visual.spec.ts` | G2 |
 | T-CAT-01 | Vollständigkeit Komponenten-Katalog | L0 | `FE/tools/gallery-stories/catalog-completeness.spec.ts` | G1 |
 | T-DRIFT-01 | Determinismus der Referenz (3 Aufnahmen, Toleranz 0) | L8 | Job `visual:drift` | G3, G4 |
 
@@ -2067,7 +2096,7 @@ Ebenen und Gates nach `15` (L0–L9, G0–G6). Alle Kriterien sind maschinell pr
 | UI-DEV-002 | `dom` | Settings-Sidebar ohne „Billing and plans“ (U11) | ADR-001 | W-008 … W-020 |
 | UI-DEV-003 | `route` | `/{ws}/active-cycles` in der CE nicht registriert (U12) | ADR-001 | – |
 | UI-DEV-004 | `pixel+dom` | Estimate-System `time` ohne Upgrade-Badge (U17) | ADR-001 | W-019 `create-stage-one` |
-| UI-DEV-005 | `pixel+dom` | Bulk-Ops-Upgrade-Banner entfällt (U18) | ADR-001 | W-026 |
+| UI-DEV-005 | `pixel+dom` | Bulk-Ops-Upgrade-Banner entfällt (U18); laut `F20` §5 im CE „praktisch nie sichtbar“ (Auswahl deaktiviert) – Eintrag wird nur wirksam, falls die Referenzaufnahme den Banner tatsächlich zeigt, sonst bei der I2-Abnahme gestrichen | ADR-001 | W-026 |
 | UI-DEV-010 | `behavior` | Keycloak-Login folgt `prefers-color-scheme` statt `localStorage.theme` | ADR-008 | K-001 … K-004 |
 | UI-DEV-011 | `mask` | Keycloak-Felder/-Texte statt E-Mail-Check-Schritt | ADR-008 | K-001 … K-004 |
 | UI-DEV-012 | `route` | Auth-Seiten `/sign-up`, `/accounts/*` entfallen bzw. leiten zu Keycloak (ADR-008) | ADR-008 | – |
@@ -2085,7 +2114,7 @@ Weitere Einträge entstehen nur über PR mit Begründung; `UI-DEV-006` … `UI-D
 
 | ID | Risiko | Wahrsch. / Auswirkung | Frühindikator | Maßnahme / Fallback | Spike |
 |---|---|---|---|---|---|
-| R-D09-01 | Angular Aria 22 deckt einzelne Muster (Combobox mit Chips/Sticky-List, Menu mit Submenüs und Hover-Intent, Autocomplete) nicht oder mit abweichender Attributsetzung ab (`A13a` O-09) | mittel / hoch | DOM-Vertrag der Leit-Komponenten in S10 rot trotz korrekter Klassen | D09-ADR-10-Fallback: Muster als Eigenbau in `PRP/headless/` auf CDK a11y (`ActiveDescendantKeyManager`, `FocusKeyManager`); Entscheidung je Muster im S10-Ergebnisbericht | S10 |
+| R-D09-01 | Angular Aria 22 deckt einzelne Muster (Combobox mit Chips/Sticky-List, Menu mit Submenüs und Hover-Intent, Autocomplete) nicht oder mit abweichender Attributsetzung ab (`A13a` O-09) | mittel / hoch | DOM-Vertrag der Leit-Komponenten in S10 rot trotz korrekter Klassen | D09-ADR-10-Fallback: Muster als Eigenbau in `PRP/headless/` auf CDK a11y (`ActiveDescendantKeyManager`, `FocusKeyManager`); Entscheidung je Muster im S10-Ergebnisbericht. Zusätzlich prüfen: Die offiziellen Angular-Aria-Beispiele (angular.dev/guide/aria: select, autocomplete, multiselect) positionieren Popups mit `cdkConnectedOverlay`; D09 verbietet CDK-Overlay – S10 weist nach, dass die Aria-Popup-Direktiven (`ngComboboxPopup` u. a.) auch in einem über `PlPortalService` gerenderten Template funktionieren (Fokus, `aria-activedescendant`, Schließen bei Commit) | S10 |
 | R-D09-02 | Base-UI-Interna (Fokus-Wächter-Elemente, Portal-Wrapper, Scroll-Lock-Styles, `inert`/`aria-hidden`-Setzung) sind nicht dokumentiert und ändern sich zwischen Patch-Versionen | mittel / mittel | DOM-Diff nur in Portal-/Body-Bereich | Vertrag ausschließlich aus der Referenz-Galerie gegen `@base-ui/react` 1.6.0 (exakt gepinnt in `FE/tools/reference-gallery`); Quelle `@base-ui/react/esm/**` als Lesereferenz; keine Updates der Referenz ohne Neuaufnahme | S10 |
 | R-D09-03 | Tailwind-4.1.17-Funktionen (`source(none)`, `@source not`, Datei als `@source`) verhalten sich anders als angenommen (⚠ §3.2.3) | niedrig / hoch | `css-diff` meldet fehlende oder zusätzliche Utilities | Fallback §3.2.3 (Glob-Liste, Specs in `__tests__/`); Referenz-CSS bleibt Inventar | S10 |
 | R-D09-04 | Nicht-deterministisches Rendering (Font-Hinting, Subpixel, Emoji-Font, GPU) zwischen Referenz- und Ziel-Aufnahme | mittel / hoch | `visual:drift` meldet Differenzen bei unverändertem Original | ein gepinntes Playwright-Image für beide Seiten (§3.14.3), `--disable-gpu`, `--font-render-hinting=none`, Noto Color Emoji gepinnt; instabile Einträge in Quarantäne nach `15` D15-ADR-18 (max. 10 Arbeitstage) | S11 |
@@ -2099,6 +2128,9 @@ Weitere Einträge entstehen nur über PR mit Begründung; `UI-DEV-006` … `UI-D
 | R-D09-12 | Lizenz: Propel und Plane-CSS sind AGPL-3.0-only und werden wörtlich übernommen (`A13a` O-11); schränkt die Lizenzwahl „or later“ für `funk.` ein | sicher / niedrig | – | `funk.` unter AGPL-3.0-only kennzeichnen (konsistent mit `01` O-09); Herkunft je Datei in `VENDORED.md`, `NOTICE`; rechtliche Bestätigung O-D09-06 | – |
 | R-D09-13 | Propel-Updates im Original (nach 0.7.3) werden nicht nachgezogen; späterer Abgleich wird teuer | mittel / niedrig | neue Propel-Version im Original-Repo | Port ist an 0.7.3 gepinnt (Rahmen); Update-Pfad: `fetch-propel.mjs` mit neuer Version → Generatoren → `css-diff`/Golden-Diffs zeigen den Änderungsumfang; nur per ADR | – |
 | R-D09-14 | Parallel entstandene Dokumente legen dieselben Artefakte unterschiedlich fest (Overlay, Theme-Ort, CSP, Seed, Visual-Pfade, Keycloak-Theme) | sicher / mittel | Widersprüche bei der Umsetzung | verbindliche Auflösung §9.2; Folgeänderungen in `08`, `14`, `15` als offene Punkte O-D09-03…-05 | – |
+| R-D09-15 | Angular-Host-Elemente (`data-pl-host`) stehen trotz `display: contents` in Kind-/Geschwister-Selektor-Kontexten (`space-x-*`, `divide-*`, `first:`/`last:`, `*:`) – DOM-Vergleich ist nach dem Auspacken grün, Pixel aber nicht | hoch / mittel | Pixel-Diff an Abständen bei grünem DOM-Vertrag | Host-Kontext-Regel §3.3.4 (Trigger-Komposita als Direktive, Portal-Komposita auf `<ng-container>`), Befund `host-context` (T-HOST-01) ab I0 als Gate, Lint `no-trigger-wrapper` | S10 |
+| R-D09-16 | `frimousse` 0.3.0 lädt Emoji-Daten als `emojibase-data@latest` – Original-Baselines des Emoji-Pickers hängen vom Aufnahmetag ab, in airgapped CI fehlen sie ganz | sicher / mittel | Drift in `visual:drift` bei Emoji-Picker-Stories, leere Picker in der Referenz | Version pinnen, `page.route`-Umleitung in der Referenzaufnahme (§3.8.2, §3.14.3) | S11 |
+| R-D09-17 | Kandidatenliste aus dem Referenz-CSS (D09-ADR-02 c) verdeckt fehlende Klassen in Angular-Templates im CSS-Diff | mittel / niedrig | – | Klassen am Element prüft der DOM-Vertrag (§3.14.6) für jeden Katalog-Eintrag und jede Story; CSS-Diff prüft nur noch Tokens/Basis/Keyframes und meldet Zusatz-Utilities | – |
 
 ### 8.2 Offene Punkte
 
@@ -2107,16 +2139,19 @@ Weitere Einträge entstehen nur über PR mit Begründung; `UI-DEV-006` … `UI-D
 | O-D09-01 | `01` ADR-041 nennt „Angular CDK (a11y, **Overlay-Basis**)“; D09-ADR-10/-11 schließen CDK-Overlay und CDK-Positionierung aus (DOM-Parität, `A13a` F-12: `.cdk-overlay-container`/`.cdk-overlay-pane` erzeugen zusätzliche Wrapper) | ADR-041 präzisieren: „CDK für a11y; Overlays über eigene Portal-Schicht + `@floating-ui/dom`“. Bis dahin gilt der Rahmen-Vorrang nur insoweit, als **kein** CDK-Overlay-DOM entstehen darf (01 §7.17 „Portale an `document.body` wie Original“ verlangt dasselbe) | Architektur / Ende S10 |
 | O-D09-02 | `01` §6.1 nennt `tools/icons-codegen/` mit „→ Angular-Komponenten“; D09-ADR-07 erzeugt Konstanten + eine Render-Komponente in `FE/tools/propel-port/port-icons.mjs` | `01`-Baumkommentar an D09-ADR-07 anpassen (ADR-041 verlangt nur „Icons per Codegen“) | Architektur / Start I0 |
 | O-D09-03 | `08` §3.8/§3.9 legt `ThemeService` in `libs/web/core/theme`, Overlays per CDK Overlay und Emoji-Daten unter `assets/emoji/` fest | `08` gemäß §9.2 (H-01, H-02, H-04) anpassen | Architektur / Start I0 |
-| O-D09-04 | `15` §3.10 (Pfade `__reference__`, `.dom.json`, `visual/deviations.yaml`, `masks.ts`, Schwellwert Seiten 0,5 %, Klassenreihenfolge signifikant, Viewports, `tools/original-gallery`, Galerie-Basis `/__gallery/`) weicht von §3.14 ab | `15` gemäß §9.2 (H-06, H-08) anpassen; Gates/Ebenen von `15` bleiben unberührt | Architektur / Ende S11 |
-| O-D09-05 | `14` §3.3.4 (Themes `plane-base`/`plane`/`plane-admin`/`plane-space`, Build in `deploy/keycloak/theme-src`) weicht von `05` §3.16 ab | `14` an `05` angleichen (H-05) | Architektur / Ende S7 |
+| O-D09-04 | `15` §3.10 weicht noch ab bei: Ablage `visual/__reference__/…png` + `.dom.json` + `.axe.json`, Register `visual/deviations.yaml` + `masks.ts`, Viewports `sm` 640 … `3xl` 1920 statt der fünf Viewports §3.14.4, Galerie `tools/original-gallery` und `/__gallery/`, Z2 auch für Galerie-Verträge. **Bereits angeglichen:** Schwellwerte (`15` §3.10.3 = §3.14.5), Klassen sortiert (N5), N1–N9, T0/Uhr, Seed-Fragment `visual` | `15` gemäß §9.2 (H-06, H-08, H-13, H-14) anpassen; Gates/Ebenen von `15` bleiben unberührt | Architektur / Ende S11 |
+| O-D09-05 | ~~`14` §3.3.4 weicht von `05` §3.16 ab~~ | **erledigt:** `14` §3.3.4/D14-ADR-04 folgt inzwischen `05` (`plane`, `plane-space`, `tools/keycloak-theme/`, `plane-login.css`) | – |
 | O-D09-06 | Rechtliche Bestätigung der wörtlichen Übernahme von AGPL-3.0-only-Code (Propel, CSS) in `funk.` (`A13a` O-11) | AGPL-3.0-only für das Gesamtwerk; Herkunftsnachweis `VENDORED.md` | Auftraggeber / vor Start I0 |
 | O-D09-07 | Produktentscheidungen „1:1 nachbauen“ für Originalfehler: tote Klassen, E-08 (Passwortstärke), E-13, E-03 (Asset-Vergleiche), Admin/Space ohne HC/Custom (`A13a` O-03, O-07, O-13) | Default 1:1 (D09-ADR-13); Korrekturen später als Change-Requests | Auftraggeber / I0-Abnahme |
 | O-D09-08 | Playwright-Image-Version und Digest, Version von `fonts-noto-color-emoji` | zum I0-Start pinnen, Wechsel nur mit Neuaufnahme aller Baselines (`capture-reference`) | Architektur / Start I0 |
-| O-D09-09 | Genaue `emojibase-data`-Version, die `frimousse` 0.3.0 lädt, und die je Locale angeforderten Dateien (`A13a` O-08) | aus dem Netzwerk-Mitschnitt der Referenzumgebung bestimmen und in `FE/apps/{web,space}/src/assets/emojibase/VERSION` festhalten | Architektur / Start I1 |
+| O-D09-09 | Genaue `emojibase-data`-Version (`A13a` O-08) | **Quelltext geklärt:** frimousse 0.3.0 lädt `emojibase-data@latest` (§3.8.2); im Original-Lockfile steht nur `emojibase-data@15.3.2` (Abhängigkeit von `@tiptap/extension-emoji`), `01` §8.2 nennt 18.x als aktuell. Empfehlung: die zum Zeitpunkt der ersten `capture-reference` aktuelle Version pinnen und per `page.route` auch dem Original liefern; Eintrag in `FE/apps/{web,space}/src/assets/emojibase/VERSION` und im pnpm-Catalog | Architektur / Start I1 |
 | O-D09-10 | Lizenz und Nutzungsbedingungen des Forgejo-Logos für die Integrationsseiten (W1) ⚠ | vor W1 prüfen; Datei in `FE/tools/propel-port/extra-brands/forgejo.svg` mit Lizenzangabe in `VENDORED.md` | Auftraggeber / vor W1 |
 | O-D09-11 | Verhalten des gemeinsamen `localStorage["theme"]` über Web/Admin/Space bei HC-/Custom-Werten (`A13a` O-14, §3.1 Punkt 5 „zu verifizieren“) | **Quelltext geklärt:** next-themes 0.4.6 gleicht den gespeicherten Wert weder im Inline-Script noch zur Laufzeit mit `themes` ab; Admin/Space setzen bei gleichem Origin also `data-theme="dark-contrast"` bzw. `"custom"` und zeigen die HC-Tokens (Custom-Theme-Variablen fehlen dort, weil nur Web sie setzt). Ziel baut das nach (§3.9.1, §5.8). Rest: im Original messen (Katalog-Zustand A-002/S-002 nach Web-`dark-contrast` und nach Web-`custom`) und als Katalog-Zustände `cross-app-theme-hc`, `cross-app-theme-custom` aufnehmen | Architektur / I6 |
 | O-D09-12 | Firefox/WebKit bis I7 nur informativ – reicht das für Nutzer mit Firefox (Scrollbar-Block `@-moz-document`, E-10, `A13a` O-06)? | nightly ab I2 berichten, Abweichungen sammeln; Gate erst I7 | Architektur / I2 |
 | O-D09-13 | Ablage der Selbst-Baselines neuer Screens: `baselines-new/` (D09 §6.4) vs. `__reference__/admin/_approved-new.yaml` (`15` §3.10.2) | D09 §6.4 übernehmen (gleiches Abnahme-Register wie alle Einträge) | Architektur / Ende S11 |
+| O-D09-14 | Start des Paritäts-Originals: `15` (D15-ADR-20, §3.2, §9.2) nennt `tools/parity/start-original.sh` + `compose.original.yml` (Proxy `:13000`, `original.env`, Option `--from-source`); `14` §3.20 nennt `tools/ci/parity/start-original.sh` + `docker-compose-local.yml` und verweist dafür auf `15` | D09 folgt `15` (Eigentümer der Testumgebungen); `14` §3.20 an `15` angleichen | Architektur / Ende S11 |
+| O-D09-15 | Ergänzungen in `01`/`08`, die D09 voraussetzt: (a) `01` §6.1 um `libs/shared/{icons-lucide,theme}` und `FE/tools/{propel-port,reference-gallery,gallery-stories,visual}` ergänzen; (b) `01` §8.2 um `lucide` **1.34.0** (Propel-intern, 17 Icons) und `@tailwindcss/oxide` (Scanner, Dev) ergänzen; (c) `08` §6 um das Multi-Token `WORK_ITEM_IDENTIFIER_DECORATORS` (A1-Andockstelle, §6.1) ergänzen | übernehmen | Architektur / Start I0 (a, b), Start I2 (c) |
+| O-D09-16 | Host-Form der Blocks-Select-Familie und weiterer Komposita, deren In-Place-DOM je Variante wechselt (§3.11 Punkt 5, §3.3.4) | Attribut-Selektor je Wurzel-Tag; Liste der Varianten mit Wurzel-Tag aus den S10-DOM-Verträgen ableiten | Architektur / Ende S10 |
 
 ---
 
@@ -2124,22 +2159,22 @@ Weitere Einträge entstehen nur über PR mit Begründung; `UI-DEV-006` … `UI-D
 
 ### 9.1 Schnittstellen je Dokument
 
-Die Nummern 12 und 13 sind in `01` Anhang A nicht vergeben. Spalte **Status** = Stand der Abstimmung zum Zeitpunkt dieses Dokuments.
+Die Nummern 12 und 13 sind in `01` Anhang A nicht vergeben. Spalte **Status** = Stand der Abstimmung zum Zeitpunkt dieses Dokuments (vorhanden sind `02`, `05`, `08`, `14`, `15`, `16`; `03`, `04`, `06`, `07`, `10`, `11` noch nicht).
 
 | Dokument | D09 liefert an das Dokument | D09 benötigt vom Dokument | Gemeinsames Artefakt | Status |
 |---|---|---|---|---|
 | `02-backend-solution-und-konventionen.md` | – (nur indirekt: Toast-/Fehlertexte zeigen Backend-Meldungen) | Fehlerformat `PlaneErrors` (`01` §7.4) unverändert, damit Fehler-Toasts dieselben Texte zeigen | – | abgestimmt (`02` führt D09 als „indirekt“) |
-| `03-datenmodell-efcore.md` | Semantik von `profiles.theme` (`theme`, `primary`, `background`, `darkPalette` u. a., `A13a` §3.3), Logo-Format `logo_props` (Emoji als Dezimal-Codepoints mit `-`, Icon `{name, color}`), `users.is_bot` für Avatar-Darstellung | Felder unverändert und tolerant gegen unbekannte Theme-Werte (E-34, `A13a` O-15) | Seed-Profil `visual` (§3.14.4) | offen (03 noch nicht vorhanden) |
+| `03-datenmodell-efcore.md` | Semantik von `profiles.theme` (`theme`, `primary`, `background`, `darkPalette` u. a., `A13a` §3.3), Logo-Format `logo_props` (Emoji als Dezimal-Codepoints mit `-`, Icon `{name, color}`), `users.is_bot` für Avatar-Darstellung | Felder unverändert und tolerant gegen unbekannte Theme-Werte (E-34, `A13a` O-15) | Seed-Fragment `visual` (§3.14.4) | offen (03 noch nicht vorhanden) |
 | `04-api-design-und-endpunktkatalog.md` | – | `PATCH /api/users/me/profile/` (Theme), `GET /api/instances/` (Instanz-Konfiguration inkl. Unsplash/Bild-Einstellungen), Asset-URLs für Avatar/Cover/Logo wie Original | Contract-Goldens der Theme-Persistenz | offen |
-| `05-auth-sicherheit-berechtigungen.md` | Tailwind-Eingaben, Fonts, Auth-Bilder (`background-pattern*.svg`, `gradient-*.webp`), DOM-Vorlagen (§3.13), Visual-Verfahren K-001…K-004 | Theme-Struktur und Templates (`05` §3.16), CSP im Gateway (D05-ADR-23), Sicherheitsregeln für externe Inhalte (G-20) | `deploy/keycloak/themes/plane*/`, `tools/keycloak-theme/` | abgestimmt (H-03, H-05) |
+| `05-auth-sicherheit-berechtigungen.md` | Tailwind-Eingaben, Fonts, Auth-Bilder (`background-pattern*.svg`), DOM-Vorlagen (§3.13), Katalog/Schwellwerte/Masken K-001…K-004 | Theme-Struktur, Templates, Build-Werkzeug `tools/keycloak-theme/` inkl. `visual.spec.ts` (`05` §3.16), CSP im Gateway (D05-ADR-23), Sicherheitsregeln für externe Inhalte (G-20) | `deploy/keycloak/themes/{plane,plane-space}/`, `tools/keycloak-theme/` | abgestimmt (H-03, H-05) |
 | `06-hintergrundjobs-events-benachrichtigungen.md` | – (E-Mail-Optik gehört zu `06`; In-App-Glocke nutzt `animate-notification-bell-ring` aus dem vendored CSS) | – | – | keine Kopplung |
-| `07-realtime-kollaboration-dokumente.md` | Inter-TTF-Dateien für PDF (§4.11, `src/documents/Plane.Documents.Pdf/Fonts/`) | – | – | abgestimmt |
-| `08-frontend-angular-architektur.md` | `libs/shared/{tailwind-config,propel,blocks,icons-lucide,theme}`, `cn()`, Galerie, Lint-Regeln, DOM-Neutralitäts-Regel und UI-Andockstellen (§6.1) | Workspace-/Lib-Struktur, Sheriff-Tags, Registries (`08` §6), Profil-Sync des Themes, Power-K-Komponente `pl-command`, Domänen-Komponenten | `FE/libs/web/extensions/src/*`, `index.html` je App | Abweichungen H-01, H-02, H-04 (O-D09-03) |
-| `10-editor-angular.md` | Propel `toolbar`, `menu`, `popover`, `suggestion-menu`, `preview-card` (ab I0/I2 fertig), Import-Position der Editor-CSS (§3.2.2), Schwellwert Editor 0,5 % | Editor-CSS `FE/libs/shared/editor/styles/*` (1:1), NodeView-DOM | Katalog W-046, Galerie-Stories der Editor-Menüs | offen (10 noch nicht vorhanden) |
+| `07-realtime-kollaboration-dokumente.md` | Inter-TTF-Dateien für PDF (§4.11, `src/documents/Plane.Documents.Pdf/Fonts/`, Ort laut `01` §5.1) | – | – | offen (07 noch nicht vorhanden; Vorgabe `01` ADR-029) |
+| `08-frontend-angular-architektur.md` | `libs/shared/{tailwind-config,propel,blocks,icons-lucide,theme}`, `cn()`, Galerie, Lint-Regeln (Ergänzungen zu `@plane/eslint-rules`, §3.3.3), Host-Kontext-Regel §3.3.4, DOM-Neutralitäts-Regel und UI-Andockstellen (§6.1) | Workspace-/Lib-Struktur, Sheriff-Tags, Registries (`08` §6) inkl. `provideFakeExtensions()`, Profil-Sync des Themes, Power-K-Komponente `pl-command`, Domänen-Komponenten, Lint-Paket `FE/tools/eslint-rules/` | `FE/libs/web/extensions/src/*`, `index.html` je App | Abweichungen H-01, H-02, H-04, H-17 (O-D09-03, O-D09-15 c) |
+| `10-editor-angular.md` | Propel `menu`, `popover`, `preview-card` (ab I0/I2 fertig), `toolbar` (I4); `suggestion-menu` nutzt das Original-Editor-Paket nicht (Slash-/Mention-Menüs sind Editor-eigen), Import-Position der Editor-CSS (§3.2.2), Schwellwert Editor 0,5 % | Editor-CSS `FE/libs/shared/editor/styles/*` (1:1), NodeView-DOM | Katalog W-046, Galerie-Stories der Editor-Menüs | offen (10 noch nicht vorhanden) |
 | `11-suche-und-ai-basis.md` | – (Power-K-Optik über `power-k.css` + `08`) | – | – | keine Kopplung (G1–G3 nicht gewählt) |
-| `14-infrastruktur-deployment-betrieb.md` | Liste gebündelter Assets für den Airgap-Test (§3.8, §4.11; Emoji-Daten `assets/emojibase/…`), CSP-Hash-Datei `theme-script.sha256`, Anforderungen an Git LFS (§8.1 R-D09-08) | Gateway-Auslieferung von `public/`/`assets/` je Base-Path, gespiegelte npm-Registry (Propel-Tarball, Tailwind, Fontsource), gespiegeltes Playwright-Image, Spiegel der Original-Images (R-D09-07), Keycloak-Image mit Themes | `deploy/keycloak/Dockerfile`, CI-Runner `parity` | Abweichung H-05 (O-D09-05) |
-| `15-teststrategie-qualitaet-paritaet.md` | Katalog (§4.14), DOM-Normalisierung (§3.14.6, §5.12), Schwellwerte (§3.14.5), Story-Format (§3.14.9), Abweichungsregister (§7.4), Testkatalog (§7.2) | Ebenen L0–L9, Gates G0–G6, Seed-Spezifikation (D15-ADR-16), Umgebung `parity`, Quarantäne-Regel (D15-ADR-18) | `FE/apps/e2e/visual/**`, `tests/seed/parity-seed.yaml` | Abweichungen H-06…H-10, H-13, H-14 (O-D09-04) |
-| `16-erweiterungspunkte-bezahl-features.md` | §6 vollständig (UI-Andockstellen, Vorziehliste, Gestaltungsregeln G-01…G-20, Schablonen T-01…T-12, Abnahme neuer Screens, Asset-Inventar) | Paket-Liste und Wellen (`F30`), fachliche Andockstellen | – | offen (16 noch nicht vorhanden) |
+| `14-infrastruktur-deployment-betrieb.md` | Liste gebündelter Assets für den Airgap-Test (§3.8, §4.11; Emoji-Daten `assets/emojibase/…`), CSP-Hash-Datei `theme-script.sha256`, Anforderungen an Git LFS (§8.1 R-D09-08) | Gateway-Auslieferung von `public/`/`assets/` je Base-Path, gespiegelte npm-Registry (Propel-Tarball, Tailwind, `@tailwindcss/oxide`, Fontsource, `lucide`), gespiegeltes Playwright-Image, Spiegel der aus Quellen gebauten Original-Images (R-D09-07), Keycloak-Image `plane-keycloak` mit Themes | `deploy/keycloak/Dockerfile`, CI-Runner `parity` | Theme-Packaging abgestimmt (D14-ADR-04 folgt `05`); offen: Paritäts-Start §3.20 (O-D09-14) |
+| `15-teststrategie-qualitaet-paritaet.md` | Katalog (§4.14), DOM-Normalisierung N1–N9 (§3.14.6, §5.12; von `15` §3.10.4 übernommen), Host-Kontext-Befund (§3.3.4), Schwellwerte (§3.14.5; `15` §3.10.3 übernimmt sie), Story-Format (§3.14.9), Abweichungsregister (§7.4), Testkatalog (§7.2), Pflichtumfang Seed-Fragment `visual` | Ebenen L0–L9, Gates G0–G6, Seed-Spezifikation und Lader (D15-ADR-16), Umgebung `parity` und `tools/parity/start-original.sh --from-source` (D15-ADR-20), Determinismus-Treiber `FE/apps/e2e/drivers/determinism.ts`, Quarantäne-Regel (D15-ADR-18), Anmeldung im Harness (§3.6.6) | `FE/apps/e2e/{visual,drivers}/**`, `tests/seed/parity-seed.yaml` | weitgehend abgestimmt (H-07, H-09, H-10, H-14 umgesetzt); offen H-06, H-08, H-13 (O-D09-04, O-D09-13) |
+| `16-erweiterungspunkte-bezahl-features.md` | §6 vollständig (UI-Andockstellen, Vorziehliste, Gestaltungsregeln G-01…G-20, Schablonen T-01…T-12, Abnahme neuer Screens, Asset-Inventar) | Paket-Liste und Wellen (`F30`), fachliche Andockstellen; `16` verweist auf D09 für `PlBlkStateSelect.allowedStateIds` (C1), Chart-Bausteine (B2) und den Paritätstest zu Stub S57 (`context-menu-item.tsx`, CE-Verhalten 1:1, E-26) | – | vorhanden, konsistent mit §6.1 |
 
 ### 9.2 Verbindliche Auflösung von Abweichungen zu parallel entstandenen Dokumenten
 
@@ -2147,31 +2182,79 @@ Maßgeblich ist die Zuständigkeit aus `01` Anhang A: `09` = Propel-/Blocks-Port
 
 | Nr. | Thema | D09 | Abweichende Stelle | Maßgeblich | Begründung | Folgeänderung |
 |---|---|---|---|---|---|---|
-| H-01 | Overlay-Unterbau | eigene Portal-Schicht `PRP/headless/portal.ts`, **kein** CDK Overlay (D09-ADR-10/-11, Lint `pl/no-cdk-overlay`) | `08` §3.9 „CDK Overlay mit eigenem Container“ | **D09** | `01` §7.17 (Portale an `document.body` wie Original); CDK-Overlay erzeugt Wrapper-DOM (`A13a` F-12). Marker, auf die die Peek-Outside-Click-Logik prüft (`08`: `data-base-ui-portal`), kommen aus dem Base-UI-DOM-Vertrag (S10) | `08` §3.9; `01` ADR-041 (O-D09-01) |
+| H-01 | Overlay-Unterbau | eigene Portal-Schicht `PRP/headless/portal.ts`, **kein** CDK Overlay (D09-ADR-10/-11, Lint `no-cdk-overlay`) | `08` §3.9 „CDK Overlay mit eigenem Container“ | **D09** | `01` §7.17 (Portale an `document.body` wie Original); CDK-Overlay erzeugt Wrapper-DOM (`A13a` F-12). Marker, auf die die Peek-Outside-Click-Logik prüft (`08`: `data-base-ui-portal`), kommen aus dem Base-UI-DOM-Vertrag (S10) | `08` §3.9; `01` ADR-041 (O-D09-01) |
 | H-02 | Ort von `ThemeService` und Theme-Asset-Helfern | `FE/libs/shared/theme/src/{theme.service,inline-script,theme-asset-helpers}.ts` | `08` §3.8: `libs/web/core/theme/*` | **D09** | Admin und Space nutzen denselben Dienst (Sheriff `scope:shared`); web-spezifischer Profil-Sync bleibt in `libs/web/core` (§3.9.1) | `08` §3.8 |
 | H-03 | CSP für das Theme-Inline-Script | Hash (`theme-script.sha256`) | frühere D09-Fassung: Nonce-Platzhalter | **`08` §3.8 / D05-ADR-23** | statische `index.html`, keine Server-Templating-Stufe im Gateway nötig | in diesem Dokument umgesetzt (§3.9.1, §5.8) |
 | H-04 | Ablage der Emoji-Daten | `FE/apps/{web,space}/src/assets/emojibase/<version>/<locale>/{data,messages}.json` | `08` D08-ADR-20: `/{base}/assets/emoji/` | **D09** | Version im Pfad (Cache, Upgrade); Airgap-Test (`14`) prüft diesen Pfad | `08` D08-ADR-20 |
-| H-05 | Keycloak-Login-Theme | CSS-Regel (gleicher Compiler, gleiche Eingaben, `css-diff --subset keycloak`), Visual K-001…K-004 | `05` §3.16 (`plane`, `plane-space`, `tools/keycloak-theme/`, `plane-login.css`); `14` §3.3.4 (`plane-base`, `plane`, `plane-admin`, `plane-space`, `deploy/keycloak/theme-src`, `plane.css`) | **`05`** für Struktur/Templates/Build-Werkzeug, **`14`** für Image/Packaging (folgt `05`), **D09** für CSS-Gleichheit und Verifikation | Zuständigkeit `01` Anhang A | D09-ADR-14, §3.1, §3.13, §4.14 in diesem Dokument umgesetzt; `14` §3.3.4 (O-D09-05) |
-| H-06 | Visual-Artefakte und Schwellwerte | `baselines/`, `dom-contracts/`, `aria-contracts/`, `ui-deviations.yaml`, Masken nur im Katalog; Seiten 0,2 %; fünf Viewports (§3.14.4) | `15` §3.10: `__reference__/…png` + `.dom.json` + `.axe.json`, `visual/deviations.yaml`, `masks.ts`, Seiten 0,5 %, Viewports 640…1920 | **D09** | Verifikationsverfahren ist D09-Thema; strengerer Schwellwert folgt aus „gleiches CSS + gleiches DOM ⇒ gleiche Pixel“ (§1.1) | `15` §3.10 (O-D09-04) |
-| H-07 | Start der Referenzumgebung | `compose.reference.yml` | `15` §3.4: `tools/ci/parity/start-original.sh` (Umgebung `parity`) | **`15`** als Einstieg; `compose.reference.yml` ist dessen Overlay für gebaute Frontends + Proxy | ein Paritäts-Setup für Contract- und Visual-Aufnahmen | in diesem Dokument umgesetzt (§3.14.2) |
+| H-05 | Keycloak-Login-Theme | CSS-Regel (gleicher Compiler, gleiche Eingaben, `css-diff --subset keycloak`), Katalog K-001…K-004 | `05` §3.16 (`plane`, `plane-space`, Admin-Variante per `clientId`, `tools/keycloak-theme/` inkl. `visual.spec.ts`, `plane-login.css`); `14` D14-ADR-04/§3.3.4 folgt `05` | **`05`** für Struktur/Templates/Build-Werkzeug/Spec-Ort, **`14`** für Image/Packaging, **D09** für CSS-Gleichheit, Katalog, Schwellwerte, Masken | Zuständigkeit `01` Anhang A | in diesem Dokument umgesetzt (D09-ADR-14, §3.1, §3.13, §4.14, T-KC-01); `14` bereits angeglichen |
+| H-06 | Visual-Artefakte und Viewports | `baselines/`, `dom-contracts/`, `aria-contracts/`, `ui-deviations.yaml`, Masken nur im Katalog; fünf Viewports (§3.14.4) | `15` §3.10: `__reference__/…png` + `.dom.json` + `.axe.json`, `visual/deviations.yaml`, `masks.ts`, Viewports 640…1920 (Schwellwerte inzwischen gleich) | **D09** | Verifikationsverfahren ist D09-Thema (`01` Anhang A) | `15` §3.10 (O-D09-04) |
+| H-07 | Start der Referenzumgebung | `tools/parity/start-original.sh --from-source` (Proxy `:13000`, `original.env`) | frühere D09-Fassung `compose.reference.yml`/`:8091`; `14` §3.20: `tools/ci/parity/start-original.sh` + `docker-compose-local.yml` | **`15`** (D15-ADR-20, §9.2) | ein Paritäts-Setup für Contract- und Visual-Aufnahmen; Visual braucht die Option `--from-source` (gleicher Commit für Baselines, Referenz-CSS, Referenz-Galerie) | in diesem Dokument umgesetzt (§3.14.2); `14` §3.20 (O-D09-14) |
 | H-08 | Galerie-Namen | `FE/tools/reference-gallery/`, Angular-Galerie unter `/gallery/` | `15`: `tools/original-gallery/`, `/__gallery/` | **D09** | D09-ADR-16; ein Name je Artefakt | `15` §3.2/§3.10 (O-D09-04) |
-| H-09 | Seed und Uhr | Profil `visual` | `15` D15-ADR-16: `tests/seed/parity-seed.yaml`, Lader `seed_plane.py`/`ParitySeedLoader`, Uhr `2026-02-01T10:00:00Z` | **`15`** (Mechanismus, Uhr); **D09** (Pflichtumfang des Profils `visual`, §3.14.4) | eine kanonische Seed-Spezifikation für Contract-, E2E- und Visual-Tests | in diesem Dokument umgesetzt (§3.14.2–§3.14.4, §5.11) |
+| H-09 | Seed und Uhr | Fragment `visual` (Pflichtumfang §3.14.4) auf Fragment `base` | frühere D09-Fassung: eigene Benutzer `ada/bob/cyd/dee/eve@acme.test`, T0 = 2026-01-31T11:00Z, Browser-Uhr T0 + 23 h, `setFixedTime` | **`15`** (Mechanismus, Benutzer, T0 = `2026-02-01T10:00:00Z` = Server- und Browser-Uhr, `page.clock.install`); **D09** (Pflichtumfang des Fragments `visual`) | eine kanonische Seed-Spezifikation für Contract-, E2E- und Visual-Tests | in diesem Dokument umgesetzt (§3.14.2–§3.14.4, §4.14 W-050, §5.11) |
 | H-10 | Determinismus-Maßnahmen | §3.14.3 | `15` §3.10.1 (Mulberry32 für `Math.random`, CSS-Override für Animations-/Transitionsdauern) | **Vereinigung** beider Listen; Ausnahme: Motion-Stories (R-D09-06) laufen ohne CSS-Override | beide Maßnahmen sind verträglich | `Math.random` in §3.14.3 umgesetzt |
 | H-11 | Icon-Codegen | `FE/tools/propel-port/port-icons.mjs` → `PlIconDef`-Konstanten + `svg[plSvgIcon]` | `01` §6.1: `tools/icons-codegen/` „→ Angular-Komponenten“ | **D09-ADR-07** (ADR-041 verlangt nur Codegen) | DOM ohne Host-Element, Tree-Shaking | `01` §6.1 (O-D09-02) |
 | H-12 | CDK als „Overlay-Basis“ | CDK nur a11y | `01` ADR-041 | **Rahmen**, präzisiert: kein CDK-Overlay-DOM | siehe O-D09-01 | `01` ADR-041 |
 | H-13 | Abweichungsregister | ein Register `ui-deviations.yaml` mit `kind` (`extra-css`, `extra-utility`, `pixel`, `dom`, `mask`, `route`, `behavior`, `asset`) | `15`: `visual/deviations.yaml` + `css-deviations.yaml` | **D09** für UI/CSS; Contract-Abweichungen bleiben in `tests/contracts/deviations.yaml` (`01` §7.20) | ein Register je Prüfgegenstand | `15` §3.15 DoD-Checkliste |
-| H-14 | DOM-Normalisierung | §3.14.6: Klassen sortiert, ganzes Dokument + Portale, SVG vollständig | `15` §3.10.4: Klassenreihenfolge signifikant, Regionen ≤ Tiefe 6, SVG bis Tiefe 1 | **D09** | Klassenreihenfolge beeinflusst die Kaskade nicht (Reihenfolge im Stylesheet entscheidet); Angular führt statische und gebundene Klassen in anderer Reihenfolge zusammen; Icons sind zusätzlich über T-ICON-01 abgedeckt | `15` §3.10.4 (O-D09-04) |
+| H-14 | DOM-Normalisierung | §3.14.6 N1–N9 (Klassen sortiert, ganzes Dokument + Portale) | `15` §3.10.4 übernimmt N1–N9 und ergänzt Z1 (sichtbares Custom-Element = Fehler) und Z2 (SVG nur bis Tiefe 1) | **Vereinigung**: N1–N9 + Z1 für alle Verträge; Z2 nur für **Seiten**-Verträge – Galerie-Verträge von Icons, State-Icons, Illustrationen und Charts vergleichen SVG vollständig (sonst wären T-ICON-01/T-ILL-01 die einzige Absicherung für Hand-Ports wie `PlBlkStateGroupIcon`) | Implementierung `FE/apps/e2e/drivers/dom-parity.ts` (`15`) | in diesem Dokument umgesetzt (§3.14.6, §5.12); `15` §3.10.4 um die Galerie-Ausnahme zu Z2 ergänzen (O-D09-04) |
+| H-15 | Lint-Regeln | Ergänzungen im Paket `@plane/eslint-rules` (`FE/tools/eslint-rules/`), ohne eigenes Präfix | frühere D09-Fassung: eigenes Präfix `pl/*` mit Dubletten zu `08` (`no-component-styles`, `no-plan-identifiers`) | **`08`** §7.6 (Paket, Ablage, Namen) | eine Regel je Inhalt | in diesem Dokument umgesetzt (§3.3.3) |
+| H-16 | Ablage der Frontend-Werkzeuge | `FE/tools/{propel-port,reference-gallery,gallery-stories,visual}` | frühere D09-Fassung: Repo-Wurzel `funk./tools/…` | **`01`** §6.1 (`frontend/tools/`) | Rahmen-Vorrang | in diesem Dokument umgesetzt (§3.1); `01` §6.1 ergänzen (O-D09-15 a) |
+| H-17 | Leere Fake-Erweiterungen im Neutralitätstest | Build-Konfiguration `extension-neutrality` mit `provideFakeExtensions({ mode: 'empty' })` | `08` AK-D08-36: `provideFakeExtensions()` in `FE/libs/web/extensions/testing/`; `15` EP-T08: `provideTestExtensions({...})` in `frontend/libs/shared/testing/extensions/` | **`08`** (Eigentümer der Registries) | ein Test-Provider je Registry-Satz | `15` EP-T08 an `08` angleichen |
 
 ### 9.3 Übergaben im Zeitverlauf
 
 | Zeitpunkt | Empfänger | Übergabe aus D09 | Voraussetzung aus dem Empfänger-Dokument |
 |---|---|---|---|
-| I0, Tag 1–3 (S0) | `14` | Liste der zu spiegelnden Pakete/Images (Propel-Tarball, Tailwind 4.1.17, Fontsource, `lucide`, Playwright-Image) | gespiegelte Registries |
+| I0, Tag 1–3 (S0) | `14` | Liste der zu spiegelnden Pakete/Images (Propel-Tarball 0.7.3, `tailwindcss`/`@tailwindcss/postcss`/`@tailwindcss/cli`/`@tailwindcss/oxide` 4.1.17, Fontsource, `lucide` 0.469.0 und 1.34.0, gepinnte `emojibase-data`, Playwright-Image, aus Quellen gebaute Original-Images) | gespiegelte Registries |
 | I0 (S10, S11) | `08`, `15` | CSS-Pipeline, Theme-Runtime, Icons, Headless-Schicht, Leit-Komponenten, Katalog I0, DOM-Normalisierung | Angular-Workspace + Sheriff (`08`), Umgebung `parity` + Seed (`15`) |
 | I0 (S7) | `05`, `14` | Tailwind-Eingaben, Fonts, Auth-Bilder, Visual K-001…K-004 | Theme-Templates (`05`), Keycloak-Image (`14`) |
 | I1 | `03`, `04`, `08` | Theme-Werte und Logo-Format (Semantik), Picker, Empty-States, Illustrationen | Profil-/Theme-Endpunkte, Profil-Sync |
-| I2 | `08`, `10` | Select-Engine, Property-Selects, Calendar, Toolbar/Menu/Popover/Suggestion-Menu für Editor-Hüllen | Layout-Komponenten, Lite-Editor |
+| I2 | `08`, `10` | Select-Engine, Property-Selects, Calendar, Menu/Popover/PreviewCard für den Lite-Editor (Toolbar folgt in I4) | Layout-Komponenten, Lite-Editor |
 | I3 | `08` | Chart-Bausteine (nach S6) | Burndown/Analytics-Fachkomponenten |
 | I4 | `07`, `10` | PDF-Schriften, Editor-Visual-Verfahren | PDF-Renderer, Document-Editor |
 | I6 | `14` | OG-Bild, `robots.txt`, Admin-/Space-Assets | Gateway-OG-Meta |
 | vor W1 | `16` | §6 als Eingabe für die Andockstellen-Detaillierung | Paket-Detailplanung W1 |
+
+---
+
+## Review-Protokoll
+
+**Review vom 23.10.2026 (adversarial, gegen Quellen, Rahmen und Parallel-Dokumente).**
+
+### Prüfmethode
+
+- **Quellen nachgezählt bzw. nachgelesen:** `npm pack @makeplane/propel@0.7.3` entpackt (68 Komponenten-, 57 Element-Ordner, 919 Icons in 17 Kategorien, alle `internal/*`-Dateien, Exporte jeder `components/*/index.d.ts` und `elements/*/index.d.ts` maschinell gegen §4.2/§4.3 abgeglichen – vollständig); `packages/blocks/src` (254 Quell-Dateien, 28 Subpath-Exporte, 21 Tests, 42 Icon-Dateien, 59 Illustrationen) gegen §4.7/§4.8 abgeglichen; Assets in `apps/*/public` und `apps/*/app/assets` gezählt; 67 `route()`-Einträge in `WEB/app/routes/core.ts` sowie Admin-/Space-Routen gegen §4.14; CE-Katalog (`ce-features.json`) für CE-I18N/CE-UIX gegen §1.3; Importhäufigkeit der Propel-Komponenten in `apps/**`/`packages/**` neu gezählt; lucide-Nutzung (181 Namen + Typ `LucideIcon`, 157 Listeneinträge, 17 Propel-interne Namen) bestätigt.
+- **Library-Quelltext gelesen:** `next-themes@0.4.6` (`dist/index.mjs`), `frimousse@0.3.0` (`dist/index.js`), `@tailwindcss/oxide@4.1.17` (`index.d.ts`, Scanner-API), Propel `components/icon`, `components/tooltip`, `components/menu/menu-content`, `components/toast`; Angular-Aria-Dokumentation (angular.dev/guide/aria, Context7).
+- **Abgleich** mit `00`, `01` (§1.3, §1.4, §6.1–§6.4, §7.17–§7.19, §8.2, ADR-041/-044/-048, S10), `05` §3.16, `08` §3.8/§3.9/§6/§7.6, `14` §3.3.4/§3.20/D14-ADR-04, `15` §3.2/§3.6.6/§3.10/§3.14/§9.2, `16`, `F20` §5, `F30` Wellen.
+
+### Korrekturen im Dokument
+
+| Nr. | Befund | Korrektur |
+|---|---|---|
+| K-01 | **CSS-Gate nicht erfüllbar:** Das Original scannt per automatischer Quellenerkennung alle Dateien der App plus `packages/**` – Utilities aus nicht portierten Dateien (React-TSX, Upsell-Komponenten, Konstanten-Strings) hätten im Ziel gefehlt; zugleich hätte jede zusätzliche Kandidaten-Zeichenkette aus Angular-TS das Gate rot gemacht | D09-ADR-02 (c) Kandidatenliste je App aus dem Referenz-CSS (Round-Trip-geprüft), Quellen-Scan je App analog zum Original (§3.2.3, §5.1), `extract-classes.mjs` über den Tailwind-Scanner; Zusatz-Utilities nur noch für Paket-Libs Gate (§3.2.5, G-02, AK-I0-01/-15, T-CSS-03, R-D09-17) |
+| K-02 | **Host-Elemente mit `display: contents` brechen Kind-Selektoren:** Begründung in D09-ADR-03 war falsch (`space-x-*`, `divide-*`, `first:`/`last:` sehen den Host; Margins auf `contents`-Boxen wirken nicht); DOM-Vertrag nach dem Auspacken grün, Pixel nicht | Host-Kontext-Regel §3.3.4 (Trigger-Komposita als Attribut-Direktive, Portal-Komposita auf `<ng-container>`, Provider als Host nur nach H2/H3), §3.3.1, §4.2 (#33, #46, #67), Skelett §5.6 neu (`[plTooltip]`), §3.11 Punkt 5, §6.6, Lint `no-trigger-wrapper`, T-HOST-01, AK-I0-14, R-D09-15, O-D09-16 |
+| K-03 | Theme-Inline-Script verwarf ungültige Werte – **next-themes 0.4.6 tut das nicht** (Wert wird unverändert als `data-theme` gesetzt); `color-scheme` wird zur Laufzeit beim Wechsel auf HC/Custom entfernt; `storage`-Event ohne Wert schreibt den Default | §3.9.1, §5.8 korrigiert; O-D09-11 per Quelltext beantwortet (HC-Werte wirken in Admin/Space), neue Katalog-Zustände `cross-app-theme-*`, AK-I6-02 |
+| K-04 | Emoji-Daten: `frimousse` 0.3.0 lädt `emojibase-data@latest` (nicht gepinnt) – Original-Baselines wären vom Aufnahmetag abhängig, in Airgap-CI leer | §3.8.2 (Version pinnen, `page.route` in der Referenzaufnahme), §3.14.3, O-D09-09, R-D09-16 |
+| K-05 | Seed/Uhr widersprachen `15` (T0 2026-01-31T11:00Z, Browser-Uhr T0 + 23 h, eigene Benutzer `ada…eve@acme.test`, 60 statt 120 Work Items, `setFixedTime` statt `clock.install`) | auf `15` umgestellt: T0 = `2026-02-01T10:00:00Z` (Server- = Browser-Uhr), Benutzer `owner/member/guest/deactivated/invited@acme`, Fragmente `base` + `visual`, gemeinsamer Treiber `drivers/determinism.ts` (§3.14.1–§3.14.4, §4.14 W-050, §5.11, H-09) |
+| K-06 | Referenzumgebung widersprach `15`: Pfad `tools/ci/parity/…`, eigenes `compose.reference.yml`, Proxy `:8091` | `tools/parity/start-original.sh --from-source`, Proxy `:13000`, `original.env` (§3.14.2, Mermaid §3.14.1, D09-ADR-16, H-07); verbleibender `14`/`15`-Widerspruch als O-D09-14 |
+| K-07 | DOM-Normalisierung: Original rendert ohne `#root` direkt in `<body>` (mit `#context-menu-portal`, `#editor-portal`); Ort der Funktion doppelt zu `15` | N1 neu (ganzer `<body>`, `app-root data-pl-host`, statische Portal-Divs in `index.html`), Implementierung in `FE/apps/e2e/drivers/dom-parity.ts` (`15`), H-14 als Vereinigung mit `15` Z1/Z2 |
+| K-08 | Keycloak-Varianten per erfundenem Attribut `login_theme_variant`; Font-/Bildpfade abweichend von `05` | §3.13 auf `05` §3.16 (Themes `plane`/`plane-space`, Admin per `clientId`, `login_theme`, `resources/fonts/inter`, `img/bg`) und Theme-Umschaltung über `plane-login.js` statt Inline-Script; T-KC-01 = eine Spec in `tools/keycloak-theme/` |
+| K-09 | Lint-Regeln mit eigenem Präfix `pl/*` und Dubletten zu `08` §7.6 | in `@plane/eslint-rules` integriert, Dubletten entfernt, neue Regeln markiert (§3.3.3, H-15) |
+| K-10 | Werkzeuge an der Repo-Wurzel entgegen `01` §6.1 (`frontend/tools/`) | nach `FE/tools/` verschoben, Baum §3.1 neu (inkl. fehlender Artefakte `css-diff.ts`, `reference-css/`, `template-frame-check.ts`, `templates/`, `baselines-new/`, `acceptance/`), Pfade mit Zustands-Ebene, H-16 |
+| K-11 | Icons: zwei Komponenten mit Attribut `plIcon` (`span`/`svg`), Effekt aktualisierte Default-Attribute beim Icon-Wechsel nicht, `focusable="false"` aus Propel `components/icon` fehlte; `PlIcon` doppelt (components/internal) | `svg[plSvgIcon]`, korrigierter Effekt (§5.7), eine `PlIcon`-Klasse (§4.2 #33, §4.4) |
+| K-12 | Inkrement-Zuordnung widersprach der eigenen Regel: `logo-spinner`, `separator`, `radio`, `toggle`, `suggestion-menu` werden im Original nirgends importiert (auch nicht von anderen Propel-Komponenten, außer `radio` durch `radio-group-field`); `toolbar` nutzt nur der Page-Editor (I4) | nach I7 (vorziehbar) bzw. I4 verschoben (§1.4, §4.2, §4.3, §4.11, §6.1.1, §9.3); CE-I18N-026 korrekt den App-eigenen LogoSpinnern zugeordnet; H1-Andockstelle ohne `PlSuggestionMenuItem` |
+| K-13 | Katalog-Skelett nutzte nicht existente Anker (`data-testid='issue-list-root'`, `#issue-peek-overview`) und `localStorage` für das serverseitige Layout | Anker aus dem Original-DOM (Text/Rolle/`id^=issue-`), Display-Filter im Seed (§5.10, §3.14.3) |
+| K-14 | A1-Andockstelle als `<ng-content>`-Slot – Pakete können CE-Aufrufer-Templates nicht ändern; Pfad/Struktur des Identifiers erfunden | Registry-Ausgang `WORK_ITEM_IDENTIFIER_DECORATORS` im Original-`div.space-x-2` (`issue-identifier.tsx`), DOM-Neutralitäts-Regel präzisiert, E3 analog über `MEMBER_ROW_DECORATORS`; Neutralitätstest über `provideFakeExtensions()` (`08`) statt Query-Parameter (§6, §6.6, H-17, O-D09-15 c) |
+| K-15 | Zahlen: Blocks 24 Subpath-Exporte/137 TSX → 28/139 (+ 59 Illustrationen, 56 TS); Blocks-Icons 46 → 42 Dateien; `apps/web/public` 7 → 8 Dateien | §1.2, §4.7, §4.11, R-D09-05 |
+| K-16 | CE-Abdeckung: CE-UIX-008 fehlte in §1.3; CE-I18N-001…-004, CE-UIX-006/-007/-011/-012 ohne Ausschlussvermerk | §1.3 ergänzt |
+| K-17 | Akzeptanzkriterien für I3, I4, I5 deckten nur Spikes/Einzelseiten ab | AK-I3-02, AK-I4-03, AK-I5-02 ergänzt |
+| K-18 | Abhängigkeiten veraltet (16 „nicht vorhanden“, 07 „abgestimmt“ obwohl nicht vorhanden, `14`-Theme-Konflikt inzwischen gelöst, `15` hat Schwellwerte/N1–N9 übernommen) | §9.1, H-05, H-06, O-D09-04, O-D09-05 aktualisiert |
+| K-19 | Angular-Aria-Beispiele setzen `cdkConnectedOverlay` voraus, D09 verbietet CDK-Overlay | als Prüfpunkt in R-D09-01/S10 aufgenommen |
+| K-20 | Kleinere Inkonsistenzen: `PlPlaneToastProvider` statt Blocks-Präfix, `<pl-card>` statt `div[plBlkCard]`, Overrides-Import nach `@plugin`, fehlende Overrides in Admin/Space, UI-DEV-005 für praktisch unsichtbaren Banner | korrigiert (§3.10, §3.3.1, §5.1, §7.4) |
+
+### Bewertung
+
+Gliederung 1–9 vollständig; Inventare (Propel, Blocks, Assets, Routen, Upsell U1–U22) gegen die Quellen vollständig; Bezahl-Pakete nur als Erweiterungspunkte (§6, alle 17 🧱-Pakete, C1/C3/G1 als nicht gewählt gekennzeichnet). Lizenzlage unverändert sauber (MIT/Apache/ISC/OFL; Propel/CSS AGPL-3.0-only, R-D09-12). Größte Restrisiken: Host-Form der Komposita (S10, O-D09-16), Angular-Aria-Abdeckung ohne CDK-Overlay (R-D09-01) und Determinismus der Referenzaufnahme (S11).
+
+### Verbleibende Punkte (außerhalb dieses Dokuments)
+
+O-D09-01 (`01` ADR-041 „Overlay-Basis“), O-D09-02/-15 (`01` §6.1/§8.2: Libs `icons-lucide`/`theme`, Werkzeuge, `lucide@1.34.0`, `@tailwindcss/oxide`), O-D09-03 (`08` §3.8/§3.9/D08-ADR-20), O-D09-04/-13 (`15` §3.10 Artefakt-Pfade, Viewports, Galerie-Namen), O-D09-14 (`14` §3.20 vs. `15`), H-17 (`15` EP-T08 vs. `08` `provideFakeExtensions`).

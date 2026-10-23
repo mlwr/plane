@@ -91,13 +91,13 @@ Jede Entscheidung konkretisiert eine ADR aus `00`/`01`; Abweichungen von `01` gi
 
 | ADR | Entscheidung | Alternativen (verworfen) | Begründung | ab |
 |---|---|---|---|---|
-| **D05-ADR-01** | **Ein OIDC-Handler, drei Keycloak-Clients.** `Plane.Api` registriert genau ein Schema `oidc` (`Microsoft.AspNetCore.Authentication.OpenIdConnect`) mit `CallbackPath=/auth/oidc/callback/`. Die App (`web`, `admin`, `space`) wird beim Login als Query-Parameter `app` übergeben, in den `AuthenticationProperties` (State, Data-Protection-geschützt) mitgeführt und bestimmt `client_id`/`client_secret` (`plane-web`, `plane-admin`, `plane-space`) beim Redirect **und** bei der Code-Einlösung. Confidential Clients, PKCE `S256` Pflicht (`pkce.code.challenge.method=S256`). Auflösung **O-06**: je App ein Client (eigenes Login-Theme-Variante, eigene Redirect-Regeln), eine gemeinsame Plane-Session. | (a) drei Schemata mit drei Callback-Pfaden (widerspricht dem in `01` §3.3 festgelegten Redirect `…/auth/oidc/callback/`); (b) Public SPA-Client mit Token im Browser (verletzt ADR-008 „kein Token im Browser“); (c) BFF im Gateway (YARP) – trennt Session-Logik vom Fachmodell `Plane.Identity` | Ein Callback-Pfad im Realm, eine Session-Erzeugung, Theme-Varianten über Client-Zuordnung | I0 |
+| **D05-ADR-01** | **Drei OIDC-Schemata, drei Keycloak-Clients, ein Callback-Pfad.** `Plane.Api` registriert je App ein Schema `oidc-web`, `oidc-admin`, `oidc-space` (`Microsoft.AspNetCore.Authentication.OpenIdConnect`) mit fester `ClientId`/`ClientSecret` (`plane-web`, `plane-admin`, `plane-space`), **identischem** `CallbackPath=/auth/oidc/callback` (ohne Slash, weil `TrailingSlashMiddleware` den Slash vor dem Routing entfernt, D02-ADR-07; die an Keycloak gesendete und dort registrierte `redirect_uri` bleibt `…/auth/oidc/callback/`) und `SkipUnrecognizedRequests=true`. Der State jedes Schemas ist mit einem **schemaeigenen** Data-Protection-Zweck geschützt (`Plane.Identity.OidcState.v1.<scheme>`); ein Handler, der den State nicht entschlüsseln kann, überspringt die Anfrage (`HandleRequestResult.SkipHandler()`), sodass genau das Schema des Logins den Callback verarbeitet. Die App (`web`, `admin`, `space`) wird beim Login als Query-Parameter `app` übergeben und wählt das Schema. Confidential Clients, PKCE `S256` Pflicht (`pkce.code.challenge.method=S256`). Auflösung **O-06**: je App ein Client (eigene Login-Theme-Variante, eigene Redirect-Regeln), eine gemeinsame Plane-Session. | (a) **ein** Schema mit je Request umgeschriebener `client_id` (ursprünglicher D05-Entwurf, verworfen im Review: `OpenIdConnectProtocolValidator.ValidateIdToken` vergleicht das Keycloak-`azp` mit `Options.ClientId` und wirft `IDX21340` für `plane-admin`/`plane-space`; Quelle `OpenIdConnectHandler.cs` release/10.0, `ClientId = Options.ClientId`); (b) drei Callback-Pfade `/auth/oidc/{app}/callback/` (widerspricht `01` §3.3, Realm-Änderung); (c) Public SPA-Client mit Token im Browser (verletzt ADR-008); (d) BFF im Gateway (YARP) – trennt Session-Logik vom Fachmodell `Plane.Identity` | Standardverhalten des Handlers ohne Eingriff in die Protokollvalidierung; ein Callback-Pfad im Realm, eine Session-Erzeugung, Theme-Varianten über Client-Zuordnung | I0 |
 | **D05-ADR-02** | **Eine Session für alle drei Apps.** Cookie-Name aus `SESSION_COOKIE_NAME` (Default `session-id`), `HttpOnly`, `SameSite=Lax`, `Path=/`, `Domain=COOKIE_DOMAIN` (Default host-only), `Secure` nach der Original-Regel `_cookies_secure` (§3.4.3). Das separate Cookie `admin-session-id` entfällt (Folge ADR-008: kein separates God-Mode-Login); damit entfällt auch der Fehler E-08 (Teilstring `instances`). | getrennte Admin-Session (Original, 1 h) | Gleiche Site, gleiche Keycloak-Identität; Admin-Schutz über Rolle + optionalen Step-up (D05-ADR-11) | I0 |
 | **D05-ADR-03** | **Serverseitige Session per `ITicketStore`.** Cookie-Schema `Session` (`02` §3.4.1 Schritt 10) mit `SessionStore = PostgresTicketStore` (Tabelle `user_sessions`). Der Browser erhält nur einen Data-Protection-geschützten Schlüssel; das `AuthenticationTicket` (Claims + `id_token` + `refresh_token`) liegt serialisiert und zusätzlich mit Zweck `Plane.Identity.SessionTicket.v1` verschlüsselt in PostgreSQL. **Absolute** Laufzeit `SESSION_COOKIE_AGE` (Default 604 800 s) wie Original; `SESSION_SAVE_EVERY_REQUEST=1` schaltet gleitende Laufzeit ein. Abgelaufene Zeilen löscht der Job `ExpiredSessionCleanupJob` stündlich (Korrektur E-18). | Session-Inhalt im Cookie (Größe, Sperrbarkeit); Redis-Sessions (zusätzliche Pflichtkomponente) | Sofortige Sperre durch Zeilenlöschung, `device_info` wie Original, Mehrinstanzfähigkeit über gemeinsamen Key-Ring | I0 |
 | **D05-ADR-04** | **Plane-Session folgt der Keycloak-Session.** (1) Back-Channel-Logout (`POST /auth/oidc/backchannel-logout/`, OIDC Back-Channel Logout 1.0) löscht alle `user_sessions` mit passendem `keycloak_sid` (bzw. `sub`). (2) Zusätzlich **Revalidierung**: Ist `revalidated_at` älter als `Plane:Auth:RevalidateIntervalSeconds` (Default 300), tauscht `SessionRevalidator` beim nächsten Request den gespeicherten Refresh-Token; schlägt das fehl (`invalid_grant`: Session beendet, Benutzer gesperrt/deaktiviert), wird die Plane-Session gelöscht → 401. Neue Tokens aktualisieren Rollen/Gruppen im Ticket. | nur Back-Channel (verpasste Zustellung bei Netzwerkfehler bleibt unbemerkt); Token-Introspection (zusätzlicher Client mit Introspection-Recht) | Belt-and-braces gegen den S7-Abbruchgrund „Back-Channel unzuverlässig“; Rollenentzug wirkt spätestens nach 5 min | I0 |
 | **D05-ADR-05** | **Abmeldung bleibt ein Formular-POST.** `POST /auth/sign-out/` (Formularfeld `csrfmiddlewaretoken`, Antiforgery) löscht die Plane-Session und leitet per 302 auf den Keycloak-`end_session_endpoint` mit `id_token_hint`, `client_id`, `post_logout_redirect_uri={APP}/auth/oidc/signed-out/` und `state` (geschütztes Ziel). Aliase mit identischem Handler: `POST /auth/spaces/sign-out/` (mit `next_path`), `POST /api/instances/admins/sign-out/` (Ziel `/god-mode/`). | GET-Logout (CSRF-anfällig); nur lokale Abmeldung (Keycloak-SSO bliebe aktiv, Forgejo ebenfalls) | Original-Frontend-Mechanik (verstecktes Formular) bleibt; vollständiges Single Logout | I0 |
 | **D05-ADR-06** | **CSRF wie Original: Origin-Prüfung + Token nur für Formulare.** Für jede cookie-authentifizierte Anfrage mit unsicherer Methode prüft `OriginCheckMiddleware` (`02` §3.4.1 Schritt 11) den `Origin`-Header exakt nach `A06` §3.14.1 (fehlender `Origin` → erlaubt, `null` → abgelehnt, Schema ignoriert bei Host-Gleichheit, Allowlist aus Basis-URLs + `CORS_ALLOWED_ORIGINS` + `CSRF_TRUSTED_ORIGINS`); Ablehnung 403 `{"detail": "CSRF Failed: origin not allowed"}`. Zusätzlich wird bei fehlendem `Origin` `Sec-Fetch-Site: cross-site` abgelehnt (Härtung ohne Vertragsänderung). Antiforgery (Formularfeld `csrfmiddlewaretoken`, Header `X-CSRFToken`, Cookie `csrftoken`) gilt nur noch für `POST /auth/sign-out/` und Aliase; `GET /auth/get-csrf-token/` bleibt. Auflösung von **E-17/OP-02**: kein Token-CSRF mehr für JSON-Endpunkte. | Double-Submit-Token für alle XHR (Frontend-Vertragsänderung) | Parität, SameSite=Lax als zweite Linie | I0 |
-| **D05-ADR-07** | **JIT-Provisionierung als Pipeline.** Nach erfolgreicher Token-Validierung läuft `UserProvisioningPipeline` mit geordneten `IUserProvisioningStep`-Implementierungen (CE: Identität → Benutzer → Profil/Avatar → Signup-Gate → Instanz-Admin-Spiegel → Einladungen → Onboarding-Ziel). Verknüpfung über `(issuer, subject)` in `user_identities`; E-Mail-Verknüpfung mit einem bestehenden, **unverknüpften** Konto nur bei `email_verified=true`; `email_verified=false` → kein Konto, Fehler 5124 `OAUTH_PROVIDER_UNVERIFIED_EMAIL`. | Verknüpfung nur über E-Mail (Takeover-Risiko, vgl. GHSA-7j95-vh8g-f365); Provisionierung über Keycloak-Event-Listener/SPI (Java-Code im Stack) | Andockstelle E3 (`01` §1.4), Takeover-Schutz | I0 (Kern), I1 (Einladungen) |
+| **D05-ADR-07** | **JIT-Provisionierung als Pipeline.** Nach **vollständiger** Protokollvalidierung (Signatur, `iss`, `aud`, `azp`, `nonce`, `at_hash` – im Handler-Ereignis `OnTicketReceived`, **nicht** `OnTokenValidated`, weil der Handler die `OpenIdConnectProtocolValidator`-Prüfung inkl. Nonce erst **nach** `TokenValidated` ausführt) läuft `UserProvisioningPipeline` mit geordneten `IUserProvisioningStep`-Implementierungen (CE: Identität → Benutzer → Profil/Avatar → Signup-Gate → Instanz-Admin-Spiegel → Einladungen → Onboarding-Ziel). Verknüpfung über `(issuer, subject)` in `user_identities`; E-Mail-Verknüpfung mit einem bestehenden, **unverknüpften** Konto nur bei `email_verified=true`; `email_verified=false` → kein Konto, Fehler 5124 `OAUTH_PROVIDER_UNVERIFIED_EMAIL`. | Verknüpfung nur über E-Mail (Takeover-Risiko, vgl. GHSA-7j95-vh8g-f365); Provisionierung über Keycloak-Event-Listener/SPI (Java-Code im Stack) | Andockstelle E3 (`01` §1.4), Takeover-Schutz | I0 (Kern), I1 (Einladungen) |
 | **D05-ADR-08** | **Keycloak ist führend für E-Mail und Anmeldedaten.** `users.email` und `users.is_email_verified` werden bei **jedem** Login aus den Claims übernommen. Plane bietet keine eigene E-Mail-Änderung mehr (CE-PROF-004 **angepasst**: „Change email“ öffnet die Keycloak-Kontokonsole); Passwort, 2FA, Passkeys und Geräte verwaltet die Kontokonsole (Profil → Security). Namen und Avatar übernimmt Plane nur bei der Anlage, außer `Plane:Auth:SyncProfileOnLogin=true` (Nachfolger von `ENABLE_<PROVIDER>_SYNC`, CE-AUTH-012). | E-Mail-Änderung in Plane mit Rückschreiben nach Keycloak (Admin-API-Credentials in Plane) | Eine Quelle der Wahrheit; kein Admin-Token für Keycloak in Plane | I0/I1 |
 | **D05-ADR-09** | **Instanz-Admin = Keycloak-Realm-Rolle.** Konfigurierbar `Plane:Auth:InstanceAdminRole` (Default `plane-instance-admin`, Claim `roles`) und optional `Plane:Auth:InstanceAdminGroup` (Claim `groups`, z. B. `/plane-instance-admins`). `PlanePrincipal.IsInstanceAdmin` entsteht ausschließlich aus dem Session-Ticket. Tabelle `instance_admins` ist nur **Spiegel** (bei jedem Login gepflegt) für `GET /api/instances/admins/` und die Workspace-Liste; `POST`/`DELETE /api/instances/admins/` entfallen (CE-INST-004 angepasst, O-11). | eigene Admin-Pflege in Plane (Doppelpflege, widerspricht ADR-008) | Rechteentzug in Keycloak wirkt ohne Plane-Aktion | I0 |
 | **D05-ADR-10** | **Erst-Einrichtung ohne Admin-Konto.** `Plane.Migrator` legt die Instanz (`is_setup_done=false`) und die Default-Konfiguration an (Korrektur B-31). Der erste Keycloak-Benutzer mit Admin-Rolle sieht im God Mode das reduzierte Setup-Formular (Vorname, Nachname, E-Mail read-only, Firmenname, Telemetrie-Checkbox ohne Wirkung) und schließt es mit `POST /api/instances/admins/setup/` (JSON) atomar ab (Row-Lock, S-16). Den ersten Admin-Benutzer legt der Realm-Import (Dev/Test) bzw. `deploy/keycloak/config/10-plane-bootstrap-admin.json` (Prod, Variablen `PLANE_BOOTSTRAP_ADMIN_EMAIL`, `PLANE_BOOTSTRAP_ADMIN_PASSWORD`, Required Action `UPDATE_PASSWORD`) an. | Admin-Anlage per Plane-Formular mit Passwort (widerspricht ADR-008) | ADR-008, B-31 | I0 |
@@ -115,8 +115,8 @@ Jede Entscheidung konkretisiert eine ADR aus `00`/`01`; Abweichungen von `01` gi
 | **D05-ADR-22** | **WebSocket-Authentisierung über dieselbe Session + Origin-Allowlist.** `Plane.Realtime` validiert das Session-Cookie aus dem Upgrade-Request gegen `user_sessions` (gemeinsamer Key-Ring) und lehnt Upgrades mit nicht erlaubtem `Origin` ab (Schutz gegen Cross-Site-WebSocket-Hijacking, im Original nicht vorhanden). | Ticket-Token im Query-String | Gleiches Modell wie HTTP | I0 (Hub), I4 |
 | **D05-ADR-23** | **Security-Header zentral im Gateway**, CSP ab I0 `Content-Security-Policy-Report-Only`, ab I7 erzwungen; `frame-ancestors 'none'` für Web/Admin, für Space-Boards einbettbar (CE-SPACE-029), Space-Startseite `SAMEORIGIN` (Original). | CSP sofort erzwingen (Risiko für Editor/Emoji-Assets ohne Messung) | Parität + Härtung messbar | I0 (Report-Only), I7 (Enforce) |
 | **D05-ADR-24** | **Ein SSRF-sicherer HTTP-Client für alle ausgehenden Aufrufe an Nutzer-URLs** (`SsrfSafeHttpHandler` in `Plane.Platform.Security`): Webhooks, Link-Vorschau, Avatar-Download, Unsplash, LLM-Endpunkt (mit Allowlist für interne LLM-Hosts). Regeln S-01/S-02 1:1. Interne Ziele (Keycloak, Forgejo, Objektspeicher) laufen über eigene benannte Clients ohne diesen Handler. | Prüfung nur zur Speicherzeit (DNS-Rebinding) | Original-Schutz inkl. Advisories bleibt | I1 |
-| **D05-ADR-25** | **Data-Protection-Key-Ring in PostgreSQL** (`data_protection_keys`, `PersistKeysToDbContext`), Anwendungsname `plane` (gemeinsam für Api, Realtime, Worker, Gateway), optional `ProtectKeysWithCertificate` (`Plane:DataProtection:CertificatePath`/`…Password`), Schlüsselrotation 90 Tage (Default). Zwecke: `Plane.Identity.SessionCookie.v1`, `Plane.Identity.SessionTicket.v1`, `Plane.Identity.OidcState.v1`, `Plane.Instance.Configuration.v1` (Ersatz Fernet), `Plane.Antiforgery`. `SECRET_KEY` wird nicht mehr benötigt (Startwarnung, wenn gesetzt). | Fernet-Nachbau mit `SECRET_KEY` | ADR-036 | I0 |
-| **D05-ADR-26** | **Rate Limiting** mit `Microsoft.AspNetCore.RateLimiting`, Policies 1:1 zum Original (`authentication`, `anon`, `asset_duplicate`, `api_key` aus `PlaneRateLimitPolicies` in `02` §3.13, Gateway `static`), verteilter Zähler über Valkey wenn konfiguriert (ADR-034); Client-IP nur über `ForwardedHeaders` mit `KnownProxies`/`KnownNetworks` und `ForwardLimit=NUM_PROXIES` (Korrektur E-19). | Gateway-Limit allein | Parität, Brute-Force-Schutz bleibt neben Keycloak-Brute-Force-Detection | I1 |
+| **D05-ADR-25** | **Data-Protection-Key-Ring in PostgreSQL** (`data_protection_keys`, `PersistKeysToDbContext`), Anwendungsname `plane` (gemeinsam für Api, Realtime, Worker, Gateway), optional `ProtectKeysWithCertificate` (`Plane:DataProtection:CertificatePath`/`…Password`), Schlüsselrotation 90 Tage (Default). Zwecke: `Plane.Identity.SessionCookie.v1`, `Plane.Identity.SessionTicket.v1`, `Plane.Identity.OidcState.v1.<scheme>` (je OIDC-Schema eigener Zweck, D05-ADR-01), `Plane.Instance.Configuration.v1` (Ersatz Fernet), `Plane.Antiforgery`. `SECRET_KEY` wird nicht mehr benötigt (Startwarnung, wenn gesetzt). | Fernet-Nachbau mit `SECRET_KEY` | ADR-036 | I0 |
+| **D05-ADR-26** | **Rate Limiting** mit `Microsoft.AspNetCore.RateLimiting`, Policies 1:1 zum Original (`authentication`, `anon`, `asset_duplicate`, `api_key` aus `PlaneRateLimitPolicies` in `02` §3.13, Gateway `static`), verteilter Zähler über Valkey wenn konfiguriert (ADR-034); Client-IP nur über `ForwardedHeaders` mit `KnownProxies`/`KnownIPNetworks` (`System.Net.IPNetwork`; `KnownNetworks` ist ab .NET 10 obsolet, Warnung `ASPDEPR005`) und `ForwardLimit=NUM_PROXIES` (Korrektur E-19). | Gateway-Limit allein | Parität, Brute-Force-Schutz bleibt neben Keycloak-Brute-Force-Detection | I1 |
 
 ---
 ## 3. Detaildesign
@@ -208,14 +208,15 @@ sequenceDiagram
   A-->>B: 200 {"is_authenticated": false}
   Note over B: AuthLandingComponent: kein error_code → Auto-Redirect
   B->>A: GET /auth/oidc/login/?app=web&next_path=/acme/projects/
-  A->>A: next_path validieren, State(app,next_path,PKCE-Verifier,nonce) DP-schützen
+  A->>A: next_path validieren, Schema oidc-web wählen, State(app,next_path,PKCE-Verifier) DP-schützen, Nonce-Cookie setzen
   A-->>B: 302 K/authorize?client_id=plane-web&code_challenge=…&state=…&nonce=…
   B->>K: Login im Theme "plane" (E-Mail → Passwort, ggf. OTP/Passkey)
   K-->>B: 302 /auth/oidc/callback/?code=…&state=…
-  B->>A: GET /auth/oidc/callback/…
+  B->>A: GET /auth/oidc/callback/… (oidc-admin/-space überspringen: State nicht entschlüsselbar)
   A->>K: POST /token (code, code_verifier, client_id=plane-web, client_secret)
   K-->>A: id_token, access_token, refresh_token
-  A->>A: id_token validieren (iss, aud ∈ {plane-web,plane-admin,plane-space}, azp, nonce, exp)
+  A->>A: id_token validieren (iss, aud = plane-web, azp = plane-web, nonce, exp, at_hash)
+  Note over A: OnTicketReceived (nach vollständiger Validierung)
   A->>DB: UserProvisioningPipeline (user_identities, users, profiles, Einladungen, instance_admins)
   A->>DB: INSERT user_sessions (ticket verschlüsselt, keycloak_sid)
   A-->>B: 302 /?next_path=/acme/projects/ + Set-Cookie session-id (HttpOnly, Lax)
@@ -241,16 +242,17 @@ sequenceDiagram
 |---|---|
 | `response_type` | `code` |
 | `scope` | `openid profile email plane-roles plane-groups` (`offline_access` **nicht**) |
-| PKCE | `S256`, Verifier 64 Byte Zufall (Handler-Default `UsePkce=true`) |
+| PKCE | `S256`, Verifier 32 Byte Zufall, Base64URL (43 Zeichen) – Handler-Default bei `UsePkce=true` (`OpenIdConnectHandler`: `new byte[32]` + `RandomNumberGenerator.Fill`) |
 | `response_mode` | `query` |
-| `nonce` | Handler-Default (Cookie-los: im geschützten State) |
+| `nonce` | Handler-Default: zufälliger Nonce im Authorize-Request, Ablage im Nonce-Cookie `.plane.oidc.nonce.<hash>` (nicht im State); Prüfung durch `OpenIdConnectProtocolValidator` nach `TokenValidated` |
 | Pushed Authorization Requests | aus (`PushedAuthorizationBehavior.Disable`); Option `Plane:Auth:Oidc:UsePar` |
-| Token-Validierung | `ValidIssuer` = `Plane:Auth:Oidc:Authority`; `ValidAudiences` = alle drei Client-IDs; `azp` muss zur App im State passen; Clock-Skew 60 s; `RequireHttpsMetadata` = `Plane:Auth:Oidc:RequireHttpsMetadata` (Dev `false`) |
-| Claims-Quelle | ID-Token + UserInfo (`GetClaimsFromUserInfoEndpoint=true`, damit `picture` und `groups` vollständig sind) |
+| Token-Validierung | `ValidIssuer` = `Plane:Auth:Oidc:Authority` (öffentlicher Issuer); `ValidAudience` = Client-ID **des Schemas**; `azp` = Client-ID des Schemas (Standardprüfung des `OpenIdConnectProtocolValidator`, IDX21340); Clock-Skew 60 s; `RequireHttpsMetadata` = `Plane:Auth:Oidc:RequireHttpsMetadata` (Dev `false`); Discovery/JWKS/Token-Endpunkt über `Plane:Auth:Oidc:MetadataAddress` (optional, interne Adresse, z. B. `http://keycloak:8080/idp/realms/plane/.well-known/openid-configuration`, `14` §3.2.2) – Keycloak meldet dank `KC_HOSTNAME` + `KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true` trotzdem den öffentlichen Issuer ⚠ S7 |
+| Claims-Quelle | **nur ID-Token** (`GetClaimsFromUserInfoEndpoint=false`): alle benötigten Mapper schreiben in das ID-Token (`profile` inkl. Keycloak-Standard-Mapper `picture`, `email`, `basic`, `plane-roles`, `plane-groups`); damit entfallen ein Roundtrip und das Zusammenführen über `ClaimActions`. Default-`ClaimActions` des Handlers löschen nach der Validierung u. a. `iss`, `aud`, `azp`, `nonce`, `iat`, `exp` aus der Identität – `IdentityClaims.From` liest den Issuer daher aus `Claim.Issuer` des `sub`-Claims; `sid` und `auth_time` bleiben erhalten (nicht in der Löschliste, `OpenIdConnectOptions.cs` release/10.0) |
 | `MapInboundClaims` | `false` (Claim-Namen wie Keycloak: `sub`, `email`, `email_verified`, `given_name`, `family_name`, `name`, `picture`, `preferred_username`, `locale`, `sid`, `roles`, `groups`, `auth_time`) |
-| Correlation-/Nonce-Cookies | `.plane.oidc.correlation.*`, `.plane.oidc.nonce.*`: `SameSite=Lax`, `Secure` wie Session-Cookie, `HttpOnly`, Lebensdauer 15 min |
+| Correlation-/Nonce-Cookies | `.plane.oidc.correlation.<scheme>.*`, `.plane.oidc.nonce.*`: `SameSite=Lax` (genügt, weil Keycloak per Top-Level-GET mit `response_mode=query` zurückleitet), `Secure` wie Session-Cookie, `HttpOnly`, Lebensdauer 15 min (`RemoteAuthenticationTimeout`) |
 | Discovery | `{Authority}/.well-known/openid-configuration`, Cache 24 h, Refresh bei Signaturfehler (`ConfigurationManager.RequestRefresh`) |
 | Backchannel-HTTP | benannter Client `keycloak` mit Timeout 10 s (Korrektur E-24), eigene CA möglich (`Plane:Auth:Oidc:CaCertificatePath`) |
+| Rate-Limit am Callback | im ersten Handler-Ereignis `OnMessageReceived` über `AuthCallbackRateLimiter` (§3.17.6), weil der Handler den Callback in `UseAuthentication` (Pipeline-Schritt 10 in `02` §3.4.1) beantwortet – **vor** `UseRateLimiter` (Schritt 13) |
 
 #### 3.3.4 `next_path`-Validierung (1:1 zu `UT/path_validator.py`)
 
@@ -265,7 +267,8 @@ Das BFF leitet wie das Original **immer auf die App-Wurzel** mit `?next_path=` u
 | Ursache | Erkennung | Redirect-Fehler |
 |---|---|---|
 | Keycloak liefert `error=…` (z. B. `access_denied`, `temporarily_unavailable`, `login_required` bei `prompt=none`) | `OnRemoteFailure` / `OnMessageReceived` | 5200 `OIDC_AUTHENTICATION_FAILED` (bei `login_required`: erneuter Redirect ohne `prompt`) |
-| State ungültig/abgelaufen (Correlation-Cookie fehlt, > 15 min) | `OnRemoteFailure` | 5200 |
+| State nicht entschlüsselbar (manipuliert, Key-Ring-Wechsel, fremdes Schema) | alle drei Schemata überspringen (`SkipUnrecognizedRequests`) → Platzhalter-Endpunkt `GET /auth/oidc/callback` (§5.3) | 5200 (Ziel `{APP}/`, weil die App unbekannt ist) |
+| State gültig, aber Correlation-Cookie fehlt bzw. > 15 min (`RemoteAuthenticationTimeout`) | `OnRemoteFailure` | 5200 |
 | Token-Endpunkt/JWKS nicht erreichbar | `HttpRequestException` | 5201 `IDENTITY_PROVIDER_UNAVAILABLE` |
 | `email_verified=false` | Pipeline-Schritt Identität | 5124 `OAUTH_PROVIDER_UNVERIFIED_EMAIL` (Original-Code, Text im Frontend ergänzt, OP-06) |
 | E-Mail fehlt im Claim | dto. | 5010 `EMAIL_REQUIRED` |
@@ -275,7 +278,7 @@ Das BFF leitet wie das Original **immer auf die App-Wurzel** mit `?next_path=` u
 | neuer Benutzer, Signup-Gate greift | Pipeline-Schritt Signup-Gate | 5015 `SIGNUP_DISABLED` |
 | Instanz nicht eingerichtet (`web`/`space`) | Pipeline-Schritt Instanz | 5000 `INSTANCE_NOT_CONFIGURED` |
 | `app=admin` ohne Admin-Rolle | dto. | 5175 `ADMIN_AUTHENTICATION_FAILED` |
-| Rate-Limit | Policy `authentication` | 5900 `RATE_LIMIT_EXCEEDED` |
+| Rate-Limit | N-01: Policy `authentication`; N-02: `AuthCallbackRateLimiter` in `OnMessageReceived` | 5900 `RATE_LIMIT_EXCEEDED` |
 | unerwartete Ausnahme in Pipeline/Session-Anlage | `try/catch` im Callback-Handler (Log Error, Kategorie `plane.authentication`) | 5999 `AUTHENTICATION_FAILED` (statt HTTP 500) |
 
 Bei Fehlern **nach** erfolgreichem Token-Tausch wird keine Plane-Session angelegt; die Keycloak-SSO-Session bleibt bestehen (der Banner bietet „Sign in“ = N-01 mit `prompt=login`, damit ein anderes Konto gewählt werden kann).
@@ -328,13 +331,19 @@ Konfiguration (Optionsklasse `PlaneAuthOptions`, Abschnitt `Plane:Auth`, ENV-Ali
 | `SlidingSession` | `SESSION_SAVE_EVERY_REQUEST` (`"1"`) | `false` |
 | `CookieDomain` | `COOKIE_DOMAIN` | leer |
 | `RevalidateIntervalSeconds` | – | `300` |
+| `RevalidateGraceSeconds` | – | `900` (maximale Dauer ohne erfolgreiche Revalidierung bei **nicht erreichbarem** Keycloak; `invalid_grant` beendet sofort) |
 | `AdminStepUpMaxAgeSeconds` | – (Ersatz `ADMIN_SESSION_COOKIE_AGE`, wird ignoriert + Startwarnung) | `0` |
 | `AutoRedirect` | – | `true` |
 | `InstanceAdminRole` / `InstanceAdminGroup` | – | `plane-instance-admin` / leer |
 | `RequiredRole` | – | leer |
 | `SyncProfileOnLogin` | `ENABLE_GOOGLE_SYNC` u. a. (ignoriert) | `false` |
-| `Oidc:Authority`, `Oidc:ClientIds:{Web,Admin,Space}`, `Oidc:ClientSecrets:{Web,Admin,Space}`, `Oidc:RequireHttpsMetadata`, `Oidc:UsePar`, `Oidc:CaCertificatePath` | – | `…/realms/plane`, `plane-web`/`plane-admin`/`plane-space`, Secrets aus Parameter (`01` §3.4 `oidc-client-secret`; in Prod je Client getrennt), `true`, `false`, leer |
-| `Oidc:AccountConsoleUrl` | – | `{Authority}/account/` |
+| `Oidc:Authority`, `Oidc:MetadataAddress`, `Oidc:RequireHttpsMetadata`, `Oidc:UsePar`, `Oidc:CaCertificatePath` | – | `…/realms/plane` (öffentlicher Issuer), leer (= aus Authority abgeleitet; Prod: interne Adresse, `14`), `true`, `false`, leer |
+| `Clients:Web:{ClientId,ClientSecret}`, `Clients:Admin:{…}`, `Clients:Space:{…}` | – | `plane-web`/`plane-admin`/`plane-space`; Secrets aus Aspire-Parametern `oidc-web-secret`, `oidc-admin-secret`, `oidc-space-secret` (ENV `Plane__Auth__Clients__Web__ClientSecret` usw., Groß-/Kleinschreibung egal) |
+| `Backend:{ClientId,ClientSecret}` | – | `plane-backend`, Parameter `oidc-backend-secret` (`IdpUserStateSyncJob`) |
+| `Bearer:Enabled`, `Bearer:Audience` | – | `false`, `plane-api` (H1) |
+| `Oidc:AccountConsoleUrl`, `Oidc:AccountConsolePaths:{Security,PersonalInfo}`, `Oidc:DisplayName` | – | `{Authority}/account/`, `account-security/signing-in` / `personal-info` (⚠ S7, O-D05-01), `Keycloak` |
+
+Diese Optionsnamen sind **verbindlich** (D05 ist fachlicher Eigentümer von `PlaneAuthOptions`; `14` §3.2.2 hat die Feldnamen ausdrücklich an D05 delegiert). Abweichende Schreibweisen in anderen Dokumenten (`Plane:Auth:BearerEnabled` in `02`/`15`, `Plane__Auth__Oidc__ClientSecret` im AppHost-Skelett von `01` §3.4) sind an diese Namen anzugleichen (§9).
 
 #### 3.4.4 Lebenszyklus
 
@@ -355,7 +364,7 @@ Konfiguration (Optionsklasse `PlaneAuthOptions`, Abschnitt `Plane:Auth`, ENV-Ali
 | Prüfung | Gilt für | Regel | Fehler |
 |---|---|---|---|
 | `OriginCheckMiddleware` | Anfragen mit Schema `Session` und Methode ∉ {GET, HEAD, OPTIONS, TRACE}, alle Pfade (`/api/`, `/auth/`, `/api/public/`, `/api/instances/`) | `A06` §3.14.1 1:1; Allowlist = normalisierte Origins von `Plane:Urls:{Web,Admin,Space,Live}` ∪ `CORS_ALLOWED_ORIGINS` ∪ `CSRF_TRUSTED_ORIGINS`; zusätzlich: fehlt `Origin` und `Sec-Fetch-Site` = `cross-site` → ablehnen | 403 `{"detail": "CSRF Failed: origin not allowed"}` |
-| Antiforgery | `POST /auth/sign-out/`, `/auth/spaces/sign-out/`, `/api/instances/admins/sign-out/` | Formularfeld `csrfmiddlewaretoken` oder Header `X-CSRFToken` passend zu Cookie `csrftoken` | 200 HTML `csrf_failure.html` 1:1 (`apps/api/templates/csrf_failure.html`, Button „Go to Home Page“ → `{APP}`) (CE-AUTH-016) |
+| Antiforgery | `POST /auth/sign-out/`, `/auth/spaces/sign-out/`, `/api/instances/admins/sign-out/` | Formularfeld `csrfmiddlewaretoken` oder Header `X-CSRFToken` passend zu Cookie `csrftoken` | 200 HTML `csrf_failure.html` 1:1 (`apps/api/templates/csrf_failure.html`, Button „Go to Home Page“ → `{APP}`; Original `render()` ohne Status = 200) (CE-AUTH-016). Mechanik: die drei Sign-out-Endpunkte tragen `.DisableAntiforgery()` und prüfen selbst mit `IAntiforgery.IsRequestValidAsync(http)` – die automatische Antiforgery-Middleware würde sonst 400 liefern |
 | `SameSite=Lax` | Session-Cookie | zweite Linie | – |
 | Back-Channel-Logout | N-07 | **ausgenommen** von Origin/Antiforgery (Server-zu-Server), geschützt über Logout-Token-Signatur | – |
 | WebSocket-Upgrade | `/live/*` | `WebSocketOriginValidator`: `Origin` **muss** vorhanden und in der Allowlist sein | 403 vor Upgrade |
@@ -419,12 +428,12 @@ Keycloak erreicht den Endpunkt über die **interne** Adresse (`backchannel.logou
 | 200 | `ResolveInstanceStep` | Instanz laden; `app ≠ admin` und `is_setup_done=false` → Fehler; `app = admin` ohne Admin-Rolle → Fehler | 5000, 5175 | Instanz-Checks in allen Auth-Views |
 | 300 | `LinkOrCreateUserStep` | (a) `user_identities` per `(iss, sub)` → Benutzer; (b) sonst Benutzer per E-Mail: existiert und **ohne** Identität → verknüpfen (nur `email_verified`), mit **anderer** Identität → 5202; (c) sonst `ctx.IsNewUser = true` (Anlage erst nach Signup-Gate) | 5202 | `complete_login_or_signup` |
 | 350 | `AccountStateGuardStep` | `is_bot` → 5017; `is_active=false` und `last_logout_time != null` → 5019 (bei `app=admin` 5190); `is_active=false` und `last_logout_time == null` (vorprovisioniert, E3/SCIM) → aktivieren + Mail `user_activation_email` | 5017, 5019, 5190 | S-15, `A06` §3.17 |
-| 400 | `SignupGateStep` | nur `IsNewUser`: `ENABLE_SIGNUP == "0"` und keine offene Einladung (`workspace_member_invites`/`project_member_invites` mit E-Mail) und kein Instanz-Admin → 5015 | 5015 | `__check_signup` |
+| 400 | `SignupGateStep` | nur `IsNewUser`: `ENABLE_SIGNUP == "0"` und keine Einladung mit dieser E-Mail (`workspace_member_invites` beliebigen Status wie Original; **zusätzlich** `project_member_invites` und Ausnahme für Instanz-Admins – bewusste, nur rechteerweiternde Harmonisierung **HARM-AUTH-01**, weil Projekt-Einladungen und Admin-Konten im Original über andere Wege angelegt wurden) → 5015 | 5015 | `__check_signup` (`AUTH/adapter/base.py` Z. 99–117: nur `WorkspaceMemberInvite.objects.filter(email=…)`) |
 | 500 | `CreateUserStep` | nur `IsNewUser`: `users` + `profiles` + `user_identities` anlegen (eine Transaktion), Avatar-Download als Job (`DownloadAvatarJob`, blockiert den Login nicht) | – | `complete_login_or_signup` |
 | 550 | `SyncProfileStep` | E-Mail/`is_email_verified` immer; Namen/Avatar bei `SyncProfileOnLogin` | 5202 bei E-Mail-Kollision | `sync_user_data` |
 | 600 | `UpdateLoginMetadataStep` | `last_login_time`, `last_login_ip` (Client-IP §3.17.6), `last_login_uagent`, `last_login_medium="oidc"`, `last_active`, `is_active=true` | – | `save_user_data` |
 | 700 | `MirrorInstanceAdminStep` | Rolle/Gruppe vorhanden → `instance_admins` upsert (role 20, `source=keycloak`); fehlt → Zeile löschen | – | – (neu) |
-| 800 | `JoinAcceptedInvitationsStep` | angenommene Workspace-Einladungen → `workspace_members` (Rolle aus Einladung); angenommene Projekt-Einladungen → `workspace_members` (Rolle ∈ {5,15}, sonst 15) **und** `project_members` **mit `project_id`** (Korrektur E-02/OP-03); danach Einladungen löschen; Cache-Tags `workspace:{slug}:members` invalidieren | – | `post_user_auth_workflow` (CE-AUTH-028) |
+| 800 | `JoinAcceptedInvitationsStep` | angenommene Workspace-Einladungen → `workspace_members` (Rolle aus Einladung); angenommene Projekt-Einladungen → `workspace_members` **und** `project_members` **mit `project_id`** (Korrektur E-02/OP-03), in beiden Fällen Rolle ∈ {5,15}, sonst 15, `created_by_id` = Einlader (1:1 `AUTH/utils/workspace_project_join.py`), Konflikte ignoriert (`ON CONFLICT DO NOTHING` wie `ignore_conflicts=True`); danach Einladungen löschen; Cache-Tags `workspace:{slug}:members` invalidieren | – | `post_user_auth_workflow` (CE-AUTH-028) |
 | 900 | `ComputeLandingStep` | nur Logging/Telemetrie-frei: setzt `ctx.Landing` (für Tests); das Ziel bestimmt das Frontend (§3.3.5) | – | `get_redirection_path` |
 
 Alle Schritte laufen in **einer** Datenbanktransaktion (`ModuleScope("Identity")`; Schreibzugriffe auf `workspace_members`/`project_members`/`instance_admins` erfolgen über die Contracts-Services der Eigentümer `Workspaces`, `Projects`, `Instance` – Regel R5 in `01`). E3 fügt später Schritte mit `Order` 750 (Gruppen-Sync) hinzu (§6).
@@ -597,7 +606,7 @@ Ziel-Prüfung in Anhang B: `LEVEL(Rollen)` + Regeln, z. B. `PRJ(A)+C:Issue` = �
 | `project` | `member` | Member | 15 |
 | `project` | `guest` | Guest | 5 |
 
-`workspace_members.role_id` / `project_members.role_id` referenzieren `roles`; die API liefert weiterhin `role: 20|15|5` (= `roles.level`), Requests mit `role` werden auf die System-Rolle gleichen Levels abgebildet. `SystemRoleProvider` (CE-Implementierung von `IRoleDefinitionProvider`) liefert je System-Rolle die Grant-Menge = alle Keys aus Anhang A, deren Spalte für die Rolle „✓“ zeigt. Diese Menge wird **beim Build** aus `PermissionKeys.g.cs` (Generator-Ausgabe der Matrix-Datei) erzeugt; ein Test vergleicht sie mit `05-permission-matrix.json`.
+`workspace_members.role_id` / `project_members.role_id` referenzieren `roles`; die API liefert weiterhin `role: 20|15|5` (= `RoleDefinition.LegacyValue` = `roles.level`), Requests mit `role` werden auf die System-Rolle gleichen Levels abgebildet. Zusätzlich legt die CE die (leere) Tabelle `role_permissions(role_id, permission_key)` an (`02` §3.6.1, `16` E5); System-Rollen haben **keine** Zeilen darin, ihre Grants entstehen aus dem Code. Die integer-Spalte `role` in den Mitgliedschaftstabellen bleibt als **denormalisierte** Kopie von `roles.level` (PostgreSQL-Generated-Columns können keine andere Tabelle referenzieren); sie wird ausschließlich von `IWorkspaceMembershipService`/`IProjectMembershipService` im selben `SaveChanges` wie `role_id` gesetzt, ein Integritätstest (`MembershipRoleConsistencyTests`) prüft `role = roles.level` für alle Zeilen. `SystemRoleProvider` (CE-Implementierung von `IRoleDefinitionProvider`) liefert je System-Rolle die Grant-Menge = alle Keys aus Anhang A, deren Spalte für die Rolle „✓“ zeigt. Diese Menge wird **beim Build** aus `PermissionKeys.g.cs` (Generator-Ausgabe der Matrix-Datei) erzeugt; ein Test vergleicht sie mit `05-permission-matrix.json`.
 
 #### 3.13.4 Evaluator-Algorithmus (`PermissionEvaluator.HasAsync`)
 
@@ -609,21 +618,26 @@ eingabe: principal, permission(key, level), scope(workspaceId, projectId?), rule
 4. permission.level == INST            → principal.IsInstanceAdmin
 5. ws := membership(principal, workspace) (aktiv, nicht gelöscht; MembershipCache je Request)
    ws == null                          → DENY
+   wsRole := roles.Get(ws.RoleId)      (IRoleDefinitionProvider; CE: SystemRoleProvider)
 6. falls Regel C:<Model> vorhanden:
      level == PRJ und prj(principal) == null → DENY      (Original: sofort 403)
      created_by(Model, routeValues.pk) == principal → ALLOW
 7. level == WS:
-     roleDef := roles.Get(ws.RoleId); roleDef.Grants ∋ key → ALLOW
+     wsRole.PermissionKeys ∋ key → ALLOW
 8. level == PRJ:
      prj := projectMembership(principal, project)
      prj == null:
-        Regel WSA|PA und ws.level == 20 → ALLOW
+        Regel WSA|PA und wsRole.PermissionKeys ∋ "workspace.admin_override" → ALLOW
         → DENY
-     effektiv := (ws.level == 20) ? SystemRoles.ProjectAdmin : roles.Get(prj.RoleId)     (D05-ADR-18)
-     effektiv.Grants ∋ key → ALLOW
+     prjRole := roles.Get(prj.RoleId); prjRole.PermissionKeys ∋ key → ALLOW
+     wsRole.PermissionKeys ∋ "workspace.admin_override" ∧ SystemRoles.ProjectAdmin.PermissionKeys ∋ key → ALLOW   (D05-ADR-18, Regel WorkspaceAdminOverride aus 02 §3.6.2 – hier auf ALLE PRJ-Deskriptoren angewendet)
 9. Regel PAGE/BOARD/SELF/OWN als zusätzliche Objektprüfung (alle müssen erfüllt sein)
 10. sonst DENY → 403 im DenyStyle des Keys bzw. Endpunkts
 ```
+
+**Interner Key `workspace.admin_override`** (aus `02` §3.6.4, Grant nur `workspace.admin`): steuert den Override; er ist **kein** Endpunkt-Key (nicht unter den 258 aus Anhang A) und steht deshalb in `InternalPermissionKeys` (Ausnahme in Architekturtest 2). Damit prüft auch der Evaluator keine Rollenzahl (Architekturtest 4, `PLANE0001`), und E5 kann den Override Custom Roles geben.
+
+**Namensabgleich mit `02` §3.6 (verbindlich, `02` ist Eigentümer der Mechanik):** Die Notation dieses Dokuments ist nur Kurzschrift; im Code gelten die Typen aus `02`: `+C:<Model>` = `PermissionRule.CreatorBypass(typeof(<Entity>), "pk", RequireMembership: true)`, Eigentümer-Bypass der Pages = `PermissionRule.OwnerBypass(typeof(Page), "page_id")`, `INST` = `PermissionRule.InstanceAdminOnly`, `AUTH` = `PermissionRule.AnyAuthenticated`, PRJ-Override = `PermissionRule.WorkspaceAdminOverride` (von `PermissionDescriptor.Project(...)` **standardmäßig** gesetzt, HARM-00); `OWN`, `SELF`, `VIS`, `PAGE`, `BOARD`, `WSA|PA`, `PRJ-MEMBER` ergänzen die Regelliste von `02` als `PermissionRule.Own`, `.Self`, `.GuestVisibility`, `.PageAccess`, `.Board`, `.WorkspaceAdminOrProjectAdmin`, `.ProjectMemberOfBody` (Nachtrag in `02`, §9). `RoleDefinition` hat die Form aus `02`: `RoleDefinition(Guid Id, string Name, ScopeLevel Scope, int LegacyValue, bool IsSystem, IReadOnlySet<string> PermissionKeys)`.
 
 Der Evaluator läuft als `PermissionEndpointFilter` **vor** Model-Binding des Bodys (Original: DRF-Permission vor Serializer). `VIS`/`OWN` auf Listen wirken als Query-Filter im Handler (`IVisibilityFilter<T>`), nicht im Filter.
 
@@ -655,13 +669,13 @@ Der Evaluator läuft als `PermissionEndpointFilter` **vor** Model-Binding des Bo
 
 ```csharp
 g.MapPatch("{pk:guid}", UpdateWorkItem)
- .RequirePermission(WorkItemsPermissions.ProjectWorkItemUpdate, PermissionRule.Creator<WorkItem>())   // PRJ(A,M)+C:Issue
+ .RequirePermission(WorkItemsPermissions.ProjectWorkItemUpdate, PermissionRule.CreatorBypass(typeof(WorkItem), "pk", RequireMembership: true))   // PRJ(A,M)+C:Issue
  .WithDenyStyle(DenyStyle.Error);                                                                       // {"error": "You don't have the required permissions."} (nur nötig, wenn vom Descriptor-Default abweichend)
 ```
 
 Architekturtests (`tests/Plane.ArchitectureTests/AuthorizationRules.cs`):
 1. Jede registrierte Route (alle `EndpointDataSource`s von Api/Realtime) trägt **genau eine** `PermissionMetadata` oder `AllowAnonymousAttribute`.
-2. Jeder `PermissionKeys`-Eintrag wird von mindestens einem Endpunkt referenziert (keine toten Keys) oder ist in `ReservedPermissionKeys` (E5-Vorhalt) gelistet.
+2. Jeder `PermissionKeys`-Eintrag wird von mindestens einem Endpunkt referenziert (keine toten Keys) oder ist in `ReservedPermissionKeys` (Paket-Vorhalt, §6.1) bzw. `InternalPermissionKeys` (`workspace.admin_override`, §3.13.4) gelistet.
 3. Für jede Zeile aus `05-permission-matrix.json` mit `permission != null` existiert eine Route mit gleicher Methode, gleichem Pfad (Trailing-Slash-normalisiert) und gleichem Key; Zeilen mit `target = "entfällt"` haben **keine** Route – einzige Ausnahme sind die Einträge aus `BffAliasRoutes` (`POST /api/instances/admins/sign-out/`, N-05), die als anonyme Auth-Oberflächen-Route existieren müssen.
 4. Rollenwerte (`20`, `15`, `5`) kommen außerhalb von `SystemRoles`/`SystemRoleProvider` nicht vor (Analyzer-Regel `PLANE0001`).
 
@@ -707,10 +721,11 @@ Zusätzlich gilt für alle Mitgliedschaftsprüfungen `deleted_at IS NULL` und `D
 
 | Datei | Zweck | Anwendung |
 |---|---|---|
-| `realms/plane-realm.json` | vollständiger Realm für **Dev/Test** inkl. Testbenutzer (§3.15.7) | Aspire `WithRealmImport("../../../deploy/keycloak/realms")` (`--import-realm`), Testcontainers `Testcontainers.Keycloak` (`WithRealm`) |
+| `realms/plane-realm.json` | vollständiger Realm für **Dev** inkl. Testbenutzer (§3.15.7), von Hand gepflegt | Aspire `WithRealmImport("../../../deploy/keycloak/realms/plane-realm.json")` (`--import-realm`; **Datei**, nicht Verzeichnis, weil im Verzeichnis zwei Dateien desselben Realms `plane` liegen) |
+| `realms/plane-realm.test.json` | **generiert** (`15` §3.14.2, Werkzeug `keycloak-test-realm`): `plane-realm.json` ⊕ `tests/seed/keycloak/test-overrides.json` (Access-Token 60 s, Back-Channel-URL `http://gateway/auth/oidc/backchannel-logout/`, Test-Schwellwerte Brute-Force) ⊕ `tests/seed/keycloak/parity-users.json` (Parity-Seed-Benutzer, Gruppen `team-a`/`team-b`, Test-Client `plane-test-app` für H1-Erweiterungstests) | Profil `test` (`WithRealmImport("…/plane-realm.test.json")`) und Testcontainers (`Testcontainers.Keycloak` mit `WithResourceMapping(<datei>, "/opt/keycloak/data/import/")` + `--import-realm` ⚠ S0: genaue Builder-API der gepinnten 4.x-Version prüfen); `KeycloakRealmConfigTests.TestRealm_IsUpToDate` (`--check`) |
 | `config/00-plane-realm.json` | Realm **ohne** Benutzer für Prod/`prodlike` (keycloak-config-cli-Format = Realm-Representation) | Init-Container `keycloak-config` (`adorsys/keycloak-config-cli`, Version an Keycloak-Major gekoppelt ⚠ S0) mit `KEYCLOAK_URL`, `KEYCLOAK_USER`, `KEYCLOAK_PASSWORD`, `IMPORT_FILES_LOCATIONS=/config/*.json`, `IMPORT_VARSUBSTITUTION_ENABLED=true`, `IMPORT_MANAGED_CLIENT=no-delete` |
 | `config/10-plane-bootstrap-admin.json` | erster Instanz-Admin (Benutzer + Rolle, Required Action `UPDATE_PASSWORD`) | nur wenn `PLANE_BOOTSTRAP_ADMIN_EMAIL` gesetzt (Compose-Profil `bootstrap`) |
-| `config/20-forgejo-client.json` | Client `forgejo` (F2) | wenn Forgejo gebündelt (`Plane:Forgejo:Bundled`) |
+| `config/20-forgejo-client.json` | Client `plane-forgejo` (F2) | wenn Forgejo gebündelt (`Plane:Forgejo:Bundled`) |
 | `themes/plane/`, `themes/plane-space/` | Login-Theme (§3.16) | Bind-Mount `/opt/keycloak/themes/` (Dev) bzw. eigenes Image `funk/keycloak` = `quay.io/keycloak/keycloak:<pin>` + Themes + `kc.sh build` (Prod, airgapped) |
 | `tools/keycloak-theme/` (Repo-Wurzel) | Build des Themes: Tailwind-CSS, Messages, Passwort-Stärke-Skript, Visual-Tests | CI, Node nur Build-Zeit |
 
@@ -725,7 +740,7 @@ Platzhalter (Keycloak ersetzt `${VAR}` beim Import aus Umgebungsvariablen; confi
 | `loginTheme` | `plane` | §3.16 |
 | `accountTheme` | `keycloak.v3` | Kontokonsole (Passwort, 2FA, Passkeys, Geräte); kein 1:1-Vorbild im Original |
 | `emailTheme` | `plane` | Keycloak-Mails im Plane-Stil (Templates aus `apps/api/templates/emails/auth/*` übernommen) |
-| `internationalizationEnabled` / `supportedLocales` / `defaultLocale` | `true` / alle 22 Plane-Locales aus `packages/i18n/src/locales` (`bg`, `cs`, `de`, `en`, `es`, `fr`, `id`, `it`, `ja`, `ka-ge`, `ko`, `nl`, `pl`, `pt-BR`, `ro`, `ru`, `sk`, `tr-TR`, `ua`, `vi-VN`, `zh-CN`, `zh-TW`; Keycloak-Locale-Codes werden beim Build abgeleitet, z. B. `ua` → `uk`, `ka-ge` → `ka`, Liste in `tools/keycloak-theme/locale-map.json`) / `en` | i18n-Parität |
+| `internationalizationEnabled` / `supportedLocales` / `defaultLocale` | `true` / alle 22 Plane-Locales aus `packages/i18n/src/locales` (`bg`, `cs`, `de`, `en`, `es`, `fr`, `id`, `it`, `ja`, `ka-ge`, `ko`, `nl`, `pl`, `pt-BR`, `ro`, `ru`, `sk`, `tr-TR`, `ua`, `vi-VN`, `zh-CN`, `zh-TW`) – im Realm stehen die **Keycloak-Codes** (BCP 47), die der Build aus `tools/keycloak-theme/locale-map.json` ableitet (z. B. `ua` → `uk`, `ka-ge` → `ka`, `tr-TR` → `tr`, `vi-VN` → `vi`); `ui_locales` aus N-01 wird mit derselben Tabelle übersetzt / `en` | i18n-Parität |
 | `registrationAllowed` | `false` | ADR-008; Betreiber kann aktivieren |
 | `registrationEmailAsUsername` / `loginWithEmailAllowed` / `duplicateEmailsAllowed` / `editUsernameAllowed` | `true` / `true` / `false` / `false` | E-Mail ist Identifikator wie im Original |
 | `resetPasswordAllowed` | `true` | Nachfolger CE-AUTH-017/-018 |
@@ -752,7 +767,7 @@ Platzhalter (Keycloak ersetzt `${VAR}` beim Import aus Umgebungsvariablen; confi
 | `plane-space` | wie `plane-web` (`${PLANE_SPACE_CLIENT_SECRET}`) | wie oben | wie oben | – | wie oben | wie oben | `plane-space` | wie oben |
 | `plane-backend` | confidential, **nur Service-Account** (`serviceAccountsEnabled=true`, `standardFlowEnabled=false`) | – | – | – | – | Client Credentials | – | Service-Account-Rollen: `realm-management/view-users` (für `IdpUserStateSyncJob`; E3 Offline-Sync) |
 | `plane-api` | **Resource-Server** (`bearerOnly`-Äquivalent: kein Flow aktiv, `publicClient=false`) | – | – | – | – | – | – | dient als Audience: Client-Scope `plane-api-audience` (Audience-Mapper `included.client.audience=plane-api`), in CE keinem Client zugewiesen (H1) |
-| `forgejo` | confidential (`${FORGEJO_CLIENT_SECRET}`) | `${FORGEJO_PUBLIC_URL}/user/oauth2/keycloak/callback` | `${FORGEJO_PUBLIC_URL}/` | – | `${FORGEJO_PUBLIC_URL}/…` nicht unterstützt → `frontchannelLogout=false`, kein Back-Channel | Code + PKCE | `plane` | `openid`, `profile`, `email`, `plane-groups` |
+| `plane-forgejo` (Name nach `01` §4.1, Präfix `plane-` wie alle Plane-Clients) | confidential (`${FORGEJO_CLIENT_SECRET}`) | `${FORGEJO_PUBLIC_URL}/user/oauth2/keycloak/callback` | `${FORGEJO_PUBLIC_URL}/` | – | `${FORGEJO_PUBLIC_URL}/…` nicht unterstützt → `frontchannelLogout=false`, kein Back-Channel | Code + PKCE | `plane` | `openid`, `profile`, `email`, `plane-groups` |
 
 Hinweis: Alle drei Plane-Clients nutzen denselben Redirect-Pfad; die Unterscheidung erfolgt über `state` (D05-ADR-01). Keycloak verlangt exakte Redirect-URIs – keine Wildcards.
 
@@ -769,7 +784,7 @@ Hinweis: Alle drei Plane-Clients nutzen denselben Redirect-Pfad; die Unterscheid
 
 | Client-Scope | Mapper (Typ) | Claim | Token |
 |---|---|---|---|
-| `profile` (Keycloak-Standard) | `given name`, `family name`, `full name`, `username`, `locale`, zusätzlich **`picture`** (User Attribute `picture` → Claim `picture`, String) | `given_name`, `family_name`, `name`, `preferred_username`, `locale`, `picture` | ID, UserInfo |
+| `profile` (Keycloak-Standard) | `given name`, `family name`, `full name`, `username`, `locale`, `picture` (Keycloak-Standard-Mapper „picture“, User Attribute `picture` → Claim `picture`; kein eigener Mapper nötig) | `given_name`, `family_name`, `name`, `preferred_username`, `locale`, `picture` | ID, UserInfo |
 | `email` (Standard) | `email`, `email verified` | `email`, `email_verified` | ID, UserInfo |
 | `plane-roles` (neu) | User Realm Role (`multivalued=true`, `claim.name=roles`, ohne Client-Präfix) | `roles` | ID, Access, UserInfo |
 | `plane-groups` (neu) | Group Membership (`full.path=true`, `claim.name=groups`) | `groups` | ID, Access, UserInfo |
@@ -831,6 +846,7 @@ Passwort aller Testbenutzer: `${PLANE_DEV_USER_PASSWORD}` (Default im AppHost-Pa
   "ssoSessionMaxLifespan": 604800,
   "accessTokenLifespan": 300,
   "browserFlow": "plane-browser",
+  "attributes": { "CreateDefaultClientScopes": "true" },
   "roles": { "realm": [ { "name": "plane-instance-admin", "description": "Plane God Mode administrator" }, { "name": "plane-user" } ] },
   "groups": [ { "name": "plane-instance-admins", "realmRoles": ["plane-instance-admin"] }, { "name": "plane" } ],
   "clientScopes": [
@@ -859,6 +875,8 @@ Passwort aller Testbenutzer: `${PLANE_DEV_USER_PASSWORD}` (Default im AppHost-Pa
 ```
 
 (`plane-admin`, `plane-space`, `plane-backend`, `plane-api`, Flow-Definition `authenticationFlows` und Testbenutzer analog den Tabellen; vollständige Datei entsteht in I0, Schnitt 1.)
+
+**Wichtig (geprüft im Keycloak-Quelltext `RealmManager.isCreateDefaultClientScopes`):** Enthält eine Realm-Datei ein `clientScopes`-Array, legt Keycloak beim Import die Standard-Scopes (`basic`, `profile`, `email`, `acr`, `web-origins`, `roles`, `address`, `phone`, `offline_access`, `microprofile-jwt`, `organization`) **nicht** an – die Clients würden dann auf nicht existierende Scopes verweisen und es gäbe weder `sub`/`auth_time` (`basic`) noch `email`. Deshalb setzt der Realm das Realm-Attribut `CreateDefaultClientScopes = "true"` (Konstante `Constants.CREATE_DEFAULT_CLIENT_SCOPES`); greift es in der gepinnten Version nicht (⚠ S7, `KeycloakRealmConfigTests` prüft `GET /admin/realms/plane/client-scopes` auf `basic`, `profile`, `email`, `acr`, `web-origins`), werden die Standard-Scopes aus einem `kc.sh export` eines frischen Realms derselben Version in die Datei übernommen. Für keycloak-config-cli (Prod) gilt dasselbe: der Realm wird dort beim ersten Lauf angelegt.
 
 ### 3.16 Plane-Login-Theme (1:1-Optik der Sign-in-Seite)
 
@@ -966,8 +984,8 @@ Alle Mechanismen dieses Abschnitts sind **querschnittlich** und liegen in `src/p
 |---|---|---|
 | Größenlimit | 10 MiB (UTF-8-Bytes) | vor dem Parsen; Fehler `"HTML content exceeds maximum size limit (10MB)"` |
 | Tags | `nh3.ALLOWED_TAGS` (Ammonia-Default der nh3-Version 0.2.18) ∪ `mention-component`, `label`, `input`, `image-component` | `AllowedTags` = Konstante `Nh3DefaultTags.All` (Liste wird einmalig aus der Original-Umgebung mit `python -c "import nh3; print(sorted(nh3.ALLOWED_TAGS))"` erzeugt und nach `Nh3DefaultTags.g.cs` eingecheckt ⚠ Generator `tools/golden/nh3-tags.py`) ∪ Custom-Tags |
-| Attribute | exakt das `ATTRIBUTES`-Dict aus `UT/content_validator.py` (global `*`: `class`, `id`, `title`, `role`, `aria-label`, `aria-hidden`, `style`, `start`, `type`, `xmlns`, `data-tight`, `data-node-type`, `data-type`, `data-checked`, `data-background-color`, `data-text-color`, `data-name`, `data-id`, `data-icon-name`, `data-icon-color`, `data-background`, `data-emoji-unicode`, `data-emoji-url`, `data-logo-in-use`, `data-block-type`; je Tag wie `A06` S-07) | `AllowedAttributes` = globale Menge; je-Tag-Attribute über Ereignis `RemovingAttribute` (Attribut bleibt, wenn es in der Tag-Menge steht) – HtmlSanitizer kennt keine Tag-spezifischen Allowlists |
-| URL-Schemata | `http`, `https`, `mailto`, `tel` (relative URLs erlaubt) | `AllowedSchemes`; `UriAttributes` = `href`, `src` |
+| Attribute | exakt das `ATTRIBUTES`-Dict aus `UT/content_validator.py` (global `*`: `class`, `id`, `title`, `role`, `aria-label`, `aria-hidden`, `style`, `start`, `type`, `xmlns`, `data-tight`, `data-node-type`, `data-type`, `data-checked`, `data-background-color`, `data-text-color`, `data-name`, `data-id`, `data-icon-name`, `data-icon-color`, `data-background`, `data-emoji-unicode`, `data-emoji-url`, `data-logo-in-use`, `data-block-type`; je Tag wie `A06` S-07) | `AllowedAttributes` = **Vereinigung** aus `*` und allen Tag-Mengen (also inkl. `href`, `src`, `target`, `width`, `colspan`, `language` …); danach entfernt ein `PostProcessNode`-Handler je Element alle Attribute, die weder in `*` noch in der Menge **dieses** Tags stehen (`Nh3AttributeMap.IsAllowed(tag, attr)`, Vergleich case-insensitiv wie der HTML-Parser). **Nicht** über `RemovingAttribute` + `Cancel` lösen: ein so „geretteter“ Wert durchläuft die URL-Prüfung (`UriAttributes`/`AllowedSchemes`) **nicht** (HtmlSanitizer prüft URLs nur für erlaubte Attribute) – XSS über `href="javascript:…"`. HtmlSanitizer kennt keine Tag-spezifischen Allowlists |
+| URL-Schemata | `http`, `https`, `mailto`, `tel` (relative URLs erlaubt) | `AllowedSchemes`; `UriAttributes` = `href`, `src` (das Tabellen-Attribut `background` enthält Farbnamen und wird **nicht** als URL behandelt; Golden-Test deckt es ab) |
 | `style` | erlaubt (nh3 prüft CSS nicht) | `AllowedCssProperties` = HtmlSanitizer-Default (vollständige Liste) ∪ `background-color`, `color`, `text-align`, `width`; CSS-Werte mit `url(`/`expression(` werden entfernt (Härtung ohne sichtbare Wirkung, weil der Editor keine URLs in `style` schreibt) |
 | `rel` an Links | Ammonia setzt `rel="noopener noreferrer"` an `<a>` | `PostProcessNode`: `a[href]` erhält `rel="noopener noreferrer"` (Golden-Test) |
 | Kommentare, `<script>`/`<style>`-Inhalt | entfernt | HtmlSanitizer-Default |
@@ -998,7 +1016,7 @@ Anwendungsstellen (alle mit derselben Instanz, Pflicht laut Architekturtest `Htm
 |---|---|
 | Key-Ring | Tabelle `data_protection_keys` (`DataProtectionKeys`-Entität von `Microsoft.AspNetCore.DataProtection.EntityFrameworkCore`, im `PlaneDbContext`, Eigentümer `Instance`), `SetApplicationName("plane")` in **allen** Hosts (`Plane.Api`, `Plane.Realtime`, `Plane.Worker`, `Plane.Gateway`, `Plane.Migrator`), `SetDefaultKeyLifetime(TimeSpan.FromDays(Plane:DataProtection:KeyLifetimeDays))` (Default 90) |
 | Schutz des Key-Rings | optional `ProtectKeysWithCertificate(X509)` aus `Plane:DataProtection:CertificatePath` + `…:CertificatePassword` (PFX); Prod-Empfehlung in `14`; ohne Zertifikat Startwarnung `"Data protection keys are stored unencrypted at rest."` (Kategorie `plane.api`) |
-| Zwecke (Purpose-Strings, versioniert) | `Plane.Identity.SessionCookie.v1` (Cookie-Schlüssel), `Plane.Identity.SessionTicket.v1` (Ticket in `user_sessions`), `Plane.Identity.OidcState.v1` (State/Nonce/Correlation), `Plane.Instance.Configuration.v1` (verschlüsselte Instanz-Konfiguration), `Plane.Antiforgery` (Framework), `Plane.Webhooks.Secret.v1` (Webhook-Secrets – müssen für HMAC entschlüsselbar sein), `Plane.Integrations.ConnectionSecret.v1` (F1, reserviert), `Plane.Forgejo.UserToken.v1` (F2, reserviert) |
+| Zwecke (Purpose-Strings, versioniert) | `Plane.Identity.SessionCookie.v1` (Cookie-Schlüssel), `Plane.Identity.SessionTicket.v1` (Ticket in `user_sessions`), `Plane.Identity.OidcState.v1.<scheme>` (State je OIDC-Schema; Nonce-/Correlation-Cookies schützt der Handler mit seinem eigenen Zweck), `Plane.Instance.Configuration.v1` (verschlüsselte Instanz-Konfiguration), `Plane.Antiforgery` (Framework), `Plane.Webhooks.Secret.v1` (Webhook-Secrets – müssen für HMAC entschlüsselbar sein), `Plane.Integrations.ConnectionSecret.v1` (F1, reserviert), `Plane.Forgejo.UserToken.v1` (F2, reserviert) |
 | Instanz-Secrets | Schlüssel mit `is_encrypted=true` (`EMAIL_HOST_PASSWORD`, `LLM_API_KEY`, `UNSPLASH_ACCESS_KEY`; die OAuth-Secrets entfallen, §4.4) werden mit `Plane.Instance.Configuration.v1` geschützt (`IDataProtector.Protect`, Base64URL). Lesen: `IInstanceConfiguration.GetAsync(key)` entschlüsselt; Entschlüsselungsfehler (fremder/verlorener Key-Ring) → leerer Wert + Log Error `"Instance configuration {Key} could not be decrypted"` (Original: still leer, A01 E-07) und God-Mode-Systemhinweis (I6) |
 | Ausgabe an God Mode | `GET /api/instances/configurations/` liefert entschlüsselte Werte nur an `INST` (Parität CE-INST-018/-025/-026: Passwortfeld mit Auge-Toggle), mit `Cache-Control: no-store`; Werte erscheinen nie in Logs (Redaktion §3.17.8). Entscheidung zu A11 O8: **1:1 beibehalten** (Risiko R-09) |
 | Webhook-Secrets | `plane_wh_` + 32 Hex; gespeichert DP-geschützt (Purpose `Plane.Webhooks.Secret.v1`), Ausgabe nur bei Anlage/Regenerierung (S-03) |
@@ -1014,7 +1032,7 @@ Mechanik, Algorithmus (`SlidingWindowRateLimiter`, verteilt über `RedisRateLimi
 | Policy (`PlaneRateLimitPolicies`) | Rate (Default, ENV-Alias) | Partition | Gilt für (Ziel) | Original | ab |
 |---|---|---|---|---|---|
 | `anon` | `30/minute` | Client-IP, nur anonyme Requests | Default der Oberflächen App, Space, Instance, Auth (N-06, N-08, N-09, N-10) | `AnonRateThrottle` | I0 |
-| `authentication` | `10/minute` (`AUTHENTICATION_RATE_LIMIT`) | Client-IP (auch angemeldet) | N-01, N-02, N-13 | `AuthenticationThrottle`, `throttle_auth_redirect` | I0 |
+| `authentication` | `10/minute` (`AUTHENTICATION_RATE_LIMIT`) | Client-IP (auch angemeldet) | N-01, N-13 als Endpunkt-Policy; N-02 über `AuthCallbackRateLimiter` (`ID/Authentication/AuthCallbackRateLimiter.cs`: `PartitionedRateLimiter<HttpContext>` mit derselben Rate und Partition, bei Valkey verteilt über `RedisRateLimiting`; Aufruf in `OnMessageReceived` aller drei OIDC-Schemata, Ablehnung → `HandleResponse()` + 302 mit 5900). Grund: der OIDC-Handler beantwortet den Callback in `UseAuthentication` (Schritt 10, `02` §3.4.1), **bevor** `UseRateLimiter` (Schritt 13) läuft – Endpunkt-Metadaten oder ein `GlobalLimiter` greifen dort nie. Der Zähler ist von N-01 getrennt (Original: gemeinsamer DRF-Scope `authentication`; Abweichung ohne Sicherheitswirkung) | `AuthenticationThrottle`, `throttle_auth_redirect` | I0 |
 | `asset_duplicate` | `5/minute` | Routenwert `asset_id` | `POST {W}/assets/v2/duplicate/{asset_id}/` | `AssetRateThrottle` | I1 |
 | `api_key` | `60/minute` (`API_KEY_RATE_LIMIT`) | `token_hash` | gesamte Oberfläche `/api/v1/` inkl. Einladungen/Stickies (Korrektur B-04) | `ApiKeyRateThrottle` | I6 |
 | `integration_webhook` | `600/minute` | `connection_id` | `/api/integrations/{provider}/webhooks/{connection_id}/` | – (F1) | W1 |
@@ -1023,7 +1041,7 @@ Mechanik, Algorithmus (`SlidingWindowRateLimiter`, verteilt über `RedisRateLimi
 
 **Fehlerform:** Bei N-01/N-02 (Browser-Navigation) **kein** JSON, sondern 302 `{BASE(app)}/?[next_path=…&]error_code=5900&error_message=RATE_LIMIT_EXCEEDED` (Parität `throttle_auth_redirect`); dafür setzt `AuthRateLimitRejection` den `OnRejected`-Callback der Policy `authentication` für die Oberfläche `Auth`. Sonst 429 `{"error_code": 5900, "error_message": "RATE_LIMIT_EXCEEDED"}` + `Retry-After`.
 
-**Client-IP (Korrektur E-19, SEC-32):** `ForwardedHeadersOptions` mit `ForwardedHeaders = XForwardedFor | XForwardedProto | XForwardedHost`, `ForwardLimit = NUM_PROXIES` (Default 1 = nur `Plane.Gateway`), `KnownProxies`/`KnownNetworks` aus `Plane:ForwardedHeaders:KnownNetworks` (Default: Aspire-/Compose-Netz des Gateways; ungültige Einträge → Startfehler). `Plane.Gateway` überschreibt eingehende `X-Forwarded-For`-Header von nicht vertrauten Quellen (YARP-Transform `X-Forwarded` mit `Action=Set`, wenn der direkte Peer nicht in `Plane:Gateway:TrustedProxies` liegt). Die IP für Rate Limits, `last_login_ip`, `device_info.ip_address` und Logs ist **immer** `HttpContext.Connection.RemoteIpAddress` nach dieser Middleware.
+**Client-IP (Korrektur E-19, SEC-32):** `ForwardedHeadersOptions` mit `ForwardedHeaders = XForwardedFor | XForwardedProto | XForwardedHost`, `ForwardLimit = NUM_PROXIES` (Default 1 = nur `Plane.Gateway`), `KnownProxies`/`KnownIPNetworks` (nicht das in .NET 10 obsolete `KnownNetworks`, `ASPDEPR005`) aus `Plane:ForwardedHeaders:KnownNetworks` (Default: Aspire-/Compose-Netz des Gateways; ungültige Einträge → Startfehler). `Plane.Gateway` überschreibt eingehende `X-Forwarded-For`-Header von nicht vertrauten Quellen (YARP-Transform `X-Forwarded` mit `Action=Set`, wenn der direkte Peer nicht in `Plane:Gateway:TrustedProxies` liegt). Die IP für Rate Limits, `last_login_ip`, `device_info.ip_address` und Logs ist **immer** `HttpContext.Connection.RemoteIpAddress` nach dieser Middleware.
 
 #### 3.17.7 Security-Header und Content-Security-Policy (D05-ADR-23)
 
@@ -1135,7 +1153,7 @@ Grundsatz (OP-01 aus `A06`, ADR-005): Sicherheitslücken werden **korrigiert**, 
 |---|---|---|---|---|---|
 | **SEC-30** | leere `CORS_ALLOWED_ORIGINS` → alle Origins mit Credentials (`A06` §2.7, OP-04) | nur eigene Origins (§3.17.1) | `Plane.Api` CORS | `CorsPolicyTests` | I0 |
 | **SEC-31** | `ALLOWED_HOSTS = *`; Redirect-/Callback-URLs und Webhook-Loop-Guard folgen dem `Host`-Header (`A06` §2.7) | Kestrel `AllowedHosts` = Hosts aus `Plane:Urls:*` (+ `Plane:AllowedHosts`); **alle** absoluten URLs (OIDC-Redirect, Mails, Loop-Guard) nur aus Konfiguration (`AuthRedirectBuilder`, `IPublicUrls`) | `Plane.Api`, `Plane.Gateway` | `HostHeaderInjectionTests` | I0 |
-| **SEC-32** | Client-IP aus vollständigem `X-Forwarded-For` ohne `NUM_PROXIES` (E-19) | `ForwardedHeaders` mit `KnownNetworks` (§3.17.6) | `Plane.ServiceDefaults` | `ClientIpResolutionTests` | I0 |
+| **SEC-32** | Client-IP aus vollständigem `X-Forwarded-For` ohne `NUM_PROXIES` (E-19) | `ForwardedHeaders` mit `KnownIPNetworks` (§3.17.6) | `Plane.ServiceDefaults` | `ClientIpResolutionTests` | I0 |
 | **SEC-33** | API-Keys im Klartext in DB und Cache-Schlüssel `api_key:<key>` | SHA-256-Hash (D05-ADR-16), Rate-Limit-Partition = Hash | `Plane.Identity` | `ApiKeyStorageTests` | I6 |
 | **SEC-34** | OAuth-Tokens im Klartext in `accounts`, Auslieferung über `GET /api/users/me/accounts/` (E-21, E-22, `A03` Q-17) | Tabelle `accounts` entfällt; Keycloak-Tokens nur im DP-verschlüsselten Session-Ticket, verlassen den Server nie (§3.4.2) | `Plane.Identity` | `TokensNeverReturnedTests` (durchsucht alle JSON-Antworten des Paritäts-Laufs nach `eyJ`-Präfixen) | I0 |
 | **SEC-35** | `PATCH /api/users/api-tokens/{pk}/` liefert das Token erneut (`A03` Q-18) | Antwort ohne `token` (§3.12.3) | `Plane.Identity` | `ApiTokenPatchTests` | I6 |
@@ -1465,7 +1483,7 @@ Ergebnis: **14 Schlüssel** in der CE (ohne AI-Erweiterungen aus `11`). Unbekann
 | `SECRET_KEY` | – (Data Protection) | entfällt (Warnung) |
 | `SKIP_ENV_VAR` | – (Instanz-Konfiguration immer aus DB, ENV nur beim Seed) | entfällt |
 | `ENABLE_*_SYNC`, `IS_*_ENABLED`, `*_CLIENT_ID`, `*_CLIENT_SECRET`, `GITHUB_ORGANIZATION_ID`, `GITLAB_HOST`, `GITEA_HOST` | – | entfällt (Startwarnung „ignored, use Keycloak identity brokering“) |
-| neu | `Plane:Auth:Oidc:*`, `Plane:Auth:{InstanceAdminRole,InstanceAdminGroup,RequiredRole,SyncProfileOnLogin,AutoRedirect,RevalidateIntervalSeconds,AdminStepUpMaxAgeSeconds}`, `Plane:Auth:Bearer:Enabled`, `Plane:Auth:IdpUserSync:Enabled`, `Plane:DataProtection:*`, `Plane:Gateway:Csp:Mode`, `Plane:Gateway:SpaceFrameAncestors`, `Plane:Security:MaskInstanceSecrets` | neu |
+| neu | `Plane:Auth:Oidc:*`, `Plane:Auth:Clients:{Web,Admin,Space}:*`, `Plane:Auth:Backend:*`, `Plane:Auth:{InstanceAdminRole,InstanceAdminGroup,RequiredRole,SyncProfileOnLogin,AutoRedirect,RevalidateIntervalSeconds,AdminStepUpMaxAgeSeconds}`, `Plane:Auth:Bearer:{Enabled,Audience}`, `Plane:Auth:IdpUserSync:Enabled`, `Plane:DataProtection:*`, `Plane:Gateway:Csp:Mode`, `Plane:Gateway:SpaceFrameAncestors`, `Plane:Security:MaskInstanceSecrets` | neu |
 
 ### 4.5 Backend-Dateien Original → Ziel
 
@@ -1486,7 +1504,7 @@ Zielpfade relativ zu `funk.`; `ID/` = `src/modules/Identity/Plane.Identity/`, `I
 | `authentication/urls.py` | 37 Routen | `ID/Endpoints/Auth/OidcBffEndpoints.cs` (N-01…N-08) | ersetzt |
 | `authentication/utils/host.py` | `base_host` | `ID/Authentication/AuthRedirectBuilder.cs` (`BaseUrl(PlaneApp)`) | unverändert (Normalisierung E-05) |
 | `authentication/utils/login.py` | `user_login` (Session, `device_info`) | `ID/Authentication/SessionIssuer.cs` (`SignInAsync` mit `PostgresTicketStore`, `device_info`) | angepasst |
-| `authentication/utils/oauth_state.py` | State in Session | OIDC-Handler (State/Nonce/Correlation, DP-Zweck `Plane.Identity.OidcState.v1`) | ersetzt |
+| `authentication/utils/oauth_state.py` | State in Session | OIDC-Handler je App-Schema (State/Nonce/Correlation, DP-Zweck `Plane.Identity.OidcState.v1.<scheme>`) | ersetzt |
 | `authentication/utils/password.py` | zxcvbn | Keycloak `passwordPolicy` (§3.15.2) | entfällt |
 | `authentication/utils/redirection_path.py` | `get_redirection_path` | `src/modules/Identity/Plane.Identity/Application/Users/UserSettingsQuery.cs` (Felder `workspace.last_workspace_slug`, `fallback_workspace_slug`, `invites`), `ComputeLandingStep` | unverändert |
 | `authentication/utils/user_auth_workflow.py`, `workspace_project_join.py` | `post_user_auth_workflow`, `process_workspace_project_invitations` | `ID/Provisioning/Steps/JoinAcceptedInvitationsStep.cs` (über `IWorkspaceMembershipService`, `IProjectMembershipService` aus den Contracts der Eigentümer) | korrigiert (E-02) |
@@ -1587,7 +1605,8 @@ Zielpfade relativ zu `funk.`; `ID/` = `src/modules/Identity/Plane.Identity/`, `I
 | `api_activity_logs` (`APIActivityLog`) | `api_activity_logs` | Identity | `token_identifier` = `token_hash` |
 | `instance_admins` (`InstanceAdmin`) | `instance_admins` | Instance | + `source`, `synced_at`; nur Spiegel |
 | `instance_configurations` (`InstanceConfiguration`) | `instance_configurations` | Instance | 14 Schlüssel; `value` bei `is_encrypted` DP-geschützt |
-| `workspace_members`, `project_members` (`role` Integer) | dto. + `role_id` FK `roles` | Workspaces/Projects | `role` bleibt als berechnete Spalte (= `roles.level`) für Abfragen und API |
+| `workspace_members`, `project_members` (`role` Integer) | dto. + `role_id` FK `roles` | Workspaces/Projects | `role` bleibt als **denormalisierte** Spalte (= `roles.level`, gesetzt im selben `SaveChanges` wie `role_id`; keine Generated Column, weil PostgreSQL dort keine Fremdtabellen erlaubt) für Abfragen und API |
+| – | `role_permissions` | Authorization | neu, in der CE leer (E5-Vorhalt, `02` §3.6.1) |
 | – | `roles` | Authorization | neu (§3.13.3; Seeds) |
 | – | `data_protection_keys` | Instance | neu (§3.17.5) |
 
@@ -1604,19 +1623,24 @@ namespace Plane.Identity.Authentication;
 
 public static class AuthenticationRegistration
 {
-    public const string PolicyScheme = "Plane", SessionScheme = "Session", OidcScheme = "oidc",
-                        ApiKeyScheme = "ApiKey", BearerScheme = "Bearer";
+    public const string PolicyScheme = "Plane", SessionScheme = "Session", ApiKeyScheme = "ApiKey", BearerScheme = "Bearer";
+    public const string OidcWeb = "oidc-web", OidcAdmin = "oidc-admin", OidcSpace = "oidc-space";       // D05-ADR-01
+    public static string OidcSchemeFor(PlaneApp app) => app switch
+    {
+        PlaneApp.Admin => OidcAdmin, PlaneApp.Space => OidcSpace, _ => OidcWeb,
+    };
 
     public static IServiceCollection AddPlaneAuthentication(this IServiceCollection services, IConfiguration cfg)
     {
         services.AddOptions<PlaneAuthOptions>().Bind(cfg.GetSection("Plane:Auth")).ValidateDataAnnotations().ValidateOnStart();
         services.AddSingleton<ITicketStore, PostgresTicketStore>();
         services.AddScoped<SessionRevalidator>();
-        services.AddSingleton<IPostConfigureOptions<CookieAuthenticationOptions>, SessionCookiePostConfigure>(); // setzt SessionStore + DP-Zweck
-        services.AddSingleton<IPostConfigureOptions<OpenIdConnectOptions>, OidcOptionsSetup>();            // Authority, Events, StateDataFormat
+        services.AddSingleton<AuthCallbackRateLimiter>();                                                  // §3.17.6
+        services.AddSingleton<IPostConfigureOptions<CookieAuthenticationOptions>, SessionCookiePostConfigure>(); // SessionStore + DP-Zweck
+        services.AddSingleton<IPostConfigureOptions<OpenIdConnectOptions>, OidcOptionsSetup>();            // je Schema: Client, Authority, Events
         services.AddHttpClient("keycloak", c => c.Timeout = TimeSpan.FromSeconds(10));                     // E-24 / SEC-46
 
-        services.AddAuthentication(PolicyScheme)
+        var auth = services.AddAuthentication(PolicyScheme)
             .AddPolicyScheme(PolicyScheme, "Plane", o => o.ForwardDefaultSelector = AuthSchemeSelector.Select)
             .AddCookie(SessionScheme, o =>
             {
@@ -1625,17 +1649,21 @@ public static class AuthenticationRegistration
                 o.Cookie.Path = "/";
                 o.SlidingExpiration = false;                       // gleitend nur über PlaneAuthOptions.SlidingSession (eigene Logik im TicketStore)
                 o.Events = new PlaneCookieEvents();                // 401/403 als JSON statt Redirect, OnValidatePrincipal → SessionRevalidator
-            })
-            .AddOpenIdConnect(OidcScheme, o =>
+            });
+
+        foreach (var scheme in new[] { OidcWeb, OidcAdmin, OidcSpace })
+        {
+            auth.AddOpenIdConnect(scheme, o =>
             {
                 o.SignInScheme = SessionScheme;
-                o.CallbackPath = "/auth/oidc/callback/";
-                o.SignedOutCallbackPath = "/auth/oidc/signed-out-internal/";   // nicht genutzt; N-06 ist ein eigener Endpunkt
+                o.CallbackPath = "/auth/oidc/callback";            // OHNE Slash: TrailingSlashMiddleware (D02-ADR-07) läuft vor UseAuthentication
+                o.SkipUnrecognizedRequests = true;                 // fremder State → nächstes Schema (D05-ADR-01)
+                o.SignedOutCallbackPath = $"/auth/oidc/{scheme}/signed-out-internal"; // nicht genutzt; N-06 ist ein eigener Endpunkt
                 o.ResponseType = OpenIdConnectResponseType.Code;
                 o.ResponseMode = OpenIdConnectResponseMode.Query;
                 o.UsePkce = true;
                 o.SaveTokens = true;
-                o.GetClaimsFromUserInfoEndpoint = true;
+                o.GetClaimsFromUserInfoEndpoint = false;           // alle Claims im ID-Token (§3.3.3)
                 o.MapInboundClaims = false;
                 o.PushedAuthorizationBehavior = PushedAuthorizationBehavior.Disable; // Plane:Auth:Oidc:UsePar → Use
                 o.Scope.Clear();
@@ -1643,15 +1671,17 @@ public static class AuthenticationRegistration
                 o.TokenValidationParameters.NameClaimType = "email";
                 o.TokenValidationParameters.RoleClaimType = "roles";
                 o.TokenValidationParameters.ClockSkew = TimeSpan.FromSeconds(60);
-                o.CorrelationCookie.Name = ".plane.oidc.correlation.";
+                o.CorrelationCookie.Name = $".plane.oidc.correlation.{scheme}.";
                 o.NonceCookie.Name = ".plane.oidc.nonce.";
                 o.RemoteAuthenticationTimeout = TimeSpan.FromMinutes(15);
-            })
-            .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(ApiKeyScheme, _ => { })
+            });
+        }
+
+        auth.AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(ApiKeyScheme, _ => { })
             .AddJwtBearer(BearerScheme, o =>                       // H1: vorkonfiguriert, AuthSchemeSelector nutzt es nur bei Plane:Auth:Bearer:Enabled
             {
                 o.MapInboundClaims = false;
-                o.TokenValidationParameters.ValidAudience = "plane-api";
+                o.TokenValidationParameters.ValidAudience = "plane-api";   // Plane:Auth:Bearer:Audience
                 o.TokenValidationParameters.RoleClaimType = "roles";
             });
 
@@ -1673,69 +1703,86 @@ public static class AuthSchemeSelector
 }
 ```
 
-### 5.2 OIDC-Ereignisse: Client je App, Provisionierung, Fehler-Redirects (`ID/Authentication/OidcOptionsSetup.cs`)
+Hinweis zur Request-Pipeline: Die drei OIDC-Schemata sind `IAuthenticationRequestHandler`; `UseAuthentication` ruft für **jede** Anfrage auf `/auth/oidc/callback` nacheinander alle drei auf. Wegen `SkipUnrecognizedRequests=true` und schemaeigenem State-Zweck verarbeitet genau eines den Callback; die übrigen geben `SkipHandler` zurück (Quelle: `OpenIdConnectHandler.HandleRemoteAuthenticateAsync`, release/10.0).
+
+### 5.2 OIDC-Ereignisse: Client je Schema, Provisionierung, Fehler-Redirects (`ID/Authentication/OidcOptionsSetup.cs`)
 
 ```csharp
-internal sealed class OidcOptionsSetup(IOptionsMonitor<PlaneAuthOptions> auth, IDataProtectionProvider dp, IHttpClientFactory http)
+internal sealed class OidcOptionsSetup(IOptionsMonitor<PlaneAuthOptions> auth, IPublicUrls urls, IDataProtectionProvider dp, IHttpClientFactory http)   // IPublicUrls = Plane:Urls (SEC-31)
     : IPostConfigureOptions<OpenIdConnectOptions>
 {
     public const string AppItem = "plane.app", NextPathItem = "plane.next_path";
 
     public void PostConfigure(string? name, OpenIdConnectOptions o)
     {
-        if (name != AuthenticationRegistration.OidcScheme) return;
-        var a = auth.CurrentValue.Oidc;
-        o.Authority = a.Authority;
-        o.ClientId = a.ClientIds.Web;                      // Default; je Request überschrieben
-        o.ClientSecret = a.ClientSecrets.Web;
-        o.RequireHttpsMetadata = a.RequireHttpsMetadata;
+        PlaneApp app;
+        switch (name)
+        {
+            case AuthenticationRegistration.OidcWeb: app = PlaneApp.Web; break;
+            case AuthenticationRegistration.OidcAdmin: app = PlaneApp.Admin; break;
+            case AuthenticationRegistration.OidcSpace: app = PlaneApp.Space; break;
+            default: return;
+        }
+        var a = auth.CurrentValue;
+        var client = a.Clients.For(app);                       // Plane:Auth:Clients:{Web|Admin|Space}:{ClientId,ClientSecret}
+        o.Authority = a.Oidc.Authority;
+        if (!string.IsNullOrEmpty(a.Oidc.MetadataAddress)) o.MetadataAddress = a.Oidc.MetadataAddress;   // interne Adresse (Prod)
+        o.ClientId = client.ClientId;                          // fest je Schema → Standard-azp-/aud-Prüfung greift (IDX21340 vermieden)
+        o.ClientSecret = client.ClientSecret;
+        o.RequireHttpsMetadata = a.Oidc.RequireHttpsMetadata;
         o.Backchannel = http.CreateClient("keycloak");
-        o.TokenValidationParameters.ValidIssuer = a.Authority;
-        o.TokenValidationParameters.ValidAudiences = [a.ClientIds.Web, a.ClientIds.Admin, a.ClientIds.Space];
-        o.StateDataFormat = new PropertiesDataFormat(dp.CreateProtector("Plane.Identity.OidcState.v1"));
-        if (a.UsePar) o.PushedAuthorizationBehavior = PushedAuthorizationBehavior.Use;
+        o.TokenValidationParameters.ValidIssuer = a.Oidc.Authority;
+        o.StateDataFormat = new PropertiesDataFormat(dp.CreateProtector($"Plane.Identity.OidcState.v1.{name}"));  // schemaeigen!
+        if (a.Oidc.UsePar) o.PushedAuthorizationBehavior = PushedAuthorizationBehavior.Use;
 
         o.Events = new OpenIdConnectEvents
         {
             OnRedirectToIdentityProvider = ctx =>
             {
-                var app = PlaneAppParser.From(ctx.Properties.Items[AppItem]);
-                ctx.ProtocolMessage.ClientId = a.ClientIds.For(app);
-                ctx.ProtocolMessage.RedirectUri = $"{a.PublicApiBaseUrl}/auth/oidc/callback/"; // aus Konfiguration, nie aus Host-Header (SEC-31)
+                ctx.ProtocolMessage.RedirectUri = $"{urls.Web}/auth/oidc/callback/";   // registrierte URI mit Slash; nie aus Host-Header (SEC-31)
                 CopyIfPresent(ctx, "prompt"); CopyIfPresent(ctx, "login_hint"); CopyIfPresent(ctx, "max_age"); CopyIfPresent(ctx, "ui_locales");
                 return Task.CompletedTask;
             },
+            OnMessageReceived = async ctx =>                     // erstes Ereignis des Callbacks → Rate-Limit (§3.17.6)
+            {
+                if (ctx.Properties is null) return;              // MessageReceived läuft in ALLEN drei Schemata vor dem Skip → nur das zuständige zählt
+                var limiter = ctx.HttpContext.RequestServices.GetRequiredService<AuthCallbackRateLimiter>();
+                if (!await limiter.TryAcquireAsync(ctx.HttpContext))
+                {
+                    ctx.HandleResponse();
+                    ctx.Response.Redirect(AuthRedirectBuilder.ErrorRedirect(ctx.Properties, AuthErrorCodes.RateLimitExceeded, app));
+                }
+            },
             OnAuthorizationCodeReceived = ctx =>
             {
-                var app = PlaneAppParser.From(ctx.Properties!.Items[AppItem]);
-                ctx.TokenEndpointRequest!.ClientId = a.ClientIds.For(app);
-                ctx.TokenEndpointRequest.ClientSecret = a.ClientSecrets.For(app);
-                ctx.TokenEndpointRequest.RedirectUri = $"{a.PublicApiBaseUrl}/auth/oidc/callback/";
+                // redirect_uri muss exakt der im Authorize-Request gesendeten entsprechen (mit Slash)
+                ctx.TokenEndpointRequest!.RedirectUri = $"{urls.Web}/auth/oidc/callback/";
                 return Task.CompletedTask;
             },
-            OnTokenValidated = async ctx =>
+            OnTicketReceived = async ctx =>                      // NACH Signatur-, aud-, azp-, nonce-, at_hash-Prüfung (D05-ADR-07)
             {
-                var app = PlaneAppParser.From(ctx.Properties!.Items[AppItem]);
-                if (ctx.Principal!.FindFirst("azp")?.Value != a.ClientIds.For(app)) { Fail(ctx, AuthErrorCodes.OidcAuthenticationFailed); return; }
                 var pipeline = ctx.HttpContext.RequestServices.GetRequiredService<UserProvisioningPipeline>();
                 var result = await pipeline.RunAsync(IdentityClaims.From(ctx.Principal!), app, ctx.HttpContext.RequestAborted);
-                if (result.IsFailure) { Fail(ctx, result.ErrorCode); return; }
+                if (result.IsFailure) { Fail(ctx, result.Error, app); return; }
                 ctx.Principal = PlanePrincipalFactory.CreateSessionPrincipal(ctx.Principal!, result.Value, app); // plane:uid, plane:kind, plane:app
+                // Session-Fixation: vorhandenes session-id-Cookie dieses Browsers → Zeile löschen (§3.4.4)
+                await SessionIssuer.RemoveExistingSessionAsync(ctx.HttpContext);
             },
             OnRemoteFailure = ctx =>
             {
-                var code = ctx.Failure is HttpRequestException ? AuthErrorCodes.IdentityProviderUnavailable : AuthErrorCodes.OidcAuthenticationFailed;
+                var code = ctx.Failure is HttpRequestException or TaskCanceledException
+                    ? AuthErrorCodes.IdentityProviderUnavailable : AuthErrorCodes.OidcAuthenticationFailed;
                 ctx.HandleResponse();
-                ctx.Response.Redirect(AuthRedirectBuilder.ErrorRedirect(ctx.Properties, code));
+                ctx.Response.Redirect(AuthRedirectBuilder.ErrorRedirect(ctx.Properties, code, app));    // Properties können null sein
                 return Task.CompletedTask;
             },
         };
     }
 
-    private static void Fail(TokenValidatedContext ctx, AuthErrorCode code)
+    private static void Fail(TicketReceivedContext ctx, AuthErrorCode code, PlaneApp app)
     {
-        ctx.HandleResponse();                               // keine Session (§3.3.6)
-        ctx.Response.Redirect(AuthRedirectBuilder.ErrorRedirect(ctx.Properties, code));
+        ctx.HandleResponse();                               // keine Session (§3.3.6); SignInAsync wird nicht aufgerufen
+        ctx.Response.Redirect(AuthRedirectBuilder.ErrorRedirect(ctx.Properties, code, app));
     }
 
     private static void CopyIfPresent(RedirectContext ctx, string key)
@@ -1747,6 +1794,8 @@ internal sealed class OidcOptionsSetup(IOptionsMonitor<PlaneAuthOptions> auth, I
 
 ### 5.3 BFF-Endpunkte (`ID/Endpoints/Auth/OidcBffEndpoints.cs`)
 
+Routen-Templates ohne abschließenden Slash (D02-ADR-07: `TrailingSlashMiddleware` normalisiert, beide Schreibweisen funktionieren).
+
 ```csharp
 internal sealed class OidcBffEndpoints : IEndpointModule
 {
@@ -1754,30 +1803,33 @@ internal sealed class OidcBffEndpoints : IEndpointModule
     {
         var g = routes.Auth("oidc");                        // Oberfläche Auth: kein Origin-Check für GET, Rate-Limit-Default anon
 
-        g.MapGet("login/", (HttpContext http, [AsParameters] LoginQuery q, IOptionsMonitor<PlaneAuthOptions> o) =>
+        g.MapGet("login", (HttpContext http, [AsParameters] LoginQuery q, IOptionsMonitor<PlaneAuthOptions> o) =>
         {
             var app = PlaneAppParser.FromQuery(q.App);                                       // web | admin | space, Default web
-            var props = new AuthenticationProperties { RedirectUri = AuthRedirectBuilder.SuccessTarget(app, NextPathValidator.Validate(q.NextPath)) };
+            var next = NextPathValidator.Validate(q.NextPath);
+            var props = new AuthenticationProperties { RedirectUri = AuthRedirectBuilder.SuccessTarget(app, next) };
             props.Items[OidcOptionsSetup.AppItem] = app.ToString().ToLowerInvariant();
-            props.Items[OidcOptionsSetup.NextPathItem] = NextPathValidator.Validate(q.NextPath);
+            props.Items[OidcOptionsSetup.NextPathItem] = next;
             if (q.Prompt is "login" or "none") props.Items["plane.prompt"] = q.Prompt;
             if (LoginHint.IsValid(q.LoginHint)) props.Items["plane.login_hint"] = q.LoginHint;
             if (app == PlaneApp.Admin && q.MaxAge is > 0) props.Items["plane.max_age"] = q.MaxAge.Value.ToString(CultureInfo.InvariantCulture);
-            if (UiLocales.IsSupported(q.UiLocales)) props.Items["plane.ui_locales"] = q.UiLocales;
-            return Results.Challenge(props, [AuthenticationRegistration.OidcScheme]);
+            if (UiLocales.TryMapToKeycloak(q.UiLocales, out var kcLocale)) props.Items["plane.ui_locales"] = kcLocale;   // ua → uk usw.
+            return Results.Challenge(props, [AuthenticationRegistration.OidcSchemeFor(app)]);
         })
         .AllowAnonymous()
         .WithRateLimit(PlaneRateLimitPolicies.Authentication);    // Ablehnung → 302 mit 5900 (AuthRateLimitRejection)
 
-        // N-02 /auth/oidc/callback/ verarbeitet der OpenIdConnectHandler selbst (CallbackPath); Rate-Limit über Endpoint-Platzhalter:
-        g.MapGet("callback/", () => Results.StatusCode(StatusCodes.Status400BadRequest)).AllowAnonymous()
-         .WithRateLimit(PlaneRateLimitPolicies.Authentication).ExcludeFromDescription();
+        // N-02: den gültigen Callback beantwortet eines der drei OIDC-Schemata in UseAuthentication. Dieser Endpunkt wird nur erreicht,
+        // wenn ALLE Schemata übersprungen haben (State fehlt/nicht entschlüsselbar) → 5200 statt 404 (§3.3.6); zugleich Architekturtest 1.
+        g.MapGet("callback", (HttpContext http) =>
+            Results.Redirect(AuthRedirectBuilder.ErrorRedirect(null, AuthErrorCodes.OidcAuthenticationFailed, PlaneApp.Web)))
+         .AllowAnonymous().WithRateLimit(PlaneRateLimitPolicies.Authentication).ExcludeFromDescription();   // erreicht UseRateLimiter regulär
 
-        g.MapGet("signed-out/", (string? state, IDataProtectionProvider dp) =>
+        g.MapGet("signed-out", (string? state, IDataProtectionProvider dp) =>
             Results.Redirect(SignedOutState.TryUnprotect(dp, state, out var s) ? AuthRedirectBuilder.SafeRedirect(s.App, s.NextPath) : AuthRedirectBuilder.BaseUrl(PlaneApp.Web)))
          .AllowAnonymous();
 
-        g.MapPost("backchannel-logout/", BackChannelLogoutEndpoint.HandleAsync)
+        g.MapPost("backchannel-logout", BackChannelLogoutEndpoint.HandleAsync)
          .AllowAnonymous().DisableAntiforgery().ExcludeFromOriginCheck();   // Server-zu-Server (§3.5)
     }
 }
@@ -1788,7 +1840,7 @@ public sealed record LoginQuery(string? App, [property: FromQuery(Name = "next_p
                                 [property: FromQuery(Name = "ui_locales")] string? UiLocales);
 ```
 
-Hinweis: Der Platzhalter-Endpunkt `callback/` wird nie erreicht, weil der `OpenIdConnectHandler` als `IAuthenticationRequestHandler` den `CallbackPath` vor dem Routing beantwortet; er existiert nur, damit Rate-Limit-Metadaten und Architekturtest 1 (jede Route deklariert ihre Sicherheit) greifen. Liefert S7, dass die Rate-Limiter-Middleware vor dem Handler nicht auf die Endpoint-Metadaten zugreifen kann, wird die Policy `authentication` stattdessen über einen pfadbasierten globalen Limiter (`PartitionedRateLimiter` mit Pfad `/auth/oidc/`) angewendet ⚠ S7.
+Hinweis: Weil `UseAuthentication` (Schritt 10) vor `UseRateLimiter` (Schritt 13) liegt (`02` §3.4.1), greift am Callback keine Endpunkt-Policy; das Limit setzt `AuthCallbackRateLimiter` in `OnMessageReceived` durch (§3.17.6, R-07 damit erledigt).
 
 ### 5.4 Ticket-Store und Revalidierung (`ID/Authentication/PostgresTicketStore.cs`, `SessionRevalidator.cs`)
 
@@ -1855,6 +1907,15 @@ internal sealed class SessionRevalidator(IOptionsMonitor<PlaneAuthOptions> auth,
 
         var app = PlaneAppParser.From(ctx.Principal!.FindFirstValue("plane:app"));
         var refreshed = await tokens.RefreshAsync(app, ctx.Properties.GetTokenValue("refresh_token")!, ctx.HttpContext.RequestAborted);
+        if (refreshed.IsFailure && refreshed.Error == RefreshError.Transient)   // Keycloak nicht erreichbar/5xx/Timeout
+        {
+            // Verfügbarkeit vor Sofortsperre: Session bleibt, nächster Versuch frühestens nach 30 s (Log Warning plane.authentication);
+            // Back-Channel-Logout wirkt unabhängig davon. Höchstdauer ohne erfolgreiche Revalidierung: Plane:Auth:RevalidateGraceSeconds (Default 900) → danach 401.
+            if (clock.UtcNow - last > TimeSpan.FromSeconds(auth.CurrentValue.RevalidateGraceSeconds)) { ctx.RejectPrincipal(); return; }
+            ctx.Properties.Items["plane.revalidated_at"] = clock.UtcNow.AddSeconds(30 - auth.CurrentValue.RevalidateIntervalSeconds).ToString("O");
+            ctx.ShouldRenew = true;
+            return;
+        }
         if (refreshed.IsFailure)                                         // invalid_grant: Keycloak-Session beendet, Konto gesperrt
         {
             ctx.RejectPrincipal();
@@ -1884,11 +1945,11 @@ internal static class BackChannelLogoutEndpoint
         var token = form["logout_token"].ToString();
         if (string.IsNullOrEmpty(token)) return Results.BadRequest(new { error = "invalid_request" });
 
-        var a = auth.CurrentValue.Oidc;
+        var a = auth.CurrentValue;
         var result = await new JsonWebTokenHandler().ValidateTokenAsync(token, new TokenValidationParameters
         {
-            ValidIssuer = a.Authority,
-            ValidAudiences = [a.ClientIds.Web, a.ClientIds.Admin, a.ClientIds.Space],
+            ValidIssuer = a.Oidc.Authority,
+            ValidAudiences = [a.Clients.Web.ClientId, a.Clients.Admin.ClientId, a.Clients.Space.ClientId],
             IssuerSigningKeys = (await oidc.GetAsync(ct)).SigningKeys,
             ValidateLifetime = false,                                    // Logout-Token hat kein exp-Pflichtfeld; iat-Prüfung unten
         });
@@ -2029,7 +2090,9 @@ namespace Plane.Authorization.Contracts;
 
 public abstract record PermissionRule
 {
-    public static PermissionRule Creator<TEntity>(string routeParam = "pk") where TEntity : class => new CreatorRuleSpec(typeof(TEntity), routeParam);
+    // Regeln aus 02 §3.6.1 (Eigentümer der Mechanik): CreatorBypass, OwnerBypass, InstanceAdminOnly, AnyAuthenticated, WorkspaceAdminOverride, ActiveWorkspaceMember …
+    public static PermissionRule CreatorBypass(Type entity, string routeParam = "pk", bool RequireMembership = true) => new CreatorBypassRule(entity, routeParam, RequireMembership);
+    // Ergänzungen dieses Dokuments (Nachtrag in 02):
     public static readonly PermissionRule Own = new OwnRuleSpec();
     public static readonly PermissionRule Self = new SelfRuleSpec();
     public static readonly PermissionRule GuestVisibility = new VisibilityRuleSpec();
@@ -2044,13 +2107,13 @@ public interface IRoleDefinitionProvider                        // 01 §5.5; CE:
     ValueTask<RoleDefinition?> GetAsync(Guid roleId, CancellationToken ct);
 }
 
-public sealed record RoleDefinition(Guid Id, string Namespace, string Slug, int Level, bool IsSystem, IReadOnlySet<string> Grants);
+public sealed record RoleDefinition(Guid Id, string Name, ScopeLevel Scope, int LegacyValue, bool IsSystem, IReadOnlySet<string> PermissionKeys);   // Form 1:1 aus 02 §3.6.1
 ```
 
 ```csharp
 // Endpunkt (Muster, Notation Anhang B → Code)
 g.MapDelete("{pk:guid}", DeleteWorkItem)
- .RequirePermission(WorkItemsPermissions.ProjectWorkItemDelete, PermissionRule.Creator<WorkItem>());   // PRJ(A)+C:Issue
+ .RequirePermission(WorkItemsPermissions.ProjectWorkItemDelete, PermissionRule.CreatorBypass(typeof(WorkItem)));   // PRJ(A)+C:Issue
 g.MapGet("", ListWorkItems)
  .RequirePermission(WorkItemsPermissions.ProjectWorkItemRead, PermissionRule.GuestVisibility);          // PRJ(A,M,G)+VIS → Handler nutzt IVisibilityFilter<WorkItem>
 ```
@@ -2248,7 +2311,7 @@ Kein Fachdesign. Dieser Abschnitt listet nur die **Stellen in D05-Bausteinen**, 
 | **E3** IdP Group Sync (W4) | §6.2 | `groups`-Claim im Ticket, `IUserProvisioningStep`-Kette, Revalidierung ruft Pipeline-Teilmenge | I0 |
 | **E5** Rollenmodell (W4) | §6.3 | Permission-Katalog, `roles`, `role_id`, `IRoleDefinitionProvider`, Frontend-Token `PERMISSION_EVALUATOR` | I0 |
 | **F1** Integrations-Framework (W1) | eingehende Webhooks, Verbindungs-Secrets, ausgehende Aufrufe | Oberfläche `Integrations` (`/api/integrations/{provider}/webhooks/{connection_id}/`): `.AllowAnonymous()` + `IWebhookSignatureVerifier`, kein Origin-Check (kein Cookie), Policy `integration_webhook`; DP-Zweck `Plane.Integrations.ConnectionSecret.v1`; `AddSsrfSafeHttpClient("integrations", …)` für nutzerkonfigurierte Ziel-URLs; Keys `workspace.integration.*` reserviert | I0 (Contracts), W1 |
-| **F2** Forgejo (W1) | SSO, Benutzerzuordnung, persönliche Verknüpfung | Keycloak-Client `forgejo` + `config/20-forgejo-client.json` (§3.15.1); Zuordnung Plane-Benutzer ↔ Forgejo-Benutzer über **gleiches** `sub` (`user_identities.subject` = Forgejo „external login user id“ der Quelle `keycloak`); DP-Zweck `Plane.Forgejo.UserToken.v1`; Forgejo-Basis-URLs aus Workspace-Einstellungen nur über `AddSsrfSafeHttpClient("forgejo", …)` mit Allowlist `Plane:Forgejo:AllowedHosts` (gebündeltes Forgejo vorbelegt); Keys `workspace.forgejo_connection.*`, `project.forgejo_mapping.*` reserviert; Smoke-Test `ForgejoSsoSmokeTests` ab I0 | I0 |
+| **F2** Forgejo (W1) | SSO, Benutzerzuordnung, persönliche Verknüpfung | Keycloak-Client `plane-forgejo` + `config/20-forgejo-client.json` (§3.15.1); Zuordnung Plane-Benutzer ↔ Forgejo-Benutzer über **gleiches** `sub` (`user_identities.subject` = Forgejo „external login user id“ der Quelle `keycloak`); DP-Zweck `Plane.Forgejo.UserToken.v1`; Forgejo-Basis-URLs aus Workspace-Einstellungen nur über `AddSsrfSafeHttpClient("forgejo", …)` mit Allowlist `Plane:Forgejo:AllowedHosts` (gebündeltes Forgejo vorbelegt); Keys `workspace.forgejo_connection.*`, `project.forgejo_mapping.*` reserviert; Smoke-Test `ForgejoSsoSmokeTests` ab I0 | I0 |
 | **G1** AI-Basis (nicht gewählt) | Embeddings/Suche dürfen keine unsichtbaren Inhalte liefern | `ISearchProvider`-Ergebnisse laufen durch `SearchVisibilityFilter` (CE-Pflicht, §3.14); Client `llm` mit SSRF-Policy | I5 |
 | **H1** OAuth-App-Plattform (W1) | §6.4 | Bearer-Schema, `PrincipalKind.App`/`Bot`, Spalte `api_scope` je Key, Audience `plane-api` | I0 |
 | **H6** Realtime-Event-Server (W1) | Autorisierung von Hub-Gruppen | SignalR-Hub `/live/events/` nutzt Session-Schema + `IPermissionEvaluator` für Gruppenbeitritt (§3.11); Policy `perm:<key>` je Key registriert (D05-ADR-17); Revoke-Nachricht schließt Hub-Verbindungen | I0 |
@@ -2271,9 +2334,9 @@ Kein Fachdesign. Dieser Abschnitt listet nur die **Stellen in D05-Bausteinen**, 
 
 | Andockstelle | CE-Zustand | Was E5 später ergänzt |
 |---|---|---|
-| Tabelle `roles` (`workspace_id` NULL = System) | 6 System-Rollen (§3.13.3) | Custom Roles mit `workspace_id`, `is_system=false`; zusätzliche Tabelle `role_grants(role_id, permission_key)` |
+| Tabelle `roles` (`workspace_id` NULL = System) | 6 System-Rollen (§3.13.3) | Custom Roles mit `workspace_id`, `is_system=false`; Grants in der bereits in der CE angelegten (leeren) Tabelle `role_permissions(role_id, permission_key)` |
 | `IRoleDefinitionProvider` | `SystemRoleProvider` (Grants aus `SystemRoleGrants.g.cs`) | `CustomRoleProvider` (Decorator: System-Rollen aus Code, Custom aus DB, Cache-Tag `roles:{workspace_id}`) – reiner DI-Tausch |
-| Mitgliedschaften | `role_id` FK + berechnete `role` (Level) | Custom Role referenziert über `role_id`; API liefert weiterhin `role` (= `roles.level` der Basisrolle) + neues Feld `role_id` |
+| Mitgliedschaften | `role_id` FK + denormalisierte `role` (= `roles.level`, gepflegt vom Membership-Service, §3.13.3) | Custom Role referenziert über `role_id`; API liefert weiterhin `role` (= `roles.level` der Basisrolle) + neues Feld `role_id` |
 | Permission-Katalog | 258 Keys + `ReservedPermissionKeys`; Endpunkt-Metadaten tragen Key + Regeln | Permission-Schemes (GAC) bündeln Keys; Regeln (`C:`, `OWN`, `VIS`, `PAGE`) bleiben endpunktseitig und gelten für alle Rollen |
 | Gast-Sichtbarkeit | `VIS` an `level == 5` gekoppelt (Prädikat §3.14) | Prädikat wird zu „Rolle hat Grant `project.work_item.read_all`“ – Key ist **reserviert**; CE: Admin/Member implizit, Gast nur mit `guest_view_all_features` |
 | Rechte-Endpunkt | reserviert: `GET /api/workspaces/{slug}/permissions/me/` (nicht registriert) | liefert effektive Keys je Scope für das Frontend |
@@ -2454,7 +2517,7 @@ Teststrategie, Werkzeuge, Pyramide und Gates stehen in `15` (D15-ADR-04, -05, -1
 | O-D05-04 | Passwortlose Anmeldung als Ersatz für Magic-Code (Passkeys sind in Keycloak enthalten, E-Mail-OTP nicht im Keycloak-Kern) | Passkeys als Option im Flow (deaktiviert); kein E-Mail-OTP in der CE | Ende I1 |
 | O-D05-05 | Ist das Auto-Redirect auch für Space-Boards gewünscht (anonymes Lesen bleibt)? | nein: Space-Startseite zeigt Button, Boards bleiben anonym | Start I6 |
 | O-D05-06 | Rate-Limit am OIDC-Callback (R-07) | pfadbasierter Limiter, falls Endpoint-Metadaten nicht greifen | Ende S7 |
-| O-D05-07 | Namensabgleich mit `14`/`15` (Client `forgejo` vs. `plane-forgejo`, Themes `plane`/`plane-space` vs. `plane-base`/`plane`/`plane-admin`/`plane-space`, Test-Realm-Datei) | D05-Namen verbindlich (fachlicher Eigentümer), Anpassung in `14`/`15` (§9) | Start I0 |
+| O-D05-07 | Namensabgleich mit `14`/`15` | **im Review entschieden:** Client `plane-forgejo` (folgt `01` §4.1 und `16`, Rang `01` > D05); Themes `plane`/`plane-space` (deckt sich mit D14-ADR-04); Test-Realm = generierte `plane-realm.test.json` nach `15` §3.14.2; Rest-Anpassungen in `14`/`15` siehe §9 | erledigt |
 
 ---
 
