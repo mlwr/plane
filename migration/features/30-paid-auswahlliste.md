@@ -557,7 +557,7 @@ _Hinweis:_ Berechtigungskatalog statt fester Rollenwerte bereits in der CE.
 | ✓ | Prio | Paket | Aufwand | 🧱 | Plan im Original | Setzt voraus |
 |---|---|---|---|---|---|---|
 | [x] | W1 | **F1** Integrations-Framework (Connections, Webhook-Empfang, Sync-Engine) | L (15–40 PT) | 🧱 | Pro | H1 |
-| [x] | W1 | **F2** Forgejo-Integration (ADR-007): Instanz-/Org-Verbindung, persönliche Konten, Repo↔Projekt-Mapping, bidirektionaler Issue-Sync, PR-/Commit-Automation, Status in Work Items, Branch aus Work Item, Webhooks, Importer, Forgejo-Login | XL (40–100 PT) | 🧱 | neu (ADR-007) | F1 |
+| [x] | W1 | **F2** Forgejo-Integration (ADR-007): Instanz-/Org-Verbindung, persönliche Konten, Repo↔Projekt-Mapping, bidirektionaler Issue-Sync, PR-/Commit-Automation, Status in Work Items, Branch aus Work Item, Webhooks, Importer, SSO mit Forgejo über Keycloak | XL (40–100 PT) | 🧱 | neu (ADR-007) | F1 |
 | [ ] |  | **F5** Slack (Verbindung, Benachrichtigungen, Slash-Command, Thread-Sync, Unfurl) | L (15–40 PT) |  | Pro | F1 |
 | [x] | W9 | **F6** Sentry | M (5–15 PT) |  | Pro | F1 |
 | [ ] |  | **F7** Weitere SaaS-Connectoren (HubSpot, Cursor-Agent, Zapier, Zendesk, Freshdesk) | L (15–40 PT) |  | Pro, unklar | F1 |
