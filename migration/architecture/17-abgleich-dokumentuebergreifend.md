@@ -191,7 +191,7 @@ Erledigte Aufträge werden im Zieldokument im Review-Protokoll mit „ABG-0xx um
 
 **Weiterhin offen (keine Festlegung ohne Eigentümer möglich):**
 
-- `Plane__Worker__Queues` (benannte Worker-Pools) wird in 16 X9/§3.2.5 mit Verweis „D14 §6.1“ genannt, ist aber weder in 14 noch als Options-Klasse in 02 §3.15 definiert. Zuständig: 02 (Options-Klasse) mit 14 (Skalierung); bis dahin gilt die 16-Beschreibung als Arbeitsgrundlage.
+- ~~`Plane__Worker__Queues` (benannte Worker-Pools) wird in 16 X9/§3.2.5 mit Verweis „D14 §6.1“ genannt, ist aber weder in 14 noch als Options-Klasse in 02 §3.15 definiert.~~ **Erledigt durch 06 (23.10.2026):** Options-Klasse `PlaneWorkerOptions` (`Plane:Worker`) in 06 §3.5.5/§3.5.6 definiert und in 02 §3.15 sowie 14 §6.1 (Zeile C3) nachgetragen.
 
 
 ## Entscheidungen des Auftraggebers zu zurückgestellten Punkten (23.10.2026)

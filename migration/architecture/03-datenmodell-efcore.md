@@ -34,6 +34,7 @@ Kürzel wie in 01: `API/` = `apps/api/plane/`, `M/` = `apps/api/plane/db/models/
 7. [Akzeptanzkriterien & Tests](#7-akzeptanzkriterien--tests)
 8. [Risiken & offene Punkte](#8-risiken--offene-punkte)
 9. [Abhängigkeiten zu anderen Dokumenten (02–16)](#9-abhängigkeiten-zu-anderen-dokumenten-0216)
+10. [Review-Protokoll](#review-protokoll)
 
 ---
 
@@ -50,7 +51,7 @@ Ein Implementierungs-Agent kann aus §3.4 je Tabelle die Entitätsklasse und die
 | Bereich | Inhalt | Abschnitt |
 |---|---|---|
 | Entitäten | alle CE-genutzten Modelle aus `M/*.py` und `LIC/instance.py`; Zuordnung zu Modulen (01 §5.4) und `[OwnedBy]` (Regel R3) | §3.3, §3.4 |
-| Neue Tabellen | `user_identities`, `user_sessions` (Form aus D05), `roles`, `role_permissions`, `data_protection_keys`, `project_feature_settings`, `workspace_feature_settings`, `work_item_relation_types`, `work_item_sequences`, `work_item_types` (Minimal-Schema), `outbox_messages`, `inbox_messages`, `jobs`, `recurring_jobs`, `integration_connections`, `external_links`, `search_documents` | §3.4.18 ff. |
+| Neue Tabellen | `user_identities`, `user_sessions` (Form aus D05), `roles`, `role_permissions`, `data_protection_keys`, `project_feature_settings`, `workspace_feature_settings`, `work_item_relation_types`, `work_item_sequences`, `work_item_types` (Minimal-Schema), `outbox_messages`, `inbox_messages`, `jobs`, `recurring_job_states`, `integration_connections`, `external_links`, `search_documents` | §3.4.18 ff. |
 | Querschnitt | UUIDv7, `snake_case`, Audit, Soft-Delete-Filter inkl. Join-Entscheidung, Mandanten-Scope-FKs, Kaskaden, Hard-Delete, Sequenzvergabe, Sortierfelder, JSONB, Enums, Checks, Beschreibungsformate, Versionen, Yjs, FTS/Trigram | §3.1, §3.5–§3.11 |
 | Migrationen | EF-Migrationshistorie je Inkrement, Ausführung durch `Plane.Migrator` (Aspire-Ressource mit `WaitForCompletion`), Expand/Contract, Drift-Gate | §3.13 |
 | Seeds | Referenzdaten (`BaseSeeds`), Laufzeit-Seeds (Default-States, Default-Intake, Benutzer-Defaults), Instanz-Konfiguration, Demo-Workspace aus `API/seeds/data` | §3.14 |
@@ -71,11 +72,11 @@ Jede Tabelle entsteht in der Migration des Inkrements, in dem ihr erster vertika
 
 | Inkrement | Migration(en) (`YYYYMMDDHHmm_<Modul>_<Beschreibung>`) | Tabellen | Seeds | Weitere Bausteine dieses Dokuments |
 |---|---|---|---|---|
-| **I0 Walking Skeleton** | `…_Platform_Extensions`, `…_Messaging_Initial`, `…_Instance_Initial`, `…_Identity_Initial`, `…_Authorization_Roles`, `…_Workspaces_Initial`, `…_Projects_Initial`, `…_Integrations_Connections` | Extensions `pg_trgm`, `unaccent`, `vector`; Funktion `plane_unaccent`; `outbox_messages`, `inbox_messages`, `jobs`, `recurring_jobs`, `data_protection_keys`, `instances`, `instance_admins`, `instance_configurations`, `users`, `profiles`, `user_identities`, `user_sessions`, `roles`, `role_permissions`, `workspaces`, `workspace_members`, `projects`, `project_identifiers`, `project_members`, `project_user_properties`, `states`, `integration_connections` | `BaseSeeds`: System-Rollen (6), Instanz-Datensatz, Instanz-Konfiguration aus ENV; Laufzeit: Default-States bei Projektanlage | Basistypen §3.1, Konventionen §3.2, Scope-FKs, Interceptors (D02), Drift-Gate, `PlaneRespawner`-Liste §4.6, `ParitySeedLoader`-Grundform |
+| **I0 Walking Skeleton** | `…_Platform_Extensions`, `…_Messaging_Initial`, `…_Instance_Initial`, `…_Identity_Initial`, `…_Authorization_Roles`, `…_Workspaces_Initial`, `…_Projects_Initial`, `…_Integrations_Connections` | Extensions `pg_trgm`, `unaccent`, `vector`; Funktion `plane_unaccent`; `outbox_messages`, `inbox_messages`, `jobs`, `recurring_job_states`, `data_protection_keys`, `instances`, `instance_admins`, `instance_configurations`, `users`, `profiles`, `user_identities`, `user_sessions`, `roles`, `role_permissions`, `workspaces`, `workspace_members`, `projects`, `project_identifiers`, `project_members`, `project_user_properties`, `states`, `integration_connections` | `BaseSeeds`: System-Rollen (6), Instanz-Datensatz (`instance_name` „funk.“), Instanz-Konfiguration aus ENV, System-Bot (D06-ADR-20); Laufzeit: Default-States bei Projektanlage | Basistypen §3.1, Konventionen §3.2, Scope-FKs, Interceptors (D02), Drift-Gate, `PlaneRespawner`-Liste §4.6, `ParitySeedLoader`-Grundform |
 | **I1 Workspace, Projekte, Konto** | `…_Workspaces_InvitesPreferences`, `…_Projects_LabelsEstimates`, `…_Projects_FeatureSettings`, `…_Assets_Initial`, `…_Identity_ApiTokens`, `…_Notifications_Preferences` | `workspace_member_invites`, `workspace_themes`, `workspace_user_properties`, `workspace_user_preferences`, `workspace_feature_settings`, `user_favorites`, `project_member_invites`, `project_feature_settings`, `labels`, `estimates`, `estimate_points`, `file_assets`, `api_tokens`, `user_notification_preferences` | Demo-Workspace-Seed (CE-WS-002) Teil 1 (Projekt, States, Labels) | Kaskaden-Registry vollständig für I0/I1-Tabellen, Hard-Delete-Job |
 | **I2 Work Items & Layouts** | `…_WorkItems_Initial`, `…_Properties_WorkItemTypesMinimal`, `…_Integrations_ExternalLinks` | `work_items`, `work_item_sequences`, `work_item_assignees`, `work_item_labels`, `work_item_relation_types`, `work_item_relations`, `work_item_mentions`, `work_item_subscribers`, `work_item_links`, `work_item_comments`, `work_item_reactions`, `work_item_comment_reactions`, `work_item_activities`, `work_item_description_versions`, `work_item_versions`, `draft_work_items`, `draft_work_item_assignees`, `draft_work_item_labels`, `work_item_types`, `external_links`; Trigram-Indizes `work_items.name`, `projects.name/identifier`, `workspaces.name` | `work_item_relation_types` (10 Typen); Demo-Seed Teil 2 (Work Items) | `SequenceAllocator` §3.6, Beschreibungsformate §3.9 |
-| **I3 Planung** | `…_Cycles_Initial`, `…_ProjectModules_Initial`, `…_Intake_Initial`, `…_Views_Initial`, `…_WorkItems_DraftPlanningLinks` | `cycles`, `cycle_work_items`, `cycle_user_properties`, `modules`, `module_members`, `module_work_items`, `module_links`, `module_user_properties`, `intakes`, `intake_work_items`, `views`, `draft_work_item_cycles`, `draft_work_item_modules` | Demo-Seed Teil 3 (Cycles, Module, View); Laufzeit: Default-Intake beim Aktivieren | Snooze-Index, Cycle-Überschneidungsindex |
-| **I4 Pages & Realtime** | `…_Pages_Initial` | `pages`, `project_pages`, `page_labels`, `page_logs`, `page_versions` | Demo-Seed Teil 4 (Pages) | Yjs-Binärfeld, Versionsaufbewahrung |
+| **I3 Planung** | `…_Cycles_Initial`, `…_ProjectModules_Initial`, `…_Intake_Initial`, `…_Views_Initial`, `…_WorkItems_DraftPlanningLinks` | `cycles`, `cycle_work_items`, `cycle_user_properties`, `modules`, `module_members`, `module_work_items`, `module_links`, `module_user_properties`, `intakes`, `intake_work_items`, `views`, `draft_work_item_cycles`, `draft_work_item_modules` | Demo-Seed Teil 3 (Cycles, Module, View); Laufzeit: Default-Intake beim Aktivieren | Snooze-Index, Cycle-Überschneidungsindex, `cycles.completion_published_at` + Index (D06 §3.17.4) |
+| **I4 Pages & Realtime** | `…_Pages_Initial` | `pages` (inkl. `description_revision`, D07), `project_pages`, `page_labels`, `page_logs`, `page_versions` | Demo-Seed Teil 4 (Pages) | Yjs-Binärfeld, Versionsaufbewahrung |
 | **I5 Überblick** | `…_Home_Initial`, `…_Notifications_Inbox`, `…_Analytics_Views`, `…_Search_Documents` | `workspace_home_preferences`, `workspace_user_links`, `user_recent_visits`, `stickies`, `notifications`, `email_notification_logs`, `analytic_views`, `search_documents`; Trigram-Indizes übrige Suchfelder | – | FTS §3.10 |
 | **I6 Außenwirkung & Administration** | `…_PublicSpace_Initial`, `…_Webhooks_Initial`, `…_Exports_Initial`, `…_Identity_ApiActivityLogs`, `…_WorkItems_Votes` | `deploy_boards`, `project_public_members`, `work_item_votes`, `webhooks`, `webhook_logs`, `exports`, `api_activity_logs` | – | Aufbewahrungsindizes |
 | **I7 Härtung & Betrieb** | Squash der Historie zu `…_CE_Baseline` (einmalig vor Release 1.0), danach nur additive Migrationen | – | – | Expand/Contract-Gate, Migrations-Lasttest, Backup/Restore-Test |
@@ -104,10 +105,10 @@ Alle Entscheidungen präzisieren ADR-037/-038 und 01 §7.6–7.8/§7.14; Spalte 
 | **D03-ADR-01** | Kontext und Ablage | **Ein** `PlaneDbContext` (+ `PlaneReadDbContext`, D02-ADR-22/-26) im Projekt `BE/data/Plane.Data`; Entitäten in `Plane.Data/Entities/<Modul>/<Entity>.cs`, Konfigurationen in `Plane.Data/Configurations/<Modul>/<Entity>Configuration.cs`, aufgenommen per `ApplyConfigurationsFromAssembly`; jede Entität trägt `[OwnedBy("<Modul>")]` (R3). Infrastruktur-Tabellen gehören den Pseudo-Modulen `Messaging` (Outbox/Inbox/Jobs) und `Instance` (Key-Ring). | Kontext je Modul; Schema je Modul (`pg schema`) | Work-Item-Listen joinen States, Labels, Cycles, Module, Assignees, Intake in einer Abfrage (ADR-037); Schreibeigentum sichert R3 maschinell | I0 |
 | **D03-ADR-02** | Tabellen- und Spaltennamen | `snake_case` über `UseSnakeCaseNamingConvention()` (EFCore.NamingConventions 10.0.1); Tabellen im Plural; das Fachobjekt heißt **Work Item**: jede Original-Tabelle `issue_*`/`*_issues` wird `work_item_*`/`*_work_items`, jede FK-Spalte `issue_id` wird `work_item_id`, `draft_issue_id` → `draft_work_item_id`, `related_issue_id` → `related_work_item_id`, `issue_comment_id` → `comment_id` (01 §7.1). **Ausnahmen mit Begründung:** `issue_views` → `views` (Modul `Plane.Views`, Entität `View`), `exporters` → `exports`, `sessions` → `user_sessions` (D05), `issue_sequences` → `work_item_sequences` (andere Form, §3.6); Spaltennamen, die als JSON-Feld 1:1 in den Vertrag gehen und keine FKs sind, bleiben (`webhooks.issue`, `exports.project`, `projects.issue_views_view`). JSON-Felder und URL-Segmente behalten die Original-Namen (`issue`, `issue_id`), die Abbildung leisten die DTOs (04). Alias-Tabelle für Nachbardokumente: §4.5 | Original-Tabellennamen 1:1; reine Umbenennung nur in C# | 01 §7.1 ist verbindlich; ein konsistentes Schema ist für Agenten und Raw-SQL (D02 §3.11.6) eindeutiger; Vertrag hängt nicht an Tabellennamen (ADR-003) | I0 |
 | **D03-ADR-03** | Namen von Constraints und Indizes | Primärschlüssel `pk_<tabelle>`, FKs `fk_<tabelle>_<ziel>_<spalte>` (EF-Default mit Snake-Case), Indizes `ix_<tabelle>_<spalten>`, Unique `ux_<tabelle>_<spalten>`, Checks `ck_<tabelle>_<regel>`, Alternate Keys `ak_<tabelle>_<spalten>`. **Partielle Unique-Constraints des Originals behalten ihren Original-Namen** (z. B. `state_unique_name_project_when_deleted_at_null`), weil `IUniqueViolationMap` (D02 §3.19) Unique-Verletzungen über den Constraint-Namen auf die endpunktspezifische Original-Fehlermeldung abbildet und die Namen in A02a §2.6/A02b §2.7 dokumentiert sind | durchgängig generierte Namen | Fehlerabbildung bleibt nachvollziehbar zum Original; neue Constraints folgen dem Schema | I0 |
-| **D03-ADR-04** | Primärschlüssel | `uuid`, in der Anwendung als **UUIDv7** erzeugt (`IIdGenerator` → `Guid.CreateVersion7(clock.UtcNow)`; R8), `ValueGeneratedNever()`, **kein** DB-Default. Ausnahmen: `project_identifiers.id` `bigint GENERATED BY DEFAULT AS IDENTITY` (API liefert die Ganzzahl, `ProjectIdentifierEndpoint`), `data_protection_keys.id` `integer` Identity (Framework-Entität), `user_sessions.id` `varchar(64)` (D05 §3.4.1), Katalogtabellen mit fachlichem Schlüssel (`work_item_relation_types.key`, `work_item_sequences.project_id`, `*_feature_settings (…_id, key)`, `inbox_messages (consumer, message_id)`, `recurring_jobs.name`). Seeds und Testdaten nutzen **UUIDv5** (D15-ADR-07/-16) bzw. feste UUIDv7-Konstanten (System-Rollen, D05 §3.13.3) | DB-seitiges `uuidv7()` (PG 18) oder `gen_random_uuid()`; Snowflake/`bigint` | Monoton steigende Schlüssel → B-Tree-freundlich, ohne Roundtrip; App-seitige Erzeugung ist Voraussetzung für Domain-Events vor `SaveChanges` und für deterministische Testdaten | I0 |
+| **D03-ADR-04** | Primärschlüssel | `uuid`, in der Anwendung als **UUIDv7** erzeugt (`IIdGenerator` → `Guid.CreateVersion7(clock.UtcNow)`; R8), `ValueGeneratedNever()`, **kein** DB-Default. Ausnahmen: `project_identifiers.id` `bigint GENERATED BY DEFAULT AS IDENTITY` (API liefert die Ganzzahl, `ProjectIdentifierEndpoint`), `data_protection_keys.id` `integer` Identity (Framework-Entität), `user_sessions.id` `varchar(64)` (D05 §3.4.1), Katalogtabellen mit fachlichem Schlüssel (`work_item_relation_types.key`, `work_item_sequences.project_id`, `*_feature_settings (…_id, key)`, `inbox_messages (consumer, message_id)`, `recurring_job_states.name`). Seeds und Testdaten nutzen **UUIDv5** (D15-ADR-07/-16) bzw. feste UUIDv7-Konstanten (System-Rollen, D05 §3.13.3) | DB-seitiges `uuidv7()` (PG 18) oder `gen_random_uuid()`; Snowflake/`bigint` | Monoton steigende Schlüssel → B-Tree-freundlich, ohne Roundtrip; App-seitige Erzeugung ist Voraussetzung für Domain-Events vor `SaveChanges` und für deterministische Testdaten | I0 |
 | **D03-ADR-05** | Mandanten-Konsistenz in der DB | Jede Tabelle mit `workspace_id` **und** `project_id` erhält statt der Einzel-FK auf `projects` einen **zusammengesetzten Scope-FK** `fk_<tabelle>_project_scope (project_id, workspace_id) → projects (id, workspace_id)` (Alternate Key `ak_projects_id_workspace_id`), zusätzlich die Einzel-FK `workspace_id → workspaces`. Bei `project_id IS NULL` (Workspace-Entitäten) greift der FK nicht (`MATCH SIMPLE`). Der `ScopeConsistencyInterceptor` (D02 §3.2.2 Nr. 4) bleibt als frühe, verständliche Fehlerquelle | nur Interceptor (D02); Trigger | Schutz gegen Mandantenvermischung auch bei Raw-SQL, `ExecuteUpdate` und Fehlern im Interceptor (Empfehlung A02a §5.2); kostet einen zusätzlichen Unique-Index auf `projects` | I0 |
 | **D03-ADR-06** | Lösch-Verhalten der FKs | DB-FKs bilden das Original-`on_delete` für **harte** Löschungen ab (`CASCADE`, `SET NULL`), weil Soft-Delete nie die DB-Kaskade auslöst; Abweichungen nur, wo das Original Daten verliert oder bricht: (a) `DO_NOTHING` der Activities → `work_item_id` `CASCADE`, `comment_id` `SET NULL` (Q3); (b) Benutzer-FKs siehe D03-ADR-07; (c) Drafts hängen nicht mehr kaskadierend an State/Parent (Q17, DEV-DM-07); (d) polymorphe Referenzen (`entity_identifier`, `moved_to_*`, `webhook_logs.webhook_id`, `profiles.last_workspace_id`) bleiben ohne FK wie im Original. Soft-Delete-Kaskaden laufen über die `SoftDeleteCascadeRegistry` (D02-ADR-03), vollständige Liste §3.5.4 | alle FKs `RESTRICT` und Löschen nur in Code; DB-Kaskaden auch für Soft-Delete per Trigger | Hard-Delete-Job (`HardDeleteJob`) kann dann mit einem `DELETE` je Wurzel arbeiten (A02a §5.2 „DB-FKs passend zu `on_delete`“); Original-Verhalten bleibt sichtbar gleich | I0 |
-| **D03-ADR-07** | Benutzer-Referenzen | Zeilen in `users` werden **nie hart gelöscht** (CE kennt nur Deaktivierung, CE-PROF-005, D05 §3.18). Daraus: Audit-Spalten `created_by_id`/`updated_by_id` → `SET NULL`; persönliche Datensätze (Sessions, Identitäten, Tokens, Präferenzen, Favoriten, Besuche, Benachrichtigungen des Empfängers, Mitgliedschaften, Reaktionen) → `CASCADE`; **Besitz-Referenzen geteilter Objekte** (`workspaces.owner_id`, `cycles.owned_by_id`, `views.owned_by_id`, `pages.owned_by_id`) → `RESTRICT` (Original `CASCADE` hätte geteilte Objekte mitgelöscht, A02a-#5); Zuständigkeiten (`projects.default_assignee_id`, `projects.project_lead_id`, `modules.lead_id`, `work_item_comments.actor_id`, `notifications.triggered_by_id`, Versions-`owned_by_id`) → `SET NULL` | Original-`CASCADE` überall | verhindert Datenverlust, falls ein Betreiber per SQL/CLI doch einen Benutzer entfernt; ohne Wirkung auf API-Verträge | I0 |
+| **D03-ADR-07** | Benutzer-Referenzen | Zeilen in `users` werden **nie hart gelöscht** (CE kennt nur Deaktivierung, CE-PROF-005, D05 §3.18). Daraus: Audit-Spalten `created_by_id`/`updated_by_id` → `SET NULL`; persönliche Datensätze (Sessions, Identitäten, Tokens, Präferenzen, Favoriten, Besuche, Benachrichtigungen des Empfängers, Mitgliedschaften, Reaktionen) → `CASCADE`; **Besitz-Referenzen geteilter Objekte** (`workspaces.owner_id`, `cycles.owned_by_id`, `views.owned_by_id`, `pages.owned_by_id`) → `RESTRICT` (Original `CASCADE` hätte geteilte Objekte mitgelöscht, A02a-#5); Zuständigkeiten (`projects.default_assignee_id`, `projects.project_lead_id`, `modules.lead_id`, `work_item_comments.actor_id`, `notifications.triggered_by_id`) → `SET NULL`; Versions-`owned_by_id` (`work_item_description_versions`, `work_item_versions`, `page_versions`; NOT NULL) → `RESTRICT` | Original-`CASCADE` überall | verhindert Datenverlust, falls ein Betreiber per SQL/CLI doch einen Benutzer entfernt; ohne Wirkung auf API-Verträge | I0 |
 | **D03-ADR-08** | Soft-Delete und Joins (**bewusste Entscheidung**) | Alle `ISoftDeletable`-Entitäten erhalten den benannten Filter `soft_delete` (EF 10, `HasQueryFilter(name, …)`, Microsoft Learn „Global Query Filters – named filters“). **Joins:** (1) EF wendet den Filter auch auf Navigationen/`Include`/Joins an – anders als Django, das über Vorwärts-FKs gelöschte Eltern lädt (A02a §3.2 f). Das ist **gewollt**: weil Kaskaden inline (bzw. für Workspace/Projekt deferred) laufen, existiert in einem konsistenten Zustand kein aktives Kind eines gelöschten Elternteils, außer bei bewusst verbleibenden Verweisen; (2) die Fälle, in denen das Original gelöschte Join-Zeilen sichtbar mitliest, sind abschließend in §3.5.2 gelistet und werden **explizit** mit `IgnoreQueryFilters([QueryFilterNames.SoftDelete])` bzw. im SQL-Baustein (D02 §3.11.6) ohne Filter umgesetzt; (3) Pflicht-Navigationen von Kind zu soft-löschbarem Elternteil werden **nicht** als `IsRequired`-Navigation modelliert (nur FK-Property + optionale Navigation), damit EF-Warnung 10622 nicht unterdrückt werden muss; (4) Join-Tabellen (Assignees, Labels, Cycle-/Modul-Zuordnungen) sind soft-löschbar wie im Original, Abfragen über M2M lesen deshalb nur aktive Zuordnungen | Filter nur auf Wurzel-Entitäten; kein globaler Filter (explizite Prädikate überall) | Explizit statt „magisch“ unterschiedlich je Codepfad (Q1); Abweichungen vom Original sind aufgezählt und testbar | I0 |
 | **D03-ADR-09** | Audit-Felder | Wie D02 §3.2.1 (`created_at`, `updated_at`, `created_by_id`, `updated_by_id`, `deleted_at`; Anlage: `updated_by_id = NULL`). Zusätzlich Interface **`ITimestamped`** (`CreatedAt`, `UpdatedAt`) für Entitäten ohne Benutzer-Audit (`users`, `profiles`, Original `TimeAuditModel`), vom `AuditInterceptor` gleich behandelt. Fachliche Historie ausschließlich über `work_item_activities` (01 §7.8). Soft-Delete-Kaskaden setzen `updated_at`, aber **nicht** `updated_by_id = NULL` (Korrektur A02a-#10) | Audit-Shadow-Properties; Temporal Tables | Golden-Files des Originals bleiben vergleichbar; der Audit-NULL-Bug wird nicht übernommen | I0 |
 | **D03-ADR-10** | Zeittypen | `DateTimeOffset` → `timestamptz` mit Präzision 6, `DateOnly` → `date`; Original-`DateField`s bleiben `date` (**auch** `work_items.archived_at`, `pages.archived_at`, `work_item_versions.archived_at`), Original-`DateTimeField`s `timestamptz` (`cycles.start_date/end_date`, `modules.archived_at`) | alles `timestamptz` | Tagesgenauigkeit ist Vertrag (A02b §3.13); Mischtypen werden in der Spaltentabelle je Feld ausgewiesen | I0 |
@@ -125,8 +126,8 @@ Alle Entscheidungen präzisieren ADR-037/-038 und 01 §7.6–7.8/§7.14; Spalte 
 | **D03-ADR-22** | Migrationsform | Eine Historie in `Plane.Data/Migrations` (01 §7.14), Namen `YYYYMMDDHHmm_<Modul>_<Beschreibung>`; **Expand/Contract** nach D14 §3.17 mit Attribut `[ContractPhase("vX.Y")]` an jeder Migration mit `DropColumn`/`DropTable`/`RenameColumn`/`AlterColumn` (Typ oder Null-Fähigkeit); Index-Anlagen auf bestehenden großen Tabellen **nach** Release 1.0 mit `CREATE INDEX CONCURRENTLY` in eigener, nicht-transaktionaler Migration (`migrationBuilder.Sql(…, suppressTransaction: true)`, Muster `MIG/0124`); Extensions/Funktionen per `migrationBuilder.Sql` mit `IF NOT EXISTS`; Snapshot nie von Hand | mehrere Historien je Modul | 01 §7.14, D14 §3.17; Zero-Downtime-Rolling (Helm) braucht additive Schritte | I0 |
 | **D03-ADR-23** | Seeds | Drei Klassen: **(A) Referenz-Seeds** (`BaseSeeds`: System-Rollen, Relationstyp-Katalog, Instanz-Datensatz, Instanz-Konfiguration) idempotent im Migrator mit festen IDs, Tabellen in `TablesToIgnore` (§4.6); **(B) Laufzeit-Seeds** im Fachcode (Default-States/Triage bei Projektanlage, Default-Intake, Profil/Benachrichtigungs-Präferenzen bei JIT, Demo-Workspace CE-WS-002 als Job) – **nie** im Migrator; **(C) Testdaten** (`ParitySeedLoader`, `VolumeSeeder`) nur in Test/Dev, über Commands (D15). Kein `HasData` für Referenz-Seeds | EF `HasData` (erzeugt Migrations-Diffs bei jeder Wertänderung, keine Upserts mit Bedingungen) | Seeds bleiben änderbar ohne Schema-Migration; Laufzeit-Seeds laufen durch dieselben Invarianten wie Benutzeraktionen | I0 |
 | **D03-ADR-24** | Concurrency-Token | Keine Row-Version (D02 §3.2.3, Lost-Update-Semantik wie Original); Ausnahmen: Zeilensperren für `work_item_sequences` (§3.6) und `SELECT … FOR UPDATE` beim Snooze-Retiming (`intake_work_items`, A02a §3.4); Page-Binärdaten serialisiert der Realtime-Host je Dokument (ADR-022) | `xmin` als Token überall | Parität; kein 409 dort, wo das Original keinen kennt | I0 |
-| **D03-ADR-25** | Messaging-Tabellen | `outbox_messages` mit den Kontextspalten aus ABG-053, `inbox_messages (consumer, message_id)`, `jobs` (Queue, `run_at`, Versuche, Dead-Letter, `dedupe_key`), `recurring_jobs` (Cron-Zustand); alle im `PlaneDbContext`, Eigentümer `Messaging`, ohne Soft-Delete (Form §3.4.19) | eigener Kontext; Broker | ADR-020: gleiche Transaktion wie Fachdaten | I0 |
-| **D03-ADR-26** | Entfallene Modelle | Nicht portiert: `Account`, `Session` (→ `user_sessions`), `Device`, `DeviceSession`, `SocialLoginConnection`, `Team`, `ProjectDeployBoard`, `ProjectWebhook`, `Integration`, `WorkspaceIntegration`, `GithubRepository`, `GithubRepositorySync`, `GithubIssueSync`, `GithubCommentSync`, `SlackProjectSync`, `Importer`, `ChangeLog`, `IssueBlocker`, `IssueAttachment`, `IssueSequence` (→ Zähler), `ProjectIssueType`, `Description`, `DescriptionVersion`; `IssueType` nur minimal (§4.1) | Übernahme „für später“ | Greenfield (ADR-003), CE ungenutzt (A02a §1.3, A02b §1.3), ADR-007/-008 | I0 |
+| **D03-ADR-25** | Messaging-Tabellen | `outbox_messages` mit den Kontextspalten aus ABG-053, `inbox_messages (consumer, message_id)`, `jobs` (Queue, `run_at`, Versuche, Dead-Letter, `dedupe_key`; Erfolg = Zeile gelöscht), `recurring_job_states` (Cron-Zustand); alle im `PlaneDbContext`, Eigentümer `Messaging`, ohne Soft-Delete; Spalten **verbindlich nach D06 §3.2** (Fachgebiet Messaging), Abbildung §3.4.18.6 | eigener Kontext; Broker | ADR-020: gleiche Transaktion wie Fachdaten | I0 |
+| **D03-ADR-26** | Entfallene Modelle | **Nicht portiert (21):** `Account`, `Device`, `DeviceSession`, `SocialLoginConnection`, `Team`, `ProjectDeployBoard`, `ProjectWebhook`, `Integration`, `WorkspaceIntegration`, `GithubRepository`, `GithubRepositorySync`, `GithubIssueSync`, `GithubCommentSync`, `SlackProjectSync`, `Importer`, `ChangeLog`, `IssueBlocker`, `IssueAttachment`, `ProjectIssueType`, `Description`, `DescriptionVersion`. **Ersetzt (zählen zu den 75 portierten):** `Session` → `user_sessions` (D05), `IssueSequence` → Zähler `work_item_sequences` (§3.6); `IssueType` nur minimal (§4.1) | Übernahme „für später“ | Greenfield (ADR-003), CE ungenutzt (A02a §1.3, A02b §1.3), ADR-007/-008 | I0 |
 | **D03-ADR-27** | Volumen-Testdaten | `VolumeSeeder` (`Plane.BuildingBlocks.Testing/Seed`) mit **Bogus** (MIT, Seed fest), schreibt Bulk per Npgsql-`COPY` (binär) unter Umgehung der Commands, aber mit denselben Invarianten-Helfern (Sequenz, Sortierung, Default-State); Profile `volume-S/M/L` | nur über Commands (zu langsam für 100k Work Items); Datenbank-Dump | Lasttests (D15 LT-*) brauchen 10⁵–10⁶ Zeilen in Minuten | I2 |
 
 ---
@@ -159,6 +160,7 @@ Ergänzende Marker (D02): `IExternallyReferenced` (`external_source varchar(255)
 | `ScopeForeignKeyConvention` | `Plane.Data/Conventions/ScopeForeignKeyConvention.cs` | legt für jede Entität mit `WorkspaceId` + `ProjectId` den Scope-FK an (D03-ADR-05); wird nach `ApplyConfigurationsFromAssembly` und vor `AuditForeignKeyConvention` (D02 §5.1.3) ausgeführt |
 | `TrigramIndexExtensions.HasTrigramIndex(...)` | `Plane.Data/Conventions/` | `HasIndex(x => x.Name).HasMethod("gin").HasOperators("gin_trgm_ops").HasDatabaseName("ix_<t>_<c>_trgm")` |
 | `PlaneDbFunctions.Unaccent(string)` | `Plane.Data/Functions/` | Abbildung der SQL-Funktion `plane_unaccent(text)` für LINQ |
+| `DbDefaultsAreFallbackOnlyConvention` | `Plane.Data/Conventions/` | setzt für **jede** Property mit `HasDefaultValue`/`HasDefaultValueSql` (außer Computed Columns und Identity) `ValueGeneratedNever()`: EF sendet immer den CLR-Wert, der DB-Default dient nur Raw-SQL/`COPY`/Betreiber-SQL. Grund: EF lässt einen Wert weg, wenn er dem Sentinel (CLR-Default) entspricht – bei `intake_work_items.status` (DB-Default `-2`, `IntakeStatus.Snoozed = 0`) würde ein „Snoozed“-Insert sonst zu „Pending“ (EF-8-Sentinel-Regel, Microsoft Learn „What's New in EF Core 8 – Sentinel values and database defaults“). Pflicht dazu: C#-Initialisierer = Original-Default (`= 65535`, `= true`, `= JsonDefaults.X.DeepClone()`); Test `ClrDefaultsMatchDbDefaultsTests` vergleicht für jede Property mit konstantem DB-Default-Literal (nicht `now()`) den Wert einer frisch konstruierten Entität mit dem Literal |
 
 #### 3.1.3 Namensregeln (D03-ADR-02/-03)
 
@@ -288,16 +290,125 @@ Vollständige Liste aller Zieltabellen des `PlaneDbContext` (ohne `__EFMigration
 | T083 | `outbox_messages` | `OutboxMessage` | `Messaging` | X | I0 | – (neu, ADR-020, ABG-053) | neu | CE-OPS-016 (Basis) | §3.4.18 |
 | T084 | `inbox_messages` | `InboxMessage` | `Messaging` | X | I0 | – (neu, ADR-020) | neu | CE-OPS-016 (Basis) | §3.4.18 |
 | T085 | `jobs` | `Job` | `Messaging` | X | I0 | – (ersetzt Celery/RabbitMQ) | neu | CE-OPS-016 | §3.4.18 |
-| T086 | `recurring_jobs` | `RecurringJob` | `Messaging` | X | I0 | – (ersetzt `django_celery_beat`) | neu | CE-OPS-016 | §3.4.18 |
+| T086 | `recurring_job_states` | `RecurringJobState` | `Messaging` | X | I0 | – (ersetzt `django_celery_beat`) | neu | CE-OPS-016 | §3.4.18 |
 | T087 | `integration_connections` | `IntegrationConnection` | `Integrations` | X | I0 | – (neu, D16 §3.4.2) | minimal | – | §3.4.18 |
 | T088 | `external_links` | `ExternalLink` | `Integrations` | X | I2 | – (neu, D16 §3.4.2) | minimal | – | §3.4.18 |
 | T089 | `search_documents` | `SearchDocument` | `Search` | X | I5 | – (neu, D16 §3.3.7 G1, ADR-024) | neu | CE-SRCH-001, CE-SRCH-002, CE-SRCH-003 | §3.4.18 |
 
 Summe: 89 Tabellen
 
+#### 3.3.1 CE-IDs ohne eigene Zeile in §3.3 (Zuordnung bzw. bewusster Ausschluss)
+
+Ergänzt im Review: Abgleich aller 507 IDs aus `features/_data/ce-features.json` gegen dieses Dokument. Jede ID ist entweder in §3.3 (Spalte „CE-IDs“) genannt oder hier zugeordnet bzw. ausgeschlossen.
+
+**(a) Datenrelevant – nutzt bestehende Tabellen/Spalten (kein eigenes Schema):**
+
+| CE-ID | Tabellen/Spalten bzw. Abschnitt |
+|---|---|
+| CE-AI-001 | `instance_configurations` (`LLM_*`) |
+| CE-AI-002 | `instance_configurations` (`UNSPLASH_ACCESS_KEY`), `projects.cover_image` |
+| CE-ANA-001 | Lesesichten über `work_items`, `states`, `labels`, `cycles`, `modules`, `projects` (kein eigenes Schema; `analytic_views` = CE-ANA-009) |
+| CE-ANA-002 | dto. |
+| CE-ANA-003 | dto. |
+| CE-ANA-004 | `projects`, `work_items` |
+| CE-ANA-005 | `work_items.created_at`/`completed_at` |
+| CE-ANA-006 | dto. |
+| CE-ANA-007 | dto. |
+| CE-API-005 | `users` |
+| CE-API-011 | `workspace_members` |
+| CE-API-023 | `file_assets` (`entity_type = ISSUE_ATTACHMENT`) |
+| CE-HOME-007 | `work_item_activities` (`ix_work_item_activities_workspace_actor_created`) |
+| CE-I18N-001 | `profiles.language` |
+| CE-I18N-004 | `users.user_timezone`, `projects.timezone`, `cycles.timezone` |
+| CE-I18N-006 | `profiles.theme` (`ProfileTheme`) |
+| CE-I18N-007 | `profiles.theme` |
+| CE-I18N-008 | `profiles.theme` |
+| CE-I18N-016 | `*.logo_props` (`LogoProps`) |
+| CE-I18N-017 | `work_item_reactions`, `work_item_comment_reactions` |
+| CE-I18N-025 | `users.avatar_asset_id`, `profiles.background_color` |
+| CE-INST-008 | `user_sessions` (Löschung) |
+| CE-INST-019 | `instance_configurations` (`EMAIL_*`) |
+| CE-LV-001 | `*_user_properties.display_filters.layout` (`DisplayFilters`, §3.8) |
+| CE-LV-002 | `work_items`, `project_user_properties` |
+| CE-LV-003 | `display_filters` |
+| CE-LV-004 | `cycle_user_properties`, `module_user_properties`, `views`, `workspace_user_properties` |
+| CE-LV-006 | `*.rich_filters` (`RichFilterNode`, §3.8) |
+| CE-LV-007 | `*.rich_filters` |
+| CE-LV-008 | `*.rich_filters` |
+| CE-LV-009 | `*.rich_filters` |
+| CE-LV-012 | `*.filters` (`LegacyIssueFilters`), `*.display_properties` |
+| CE-LV-013 | `*.display_filters`, `*.display_properties` |
+| CE-LV-017 | `display_filters.group_by`/`sub_group_by` |
+| CE-LV-019 | `work_items.parent_id` (`ix_work_items_parent_id`) |
+| CE-LV-024 | `work_items.sort_order` (§3.7) |
+| CE-LV-026 | `work_items.start_date`/`target_date` |
+| CE-LV-030 | `work_items.start_date`/`target_date` |
+| CE-LV-031 | `work_items.start_date`/`target_date` |
+| CE-LV-032 | `work_items.sort_order` |
+| CE-LV-037 | `work_items.parent_id` |
+| CE-LV-046 | `work_items.archived_at`, `cycles.archived_at`, `modules.archived_at` |
+| CE-OPS-010 | `PlaneReadDbContext` (D03-ADR-01) |
+| CE-OPS-014 | §3.5 (Soft-Delete, Kaskaden, Hard-Delete) |
+| CE-OPS-017 | §3.9.1 Regeln (2)/(3), `ck_*_description_binary_size` |
+| CE-PAGE-013 | `pages.description_binary`/`description_revision` (§3.9.3) |
+| CE-PAGE-014 | `pages.is_locked`, `archived_at`, `access` |
+| CE-PAGE-015 | `pages.name`, `logo_props` |
+| CE-PAGE-016 | `pages.description_json` (Überschriften) |
+| CE-PAGE-017 | `pages`, `page_versions`, `page_logs` |
+| CE-PAGE-020 | `pages.view_props.full_width` (`PageViewProps`), `project_members.preferences.pages.block_display` |
+| CE-PAGE-021 | `*.description_json` (Schema D10) |
+| CE-PAGE-022 | `work_item_comments.comment_json`, `stickies.description` |
+| CE-PAGE-023 | `page_versions` |
+| CE-PAGE-024 | `*.description_json`/`description_html` (Editor-Schema D10, §3.9.1) |
+| CE-PAGE-025 | `*.description_json`/`description_html` (Editor-Schema D10, §3.9.1) |
+| CE-PAGE-026 | `*.description_json`/`description_html` (Editor-Schema D10, §3.9.1) |
+| CE-PAGE-027 | `*.description_json`/`description_html` (Editor-Schema D10, §3.9.1) |
+| CE-PAGE-028 | `*.description_json`/`description_html` (Editor-Schema D10, §3.9.1) |
+| CE-PAGE-029 | `*.description_json`/`description_html` (Editor-Schema D10, §3.9.1) |
+| CE-PAGE-030 | `*.description_json`/`description_html` (Editor-Schema D10, §3.9.1) |
+| CE-PAGE-031 | `*.description_json`/`description_html` (Editor-Schema D10, §3.9.1) |
+| CE-PAGE-032 | `*.description_json`/`description_html` (Editor-Schema D10, §3.9.1) |
+| CE-PAGE-033 | `*.description_json`/`description_html` (Editor-Schema D10, §3.9.1) |
+| CE-PAGE-034 | `*.description_json`/`description_html` (Editor-Schema D10, §3.9.1) |
+| CE-PAGE-035 | `*.description_json`/`description_html` (Editor-Schema D10, §3.9.1) |
+| CE-PAGE-036 | `*.description_json`/`description_html` (Editor-Schema D10, §3.9.1) |
+| CE-PAGE-037 | `*.description_json`/`description_html` (Editor-Schema D10, §3.9.1) |
+| CE-PAGE-038 | `*.description_json`/`description_html` (Editor-Schema D10, §3.9.1) |
+| CE-PAGE-039 | `*.description_json`/`description_html` (Editor-Schema D10, §3.9.1) |
+| CE-PAGE-040 | `*.description_json`/`description_html` (Editor-Schema D10, §3.9.1) |
+| CE-PRJ-012 | `project_user_properties.sort_order` (§3.7), `user_favorites` |
+| CE-PRJ-013 | `project_user_properties.sort_order`, `projects.archived_at` |
+| CE-PRJ-014 | `projects.cycle_view`/`module_view`/`issue_views_view`/`page_view`/`intake_view` |
+| CE-PRJ-020 | dto. (Feature-Toggles an `projects`) |
+| CE-PROF-002 | `users`, `profiles` |
+| CE-PROF-009 | `work_items`, `work_item_assignees`, `work_item_subscribers` |
+| CE-PROF-011 | `users`, `workspace_members`, `work_item_activities` |
+| CE-RT-001 | `pages.description_binary`, `description_revision` (§3.9.3) |
+| CE-RT-002 | `pages.description_binary` |
+| CE-RT-004 | `pages.is_locked`/`archived_at`/`access` |
+| CE-RT-006 | `pages.is_locked`/`archived_at` (Fehlercodes 4701/4702) |
+| CE-RT-008 | `description_html`/`_json`/`_binary` (Konvertierung, §3.9.1) |
+| CE-SPACE-012 | – (Keycloak-Fehlercodes, kein Schema) |
+| CE-SPACE-018 | `deploy_boards.view_props` (`PublishViewProps`) |
+| CE-SPACE-019 | `deploy_boards`, `work_items` |
+| CE-SPACE-020 | `deploy_boards`, `work_items` |
+| CE-SPACE-021 | `deploy_boards.view_props` |
+| CE-SPACE-022 | `work_items` (Filter) |
+| CE-SPACE-023 | `work_items` (Filter) |
+| CE-SPACE-024 | `work_items`, `work_item_comments`, `work_item_reactions`, `work_item_votes` |
+| CE-SPACE-030 | `users` (Mentions) |
+| CE-UIX-009 | `file_assets` |
+| CE-WH-008 | `webhook_logs.request_body` (Format D06 §3.14) |
+| CE-WS-006 | `states`, `labels`, `workspace_members`, `estimates` (Workspace-weite Lesesichten, kein eigenes Schema) |
+
+**(b) Entfallen durch ADR-008 (keine Tabellen für Passwort, Magic-Code, OAuth-Provider, Admin-Login):** CE-AUTH-002, CE-AUTH-003, CE-AUTH-004, CE-AUTH-005, CE-AUTH-006, CE-AUTH-007, CE-AUTH-008, CE-AUTH-009, CE-AUTH-010, CE-AUTH-011, CE-AUTH-013, CE-AUTH-017, CE-AUTH-018, CE-AUTH-019, CE-AUTH-020, CE-AUTH-021, CE-INST-007, CE-INST-020, CE-INST-021, CE-INST-022, CE-INST-023, CE-INST-024, CE-SPACE-008, CE-SPACE-009, CE-SPACE-010, CE-SPACE-011.
+
+**(c) Reine UI-, Editor-Client- oder Betriebsfunktionen ohne Schemawirkung** (Fachgebiet 08/09/10/14; hier bewusst ohne Tabelle): CE-WS-013, CE-WS-014, CE-WS-016, CE-WS-017, CE-WS-018, CE-WS-019, CE-WS-020, CE-WS-024, CE-PRJ-017, CE-LV-018, CE-LV-020, CE-LV-021, CE-LV-022, CE-LV-023, CE-LV-025, CE-LV-027, CE-LV-028, CE-LV-029, CE-LV-034, CE-LV-035, CE-LV-036, CE-LV-038, CE-LV-039, CE-LV-040, CE-LV-041, CE-LV-042, CE-LV-043, CE-LV-044, CE-LV-045, CE-RT-007, CE-RT-009, CE-SRCH-004, CE-SRCH-005, CE-SRCH-006, CE-SRCH-007, CE-SRCH-008, CE-SRCH-009, CE-AUTH-001, CE-AUTH-014, CE-AUTH-015, CE-AUTH-016, CE-AUTH-026, CE-AUTH-029, CE-INST-009, CE-INST-010, CE-INST-011, CE-INST-012, CE-INST-013, CE-INST-014, CE-INST-015, CE-INST-016, CE-INST-030, CE-SPACE-013, CE-SPACE-014, CE-SPACE-015, CE-SPACE-016, CE-SPACE-029, CE-SPACE-031, CE-SPACE-032, CE-API-002, CE-API-004, CE-I18N-002, CE-I18N-003, CE-I18N-005, CE-I18N-009, CE-I18N-010, CE-I18N-011, CE-I18N-012, CE-I18N-013, CE-I18N-014, CE-I18N-015, CE-I18N-018, CE-I18N-019, CE-I18N-020, CE-I18N-021, CE-I18N-022, CE-I18N-023, CE-I18N-024, CE-I18N-026, CE-UIX-001, CE-UIX-002, CE-UIX-003, CE-UIX-004, CE-UIX-005, CE-UIX-006, CE-UIX-007, CE-UIX-008, CE-UIX-010, CE-UIX-011, CE-UIX-012, CE-UIX-013, CE-OPS-001, CE-OPS-002, CE-OPS-003, CE-OPS-004, CE-OPS-005, CE-OPS-006, CE-OPS-007, CE-OPS-008, CE-OPS-009, CE-OPS-011, CE-OPS-019, CE-OPS-021, CE-OPS-022, CE-OPS-023.
+
+
 ### 3.4 Tabellen je Modul (Spalten, Schlüssel, Indizes, Checks)
 
-**Lesehilfe.** Je Tabelle: Kopfzeile mit Entität, Eigentümer, Basis, Inkrement, Status, CE-IDs; dann alle **fachlichen** Spalten in Original-Reihenfolge (Basis-Spalten nach §3.1.1 sind nicht wiederholt, außer bei Basis X). „Default“: DB-Default (`DEFAULT …` in der Migration); „C#:“ = nur im Code gesetzt; `JsonDefaults.*` = konstantes Literal (§3.8.2), zugleich DB-Default. FK-Angaben nennen das Lösch-Verhalten der **DB** (harte Löschung); das Soft-Delete-Verhalten steht in §3.5.4. Durchgestrichene Spalten entfallen. Zusätzlich gilt für alle Basen W/P der Scope-FK (D03-ADR-05) und für alle Basen A/W/P der Index `ix_<tabelle>_workspace_id`/`ix_<tabelle>_project_id`, den EF für FKs automatisch anlegt.
+**Lesehilfe.** Je Tabelle: Kopfzeile mit Entität, Eigentümer, Basis, Inkrement, Status, CE-IDs; dann alle **fachlichen** Spalten in Original-Reihenfolge (Basis-Spalten nach §3.1.1 sind nicht wiederholt, außer bei Basis X). „Default“: DB-Default (`DEFAULT …` in der Migration); „C#:“ = nur im Code gesetzt; `JsonDefaults.*` = konstantes Literal (§3.8.2), zugleich DB-Default. FK-Angaben nennen das Lösch-Verhalten der **DB** (harte Löschung); das Soft-Delete-Verhalten steht in §3.5.4. Durchgestrichene Spalten entfallen. **C#-Typ bei Enum-Spalten:** Für jede Spalte, die in §3.11 einem C#-Enum zugeordnet ist, gilt dieses Enum als Property-Typ (mit `EnumValueConverter<T>` bzw. Zahlenwert), auch wo die Spaltentabelle den Grundtyp (`string`, `short`, `int`) nennt. Zusätzlich gilt für alle Basen W/P – und für jede X-Tabelle mit den Spalten `workspace_id` **und** `project_id` (z. B. `file_assets`, `notifications`, `project_pages`) – der Scope-FK (D03-ADR-05), der eine dort genannte Einzel-FK `project_id → projects` ersetzt und für alle Basen A/W/P der Index `ix_<tabelle>_workspace_id`/`ix_<tabelle>_project_id`, den EF für FKs automatisch anlegt.
 
 #### 3.4.1 Modul Identity (Benutzer, Sessions, API-Tokens)
 
@@ -341,7 +452,7 @@ Entität `User` · `[OwnedBy("Identity")]` · Basis eigene Form (Spalten vollst�
 | `last_login_uagent` | `text` | nein | – | LastLoginUagent: `string` | 1:1 |
 | ~~`token_updated_at`~~ | – | – | – | – | entfällt: ADR-008 |
 | `is_bot` | `boolean` | nein | false | IsBot: `bool` | 1:1 |
-| `bot_type` | `varchar(30)` | ja | – | BotType: `string?` | `WORKSPACE_SEED` (Seed-Bot), reserviert `integration` (D16-ADR-12), `app` (H1) |
+| `bot_type` | `varchar(30)` | ja | – | BotType: `string?` | `WORKSPACE_SEED` (Seed-Bot), `SYSTEM` (Instanz-System-Bot, D06-ADR-20, §3.14.1), reserviert `integration` (D16-ADR-12), `app` (H1) |
 | `user_timezone` | `varchar(255)` | nein | `'UTC'` | UserTimezone: `string` | IANA-Name, Check gegen Liste `pytz.common_timezones` nur im Validator (`TimeZoneCatalog`), nicht als DB-Check |
 | `is_email_valid` | `boolean` | nein | false | IsEmailValid: `bool` | 1:1 |
 | `masked_at` | `timestamptz` | ja | – | MaskedAt: `DateTimeOffset?` | 1:1 |
@@ -623,7 +734,7 @@ Entität `UserFavorite` · `[OwnedBy("Workspaces")]` · Basis `WorkspaceEntity` 
 | `entity_identifier` | `uuid` | ja | – | EntityIdentifier: `Guid?` | polymorph, **kein FK** (wie Original); Aufräumen über Handler des Eigentümers |
 | `name` | `varchar(255)` | ja | – | Name: `string?` | 1:1 |
 | `is_folder` | `boolean` | nein | false | IsFolder: `bool` | 1:1 |
-| `sequence` | `double precision` | nein | 65535 | Sequence: `double` | Sortierung (`min − 10000`, 02a §3.6) |
+| `sequence` | `double precision` | nein | 65535 | Sequence: `double` | Sortierung: Anlage `max(sequence im Workspace) + 10000`, sonst 65535 (§3.7, 02a §3.6) |
 | `parent_id` | `uuid` | ja | – | ParentId: `Guid?` | FK `user_favorites` ON DELETE CASCADE |
 | `teamspace_id` | `uuid` | ja | NULL | `TeamspaceId: Guid?` | B1-Vorhalt (01 §1.4), ohne FK, CE immer `NULL` |
 
@@ -827,7 +938,7 @@ Entität `WorkItem` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` (Audit-
 |---|---|---|---|---|---|
 | `parent_id` | `uuid` | ja | – | ParentId: `Guid?` | FK `work_items` ON DELETE CASCADE; Zyklenfreiheit/gleiches Projekt über `IWorkItemHierarchyPolicy` (E-05) |
 | `state_id` | `uuid` | ja | – | StateId: `Guid?` | FK `states` ON DELETE CASCADE; Default-State bei Anlage (`_ensure_default_state`), Schreiben nur über `IWorkItemStateChanger` (C1) |
-| `point` | `smallint` | ja | – | Point: `short?` | Legacy (Original `Sum("point")`-Analytics, Q23); Spalte bleibt für Vertrag (`fields="__all__"`) |
+| `point` | `integer` | ja | – | Point: `int?` | Legacy (Original `Sum("point")`-Analytics, Q23); Spalte bleibt für Vertrag (`fields="__all__"`) |
 | `estimate_point_id` | `uuid` | ja | – | EstimatePointId: `Guid?` | FK `estimate_points` ON DELETE SET NULL |
 | `name` | `varchar(255)` | nein | – | Name: `string` | 1:1 |
 | `description_json` | `jsonb` | nein | `'{}'::jsonb` | DescriptionJson: `JsonObject` | Lesemodell `ProseMirrorDoc` |
@@ -898,7 +1009,7 @@ Entität `WorkItemRelation` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity`
 |---|---|---|---|---|---|
 | `work_item_id` | `uuid` | nein | – | WorkItemId: `Guid` | FK `work_items` ON DELETE CASCADE; Original `issue_id` |
 | `related_work_item_id` | `uuid` | nein | – | RelatedWorkItemId: `Guid` | FK `work_items` ON DELETE CASCADE; projektübergreifend zulässig (nur gleicher Workspace, A9); Original `related_issue_id` |
-| `relation_type` | `varchar(30)` | nein | `'blocked_by'` | RelationType: `string` | FK auf Katalogschlüssel (A9) statt freier String (Korrektur Q19); gespeichert wird die Vorwärtsrichtung aus Sicht von `work_item_id` |
+| `relation_type` | `varchar(30)` | nein | `'blocked_by'` | RelationType: `string` | FK `work_item_relation_types(key)` ON DELETE RESTRICT – Katalogschlüssel (A9) statt freier String (Korrektur Q19); gespeichert wird die Vorwärtsrichtung aus Sicht von `work_item_id` |
 
 **Indizes/Unique:** `issue_relation_unique_issue_related_issue_when_deleted_at_null` UNIQUE (`work_item_id`, `related_work_item_id`) WHERE `deleted_at IS NULL`; `ix_work_item_relations_related` (`related_work_item_id`) WHERE `deleted_at IS NULL`.
 
@@ -1040,7 +1151,7 @@ Entität `WorkItemDescriptionVersion` · `[OwnedBy("WorkItems")]` · Basis `Proj
 | `description_stripped` | `text` | ja | – | DescriptionStripped: `string?` | 1:1 |
 | `description_json` | `jsonb` | nein | `'{}'::jsonb` | DescriptionJson: `JsonObject` | Lesemodell `ProseMirrorDoc` |
 | `last_saved_at` | `timestamptz` | nein | `now()` | LastSavedAt: `DateTimeOffset` | 1:1 |
-| `owned_by_id` | `uuid` | nein | – | OwnedById: `Guid` | FK `users` ON DELETE SET NULL (Original CASCADE); Original `CASCADE` |
+| `owned_by_id` | `uuid` | nein | – | OwnedById: `Guid` | FK `users` ON DELETE RESTRICT (Original CASCADE); NOT NULL bleibt (Merge-Regel und Vertrag `owned_by` brauchen den Besitzer); `SET NULL` wäre mit NOT NULL unvereinbar |
 
 **Indizes/Unique:** `ix_work_item_description_versions_work_item_last_saved` (`work_item_id`, `last_saved_at` DESC).
 
@@ -1076,7 +1187,7 @@ Entität `WorkItemVersion` · `[OwnedBy("WorkItems")]` · Basis `ProjectEntity` 
 | `last_saved_at` | `timestamptz` | nein | `now()` | LastSavedAt: `DateTimeOffset` | 1:1 |
 | `work_item_id` | `uuid` | nein | – | WorkItemId: `Guid` | FK `work_items` ON DELETE CASCADE; Original `issue_id` |
 | `activity_id` | `uuid` | ja | – | ActivityId: `Guid?` | FK `work_item_activities` ON DELETE SET NULL |
-| `owned_by_id` | `uuid` | nein | – | OwnedById: `Guid` | FK `users` ON DELETE SET NULL (Original CASCADE); Original `CASCADE` |
+| `owned_by_id` | `uuid` | nein | – | OwnedById: `Guid` | FK `users` ON DELETE RESTRICT (Original CASCADE); NOT NULL bleibt (Merge-Regel und Vertrag `owned_by` brauchen den Besitzer); `SET NULL` wäre mit NOT NULL unvereinbar |
 
 **Indizes/Unique:** `ix_work_item_versions_work_item_last_saved` (`work_item_id`, `last_saved_at` DESC).
 
@@ -1200,8 +1311,9 @@ Entität `Cycle` · `[OwnedBy("Cycles")]` · Basis `ProjectEntity` (Audit-Basis 
 | `logo_props` | `jsonb` | nein | `'{}'::jsonb` | LogoProps: `JsonObject` | Lesemodell `LogoProps` |
 | `timezone` | `varchar(255)` | nein | `'UTC'` | Timezone: `string` | Vertragsfeld; Logik nutzt `projects.timezone` |
 | `version` | `integer` | nein | 1 | Version: `int` | 1 (CE); 2 = Fortschritt aus `progress`-Array (B3/B4) |
+| `completion_published_at` | `timestamptz` | ja | – | CompletionPublishedAt: `DateTimeOffset?` | **neu** (D06 O-D06-06, §3.17.4): gesetzt von `CycleCompletionDetectionJob` beim Ereignis `plane.cycle.completed.v1`, `NULL` gesetzt von `UpdateCycleCommand`, wenn `end_date` in die Zukunft verschoben wird; kein Vertragsfeld |
 
-**Indizes/Unique:** `ix_cycles_project_dates` (`project_id`, `start_date`, `end_date`) WHERE `deleted_at IS NULL` – Überschneidungsprüfung CE-CYC-006, Status; GIN-Trigram `ix_cycles_name_trgm`.
+**Indizes/Unique:** `ix_cycles_project_dates` (`project_id`, `start_date`, `end_date`) WHERE `deleted_at IS NULL` – Überschneidungsprüfung CE-CYC-006, Status; GIN-Trigram `ix_cycles_name_trgm`; `ix_cycles_completion_pending` (`end_date`) WHERE `completion_published_at IS NULL AND end_date IS NOT NULL AND deleted_at IS NULL` – Abschluss-Erkennung alle 15 min.
 
 **Checks:** `ck_cycles_dates` CHECK (`start_date IS NULL OR end_date IS NULL OR start_date <= end_date`).
 
@@ -1389,6 +1501,7 @@ Entität `Page` · `[OwnedBy("Pages")]` · Basis eigene Form (Spalten vollständ
 | `description_binary` | `bytea` | ja | – | DescriptionBinary: `byte[]?` | **kanonisch** für Pages: Yjs-Update, Fragmente `default` und `title` (ADR-022) |
 | `description_html` | `text` | nein | `'<p></p>'` | DescriptionHtml: `string` | 1:1 |
 | `description_stripped` | `text` | ja | – | DescriptionStripped: `string?` | 1:1 |
+| `description_revision` | `bigint` | nein | `0` | DescriptionRevision: `long` | **neu** (D07 §3.6.8): `+1` je geändertem Store (Realtime) bzw. Beschreibungs-PATCH, im selben `UPDATE` wie `description_binary`; Signal-Abgleich ohne Binärvergleich; kein Vertragsfeld der CE-Endpunkte |
 | `owned_by_id` | `uuid` | nein | – | OwnedById: `Guid` | FK `users` ON DELETE RESTRICT (Original CASCADE); Original `CASCADE` |
 | `access` | `smallint` | nein | 0 | Access: `short` | 0 = Public, 1 = Private |
 | `color` | `varchar(255)` | nein | `''` | Color: `string` | 1:1 |
@@ -1469,7 +1582,7 @@ Entität `PageVersion` · `[OwnedBy("Pages")]` · Basis eigene Form (Spalten vol
 | `workspace_id` | `uuid` | nein | – | WorkspaceId: `Guid` | FK `workspaces` ON DELETE CASCADE |
 | `page_id` | `uuid` | nein | – | PageId: `Guid` | FK `pages` ON DELETE CASCADE |
 | `last_saved_at` | `timestamptz` | nein | `now()` | LastSavedAt: `DateTimeOffset` | 1:1 |
-| `owned_by_id` | `uuid` | nein | – | OwnedById: `Guid` | FK `users` ON DELETE SET NULL (Original CASCADE); Original `CASCADE` |
+| `owned_by_id` | `uuid` | nein | – | OwnedById: `Guid` | FK `users` ON DELETE RESTRICT (Original CASCADE); NOT NULL bleibt (Merge-Regel und Vertrag `owned_by` brauchen den Besitzer); `SET NULL` wäre mit NOT NULL unvereinbar |
 | `description_binary` | `bytea` | ja | – | DescriptionBinary: `byte[]?` | 1:1 |
 | `description_html` | `text` | nein | `'<p></p>'` | DescriptionHtml: `string` | 1:1 |
 | `description_stripped` | `text` | ja | – | DescriptionStripped: `string?` | 1:1 |
@@ -1652,9 +1765,9 @@ Entität `EmailNotificationLog` · `[OwnedBy("Notifications")]` · Basis `Audita
 | `data` | `jsonb` | ja | – | Data: `JsonObject?` | Lesemodell `EmailNotificationData` |
 | `processed_at` | `timestamptz` | ja | – | ProcessedAt: `DateTimeOffset?` | 1:1 |
 | `sent_at` | `timestamptz` | ja | – | SentAt: `DateTimeOffset?` | 1:1 |
-| `entity` | `varchar(200)` | nein | – | Entity: `string` | 1:1 |
-| `old_value` | `varchar(300)` | ja | – | OldValue: `string?` | 1:1 |
-| `new_value` | `varchar(300)` | ja | – | NewValue: `string?` | 1:1 |
+| ~~`entity`~~ | – | – | – | – | entfällt (D06-ADR-23: Original schreibt nie einen Wert, `entity` immer `""`; kein Vertragsfeld) |
+| ~~`old_value`~~ | – | – | – | – | entfällt (D06-ADR-23: Original schreibt nie einen Wert, `entity` immer `""`; kein Vertragsfeld) |
+| ~~`new_value`~~ | – | – | – | – | entfällt (D06-ADR-23: Original schreibt nie einen Wert, `entity` immer `""`; kein Vertragsfeld) |
 
 **Indizes/Unique:** `ix_email_notification_logs_unprocessed` (`receiver_id`, `created_at`) WHERE `processed_at IS NULL` – 5-Minuten-Bündelung; `ix_email_notification_logs_sent_at` (`sent_at`) – Aufbewahrung 7 Tage.
 
@@ -1711,7 +1824,7 @@ Entität `Webhook` · `[OwnedBy("Webhooks")]` · Basis eigene Form (Spalten voll
 | `module` | `boolean` | nein | false | Module: `bool` | Event-Flag |
 | `cycle` | `boolean` | nein | false | Cycle: `bool` | Event-Flag |
 | `issue_comment` | `boolean` | nein | false | IssueComment: `bool` | Event-Flag |
-| `is_internal` | `boolean` | nein | false | IsInternal: `bool` | 1:1 |
+| ~~`is_internal`~~ | – | – | – | – | entfällt (D06-ADR-23: in der CE nie gesetzt/gelesen); da `WebhookSerializer` alle Felder ausgibt, liefert das DTO konstant `false` (04) |
 | `version` | `varchar(50)` | nein | `'v1'` | Version: `string` | 1:1 |
 | `secret_key_protected` | `bytea` | nein | – | `SecretKeyProtected: byte[]` | DP-geschütztes `plane_wh_<32hex>`; Klartext nur bei Anlage/Regenerierung |
 
@@ -1841,55 +1954,56 @@ Form exakt nach D16 §5.1 (SQL-Skizze). In der CE leer; die fünf CE-Toggles ble
 
 **Checks:** `ck_work_item_relation_types_category` CHECK (`category IN (0,1,2)`). Kein Soft-Delete, keine Audit-Benutzer (Referenzkatalog, `TablesToIgnore`). Seed-Werte §3.14.1 (10 Zeilen, D16 §5.3). `work_item_relations.relation_type` referenziert `key` mit `ON DELETE RESTRICT`. Ein Paket-Typ mit gleichem `key` in einem Workspace ist durch den PK ausgeschlossen; Paket A9 erweitert den PK bei Bedarf additiv um eine Surrogat-ID (Expand/Contract, Fachdesign W2).
 
-##### 3.4.18.6 `outbox_messages`, `inbox_messages`, `jobs`, `recurring_jobs` (Eigentümer `Messaging`, ab I0, ADR-020)
+##### 3.4.18.6 `outbox_messages`, `inbox_messages`, `jobs`, `recurring_job_states` (Eigentümer `Messaging`, ab I0, ADR-020)
 
-`outbox_messages` (Spaltenliste verbindlich nach ABG-053 / D02 §3.2.2 Nr. 5):
+**Verbindliche Form: D06 §3.2** (Fachgebiet Messaging; Spaltennamen dort „verbindlich“, ABG-053 für `outbox_messages`). Dieses Dokument übernimmt sie unverändert in die Migration `…_Messaging_Initial` und ergänzt nur die EF-Abbildung. Alle vier Tabellen: kein Soft-Delete, keine Audit-Benutzer, keine FKs (Nachrichten überleben jede Fachlöschung), `[OwnedBy("Messaging")]`, geschrieben nur von `Plane.BuildingBlocks.Messaging`.
+
+`outbox_messages` (ABG-053 / D06 §3.2 / D02 §3.2.2 Nr. 5):
 
 | Spalte | PostgreSQL | Null | Default | C#-Property: Typ | Regel |
 |---|---|---|---|---|---|
-| `id` | `uuid` | nein | – | Id: `Guid` | PK = `EventContext.MessageId` (UUIDv7 → Reihenfolge) |
-| `event_type` | `varchar(200)` | nein | – | EventType: `string` | `plane.<aggregat>.<ereignis>.v<n>` |
-| `payload` | `jsonb` | nein | – | Payload: `JsonObject` | serialisiertes Integration-Event (`PlaneJsonContext`) |
+| `id` | `uuid` | nein | – | Id: `Guid` | PK = Message-ID (UUIDv7 → Reihenfolge) |
+| `event_type` | `text` | nein | – | EventType: `string` | `plane.<aggregat>.<ereignis>.v<n>` (Katalog D06 §3.8) |
+| `payload` | `jsonb` | nein | – | Payload: `JsonObject` | serialisiertes Integration-Event (`PlaneJsonContext`, snake_case) |
 | `occurred_at` | `timestamptz` | nein | – | OccurredAt: `DateTimeOffset` | `IClock` beim `SaveChanges` |
-| `traceparent` | `varchar(55)` | ja | – | TraceParent: `string?` | W3C Trace Context |
-| `actor_id` | `uuid` | ja | – | ActorId: `Guid?` | aus `ICurrentActor` (ohne FK – Nachrichten überleben alles) |
+| `traceparent` | `text` | ja | – | TraceParent: `string?` | W3C Trace Context (01 §7.16) |
+| `actor_id` | `uuid` | ja | – | ActorId: `Guid?` | aus `ICurrentActor`, ohne FK |
 | `actor_kind` | `smallint` | ja | – | ActorKind: `PrincipalKind?` | 0 User, 1 ApiKey, 2 App, 3 Bot |
-| `origin` | `varchar(40)` | nein | – | Origin: `string` | `StateChangeOrigin`-Name bzw. `ApiSurface` bzw. `worker` |
-| `workspace_id` | `uuid` | ja | – | WorkspaceId: `Guid?` | ohne FK |
+| `origin` | `text` | nein | – | Origin: `string` | `App`, `V1`, `Space`, `Instance`, `Auth`, `Integrations`, `worker` bzw. `StateChangeOrigin`-Name |
+| `workspace_id` | `uuid` | ja | – | WorkspaceId: `Guid?` | ohne FK (Routing H6) |
 | `project_id` | `uuid` | ja | – | ProjectId: `Guid?` | ohne FK |
-| `correlation_id` | `varchar(100)` | ja | – | CorrelationId: `string?` | – |
-| `causation_depth` | `integer` | nein | `0` | CausationDepth: `int` | > 5 → verwerfen |
+| `correlation_id` | `text` | ja | – | CorrelationId: `string?` | Request-/Trace-ID |
+| `causation_depth` | `integer` | nein | `0` | CausationDepth: `int` | `> 5` → nicht geschrieben (D06-ADR-21) |
 | `dispatched_at` | `timestamptz` | ja | – | DispatchedAt: `DateTimeOffset?` | gesetzt vom Dispatcher |
-| `attempts` | `integer` | nein | `0` | Attempts: `int` | Dispatch-Versuche |
-| `last_error` | `text` | ja | – | LastError: `string?` | – |
 
-**Indizes:** `ix_outbox_messages_pending` (`id`) WHERE `dispatched_at IS NULL` (Dispatcher `FOR UPDATE SKIP LOCKED … ORDER BY id`); `ix_outbox_messages_dispatched_at` (`dispatched_at`) WHERE `dispatched_at IS NOT NULL` (Aufräumen nach `Plane:Messaging:OutboxRetentionDays`, Default 7). Trigger-freier Weckruf: der `OutboxInterceptor` sendet nach Commit `NOTIFY plane_outbox` (Post-Commit-Aktion).
+**Indizes:** `ix_outbox_pending` (`id`) WHERE `dispatched_at IS NULL`; `ix_outbox_dispatched` (`dispatched_at`) WHERE `dispatched_at IS NOT NULL` (Namen wie D06 §3.2). Weckruf `pg_notify('plane_outbox', '')` in derselben Transaktion (D06 §3.2 Regel 4).
 
-`inbox_messages`: `consumer varchar(200)` + `message_id uuid` (PK zusammen), `processed_at timestamptz NOT NULL`; Index `ix_inbox_messages_processed_at` (Aufräumen nach 14 Tagen).
+`inbox_messages`: `consumer text NOT NULL` + `message_id uuid NOT NULL` (PK `pk_inbox_messages` zusammen), `processed_at timestamptz NOT NULL`; Index `ix_inbox_processed` (`processed_at`).
 
 `jobs`:
 
 | Spalte | PostgreSQL | Null | Default | Regel |
 |---|---|---|---|---|
 | `id` | `uuid` | nein | – | PK (UUIDv7) |
-| `queue` | `varchar(50)` | nein | `'default'` | benannte Queues (D16 §3.2.5) |
-| `job_type` | `varchar(200)` | nein | – | CLR-Typname des `IJob` (Katalog) |
-| `payload` | `jsonb` | nein | `'{}'::jsonb` | Job-Daten |
+| `queue` | `text` | nein | – | `PlaneQueues.*` oder reservierte Paket-Queue (D16 §3.2.5) |
+| `job_type` | `text` | nein | – | stabiler Name aus `[JobType("…")]` |
+| `payload` | `jsonb` | nein | – | Job-Daten |
+| `status` | `smallint` | nein | `0` | `0` pending, `1` running, `4` dead; **Erfolg = Zeile gelöscht** (D06 §3.2 Regel 2) |
+| `priority` | `smallint` | nein | `0` | reserviert, CE nutzt 0 |
 | `run_at` | `timestamptz` | nein | – | frühester Start |
-| `status` | `smallint` | nein | `0` | 0 Pending, 1 Running, 2 Succeeded, 3 Failed (Retry geplant), 4 DeadLetter |
 | `attempts` | `integer` | nein | `0` | – |
-| `max_attempts` | `integer` | nein | `5` | Webhook-Policy wie Original (ADR-020) |
-| `locked_until` | `timestamptz` | ja | – | Lease des Workers |
-| `locked_by` | `varchar(100)` | ja | – | Worker-Instanz |
-| `dedupe_key` | `varchar(200)` | ja | – | `IJobScheduler.EnqueueAsync(dedupeKey)` |
-| `last_error` | `text` | ja | – | – |
+| `max_attempts` | `integer` | nein | – | aus `JobRetryPolicy` |
+| `dedupe_key` | `text` | ja | – | eindeutig nur solange offen |
+| `locked_by` | `text` | ja | – | `<host>/<pid>/<runner-guid>` |
+| `locked_until` | `timestamptz` | ja | – | Lease |
+| `last_error` | `text` | ja | – | gekürzt auf 4 000 Zeichen, redigiert |
 | `created_at` | `timestamptz` | nein | – | – |
-| `completed_at` | `timestamptz` | ja | – | – |
-| `actor_id`, `workspace_id`, `traceparent` | `uuid`/`uuid`/`varchar(55)` | ja | – | Kontext wie Outbox |
+| `dead_at` | `timestamptz` | ja | – | Dead-Letter-Zeitpunkt |
+| `actor_id`, `actor_kind`, `origin`, `workspace_id`, `project_id`, `correlation_id`, `causation_depth`, `traceparent` | wie `outbox_messages` | wie dort | `causation_depth` `0` | Kontext (D06-ADR-20/-21) |
 
-**Indizes:** `ix_jobs_due` (`queue`, `run_at`) WHERE `status IN (0,3)`; `ux_jobs_dedupe_key` UNIQUE (`dedupe_key`) WHERE `dedupe_key IS NOT NULL AND status IN (0,1,3)`; **Check** `ck_jobs_status` CHECK (`status BETWEEN 0 AND 4`).
+**Indizes/Checks:** `ix_jobs_ready` (`queue`, `priority` DESC, `run_at`) WHERE `status = 0`; `ix_jobs_lease` (`locked_until`) WHERE `status = 1`; `ux_jobs_dedupe` UNIQUE (`dedupe_key`) WHERE `dedupe_key IS NOT NULL AND status IN (0, 1)`; `ix_jobs_dead` (`dead_at`) WHERE `status = 4`; `ck_jobs_status` CHECK (`status IN (0,1,4)`).
 
-`recurring_jobs`: `name varchar(100)` PK, `cron varchar(100) NOT NULL` (UTC), `last_run_at timestamptz NULL`, `next_run_at timestamptz NULL`, `last_status smallint NULL`. Leader-Wahl über `pg_try_advisory_lock` (keine Tabelle). Zeilen werden beim Start des Workers aus `IRecurringJobRegistry` synchronisiert (keine Seeds).
+`recurring_job_states` (Zustand der Cron-Definitionen, D06-ADR-07): `name text` PK, `source text NOT NULL` (`code` \| `dynamic`), `cron_utc text NOT NULL`, `job_type text NOT NULL`, `queue text NOT NULL`, `payload jsonb NOT NULL DEFAULT '{}'`, `enabled boolean NOT NULL DEFAULT true`, `last_fired_at timestamptz NULL` (Termin, nicht Ausführungszeit), `next_fire_at timestamptz NULL`, `updated_at timestamptz NOT NULL`. Leader-Wahl über `pg_try_advisory_lock(PlaneLocks.Scheduler)` (keine Tabelle). Zeilen mit `source = 'code'` schreibt jede Worker-Instanz beim Start idempotent aus `IRecurringJobRegistry` (keine Seeds).
 
 ##### 3.4.18.7 `integration_connections` (ab I0) und `external_links` (ab I2) (Eigentümer `Integrations`, Andockstelle F1/F2)
 
@@ -1930,20 +2044,25 @@ Spalten und Schlüssel **verbindlich nach D16 §3.4.2**; hier die Typen:
 
 ##### 3.4.18.8 `search_documents` (Eigentümer `Search`, ab I5, Andockstelle G1/B6)
 
+**Verbindliche Form: D11 §3.10.1** (Fachgebiet Suche); hier die EF-Abbildung. Technische Tabelle: kein Soft-Delete, keine Audit-Benutzer (`[TechnicalTable]`, D11), kein `workspace_tenant`-Bypass nötig (Zugriff nur über `Plane.Search`).
+
 | Spalte | PostgreSQL | Null | Default | C#-Property: Typ | Regel |
 |---|---|---|---|---|---|
-| `entity_type` | `varchar(30)` | nein | – | EntityType: `string` | PK-Teil: `work_item`, `page`, `project`, `cycle`, `module`, `view`, `comment` |
-| `entity_id` | `uuid` | nein | – | EntityId: `Guid` | PK-Teil (ohne FK, polymorph) |
-| `workspace_id` | `uuid` | nein | – | WorkspaceId: `Guid` | FK `workspaces` CASCADE |
-| `project_id` | `uuid` | ja | – | ProjectId: `Guid?` | ohne FK (Pages haben mehrere Projekte → `facets`) |
-| `title` | `text` | nein | `''` | Title: `string` | – |
-| `body` | `text` | ja | – | Body: `string?` | `*_stripped`, max. 1 MiB (Pipeline kürzt) |
-| `facets` | `jsonb` | nein | `'{}'::jsonb` | Facets: `JsonObject` | `IndexDocument.Facets` (z. B. `project_ids`, `state_group`, `identifier`) |
-| `search_vector` | `tsvector` | – | GENERATED | SearchVector: `NpgsqlTsVector` | `GENERATED ALWAYS AS (setweight(to_tsvector('simple', plane_unaccent(coalesce(title,''))), 'A') \|\| setweight(to_tsvector('simple', plane_unaccent(coalesce(body,''))), 'B')) STORED` (per `HasComputedColumnSql(..., stored: true)`) |
-| `updated_at` | `timestamptz` | nein | – | UpdatedAt: `DateTimeOffset` | Quelle |
+| `id` | `uuid` | nein | – | Id: `Guid` | PK (UUIDv7, `IIdGenerator`); Ziel der FK aus `search_embeddings` (G1, §6.1) |
+| `workspace_id` | `uuid` | nein | – | WorkspaceId: `Guid` | FK `workspaces` ON DELETE CASCADE |
+| `project_id` | `uuid` | ja | – | ProjectId: `Guid?` | Scope-FK `fk_search_documents_project_scope (project_id, workspace_id) → projects` ON DELETE CASCADE über `ScopeForeignKeyConvention` (ersetzt die Einzel-FK `REFERENCES projects(id)` aus D11 §3.10.1 bei gleichem Lösch-Verhalten); Pages mit mehreren Projekten → `NULL` + `facets.project_ids` |
+| `entity_type` | `varchar(32)` | nein | – | EntityType: `string` | `IndexEntityTypes`: `work_item`, `work_item_comment`, `page`, `project`, `cycle`, `module`, `issue_view` (Werte D11 §3.10.2) |
+| `entity_id` | `uuid` | nein | – | EntityId: `Guid` | polymorph, ohne FK |
+| `title` | `text` | nein | – | Title: `string` | – |
+| `body` | `text` | ja | – | Body: `string?` | Klartext, gekürzt auf `Plane:Search:BodyMaxChars` (100 000) |
+| `identifier` | `varchar(64)` | ja | – | Identifier: `string?` | z. B. `WEB-123` |
+| `facets` | `jsonb` | nein | `'{}'::jsonb` | Facets: `JsonObject` | `IndexDocument.Facets` |
+| `content_hash` | `bytea` | nein | – | ContentHash: `byte[]` | SHA-256 über `title\|body\|identifier\|facets` (Upsert nur bei Änderung) |
+| `source_updated_at` | `timestamptz` | nein | – | SourceUpdatedAt: `DateTimeOffset` | `updated_at` der Quelle |
 | `indexed_at` | `timestamptz` | nein | – | IndexedAt: `DateTimeOffset` | Pipeline |
+| `search_vector` | `tsvector` | – | GENERATED | SearchVector: `NpgsqlTsVector` | `GENERATED ALWAYS AS (setweight(to_tsvector('simple', plane_unaccent(coalesce(identifier, '') \|\| ' ' \|\| title)), 'A') \|\| setweight(to_tsvector('simple', plane_unaccent(coalesce(body, ''))), 'B')) STORED` (`HasComputedColumnSql(..., stored: true)`) |
 
-**Indizes:** PK (`entity_type`, `entity_id`); `ix_search_documents_vector` GIN (`search_vector`); `ix_search_documents_title_trgm` GIN (`title gin_trgm_ops`); `ix_search_documents_workspace_type` (`workspace_id`, `entity_type`). Kein Soft-Delete: gelöschte Entitäten entfernt `IIndexingPipeline.RemoveAsync`. **Keine** `embedding`-Spalte in der CE (D16 §3.3.7); G1 ergänzt eine eigene Tabelle (§6).
+**Indizes/Unique:** `uq_search_documents_entity` UNIQUE (`entity_type`, `entity_id`) (Name wie D11; Ausnahme vom `ux_`-Schema); `ix_search_documents_search_vector` GIN (`search_vector`); `ix_search_documents_title_trgm` GIN (`title gin_trgm_ops`); `ix_search_documents_workspace` (`workspace_id`, `entity_type`); `ix_search_documents_project` (`project_id`) WHERE `project_id IS NOT NULL`; `ix_search_documents_facets` GIN (`facets jsonb_path_ops`). Gelöschte Entitäten entfernt `IIndexingPipeline.RemoveAsync`. **Keine** `embedding`-Spalte in der CE (D16 §3.3.7, D11-ADR-07); G1 ergänzt `search_embeddings` (§6.1).
 
 ### 3.5 Löschen: Soft-Delete-Filter, Join-Regeln, Kaskaden-Registry, Hard-Delete
 
@@ -1954,7 +2073,7 @@ Spalten und Schlüssel **verbindlich nach D16 §3.4.2**; hier die Typen:
 | `soft_delete` | alle `ISoftDeletable` (Basen A/W/P sowie X-Tabellen mit `deleted_at`) | `e => e.DeletedAt == null` | `IgnoreQueryFilters([QueryFilterNames.SoftDelete])` (= Original `all_objects`); nur in den Fällen §3.5.2, im Hard-Delete-Job, in Restore-Pfaden und in Admin-Abfragen (`plane-cli`) |
 | `workspace_tenant` | alle `IWorkspaceScoped` | `e => !_tenant.IsBound \|\| e.WorkspaceId == _tenant.WorkspaceId` (D02 §3.5.4) | nie im Fachcode; `IgnoreQueryFilters()` ohne Argument ist außerhalb von `Plane.Data`, Migrator und Tests verboten (Banned-API, D02 §5.1.3) |
 
-Tabellen **ohne** Soft-Delete (harte Löschung ist fachlich gewollt oder Zeilen sind unveränderlich): `users`, `profiles`, `user_identities`, `user_sessions`, `role_permissions`, `data_protection_keys`, `work_item_sequences`, `work_item_relation_types`, `*_feature_settings`, `outbox_messages`, `inbox_messages`, `jobs`, `recurring_jobs`, `search_documents`.
+Tabellen **ohne** Soft-Delete (harte Löschung ist fachlich gewollt oder Zeilen sind unveränderlich): `users`, `profiles`, `user_identities`, `user_sessions`, `role_permissions`, `data_protection_keys`, `work_item_sequences`, `work_item_relation_types`, `*_feature_settings`, `outbox_messages`, `inbox_messages`, `jobs`, `recurring_job_states`, `search_documents`.
 
 #### 3.5.2 Join-Ausnahmen (Original liest gelöschte Zeilen mit) – abschließende Liste
 
@@ -2023,20 +2142,24 @@ cascade.NoSoftCascade<WorkItem, WorkItemActivity>(c => c.WorkItemId, reason: "Ve
 
 #### 3.5.5 Hard-Delete und Aufbewahrung
 
-| Job (Name in `IRecurringJobRegistry`) | Cron (UTC) | Wirkung | Konfiguration (Default) | Original |
+| Job (Name in `IRecurringJobRegistry`, D06 §4.2) | Cron (UTC) | Wirkung (Datenmodell) | Konfiguration (Default) | Original |
 |---|---|---|---|---|
-| `retention.hard_delete` (`HardDeleteJob`) | `0 0 * * *` | je Wurzeltabelle in FK-sicherer Reihenfolge `DELETE … WHERE deleted_at < now() - interval` in Batches à 1000; DB-Kaskaden (`ON DELETE CASCADE/SET NULL`) erledigen Kinder; anschließend `FileAssetPurgeConsumer` entfernt Objekte gelöschter `file_assets` aus dem Speicher | `Plane:Retention:HardDeleteDays` (60, Alias `HARD_DELETE_AFTER_DAYS`) | `deletion_task.hard_delete`; Abbruch-Bug Q3 behoben, Objektlöschung neu |
-| `retention.api_activity_logs` | `30 2 * * *` | `DELETE api_activity_logs WHERE created_at <= now() - 14 d` | `Plane:Retention:ApiActivityLogDays` (14) | `cleanup_task.delete_api_logs` |
-| `retention.webhook_logs` | `30 3 * * *` | dto. `webhook_logs` | `Plane:Retention:WebhookLogDays` (14) | `cleanup_task.delete_webhook_logs` |
-| `retention.email_notification_logs` | `45 2 * * *` | `sent_at <= now() - 7 d` | `Plane:Retention:EmailLogDays` (7, Alias `EMAIL_LOG_RETENTION_DAYS`) | `cleanup_task` |
-| `retention.page_versions` | `0 3 * * *` | je Page alles außer den 20 neuesten (`created_at`) hart löschen | `Plane:Retention:PageVersions` (20) | `cleanup_task.delete_page_versions` |
-| `retention.work_item_description_versions` | `15 3 * * *` | je Work Item alles außer den 20 neuesten | `Plane:Retention:WorkItemDescriptionVersions` (20) | `cleanup_task.delete_issue_description_versions` |
-| `retention.unuploaded_assets` | `0 2 * * *` | `file_assets` mit `is_uploaded = false` und älter als n Tage **soft** löschen | `Plane:Retention:UnuploadedAssetDays` (7, Alias `UNUPLOADED_ASSET_DELETE_DAYS`) | `file_asset_task.delete_unuploaded_file_asset` |
-| `retention.export_links` | `30 1 * * *` | `exports.url IS NOT NULL AND created_at <= now() - 8 d` → Objekt löschen, `url = NULL` (einmal statt doppelt eingeplant, A02a-#13) | `Plane:Retention:ExportLinkDays` (8) | `exporter_expired_task.delete_old_s3_link` |
-| `retention.messaging` | `0 4 * * *` | `outbox_messages` dispatched > 7 d, `inbox_messages` > 14 d, `jobs` erfolgreich > 7 d löschen | `Plane:Messaging:*RetentionDays` | – (neu) |
-| `retention.user_sessions` | `*/30 * * * *` | `user_sessions WHERE expires_at < now()` | – | Django-`clearsessions` (implizit) |
+| `maintenance.hard_delete` (`HardDeleteJob`, ab I1) | `0 0 * * *` | je Wurzeltabelle in FK-sicherer Reihenfolge (`HardDeleteTableRegistry`, aus dem Modell erzeugt) `DELETE … WHERE deleted_at < now() - interval` in Batches à 1000; DB-Kaskaden (`ON DELETE CASCADE/SET NULL`) erledigen Kinder; anschließend entfernt `FileAssetPurgeConsumer` die Objekte gelöschter `file_assets` aus dem Speicher | `Plane:Retention:HardDeleteDays` (60, Alias `HARD_DELETE_AFTER_DAYS`) | `deletion_task.hard_delete`; Abbruch-Bug Q3 behoben, Objektlöschung neu (DEV-OPS-002) |
+| `maintenance.api_activity_logs_cleanup` (ab I6) | `30 2 * * *` | `DELETE api_activity_logs WHERE created_at <= now() - 14 d` | `Plane:Retention:ApiActivityLogDays` (14) | `cleanup_task.delete_api_logs` |
+| `maintenance.webhook_logs_cleanup` (ab I6) | `30 3 * * *` | dto. `webhook_logs` | `Plane:Retention:WebhookLogDays` (14) | `cleanup_task.delete_webhook_logs` |
+| `maintenance.email_notification_logs_cleanup` (ab I5) | `45 2 * * *` | `sent_at <= now() - 7 d` | `Plane:Retention:EmailLogDays` (7, Alias `EMAIL_LOG_RETENTION_DAYS`) | `cleanup_task` |
+| `maintenance.page_versions_cleanup` (ab I4) | `0 3 * * *` | je Page alles außer den 20 neuesten (`last_saved_at`) hart löschen | `Plane:Retention:PageVersions` (20) | `cleanup_task.delete_page_versions` |
+| `maintenance.description_versions_cleanup` (ab I2) | `15 3 * * *` | je Work Item alles außer den 20 neuesten | `Plane:Retention:WorkItemDescriptionVersions` (20) | `cleanup_task.delete_issue_description_versions` |
+| – (kein Cron; Recorder) | – | `work_item_versions`: der `WorkItemVersionRecorder` löscht nach dem Schreiben im selben Command alle Versionen des Work Items außer den 20 neuesten hart (Original schreibt keine Versionen, Q11; daher kein Original-Cron) | `Plane:Retention:WorkItemVersions` (20, neu) | – (neu, DEV-DM-06) |
+| `assets.soft_delete_unuploaded` (ab I1) | `0 2 * * *` | `file_assets` mit `is_uploaded = false` und älter als n Tage **soft** löschen | `Plane:Retention:UnuploadedAssetDays` (7, Alias `UNUPLOADED_ASSET_DELETE_DAYS`) | `file_asset_task.delete_unuploaded_file_asset` |
+| `exports.expire_links` (ab I6) | `30 1 * * *` | `exports.url IS NOT NULL AND created_at <= now() - 8 d` → Objekt löschen, `url = NULL` (einmal statt doppelt eingeplant, A02a-#13, B13 entfällt) | `Plane:Retention:ExportLinkDays` (8) | `exporter_expired_task.delete_old_s3_link` |
+| `messaging.outbox_cleanup` (ab I0) | `5 * * * *` | `outbox_messages` mit `dispatched_at < now() - OutboxRetentionHours` löschen | `OutboxRetentionHours` (24, D06 §3.3) | – (neu) |
+| `messaging.inbox_cleanup` (ab I0) | `25 4 * * *` | `inbox_messages` mit `processed_at < now() - InboxRetentionDays` | `InboxRetentionDays` (7, D06 §3.4) | – (neu) |
+| `messaging.dead_letter_cleanup` (ab I0) | `40 4 * * *` | `jobs` mit `status = 4 AND dead_at < now() - DeadLetterRetentionDays` (erfolgreiche Jobs sind bereits gelöscht) | `DeadLetterRetentionDays` (30, D06 §3.2) | – (neu) |
+| `identity.expired_sessions_cleanup` (ab I0) | `17 * * * *` | `DELETE user_sessions WHERE expires_at < now()` | – | Django-`clearsessions` (implizit), D05-ADR-03 (stündlich) |
+| `cycles.completion_detection` (ab I3) | `*/15 * * * *` | setzt `cycles.completion_published_at` (§3.4.6.1) | – | – (neu, D06 §3.17.4) |
 
-Die Job-Klassen, Queues und Fehlerbehandlung definiert `06-hintergrundjobs-events-benachrichtigungen.md`; Namen und Spalten hier sind verbindlich für die Indizes in §3.4.
+Job-Namen, Cron-Zeiten, Queues, Job-Klassen und Fehlerbehandlung sind **verbindlich in D06 §4.2/§3.16** festgelegt (Fachgebiet); diese Tabelle zeigt nur die Datenwirkung und begründet die Aufbewahrungsindizes in §3.4.
 
 ### 3.6 Nebenläufigkeitssichere Work-Item-Nummer (`sequence_id`)
 
@@ -2079,9 +2202,10 @@ Alle Sortierfelder sind `double precision` mit Original-Default 65535 und Origin
 | `modules.sort_order` | `min(project) − 10000` | `ModuleSortRules.Next` | – |
 | `views.sort_order` | `max(project) + 10000` bzw. `max(workspace, project IS NULL) + 10000` | `ViewSortRules.Next` | – |
 | `pages.sort_order` | keine Regel (Default 65535) | – | – |
-| `user_favorites.sequence` | `min(user, workspace) − 10000` (A02a §3.6) | `FavoriteSortRules.Next` | – |
-| `project_user_properties.sort_order`, `project_members.sort_order` | `min(user, workspace) − 10000` | `ProjectSidebarSortRules.Next` | – |
-| `stickies.sort_order` | `max(owner, workspace) + 10000` | `StickySortRules.Next` | – |
+| `user_favorites.sequence` | `max(workspace) + 10000` über **alle** aktiven Favoriten des Workspaces (nicht nur des Benutzers; bei gesetztem `project` über `project.workspace`), ohne Vorgänger 65535 (`M/favorite.py` `save()`, A02a §3.6) | `FavoriteSortRules.Next` | – |
+| `project_user_properties.sort_order` | bei Anlage einer Projektmitgliedschaft: `min(project_user_properties.sort_order WHERE user, workspace) − 10000`, ohne Vorgänger 65535 (`ProjectMember.save`, `M/project.py` Z. 276–290) | `ProjectSidebarSortRules.Next` | – |
+| `project_members.sort_order` | keine Anlage-Regel (Default 65535); nur Client-Updates | – | – |
+| `stickies.sort_order` | `max(workspace) + 10000` über **alle** aktiven Stickies des Workspaces (nicht nur des Owners; `M/sticky.py` `save()`, A02a §3.6); Liste sortiert `-sort_order` | `StickySortRules.Next` | – |
 | `workspace_user_preferences.sort_order`, `workspace_home_preferences.sort_order` | Default 65535, Client setzt | – | – |
 | `estimate_points` | keine Spalte; Sortierung `value` alphabetisch (Q9, 1:1) | – | – |
 | `intakes` | Sortierung `name` | – | – |
@@ -2172,7 +2296,7 @@ Die 600-s-Grenze ist die Konstante `VersionMergeWindow = TimeSpan.FromSeconds(60
 | Schritt | Spalten | Eigentümer |
 |---|---|---|
 | Laden (`IPageDocumentStore.LoadAsync`) | `pages.description_binary`; fehlt sie, wird aus `description_html` + `name` per `Plane.Documents` ein Yjs-Dokument erzeugt (Original `getBinaryDataFromDocumentEditorHTMLString`) und **nicht** sofort gespeichert | `Plane.Pages` |
-| Speichern (Debounce 10 s, ADR-022) | `description_binary`, `description_html`, `description_json`, `description_stripped`, `name` (Titel-Sync aus Fragment `title`) in **einem** `UPDATE`; danach `page_logs`-Abgleich und `page_versions` | `Plane.Pages` über `IPageDocumentStore.SaveAsync` |
+| Speichern (Debounce 10 s, ADR-022) | `description_binary`, `description_html`, `description_json`, `description_stripped`, `name` (Titel-Sync aus Fragment `title`) und `description_revision = description_revision + 1` in **einem** `UPDATE` (Semantik D07 §3.6); danach `page_logs`-Abgleich und `page_versions` | `Plane.Pages` über `IPageDocumentStore.SaveAsync` |
 | Sperre/Archiv | `pages.is_locked`/`archived_at` → Realtime-Server lehnt Schreiben ab (Fehlercodes 4701/4702) | `Plane.Pages` |
 
 ### 3.10 Volltext- und Trigram-Suche
@@ -2229,8 +2353,1933 @@ CREATE OR REPLACE FUNCTION plane_unaccent(text) RETURNS text
 | `PublishEntityName` | `project`, `issue`, `module`, `cycle`, `page`, `view`, `intake` | `deploy_boards.entity_name` | `varchar(30)` | `IN (…)` oder `NULL` |
 | `RelationCategory` | `Relation = 0`, `Dependency = 1`, `Implementation = 2` | `work_item_relation_types.category` | `smallint` | `IN (0,1,2)` |
 | `RoleNamespace` | `workspace`, `project`, `instance`, `teamspace` | `roles.namespace` | `varchar(20)` | `IN (…)` |
-| `JobStatus` | `Pending = 0` … `DeadLetter = 4` | `jobs.status` | `smallint` | `BETWEEN 0 AND 4` |
+| `JobStatus` | `Pending = 0`, `Running = 1`, `Dead = 4` (Erfolg = Zeile gelöscht, D06 §3.2) | `jobs.status` | `smallint` | `IN (0,1,4)` |
 | `PrincipalKind` | `User = 0`, `ApiKey = 1`, `App = 2`, `Bot = 3` | `outbox_messages.actor_kind` | `smallint` | – (Erweiterung durch H1) |
 
 Weitere Checks (Datumsreihenfolge, Größen, Selbstreferenzen, Monatsgrenzen `archive_in`/`close_in`, `point` 0–12, Kleinschreibung E-Mail, Großschreibung Identifier) stehen je Tabelle in §3.4. Wertelisten ohne Check: D03-ADR-14.
 
+### 3.12 Mermaid-ER-Diagramme je Modul
+
+Die Diagramme zeigen je Modulgruppe alle Tabellen mit PK, allen FKs und bis zu vier fachlichen Spalten; Beschreibungsfelder sind ausgelassen. Kanten zu `users` sind außerhalb von Identity weggelassen (jede Tabelle hat Audit-FKs auf `users`); Kanten zu `workspaces` sind in den Basen W/P implizit. Vollständige Spalten: §3.4.
+
+#### 3.12.1 Identity (Identity, Instance)
+
+```mermaid
+erDiagram
+  users {
+    uuid id PK
+    varchar username
+    varchar mobile_number
+    varchar email
+    varchar display_name
+    uuid avatar_asset_id FK
+    uuid cover_image_asset_id FK
+  }
+  profiles {
+    uuid id PK
+    uuid user_id FK
+    jsonb theme
+    boolean is_app_rail_docked
+    boolean is_tour_completed
+    jsonb onboarding_step
+  }
+  api_tokens {
+    uuid id PK
+    varchar label
+    boolean is_active
+    timestamptz last_used
+    uuid user_id FK
+    smallint user_type
+    uuid workspace_id FK
+  }
+  api_activity_logs {
+    uuid id PK
+    varchar token_identifier
+    varchar path
+    varchar method
+    text query_params
+  }
+  instances {
+    uuid id PK
+    varchar instance_name
+    text whitelist_emails
+    varchar instance_id
+    varchar current_version
+  }
+  instance_admins {
+    uuid id PK
+    uuid user_id FK
+    uuid instance_id FK
+    integer role
+    boolean is_verified
+  }
+  instance_configurations {
+    uuid id PK
+    varchar key
+    text value
+    varchar category
+    boolean is_encrypted
+  }
+  user_identities {
+    uuid id PK
+    uuid user_id FK
+    varchar issuer
+    varchar subject
+  }
+  user_sessions {
+    varchar id PK
+    uuid user_id FK
+    varchar keycloak_sid
+    bytea ticket
+  }
+  file_assets ||--o{ users : "avatar_asset_id"
+  file_assets ||--o{ users : "cover_image_asset_id"
+  users ||--o| profiles : "user_id"
+  users ||--o{ api_tokens : "user_id"
+  workspaces ||--o{ api_tokens : "workspace_id"
+  users ||--o{ instance_admins : "user_id"
+  instances ||--o{ instance_admins : "instance_id"
+  users ||--o{ user_identities : "user_id"
+  users ||--o{ user_sessions : "user_id"
+```
+
+#### 3.12.2 Workspaces
+
+```mermaid
+erDiagram
+  workspaces {
+    uuid id PK
+    varchar name
+    text logo
+    uuid logo_asset_id FK
+    uuid owner_id FK
+    varchar slug
+    varchar organization_size
+  }
+  workspace_members {
+    uuid id PK
+    uuid workspace_id FK
+    uuid member_id FK
+    smallint role
+    text company_role
+    jsonb view_props
+    jsonb default_props
+  }
+  workspace_member_invites {
+    uuid id PK
+    uuid workspace_id FK
+    varchar email
+    boolean accepted
+    text token
+    text message
+  }
+  workspace_themes {
+    uuid id PK
+    uuid workspace_id FK
+    varchar name
+    uuid actor_id FK
+    jsonb colors
+  }
+  workspace_user_properties {
+    uuid id PK
+    uuid workspace_id FK
+    uuid user_id FK
+    jsonb filters
+    jsonb display_filters
+    jsonb display_properties
+    jsonb rich_filters
+  }
+  workspace_user_preferences {
+    uuid id PK
+    uuid workspace_id FK
+    uuid user_id FK
+    varchar key
+    boolean is_pinned
+    double_precision sort_order
+  }
+  user_favorites {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid user_id FK
+    varchar entity_type
+    uuid entity_identifier
+    varchar name
+    boolean is_folder
+    uuid parent_id FK
+  }
+  workspace_feature_settings {
+    uuid workspace_id PK
+    varchar key PK
+    boolean enabled
+  }
+  file_assets ||--o{ workspaces : "logo_asset_id"
+  workspaces ||--o{ workspace_members : "workspace_id"
+  workspaces ||--o{ workspace_member_invites : "workspace_id"
+  workspaces ||--o{ workspace_themes : "workspace_id"
+  workspaces ||--o{ workspace_user_properties : "workspace_id"
+  workspaces ||--o{ workspace_user_preferences : "workspace_id"
+  user_favorites ||--o{ user_favorites : "parent_id"
+  roles ||--o{ workspace_members : "role_id"
+  roles ||--o{ workspace_member_invites : "role_id"
+  workspaces ||--o{ workspace_feature_settings : "workspace_id"
+```
+
+#### 3.12.3 Projects
+
+```mermaid
+erDiagram
+  projects {
+    uuid id PK
+    varchar name
+    jsonb description_text
+    smallint network
+    uuid workspace_id FK
+    varchar identifier
+    uuid default_assignee_id FK
+    uuid project_lead_id FK
+    uuid cover_image_asset_id FK
+    uuid estimate_id FK
+    uuid default_state_id FK
+  }
+  project_identifiers {
+    bigint id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    varchar name
+  }
+  project_members {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid member_id FK
+    text comment
+    smallint role
+    jsonb view_props
+    jsonb default_props
+  }
+  project_member_invites {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    varchar email
+    boolean accepted
+    text token
+    text message
+  }
+  project_user_properties {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid user_id FK
+    jsonb filters
+    jsonb display_filters
+    jsonb display_properties
+    jsonb rich_filters
+  }
+  states {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    varchar name
+    varchar color
+    varchar slug
+    double_precision sequence
+  }
+  labels {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid parent_id FK
+    varchar name
+    varchar color
+    double_precision sort_order
+    varchar external_source
+  }
+  estimates {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    varchar name
+    varchar type
+    boolean last_used
+  }
+  estimate_points {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid estimate_id FK
+    integer key
+    varchar value
+  }
+  project_feature_settings {
+    uuid project_id PK
+    varchar key PK
+    boolean enabled
+  }
+  workspaces ||--o{ projects : "workspace_id"
+  file_assets ||--o{ projects : "cover_image_asset_id"
+  estimates ||--o{ projects : "estimate_id"
+  states ||--o{ projects : "default_state_id"
+  labels ||--o{ labels : "parent_id"
+  estimates ||--o{ estimate_points : "estimate_id"
+  roles ||--o{ project_members : "role_id"
+  roles ||--o{ project_member_invites : "role_id"
+  projects ||--o{ project_feature_settings : "project_id"
+  projects ||--o| project_identifiers : "project_id"
+```
+
+#### 3.12.4 WorkItems
+
+```mermaid
+erDiagram
+  work_items {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid parent_id FK
+    uuid state_id FK
+    smallint point
+    uuid estimate_point_id FK
+    varchar name
+    varchar priority
+    date start_date
+    uuid type_id FK
+  }
+  work_item_sequences {
+    uuid project_id PK
+    bigint last_value
+  }
+  work_item_assignees {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid work_item_id FK
+    uuid assignee_id FK
+  }
+  work_item_labels {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid work_item_id FK
+    uuid label_id FK
+  }
+  work_item_relations {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid work_item_id FK
+    uuid related_work_item_id FK
+    varchar relation_type
+  }
+  work_item_mentions {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid work_item_id FK
+    uuid mention_id FK
+  }
+  work_item_subscribers {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid work_item_id FK
+    uuid subscriber_id FK
+  }
+  work_item_links {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    varchar title
+    text url
+    uuid work_item_id FK
+    jsonb metadata
+  }
+  work_item_comments {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    text comment_stripped
+    jsonb comment_json
+    text comment_html
+    text_array attachments
+    uuid work_item_id FK
+    uuid actor_id FK
+    uuid parent_id FK
+  }
+  work_item_reactions {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid actor_id FK
+    uuid work_item_id FK
+    text reaction
+  }
+  work_item_comment_reactions {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid actor_id FK
+    uuid comment_id FK
+    text reaction
+  }
+  work_item_votes {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid work_item_id FK
+    uuid actor_id FK
+    integer vote
+  }
+  work_item_activities {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid work_item_id FK
+    varchar verb
+    varchar field
+    text old_value
+    text new_value
+    uuid comment_id FK
+    uuid actor_id FK
+  }
+  work_item_description_versions {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid work_item_id FK
+    timestamptz last_saved_at
+    uuid owned_by_id FK
+  }
+  work_item_versions {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid parent
+    uuid state
+    uuid estimate_point
+    varchar name
+    uuid work_item_id FK
+    uuid activity_id FK
+    uuid owned_by_id FK
+  }
+  draft_work_items {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid parent_id FK
+    uuid state_id FK
+    uuid estimate_point_id FK
+    varchar name
+    varchar priority
+    date start_date
+    date target_date
+    uuid type_id FK
+  }
+  draft_work_item_assignees {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid draft_work_item_id FK
+    uuid assignee_id FK
+  }
+  draft_work_item_labels {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid draft_work_item_id FK
+    uuid label_id FK
+  }
+  draft_work_item_modules {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid module_id FK
+    uuid draft_work_item_id FK
+  }
+  draft_work_item_cycles {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid draft_work_item_id FK
+    uuid cycle_id FK
+  }
+  work_item_types {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid workspace_id FK
+    varchar name
+    boolean is_default
+  }
+  work_item_relation_types {
+    varchar key PK
+    varchar reverse_key
+    smallint category
+  }
+  work_items ||--o{ work_items : "parent_id"
+  states ||--o{ work_items : "state_id"
+  estimate_points ||--o{ work_items : "estimate_point_id"
+  work_item_types ||--o{ work_items : "type_id"
+  projects ||--o{ work_items : "project_id"
+  work_items ||--o{ work_item_assignees : "work_item_id"
+  projects ||--o{ work_item_assignees : "project_id"
+  work_items ||--o{ work_item_labels : "work_item_id"
+  labels ||--o{ work_item_labels : "label_id"
+  projects ||--o{ work_item_labels : "project_id"
+  work_items ||--o{ work_item_relations : "work_item_id"
+  work_items ||--o{ work_item_relations : "related_work_item_id"
+  projects ||--o{ work_item_relations : "project_id"
+  work_items ||--o{ work_item_mentions : "work_item_id"
+  projects ||--o{ work_item_mentions : "project_id"
+  work_items ||--o{ work_item_subscribers : "work_item_id"
+  projects ||--o{ work_item_subscribers : "project_id"
+  work_items ||--o{ work_item_links : "work_item_id"
+  projects ||--o{ work_item_links : "project_id"
+  work_items ||--o{ work_item_comments : "work_item_id"
+  work_item_comments ||--o{ work_item_comments : "parent_id"
+  projects ||--o{ work_item_comments : "project_id"
+  work_items ||--o{ work_item_reactions : "work_item_id"
+  projects ||--o{ work_item_reactions : "project_id"
+  work_item_comments ||--o{ work_item_comment_reactions : "comment_id"
+  projects ||--o{ work_item_comment_reactions : "project_id"
+  work_items ||--o{ work_item_votes : "work_item_id"
+  projects ||--o{ work_item_votes : "project_id"
+  work_items ||--o{ work_item_activities : "work_item_id"
+  work_item_comments ||--o{ work_item_activities : "comment_id"
+  projects ||--o{ work_item_activities : "project_id"
+  work_items ||--o{ work_item_description_versions : "work_item_id"
+  projects ||--o{ work_item_description_versions : "project_id"
+  work_items ||--o{ work_item_versions : "work_item_id"
+  work_item_activities ||--o{ work_item_versions : "activity_id"
+  projects ||--o{ work_item_versions : "project_id"
+  work_items ||--o{ draft_work_items : "parent_id"
+  states ||--o{ draft_work_items : "state_id"
+  estimate_points ||--o{ draft_work_items : "estimate_point_id"
+  work_item_types ||--o{ draft_work_items : "type_id"
+  draft_work_items ||--o{ draft_work_item_assignees : "draft_work_item_id"
+  draft_work_items ||--o{ draft_work_item_labels : "draft_work_item_id"
+  labels ||--o{ draft_work_item_labels : "label_id"
+  modules ||--o{ draft_work_item_modules : "module_id"
+  draft_work_items ||--o{ draft_work_item_modules : "draft_work_item_id"
+  draft_work_items ||--o{ draft_work_item_cycles : "draft_work_item_id"
+  cycles ||--o{ draft_work_item_cycles : "cycle_id"
+  workspaces ||--o{ work_item_types : "workspace_id"
+  work_item_relation_types ||--o{ work_item_relations : "relation_type"
+  projects ||--o| work_item_sequences : "project_id"
+  work_items ||--o{ external_links : "work_item_id"
+```
+
+#### 3.12.5 Planung (Cycles, ProjectModules, Views, Intake)
+
+```mermaid
+erDiagram
+  cycles {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    varchar name
+    timestamptz start_date
+    timestamptz end_date
+    uuid owned_by_id FK
+    jsonb view_props
+  }
+  cycle_work_items {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid work_item_id FK
+    uuid cycle_id FK
+  }
+  cycle_user_properties {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid cycle_id FK
+    uuid user_id FK
+    jsonb filters
+    jsonb display_filters
+    jsonb display_properties
+    jsonb rich_filters
+  }
+  modules {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    varchar name
+    jsonb description_text
+    date start_date
+    date target_date
+    uuid lead_id FK
+  }
+  module_members {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid module_id FK
+    uuid member_id FK
+  }
+  module_work_items {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid module_id FK
+    uuid work_item_id FK
+  }
+  module_links {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    varchar title
+    varchar url
+    uuid module_id FK
+    jsonb metadata
+  }
+  module_user_properties {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid module_id FK
+    uuid user_id FK
+    jsonb filters
+    jsonb display_filters
+    jsonb display_properties
+    jsonb rich_filters
+  }
+  views {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    varchar name
+    jsonb query
+    jsonb filters
+    jsonb display_filters
+    uuid owned_by_id FK
+  }
+  intakes {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    varchar name
+    boolean is_default
+    jsonb view_props
+    jsonb logo_props
+  }
+  intake_work_items {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid intake_id FK
+    uuid work_item_id FK
+    integer status
+    timestamptz snoozed_till
+    uuid duplicate_to_id FK
+    varchar source
+    text source_email
+  }
+  projects ||--o{ cycles : "project_id"
+  work_items ||--o{ cycle_work_items : "work_item_id"
+  cycles ||--o{ cycle_work_items : "cycle_id"
+  projects ||--o{ cycle_work_items : "project_id"
+  cycles ||--o{ cycle_user_properties : "cycle_id"
+  projects ||--o{ cycle_user_properties : "project_id"
+  projects ||--o{ modules : "project_id"
+  modules ||--o{ module_members : "module_id"
+  projects ||--o{ module_members : "project_id"
+  modules ||--o{ module_work_items : "module_id"
+  work_items ||--o{ module_work_items : "work_item_id"
+  projects ||--o{ module_work_items : "project_id"
+  modules ||--o{ module_links : "module_id"
+  projects ||--o{ module_links : "project_id"
+  modules ||--o{ module_user_properties : "module_id"
+  projects ||--o{ module_user_properties : "project_id"
+  projects ||--o{ intakes : "project_id"
+  intakes ||--o{ intake_work_items : "intake_id"
+  work_items ||--o{ intake_work_items : "work_item_id"
+  work_items ||--o{ intake_work_items : "duplicate_to_id"
+  projects ||--o{ intake_work_items : "project_id"
+```
+
+#### 3.12.6 Pages
+
+```mermaid
+erDiagram
+  pages {
+    uuid id PK
+    uuid workspace_id FK
+    text name
+    uuid owned_by_id FK
+    smallint access
+    varchar color
+    uuid parent_id FK
+    date archived_at
+  }
+  project_pages {
+    uuid id PK
+    uuid project_id FK
+    uuid page_id FK
+    uuid workspace_id FK
+  }
+  page_labels {
+    uuid id PK
+    uuid label_id FK
+    uuid page_id FK
+    uuid workspace_id FK
+  }
+  page_logs {
+    uuid id PK
+    uuid transaction
+    uuid page_id FK
+    uuid entity_identifier
+    varchar entity_name
+    varchar entity_type
+    uuid workspace_id FK
+  }
+  page_versions {
+    uuid id PK
+    uuid workspace_id FK
+    uuid page_id FK
+    timestamptz last_saved_at
+    uuid owned_by_id FK
+    jsonb sub_pages_data
+  }
+  workspaces ||--o{ pages : "workspace_id"
+  pages ||--o{ pages : "parent_id"
+  projects ||--o{ project_pages : "project_id"
+  pages ||--o{ project_pages : "page_id"
+  workspaces ||--o{ project_pages : "workspace_id"
+  labels ||--o{ page_labels : "label_id"
+  pages ||--o{ page_labels : "page_id"
+  workspaces ||--o{ page_labels : "workspace_id"
+  pages ||--o{ page_logs : "page_id"
+  workspaces ||--o{ page_logs : "workspace_id"
+  workspaces ||--o{ page_versions : "workspace_id"
+  pages ||--o{ page_versions : "page_id"
+```
+
+#### 3.12.7 Assets
+
+```mermaid
+erDiagram
+  file_assets {
+    uuid id PK
+    jsonb attributes
+    varchar asset
+    uuid user_id FK
+    uuid workspace_id FK
+    uuid draft_work_item_id FK
+    uuid project_id FK
+    uuid work_item_id FK
+    uuid comment_id FK
+    uuid page_id FK
+    varchar entity_type
+    varchar entity_identifier
+  }
+  workspaces ||--o{ file_assets : "workspace_id"
+  draft_work_items ||--o{ file_assets : "draft_work_item_id"
+  projects ||--o{ file_assets : "project_id"
+  work_items ||--o{ file_assets : "work_item_id"
+  work_item_comments ||--o{ file_assets : "comment_id"
+  pages ||--o{ file_assets : "page_id"
+```
+
+#### 3.12.8 Überblick (Home, Analytics, Notifications)
+
+```mermaid
+erDiagram
+  workspace_home_preferences {
+    uuid id PK
+    uuid workspace_id FK
+    uuid user_id FK
+    varchar key
+    boolean is_enabled
+    jsonb config
+    double_precision sort_order
+  }
+  workspace_user_links {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    varchar title
+    text url
+    jsonb metadata
+    uuid owner_id FK
+  }
+  user_recent_visits {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid entity_identifier
+    varchar entity_name
+    uuid user_id FK
+    timestamptz visited_at
+  }
+  stickies {
+    uuid id PK
+    text name
+    jsonb logo_props
+    varchar color
+    varchar background_color
+    uuid workspace_id FK
+    uuid owner_id FK
+  }
+  analytic_views {
+    uuid id PK
+    uuid workspace_id FK
+    varchar name
+    jsonb query
+    jsonb query_dict
+  }
+  notifications {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    jsonb data
+    uuid entity_identifier
+    varchar entity_name
+    text title
+    uuid triggered_by_id FK
+    uuid receiver_id FK
+  }
+  user_notification_preferences {
+    uuid id PK
+    uuid user_id FK
+    uuid workspace_id FK
+    uuid project_id FK
+    boolean property_change
+    boolean state_change
+    boolean comment
+    boolean mention
+  }
+  email_notification_logs {
+    uuid id PK
+    uuid receiver_id FK
+    uuid triggered_by_id FK
+    uuid entity_identifier
+    varchar entity_name
+    jsonb data
+    timestamptz processed_at
+  }
+  workspaces ||--o{ workspace_home_preferences : "workspace_id"
+  workspaces ||--o{ stickies : "workspace_id"
+  workspaces ||--o{ analytic_views : "workspace_id"
+  workspaces ||--o{ notifications : "workspace_id"
+  projects ||--o{ notifications : "project_id"
+  workspaces ||--o{ user_notification_preferences : "workspace_id"
+  projects ||--o{ user_notification_preferences : "project_id"
+```
+
+#### 3.12.9 Außenwirkung (PublicSpace, Webhooks, Exports)
+
+```mermaid
+erDiagram
+  deploy_boards {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid entity_identifier
+    varchar entity_name
+    varchar anchor
+    boolean is_comments_enabled
+    uuid intake_id FK
+  }
+  project_public_members {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    uuid member_id FK
+  }
+  webhooks {
+    uuid id PK
+    uuid workspace_id FK
+    varchar url
+    boolean is_active
+    boolean project
+    boolean issue
+  }
+  webhook_logs {
+    uuid id PK
+    uuid workspace_id FK
+    uuid webhook_id
+    varchar event_type
+    varchar request_method
+    text request_headers
+  }
+  exports {
+    uuid id PK
+    varchar name
+    varchar type
+    uuid workspace_id FK
+    uuid_array project
+    varchar provider
+    uuid initiated_by_id FK
+  }
+  intakes ||--o{ deploy_boards : "intake_id"
+  projects ||--o{ project_public_members : "project_id"
+  workspaces ||--o{ webhooks : "workspace_id"
+  workspaces ||--o{ webhook_logs : "workspace_id"
+  workspaces ||--o{ exports : "workspace_id"
+```
+
+#### 3.12.10 Plattform und Andockstellen (Authorization, Instance, Messaging, Integrations, Search)
+
+Ergänzt im Review: die zehn neuen Tabellen ohne Original-Modell, die in 3.12.1–3.12.9 fehlten. Messaging-Tabellen haben bewusst **keine** FKs (Nachrichten überleben Fachlöschungen); Kanten zu `workspaces`/`projects` nur, wo eine FK existiert.
+
+```mermaid
+erDiagram
+  roles {
+    uuid id PK
+    uuid workspace_id FK
+    varchar namespace
+    varchar slug
+    smallint level
+    boolean is_system
+  }
+  role_permissions {
+    uuid role_id PK
+    varchar permission_key PK
+  }
+  data_protection_keys {
+    integer id PK
+    text friendly_name
+    text xml
+  }
+  outbox_messages {
+    uuid id PK
+    text event_type
+    jsonb payload
+    smallint actor_kind
+    integer causation_depth
+    timestamptz dispatched_at
+  }
+  inbox_messages {
+    text consumer PK
+    uuid message_id PK
+    timestamptz processed_at
+  }
+  jobs {
+    uuid id PK
+    text queue
+    text job_type
+    smallint status
+    timestamptz run_at
+    text dedupe_key
+  }
+  recurring_job_states {
+    text name PK
+    text source
+    text cron_utc
+    timestamptz last_fired_at
+  }
+  integration_connections {
+    uuid id PK
+    uuid workspace_id FK
+    uuid bot_user_id FK
+    varchar provider
+    varchar base_url
+    varchar status
+  }
+  external_links {
+    uuid id PK
+    uuid project_id FK
+    uuid work_item_id FK
+    uuid comment_id FK
+    uuid connection_id FK
+    varchar external_type
+  }
+  search_documents {
+    uuid id PK
+    uuid workspace_id FK
+    uuid project_id FK
+    varchar entity_type
+    uuid entity_id
+    tsvector search_vector
+  }
+  workspaces ||--o{ roles : "workspace_id"
+  roles ||--o{ role_permissions : "role_id"
+  roles ||--o{ workspace_members : "role_id"
+  roles ||--o{ project_members : "role_id"
+  workspaces ||--o{ integration_connections : "workspace_id"
+  users |o--o{ integration_connections : "bot_user_id"
+  integration_connections ||--o{ external_links : "connection_id"
+  projects ||--o{ external_links : "project_id"
+  work_items ||--o{ external_links : "work_item_id"
+  work_item_comments |o--o{ external_links : "comment_id"
+  workspaces ||--o{ search_documents : "workspace_id"
+  projects |o--o{ search_documents : "project_id"
+```
+
+### 3.13 Migrationsstrategie
+
+#### 3.13.1 Ablauf und Verantwortlichkeiten
+
+```mermaid
+flowchart LR
+  Dev[Agent ändert Entität/Konfiguration] --> Add["dotnet ef migrations add YYYYMMDDHHmm_Modul_Beschreibung<br/>-p src/data/Plane.Data -s src/hosts/Plane.Migrator"]
+  Add --> Review[Review: nur additiv? ContractPhase?]
+  Review --> CI{CI-Gates}
+  CI -->|has-pending-model-changes = leer| G1[ok]
+  CI -->|Migrations-Lint: Drop/Rename/Alter ohne ContractPhase| Fail[Build rot]
+  CI --> Script["migrations script --idempotent → artifacts/migrations/plane-version.sql"]
+  G1 --> Image[Image plane-migrator]
+  Image --> Aspire["AppHost: migrator → WaitForCompletion → api/worker/realtime"]
+  Image --> Compose["Compose: migrator (restart: no) → depends_on: service_completed_successfully"]
+  Image --> Helm["Helm: Job plane-migrator-r{Revision} + Schema-Gate"]
+```
+
+| Regel | Festlegung |
+|---|---|
+| Erzeugung | `dotnet ef migrations add <Name> --project src/data/Plane.Data --startup-project src/hosts/Plane.Migrator --output-dir Migrations`; Design-Time-Factory `PlaneDbContextDesignTimeFactory` (liest `ConnectionStrings__plane` oder Dummy-Verbindung, kein Netzzugriff nötig) |
+| Name | `YYYYMMDDHHmm_<Modul>_<Beschreibung>` (01 §7.14); Pakete `W<n>_<Paket>_<Beschreibung>` (D16-ADR-06) |
+| Konflikte paralleler Agenten | eigene Migration löschen, rebasen, neu erzeugen; Snapshot nie von Hand mergen (01 §7.14) |
+| Drift-Gate | `dotnet ef migrations has-pending-model-changes` muss leer sein (CI, `Plane.Migrator.Tests/ModelDriftTests`) |
+| Ausführung | ausschließlich `Plane.Migrator` (D14 §3.15 Schritte 1–11; D03-ADR-21); `Plane.Api`/`Worker`/`Realtime` prüfen nur (Schema-Gate) |
+| Extensions/Funktionen | Migration `…_Platform_Extensions` (I0) per `migrationBuilder.Sql("CREATE EXTENSION IF NOT EXISTS …")` und `HasPostgresExtension("pg_trgm")`/`("unaccent")`/`("vector")` im Modell (damit der Snapshot sie kennt); externe Datenbanken ohne Superuser-Rechte: Betreiber legt die Extensions vorab an (D14 §3.15 Schritt 3 meldet klar) |
+| Zirkuläre FKs | `projects.estimate_id`/`default_state_id` ↔ `estimates`/`states`: Tabellen zuerst ohne diese FKs, FKs in derselben Migration danach per `AddForeignKey` (EF ordnet automatisch; Test `InitialMigrationAppliesOnEmptyDatabase`) |
+| Deferrable FK | `work_item_relation_types.reverse_key` per `migrationBuilder.Sql("ALTER TABLE … ADD CONSTRAINT … DEFERRABLE INITIALLY DEFERRED")` |
+| Generated Column | `search_documents.search_vector` per `HasComputedColumnSql(sql, stored: true)` |
+| Partielle/Trigram-Indizes | über Fluent API (`HasFilter`, `HasMethod("gin")`, `HasOperators("gin_trgm_ops")`, `AreNullsDistinct(false)`) – kein Raw-SQL nötig |
+| Nach Release 1.0 | Indizes auf befüllten Tabellen mit `IsCreatedConcurrently()` in **eigener** Migration ohne weitere Operationen (nicht transaktional; vorher `DROP INDEX CONCURRENTLY IF EXISTS` gegen `INVALID`-Reste, Muster `MIG/0124`); Spaltenzusätze nur `NULL` oder mit konstantem Default (PostgreSQL ≥ 11 ohne Tabellen-Rewrite) |
+| Expand/Contract | Drop/Rename/Typ-/Null-Änderung nur in einer mit `[ContractPhase("vX.Y")]` markierten Migration, frühestens eine Minor-Version nach dem Expand-Schritt (D14 §3.17); Architekturtest `MigrationsAreExpandOnly` liest die Operationen per `IMigrationsAssembly` |
+| Squash | bis Release 1.0 je Inkrement erlaubt (01 §7.14); einmalig vor 1.0 zu `…_CE_Baseline` |
+| Datenmigrationen | in der CE keine (Greenfield, ADR-003); nach 1.0 als eigene Migration mit `migrationBuilder.Sql` in Batches oder als einmaliger Job (`IJob`, Queue `maintenance`), nie im Startpfad der Api |
+| Bundle | `efbundle` wird **nicht** ausgeliefert (D03-ADR-21); Betreiber mit DBA-Prozess nutzen `plane-<version>.sql` und starten den Migrator anschließend mit `--skip-schema` (Seeds, Instanz-Init, Bucket) |
+
+#### 3.13.2 Migrator-Ablauf (Bezug auf D14 §3.15)
+
+```csharp
+// src/hosts/Plane.Migrator/MigratorWorker.cs (Ausschnitt; Schrittnummern = D14 §3.15)
+public sealed class MigratorWorker(IServiceProvider sp, IHostApplicationLifetime life, ILogger<MigratorWorker> log) : BackgroundService
+{
+    protected override async Task ExecuteAsync(CancellationToken ct)
+    {
+        await using var scope = sp.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<PlaneDbContext>();
+        await DatabaseReadiness.WaitAsync(db, TimeSpan.FromSeconds(60), ct);                       // 1
+        await using var _ = await MigrationLock.AcquireAsync(db, PlaneLocks.Migrator, ct);          // 2  pg_advisory_lock(7356001)
+        await ExtensionCheck.EnsureAsync(db, ["pg_trgm", "unaccent", "vector"], ct);                 // 3
+        await SchemaMigrator.MigrateAsync(db, ct);                                                   // 4  Downgrade-Schutz → Exit 3
+        await scope.ServiceProvider.GetRequiredService<DataProtectionKeyRingInit>().RunAsync(ct);   // 5
+        await scope.ServiceProvider.GetRequiredService<InstanceBootstrapper>().RunAsync(ct);        // 6
+        await scope.ServiceProvider.GetRequiredService<InstanceConfigurationSeeder>().RunAsync(ct); // 7
+        await scope.ServiceProvider.GetRequiredService<SeedRunner>().RunAsync(SeedProfile.Base, ct); // 8  BaseSeeds (§3.14.1); --seed parity|volume-M in Test/Dev
+        await scope.ServiceProvider.GetRequiredService<BucketInitializer>().RunAsync(ct);           // 9
+        await scope.ServiceProvider.GetRequiredService<CacheInvalidator>().RunAsync(ct);            // 10
+        log.LogInformation("migrations completed");                                                  // 11
+        life.StopApplication();
+    }
+}
+```
+
+### 3.14 Seeds
+
+#### 3.14.1 Referenz-Seeds (`BaseSeeds`, Migrator Schritt 8, idempotent per `INSERT … ON CONFLICT DO UPDATE` nur auf Seed-eigene Spalten)
+
+| Seed | Tabelle | Inhalt | Schlüssel | Quelle |
+|---|---|---|---|---|
+| `SystemRoleSeed` | `roles` | 6 Zeilen: `workspace`/`project` × `admin` 20, `member` 15, `guest` 5; `is_system = true`, `workspace_id = NULL` | feste UUIDv7-Konstanten `SystemRoles.WorkspaceAdmin` … `SystemRoles.ProjectGuest` | D05 §3.13.3 |
+| `WorkItemRelationTypeSeed` | `work_item_relation_types` | `blocked_by`↔`blocking`, `relates_to`↔`relates_to`, `duplicate`↔`duplicate` (Kategorie Relation); `start_before`↔`start_after`, `finish_before`↔`finish_after` (Dependency); `implemented_by`↔`implements` (Implementation); Labels „Blocked By“, „Blocking“, „Relates To“, „Duplicate“, „Start Before“, „Start After“, „Finish Before“, „Finish After“, „Implemented By“, „Implements“; `sort_order` 1…10 | `key` | `M/issue.py` Z. 272–293, D16 §5.3 |
+| `InstanceBootstrapper` | `instances` | eine Zeile: `instance_name` = `Plane:Instance:DefaultName` (Default `"funk."` statt „Plane Community Edition“: ADR-001 entfernt den Editionsnamen, ADR-009B ersetzt den Produktnamen; DEV-DM-12/`BRAND-DM-01`), `instance_id` 24 Hex (Zufall, einmalig), `current_version` = `latest_version` = Assembly-Version, `domain` = `Plane:Urls:Web`, `is_telemetry_enabled = false`, `is_setup_done = false`, `is_test` aus `IS_TEST` | Singleton | D14 §3.15 Schritt 6, CE-INST-001 |
+| `InstanceConfigurationSeeder` | `instance_configurations` | alle Schlüssel aus `InstanceConfigurationKeys.All` (D02 §4.10) **ohne** vorhandene Zeile: Wert aus gleichnamiger ENV-Variable oder `SeedDefault`, geheime Werte DP-geschützt | `key` | `configure_instance`, CE-INST-002 |
+| `SystemBotSeed` | `users`, `profiles` | genau ein System-Bot der Instanz für Cron-/Hintergrund-Akteure (D06-ADR-20): feste UUIDv7-Konstante `SystemUsers.SystemBot` (wie `SystemRoles.*`, D03-ADR-04), `username = "plane_system_bot"`, `email = "system-bot@funk.invalid"`, `display_name = "funk."` (ADR-009B), `is_bot = true`, `bot_type = "SYSTEM"`, `is_active = true`, `is_email_verified = true`; keine `user_identities`-Zeile (kein Login), keine Workspace-Mitgliedschaft | `id` | D06-ADR-20 |
+
+Referenz-Seeds ändern nie Benutzerdaten (Ausnahme: der System-Bot ist Infrastruktur); ein erneuter Lauf ist ein No-op (`SeedRunnerTests.Base_IsIdempotent`). **Respawn:** `users`/`profiles` sind keine Referenztabellen (§4.6) – `PlaneRespawner` ruft nach jedem Reset `BaseSeeds.ApplyAsync` erneut auf (D15 §3.3.2), damit `SystemBotSeed` den Bot wiederherstellt.
+
+#### 3.14.2 Laufzeit-Seeds (Fachcode, gleiche Commands wie Benutzeraktionen)
+
+| Auslöser | Erzeugt | Werte | Ort | CE-ID |
+|---|---|---|---|---|
+| Projekt anlegen (App, v1, Demo-Seed) | 6 States (`DEFAULT_STATES`) | `Backlog` `#60646C` 15000 `backlog` **default**; `Todo` `#60646C` 25000 `unstarted`; `In Progress` `#F59E0B` 35000 `started`; `Done` `#46A758` 45000 `completed`; `Cancelled` `#9AA4BC` 55000 `cancelled`; `Triage` `#4E5355` 65000 `triage` (`is_triage = true`) – Werte per **Bulk** (Sequenzregel greift nicht) | `Plane.Projects/Domain/DefaultStates.cs` (Port `M/state.py` Z. 24–62) | CE-PRJ-004, CE-PRJ-023 |
+| Projekt anlegen | `project_identifiers`-Zeile, `project_members` (Ersteller als Admin) + `project_user_properties`, `work_item_sequences` lazy (erste Nummer) | – | `CreateProjectCommand` | CE-PRJ-004 |
+| `intake_view` aktivieren | `intakes`: `name = "<Projektname> Intake"`, `is_default = true`; Triage-State nachlegen, falls fehlend (`sequence` 65000) | – | `Plane.Intake` über Projekt-Event | CE-INT-001 |
+| JIT-Benutzeranlage | `users`, `profiles` (Defaults §3.8.2, `background_color` zufällig), `user_identities`, `user_notification_preferences` (alle `true`, global) | – | `CreateUserStep` (Order 500, D05 §3.7.3) | CE-AUTH-012 |
+| Workspace anlegen | Admin-Mitgliedschaft (Rolle 20), danach **Demo-Seed** als Job `WorkspaceDemoSeedJob` (Queue `default`) | §3.14.3 | `Plane.Workspaces` | CE-WS-001, CE-WS-002 |
+
+#### 3.14.3 Demo-Workspace (Port `API/bgtasks/workspace_seed_task.py`, Daten `API/seeds/data/*.json`)
+
+Die acht JSON-Dateien werden **unverändert** nach `BE/data/Plane.Data/Seeds/Demo/` kopiert (eingebettete Ressourcen, Lizenz AGPL-3.0 des Originals) und von `WorkspaceDemoSeeder` (`Plane.Workspaces/Application/Jobs/WorkspaceDemoSeedJob.cs`) über die Contracts-Commands der Eigentümer-Module angelegt (R5; kein Direkt-Insert):
+
+| Schritt | Datei | Inhalt (Original) | Ziel-Regel |
+|---|---|---|---|
+| 1 | – | Bot-Benutzer `bot_user_<workspace_id>`, `display_name = "funk."` (Original `"Plane"`, ADR-009B, `BRAND-DM-02`), `is_bot = true`, `bot_type = WORKSPACE_SEED`, E-Mail `bot_user_<id>@<host von WEB_URL>`; Workspace-Mitglied Rolle 20 | ohne Passwort (ADR-008); keine `user_identities`-Zeile (kein Login möglich) |
+| 2 | `projects.json` (1) | „Plane Demo Project“ → **„funk. Demo Project“** (ADR-009B, `BRAND-DM-03`), `network` 2, `cover_image` (Unsplash), `logo_props` (Emoji-PNG von jsDelivr) | Identifier = erste 5 **ASCII**-alphanumerische Zeichen des Workspace-Namens, uppercase; leer → `PDP` (Korrektur A02a-#19, DEV-DM-13); alle Workspace-Mitglieder werden Projektmitglieder mit ihrer Workspace-Rolle; `project_user_properties` mit Seed-`display_filters`/`display_properties` (A02a §2.5) |
+| 3 | `states.json` (5) | Backlog `#A3A3A3` default, Todo `#3A3A3A`, In Progress `#F59E0B`, Done `#16A34A`, Cancelled `#EF4444` (abweichend von `DEFAULT_STATES`) | Seed-Werte 1:1; Triage-State zusätzlich (Invariante §3.4.4.6) |
+| 4 | `labels.json` (2) | 2 Labels mit `sort_order` | 1:1 |
+| 5 | `cycles.json` (2) | `CURRENT` (jetzt … +14 Tage), `UPCOMING` (Ende des letzten + 1 Tag … +14 Tage) | Zeitpunkte aus `IClock` (deterministisch im Test) |
+| 6 | `modules.json` (3) | Status `planned`/`backlog`/… | 1:1 |
+| 7 | `issues.json` (7) | Work Items mit `sequence_id`, `state_id`, Labels, Cycle, Modulen, `description_html`, Activity „created“ | Nummern über `ISequenceAllocator.AllocateRangeAsync` (Korrektur Q6); Activities über `IActivityRecorder` |
+| 8 | `views.json` (1) | Projekt-View mit `rich_filters` `{"priority__in":"urgent"}` und Seed-Display-Properties | 1:1 (unbekannte Schlüssel durchreichen, D16 A1/A7) |
+| 9 | `pages.json` (2) | Pages mit `description_html` | zusätzlich `description_json`/`description_binary` über `Plane.Documents` erzeugen (Original lässt sie leer, A02a-#19 – korrigiert, ohne Vertragswirkung) |
+
+**Airgapped (ADR-004):** Externe Bild-URLs der Seeds (`images.unsplash.com/photo-1691230995681-480d86cbc135`, `cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/{1f447,1f4a1,1f4cc,1f516,1f680,1f9f1}.png`, `media.docs.plane.so/seed_assets/{21,31,32,33,41,51,61}.png`) liegen als Dateien unter `BE/data/Plane.Data/Seeds/Demo/assets/`, werden beim Seed als `file_assets` in den Objektspeicher hochgeladen und die URLs im HTML/JSON durch die Asset-URLs ersetzt (`DemoSeedAssetRewriter`). **Branding (ADR-009B):** `DemoSeedBrandingRewriter` ersetzt beim Seed in Namen, Titeln, `description_html` und Labels das Wort „Plane“ als Produktname durch „funk.“ (Fachvokabular wie „Work Items“, „Cycles“ bleibt) und schreibt Hyperlinks auf `docs.plane.so`/`plane.so` auf `Plane:Urls:Docs` um bzw. entfernt sie, wenn nicht konfiguriert (`BRAND-DM-03`); `WorkspaceDemoSeedTests` vergleicht gegen das **gebrandete** Golden-File und prüft `NOT ILIKE '%plane%'` auf allen Seed-Textspalten (außer technischen Bezeichnern). Lizenzprüfung der Bilddateien: §8 R-D03-07.
+
+### 3.15 Testdaten-Generator
+
+| Werkzeug | Ort | Zweck | Verfahren | Daten |
+|---|---|---|---|---|
+| `BaseSeeds` | `Plane.Data/Seeds/` | Referenzdaten in jeder Testdatenbank | wie Produktion | §3.14.1 |
+| `ParitySeedLoader` | `Plane.BuildingBlocks.Testing/Seed/` (D15 §3.14) | identische Daten in Original und Ziel für Contract-/Visual-Tests | YAML `tests/seed/parity-seed.yaml` (Fragmente `base`, `labels-hierarchy`, `security-matrix`, `visual`, `e2e`), **UUIDv5** (`ns = a3c1f0c8-6d2e-5b7a-9e1f-0f00f00f0015`, Schlüssel `ws:acme`, `prj:acme/WEB`, `wi:acme/WEB-12` …), `FixedClock`/`DeterministicIdGenerator`; schreibt über die Commands der Module (Invarianten, Activities) und erzeugt `manifest.funk.json` | D15 §3.14.1 |
+| `VolumeSeeder` (CE-OPS-024) | `Plane.BuildingBlocks.Testing/Seed/VolumeSeeder.cs`; CLI `plane-cli create-dummy-data --profile volume-M --workspace <slug>` (Port `create_dummy_data`, ohne interaktive Eingaben) | Last-/Performance-Tests, lokale Entwicklung | **Bogus** (MIT) mit festem `Randomizer.Seed`; IDs aus `DeterministicIdGenerator` (UUIDv7 aus `FixedClock` + Seed-Zufall), Bulk per Npgsql binärem `COPY` (`NpgsqlBinaryImporter`) je Tabelle in Abhängigkeitsreihenfolge; Invarianten-Helfer: `WorkItemSequenceBlock` (vergibt Nummern per `AllocateRangeAsync`), `SortOrderSequence`, `DefaultStates`; danach `ANALYZE` | Profile s. u. |
+
+| Profil | Workspaces | Projekte je WS | Mitglieder je WS | Work Items je Projekt | Kommentare je WI | Labels/States je Projekt | Cycles/Module je Projekt | Pages je Projekt | Activities | Zielzeit (CI-Runner) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `volume-S` | 1 | 3 | 10 | 500 | 2 | 10 / 6 | 4 / 4 | 10 | ~5/WI | < 30 s |
+| `volume-M` | 2 | 10 | 50 | 10 000 | 3 | 30 / 8 | 12 / 10 | 50 | ~6/WI | < 5 min |
+| `volume-L` | 5 | 20 | 200 | 50 000 | 5 | 50 / 10 | 24 / 20 | 200 | ~8/WI | < 30 min (nur `perf`-Runner) |
+
+Verteilung: Prioritäten gleichverteilt, 30 % mit Parent (max. Tiefe 3), 60 % mit 1–3 Labels, 40 % in einem Cycle, 30 % in 1–2 Modulen, 5 % archiviert, 2 % soft-gelöscht, 10 % Intake (davon 50 % Pending); Beschreibungen aus einem festen Korpus von 50 HTML-Schnipseln (inkl. Mentions, Bilder, Tabellen). Der Generator ist reproduzierbar: gleicher Seed → byte-gleicher `pg_dump --data-only` (Test `VolumeSeederDeterminismTests`).
+
+## 4. Vollständige Mapping-Tabellen Original → Ziel
+
+### 4.1 Django-Model → EF-Entität (alle 96 konkreten Modelle)
+
+Reihenfolge wie Quelldateien. Enum-/Manager-Klassen (`StateGroup`, `IssueRelationChoices`, `IssueManager`, `StateManager`, `TriageStateManager`, `EstimateType`, `ModuleStatus`, `SourceType`, `IntakeIssueStatus`, `EntityNameEnum`, `BotTypeEnum`, `ROLE`, `ProjectNetwork`, `InstanceEdition`, `SessionStore`) sind keine Tabellen; ihre Abbildung steht in §3.11 bzw. §3.5. Abstrakte Basen (`BaseModel`, `WorkspaceBaseModel`, `ProjectBaseModel`, `AuditModel`, `TimeAuditModel`, `UserAuditModel`, `SoftDeleteModel`) → §3.1.1. Spaltendetails je Tabelle: §3.4.
+
+| Nr. | Django-Model (Datei, Zeilen) | Original-Tabelle | Ziel-Entität (`BE/data/Plane.Data/Entities/<Modul>/`) | Ziel-Tabelle | Status | Abweichungen / Begründung |
+|---|---|---|---|---|---|---|
+| M001 | `AnalyticView` (`M/analytic.py` Z. 11–26) | `analytic_views` | `Analytics/AnalyticView` | `analytic_views` | angepasst | – |
+| M002 | `APIToken` (`M/api.py` Z. 23–46) | `api_tokens` | `Identity/ApiToken` | `api_tokens` | angepasst | `token` entfällt; +`token_hash`; +`token_prefix` |
+| M003 | `APIActivityLog` (`M/api.py` Z. 49–74) | `api_activity_logs` | `Identity/ApiActivityLog` | `api_activity_logs` | angepasst | – |
+| M004 | `FileAsset` (`M/asset.py` Z. 31–103) | `file_assets` | `Assets/FileAsset` | `file_assets` | angepasst | `draft_issue_id`→`draft_work_item_id`; `issue_id`→`work_item_id` |
+| M005 | `Cycle` (`M/cycle.py` Z. 60–101) | `cycles` | `Cycles/Cycle` | `cycles` | übernommen | `owned_by` ON DELETE CASCADE→RESTRICT |
+| M006 | `CycleIssue` (`M/cycle.py` Z. 104–127) | `cycle_issues` | `Cycles/CycleWorkItem` | `cycle_work_items` | angepasst | Tabelle `cycle_issues`→`cycle_work_items`; `issue_id`→`work_item_id` |
+| M007 | `CycleUserProperties` (`M/cycle.py` Z. 130–157) | `cycle_user_properties` | `Cycles/CycleUserProperties` | `cycle_user_properties` | übernommen | – |
+| M008 | `DeployBoard` (`M/deploy_board.py` Z. 19–57) | `deploy_boards` | `PublicSpace/DeployBoard` | `deploy_boards` | übernommen | – |
+| M009 | `Description` (`M/description.py` Z. 10–29) | `descriptions` | – | – | entfällt | nur 1:1-Spiegel von `IssueComment` (Q15); Inhalt bleibt in `work_item_comments.comment_*` |
+| M010 | `DescriptionVersion` (`M/description.py` Z. 32–56) | `description_versions` | – | – | entfällt | in der CE ungenutzt (02b §1.3) |
+| M011 | `Device` (`M/device.py` Z. 11–27) | `devices` | – | – | entfällt | in der CE ungenutzt (Mobile-App/Push, 02a §1.3); kein CE-Feature |
+| M012 | `DeviceSession` (`M/device.py` Z. 30–42) | `device_sessions` | – | – | entfällt | in der CE ungenutzt (02a §1.3) |
+| M013 | `DraftIssue` (`M/draft.py` Z. 16–136) | `draft_issues` | `WorkItems/DraftWorkItem` | `draft_work_items` | angepasst | Tabelle `draft_issues`→`draft_work_items`; `parent` ON DELETE CASCADE→SET NULL; `state` ON DELETE CASCADE→SET NULL |
+| M014 | `DraftIssueAssignee` (`M/draft.py` Z. 139–162) | `draft_issue_assignees` | `WorkItems/DraftWorkItemAssignee` | `draft_work_item_assignees` | übernommen | Tabelle `draft_issue_assignees`→`draft_work_item_assignees`; `draft_issue_id`→`draft_work_item_id` |
+| M015 | `DraftIssueLabel` (`M/draft.py` Z. 165–176) | `draft_issue_labels` | `WorkItems/DraftWorkItemLabel` | `draft_work_item_labels` | angepasst | Tabelle `draft_issue_labels`→`draft_work_item_labels`; `draft_issue_id`→`draft_work_item_id` |
+| M016 | `DraftIssueModule` (`M/draft.py` Z. 179–198) | `draft_issue_modules` | `WorkItems/DraftWorkItemModule` | `draft_work_item_modules` | übernommen | Tabelle `draft_issue_modules`→`draft_work_item_modules`; `draft_issue_id`→`draft_work_item_id` |
+| M017 | `DraftIssueCycle` (`M/draft.py` Z. 201–224) | `draft_issue_cycles` | `WorkItems/DraftWorkItemCycle` | `draft_work_item_cycles` | übernommen | Tabelle `draft_issue_cycles`→`draft_work_item_cycles`; `draft_issue_id`→`draft_work_item_id` |
+| M018 | `Estimate` (`M/estimate.py` Z. 18–40) | `estimates` | `Projects/Estimate` | `estimates` | übernommen | – |
+| M019 | `EstimatePoint` (`M/estimate.py` Z. 43–57) | `estimate_points` | `Projects/EstimatePoint` | `estimate_points` | übernommen | – |
+| M020 | `ExporterHistory` (`M/exporter.py` Z. 24–67) | `exporters` | `Exports/ExportJob` | `exports` | angepasst | Tabelle `exporters`→`exports` |
+| M021 | `UserFavorite` (`M/favorite.py` Z. 14–69) | `user_favorites` | `Workspaces/UserFavorite` | `user_favorites` | übernommen | +`teamspace_id` |
+| M022 | `Importer` (`M/importer.py` Z. 13–40) | `importers` | – | – | entfällt | nicht portiert; Forgejo-Importer über `integration_sync_runs` (W1, D16 §4.2) |
+| M023 | `Intake` (`M/intake.py` Z. 16–39) | `intakes` | `Intake/Intake` | `intakes` | übernommen | – |
+| M024 | `IntakeIssue` (`M/intake.py` Z. 54–110) | `intake_issues` | `Intake/IntakeWorkItem` | `intake_work_items` | angepasst | Tabelle `intake_issues`→`intake_work_items`; `issue_id`→`work_item_id` |
+| M025 | `Integration` (`M/integration/base.py` Z. 16–38) | `integrations` | – | – | entfällt | nicht portiert (ADR-003/-007); Ersatz `integration_connections`/`external_links` (F1, D16 §3.4.2) |
+| M026 | `WorkspaceIntegration` (`M/integration/base.py` Z. 41–60) | `workspace_integrations` | – | – | entfällt | nicht portiert (ADR-003/-007); Ersatz `integration_connections`/`external_links` (F1, D16 §3.4.2) |
+| M027 | `GithubRepository` (`M/integration/github.py` Z. 14–29) | `github_repositories` | – | – | entfällt | nicht portiert (ADR-003/-007); Ersatz `integration_connections`/`external_links` (F1, D16 §3.4.2) |
+| M028 | `GithubRepositorySync` (`M/integration/github.py` Z. 32–51) | `github_repository_syncs` | – | – | entfällt | nicht portiert (ADR-003/-007); Ersatz `integration_connections`/`external_links` (F1, D16 §3.4.2) |
+| M029 | `GithubIssueSync` (`M/integration/github.py` Z. 54–70) | `github_issue_syncs` | – | – | entfällt | nicht portiert (ADR-003/-007); Ersatz `integration_connections`/`external_links` (F1, D16 §3.4.2) |
+| M030 | `GithubCommentSync` (`M/integration/github.py` Z. 73–87) | `github_comment_syncs` | – | – | entfällt | nicht portiert (ADR-003/-007); Ersatz `integration_connections`/`external_links` (F1, D16 §3.4.2) |
+| M031 | `SlackProjectSync` (`M/integration/slack.py` Z. 14–35) | `slack_project_syncs` | – | – | entfällt | nicht portiert (ADR-003/-007); Ersatz `integration_connections`/`external_links` (F1, D16 §3.4.2) |
+| M032 | `Issue` (`M/issue.py` Z. 104–255) | `issues` | `WorkItems/WorkItem` | `work_items` | angepasst | Tabelle `issues`→`work_items`; `point` Typ → `smallint` |
+| M033 | `IssueBlocker` (`M/issue.py` Z. 258–269) | `issue_blockers` | – | – | entfällt | Altlast, seit `MIG/0043` durch `IssueRelation` ersetzt (02b §1.3) |
+| M034 | `IssueRelation` (`M/issue.py` Z. 296–320) | `issue_relations` | `WorkItems/WorkItemRelation` | `work_item_relations` | angepasst | Tabelle `issue_relations`→`work_item_relations`; `issue_id`→`work_item_id`; `related_issue_id`→`related_work_item_id`; `relation_type` Typ → `varchar(30)` |
+| M035 | `IssueMention` (`M/issue.py` Z. 323–342) | `issue_mentions` | `WorkItems/WorkItemMention` | `work_item_mentions` | übernommen | Tabelle `issue_mentions`→`work_item_mentions`; `issue_id`→`work_item_id` |
+| M036 | `IssueAssignee` (`M/issue.py` Z. 345–368) | `issue_assignees` | `WorkItems/WorkItemAssignee` | `work_item_assignees` | übernommen | Tabelle `issue_assignees`→`work_item_assignees`; `issue_id`→`work_item_id` |
+| M037 | `IssueLink` (`M/issue.py` Z. 371–384) | `issue_links` | `WorkItems/WorkItemLink` | `work_item_links` | übernommen | Tabelle `issue_links`→`work_item_links`; `issue_id`→`work_item_id` |
+| M038 | `IssueAttachment` (`M/issue.py` Z. 398–412) | `issue_attachments` | – | – | entfällt | Altlast; Anhänge sind `file_assets` mit `entity_type = ISSUE_ATTACHMENT` (02b §1.3, `MIG/0079`) |
+| M039 | `IssueActivity` (`M/issue.py` Z. 415–448) | `issue_activities` | `WorkItems/WorkItemActivity` | `work_item_activities` | angepasst | Tabelle `issue_activities`→`work_item_activities`; `issue_id`→`work_item_id`; `issue` ON DELETE DO NOTHING→CASCADE; `issue_comment_id`→`comment_id`; `issue_comment` ON DELETE DO NOTHING→SET NULL |
+| M040 | `IssueComment` (`M/issue.py` Z. 451–540) | `issue_comments` | `WorkItems/WorkItemComment` | `work_item_comments` | angepasst | Tabelle `issue_comments`→`work_item_comments`; `description` entfällt; `issue_id`→`work_item_id`; `actor` ON DELETE CASCADE→SET NULL; +`teamspace_id` |
+| M041 | `IssueLabel` (`M/issue.py` Z. 543–554) | `issue_labels` | `WorkItems/WorkItemLabel` | `work_item_labels` | angepasst | Tabelle `issue_labels`→`work_item_labels`; `issue_id`→`work_item_id` |
+| M042 | `IssueSequence` (`M/issue.py` Z. 557–571) | `issue_sequences` | `WorkItems/WorkItemSequence` | `work_item_sequences` | ersetzt | Tabelle `issue_sequences`→`work_item_sequences`; Form neu (§3.4) |
+| M043 | `IssueSubscriber` (`M/issue.py` Z. 574–597) | `issue_subscribers` | `WorkItems/WorkItemSubscriber` | `work_item_subscribers` | übernommen | Tabelle `issue_subscribers`→`work_item_subscribers`; `issue_id`→`work_item_id` |
+| M044 | `IssueReaction` (`M/issue.py` Z. 600–624) | `issue_reactions` | `WorkItems/WorkItemReaction` | `work_item_reactions` | übernommen | Tabelle `issue_reactions`→`work_item_reactions`; `issue_id`→`work_item_id` |
+| M045 | `CommentReaction` (`M/issue.py` Z. 627–651) | `comment_reactions` | `WorkItems/WorkItemCommentReaction` | `work_item_comment_reactions` | übernommen | Tabelle `comment_reactions`→`work_item_comment_reactions` |
+| M046 | `IssueVote` (`M/issue.py` Z. 654–674) | `issue_votes` | `WorkItems/WorkItemVote` | `work_item_votes` | übernommen | Tabelle `issue_votes`→`work_item_votes`; `issue_id`→`work_item_id` |
+| M047 | `IssueVersion` (`M/issue.py` Z. 677–779) | `issue_versions` | `WorkItems/WorkItemVersion` | `work_item_versions` | korrigiert | Tabelle `issue_versions`→`work_item_versions`; `issue_id`→`work_item_id`; `owned_by` ON DELETE CASCADE→SET NULL |
+| M048 | `IssueDescriptionVersion` (`M/issue.py` Z. 782–822) | `issue_description_versions` | `WorkItems/WorkItemDescriptionVersion` | `work_item_description_versions` | übernommen | Tabelle `issue_description_versions`→`work_item_description_versions`; `issue_id`→`work_item_id`; `owned_by` ON DELETE CASCADE→SET NULL |
+| M049 | `IssueType` (`M/issue_type.py` Z. 14–32) | `issue_types` | `Properties/WorkItemType` | `work_item_types` | minimal | Tabelle `issue_types`→`work_item_types`; `description` entfällt; `logo_props` entfällt; `is_epic` entfällt; `is_active` entfällt; `level` entfällt; `external_source` entfällt; `external_id` entfällt |
+| M050 | `ProjectIssueType` (`M/issue_type.py` Z. 35–55) | `project_issue_types` | – | – | entfällt | nicht in der CE; Paket A1 legt `project_work_item_types` an (D16 §4.2) |
+| M051 | `Label` (`M/label.py` Z. 11–57) | `labels` | `Projects/Label` | `labels` | angepasst | – |
+| M052 | `Module` (`M/module.py` Z. 67–127) | `modules` | `ProjectModules/Module` | `modules` | angepasst | `description_html` Typ → `text` |
+| M053 | `ModuleMember` (`M/module.py` Z. 130–149) | `module_members` | `ProjectModules/ModuleMember` | `module_members` | übernommen | – |
+| M054 | `ModuleIssue` (`M/module.py` Z. 152–171) | `module_issues` | `ProjectModules/ModuleWorkItem` | `module_work_items` | übernommen | Tabelle `module_issues`→`module_work_items`; `issue_id`→`work_item_id` |
+| M055 | `ModuleLink` (`M/module.py` Z. 174–187) | `module_links` | `ProjectModules/ModuleLink` | `module_links` | übernommen | – |
+| M056 | `ModuleUserProperties` (`M/module.py` Z. 190–217) | `module_user_properties` | `ProjectModules/ModuleUserProperties` | `module_user_properties` | übernommen | – |
+| M057 | `Notification` (`M/notification.py` Z. 13–69) | `notifications` | `Notifications/Notification` | `notifications` | übernommen | – |
+| M058 | `UserNotificationPreference` (`M/notification.py` Z. 81–118) | `user_notification_preferences` | `Notifications/UserNotificationPreference` | `user_notification_preferences` | angepasst | – |
+| M059 | `EmailNotificationLog` (`M/notification.py` Z. 121–149) | `email_notification_logs` | `Notifications/EmailNotificationLog` | `email_notification_logs` | übernommen | – |
+| M060 | `Page` (`M/page.py` Z. 23–77) | `pages` | `Pages/Page` | `pages` | angepasst | `owned_by` ON DELETE CASCADE→RESTRICT; +`teamspace_id` |
+| M061 | `PageLog` (`M/page.py` Z. 80–117) | `page_logs` | `Pages/PageLog` | `page_logs` | korrigiert | – |
+| M062 | `PageLabel` (`M/page.py` Z. 120–132) | `page_labels` | `Pages/PageLabel` | `page_labels` | übernommen | – |
+| M063 | `ProjectPage` (`M/page.py` Z. 135–155) | `project_pages` | `Pages/ProjectPage` | `project_pages` | übernommen | – |
+| M064 | `PageVersion` (`M/page.py` Z. 158–182) | `page_versions` | `Pages/PageVersion` | `page_versions` | korrigiert | `owned_by` ON DELETE CASCADE→SET NULL |
+| M065 | `Project` (`M/project.py` Z. 68–227) | `projects` | `Projects/Project` | `projects` | angepasst | `description_html` Typ → `text`; `default_assignee` ON DELETE CASCADE→SET NULL; `project_lead` ON DELETE CASCADE→SET NULL |
+| M066 | `ProjectMemberInvite` (`M/project.py` Z. 242–257) | `project_member_invites` | `Projects/ProjectMemberInvite` | `project_member_invites` | übernommen | `token` Typ → `text`; +`role_id` |
+| M067 | `ProjectMember` (`M/project.py` Z. 260–310) | `project_members` | `Projects/ProjectMember` | `project_members` | angepasst | `member` NOT NULL; +`role_id` |
+| M068 | `ProjectIdentifier` (`M/project.py` Z. 314–331) | `project_identifiers` | `Projects/ProjectIdentifier` | `project_identifiers` | übernommen | Form neu (§3.4) |
+| M069 | `ProjectDeployBoard` (`M/project.py` Z. 350–367) | `project_deploy_boards` | – | – | entfällt | DEPRECATED im Original (02a §2.3.21); ersetzt durch `deploy_boards` |
+| M070 | `ProjectPublicMember` (`M/project.py` Z. 370–389) | `project_public_members` | `PublicSpace/ProjectPublicMember` | `project_public_members` | übernommen | – |
+| M071 | `ProjectUserProperty` (`M/project.py` Z. 392–423) | `project_user_properties` | `Projects/ProjectUserProperty` | `project_user_properties` | übernommen | – |
+| M072 | `UserRecentVisit` (`M/recent_visit.py` Z. 22–39) | `user_recent_visits` | `Home/UserRecentVisit` | `user_recent_visits` | angepasst | – |
+| M073 | `Session` (`M/session.py` Z. 17–27) | `sessions` | `Identity/UserSession` | `user_sessions` | ersetzt | Tabelle `sessions`→`user_sessions` |
+| M074 | `SocialLoginConnection` (`M/social_connection.py` Z. 14–43) | `social_login_connections` | – | – | entfällt | in der CE ungenutzt; ADR-008 |
+| M075 | `State` (`M/state.py` Z. 79–126) | `states` | `Projects/State` | `states` | angepasst | – |
+| M076 | `Sticky` (`M/sticky.py` Z. 16–57) | `stickies` | `Home/Sticky` | `stickies` | übernommen | – |
+| M077 | `User` (`M/user.py` Z. 56–197) | `users` | `Identity/User` | `users` | angepasst | `email` NOT NULL; `is_superuser` entfällt; `is_password_expired` entfällt; `is_staff` entfällt; `is_password_autoset` entfällt; `is_password_reset_required` entfällt; `token` entfällt; `token_updated_at` entfällt; +`password` |
+| M078 | `Profile` (`M/user.py` Z. 200–268) | `profiles` | `Identity/Profile` | `profiles` | angepasst | `billing_address_country` entfällt; `billing_address` entfällt; `has_billing_address` entfällt |
+| M079 | `Account` (`M/user.py` Z. 271–295) | `accounts` | – | – | entfällt | ADR-008: verknüpfte OAuth-Konten entfallen (CE-PROF-007, D05 §4.8) |
+| M080 | `IssueView` (`M/view.py` Z. 58–99) | `issue_views` | `Views/View` | `views` | angepasst | Tabelle `issue_views`→`views`; `owned_by` ON DELETE CASCADE→RESTRICT; +`teamspace_id` |
+| M081 | `Webhook` (`M/webhook.py` Z. 34–62) | `webhooks` | `Webhooks/Webhook` | `webhooks` | angepasst | `secret_key` entfällt; +`secret_key_protected` |
+| M082 | `WebhookLog` (`M/webhook.py` Z. 65–91) | `webhook_logs` | `Webhooks/WebhookLog` | `webhook_logs` | übernommen | – |
+| M083 | `ProjectWebhook` (`M/webhook.py` Z. 94–109) | `project_webhooks` | – | – | entfällt | in der CE ungenutzt (02a §1.3) |
+| M084 | `Workspace` (`M/workspace.py` Z. 119–182) | `workspaces` | `Workspaces/Workspace` | `workspaces` | angepasst | `owner` ON DELETE CASCADE→RESTRICT |
+| M085 | `WorkspaceMember` (`M/workspace.py` Z. 198–231) | `workspace_members` | `Workspaces/WorkspaceMember` | `workspace_members` | angepasst | +`role_id` |
+| M086 | `WorkspaceMemberInvite` (`M/workspace.py` Z. 234–258) | `workspace_member_invites` | `Workspaces/WorkspaceMemberInvite` | `workspace_member_invites` | übernommen | `token` Typ → `text`; +`role_id` |
+| M087 | `Team` (`M/workspace.py` Z. 261–283) | `teams` | – | – | entfällt | Legacy, in der CE ungenutzt; Teamspaces kommen mit Paket B1 als neue Tabelle `teamspaces` (D16 §3.3.2) |
+| M088 | `WorkspaceTheme` (`M/workspace.py` Z. 286–307) | `workspace_themes` | `Workspaces/WorkspaceTheme` | `workspace_themes` | übernommen | – |
+| M089 | `WorkspaceUserProperties` (`M/workspace.py` Z. 310–351) | `workspace_user_properties` | `Workspaces/WorkspaceUserProperties` | `workspace_user_properties` | übernommen | – |
+| M090 | `WorkspaceUserLink` (`M/workspace.py` Z. 354–371) | `workspace_user_links` | `Home/WorkspaceUserLink` | `workspace_user_links` | übernommen | – |
+| M091 | `WorkspaceHomePreference` (`M/workspace.py` Z. 374–414) | `workspace_home_preferences` | `Home/WorkspaceHomePreference` | `workspace_home_preferences` | übernommen | – |
+| M092 | `WorkspaceUserPreference` (`M/workspace.py` Z. 417–455) | `workspace_user_preferences` | `Workspaces/WorkspaceUserPreference` | `workspace_user_preferences` | übernommen | – |
+| M093 | `Instance` (`LIC/instance.py` Z. 22–50) | `instances` | `Instance/Instance` | `instances` | angepasst | `edition` entfällt |
+| M094 | `InstanceAdmin` (`LIC/instance.py` Z. 53–69) | `instance_admins` | `Instance/InstanceAdminMirror` | `instance_admins` | angepasst | `user` ON DELETE SET NULL→CASCADE; `user` NOT NULL; +`source`; +`synced_at` |
+| M095 | `InstanceConfiguration` (`LIC/instance.py` Z. 72–83) | `instance_configurations` | `Instance/InstanceConfiguration` | `instance_configurations` | angepasst | `category` Typ → `varchar(100)` |
+| M096 | `ChangeLog` (`LIC/instance.py` Z. 86–100) | `changelogs` | – | – | entfällt | in der CE ungenutzt (02a §1.3); „What's new“ (CE-WS-015) nutzt einen gebündelten statischen Inhalt (ADR-004) |
+
+Abgedeckt: **75** Modelle portiert (davon `Session` → `user_sessions` ersetzt, `IssueType` minimal, `IssueSequence` als Zähler neu geformt), **21** entfallen (D03-ADR-26); dazu **14** neue Tabellen (§3.4.18) → **89** Zieltabellen (§3.3). Prüfskript: `tools/ci/datamodel-coverage` vergleicht die Klassenliste aus `M/**/*.py` + `LIC/*.py` (AST) mit `_data/03-datenmodell.json`.
+
+### 4.2 Managers, Mixins und Modell-Logik → Ziel
+
+| Original | Datei | Ziel | Status |
+|---|---|---|---|
+| `SoftDeletionManager.objects` / `all_objects` | `API/db/mixins.py` | Filter `soft_delete` / `IgnoreQueryFilters([SoftDelete])` (§3.5.1) | 1:1 |
+| `IssueManager.issue_objects` (Default-Manager) | `M/issue.py` Z. 92–101 | Basismenge `WorkItemBaseSets.IssueObjects` (D02 §3.11.4), **kein** Default-Filter (Q1) | korrigiert |
+| `StateManager` / `TriageStateManager` | `M/state.py` Z. 65–76 | Prädikate `StatePredicates.NotTriage` / `.Triage` in `Plane.Projects.Contracts` (`IStateCatalog` liefert ohne Triage) | angepasst |
+| `BaseModel.save` (crum-Audit) | `M/base.py` Z. 24–44 | `AuditInterceptor` + `ICurrentActor` (D02 §5.1.2); `created_by_id`-Override über `ICreatedByOverride` | angepasst |
+| `WorkspaceBaseModel.save`/`ProjectBaseModel.save` (Workspace aus Projekt) | `M/workspace.py` Z. 192–195, `M/project.py` Z. 237–239 | `ScopeConsistencyInterceptor` + Scope-FK (D03-ADR-05) | angepasst |
+| `SoftDeleteModel.delete` + `soft_delete_related_objects` | `API/db/mixins.py`, `API/bgtasks/deletion_task.py` | `SoftDeleteInterceptor` + Registry §3.5.4 | angepasst (inline, DEV-OPS-001) |
+| `hard_delete` | `API/bgtasks/deletion_task.py` Z. 114–185 | `HardDeleteJob` §3.5.5 | korrigiert (Q3) |
+| `ChangeTrackerMixin` (`TRACKED_FIELDS`) | `API/db/mixins.py` | `IChangeSet<T>` über `EntityEntry.OriginalValues` (D02 §4.1) | angepasst |
+| `Issue.save` (Default-State, `completed_at`, Sequenz, `sort_order`, `description_stripped`) | `M/issue.py` Z. 180–255 | `CreateWorkItemCommand` + `WorkItemStateChanger` + `ISequenceAllocator` + `WorkItemSortRules` + `HtmlText.StripTags` | angepasst |
+| `IssueComment.save` (Stripped, `Description`-Spiegel) | `M/issue.py` Z. 481–530 | `CreateCommentCommand`/`UpdateCommentCommand` (Stripped); Spiegel entfällt (Q15) | korrigiert |
+| `IssueVersion.log_issue_version` | `M/issue.py` Z. 736–779 | `WorkItemVersionRecorder` (§3.9.2) | korrigiert (Q11) |
+| `IssueDescriptionVersion.log_issue_description_version` | `M/issue.py` Z. 800–822 | `WorkItemDescriptionVersionRecorder` | 1:1 |
+| `DraftIssue.save` | `M/draft.py` Z. 84–132 | `DraftWorkItem`-Commands (`completed_at` nur bei Wechsel, Q13) | korrigiert |
+| `State.save` (Slug, Sequenz) | `M/state.py` Z. 117–126 | `StateRules.Slugify`, `StateSequenceRules.Next` (Triage fest, Q12) | korrigiert |
+| `Label.save`, `Cycle.save`, `Module.save`, `IssueView.save` (Sortierung, `query`) | `M/label.py`, `M/cycle.py`, `M/module.py`, `M/view.py` | Sortierregeln §3.7; `ViewQueryCache.FromLegacyFilters(filters)` | 1:1 |
+| `Page.save`, `PageVersion.save`, `Description.save` (Stripped) | `M/page.py`, `M/description.py` | `HtmlText.StripTags` in den Commands | angepasst (eine Implementierung, Q14) |
+| `IntakeIssue.save` (Snooze → 00:00 Projekt-TZ) | `M/intake.py` Z. 100–110 | `IntakeSnoozeRules.NormalizeToProjectDayStart` | 1:1 |
+| `Project.save` (Identifier `upper`, TZ erben, Snooze-Retiming) | `M/project.py` Z. 167–227 | `Project.Create`, `Project.ChangeTimezone` + `IIntakeSnoozeRetimer` (`SELECT … FOR UPDATE`) | 1:1 |
+| `ProjectMember.save` (legt `ProjectUserProperty` an) | `M/project.py` Z. 276–310 | `IProjectMembershipService.AddAsync` (eine Transaktion, `ON CONFLICT DO NOTHING`) | 1:1 |
+| `Workspace.delete` (Slug-Suffix) | `M/workspace.py` Z. 156–176 | partieller Unique-Index; kein Suffix (DEV-DM-01) | korrigiert |
+| `User.save` (Anzeigename, Token-Rotation) | `M/user.py` Z. 160–197 | `User.Create` (Anzeigename aus E-Mail-Lokalteil); Token entfällt | angepasst |
+| `post_save(User)` → `UserNotificationPreference` | `M/user.py` Z. 298 ff. | `CreateUserStep` (JIT) | angepasst |
+| `convert_uuid_to_integer` + `pg_advisory_xact_lock` | `API/utils/uuid.py`, `M/issue.py` | entfällt (Zähler-Zeilensperre, §3.6) | ersetzt |
+| `get_upload_path` | `M/asset.py` Z. 19–23 | `AssetKeyBuilder.Build(workspaceId?, fileName)` (gleiches Schema, `sanitize_filename`-Port) | 1:1 |
+| `get_random_color` | `API/utils/color.py` | `ColorGenerator.Random()` (Großbuchstaben, A02a-#18) | korrigiert (ohne Vertragswirkung) |
+| `generate_token` (API `plane_api_`, Webhook `plane_wh_`), `get_anchor`, `generate_label_token` | `M/api.py`, `M/webhook.py`, `M/deploy_board.py` | `TokenGenerator.Create("plane_api_"/"plane_wh_")` (32 Hex aus `RandomNumberGenerator`), `AnchorGenerator.Create()`, Label = UUIDv7-Hex | angepasst (Zufallsquelle) |
+
+### 4.3 Quirks und Fehler des Originals → Entscheidung
+
+| Nr. | Befund (Quelle) | Entscheidung | Abweichungs-ID |
+|---|---|---|---|
+| Q1 | Default-Manager `issue_objects` filtert Rückwärts-Relationen (A02b §3.1 a) | Basismengen als explizite Query-Spezifikationen | – (Verhalten gleich, Technik anders) |
+| Q2 | Soft-Delete `EstimatePoint`/`IssueType` nullt nur sichtbare Issues | SetNull auf alle Zeilen (§3.5.3) | DEV-DM-14 |
+| Q3 | Hard-Delete bricht an `DO_NOTHING`-FK der Activities ab | FK `CASCADE` (Work Item) / `SET NULL` (Kommentar) | DEV-DM-15 |
+| Q4 | kein Unique `(project_id, sequence_id)` | Unique-Index | DEV-DM-05 |
+| Q5 | `close_old_issues` setzt `completed_at` nicht, nimmt fremden `cancelled`-State | über `IWorkItemStateChanger` mit State **des Projekts** (Job in 06) | DEV-DM-16 |
+| Q6 | Workspace-Seed legt doppelte Sequenzen an | Allokator für Seeds | – (Zähler) |
+| Q7 | Workspace-Labels instanzweit eindeutig | Unique je Workspace | DEV-LBL-04 (D02) |
+| Q8 | `access` von Views/Pages invertiert | Werte 1:1, sprechende Enums | – |
+| Q9 | `EstimatePoint` alphabetisch sortiert | 1:1 | – |
+| Q10 | `track_page_version` nutzt `page.description` → keine Versionen | Versionen werden geschrieben | DEV-DM-10 |
+| Q11 | `log_issue_version` → `FieldError` | Versionen werden geschrieben | DEV-DM-06 |
+| Q12 | `State.save` überschreibt Sequenz; Triage 70000; `is_triage` nicht gesetzt | Triage 65000, Flag = Gruppe (Check) | DEV-DM-17 |
+| Q13 | `DraftIssue.completed_at` bei jedem Save | nur bei State-Wechsel | DEV-DM-18 |
+| Q14 | zwei `strip_tags`-Varianten | eine (`HtmlText.StripTags`, Plane-Variante) | – (Kommentare unverändert) |
+| Q15 | `Description`-Spiegel verwaist/Kaskade falsch herum | Spiegel entfällt, Feld `description` = `null` | DEV-DM-03 |
+| Q16 | `PageLog`-Löschung ohne `page_id`, voll eindeutig | partiell eindeutig + Seitenfilter | DEV-DM-09 |
+| Q17 | State-Löschung löscht Drafts | Drafts `state_id` → `NULL` | DEV-DM-07 |
+| Q18 | `CommentReaction.__str__` defekt | irrelevant | – |
+| Q19 | `relation_type` ohne Choices | FK auf Katalog | DEV-DM-19 (ungültige Typen → 400) |
+| Q20 | `UserNotificationPreference` ohne Unique | partieller Unique global | – |
+| Q21 | Snooze „heute“ sofort wach | 1:1 | – |
+| Q22 | `ModuleLink.url` `varchar(200)` vs. `IssueLink.url` `text` | 1:1 (Validierungsgrenze) | – |
+| Q23 | Legacy-Analytics `Sum("point")` | Summe über `estimate_points.value` (numerisch interpretierbar) – Detail 04/Analytics | DEV-DM-20 |
+| Q24 | Alt-Drafts `is_draft = true` in `issues` | nicht relevant (Greenfield) | – |
+| Q25 | Activity „Schätzung entfernt“ fehlt | Activity wird geschrieben | DEV-DM-21 |
+| A02a-#1 | `WorkspaceUserProperties`-Defaults verschachtelt | 1:1 (Vertrag) | – |
+| A02a-#2/#3 | `Account.provider`/`SocialLoginConnection.medium` | Tabellen entfallen | – |
+| A02a-#4 | `Project.description_html` als JSON | `text`, Vertrag String | – |
+| A02a-#5 | `default_assignee`/`project_lead` `CASCADE` | `SET NULL` | – |
+| A02a-#6 | `ProjectMember.member` nullable | `NOT NULL` | – |
+| A02a-#7 | `WebhookLog.webhook` ohne FK | 1:1 | – |
+| A02a-#8 | `file_size`-Validator nicht registriert | Größe im Upload-Command (`min(size, FILE_SIZE_LIMIT)`) wie Original | – |
+| A02a-#9 | `UserRecentVisit.created_by` immer `NULL` | Akteur gesetzt | DEV-DM-22 (ohne Vertragswirkung) |
+| A02a-#10 | Soft-Delete-Kaskade nullt Audit-Benutzer | nicht übernommen | – |
+| A02a-#11 | SET_NULL beim Soft-Delete ist nicht umkehrbar | 1:1 | – |
+| A02a-#12 | Slug > 36 Zeichen nicht löschbar | partieller Unique | DEV-DM-01 |
+| A02a-#13 | `delete_old_s3_link` doppelt geplant | einmal | – |
+| A02a-#14 | `wait_for_db` wartet nicht | `DatabaseReadiness` (D14) | – |
+| A02a-#15 | `create_project_member` ohne `--role` | CLI verlangt `--role` | – |
+| A02a-#16 | Workspace-Create-`IntegrityError` → 500 | `IUniqueViolationMap` → Original-409/400 | DEV-DM-23 |
+| A02a-#17 | Einladungs-JWT > 255 Zeichen | `text` | – |
+| A02a-#18 | Zufallsfarben gemischte Schreibweise | Großbuchstaben | – |
+| A02a-#19 | Seed: Unicode-Identifier, leere Page-JSON | ASCII-Identifier, JSON/Binary erzeugt | DEV-DM-13 |
+| A02a-#20 | `AnalyticView`-Update leert `query` | `query` bleibt, Abruf nutzt `query_dict` | DEV-DM-24 |
+| A02a-#21 | `User.token` rotiert bei jedem Save | Spalte entfällt | – |
+| A02a-#22 | `WorkspaceProjectDeployBoardEndpoint` defekt | Endpunkt-Frage (04) | – |
+
+### 4.4 `FloatField`-Liste (für D15 R-D15-04, N9)
+
+Jedes Feld wird als `double precision` gespeichert, im DTO als `double` geführt und vom `PythonFloatConverter` (D02-ADR-11) **immer mit Dezimalteil** ausgegeben (`65535.0`, `0.0`). Der Property-Test `FloatFieldOutputTests` iteriert über diese Liste (Quelle `_data/03-datenmodell.json` → `float_fields[]`).
+
+| Nr. | Ziel-Tabelle.Spalte | Original | JSON-Feld (Vertrag) | Default | Beispielausgabe |
+|---|---|---|---|---|---|
+| F01 | `work_items.sort_order` | `issues.sort_order` | `sort_order` | 65535 | `75535.0` |
+| F02 | `draft_work_items.sort_order` | `draft_issues.sort_order` | `sort_order` | 65535 | `65535.0` |
+| F03 | `work_item_versions.sort_order` | `issue_versions.sort_order` | `sort_order` | 65535 | `65535.0` |
+| F04 | `work_item_activities.epoch` | `issue_activities.epoch` | `epoch` | NULL | `1769940000.0` |
+| F05 | `states.sequence` | `states.sequence` | `sequence` | 65535 | `15000.0` |
+| F06 | `labels.sort_order` | `labels.sort_order` | `sort_order` | 65535 | `75535.0` |
+| F07 | `cycles.sort_order` | `cycles.sort_order` | `sort_order` | 65535 | `55535.0` |
+| F08 | `modules.sort_order` | `modules.sort_order` | `sort_order` | 65535 | `55535.0` |
+| F09 | `views.sort_order` | `issue_views.sort_order` | `sort_order` | 65535 | `75535.0` |
+| F10 | `pages.sort_order` | `pages.sort_order` | `sort_order` | 65535 | `65535.0` |
+| F11 | `project_members.sort_order` | `project_members.sort_order` | `sort_order` | 65535 | `65535.0` |
+| F12 | `project_user_properties.sort_order` | `project_user_properties.sort_order` | `sort_order` | 65535 | `55535.0` |
+| F13 | `user_favorites.sequence` | `user_favorites.sequence` | `sequence` | 65535 | `55535.0` |
+| F14 | `stickies.sort_order` | `stickies.sort_order` | `sort_order` | 65535 | `75535.0` |
+| F15 | `workspace_home_preferences.sort_order` | dto. | `sort_order` | 65535 | `65535.0` |
+| F16 | `workspace_user_preferences.sort_order` | dto. | `sort_order` | 65535 | `65535.0` |
+| F17 | `file_assets.size` | `file_assets.size` | `size`, `attributes.size` (JSON) | 0 | `1024.0` |
+| F18 | `roles.sort_order` | – (neu) | – (nicht im Vertrag) | 65535 | – |
+| – | `issue_types.level` (Original) | entfällt (W2) | – | – | – |
+
+Nicht in dieser Liste, aber vom gleichen Converter betroffen (Werte aus Abfragen, nicht aus Spalten): `file_size_limit` in `GET /api/instances/`, Analytics-Summen/Durchschnitte, Cycle-/Modul-Fortschritt (`completed_estimate_points` u. a.) – Liste in 04.
+
+### 4.5 Alias-Tabelle: Original- und Nachbardokument-Namen → verbindlicher Tabellenname
+
+| Bezeichnung (Original bzw. in D02/D05/D16) | Verbindlich (D03) | Fundstelle Nachbar |
+|---|---|---|
+| `issues` | `work_items` | – |
+| `issue_labels` | `work_item_labels` (Spalte `work_item_id`) | D02 §3.2.2 Nr. 2, §3.11.5 (`il.issue_id` → `wil.work_item_id`) |
+| `issue_assignees` | `work_item_assignees` | D02 §3.11.5 |
+| `cycle_issues` | `cycle_work_items` | D02 §3.11.5 |
+| `module_issues` | `module_work_items` | D02 §3.11.5 |
+| `intake_issues` | `intake_work_items` | D02 §3.11.4 |
+| `issue_views` | `views` | D16 §3.3.2 (B1), §5.4; D11 §3.10.2 (Quelle `issue_views`; der **Index-Typwert** `issue_view` in `search_documents.entity_type` bleibt, weil er kein Tabellenname ist) |
+| `issue_comments` | `work_item_comments` | D16 |
+| `issue_activities` | `work_item_activities` | D16 §5.16 |
+| `issue_relations` | `work_item_relations` | D16 §3.3.1 |
+| `issue_votes` | `work_item_votes` | D16 §4.2 |
+| `draft_issues` | `draft_work_items` | D16 §5.1 |
+| `issue_types` | `work_item_types` | 01 §1.4, D16 §5.1 |
+| `issue_sequences` | `work_item_sequences` (Zähler) | 01 §10 |
+| `exporters` | `exports` | 01 §5.4 (Modul `Exports`) |
+| `export_histories` | `exports` | D06 §3.15 (Z. 755, 786) |
+| `recurring_jobs` (Vorfassung D03) | `recurring_job_states` (Form D06 §3.2) | – |
+| `sessions` | `user_sessions` | D05 §3.4.1 |
+| `issue_reactions`, `comment_reactions`, `issue_links`, `issue_mentions`, `issue_subscribers`, `issue_description_versions`, `issue_versions` | `work_item_reactions`, `work_item_comment_reactions`, `work_item_links`, `work_item_mentions`, `work_item_subscribers`, `work_item_description_versions`, `work_item_versions` | – |
+| `draft_issue_assignees/labels/modules/cycles` | `draft_work_item_assignees/labels/modules/cycles` | – |
+| Entitätsnamen in D05 `ID/Domain/UserSession.cs`, `ID/Domain/ApiToken.cs`, `INS/Domain/InstanceAdminMirror.cs` | `BE/data/Plane.Data/Entities/Identity/UserSession.cs`, `…/Identity/ApiToken.cs`, `…/Instance/InstanceAdminMirror.cs` (R3: Entitäten liegen in `Plane.Data`) | D05 §4.x |
+
+### 4.6 Referenztabellen für `TablesToIgnore` (D15 §3.3.2, `PlaneRespawner`)
+
+| Tabelle | Grund | Befüllt durch |
+|---|---|---|
+| `__EFMigrationsHistory` | Schema-Stand | Migrator |
+| `roles` | System-Rollen (feste IDs, von allen Mitgliedschaften referenziert) | `SystemRoleSeed` |
+| `work_item_relation_types` | Relationstyp-Katalog | `WorkItemRelationTypeSeed` |
+| `data_protection_keys` | Key-Ring; Leeren würde DP-geschützte Werte der Template-DB unlesbar machen | Data Protection |
+| `instances` | Instanz-Singleton | `InstanceBootstrapper` |
+| `instance_configurations` | Instanz-Konfiguration aus ENV (Tests überschreiben gezielt per `InstanceConfigurationOverride`) | `InstanceConfigurationSeeder` |
+| `recurring_job_states` | Cron-Registrierung des Workers | Worker-Start |
+
+**Korrektur gegenüber D15 §3.3.2:** `event_types` existiert nicht – der Event-Katalog ist reiner Code (`EventCatalog`, Snapshot-Test, 06); dafür kommen `instance_configurations` und `recurring_job_states` hinzu (Rückmeldung §9). Maschinenlesbar: `_data/03-datenmodell.json` → `reference_tables[]`.
+
+### 4.7 Abweichungskatalog des Datenmodells (`tests/contracts/deviations.yaml`)
+
+| ID | Kurzbeschreibung | Vertragswirkung | Abschnitt |
+|---|---|---|---|
+| `DEV-DM-01` | Workspace-Slug sofort nach Löschung wieder frei (partieller Unique statt Suffix `__<epoch>`) | `slug` gelöschter Workspaces nicht mehr suffigiert (nur God-Mode-Listen mit gelöschten Workspaces betroffen) | §3.4.3.1 |
+| `DEV-DM-03` | Kommentar-Feld `description` immer `null` (Spiegel entfällt) | ja (Feldwert) | §3.4.5.9 |
+| `DEV-DM-04` | höchstens ein Default-State je Projekt (DB-Regel) | Fehler 400 statt zweitem Default (Original setzt per View ohnehin nur einen) | §3.4.4.6 |
+| `DEV-DM-05` | `(project_id, sequence_id)` eindeutig | nein | §3.6 |
+| `DEV-DM-06` | Eigenschafts-Versionen werden geschrieben | ja (`…/versions/` liefert Einträge) | §3.9.2 |
+| `DEV-DM-07` | Drafts bleiben bei Löschung von State/Parent erhalten (`NULL`) | ja | §3.4.5.16 |
+| `DEV-DM-08` | höchstens eine aktive Cycle-Zuordnung je Work Item | nein (Original-View verschiebt bereits) | §3.4.6.2 |
+| `DEV-DM-09` | `page_logs` partiell eindeutig, Löschen mit Seitenfilter | nein | §3.4.10.4 |
+| `DEV-DM-10` | Page-Versionen werden geschrieben | ja | §3.9.2 |
+| `DEV-DM-11` | gelöschter Workspace sofort unzugänglich (kein Fenster bis Kaskadenende) | ja (403 statt Daten) | §3.5.2 J5 |
+| `DEV-DM-12` / `BRAND-DM-01` | Default-`instance_name` „funk.“ statt „Plane Community Edition“ (ADR-001, ADR-009B) | ja (Text; Screenshot-Maske laut ADR-009B) | §3.14.1 |
+| `BRAND-DM-02` | Demo-Seed-Bot `display_name` „funk.“ statt „Plane“ | ja (Text in Activities/Mitgliederliste) | §3.14.3 |
+| `BRAND-DM-03` | Demo-Seed: Produktname „Plane“ in Projektname, Work-Item-/Page-Titeln und -HTML durch „funk.“ ersetzt (`DemoSeedBrandingRewriter`), Links auf `docs.plane.so`/`plane.so` auf `Plane:Urls:Docs` (konfigurierbar, ADR-009B „Externe Links“) umgeschrieben bzw. entfernt | ja (Seed-Inhalt) | §3.14.3 |
+| `DEV-DM-13` | Demo-Projekt-Identifier nur ASCII; Demo-Pages mit JSON/Binary | ja (Seed-Inhalt) | §3.14.3 |
+| `DEV-DM-14` | SetNull bei Soft-Delete auf alle Zeilen | ja (archivierte/Triage-Items) | §3.5.3 |
+| `DEV-DM-15` | Hard-Delete entfernt Activities gelöschter Work Items | nein | §3.5.5 |
+| `DEV-DM-16` | Auto-Close nutzt `cancelled`-State des Projekts und setzt `completed_at` | ja | §4.3 Q5 |
+| `DEV-DM-17` | Triage-State `sequence` 65000, `is_triage = true` | ja (Feldwerte) | §3.7 |
+| `DEV-DM-18` | Draft-`completed_at` nur bei State-Wechsel | ja | §3.4.5.16 |
+| `DEV-DM-19` | unbekannter `relation_type` → 400 | ja | §3.4.5.5 |
+| `DEV-DM-20` | Legacy-Analytics-Schätzsummen aus `estimate_points` | ja | §4.3 Q23 |
+| `DEV-DM-21` | Activity „Schätzung entfernt“ | ja | §4.3 Q25 |
+| `DEV-DM-22` | `user_recent_visits.created_by_id` gesetzt | nein (Feld nicht im Vertrag) | §3.4.12.3 |
+| `DEV-DM-23` | Unique-Verletzung bei Workspace-Anlage → Original-Konfliktantwort statt 500 | ja | §4.3 A02a-#16 |
+| `DEV-DM-24` | `analytic_views.query` bleibt beim Update erhalten | nein | §4.3 A02a-#20 |
+| `DEV-DM-25` | unique `work_item_labels`, `draft_work_item_labels`, `page_labels`, `user_recent_visits`, `intake_work_items.work_item_id` | Duplikate → idempotent statt doppelt | §3.4 |
+
+### 4.8 Management-Commands mit Datenbezug → Ziel
+
+| Original (`API/db/management/commands/`) | Ziel | Status |
+|---|---|---|
+| `wait_for_db`, `wait_for_migrations` | `DatabaseReadiness`, Schema-Gate (D14 §3.15) | ersetzt |
+| `create_bucket`, `update_bucket` | `BucketInitializer` / entfällt | ersetzt / entfällt |
+| `clear_cache` | `plane-cli clear-cache` | 1:1 |
+| `create_dummy_data` | `plane-cli create-dummy-data --profile …` (`VolumeSeeder`, §3.15) | angepasst (nicht interaktiv) |
+| `fix_duplicate_sequences` | entfällt (Unique + Zähler, §3.6) | entfällt |
+| `copy_issue_comment_to_description`, `sync_issue_version`, `sync_issue_description_version`, `update_deleted_workspace_slug` | entfallen (Greenfield-Datenmigrationen) | entfällt |
+| `create_instance_admin`, `reset_password`, `activate_user` | entfallen bzw. Keycloak (ADR-008); `plane-cli users activate <email>` setzt nur `is_active` | angepasst |
+| `reactivate_workspace_member`, `create_project_member --role` | `plane-cli members reactivate|add` | 1:1 (Bug A02a-#15 behoben) |
+| `test_email` | `plane-cli mail test` | 1:1 |
+
+## 5. Code-Skelette
+
+Die Skelette legen Namen, Signaturen und Konfigurationsmuster fest; sie ergänzen D02 §5.1/§5.2 (Basistypen, `PlaneEntityConfiguration<T>`, Label-Referenzmodul) und werden nicht wiederholt.
+
+### 5.1 `PlaneDbContext` – `src/data/Plane.Data/PlaneDbContext.cs`
+
+```csharp
+namespace Plane.Data;
+
+public sealed class PlaneDbContext(DbContextOptions<PlaneDbContext> options, IWorkspaceContext tenant)
+    : DbContext(options), IDataProtectionKeyContext
+{
+    private readonly IWorkspaceContext _tenant = tenant;           // Filter workspace_tenant (D02 §3.5.4)
+
+    // DbSets nur für Wurzeln, die Handler direkt abfragen; alle übrigen Typen kommen über die Konfigurationen ins Modell.
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Workspace> Workspaces => Set<Workspace>();
+    public DbSet<Project> Projects => Set<Project>();
+    public DbSet<WorkItem> WorkItems => Set<WorkItem>();
+    public DbSet<State> States => Set<State>();
+    public DbSet<Label> Labels => Set<Label>();
+    public DbSet<Page> Pages => Set<Page>();
+    // … je Tabelle aus §3.3 genau ein DbSet (Architekturtest DbSetsMatchTableDirectory)
+    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder b)
+    {
+        b.Properties<DateTimeOffset>().HavePrecision(6);
+        b.Properties<string>().AreUnicode();
+        b.Properties<JsonObject>().HaveConversion<JsonNodeValueConverter<JsonObject>, JsonNodeComparer<JsonObject>>().HaveColumnType("jsonb");
+        b.Properties<JsonNode>().HaveConversion<JsonNodeValueConverter<JsonNode>, JsonNodeComparer<JsonNode>>().HaveColumnType("jsonb");
+        b.Properties<JsonArray>().HaveConversion<JsonNodeValueConverter<JsonArray>, JsonNodeComparer<JsonArray>>().HaveColumnType("jsonb");
+    }
+
+    protected override void OnModelCreating(ModelBuilder mb)
+    {
+        mb.HasPostgresExtension("pg_trgm").HasPostgresExtension("unaccent").HasPostgresExtension("vector");
+        mb.HasDbFunction(typeof(PlaneDbFunctions).GetMethod(nameof(PlaneDbFunctions.Unaccent))!).HasName("plane_unaccent");
+
+        mb.ApplyConfigurationsFromAssembly(typeof(PlaneDbContext).Assembly);   // Configurations/<Modul>/*
+        ScopeForeignKeyConvention.Apply(mb);                                     // D03-ADR-05 (§5.2)
+        AuditForeignKeyConvention.Apply(mb);                                     // D02 §5.1.3
+        DeleteBehaviorConvention.AssertExplicit(mb);                             // jede FK hat explizites OnDelete (§3.4)
+
+        var apply = typeof(PlaneDbContext).GetMethod(nameof(ApplyTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!;
+        foreach (var et in mb.Model.GetEntityTypes().Where(t => t.BaseType is null && typeof(IWorkspaceScoped).IsAssignableFrom(t.ClrType)))
+            apply.MakeGenericMethod(et.ClrType).Invoke(this, [mb]);
+        // soft_delete wird je Entität in PlaneEntityConfiguration<T> gesetzt (D02 §5.1.3)
+    }
+
+    // EF parametrisiert Zugriffe auf Felder des Kontexts je Query (kein Modell-Cache-Problem, D02-ADR-26: kein Pooling)
+    private void ApplyTenantFilter<T>(ModelBuilder mb) where T : class, IWorkspaceScoped
+        => mb.Entity<T>().HasQueryFilter(QueryFilterNames.WorkspaceTenant,
+               e => !_tenant.IsBound || e.WorkspaceId == _tenant.WorkspaceId);
+}
+```
+
+### 5.2 Scope-FK-Konvention – `src/data/Plane.Data/Conventions/ScopeForeignKeyConvention.cs`
+
+```csharp
+internal static class ScopeForeignKeyConvention
+{
+    public static void Apply(ModelBuilder mb)
+    {
+        mb.Entity<Project>().HasAlternateKey(p => new { p.Id, p.WorkspaceId }).HasName("ak_projects_id_workspace_id");
+
+        foreach (var et in mb.Model.GetEntityTypes().Where(t => t.BaseType is null && t.ClrType != typeof(Project)))
+        {
+            var ws = et.FindProperty("WorkspaceId"); var pr = et.FindProperty("ProjectId");
+            if (ws is null || pr is null) continue;
+            var table = et.GetTableName()!;
+            // Einzel-FK ProjectId → projects (falls von einer Konfiguration deklariert) durch die Scope-FK ersetzen
+            foreach (var single in et.FindForeignKeys(pr).Where(f => f.Properties.Count == 1).ToList())
+                et.RemoveForeignKey(single);
+            mb.Entity(et.ClrType)
+              .HasOne(typeof(Project)).WithMany()
+              .HasForeignKey("ProjectId", "WorkspaceId")
+              .HasPrincipalKey(nameof(Project.Id), nameof(Project.WorkspaceId))
+              .OnDelete(DeleteBehavior.Cascade)
+              .HasConstraintName($"fk_{table}_project_scope");
+            mb.Entity(et.ClrType)
+              .HasOne(typeof(Workspace)).WithMany()
+              .HasForeignKey("WorkspaceId").OnDelete(DeleteBehavior.Cascade)          // konfiguriert eine bereits deklarierte FK, legt keine zweite an
+              .HasConstraintName($"fk_{table}_workspaces_workspace_id");
+        }
+    }
+}
+```
+
+Hinweis: Die Konfigurationsklassen der Module deklarieren **keine** eigene FK `ProjectId → Project` mehr (Abweichung zum D02-Beispiel `LabelConfiguration`, Rückmeldung §9); ein Architekturtest prüft, dass jede Entität mit `ProjectId` genau die Scope-FK besitzt.
+
+### 5.3 JSON-Konverter – `src/data/Plane.Data/Conventions/Json/JsonNodeValueConverter.cs`
+
+```csharp
+public sealed class JsonNodeValueConverter<T>() : ValueConverter<T, string>(
+    v => v.ToJsonString(PlaneJsonStorage.Options),                          // kompakt, Schlüsselreihenfolge erhalten
+    s => (T)JsonNode.Parse(s, null, PlaneJsonStorage.DocumentOptions)!) where T : JsonNode;   // alle Argumente positional: Expression-Trees erlauben weder ausgelassene optionale (CS0854) noch benannte Argumente
+
+public sealed class JsonNodeComparer<T>() : ValueComparer<T>(
+    (a, b) => JsonNode.DeepEquals(a, b),
+    v => v == null ? 0 : v.ToJsonString(PlaneJsonStorage.Options).GetHashCode(StringComparison.Ordinal),
+    v => (T)v.DeepClone()) where T : JsonNode;
+
+public static class PlaneJsonStorage
+{
+    public static readonly JsonSerializerOptions Options = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping, WriteIndented = false };
+    public static readonly JsonDocumentOptions DocumentOptions = new() { MaxDepth = 256 };
+}
+
+// Lesemodell-Beispiel (Plane.Data/Json/LogoProps.cs)
+public sealed record LogoProps(string? InUse, LogoEmoji? Emoji, LogoIcon? Icon)
+{ [JsonExtensionData] public Dictionary<string, JsonElement>? Extra { get; init; } }
+public sealed record LogoEmoji(string? Value, string? Url);
+public sealed record LogoIcon(string? Name, string? Color, string? BackgroundColor);
+```
+
+### 5.4 Work Item – Entität und Konfiguration
+
+```csharp
+// src/data/Plane.Data/Entities/WorkItems/WorkItem.cs
+[OwnedBy("WorkItems")]
+public sealed class WorkItem : ProjectEntity, IExternallyReferenced, ISortable
+{
+    public const int NameMaxLength = 255;
+    private WorkItem() { }
+    internal WorkItem(Guid id, Guid workspaceId, Guid projectId, string name, int sequenceId, Guid? stateId, double sortOrder)
+        : base(id, workspaceId, projectId) { Name = name; SequenceId = sequenceId; StateId = stateId; SortOrder = sortOrder; }
+
+    public Guid? ParentId { get; private set; }
+    public Guid? StateId { get; internal set; }                 // nur WorkItemStateChanger (C1, Architekturtest)
+    public int? Point { get; private set; }                     // Legacy-Vertragsfeld (Original IntegerField → integer, D03-ADR-11)
+    public Guid? EstimatePointId { get; private set; }
+    public string Name { get; private set; } = "";
+    public JsonObject DescriptionJson { get; private set; } = new();
+    public string DescriptionHtml { get; private set; } = "<p></p>";
+    public string? DescriptionStripped { get; private set; }
+    public byte[]? DescriptionBinary { get; private set; }
+    public WorkItemPriority Priority { get; private set; } = WorkItemPriority.None;   // varchar(30) über EnumValueConverter (D03-ADR-14)
+    public DateOnly? StartDate { get; private set; }
+    public DateOnly? TargetDate { get; private set; }
+    public int SequenceId { get; private set; }
+    public double SortOrder { get; set; } = 65535;
+    public DateTimeOffset? CompletedAt { get; internal set; }
+    public DateOnly? ArchivedAt { get; private set; }
+    public bool IsDraft { get; private set; }
+    public string? ExternalSource { get; set; }
+    public string? ExternalId { get; set; }
+    public Guid? TypeId { get; private set; }                   // A1 (CE: immer null)
+
+    public void SetDescription(string sanitizedHtml, JsonObject? json, byte[]? binary)
+    { DescriptionHtml = sanitizedHtml; DescriptionStripped = HtmlText.StripTags(sanitizedHtml); if (json is not null) DescriptionJson = json; if (binary is not null) DescriptionBinary = binary; }
+}
+
+// src/data/Plane.Data/Configurations/WorkItems/WorkItemConfiguration.cs
+internal sealed class WorkItemConfiguration : PlaneEntityConfiguration<WorkItem>
+{
+    protected override void ConfigureEntity(EntityTypeBuilder<WorkItem> b)
+    {
+        b.ToTable("work_items", t =>
+        {
+            t.HasCheckConstraint("ck_work_items_priority", "priority IN ('urgent','high','medium','low','none')");
+            t.HasCheckConstraint("ck_work_items_point", "point IS NULL OR point BETWEEN 0 AND 12");
+            t.HasCheckConstraint("ck_work_items_sequence_id", "sequence_id >= 1");
+            t.HasCheckConstraint("ck_work_items_not_own_parent", "parent_id IS NULL OR parent_id <> id");
+            t.HasCheckConstraint("ck_work_items_description_binary_size", "description_binary IS NULL OR octet_length(description_binary) <= 10485760");
+        });
+        b.Property(x => x.Name).HasMaxLength(WorkItem.NameMaxLength).IsRequired();
+        b.Property(x => x.DescriptionJson).HasDefaultValueSql("'{}'::jsonb");
+        b.Property(x => x.DescriptionHtml).HasDefaultValue("<p></p>");
+        b.Property(x => x.Priority).HasConversion<EnumValueConverter<WorkItemPriority>>().HasMaxLength(30).HasDefaultValue(WorkItemPriority.None);
+        b.Property(x => x.SequenceId).HasDefaultValue(1);
+        b.Property(x => x.SortOrder).HasDefaultValue(65535d);
+        b.Property(x => x.ExternalSource).HasMaxLength(255);
+        b.Property(x => x.ExternalId).HasMaxLength(255);
+
+        b.HasOne<WorkItem>().WithMany().HasForeignKey(x => x.ParentId).OnDelete(DeleteBehavior.Cascade);
+        b.HasOne<State>().WithMany().HasForeignKey(x => x.StateId).OnDelete(DeleteBehavior.Cascade);
+        b.HasOne<EstimatePoint>().WithMany().HasForeignKey(x => x.EstimatePointId).OnDelete(DeleteBehavior.SetNull);
+        b.HasOne<WorkItemType>().WithMany().HasForeignKey(x => x.TypeId).OnDelete(DeleteBehavior.SetNull);
+
+        b.HasIndex(x => new { x.ProjectId, x.SequenceId }).IsUnique().HasDatabaseName("ux_work_items_project_sequence_id");
+        b.HasIndex(x => new { x.ProjectId, x.StateId }).HasFilter("deleted_at IS NULL").HasDatabaseName("ix_work_items_project_state");
+        b.HasIndex(x => new { x.ProjectId, x.CreatedAt }).IsDescending(false, true).HasFilter("deleted_at IS NULL").HasDatabaseName("ix_work_items_project_created_at");
+        b.HasIndex(x => new { x.WorkspaceId, x.UpdatedAt }).HasDatabaseName("ix_work_items_workspace_updated_at");
+        b.HasIndex(x => x.ParentId).HasFilter("parent_id IS NOT NULL").HasDatabaseName("ix_work_items_parent_id");
+        b.HasIndex(x => x.TypeId).HasFilter("type_id IS NOT NULL").HasDatabaseName("ix_work_items_type_id");
+        b.HasIndex(x => new { x.ProjectId, x.ExternalSource, x.ExternalId }).HasDatabaseName("ix_work_items_project_external");
+        b.HasTrigramIndex(x => x.Name, "ix_work_items_name_trgm");
+    }
+}
+```
+
+### 5.5 Sequenz-Allokator – `src/data/Plane.Data/Sequences/PostgresSequenceAllocator.cs`
+
+```csharp
+public interface ISequenceAllocator          // Plane.BuildingBlocks.Persistence/Sequences (01 §7.6)
+{
+    ValueTask<int> NextAsync(Guid projectId, CancellationToken ct);
+    ValueTask<(int First, int Last)> AllocateRangeAsync(Guid projectId, int count, CancellationToken ct);
+}
+
+internal sealed class PostgresSequenceAllocator(PlaneDbContext db, IClock clock) : ISequenceAllocator
+{
+    public async ValueTask<int> NextAsync(Guid projectId, CancellationToken ct) => (await AllocateRangeAsync(projectId, 1, ct)).Last;
+
+    public async ValueTask<(int First, int Last)> AllocateRangeAsync(Guid projectId, int count, CancellationToken ct)
+    {
+        if (db.Database.CurrentTransaction is null)
+            throw new InvalidOperationException("SequenceAllocator requires the command transaction (TransactionBehavior).");
+        // Nicht komponierbares SQL (INSERT … RETURNING): KEIN Single/First direkt auf SqlQuery – EF würde es als
+        // Subquery einbetten ("SELECT … FROM (INSERT …)"), was PostgreSQL ablehnt (RelationalStrings.FromSqlNonComposable).
+        var rows = await db.Database.SqlQuery<long>($"""
+            INSERT INTO work_item_sequences (project_id, last_value, updated_at)
+            VALUES ({projectId}, {(long)count}, {clock.UtcNow})
+            ON CONFLICT (project_id) DO UPDATE
+               SET last_value = work_item_sequences.last_value + {(long)count}, updated_at = EXCLUDED.updated_at
+            RETURNING last_value AS "Value"
+            """).ToListAsync(ct);
+        var last = rows.Single();
+        return (checked((int)(last - count + 1)), checked((int)last));
+    }
+}
+```
+
+### 5.6 Such-Tabelle und Trigram-Erweiterung
+
+```csharp
+// src/data/Plane.Data/Configurations/Search/SearchDocumentConfiguration.cs  (Form D11 §3.10.1/§5.6)
+internal sealed class SearchDocumentConfiguration : IEntityTypeConfiguration<SearchDocument>
+{
+    public void Configure(EntityTypeBuilder<SearchDocument> b)
+    {
+        b.ToTable("search_documents");
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Id).ValueGeneratedNever();
+        b.Property(x => x.EntityType).HasMaxLength(32);
+        b.Property(x => x.Identifier).HasMaxLength(64);
+        b.Property(x => x.Facets).HasDefaultValueSql("'{}'::jsonb");
+        b.Property(x => x.SearchVector)
+         .HasColumnType("tsvector")
+         .HasComputedColumnSql("setweight(to_tsvector('simple', plane_unaccent(coalesce(identifier, '') || ' ' || title)), 'A') || " +
+                               "setweight(to_tsvector('simple', plane_unaccent(coalesce(body, ''))), 'B')", stored: true);
+        b.HasIndex(x => new { x.EntityType, x.EntityId }).IsUnique().HasDatabaseName("uq_search_documents_entity");
+        b.HasIndex(x => x.SearchVector).HasMethod("gin").HasDatabaseName("ix_search_documents_search_vector");
+        b.HasTrigramIndex(x => x.Title, "ix_search_documents_title_trgm");
+        b.HasIndex(x => new { x.WorkspaceId, x.EntityType }).HasDatabaseName("ix_search_documents_workspace");
+        b.HasIndex(x => x.ProjectId).HasFilter("project_id IS NOT NULL").HasDatabaseName("ix_search_documents_project");
+        b.HasIndex(x => x.Facets).HasMethod("gin").HasOperators("jsonb_path_ops").HasDatabaseName("ix_search_documents_facets");
+        b.HasOne<Workspace>().WithMany().HasForeignKey(x => x.WorkspaceId).OnDelete(DeleteBehavior.Cascade);
+        // ProjectId → projects: Scope-FK über ScopeForeignKeyConvention (§5.2), keine eigene Deklaration
+    }
+}
+
+// src/data/Plane.Data/Conventions/TrigramIndexExtensions.cs
+public static class TrigramIndexExtensions
+{
+    public static IndexBuilder<T> HasTrigramIndex<T>(this EntityTypeBuilder<T> b, Expression<Func<T, object?>> column, string name) where T : class
+        => b.HasIndex(column).HasMethod("gin").HasOperators("gin_trgm_ops").HasDatabaseName(name);
+}
+```
+
+### 5.7 Migration für Extensions und Funktion (I0)
+
+```csharp
+// src/data/Plane.Data/Migrations/202611020900_Platform_Extensions.cs (Name nach 01 §7.14)
+public partial class Platform_Extensions : Migration
+{
+    protected override void Up(MigrationBuilder m)
+    {
+        m.AlterDatabase().Annotation("Npgsql:PostgresExtension:pg_trgm", ",,").Annotation("Npgsql:PostgresExtension:unaccent", ",,")
+                         .Annotation("Npgsql:PostgresExtension:vector", ",,");      // vom Snapshot erzeugt (HasPostgresExtension)
+        m.Sql("""
+            CREATE OR REPLACE FUNCTION plane_unaccent(text) RETURNS text
+              LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT
+              AS $$ SELECT public.unaccent('public.unaccent'::regdictionary, $1) $$;
+            """);
+    }
+    protected override void Down(MigrationBuilder m) => m.Sql("DROP FUNCTION IF EXISTS plane_unaccent(text);");
+}
+
+// Contract-Kennzeichnung (D03-ADR-22)
+[AttributeUsage(AttributeTargets.Class)]
+public sealed class ContractPhaseAttribute(string sinceVersion) : Attribute { public string SinceVersion { get; } = sinceVersion; }
+```
+
+### 5.8 Referenz-Seeds – `src/data/Plane.Data/Seeds/`
+
+```csharp
+public interface IReferenceSeed { int Order { get; } ValueTask ApplyAsync(PlaneDbContext db, IClock clock, CancellationToken ct); }
+
+internal sealed class SystemRoleSeed : IReferenceSeed
+{
+    public int Order => 100;
+    public async ValueTask ApplyAsync(PlaneDbContext db, IClock clock, CancellationToken ct)
+    {
+        foreach (var r in SystemRoles.All)          // 6 Einträge, feste UUIDv7 (D05 §3.13.3)
+            await db.Database.ExecuteSqlAsync($"""
+                INSERT INTO roles (id, workspace_id, namespace, slug, name, level, is_system, sort_order, created_at, updated_at)
+                VALUES ({r.Id}, NULL, {r.Namespace.ToDbValue()}, {r.Slug}, {r.Name}, {(short)r.Level}, TRUE, {r.SortOrder}, {clock.UtcNow}, {clock.UtcNow})   -- Enum als String bzw. smallint übergeben (Raw-SQL kennt keine Converter)
+                ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, level = EXCLUDED.level, is_system = TRUE
+                """, ct);
+    }
+}
+
+internal sealed class WorkItemRelationTypeSeed : IReferenceSeed   // Werte D16 §5.3 / §3.14.1
+{
+    public int Order => 200;
+    public ValueTask ApplyAsync(PlaneDbContext db, IClock clock, CancellationToken ct) => /* Upsert der 10 Zeilen in einer Transaktion (deferrable FK) */ ValueTask.CompletedTask;
+}
+
+public static class BaseSeeds   // genutzt von Migrator (SeedRunner) und Tests (D15 §5.1: BaseSeeds.ApplyAsync)
+{
+    public static async Task ApplyAsync(PlaneDbContext db, IClock clock, CancellationToken ct)
+    {
+        foreach (var seed in ReferenceSeedCatalog.All.OrderBy(s => s.Order)) await seed.ApplyAsync(db, clock, ct);
+    }
+}
+```
+
+### 5.9 Lösch-Konvention und Registry-Prüfung (Test)
+
+```csharp
+// tests/Plane.ArchitectureTests/DataModel/SoftDeleteCascadeCoverageTests.cs
+[Fact]
+public void Every_cascading_fk_to_soft_deletable_principal_is_registered()
+{
+    var model = TestModel.Create();                                   // PlaneDbContext-Modell ohne Datenbank
+    var registry = SoftDeleteCascadeRegistry.BuildFromModules(ModuleCatalog.All);
+    var missing = model.GetEntityTypes()
+        .SelectMany(e => e.GetForeignKeys())
+        .Where(fk => fk.DeleteBehavior is DeleteBehavior.Cascade or DeleteBehavior.SetNull or DeleteBehavior.ClientSetNull)
+        .Where(fk => typeof(ISoftDeletable).IsAssignableFrom(fk.PrincipalEntityType.ClrType))
+        .Where(fk => !fk.IsScopeForeignKey())                          // Workspace/Projekt: Deferred-Wurzeln
+        .Where(fk => !registry.Covers(fk))
+        .Select(fk => $"{fk.DeclaringEntityType.GetTableName()}.{string.Join(",", fk.Properties.Select(p => p.GetColumnName()))}")
+        .ToList();
+    missing.ShouldBeEmpty();
+}
+```
+
+## 6. Erweiterungspunkte für Bezahl-Pakete
+
+**Kein Fachdesign.** Die folgende Tabelle nennt nur die Stellen **im Datenmodell**, an denen die 🧱-Pakete aus `features/30-paid-auswahlliste.md` später andocken, und was die CE dafür anlegt. Fachliche Spalten, Regeln und APIs plant die jeweilige Welle (D16 §6). Klassen P/V/R/S nach D16 §1.5. Pakete erweitern das Schema **nur additiv** (D16-ADR-06): neue Tabellen in `BE/data/Plane.Data/Entities/<Paket>/`, neue nullable Spalten, neue Indizes; Migrationen `W<n>_<Paket>_<Beschreibung>`; nie Umbenennung oder Typänderung einer CE-Spalte.
+
+### 6.1 Andockstellen je 🧱-Paket
+
+| Paket (Welle) | Andockstelle im Datenmodell (CE) | Kl. | CE-Inhalt / -Default | Wie das Paket später andockt (nur Anker, kein Design) | ab |
+|---|---|---|---|---|---|
+| **A1** Work-Item-Types & Custom Properties (W2) | `work_items.type_id`, `draft_work_items.type_id` (nullable FK `work_item_types` ON DELETE SET NULL, partieller Index); Tabelle `work_item_types` mit Minimal-Schema (`id`, `workspace_id`, `project_id` NULL, `name`, `is_default`, Audit, `[OwnedBy("Properties")]`) | P | Tabelle leer, `type_id` immer `NULL`; `projects.is_issue_type_enabled` = `false` (V) | additive Spalten an `work_item_types` (`description`, `logo_props`, `is_epic`, `is_active`, `level`, `external_*`); neue Tabellen `project_work_item_types`, `work_item_properties`, `work_item_property_options`, **`work_item_property_values`** (Anker: FK `work_item_id → work_items` ON DELETE CASCADE + Soft-Delete-Registry-Eintrag `WorkItem → WorkItemPropertyValue`, Scope-FK automatisch über `ScopeForeignKeyConvention`); Filter/Gruppierung über Registries (D02 §6) | I2 |
+| **A2** Workspace-Types, Hierarchie, Roll-ups (W6) | `work_item_types.project_id` nullable (keine Projektpflicht); `IScopedCatalogEntry` an `WorkItemType` | P | – | neue Tabellen `work_item_type_hierarchy_rules`, `workspace_work_item_type_links`, `property_rollups`, `property_contexts` mit `ScopeRef`-Spalten (`workspace_id` + optional `teamspace_id`/`project_id`) | I2 |
+| **A9** Relationen & Abhängigkeiten (W2) | Katalog `work_item_relation_types` (PK `key`, `reverse_key`, `workspace_id` NULL = System, `is_system`, `category`); `work_item_relations.relation_type` = FK auf `key`; Relationen projektübergreifend zulässig (kein Check auf gleiches Projekt, nur gleicher Workspace über `IWorkItemHierarchyPolicy`) | P | 10 System-Typen (§3.14.1) | workspace-eigene Typen als neue Zeilen (`is_system = false`); bei Namenskollisionen PK-Erweiterung per Expand/Contract (Surrogat-ID) – Entscheidung im W2-Fachdesign | I2 |
+| **A17** Workspace-Governance States/Labels (W6) | `labels.project_id` nullable (V, Original), Unique `(workspace_id, name) WHERE project_id IS NULL` (DEV-LBL-04); `states.project_id` NOT NULL (CE) | P/V | keine Workspace-Labels/-States in der CE | W6 lockert `states.project_id` per Expand-Migration (nullable) und ergänzt partiellen Unique `(workspace_id, name) WHERE project_id IS NULL`; Leser nutzen ausschließlich `IStateCatalog`/`ILabelCatalog` | I1 |
+| **B1** Teamspaces (W5) | `teamspace_id uuid NULL` **ohne FK** + partieller Index an `views`, `pages`, `work_item_comments`, `user_favorites` (01 §1.4); `roles.namespace` akzeptiert `teamspace` (Check); `ScopeLevel.Teamspace` | P | Spalten immer `NULL` | neue Tabellen `teamspaces`, `teamspace_members`, `teamspace_projects`, `teamspace_updates`; danach additive Migration `ALTER TABLE … ADD CONSTRAINT fk_<t>_teamspaces_teamspace_id FOREIGN KEY (teamspace_id) REFERENCES teamspaces(id) ON DELETE SET NULL` (NOT VALID + `VALIDATE CONSTRAINT`, weil alle Werte `NULL`) | I1 |
+| **B6** Erweiterte Filter/PQL (W5) | `search_documents` (`tsvector`, `plane_unaccent`, Trigram auf `title`); Trigram-Indizes der Suchfelder (§3.10) | P | Index wird ab I5 befüllt | PQL nutzt denselben Filter-AST; zusätzliche Indizes (z. B. auf JSON-Pfade von Property-Werten) additiv mit `IsCreatedConcurrently()` | I5 |
+| **C1** Workflows (nicht gewählt) | `work_items.state_id` wird nur über `IWorkItemStateChanger` geschrieben (Architekturtest); `project_feature_settings` (Schalter `is_workflow_enabled`) | P | Guard erlaubt alles | Workflow-Tabellen additiv; keine CE-Spalte nötig | I2 |
+| **C3** Automation-Engine (nicht gewählt) | `outbox_messages` mit Kontextspalten (`actor_id`, `actor_kind`, `origin`, `workspace_id`, `project_id`, `correlation_id`, `causation_depth`, ABG-053), `inbox_messages (consumer, message_id)`, `jobs` (`dedupe_key`, `run_at`), `recurring_job_states` | P | CE-Consumer und CE-Jobs | Automationen konsumieren Events (eigene Consumer-Namen in `inbox_messages`), planen Jobs über `jobs`; Automations-Definitionen in eigenen Tabellen | I0 |
+| **D1** Wiki & Collections (W3) | `pages` **ohne** `project_id`; Projektbezug ausschließlich über `project_pages` (PK-Struktur wie Original); `pages.is_global` (V); `teamspace_id` (B1) | P/V | nur Projekt-Pages (genau eine `project_pages`-Zeile) | Workspace-Pages = Pages ohne `project_pages`-Zeile; neue Tabellen `collections`, `collection_pages`, `collection_members`; `workspace_feature_settings` (Schalter `wiki`) | I4 |
+| **D2** Nested Pages (W3) | `pages.parent_id` (nullable FK `pages` ON DELETE CASCADE, Check gegen Selbstreferenz, partieller Index), `moved_to_page`, `moved_to_project` (ohne FK), `page_versions.sub_pages_data` (`jsonb`, Default `{}`); Registry-Eintrag `Page → Page (parent_id)` als **Deferred** vorbereitet | P/V | `parent_id` immer `NULL` | Hierarchie-Abfragen per rekursivem CTE (`WITH RECURSIVE` über `parent_id`) hinter `IPageHierarchyQueries`; bei Bedarf additiver Index `(workspace_id, parent_id)` | I4 |
+| **E3** IdP Group Sync (W4) | `user_identities (issuer, subject)` als feste Zuordnung; Mitgliedschaften mit `role_id` | P | JIT + Einladungen | neue Tabelle `idp_group_mappings` (Name D05 §6.2); optional additive Spalte `membership_source` an `workspace_members`/`project_members` (D05 `MembershipSource`) | I0 |
+| **E5** Rollenmodell (W4) | `roles` (System-Seeds 20/15/5, `workspace_id` NULL = System, `namespace`), `role_permissions (role_id, permission_key)` leer, `workspace_members.role_id`/`project_members.role_id`/`*_member_invites.role_id` (FK RESTRICT), denormalisiertes `role` | P | 6 System-Rollen; Grants aus Code | Custom Roles = Zeilen mit `workspace_id` und `is_system = false` + `role_permissions`-Zeilen; keine Schemaänderung nötig | I0 |
+| **F1** Integrations-Framework (W1) | `integration_connections` (I0), `external_links` (I2) leer; `work_items.external_source/external_id` (V) | P | leer | W1 ergänzt `integration_secrets`, `user_integration_connections`, `integration_entity_mappings`, `integration_webhook_deliveries`, `integration_sync_runs` (Form D16 §3.4.2) | I0/I2 |
+| **F2** Forgejo (W1) | `users.is_bot`/`bot_type` (Bot je Verbindung, `bot_type = 'integration'`), `work_item_activities.field` reserviert `forgejo_branch`/`forgejo_commit`/`forgejo_pull_request` | P/V | – | nutzt F1-Tabellen; `external_source = 'forgejo'`, `external_id = '<connection_id>:<repo_id>#<index>'` an Work Items/Labels/States/Kommentaren (D16 §3.4.2) | I0 |
+| **G1** AI-Basis (nicht gewählt) | Extension `vector` ab I0 aktiv; `search_documents` als Indexierungsquelle (I5); **keine** Vektor-Spalte in der CE | P | Null-Embeddings | neue Tabelle `search_embeddings` – Schema **reserviert und festgelegt in D11 §6.2** (Anker: `search_document_id uuid NOT NULL REFERENCES search_documents(id) ON DELETE CASCADE`, dimensionslose Spalte `embedding vector`, `model_key`, `dimensions`, je Modell partieller Ausdrucks-HNSW-Index `((embedding::vector(n)) vector_cosine_ops) WHERE model_key = …`, D11-ADR-07); deshalb hat `search_documents` einen Surrogat-PK `id` | I0/I5 |
+| **H1** OAuth-App-Plattform (W1) | `users.is_bot`, `bot_type` (V); `api_tokens.user_type` (Bot, V); `outbox_messages.actor_kind` kennt `App`/`Bot` | P/V | – | neue Tabellen `apps`, `app_installations`, `app_bot_users`; Bot-Benutzer sind normale `users`-Zeilen | I0 |
+| **H6** Realtime-Event-Server (W1) | Outbox als Quelle (`outbox_messages` mit `workspace_id`/`project_id` für Gruppen-Routing) | P | `RealtimeFanOutConsumer` ohne Abnehmer bis I5 | keine eigenen Tabellen nötig | I0 |
+
+### 6.2 Reservierte Tabellennamen (Klasse R)
+
+Damit CE-Migrationen nie mit späteren Paket-Tabellen kollidieren, sind folgende Namen reserviert (Liste `tests/Plane.ArchitectureTests/DataModel/reserved-tables.yaml`, Test `ReservedTableNamesTests` – keine CE-Tabelle darf so heißen; Pakete müssen einen dieser Namen oder einen Namen mit eigenem Präfix nutzen):
+
+`project_work_item_types`, `work_item_properties`, `work_item_property_options`, `work_item_property_values`, `work_item_type_hierarchy_rules`, `workspace_work_item_type_links`, `property_rollups`, `property_contexts`, `teamspaces`, `teamspace_members`, `teamspace_projects`, `teamspace_updates`, `collections`, `collection_pages`, `collection_members`, `page_shares`, `page_subscribers`, `view_shares`, `idp_group_mappings`, `audit_log_entries`, `apps`, `app_installations`, `app_bot_users`, `integration_secrets`, `user_integration_connections`, `integration_entity_mappings`, `integration_webhook_deliveries`, `integration_sync_runs`, `milestones`, `milestone_work_items`, `worklogs`, `timesheet_approvals`, `module_assignment_rules`, `project_states`, `project_labels`, `project_updates`, `project_join_requests`, `intake_forms`, `intake_email_addresses`, `search_embeddings` (Quellen: D16 §3.3, §3.4.2, D05 §6.2).
+
+### 6.3 Mechanik, die Paket-Tabellen automatisch erhalten
+
+| Mechanik | Wirkung auf neue Paket-Entitäten | Pflicht für das Paket |
+|---|---|---|
+| `PlaneEntityConfiguration<T>` + `AuditForeignKeyConvention` | Audit-FKs, Präzision, `soft_delete`-Filter | Basisklasse A/W/P verwenden |
+| `ScopeForeignKeyConvention` | Scope-FK bei `WorkspaceId` + `ProjectId` | – |
+| Filter `workspace_tenant` | bei `IWorkspaceScoped` | `IWorkspaceScoped` implementieren |
+| `OwnershipGuardInterceptor` | Schreibschutz durch fremde Module | `[OwnedBy("<Paketmodul>")]` |
+| `SoftDeleteCascadeRegistry` + Coverage-Test | Kaskaden von CE-Wurzeln auf Paket-Tabellen | Einträge im Paketmodul registrieren (CE-Datei bleibt unverändert) |
+| `PlaneRespawner` | neue Tabellen werden in Tests geleert | Referenztabellen des Pakets in `TablesToIgnore` des Paket-Testprojekts ergänzen |
+| `ReservedTableNamesTests`, `MigrationsAreExpandOnly` | Kollisions- und Additivitätsprüfung | Migrationen `W<n>_…` nur additiv |
+
+## 7. Akzeptanzkriterien & Tests
+
+### 7.1 Akzeptanzkriterien (messbar)
+
+| ID | Kriterium | Messung | Inkrement |
+|---|---|---|---|
+| AK-03-01 | Jede Tabelle aus §3.3, die zum laufenden Inkrement gehört, existiert nach `MigrateAsync()` auf leerer PostgreSQL-17-Datenbank mit genau den Spalten, Typen, Null-Fähigkeiten und Defaults aus §3.4 | `SchemaConformanceTests`: liest `information_schema.columns` und vergleicht mit `_data/03-datenmodell.json` (generiert aus diesem Dokument) | I0 ff. |
+| AK-03-02 | Alle Unique-, partiellen und Trigram-Indizes und Check-Constraints aus §3.4 existieren mit den angegebenen Namen | `pg_indexes`/`pg_constraint`-Abgleich in `SchemaConformanceTests` | I0 ff. |
+| AK-03-03 | `dotnet ef migrations has-pending-model-changes` ist leer; Migrationen sind auf leerer DB und wiederholt (No-op) anwendbar | CI-Gate + `Plane.Migrator.Tests/MigrationIdempotencyTests` | I0 |
+| AK-03-04 | Kein Schreibzugriff eines Moduls auf fremde Entitäten außer deklarierten Kaskaden | `OwnershipGuardInterceptor` in allen Integrationstests aktiv (R3) | I0 |
+| AK-03-05 | 100 parallele Work-Item-Anlagen in einem Projekt erzeugen `sequence_id` 1…100 ohne Lücke/Duplikat; Rollback verbraucht keine Nummer | `SequenceAllocatorConcurrencyTests` | I2 |
+| AK-03-06 | Jede FK mit `CASCADE`/`SET NULL` auf eine soft-löschbare Entität ist in der Registry oder als `NoSoftCascade` vermerkt; die Kaskaden aus §3.5.4 wirken (je Wurzel ein Test) | `SoftDeleteCascadeCoverageTests`, `SoftDeleteCascadeBehaviourTests` | I0–I6 |
+| AK-03-07 | Zugriff mit fremdem Workspace liefert nie Daten; Scope-FK verhindert `project_id` aus anderem Workspace (Insert per Raw-SQL schlägt mit `23503` fehl) | `TenantIsolationTests` je Modul, `ScopeForeignKeyTests` | I0 |
+| AK-03-08 | Jede `IgnoreQueryFilters([SoftDelete])`-Stelle steht in §3.5.2/`soft-delete-bypass.yaml` | `SoftDeleteBypassIsDocumented` | I2 |
+| AK-03-09 | Alle Felder der `FloatField`-Liste (§4.4) werden mit Dezimalteil serialisiert | `FloatFieldOutputTests` (Property-Test über DTOs) | I1 |
+| AK-03-10 | `JsonDefaults` stimmen mit den Original-Funktionen überein; unbekannte JSON-Schlüssel überleben Lesen + Schreiben | `JsonDefaultsSnapshotTests`, `JsonPassthroughTests` | I0 |
+| AK-03-11 | Referenz-Seeds sind idempotent; nach `BaseSeeds` existieren 6 System-Rollen mit den festen IDs und 10 Relationstypen | `SeedRunnerTests` | I0/I2 |
+| AK-03-12 | Projektanlage erzeugt exakt die 6 Default-States mit Original-Werten; Triage-Invariante (genau ein Triage-State) gilt nach allen Intake-Pfaden | `DefaultStatesTests`, `TriageInvariantTests` | I0/I3 |
+| AK-03-13 | Demo-Workspace-Seed erzeugt die Inhalte aus `API/seeds/data` (1 Projekt, 5+1 States, 2 Labels, 2 Cycles, 3 Module, 7 Work Items, 1 View, 2 Pages) ohne externe URL | `WorkspaceDemoSeedTests` (Golden-Vergleich mit Original-Seed, IDs maskiert) + Egress-Sperre | I1–I4 |
+| AK-03-14 | Migrationen enthalten keine Drop/Rename/Typänderung ohne `[ContractPhase]` | `MigrationsAreExpandOnly` | I0 |
+| AK-03-15 | Hard-Delete-Job entfernt soft-gelöschte Zeilen älter als `HardDeleteDays` inklusive Work Items mit Activities ohne Fehler | `HardDeleteJobTests` (Q3-Szenario) | I2 |
+| AK-03-16 | Trigram-Indizes werden von den Suchabfragen genutzt (`EXPLAIN` zeigt `Bitmap Index Scan on ix_*_trgm` bei 10 000 Zeilen) | `SearchIndexUsageTests` (Profil `volume-S`) | I2/I5 |
+| AK-03-17 | `VolumeSeeder volume-M` läuft unter 5 min und ist deterministisch | `VolumeSeederDeterminismTests`, CI-Messung | I2 |
+| AK-03-18 | Keine CE-Tabelle trägt einen reservierten Namen (§6.2); jede 🧱-Andockstelle aus §6.1 existiert im Modell | `ReservedTableNamesTests`, `ExtensionAnchorSchemaTests` (Eintrag in `tests/extension-points.yaml`, D15 EP) | I0–I5 |
+| AK-03-19 | `pgvector` (`vector`-Extension, `Pgvector.EntityFrameworkCore` mit EF 10) lässt sich laden, eine Testspalte anlegen und eine `CosineDistance`-Abfrage übersetzen | `PgvectorSmokeTests` (Spike S0, D15) | I0 |
+| AK-03-20 | Instanz-, Konfigurations- und Rollen-Tabellen bleiben beim Respawn gefüllt; alle anderen werden geleert | `PlaneRespawnerTests` | I0 |
+| AK-03-21 | Für jede Property mit konstantem DB-Default ist `ValueGenerated = Never` und der CLR-Initialisierer gleich dem Literal; ein Insert mit dem CLR-Default-Wert eines Enums (z. B. `IntakeStatus.Snoozed = 0`) speichert genau diesen Wert | `ClrDefaultsMatchDbDefaultsTests` (Modell-Scan) + `IntakeStatusInsertTests` | I0/I3 |
+| AK-03-22 | Kein Spaltenpaar `NOT NULL` + `ON DELETE SET NULL` im Modell | `DeleteBehaviorIsExplicit` (Modell-Scan: `fk.DeleteBehavior == SetNull` ⇒ alle FK-Properties nullable) | I0 |
+| AK-03-23 | Demo-Workspace-Seed und System-Bot enthalten in keiner Textspalte den Produktnamen „Plane“ (ADR-009B); `display_name` des Seed-Bots und Default-`instance_name` = „funk.“ | `WorkspaceDemoSeedTests.NoPlaneBranding`, `SeedRunnerTests.InstanceName` | I0/I1 |
+
+### 7.2 Testinventar (Ablage und Verantwortung)
+
+| Testklasse | Projekt | Inhalt |
+|---|---|---|
+| `SchemaConformanceTests` | `tests/Plane.Migrator.Tests/` | AK-03-01/-02 gegen `_data/03-datenmodell.json` |
+| `MigrationIdempotencyTests`, `ModelDriftTests`, `InitialMigrationAppliesOnEmptyDatabase` | `tests/Plane.Migrator.Tests/` | AK-03-03 |
+| `MigrationsAreExpandOnly`, `SoftDeleteCascadeCoverageTests`, `SoftDeleteBypassIsDocumented`, `ReservedTableNamesTests`, `DbSetsMatchTableDirectory`, `DeleteBehaviorIsExplicit` | `tests/Plane.ArchitectureTests/DataModel/` | Modellregeln |
+| `SequenceAllocatorConcurrencyTests`, `ScopeForeignKeyTests`, `JsonPassthroughTests`, `JsonDefaultsSnapshotTests`, `FloatFieldOutputTests` | `tests/Plane.BuildingBlocks.Tests/Persistence/` | Querschnitt |
+| `SoftDeleteCascadeBehaviourTests` | je Modul `tests/modules/Plane.<M>.Tests/Integration/SoftDelete/` | je Wurzel aus §3.5.4 |
+| `TenantIsolationTests` | je Modul | 01 §7.9 |
+| `SeedRunnerTests`, `DefaultStatesTests`, `WorkspaceDemoSeedTests` | `tests/Plane.Migrator.Tests/`, `tests/modules/Plane.Projects.Tests/`, `tests/modules/Plane.Workspaces.Tests/` | Seeds |
+| `HardDeleteJobTests` | `tests/Plane.Worker.Tests/` | Aufbewahrung |
+| `SearchIndexUsageTests` | `tests/modules/Plane.Search.Tests/` | Indexnutzung |
+| `VolumeSeederDeterminismTests` | `tests/Plane.BuildingBlocks.Testing.Tests/` | Generator |
+| `PgvectorSmokeTests`, `PlaneRespawnerTests` | `tests/Plane.BuildingBlocks.Testing.Tests/` | S0, Respawn |
+| `ClrDefaultsMatchDbDefaultsTests` | `tests/Plane.ArchitectureTests/DataModel/` | AK-03-21 |
+| `IntakeStatusInsertTests` | `tests/modules/Plane.Intake.Tests/` | AK-03-21 |
+
+Alle Integrationstests laufen gegen PostgreSQL 17 mit `pgvector`-Image (Testcontainers bzw. `Aspire.Hosting.Testing`, D15 §5.1) – **nie** gegen SQLite/In-Memory, weil partielle Indizes, `tsvector`, `jsonb`, Arrays und Zeilensperren Teil des Vertrags sind.
+
+---
+
+## 8. Risiken & offene Punkte
+
+### 8.1 Risiken
+
+| ID | Risiko | Eintritt / Wirkung | Gegenmaßnahme |
+|---|---|---|---|
+| R-D03-01 | `Pgvector.EntityFrameworkCore` 0.3.0 (NuGet, veröffentlicht 21.12.2025, Build `net8.0`) deklariert `Npgsql.EntityFrameworkCore.PostgreSQL` **≥ 9.0.1 ohne Obergrenze** und lässt sich damit mit 10.0.x installieren; das CHANGELOG nennt „Improved type registration; dropped support for Npgsql.EFCore < 9“, aber **keine** ausdrückliche EF-10-Freigabe (geprüft 23.10.2026: NuGet-Registrierung, `pgvector-dotnet/CHANGELOG.md`) | mittel / niedrig (CE nutzt keine Vektor-Spalte) | `PgvectorSmokeTests` in S0 (01 ADR-025); Fallback: `HasColumnType("vector")` + `FromSql`, `UseVector()` entfernen |
+| R-D03-02 | Scope-FK (composite) mit überlappender Spalte `workspace_id` erzeugt EF-Warnungen oder unerwartete Fix-up-Effekte bei optionalem `project_id` | niedrig / mittel | Spike in I0 mit Label (W) und State (P); Fallback: Scope-FK nur als Raw-SQL-Constraint (`migrationBuilder.Sql`), Modell behält Einzel-FK |
+| R-D03-03 | Inline-Kaskaden per `ExecuteUpdate` sind bei großen Wurzeln langsam (z. B. Label mit 50 000 Zuordnungen) | niedrig / mittel | Messung mit `volume-L`; bei > 2 s Umstellung des Eintrags auf `Deferred` (Registry-Änderung, kein Schema) |
+| R-D03-04 | Trigram-GIN-Indizes verlangsamen Schreiblast auf `work_items.name` | niedrig / niedrig | `fastupdate` (Default an); Messung LT-*; Index kann ohne Vertragswirkung entfallen |
+| R-D03-05 | `JsonObject`-Spalten ohne `ToJson`-Mapping sind in LINQ nicht abfragbar | mittel / niedrig | Abfragen in JSON nur über benannte SQL-Bausteine; bisher kein CE-Bedarf (Original filtert nicht in JSON) |
+| R-D03-06 | `plane_unaccent` muss in externen Datenbanken angelegt werden dürfen (Funktion + Extension) | mittel / mittel | Migrator meldet fehlende Rechte klar (D14 §3.15 Schritt 3); Betreiberdoku liefert SQL-Vorlage |
+| R-D03-07 | Lizenz der Demo-Seed-Bilder (Unsplash-Foto, Apple-Emoji-PNGs aus `emoji-datasource-apple`, `media.docs.plane.so`) für gebündelte Weitergabe | mittel / mittel | vor I1 prüfen; Ersatz durch eigene bzw. frei lizenzierte Bilder (z. B. Emoji aus `emojibase`-Bestand, D09) mit Abweichungseintrag `DEV-DM-13` |
+| R-D03-08 | Abweichungen von Nachbardokumenten bei Tabellennamen (`issue_labels`, `issue_views`, `event_types`) führen zu falschem Raw-SQL | mittel / hoch | Alias-Tabelle §4.5, Rückmeldungen §9; `SchemaConformanceTests` + Raw-SQL-Tests der Query-Engine schlagen sofort fehl |
+| R-D03-09 | Paritätsabweichungen durch Korrekturen (DEV-DM-*) überraschen Contract-Tests | sicher / niedrig | jede Korrektur steht in `deviations.yaml` mit Maske/Erwartung (§4.7) |
+| R-D03-10 | Migrations-Konflikte paralleler Agenten im Modell-Snapshot | hoch / niedrig | Regel 01 §7.14; ein Modul je Migration; CI-Drift-Gate |
+
+### 8.2 Offene Punkte (mit Empfehlung)
+
+| ID | Punkt | Empfehlung | Entscheidung durch / bis |
+|---|---|---|---|
+| O-D03-01 | Soll der Vertrag `issue_comment.description` (Feld fällt weg, `null`) für Clients erhalten bleiben? | `null` ausgeben (DEV-DM-03); Frontend-Typ kennt das Feld nicht | 04 / I2 |
+| O-D03-02 | `work_item_versions`-Aufbewahrung (neu, Original ohne Daten) | Default 20 wie Beschreibungsversionen | Auftraggeber (Abnahme I2) |
+| O-D03-03 | ~~Produktname im Default-`instance_name`~~ | **entschieden durch ADR-009B:** `"funk."` (Review 23.10.2026) | – |
+| O-D03-04 | Lizenzklärung Demo-Seed-Bilder (R-D03-07) | vor I1 | Auftraggeber |
+| O-D03-05 | Scope-FK auch für Tabellen mit **nullable** `workspace_id` (`file_assets`, `user_notification_preferences`) | ja – die Konvention greift; `MATCH SIMPLE` erzwingt die FK nur, wenn beide Spalten gesetzt sind (Benutzer-Assets ohne Workspace bleiben zulässig) | I1 (Bestätigung im Scope-FK-Spike, R-D03-02) |
+| O-D03-06 | Externe Datenbanken ohne Extension-Rechte: Trigram/`unaccent` optional machen? | nein – Pflicht-Extensions dokumentieren (D14) | I7 |
+
+---
+
+## 9. Abhängigkeiten zu anderen Dokumenten (02–16)
+
+| Dokument | Beziehung | Was D03 von dort nutzt | Was D03 liefert / Rückmeldung (Änderungsbedarf beim Nachbarn) |
+|---|---|---|---|
+| `00-grundsatzentscheidungen.md` | bindend | ADR-001 (keine Plan-Limits → Aufbewahrung als Instanz-Einstellung), ADR-003 (Greenfield), ADR-004 (Seeds ohne externe URLs), ADR-007 (Integrationstabellen), ADR-008 (keine Passwort-/OAuth-Tabellen), ADR-009 (`funk.`), ADR-009B (Branding: `instance_name`, Seed-Bot, Demo-Inhalte → `BRAND-DM-01…03`) | – |
+| `01-zielarchitektur-und-tech-stack.md` | bindend | ADR-020, -024, -025, -037, -038; §1.4 Andockstellen; §5.1 Baum; R3; §7.6–7.8, §7.14; Glossar | Präzisierungen: Tabellen `work_item_sequences` (Zähler statt `IssueSequence`-Zeilen), Extension `vector` bereits in I0 (wie D14 Migrator-Schritt 3) statt I5 (§1.4 G1); keine ADR-Änderung |
+| `02-backend-solution-und-konventionen.md` | nutzt | Basistypen, Interceptor-Kette, `PlaneEntityConfiguration<T>`, Label-Referenzmodul, Query-Engine (§3.11), Registrierung (D02-ADR-26) | **(1)** Raw-SQL der Query-Engine (§3.11.4/§3.11.5) mit Tabellennamen nach §4.5 (`work_item_labels`, `work_item_assignees`, `cycle_work_items`, `module_work_items`, `intake_work_items`, Spalte `work_item_id`); **(2)** `ITimestamped` als Basis von `IAuditable` (§3.1.2); **(3)** `LabelConfiguration`: Projekt-FK über `ScopeForeignKeyConvention` statt eigener `HasOne<Project>` (§5.2); **(4)** Soft-Delete-Kaskaden setzen `updated_by_id` nicht auf `NULL` (D03-ADR-09) |
+| `04-api-design-und-endpunktkatalog.md` | liefert an | D04-ADR-17 (Branding in Verträgen, `BRAND-API-*`) | Tabellen-/Spaltennamen für DTO-Projektionen, `FloatField`-Liste §4.4, Vertragsfelder ohne Spalte (Konstanten: `is_password_autoset`, `is_superuser`, `is_staff`, `edition`, Kommentar-`description`, `Webhook.is_internal` = `false`), Abweichungen DEV-DM-*/BRAND-DM-* §4.7 |
+| `05-auth-sicherheit-berechtigungen.md` | nutzt | `user_sessions`, `user_identities`, `api_tokens` (Hash), `roles`, `role_permissions`, `instance_admins` (Spiegel), `data_protection_keys`, DP-Zwecke | Rückmeldung: Entitäten liegen nach R3 unter `Plane.Data/Entities/<Modul>/` (D05 nennt `ID/Domain/*.cs`, §4.5); `roles` erhält Audit-Spalten und `sort_order` (§3.4.18.2) |
+| `06-hintergrundjobs-events-benachrichtigungen.md` | nutzt (Fachgebiet Messaging/Jobs) | §3.2 (Tabellen `outbox_messages`, `inbox_messages`, `jobs`, `recurring_job_states` – übernommen, §3.4.18.6), §4.2 (Cron-Namen, übernommen in §3.5.5), D06-ADR-20 (System-Bot, §3.14.1), D06-ADR-23 (`Webhook.is_internal`, `EmailNotificationLog.entity/old_value/new_value` entfallen), O-D06-06 (`cycles.completion_published_at`), §3.9.3/§3.14.1 (Activities/Webhooks) | Rückmeldung: **(1)** Tabellenname `exports` statt `export_histories` (§4.5); **(2)** `PlaneLocks.Migrations = 0x504C_4E00_0003` (D06 Z. 408) widerspricht D14-ADR-16/§4.5 `PlaneLocks.Migrator = 7356001` – D03 folgt D14; **(3)** `work_item_versions` werden vom Recorder inline auf 20 begrenzt (kein Cron, §3.5.5); **(4)** Activity-Index `(work_item_id, created_at)` ohne `DESC` genügt (B-Tree rückwärts lesbar) |
+| `07-realtime-kollaboration-dokumente.md` | nutzt | §3.6.8 (Spaltenanforderungen: `pages.description_revision` übernommen, `page_versions`, `page_logs` wie Original) | Page-Spalten und Speicherreihenfolge (§3.9.3), Größengrenze `description_binary`, Versionsregel |
+| `08-frontend-angular-architektur.md` | – | – | keine (JSON-Verträge über 04) |
+| `09-ui-paritaet-designsystem.md` | – | – | Seed-Fragment `visual` nutzt die Tabellen dieses Dokuments (über D15) |
+| `10-editor-angular.md` | – | D10 §3.2 (Schema-Freeze) | `description_json`-Schema = Tiptap-Schema-Freeze (ADR-042) |
+| `11-suche-und-ai-basis.md` | nutzt (Fachgebiet Suche) | §3.10.1 (Form `search_documents` – übernommen, §3.4.18.8), §6.2 (`search_embeddings` reserviert) | Rückmeldung: **(1)** D11-ADR-07 nennt eine FK auf „den zusammengesetzten Schlüssel `(entity_type, entity_id)`“, D11 §6.2 dagegen `search_document_id → search_documents(id)` – D03 folgt §6.2 (Surrogat-PK `id`); **(2)** `plane_unaccent` legt bereits `…_Platform_Extensions` (I0) an – die D11-Migration `AddSearchDocuments` darf sie nicht erneut definieren und heißt nach 01 §7.14 `YYYYMMDDHHmm_Search_Documents`; **(3)** Quelltabelle heißt `views`, nicht `issue_views` (§4.5); **(4)** `project_id` erhält die Scope-FK statt Einzel-FK |
+| `14-infrastruktur-deployment-betrieb.md` | nutzt | Migrator-Schritte (§3.15), Expand/Contract (§3.17), PostgreSQL-Image mit `pgvector`, Extension-Init-Skript | `[ContractPhase]` und `MigrationsAreExpandOnly` (§3.13); idempotentes SQL-Skript als Release-Artefakt `artifacts/migrations/plane-<version>.sql`; Default-Instanzname „funk.“ statt „Plane Community Edition“ (ADR-009B; D14 §3.15 Schritt 6 verweist auf D03) |
+| `15-teststrategie-qualitaet-paritaet.md` | nutzt | `ParitySeedLoader`, UUIDv5-Namensraum, `PlaneRespawner`, `BaseSeeds.ApplyAsync`, Testprojekte | **R-D15-04**: `FloatField`-Liste §4.4; **TablesToIgnore**: §4.6 (ohne `event_types`, dafür `instance_configurations`, `recurring_job_states`); Testinventar §7.2; `VolumeSeeder`-Profile §3.15 |
+| `16-erweiterungspunkte-bezahl-features.md` | nutzt | §3.2.6 Feature-Kataloge, §3.4.2 Integrationstabellen, §4.2 Backend-Spuren, §5.1/§5.3/§5.4/§5.13 Skizzen, D16-ADR-06 | Rückmeldung: **(1)** `external_links` entsteht in I2 (FK auf `work_items`), nicht I0 (E-13); **(2)** Tabellennamen `views` statt `issue_views`, `work_item_labels` statt `issue_labels` (§4.5); **(3)** reservierte Tabellennamen §6.2 inkl. `search_embeddings` für G1 |
+| `17-abgleich-dokumentuebergreifend.md` | bindend | ABG-011 (Lieferungen von 03), ABG-053 (Outbox-Spalten), Z-12 (funktionale Fehler korrigieren), Z-10 (nur Chromium – ohne Bezug) | ABG-011: `FloatField`-Liste (§4.4) und Referenztabellen (§4.6) geliefert; ABG-053: Spalten übernommen (§3.4.18.6) |
+| `migration/plan/01-roadmap-ce.md`, `_data/wp-ce.json` (noch nicht vorhanden) | liefert an | – | Migrationen/Tabellen je Inkrement (§1.4) als Bestandteil der Arbeitspakete |
+
+---
+
+## Prüfprotokoll (Erstellung 23.10.2026)
+
+| Prüfung | Verfahren | Ergebnis |
+|---|---|---|
+| Modellabdeckung | Skript (Python-AST über `M/**/*.py`, `LIC/instance.py`): 114 Klassen, davon 96 konkrete Tabellen-Modelle; Abgleich mit der Zuordnung dieses Dokuments | 96/96 entschieden (75 portiert, 21 entfallen), keine Lücke |
+| Spaltenvollständigkeit | Spaltentabellen §3.4 aus denselben AST-Daten generiert (Feldname, Typ, `max_length`, `null`, `default`, `on_delete`, Meta-Constraints/Indizes) und anschließend um Zielregeln ergänzt | jede Original-Spalte erscheint als Zielspalte oder als „entfällt“ |
+| Original-Constraints | partielle Unique-Constraints und Indizes aus `Meta.constraints/indexes` je Tabelle übernommen (Namen identisch, A02a §2.6, A02b §2.7); wirkungslose `unique_together` mit `deleted_at` (A02b §2.7 b) bewusst nicht übernommen | alle aktiven Constraints der portierten Modelle abgebildet; neue Regeln als `ux_`/`ck_` gekennzeichnet |
+| `FloatField` | AST-Suche über alle Modelle | 18 Felder, 17 in der CE (§4.4) |
+| EF-10-Funktionen | Microsoft Learn: benannte Query-Filter und `IgnoreQueryFilters(IReadOnlyCollection<string>)` (EF Core 10, „What's New in EF Core 10“) | bestätigt |
+| Npgsql-Funktionen | Npgsql-EF-Dokumentation (Context7 `/npgsql/efcore.pg`): `HasMethod`/`HasOperators` (GIN/`gin_trgm_ops`), `AreNullsDistinct` (PG 15+), `HasGeneratedTsVectorColumn`/`IsGeneratedTsVectorColumn` | bestätigt; für `search_documents` wird bewusst `HasComputedColumnSql` mit `plane_unaccent` genutzt, weil `HasGeneratedTsVectorColumn` keine Funktionsausdrücke (unaccent, Gewichte) erlaubt |
+| pgvector | NuGet-Seite `Pgvector.EntityFrameworkCore` 0.3.0 (Websuche) | nur `net8.0`, keine Aussage zu EF 10 → R-D03-01, S0 |
+| CE-IDs | alle genannten IDs gegen `features/_data/ce-features.json` | Bereiche aus 01 §5.4 übernommen |
+| Nachbardokumente | Namensabgleich mit 01, D02, D05, D14, D15, D16, 17 | Abweichungen in §4.5/§9 als Rückmeldungen |
+
+---
+
+## Review-Protokoll
+
+**Adversarialer Review vom 23.10.2026** (Prüfung gegen Analysen 02a/02b, Original-Modelle `apps/api/plane/db/models`, CE-Katalog `features/_data/ce-features.json`, Grundsatzentscheidungen 00 inkl. ADR-009B, 01, 17 sowie die inzwischen vorliegenden Nachbarn 04, 06, 07, 10, 11; Library-Fakten per Microsoft Learn und NuGet-API). Korrekturen sind direkt im Dokument und in `_data/03-datenmodell.json` umgesetzt (Feld `review`).
+
+### Geprüft und bestätigt
+
+| Prüfung | Verfahren | Ergebnis |
+|---|---|---|
+| Modellabdeckung | Abgleich aller Klassennamen aus `M/**/*.py` und `LIC/*.py` mit dem Dokument | jede Modellklasse genannt; 75 portiert, 21 entfallen, 14 neu = 89 Tabellen (JSON `tables[]` = §3.3) |
+| Spaltentypen/Null | Skript: Django-Feldtyp/`max_length`/`null` je portierter Spalte gegen `_data/03-datenmodell.json` | alle Abweichungen begründet (E-Mail NOT NULL, Token `text`, `description_html` `text`, `relation_type` FK-Länge) außer `work_items.point` (behoben) |
+| Mermaid | Syntaxprüfung aller `erDiagram`-Blöcke (Entitäten, Attribute, Kanten) | gültig; fehlende Tabellen ergänzt (§3.12.10) |
+| Tabellenformat | Spaltenzahl je Markdown-Tabellenzeile | konsistent |
+| EF-10-/Npgsql-APIs | Microsoft Learn (Named Query Filters, Sentinel-Regel EF 8+, `SqlQuery`-Komposition `FromSqlNonComposable`), NuGet-Registrierung | bestätigt bzw. Skelette korrigiert (s. u.) |
+| Paketstände | NuGet-API 23.10.2026: `EFCore.NamingConventions` 10.0.1, `Npgsql.EntityFrameworkCore.PostgreSQL` 10.0.3 (11.0 nur RC), `Pgvector.EntityFrameworkCore` 0.3.0, `Bogus` 35.6.5 | Annahmen des Dokuments tragfähig; Pgvector-Befund präzisiert (R-D03-01) |
+| Strategie | Bezahl-Pakete nur als Andockstellen (§6), kein Fachdesign | eingehalten; alle 17 🧱-Pakete in §6.1 |
+
+### Gefundene Mängel und Korrekturen
+
+| Nr. | Befund | Schwere | Korrektur (Abschnitt) |
+|---|---|---|---|
+| RV-01 | Messaging-Tabellen widersprachen D06 §3.2 (Fachgebiet, „Spaltennamen verbindlich“): `recurring_jobs` statt `recurring_job_states`, andere `jobs`-Statussemantik (Succeeded/Failed-Zeilen statt „Erfolg = gelöscht“), fehlende Kontextspalten in `jobs`, zusätzliche Outbox-Spalten `attempts`/`last_error`, andere Indexnamen | hoch | §3.4.18.6 neu nach D06; T086, D03-ADR-25, §4.6, §6.1 C3, ER §3.12.10, JSON |
+| RV-02 | Aufbewahrungs-Cron-Namen/-Zeiten/-Fristen wichen von D06 §4.2 ab (`retention.*` statt `maintenance.*`/`messaging.*`, Outbox 7 d statt 24 h, Inbox 14 d statt 7 d, Session-Cleanup `*/30` statt `17 * * * *`/stündlich D05-ADR-03) | mittel | §3.5.5 neu, D06 als verbindliche Quelle |
+| RV-03 | `owned_by_id` der drei Versionstabellen `NOT NULL` **und** `ON DELETE SET NULL` – nicht ausführbar (Verletzung bei Benutzerlöschung) | hoch | `RESTRICT`, D03-ADR-07 angepasst, AK-03-22 |
+| RV-04 | Sortierregeln falsch: `user_favorites.sequence` ist `max(workspace) + 10000` (nicht `min(user) − 10000`), `stickies.sort_order` workspaceweit (nicht je Owner), `project_members.sort_order` ohne Anlage-Regel | mittel (1:1-Reihenfolge in Sidebar/Favoriten/Stickies) | §3.7, Spalte `user_favorites.sequence` |
+| RV-05 | Fehlende Spalten aus Nachbarvorgaben: `cycles.completion_published_at` (D06 O-D06-06), `pages.description_revision` (D07 §3.6.8); fehlender System-Bot-Seed (D06-ADR-20) inkl. `bot_type = 'SYSTEM'` | hoch | §3.4.6.1, §3.4.10.1, §3.9.3, §3.14.1, §1.4 |
+| RV-06 | `Webhook.is_internal`, `EmailNotificationLog.entity/old_value/new_value` übernommen, obwohl D06-ADR-23 sie streicht | niedrig | Spalten entfallen; DTO-Konstante `is_internal = false` (04) |
+| RV-07 | `search_documents` wich vom Fachgebiet D11 §3.10.1 ab (Composite-PK statt `id`, fehlende `identifier`/`content_hash`/`source_updated_at`, andere Indexnamen und Typwerte); G1-Anker inkompatibel mit D11 §6.2 | hoch | §3.4.18.8, §5.6, §6.1 G1 nach D11 |
+| RV-08 | ADR-009B (Branding) nicht umgesetzt: Default-`instance_name` „Plane“, Seed-Bot „Plane“, Demo-Projekt „Plane Demo Project“, Doku-Links; O-D03-03 war durch ADR-009B bereits entschieden | mittel | §3.14.1, §3.14.3, `BRAND-DM-01…03`, AK-03-23, O-D03-03 geschlossen |
+| RV-09 | Skelett §5.5: `SqlQuery(...).SingleAsync()` über `INSERT … RETURNING` wird von EF als Subquery komponiert → PostgreSQL-Syntaxfehler | hoch (Laufzeitfehler im Kernpfad CE-WI-002) | `ToListAsync()` + `Single()` mit Begründung |
+| RV-10 | Skelett §5.3: `JsonNode.Parse(s, documentOptions: …)` in einem Expression-Tree (ausgelassenes optionales + benanntes Argument) kompiliert nicht (CS0854/CS0853) | mittel | positionale Argumente |
+| RV-11 | DB-Defaults ohne Sentinel-Regel: EF lässt CLR-Default-Werte weg (z. B. `IntakeStatus.Snoozed = 0` → DB-Default `-2` „Pending“) | hoch (stiller Datenfehler) | Konvention `DbDefaultsAreFallbackOnlyConvention` (§3.1.2), AK-03-21 |
+| RV-12 | `work_items.point` als `smallint`, obwohl Original `IntegerField` und D03-ADR-11 `integer` verlangt | niedrig | `integer`/`int?` |
+| RV-13 | D03-ADR-26 zählte `Session`/`IssueSequence` zu den nicht portierten Modellen (23 statt 21) | niedrig | Liste getrennt in „nicht portiert (21)“ und „ersetzt“ |
+| RV-14 | 226 CE-IDs ohne Erwähnung, darunter datenrelevante (CE-OPS-014 Soft-Delete, CE-OPS-017 Sanitizing, CE-PAGE-020, CE-LV-006 Rich-Filter, CE-API-023 Anhänge, CE-I18N-001/-006 Sprache/Theme) | mittel | §3.3.1 vollständige Zuordnung bzw. begründeter Ausschluss |
+| RV-15 | Raw-SQL-Seed übergab Enum-Werte ohne Konvertierung (`{r.Namespace}`) | niedrig | `ToDbValue()`/`(short)` |
+| RV-16 | Enum-Spalten in §3.4 mit C#-Typ `string` im Widerspruch zu D03-ADR-14 und Skelett | niedrig | Lesehilfe-Regel „Enum aus §3.11 gilt“ |
+| RV-17 | §9 führte 04, 06, 07, 10, 11 als „noch nicht vorhanden“ | niedrig | Zeilen mit Nutzung und Rückmeldungen aktualisiert |
+| RV-18 | ER-Diagramme ohne die zehn Plattform-/Andockstellen-Tabellen | niedrig | §3.12.10 |
+| RV-19 | Alias-Lücken: `export_histories` (D06), `issue_views` als D11-Quelltabelle | niedrig | §4.5 |
+
+### Verbleibende Punkte (nicht im Review lösbar)
+
+- `PgvectorSmokeTests` (S0) muss die EF-10-Tauglichkeit von `Pgvector.EntityFrameworkCore` 0.3.0 praktisch belegen (R-D03-01).
+- Scope-FK-Spike (R-D03-02, O-D03-05) steht aus.
+- Lizenzklärung der gebündelten Demo-Seed-Bilder (R-D03-07, O-D03-04) – zusätzlich prüfen, ob `media.docs.plane.so`-Bilder Plane-Branding zeigen (ADR-009B → Ersatzbilder).
+- `PlaneRespawner` muss nach jedem Reset `BaseSeeds` erneut anwenden (System-Bot in `users`); D15 §3.3.2 nennt das nicht ausdrücklich.
+- `JsonNodeComparer` bildet den Hash über die serialisierte Form (schlüsselreihenfolgeabhängig); ob `JsonNode.DeepEquals` Objekte reihenfolgeunabhängig vergleicht, ist im I0-Spike per Test festzuhalten – für Change-Tracking unkritisch (höchstens ein überflüssiges `UPDATE`), als Dictionary-Schlüssel ungeeignet.

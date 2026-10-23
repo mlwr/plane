@@ -1,2041 +1,2042 @@
 {
- "generated": "2026-10-23",
- "source": "packages/editor/src (Plane v1.4.2, 225 Dateien)",
- "legend": {
-  "K1": "Kopie 1:1 (nur Importpfade)",
-  "K2": "Kopie mit Typ-/Icon-Anpassung",
-  "NV": "Extension-/Plugin-Datei 1:1 im Kern; ReactNodeViewRenderer/ReactRenderer -> EditorUiPort (uiNodeView/uiRender), Implementierung in der Angular-Schicht",
-  "NG": "Neubau als Angular-Komponente/Direktive, DOM/Klassen 1:1",
-  "SV": "Neubau als Service/Funktion, Logik 1:1",
-  "PA": "Barrel/Public-API",
-  "CSS": "CSS 1:1",
-  "EX": "entfaellt in der CE (Grund in note)"
- },
- "files": [
-  {
-   "original": "packages/editor/src/components/document-editor-side-effects.ts",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/document-editor-side-effects.component.ts",
-   "symbol": "PlEdDocumentEditorSideEffects (rendert Beiträge aus EDITOR_EXTENSIONS.sideEffects, CE leer)",
-   "increment": "I4",
-   "ce_ids": "CE-RT-004",
-   "note": "EE-Stub S60, CE rendert nichts"
-  },
-  {
-   "original": "packages/editor/src/components/editors/document/collaborative-editor.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/editors/document/collaborative-editor.component.ts",
-   "symbol": "PlEdCollaborativeDocumentEditor `pl-ed-collaborative-document-editor`",
-   "increment": "I4",
-   "ce_ids": "CE-PAGE-013, CE-RT-002",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/editors/document/editor.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/editors/document/editor.component.ts",
-   "symbol": "PlEdDocumentEditor `pl-ed-document-editor`",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-023, CE-WI-041",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/editors/document/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/components/src/components/editors/document/index.ts",
-   "symbol": "Barrel",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/editors/document/loader.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/editors/document/loader.component.ts",
-   "symbol": "PlEdDocumentContentLoader `pl-ed-document-content-loader` (nutzt PlBlkLoader)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-023, CE-WI-041",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/editors/document/page-renderer.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/editors/document/page-renderer.component.ts",
-   "symbol": "PlEdPageRenderer `div[plEdPageRenderer]`",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-023, CE-WI-041",
-   "note": "Titel-Editor-Teil erst I4"
-  },
-  {
-   "original": "packages/editor/src/components/editors/editor-container.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/editors/editor-container.component.ts",
-   "symbol": "PlEdEditorContainer `div[plEdEditorContainer]`",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-039",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/editors/editor-content.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/editors/editor-content.component.ts",
-   "symbol": "PlEdEditorContentWrapper `div[plEdEditorContentWrapper]` + Binding-Direktive `[plEdEditorContent]`",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/editors/editor-wrapper.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/editors/editor-wrapper.component.ts",
-   "symbol": "PlEdEditorWrapper `pl-ed-editor-wrapper` (display:contents, data-pl-host)",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/editors/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/components/src/components/editors/index.ts",
-   "symbol": "Barrel",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/editors/link-view-container.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/editors/link-view-container.component.ts",
-   "symbol": "PlEdLinkViewContainer",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-036",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/editors/lite-text/editor.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/editors/lite-text/editor.component.ts",
-   "symbol": "PlEdLiteTextEditor `pl-ed-lite-text-editor`",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-022, CE-WI-037",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/editors/lite-text/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/components/src/components/editors/lite-text/index.ts",
-   "symbol": "Barrel",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-022, CE-WI-037",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/editors/rich-text/editor.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/editors/rich-text/editor.component.ts",
-   "symbol": "PlEdRichTextEditor `pl-ed-rich-text-editor`",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-021, CE-WI-005",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/editors/rich-text/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/components/src/components/editors/rich-text/index.ts",
-   "symbol": "Barrel",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-021, CE-WI-005",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/link-container.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/link-container.component.ts",
-   "symbol": "PlEdLinkContainer",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-036",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/links/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/components/src/components/links/index.ts",
-   "symbol": "Barrel + Typen LinkViews/LinkViewProps (1:1)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-036",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/links/link-edit-view.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/links/link-edit-view.component.ts",
-   "symbol": "PlEdLinkEditView",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-036",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/links/link-preview.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/links/link-preview.component.ts",
-   "symbol": "PlEdLinkPreview",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-036",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/links/link-view.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/links/link-view.component.ts",
-   "symbol": "PlEdLinkView",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-036",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/menus/ai-menu.tsx",
-   "category": "EX",
-   "target": null,
-   "symbol": "–",
-   "increment": "–",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": "in CE nicht gerendert; G3 nicht gewählt. Andockpunkt bleibt Input `aiHandler` + Flag `ai` (§6)"
-  },
-  {
-   "original": "packages/editor/src/components/menus/block-menu-options.tsx",
-   "category": "K2",
-   "target": "FE/libs/shared/editor/core/src/components/menus/block-menu-options.ts",
-   "symbol": "getBlockMenuOptions() (Logik + PlIconDef), Rendering in PlEdBlockMenu",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-026",
-   "note": "JSX-freie Optionsliste; Icons als PlIconDef"
-  },
-  {
-   "original": "packages/editor/src/components/menus/block-menu.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/menus/block-menu.component.ts",
-   "symbol": "PlEdBlockMenu",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-026",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/menus/bubble-menu/alignment-selector.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/menus/bubble-menu/alignment-selector.component.ts",
-   "symbol": "PlEdBubbleMenuAlignmentSelector",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-025",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/menus/bubble-menu/color-selector.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/menus/bubble-menu/color-selector.component.ts",
-   "symbol": "PlEdBubbleMenuColorSelector",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-025",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/menus/bubble-menu/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/components/src/components/menus/bubble-menu/index.ts",
-   "symbol": "Barrel",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-025",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/menus/bubble-menu/link-selector.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/menus/bubble-menu/link-selector.component.ts",
-   "symbol": "PlEdBubbleMenuLinkSelector",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-025",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/menus/bubble-menu/node-selector.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/menus/bubble-menu/node-selector.component.ts",
-   "symbol": "PlEdBubbleMenuNodeSelector",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-025",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/menus/bubble-menu/root.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/menus/bubble-menu/root.component.ts",
-   "symbol": "PlEdEditorBubbleMenu (nutzt Direktive `[plEdBubbleMenu]`)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-025",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/menus/floating-menu/root.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/components/menus/floating-menu/root.component.ts",
-   "symbol": "PlEdFloatingMenuRoot (FloatingPortal + FloatingOverlay z 99 + Inhalt z 100)",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/menus/floating-menu/use-floating-menu.ts",
-   "category": "SV",
-   "target": "FE/libs/shared/editor/components/src/components/menus/floating-menu/floating-menu.ts",
-   "symbol": "createFloatingMenu() (computePosition/autoUpdate, click, dismiss, role)",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/menus/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/components/src/components/menus/index.ts",
-   "symbol": "Barrel",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/components/menus/menu-items.ts",
-   "category": "K2",
-   "target": "FE/libs/shared/editor/core/src/components/menus/menu-items.ts",
-   "symbol": "getEditorMenuItems() 1:1, Icons → PlIconDef",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-014, CE-WI-037",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/constants/assets.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/constants/assets.ts",
-   "symbol": "ADDITIONAL_ASSETS_META_DATA_RECORD → liest EditorBlockRegistry (§6.3)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": "D9-Andockpunkt"
-  },
-  {
-   "original": "packages/editor/src/constants/common.ts",
-   "category": "K2",
-   "target": "FE/libs/shared/editor/core/src/constants/common.ts",
-   "symbol": "TOOLBAR_ITEMS, COLORS_LIST, EDITOR_FONT_STYLES … (Icons → PlIconDef)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-014, CE-WI-037",
-   "note": "E9: Shortcut-Labels korrigiert (FE-ED-04)"
-  },
-  {
-   "original": "packages/editor/src/constants/config.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/constants/config.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-040, CE-I18N-010",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/constants/document-collaborative-events.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/constants/document-collaborative-events.ts",
-   "symbol": "DocumentCollaborativeEvents",
-   "increment": "I4",
-   "ce_ids": "CE-RT-004",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/constants/extension.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/constants/extension.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/constants/extensions.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/constants/extensions.ts",
-   "symbol": "ADDITIONAL_EXTENSIONS (leer), ADDITIONAL_BLOCK_NODE_TYPES → liest EditorBlockRegistry (§6.3)",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": "D9-Andockpunkt"
-  },
-  {
-   "original": "packages/editor/src/constants/meta.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/constants/meta.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/constants/utility.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/constants/utility.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/contexts/collaboration-context.tsx",
-   "category": "SV",
-   "target": "FE/libs/shared/editor/collaboration/src/collaboration-context.ts",
-   "symbol": "Token COLLABORATION_SESSION + provideCollaborationSession()",
-   "increment": "I4",
-   "ce_ids": "CE-PAGE-013, CE-RT-002",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/contexts/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/collaboration/src/index.ts",
-   "symbol": "Barrel",
-   "increment": "I4",
-   "ce_ids": "CE-PAGE-013, CE-RT-002",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/additional-slash-command-options.tsx",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/additional-slash-command-options.ts",
-   "symbol": "coreEditorAdditionalSlashCommandOptions() → Beiträge aus EditorBlockRegistry",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-024",
-   "note": "D9-Andockpunkt (S49)"
-  },
-  {
-   "original": "packages/editor/src/extensions/callout/block.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/callout/block.component.ts",
-   "symbol": "PlEdCalloutBlock `[plEdCalloutBlock]` (NodeView)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-033",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/callout/color-selector.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/callout/color-selector.component.ts",
-   "symbol": "PlEdCalloutColorSelector",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-033",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/callout/extension-config.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/callout/extension-config.ts",
-   "symbol": "CustomCalloutExtensionConfig",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-033",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/callout/extension.tsx",
-   "category": "NV",
-   "target": "FE/libs/shared/editor/core/src/extensions/callout/extension.ts",
-   "symbol": "CustomCalloutExtension; addNodeView → uiNodeView('callout-block')",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-033",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/callout/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/core/src/extensions/callout/index.ts",
-   "symbol": "Barrel",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-033",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/callout/logo-selector.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/callout/logo-selector.component.ts",
-   "symbol": "PlEdCalloutLogoSelector (nutzt PlBlkEmojiPicker, PlBlkLogo)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-033",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/callout/types.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/callout/types.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-033",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/callout/utils.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/callout/utils.ts",
-   "symbol": "DEFAULT_CALLOUT_BLOCK_ATTRIBUTES (EMOJI_URL-String unverändert, D10-ADR-12)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-033",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/code-inline/index.tsx",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/code-inline/index.ts",
-   "symbol": "CustomCodeInlineExtension",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-029",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/code/code-block-lowlight.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/code/code-block-lowlight.ts",
-   "symbol": "CodeBlockLowlight",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-030",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/code/code-block-node-view.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/code/code-block-node-view.component.ts",
-   "symbol": "PlEdCodeBlockNodeView `[plEdCodeBlockNodeView]`",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-030",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/code/code-block.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/code/code-block.ts",
-   "symbol": "CodeBlock (+ Plugin codeBlockVSCodeHandlerCustom)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-030",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/code/index.tsx",
-   "category": "NV",
-   "target": "FE/libs/shared/editor/core/src/extensions/code/index.ts",
-   "symbol": "CustomCodeBlockExtension; addNodeView → uiNodeView('code-block')",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-030",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/code/lowlight-plugin.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/code/lowlight-plugin.ts",
-   "symbol": "LowlightPlugin",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-030",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/code/types.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/code/types.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-030",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/code/utils/replace-code-block-with-text.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/code/utils/replace-code-block-with-text.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-030",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/code/without-props.tsx",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/code/without-props.ts",
-   "symbol": "CustomCodeBlockExtensionWithoutProps",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-030",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/core-without-props.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/core-without-props.ts",
-   "symbol": "CoreEditorExtensionsWithoutProps, DocumentEditorExtensionsWithoutProps",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": "Quelle Server-Schema-Golden"
-  },
-  {
-   "original": "packages/editor/src/extensions/core/extensions.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/core/extensions.ts",
-   "symbol": "CoreEditorAdditionalExtensions() → Beiträge aus EditorBlockRegistry",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": "D9-Andockpunkt"
-  },
-  {
-   "original": "packages/editor/src/extensions/core/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/core/src/extensions/core/index.ts",
-   "symbol": "Barrel",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/core/without-props.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/core/without-props.ts",
-   "symbol": "CoreEditorAdditionalExtensionsWithoutProps (CE leer)",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-color.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/custom-color.ts",
-   "symbol": "CustomColorExtension",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-029",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-image/components/block.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/block.component.ts",
-   "symbol": "PlEdImageBlock",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-image/components/node-view.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/node-view.component.ts",
-   "symbol": "PlEdCustomImageNodeView `[plEdCustomImageNodeView]`",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-image/components/toolbar/alignment.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/toolbar/alignment.component.ts",
-   "symbol": "PlEdImageAlignmentAction",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-image/components/toolbar/download.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/toolbar/download.component.ts",
-   "symbol": "PlEdImageDownloadAction",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-image/components/toolbar/full-screen/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/toolbar/full-screen/index.ts",
-   "symbol": "Barrel",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-image/components/toolbar/full-screen/modal.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/toolbar/full-screen/modal.component.ts",
-   "symbol": "PlEdImageFullScreenModal (Portal nach #editor-portal)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-image/components/toolbar/full-screen/root.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/toolbar/full-screen/root.component.ts",
-   "symbol": "PlEdImageFullScreenAction",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-image/components/toolbar/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/toolbar/index.ts",
-   "symbol": "Barrel",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-image/components/toolbar/root.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/toolbar/root.component.ts",
-   "symbol": "PlEdImageToolbarRoot",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-image/components/upload-status.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/upload-status.component.ts",
-   "symbol": "PlEdImageUploadStatus (editorState-Signal statt useEditorState)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-image/components/uploader.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/uploader.component.ts",
-   "symbol": "PlEdImageUploader",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-image/extension-config.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/custom-image/extension-config.ts",
-   "symbol": "CustomImageExtensionConfig",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-image/extension.tsx",
-   "category": "NV",
-   "target": "FE/libs/shared/editor/core/src/extensions/custom-image/extension.ts",
-   "symbol": "CustomImageExtension; addNodeView → uiNodeView('custom-image')",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-image/types.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/custom-image/types.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-image/utils.ts",
-   "category": "K2",
-   "target": "FE/libs/shared/editor/core/src/extensions/custom-image/utils.ts",
-   "symbol": "Ausrichtungs-Optionen mit PlIconDef",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-link/extension.tsx",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/custom-link/extension.ts",
-   "symbol": "CustomLinkExtension",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-036",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-link/helpers/autolink.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/custom-link/helpers/autolink.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-036",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-link/helpers/clickHandler.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/custom-link/helpers/clickHandler.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-036",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-link/helpers/pasteHandler.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/custom-link/helpers/pasteHandler.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-036",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-link/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/core/src/extensions/custom-link/index.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-036",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-list-keymap/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/core/src/extensions/custom-list-keymap/index.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-028",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-list-keymap/list-helpers.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/custom-list-keymap/list-helpers.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-028",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/custom-list-keymap/list-keymap.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/custom-list-keymap/list-keymap.ts",
-   "symbol": "ListKeymap",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-028",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/document-extensions.tsx",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/document-extensions.ts",
-   "symbol": "DocumentEditorAdditionalExtensions() (Registry 1:1)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-023, CE-WI-041",
-   "note": "S50"
-  },
-  {
-   "original": "packages/editor/src/extensions/emoji/components/emojis-list.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/emoji/components/emojis-list.component.ts",
-   "symbol": "PlEdEmojisListDropdown",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-035",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/emoji/emoji.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/emoji/emoji.ts",
-   "symbol": "Emoji (Fork)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-035",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/emoji/extension.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/emoji/extension.ts",
-   "symbol": "EmojiExtension",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-035",
-   "note": "Teil des Server-Schemas"
-  },
-  {
-   "original": "packages/editor/src/extensions/emoji/suggestion.ts",
-   "category": "NV",
-   "target": "FE/libs/shared/editor/core/src/extensions/emoji/suggestion.ts",
-   "symbol": "emojiSuggestion; ReactRenderer → uiRender('emojis-list-dropdown')",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-035",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/enter-key.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/enter-key.ts",
-   "symbol": "EnterKeyExtension",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-022, CE-WI-037",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/extensions.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/extensions.ts",
-   "symbol": "CoreEditorExtensions() 1:1",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/headings-list.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/headings-list.ts",
-   "symbol": "HeadingListExtension",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-016",
-   "note": "E12 korrigiert (FE-ED-06)"
-  },
-  {
-   "original": "packages/editor/src/extensions/horizontal-rule.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/horizontal-rule.ts",
-   "symbol": "CustomHorizontalRule",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-027",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/image/extension-config.tsx",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/image/extension-config.ts",
-   "symbol": "ImageExtensionConfig",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/image/extension.tsx",
-   "category": "NV",
-   "target": "FE/libs/shared/editor/core/src/extensions/image/extension.ts",
-   "symbol": "ImageExtension; addNodeView → uiNodeView('custom-image')",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/image/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/core/src/extensions/image/index.ts",
-   "symbol": "Barrel",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/core/src/extensions/index.ts",
-   "symbol": "Barrel",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/keymap.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/keymap.ts",
-   "symbol": "CustomKeymap",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-028",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/mentions/extension-config.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/mentions/extension-config.ts",
-   "symbol": "CustomMentionExtensionConfig",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-034, CE-WI-044",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/mentions/extension.tsx",
-   "category": "NV",
-   "target": "FE/libs/shared/editor/core/src/extensions/mentions/extension.ts",
-   "symbol": "CustomMentionExtension; addNodeView → uiNodeView('mention')",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-034, CE-WI-044",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/mentions/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/core/src/extensions/mentions/index.ts",
-   "symbol": "Barrel",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-034, CE-WI-044",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/mentions/mention-node-view.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/mentions/mention-node-view.component.ts",
-   "symbol": "PlEdMentionNodeView `[plEdMentionNodeView]`",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-034, CE-WI-044",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/mentions/mentions-list-dropdown.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/mentions/mentions-list-dropdown.component.ts",
-   "symbol": "PlEdMentionsListDropdown",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-034, CE-WI-044",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/mentions/types.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/mentions/types.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-034, CE-WI-044",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/mentions/utils.ts",
-   "category": "NV",
-   "target": "FE/libs/shared/editor/core/src/extensions/mentions/utils.ts",
-   "symbol": "renderMentionsDropdown; ReactRenderer → uiRender('mentions-list-dropdown')",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-034, CE-WI-044",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/placeholder.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/placeholder.ts",
-   "symbol": "CustomPlaceholderExtension",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-038",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/quote.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/quote.ts",
-   "symbol": "CustomQuoteExtension",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-027",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/rich-text-extensions.tsx",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/rich-text-extensions.ts",
-   "symbol": "RichTextEditorAdditionalExtensions() (Registry 1:1)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-021, CE-WI-005",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/side-menu.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/side-menu.ts",
-   "symbol": "SideMenuExtension",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-026",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/slash-commands/command-items-list.tsx",
-   "category": "K2",
-   "target": "FE/libs/shared/editor/core/src/extensions/slash-commands/command-items-list.ts",
-   "symbol": "getSlashCommandFilteredSections() (Icons → PlIconDef, `Smile` → lucide-Konstante)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-024",
-   "note": "E1 korrigiert (FE-ED-02)"
-  },
-  {
-   "original": "packages/editor/src/extensions/slash-commands/command-menu-item.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/slash-commands/command-menu-item.component.ts",
-   "symbol": "PlEdSlashCommandMenuItem `button[plEdSlashCommandMenuItem]`",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-024",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/slash-commands/command-menu.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/slash-commands/command-menu.component.ts",
-   "symbol": "PlEdSlashCommandsMenu",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-024",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/slash-commands/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/core/src/extensions/slash-commands/index.ts",
-   "symbol": "Barrel",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-024",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/slash-commands/root.tsx",
-   "category": "NV",
-   "target": "FE/libs/shared/editor/core/src/extensions/slash-commands/root.ts",
-   "symbol": "SlashCommands; ReactRenderer → uiRender('slash-commands-menu')",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-024",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/starter-kit.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/starter-kit.ts",
-   "symbol": "CustomStarterKitExtension",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-027",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/index.ts",
-   "symbol": "Barrel",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/plugins/drag-handles/actions.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/drag-handles/actions.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/plugins/drag-handles/color-selector.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/table/plugins/drag-handles/color-selector.component.ts",
-   "symbol": "PlEdTableDragHandleColorSelector (PlCollapsible)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/plugins/drag-handles/column/drag-handle.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/table/plugins/drag-handles/column/drag-handle.component.ts",
-   "symbol": "PlEdTableColumnDragHandle",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-026",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/plugins/drag-handles/column/dropdown.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/table/plugins/drag-handles/column/dropdown.component.ts",
-   "symbol": "PlEdTableColumnDropdown",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/plugins/drag-handles/column/plugin.ts",
-   "category": "NV",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/drag-handles/column/plugin.ts",
-   "symbol": "TableColumnDragHandlePlugin; ReactRenderer → uiRender('table-column-drag-handle')",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/plugins/drag-handles/column/utils.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/drag-handles/column/utils.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/plugins/drag-handles/marker-utils.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/drag-handles/marker-utils.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/plugins/drag-handles/row/drag-handle.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/table/plugins/drag-handles/row/drag-handle.component.ts",
-   "symbol": "PlEdTableRowDragHandle",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-026",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/plugins/drag-handles/row/dropdown.tsx",
-   "category": "NG",
-   "target": "FE/libs/shared/editor/components/src/extensions/table/plugins/drag-handles/row/dropdown.component.ts",
-   "symbol": "PlEdTableRowDropdown",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/plugins/drag-handles/row/plugin.ts",
-   "category": "NV",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/drag-handles/row/plugin.ts",
-   "symbol": "TableRowDragHandlePlugin; ReactRenderer → uiRender('table-row-drag-handle')",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/plugins/drag-handles/row/utils.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/drag-handles/row/utils.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/plugins/drag-handles/utils.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/drag-handles/utils.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/plugins/drag-state.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/drag-state.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/plugins/insert-handlers/plugin.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/insert-handlers/plugin.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/plugins/insert-handlers/utils.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/insert-handlers/utils.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/plugins/selection-outline/plugin.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/selection-outline/plugin.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/plugins/selection-outline/utils.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/selection-outline/utils.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/table-cell.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/table-cell.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/table-header.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/table-header.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/table-row.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/table-row.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/table/icons.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/table/icons.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/table/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/table/index.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/table/table-view.tsx",
-   "category": "K2",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/table/table-view.ts",
-   "symbol": "TableView (jsx-dom `h` → helpers/dom-builder.ts)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/table/table.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/table/table.ts",
-   "symbol": "Table (Option `View: TableView` – Vanilla-NodeView)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/table/utilities/create-cell.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/table/utilities/create-cell.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/table/utilities/create-table.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/table/utilities/create-table.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/table/utilities/delete-column.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/table/utilities/delete-column.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/table/utilities/delete-key-shortcut.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/table/utilities/delete-key-shortcut.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/table/utilities/delete-row.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/table/utilities/delete-row.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/table/utilities/get-table-node-types.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/table/utilities/get-table-node-types.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/table/utilities/helpers.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/table/utilities/helpers.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/table/utilities/insert-line-above-table-action.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/table/utilities/insert-line-above-table-action.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/table/table/utilities/insert-line-below-table-action.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/table/table/utilities/insert-line-below-table-action.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/text-align.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/text-align.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-027",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/title-extension.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/title-extension.ts",
-   "symbol": "TitleExtensions",
-   "increment": "I4",
-   "ce_ids": "CE-PAGE-013, CE-PAGE-038",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/trailing-node.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/trailing-node.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-027",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/typography/index.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/typography/index.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-029",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/typography/inputRules.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/typography/inputRules.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-029",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/unique-id/extension.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/unique-id/extension.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-039",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/unique-id/plugin.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/unique-id/plugin.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-039",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/unique-id/utils.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/unique-id/utils.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-039",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/utility.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/utility.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/work-item-embed/extension-config.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/work-item-embed/extension-config.ts",
-   "symbol": "WorkItemEmbedExtensionConfig (nur Server-/Document-Schema)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-023 (Schema)",
-   "note": "Schema-Freeze"
-  },
-  {
-   "original": "packages/editor/src/extensions/work-item-embed/extension.tsx",
-   "category": "EX",
-   "target": null,
-   "symbol": "–",
-   "increment": "–",
-   "ce_ids": "CE-PAGE-023 (Schema)",
-   "note": "Runtime in CE nicht registriert; Paket D6 liefert NodeView über EDITOR_BLOCKS"
-  },
-  {
-   "original": "packages/editor/src/extensions/work-item-embed/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/core/src/extensions/work-item-embed/index.ts",
-   "symbol": "Barrel (nur Config + Typen)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-023 (Schema)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/extensions/work-item-embed/types.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/extensions/work-item-embed/types.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-023 (Schema)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/helpers/asset-duplication.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/helpers/asset-duplication.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/helpers/assets.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/helpers/assets.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/helpers/common.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/helpers/common.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/helpers/editor-commands.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/helpers/editor-commands.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-014, CE-WI-037",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/helpers/editor-ref.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/helpers/editor-ref.ts",
-   "symbol": "getEditorRefHelpers() → EditorRefApi",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-016, CE-PAGE-017, CE-PAGE-018, CE-PAGE-037",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/helpers/file.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/helpers/file.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/helpers/find-suggestion-match.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/helpers/find-suggestion-match.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/helpers/floating-ui.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/helpers/floating-ui.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/helpers/get-document-server-event.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/helpers/get-document-server-event.ts",
-   "symbol": "",
-   "increment": "I4",
-   "ce_ids": "CE-RT-004",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/helpers/image-helpers.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/helpers/image-helpers.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/helpers/insert-content-at-cursor-position.ts",
-   "category": "K2",
-   "target": "FE/libs/shared/editor/core/src/helpers/insert-content-at-cursor-position.ts",
-   "symbol": "Typ-Import `@tiptap/react` → `@tiptap/core`",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/helpers/insert-empty-paragraph-at-node-boundary.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/helpers/insert-empty-paragraph-at-node-boundary.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/helpers/parser.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/helpers/parser.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-RT-003, CE-RT-008, CE-PAGE-009",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/helpers/paste-asset.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/helpers/paste-asset.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/helpers/scroll-to-node.ts",
-   "category": "K2",
-   "target": "FE/libs/shared/editor/core/src/helpers/scroll-to-node.ts",
-   "symbol": "Typ-Import `@tiptap/react` → `@tiptap/core`",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-039",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/helpers/tippy.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/helpers/tippy.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/helpers/yjs-utils.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/helpers/yjs-utils.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-RT-003, CE-RT-008, CE-PAGE-009",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/hooks/use-collaborative-editor.ts",
-   "category": "SV",
-   "target": "FE/libs/shared/editor/components/src/services/collaborative-editor-instance.ts",
-   "symbol": "CollaborativeEditorInstance (Komponenten-Provider)",
-   "increment": "I4",
-   "ce_ids": "CE-PAGE-013, CE-RT-002",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/hooks/use-editor-navigation.ts",
-   "category": "SV",
-   "target": "FE/libs/shared/editor/core/src/hooks/editor-navigation.ts",
-   "symbol": "createTitleEditorNavigation(), createMainEditorNavigation() (reine Funktionen)",
-   "increment": "I4",
-   "ce_ids": "CE-PAGE-013, CE-PAGE-038",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/hooks/use-editor.ts",
-   "category": "SV",
-   "target": "FE/libs/shared/editor/components/src/services/editor-instance.ts",
-   "symbol": "EditorInstance (useEditor-Semantik, Komponenten-Provider)",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/hooks/use-file-upload.ts",
-   "category": "SV",
-   "target": "FE/libs/shared/editor/components/src/services/file-upload.ts",
-   "symbol": "createUploader(), Direktive `[plEdDropZone]`",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/hooks/use-title-editor.ts",
-   "category": "SV",
-   "target": "FE/libs/shared/editor/components/src/services/title-editor-instance.ts",
-   "symbol": "TitleEditorInstance",
-   "increment": "I4",
-   "ce_ids": "CE-PAGE-013, CE-PAGE-038",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/hooks/use-yjs-setup.ts",
-   "category": "SV",
-   "target": "FE/libs/shared/editor/collaboration/src/collaboration-session.ts",
-   "symbol": "CollaborationSession (Stage-Maschine 1:1, Signals)",
-   "increment": "I4",
-   "ce_ids": "CE-PAGE-013, CE-RT-002",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/components/src/public-api.ts",
-   "symbol": "`@plane/editor` (gleiche Export-Namen ohne `WithRef`-Suffix-Komponenten: Komponenten-Klassen)",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/lib.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/core/src/lib.ts",
-   "symbol": "`@plane/editor/core` – Server-Schema + Konverter (nur Tests/Golden)",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/plugins/ai-handle.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/plugins/ai-handle.ts",
-   "symbol": "AIHandlePlugin (nur bei Flag ai)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-026",
-   "note": "G1/G3-Andockpunkt, CE inaktiv"
-  },
-  {
-   "original": "packages/editor/src/plugins/drag-handle.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/plugins/drag-handle.ts",
-   "symbol": "DragHandlePlugin (generalSelectors + Beiträge aus EditorBlockRegistry)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-026",
-   "note": "D9-Andockpunkt"
-  },
-  {
-   "original": "packages/editor/src/plugins/drop.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/plugins/drop.ts",
-   "symbol": "DropHandlerPlugin (Attachment-Zweig → EditorBlockRegistry.fileDropHandlers)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": "D9-Andockpunkt, E23"
-  },
-  {
-   "original": "packages/editor/src/plugins/file/delete.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/plugins/file/delete.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/plugins/file/restore.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/plugins/file/restore.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/plugins/file/root.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/plugins/file/root.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/plugins/file/types.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/plugins/file/types.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-032",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/plugins/highlight.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/plugins/highlight.ts",
-   "symbol": "nodeHighlight (wie Original nicht registriert, E22)",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-039",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/plugins/markdown-clipboard.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/plugins/markdown-clipboard.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-037",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/props.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/props.ts",
-   "symbol": "CoreEditorProps",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/styles/drag-drop.css",
-   "category": "CSS",
-   "target": "FE/libs/shared/editor/styles/drag-drop.css",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-026",
-   "note": "Import-Position 09 §3.2.2"
-  },
-  {
-   "original": "packages/editor/src/styles/editor.css",
-   "category": "CSS",
-   "target": "FE/libs/shared/editor/styles/editor.css",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": "Import-Position 09 §3.2.2"
-  },
-  {
-   "original": "packages/editor/src/styles/github-dark.css",
-   "category": "CSS",
-   "target": "FE/libs/shared/editor/styles/github-dark.css",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-030",
-   "note": "Import-Position 09 §3.2.2"
-  },
-  {
-   "original": "packages/editor/src/styles/index.css",
-   "category": "CSS",
-   "target": "FE/libs/shared/editor/styles/index.css",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": "Import-Position 09 §3.2.2"
-  },
-  {
-   "original": "packages/editor/src/styles/table.css",
-   "category": "CSS",
-   "target": "FE/libs/shared/editor/styles/table.css",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-031",
-   "note": "Import-Position 09 §3.2.2"
-  },
-  {
-   "original": "packages/editor/src/styles/title-editor.css",
-   "category": "CSS",
-   "target": "FE/libs/shared/editor/styles/title-editor.css",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-013, CE-PAGE-038",
-   "note": "Import-Position 09 §3.2.2"
-  },
-  {
-   "original": "packages/editor/src/styles/variables.css",
-   "category": "CSS",
-   "target": "FE/libs/shared/editor/styles/variables.css",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-040, CE-I18N-010",
-   "note": "Import-Position 09 §3.2.2"
-  },
-  {
-   "original": "packages/editor/src/types/ai.ts",
-   "category": "K2",
-   "target": "FE/libs/shared/editor/core/src/types/ai.ts",
-   "symbol": "ReactNode → TEditorRenderable",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/types/asset.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/types/asset.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/types/collaboration.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/types/collaboration.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-013, CE-RT-002",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/types/config.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/types/config.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/types/document-collaborative-events.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/types/document-collaborative-events.ts",
-   "symbol": "",
-   "increment": "I4",
-   "ce_ids": "CE-RT-004",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/types/editor-extended.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/types/editor-extended.ts",
-   "symbol": "1:1 (D16-ADR-15, S48)",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": "V-Andockpunkt"
-  },
-  {
-   "original": "packages/editor/src/types/editor.ts",
-   "category": "K2",
-   "target": "FE/libs/shared/editor/core/src/types/editor.ts",
-   "symbol": "IEditorProps & Co. (MutableRefObject/ReactNode → agnostische Typen, §3.3)",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/types/embed.ts",
-   "category": "K2",
-   "target": "FE/libs/shared/editor/core/src/types/embed.ts",
-   "symbol": "ReactNode → TEditorRenderable",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/types/extensions.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/types/extensions.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/types/hook.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/types/hook.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/types/index.ts",
-   "category": "PA",
-   "target": "FE/libs/shared/editor/core/src/types/index.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/types/issue-embed.ts",
-   "category": "K2",
-   "target": "FE/libs/shared/editor/core/src/types/issue-embed.ts",
-   "symbol": "ReactNode → TEditorRenderable",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/types/mention.ts",
-   "category": "K2",
-   "target": "FE/libs/shared/editor/core/src/types/mention.ts",
-   "symbol": "TMentionHandler.renderComponent → TEditorRenderable",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/types/slash-commands-suggestion.ts",
-   "category": "K2",
-   "target": "FE/libs/shared/editor/core/src/types/slash-commands-suggestion.ts",
-   "symbol": "CSSProperties → Partial<CSSStyleDeclaration>",
-   "increment": "I2",
-   "ce_ids": "CE-PAGE-024",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/types/storage.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/types/storage.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  },
-  {
-   "original": "packages/editor/src/types/utils.ts",
-   "category": "K1",
-   "target": "FE/libs/shared/editor/core/src/types/utils.ts",
-   "symbol": "",
-   "increment": "I2",
-   "ce_ids": "Querschnitt (CE-PAGE-021…023)",
-   "note": ""
-  }
- ]
+  "generated": "2026-10-23",
+  "source": "packages/editor/src (Plane v1.4.2, 225 Dateien)",
+  "legend": {
+    "K1": "Kopie 1:1 (nur Importpfade)",
+    "K2": "Kopie mit markierter Anpassung (PORT-DIFF: Icons, React-Typen, dom-builder, Block-Registry, UI-Props, Bugfix)",
+    "NV": "Extension-/Plugin-Datei 1:1 im Kern; ReactNodeViewRenderer/ReactRenderer -> EditorUiPort (uiNodeView/uiRender), Implementierung in der Angular-Schicht",
+    "NG": "Neubau als Angular-Komponente/Direktive, DOM/Klassen 1:1",
+    "SV": "Neubau als Service/Funktion, Logik 1:1",
+    "PA": "Barrel/Public-API",
+    "CSS": "CSS 1:1",
+    "EX": "entfaellt in der CE (Grund in note)"
+  },
+  "files": [
+    {
+      "original": "packages/editor/src/components/document-editor-side-effects.ts",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/document-editor-side-effects.component.ts",
+      "symbol": "PlEdDocumentEditorSideEffects (rendert Beiträge aus EDITOR_EXTENSIONS.sideEffects, CE leer)",
+      "increment": "I4",
+      "ce_ids": "CE-RT-004",
+      "note": "EE-Stub S60, CE rendert nichts"
+    },
+    {
+      "original": "packages/editor/src/components/editors/document/collaborative-editor.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/editors/document/collaborative-editor.component.ts",
+      "symbol": "PlEdCollaborativeDocumentEditor `pl-ed-collaborative-document-editor`",
+      "increment": "I4",
+      "ce_ids": "CE-PAGE-013, CE-RT-002",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/editors/document/editor.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/editors/document/editor.component.ts",
+      "symbol": "PlEdDocumentEditor `pl-ed-document-editor`",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-023, CE-WI-041",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/editors/document/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/components/src/components/editors/document/index.ts",
+      "symbol": "Barrel",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/editors/document/loader.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/editors/document/loader.component.ts",
+      "symbol": "PlEdDocumentContentLoader `pl-ed-document-content-loader` (nutzt PlBlkLoader)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-023, CE-WI-041",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/editors/document/page-renderer.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/editors/document/page-renderer.component.ts",
+      "symbol": "PlEdPageRenderer `div[plEdPageRenderer]`",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-023, CE-WI-041",
+      "note": "Titel-Editor-Teil erst I4"
+    },
+    {
+      "original": "packages/editor/src/components/editors/editor-container.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/editors/editor-container.component.ts",
+      "symbol": "PlEdEditorContainer `div[plEdEditorContainer]`",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-039",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/editors/editor-content.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/editors/editor-content.component.ts",
+      "symbol": "PlEdEditorContentWrapper `div[plEdEditorContentWrapper]` + Binding-Direktive `[plEdEditorContent]`",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/editors/editor-wrapper.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/editors/editor-wrapper.component.ts",
+      "symbol": "PlEdEditorWrapper `pl-ed-editor-wrapper` (display:contents, data-pl-host)",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/editors/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/components/src/components/editors/index.ts",
+      "symbol": "Barrel",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/editors/link-view-container.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/editors/link-view-container.component.ts",
+      "symbol": "PlEdLinkViewContainer",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-036",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/editors/lite-text/editor.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/editors/lite-text/editor.component.ts",
+      "symbol": "PlEdLiteTextEditor `pl-ed-lite-text-editor`",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-022, CE-WI-037",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/editors/lite-text/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/components/src/components/editors/lite-text/index.ts",
+      "symbol": "Barrel",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-022, CE-WI-037",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/editors/rich-text/editor.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/editors/rich-text/editor.component.ts",
+      "symbol": "PlEdRichTextEditor `pl-ed-rich-text-editor`",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-021, CE-WI-005",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/editors/rich-text/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/components/src/components/editors/rich-text/index.ts",
+      "symbol": "Barrel",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-021, CE-WI-005",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/link-container.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/link-container.component.ts",
+      "symbol": "PlEdLinkContainer",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-036",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/links/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/components/src/components/links/index.ts",
+      "symbol": "Barrel + Typen LinkViews/LinkViewProps (1:1)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-036",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/links/link-edit-view.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/links/link-edit-view.component.ts",
+      "symbol": "PlEdLinkEditView",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-036",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/links/link-preview.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/links/link-preview.component.ts",
+      "symbol": "PlEdLinkPreview",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-036",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/links/link-view.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/links/link-view.component.ts",
+      "symbol": "PlEdLinkView",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-036",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/menus/ai-menu.tsx",
+      "category": "EX",
+      "target": null,
+      "symbol": "–",
+      "increment": "–",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": "in CE nicht gerendert; G3 nicht gewählt. Andockpunkt bleibt Input `aiHandler` + Flag `ai` (§6)"
+    },
+    {
+      "original": "packages/editor/src/components/menus/block-menu-options.tsx",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/components/menus/block-menu-options.ts",
+      "symbol": "getBlockMenuOptions() (Logik + PlIconDef), Rendering in PlEdBlockMenu",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-026",
+      "note": "JSX-freie Optionsliste; Icons als PlIconDef; Typ BlockMenuOption aus ui-port/ui-props.ts (R-ED-15)"
+    },
+    {
+      "original": "packages/editor/src/components/menus/block-menu.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/menus/block-menu.component.ts",
+      "symbol": "PlEdBlockMenu",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-026",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/menus/bubble-menu/alignment-selector.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/menus/bubble-menu/alignment-selector.component.ts",
+      "symbol": "PlEdBubbleMenuAlignmentSelector",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-025",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/menus/bubble-menu/color-selector.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/menus/bubble-menu/color-selector.component.ts",
+      "symbol": "PlEdBubbleMenuColorSelector",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-025",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/menus/bubble-menu/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/components/src/components/menus/bubble-menu/index.ts",
+      "symbol": "Barrel",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-025",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/menus/bubble-menu/link-selector.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/menus/bubble-menu/link-selector.component.ts",
+      "symbol": "PlEdBubbleMenuLinkSelector",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-025",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/menus/bubble-menu/node-selector.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/menus/bubble-menu/node-selector.component.ts",
+      "symbol": "PlEdBubbleMenuNodeSelector",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-025",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/menus/bubble-menu/root.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/menus/bubble-menu/root.component.ts",
+      "symbol": "PlEdEditorBubbleMenu (nutzt Direktive `[plEdBubbleMenu]`)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-025",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/menus/floating-menu/root.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/components/menus/floating-menu/root.component.ts",
+      "symbol": "PlEdFloatingMenuRoot (FloatingPortal + FloatingOverlay z 99 + Inhalt z 100)",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/menus/floating-menu/use-floating-menu.ts",
+      "category": "SV",
+      "target": "FE/libs/shared/editor/components/src/components/menus/floating-menu/floating-menu.ts",
+      "symbol": "createFloatingMenu() (computePosition/autoUpdate, click, dismiss, role)",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/menus/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/components/src/components/menus/index.ts",
+      "symbol": "Barrel",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/components/menus/menu-items.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/components/menus/menu-items.ts",
+      "symbol": "getEditorMenuItems() 1:1, Icons → PlIconDef",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-014, CE-WI-037",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/constants/assets.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/constants/assets.ts",
+      "symbol": "ADDITIONAL_ASSETS_META_DATA_RECORD → liest EditorBlockRegistry (§6.3)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": "D9-Andockpunkt"
+    },
+    {
+      "original": "packages/editor/src/constants/common.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/constants/common.ts",
+      "symbol": "TOOLBAR_ITEMS, COLORS_LIST, EDITOR_FONT_STYLES … (Icons → PlIconDef)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-014, CE-WI-037",
+      "note": "E9: Shortcut-Labels korrigiert (FE-ED-04)"
+    },
+    {
+      "original": "packages/editor/src/constants/config.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/constants/config.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-040, CE-I18N-010",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/constants/document-collaborative-events.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/constants/document-collaborative-events.ts",
+      "symbol": "DocumentCollaborativeEvents",
+      "increment": "I4",
+      "ce_ids": "CE-RT-004",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/constants/extension.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/constants/extension.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/constants/extensions.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/constants/extensions.ts",
+      "symbol": "ADDITIONAL_EXTENSIONS (leer), ADDITIONAL_BLOCK_NODE_TYPES → liest EditorBlockRegistry (§6.3)",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": "D9-Andockpunkt"
+    },
+    {
+      "original": "packages/editor/src/constants/meta.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/constants/meta.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/constants/utility.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/constants/utility.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/contexts/collaboration-context.tsx",
+      "category": "SV",
+      "target": "FE/libs/shared/editor/collaboration/src/collaboration-context.ts",
+      "symbol": "Token COLLABORATION_SESSION + provideCollaborationSession()",
+      "increment": "I4",
+      "ce_ids": "CE-PAGE-013, CE-RT-002",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/contexts/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/collaboration/src/index.ts",
+      "symbol": "Barrel",
+      "increment": "I4",
+      "ce_ids": "CE-PAGE-013, CE-RT-002",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/additional-slash-command-options.tsx",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/extensions/additional-slash-command-options.ts",
+      "symbol": "coreEditorAdditionalSlashCommandOptions() → Beiträge aus EditorBlockRegistry",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-024",
+      "note": "D9-Andockpunkt (S49)"
+    },
+    {
+      "original": "packages/editor/src/extensions/callout/block.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/callout/block.component.ts",
+      "symbol": "PlEdCalloutBlock `[plEdCalloutBlock]` (NodeView)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-033",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/callout/color-selector.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/callout/color-selector.component.ts",
+      "symbol": "PlEdCalloutColorSelector",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-033",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/callout/extension-config.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/callout/extension-config.ts",
+      "symbol": "CustomCalloutExtensionConfig",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-033",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/callout/extension.tsx",
+      "category": "NV",
+      "target": "FE/libs/shared/editor/core/src/extensions/callout/extension.ts",
+      "symbol": "CustomCalloutExtension; addNodeView → uiNodeView('callout-block')",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-033",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/callout/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/core/src/extensions/callout/index.ts",
+      "symbol": "Barrel",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-033",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/callout/logo-selector.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/callout/logo-selector.component.ts",
+      "symbol": "PlEdCalloutLogoSelector (nutzt PlBlkEmojiPicker, PlBlkLogo)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-033",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/callout/types.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/callout/types.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-033",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/callout/utils.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/callout/utils.ts",
+      "symbol": "DEFAULT_CALLOUT_BLOCK_ATTRIBUTES (EMOJI_URL-String unverändert, D10-ADR-12)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-033",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/code-inline/index.tsx",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/code-inline/index.ts",
+      "symbol": "CustomCodeInlineExtension",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-029",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/code/code-block-lowlight.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/code/code-block-lowlight.ts",
+      "symbol": "CodeBlockLowlight",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-030",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/code/code-block-node-view.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/code/code-block-node-view.component.ts",
+      "symbol": "PlEdCodeBlockNodeView `[plEdCodeBlockNodeView]`",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-030",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/code/code-block.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/code/code-block.ts",
+      "symbol": "CodeBlock (+ Plugin codeBlockVSCodeHandlerCustom)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-030",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/code/index.tsx",
+      "category": "NV",
+      "target": "FE/libs/shared/editor/core/src/extensions/code/index.ts",
+      "symbol": "CustomCodeBlockExtension; addNodeView → uiNodeView('code-block')",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-030",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/code/lowlight-plugin.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/code/lowlight-plugin.ts",
+      "symbol": "LowlightPlugin",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-030",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/code/types.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/code/types.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-030",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/code/utils/replace-code-block-with-text.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/code/utils/replace-code-block-with-text.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-030",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/code/without-props.tsx",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/code/without-props.ts",
+      "symbol": "CustomCodeBlockExtensionWithoutProps",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-030",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/core-without-props.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/extensions/core-without-props.ts",
+      "symbol": "CoreEditorExtensionsWithoutProps, DocumentEditorExtensionsWithoutProps",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": "Quelle Server-Schema-Golden; PORT-DIFF(block-registry): zusätzliche Getter getCoreEditorExtensionsWithoutProps()/getDocumentEditorExtensionsWithoutProps(), Original-Konstanten unverändert (R-ED-12)"
+    },
+    {
+      "original": "packages/editor/src/extensions/core/extensions.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/extensions/core/extensions.ts",
+      "symbol": "CoreEditorAdditionalExtensions() → Beiträge aus EditorBlockRegistry",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": "D9-Andockpunkt"
+    },
+    {
+      "original": "packages/editor/src/extensions/core/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/core/src/extensions/core/index.ts",
+      "symbol": "Barrel",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/core/without-props.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/core/without-props.ts",
+      "symbol": "CoreEditorAdditionalExtensionsWithoutProps (CE leer)",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": "unveraendert (CE []); Paket-Server-Schema fliesst ueber getCoreEditorExtensionsWithoutProps() ein (R-ED-12)"
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-color.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/custom-color.ts",
+      "symbol": "CustomColorExtension",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-029",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-image/components/block.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/block.component.ts",
+      "symbol": "PlEdImageBlock",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-image/components/node-view.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/node-view.component.ts",
+      "symbol": "PlEdCustomImageNodeView `[plEdCustomImageNodeView]`",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-image/components/toolbar/alignment.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/toolbar/alignment.component.ts",
+      "symbol": "PlEdImageAlignmentAction",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-image/components/toolbar/download.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/toolbar/download.component.ts",
+      "symbol": "PlEdImageDownloadAction",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-image/components/toolbar/full-screen/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/toolbar/full-screen/index.ts",
+      "symbol": "Barrel",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-image/components/toolbar/full-screen/modal.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/toolbar/full-screen/modal.component.ts",
+      "symbol": "PlEdImageFullScreenModal (Portal nach #editor-portal)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-image/components/toolbar/full-screen/root.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/toolbar/full-screen/root.component.ts",
+      "symbol": "PlEdImageFullScreenAction",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-image/components/toolbar/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/toolbar/index.ts",
+      "symbol": "Barrel",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-image/components/toolbar/root.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/toolbar/root.component.ts",
+      "symbol": "PlEdImageToolbarRoot",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-image/components/upload-status.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/upload-status.component.ts",
+      "symbol": "PlEdImageUploadStatus (editorState-Signal statt useEditorState)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-image/components/uploader.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/custom-image/components/uploader.component.ts",
+      "symbol": "PlEdImageUploader",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-image/extension-config.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/custom-image/extension-config.ts",
+      "symbol": "CustomImageExtensionConfig",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-image/extension.tsx",
+      "category": "NV",
+      "target": "FE/libs/shared/editor/core/src/extensions/custom-image/extension.ts",
+      "symbol": "CustomImageExtension; addNodeView → uiNodeView('custom-image')",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-image/types.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/custom-image/types.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-image/utils.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/extensions/custom-image/utils.ts",
+      "symbol": "Ausrichtungs-Optionen mit PlIconDef",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-link/extension.tsx",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/custom-link/extension.ts",
+      "symbol": "CustomLinkExtension",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-036",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-link/helpers/autolink.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/custom-link/helpers/autolink.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-036",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-link/helpers/clickHandler.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/custom-link/helpers/clickHandler.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-036",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-link/helpers/pasteHandler.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/custom-link/helpers/pasteHandler.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-036",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-link/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/core/src/extensions/custom-link/index.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-036",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-list-keymap/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/core/src/extensions/custom-list-keymap/index.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-028",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-list-keymap/list-helpers.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/custom-list-keymap/list-helpers.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-028",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/custom-list-keymap/list-keymap.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/custom-list-keymap/list-keymap.ts",
+      "symbol": "ListKeymap",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-028",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/document-extensions.tsx",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/extensions/document-extensions.ts",
+      "symbol": "DocumentEditorAdditionalExtensions() (Registry 1:1)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-023, CE-WI-041",
+      "note": "S50"
+    },
+    {
+      "original": "packages/editor/src/extensions/emoji/components/emojis-list.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/emoji/components/emojis-list.component.ts",
+      "symbol": "PlEdEmojisListDropdown",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-035",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/emoji/emoji.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/emoji/emoji.ts",
+      "symbol": "Emoji (Fork)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-035",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/emoji/extension.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/emoji/extension.ts",
+      "symbol": "EmojiExtension",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-035",
+      "note": "Teil des Server-Schemas"
+    },
+    {
+      "original": "packages/editor/src/extensions/emoji/suggestion.ts",
+      "category": "NV",
+      "target": "FE/libs/shared/editor/core/src/extensions/emoji/suggestion.ts",
+      "symbol": "emojiSuggestion; ReactRenderer → uiRender('emojis-list-dropdown')",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-035",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/enter-key.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/enter-key.ts",
+      "symbol": "EnterKeyExtension",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-022, CE-WI-037",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/extensions.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/extensions.ts",
+      "symbol": "CoreEditorExtensions() 1:1",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/headings-list.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/extensions/headings-list.ts",
+      "symbol": "HeadingListExtension",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-016",
+      "note": "E12 korrigiert (FE-ED-06)"
+    },
+    {
+      "original": "packages/editor/src/extensions/horizontal-rule.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/horizontal-rule.ts",
+      "symbol": "CustomHorizontalRule",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-027",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/image/extension-config.tsx",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/image/extension-config.ts",
+      "symbol": "ImageExtensionConfig",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/image/extension.tsx",
+      "category": "NV",
+      "target": "FE/libs/shared/editor/core/src/extensions/image/extension.ts",
+      "symbol": "ImageExtension; addNodeView → uiNodeView('custom-image')",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/image/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/core/src/extensions/image/index.ts",
+      "symbol": "Barrel",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/core/src/extensions/index.ts",
+      "symbol": "Barrel",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/keymap.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/keymap.ts",
+      "symbol": "CustomKeymap",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-028",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/mentions/extension-config.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/mentions/extension-config.ts",
+      "symbol": "CustomMentionExtensionConfig",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-034, CE-WI-044",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/mentions/extension.tsx",
+      "category": "NV",
+      "target": "FE/libs/shared/editor/core/src/extensions/mentions/extension.ts",
+      "symbol": "CustomMentionExtension; addNodeView → uiNodeView('mention')",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-034, CE-WI-044",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/mentions/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/core/src/extensions/mentions/index.ts",
+      "symbol": "Barrel",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-034, CE-WI-044",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/mentions/mention-node-view.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/mentions/mention-node-view.component.ts",
+      "symbol": "PlEdMentionNodeView `[plEdMentionNodeView]`",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-034, CE-WI-044",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/mentions/mentions-list-dropdown.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/mentions/mentions-list-dropdown.component.ts",
+      "symbol": "PlEdMentionsListDropdown",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-034, CE-WI-044",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/mentions/types.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/mentions/types.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-034, CE-WI-044",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/mentions/utils.ts",
+      "category": "NV",
+      "target": "FE/libs/shared/editor/core/src/extensions/mentions/utils.ts",
+      "symbol": "renderMentionsDropdown; ReactRenderer → uiRender('mentions-list-dropdown')",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-034, CE-WI-044",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/placeholder.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/placeholder.ts",
+      "symbol": "CustomPlaceholderExtension",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-038",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/quote.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/quote.ts",
+      "symbol": "CustomQuoteExtension",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-027",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/rich-text-extensions.tsx",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/extensions/rich-text-extensions.ts",
+      "symbol": "RichTextEditorAdditionalExtensions() (Registry 1:1)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-021, CE-WI-005",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/side-menu.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/side-menu.ts",
+      "symbol": "SideMenuExtension",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-026",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/slash-commands/command-items-list.tsx",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/extensions/slash-commands/command-items-list.ts",
+      "symbol": "getSlashCommandFilteredSections() (Icons → PlIconDef, `Smile` → lucide-Konstante)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-024",
+      "note": "E1 korrigiert (FE-ED-02)"
+    },
+    {
+      "original": "packages/editor/src/extensions/slash-commands/command-menu-item.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/slash-commands/command-menu-item.component.ts",
+      "symbol": "PlEdSlashCommandMenuItem `button[plEdSlashCommandMenuItem]`",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-024",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/slash-commands/command-menu.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/slash-commands/command-menu.component.ts",
+      "symbol": "PlEdSlashCommandsMenu",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-024",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/slash-commands/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/core/src/extensions/slash-commands/index.ts",
+      "symbol": "Barrel",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-024",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/slash-commands/root.tsx",
+      "category": "NV",
+      "target": "FE/libs/shared/editor/core/src/extensions/slash-commands/root.ts",
+      "symbol": "SlashCommands; ReactRenderer → uiRender('slash-commands-menu')",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-024",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/starter-kit.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/starter-kit.ts",
+      "symbol": "CustomStarterKitExtension",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-027",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/index.ts",
+      "symbol": "Barrel",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/plugins/drag-handles/actions.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/drag-handles/actions.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/plugins/drag-handles/color-selector.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/table/plugins/drag-handles/color-selector.component.ts",
+      "symbol": "PlEdTableDragHandleColorSelector (PlCollapsible)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/plugins/drag-handles/column/drag-handle.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/table/plugins/drag-handles/column/drag-handle.component.ts",
+      "symbol": "PlEdTableColumnDragHandle",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-026",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/plugins/drag-handles/column/dropdown.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/table/plugins/drag-handles/column/dropdown.component.ts",
+      "symbol": "PlEdTableColumnDropdown",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/plugins/drag-handles/column/plugin.ts",
+      "category": "NV",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/drag-handles/column/plugin.ts",
+      "symbol": "TableColumnDragHandlePlugin; ReactRenderer → uiRender('table-column-drag-handle')",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/plugins/drag-handles/column/utils.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/drag-handles/column/utils.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/plugins/drag-handles/marker-utils.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/drag-handles/marker-utils.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/plugins/drag-handles/row/drag-handle.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/table/plugins/drag-handles/row/drag-handle.component.ts",
+      "symbol": "PlEdTableRowDragHandle",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-026",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/plugins/drag-handles/row/dropdown.tsx",
+      "category": "NG",
+      "target": "FE/libs/shared/editor/components/src/extensions/table/plugins/drag-handles/row/dropdown.component.ts",
+      "symbol": "PlEdTableRowDropdown",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/plugins/drag-handles/row/plugin.ts",
+      "category": "NV",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/drag-handles/row/plugin.ts",
+      "symbol": "TableRowDragHandlePlugin; ReactRenderer → uiRender('table-row-drag-handle')",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/plugins/drag-handles/row/utils.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/drag-handles/row/utils.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/plugins/drag-handles/utils.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/drag-handles/utils.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/plugins/drag-state.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/drag-state.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/plugins/insert-handlers/plugin.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/insert-handlers/plugin.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/plugins/insert-handlers/utils.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/insert-handlers/utils.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/plugins/selection-outline/plugin.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/selection-outline/plugin.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/plugins/selection-outline/utils.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/plugins/selection-outline/utils.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/table-cell.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/table-cell.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/table-header.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/table-header.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/table-row.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/table-row.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/table/icons.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/table/icons.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/table/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/table/index.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/table/table-view.tsx",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/table/table-view.ts",
+      "symbol": "TableView (jsx-dom `h` → helpers/dom-builder.ts)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/table/table.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/table/table.ts",
+      "symbol": "Table (Option `View: TableView` – Vanilla-NodeView)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/table/utilities/create-cell.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/table/utilities/create-cell.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/table/utilities/create-table.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/table/utilities/create-table.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/table/utilities/delete-column.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/table/utilities/delete-column.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/table/utilities/delete-key-shortcut.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/table/utilities/delete-key-shortcut.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/table/utilities/delete-row.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/table/utilities/delete-row.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/table/utilities/get-table-node-types.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/table/utilities/get-table-node-types.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/table/utilities/helpers.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/table/utilities/helpers.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/table/utilities/insert-line-above-table-action.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/table/utilities/insert-line-above-table-action.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/table/table/utilities/insert-line-below-table-action.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/table/table/utilities/insert-line-below-table-action.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/text-align.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/text-align.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-027",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/title-extension.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/title-extension.ts",
+      "symbol": "TitleExtensions",
+      "increment": "I4",
+      "ce_ids": "CE-PAGE-013, CE-PAGE-038",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/trailing-node.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/trailing-node.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-027",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/typography/index.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/typography/index.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-029",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/typography/inputRules.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/typography/inputRules.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-029",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/unique-id/extension.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/extensions/unique-id/extension.ts",
+      "symbol": "COMBINED_BLOCK_NODE_TYPES als Getter (R-ED-12)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-039",
+      "note": "PORT-DIFF(block-registry)"
+    },
+    {
+      "original": "packages/editor/src/extensions/unique-id/plugin.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/unique-id/plugin.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-039",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/unique-id/utils.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/unique-id/utils.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-039",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/utility.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/utility.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/work-item-embed/extension-config.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/work-item-embed/extension-config.ts",
+      "symbol": "WorkItemEmbedExtensionConfig (nur Server-/Document-Schema)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-023 (Schema)",
+      "note": "Schema-Freeze"
+    },
+    {
+      "original": "packages/editor/src/extensions/work-item-embed/extension.tsx",
+      "category": "EX",
+      "target": null,
+      "symbol": "–",
+      "increment": "–",
+      "ce_ids": "CE-PAGE-023 (Schema)",
+      "note": "Runtime in CE nicht registriert; Paket D6 liefert NodeView über EDITOR_BLOCKS"
+    },
+    {
+      "original": "packages/editor/src/extensions/work-item-embed/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/core/src/extensions/work-item-embed/index.ts",
+      "symbol": "Barrel (nur Config + Typen)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-023 (Schema)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/extensions/work-item-embed/types.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/extensions/work-item-embed/types.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-023 (Schema)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/helpers/asset-duplication.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/helpers/asset-duplication.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/helpers/assets.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/helpers/assets.ts",
+      "symbol": "liest assetMetaData der Block-Registry",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": "PORT-DIFF(block-registry)"
+    },
+    {
+      "original": "packages/editor/src/helpers/common.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/helpers/common.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/helpers/editor-commands.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/helpers/editor-commands.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-014, CE-WI-037",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/helpers/editor-ref.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/helpers/editor-ref.ts",
+      "symbol": "getEditorRefHelpers() → EditorRefApi",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-016, CE-PAGE-017, CE-PAGE-018, CE-PAGE-037",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/helpers/file.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/helpers/file.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/helpers/find-suggestion-match.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/helpers/find-suggestion-match.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/helpers/floating-ui.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/helpers/floating-ui.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/helpers/get-document-server-event.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/helpers/get-document-server-event.ts",
+      "symbol": "",
+      "increment": "I4",
+      "ce_ids": "CE-RT-004",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/helpers/image-helpers.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/helpers/image-helpers.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/helpers/insert-content-at-cursor-position.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/helpers/insert-content-at-cursor-position.ts",
+      "symbol": "Typ-Import `@tiptap/react` → `@tiptap/core`",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/helpers/insert-empty-paragraph-at-node-boundary.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/helpers/insert-empty-paragraph-at-node-boundary.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/helpers/parser.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/helpers/parser.ts",
+      "symbol": "extract/replaceAdditionalAssets… lesen die Block-Registry",
+      "increment": "I2",
+      "ce_ids": "CE-RT-003, CE-RT-008, CE-PAGE-009",
+      "note": "PORT-DIFF(block-registry)"
+    },
+    {
+      "original": "packages/editor/src/helpers/paste-asset.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/helpers/paste-asset.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/helpers/scroll-to-node.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/helpers/scroll-to-node.ts",
+      "symbol": "Typ-Import `@tiptap/react` → `@tiptap/core`",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-039",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/helpers/tippy.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/helpers/tippy.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/helpers/yjs-utils.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/helpers/yjs-utils.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-RT-003, CE-RT-008, CE-PAGE-009",
+      "note": "PORT-DIFF(block-registry): Modul-Konstanten RICH_TEXT_EDITOR_EXTENSIONS/DOCUMENT_EDITOR_EXTENSIONS werden zur Laufzeit ueber die Getter gebildet (R-ED-12)"
+    },
+    {
+      "original": "packages/editor/src/hooks/use-collaborative-editor.ts",
+      "category": "SV",
+      "target": "FE/libs/shared/editor/components/src/services/collaborative-editor-instance.ts",
+      "symbol": "CollaborativeEditorInstance (Komponenten-Provider)",
+      "increment": "I4",
+      "ce_ids": "CE-PAGE-013, CE-RT-002",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/hooks/use-editor-navigation.ts",
+      "category": "SV",
+      "target": "FE/libs/shared/editor/core/src/hooks/editor-navigation.ts",
+      "symbol": "createTitleEditorNavigation(), createMainEditorNavigation() (reine Funktionen)",
+      "increment": "I4",
+      "ce_ids": "CE-PAGE-013, CE-PAGE-038",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/hooks/use-editor.ts",
+      "category": "SV",
+      "target": "FE/libs/shared/editor/components/src/services/editor-instance.ts",
+      "symbol": "EditorInstance (useEditor-Semantik, Komponenten-Provider)",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/hooks/use-file-upload.ts",
+      "category": "SV",
+      "target": "FE/libs/shared/editor/components/src/services/file-upload.ts",
+      "symbol": "createUploader(), Direktive `[plEdDropZone]`",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/hooks/use-title-editor.ts",
+      "category": "SV",
+      "target": "FE/libs/shared/editor/components/src/services/title-editor-instance.ts",
+      "symbol": "TitleEditorInstance",
+      "increment": "I4",
+      "ce_ids": "CE-PAGE-013, CE-PAGE-038",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/hooks/use-yjs-setup.ts",
+      "category": "SV",
+      "target": "FE/libs/shared/editor/collaboration/src/collaboration-session.ts",
+      "symbol": "CollaborationSession (Stage-Maschine 1:1, Signals)",
+      "increment": "I4",
+      "ce_ids": "CE-PAGE-013, CE-RT-002",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/components/src/public-api.ts",
+      "symbol": "`@plane/editor` (gleiche Export-Namen ohne `WithRef`-Suffix-Komponenten: Komponenten-Klassen)",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/lib.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/core/src/lib.ts",
+      "symbol": "`@plane/editor/core` – Server-Schema + Konverter (nur Tests/Golden)",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/plugins/ai-handle.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/plugins/ai-handle.ts",
+      "symbol": "AIHandlePlugin (nur bei Flag ai)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-026",
+      "note": "G1/G3-Andockpunkt, CE inaktiv"
+    },
+    {
+      "original": "packages/editor/src/plugins/drag-handle.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/plugins/drag-handle.ts",
+      "symbol": "DragHandlePlugin (generalSelectors + Beiträge aus EditorBlockRegistry)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-026",
+      "note": "D9-Andockpunkt"
+    },
+    {
+      "original": "packages/editor/src/plugins/drop.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/plugins/drop.ts",
+      "symbol": "DropHandlerPlugin (Attachment-Zweig → EditorBlockRegistry.fileDropHandlers)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": "D9-Andockpunkt, E23"
+    },
+    {
+      "original": "packages/editor/src/plugins/file/delete.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/plugins/file/delete.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/plugins/file/restore.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/plugins/file/restore.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/plugins/file/root.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/plugins/file/root.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/plugins/file/types.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/plugins/file/types.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-032",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/plugins/highlight.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/plugins/highlight.ts",
+      "symbol": "nodeHighlight (wie Original nicht registriert, E22)",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-039",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/plugins/markdown-clipboard.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/plugins/markdown-clipboard.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-037",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/props.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/props.ts",
+      "symbol": "CoreEditorProps",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/styles/drag-drop.css",
+      "category": "CSS",
+      "target": "FE/libs/shared/editor/styles/drag-drop.css",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-026",
+      "note": "Import-Position 09 §3.2.2"
+    },
+    {
+      "original": "packages/editor/src/styles/editor.css",
+      "category": "CSS",
+      "target": "FE/libs/shared/editor/styles/editor.css",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": "Import-Position 09 §3.2.2"
+    },
+    {
+      "original": "packages/editor/src/styles/github-dark.css",
+      "category": "CSS",
+      "target": "FE/libs/shared/editor/styles/github-dark.css",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-030",
+      "note": "Import-Position 09 §3.2.2"
+    },
+    {
+      "original": "packages/editor/src/styles/index.css",
+      "category": "CSS",
+      "target": "FE/libs/shared/editor/styles/index.css",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": "Import-Position 09 §3.2.2"
+    },
+    {
+      "original": "packages/editor/src/styles/table.css",
+      "category": "CSS",
+      "target": "FE/libs/shared/editor/styles/table.css",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-031",
+      "note": "Import-Position 09 §3.2.2"
+    },
+    {
+      "original": "packages/editor/src/styles/title-editor.css",
+      "category": "CSS",
+      "target": "FE/libs/shared/editor/styles/title-editor.css",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-013, CE-PAGE-038",
+      "note": "Import-Position 09 §3.2.2"
+    },
+    {
+      "original": "packages/editor/src/styles/variables.css",
+      "category": "CSS",
+      "target": "FE/libs/shared/editor/styles/variables.css",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-040, CE-I18N-010",
+      "note": "Import-Position 09 §3.2.2"
+    },
+    {
+      "original": "packages/editor/src/types/ai.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/types/ai.ts",
+      "symbol": "ReactNode → TEditorRenderable",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/types/asset.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/types/asset.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/types/collaboration.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/types/collaboration.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-013, CE-RT-002",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/types/config.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/types/config.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/types/document-collaborative-events.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/types/document-collaborative-events.ts",
+      "symbol": "",
+      "increment": "I4",
+      "ce_ids": "CE-RT-004",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/types/editor-extended.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/types/editor-extended.ts",
+      "symbol": "1:1 (D16-ADR-15, S48)",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": "V-Andockpunkt"
+    },
+    {
+      "original": "packages/editor/src/types/editor.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/types/editor.ts",
+      "symbol": "IEditorProps & Co. (MutableRefObject/ReactNode → agnostische Typen, §3.3)",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/types/embed.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/types/embed.ts",
+      "symbol": "ReactNode → TEditorRenderable",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/types/extensions.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/types/extensions.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/types/hook.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/types/hook.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/types/index.ts",
+      "category": "PA",
+      "target": "FE/libs/shared/editor/core/src/types/index.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/types/issue-embed.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/types/issue-embed.ts",
+      "symbol": "ReactNode → TEditorRenderable",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/types/mention.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/types/mention.ts",
+      "symbol": "TMentionHandler.renderComponent → TEditorRenderable",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/types/slash-commands-suggestion.ts",
+      "category": "K2",
+      "target": "FE/libs/shared/editor/core/src/types/slash-commands-suggestion.ts",
+      "symbol": "CSSProperties → Partial<CSSStyleDeclaration>",
+      "increment": "I2",
+      "ce_ids": "CE-PAGE-024",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/types/storage.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/types/storage.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    },
+    {
+      "original": "packages/editor/src/types/utils.ts",
+      "category": "K1",
+      "target": "FE/libs/shared/editor/core/src/types/utils.ts",
+      "symbol": "",
+      "increment": "I2",
+      "ce_ids": "Querschnitt (CE-PAGE-021…023)",
+      "note": ""
+    }
+  ],
+  "review": "2026-10-23 Review: core-without-props.ts und yjs-utils.ts K1->K2, core/without-props.ts K2->K1 (R-ED-12); Summen K1 101, K2 28, NV 10, NG 45, SV 8, PA 24, CSS 7, EX 2"
 }
