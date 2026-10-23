@@ -30,34 +30,34 @@ Diese Liste dient der Entscheidung, **welche Bezahl-Features nach der Community 
 
 | ✓ | Prio | Paket | Aufwand | 🧱 | Plan im Original | Setzt voraus |
 |---|---|---|---|---|---|---|
-| [ ] | | **A1** Work-Item-Types & Custom Properties (Projekt-Ebene) | XL (40–100 PT) | 🧱 | Pro | – |
-| [ ] | | **A2** Workspace-weite Types/Properties, Typ-Hierarchie, Roll-ups, Property Contexts | L (15–40 PT) | 🧱 | Business, Enterprise | A1 |
-| [ ] | | **A3** Epics (inkl. Fortschritt, Updates, Conversions) | M (5–15 PT) |  | Pro, unklar | A1 |
-| [ ] | | **A4** Initiatives inkl. Labels, Checkpoints/Updates | M (5–15 PT) |  | Pro | A3 |
-| [ ] | | **A5** Milestones | S (2–5 PT) |  | Pro | – |
-| [ ] | | **A6** Releases (Tags, Labels, Links, Changelog) | M (5–15 PT) |  | Business | – |
-| [ ] | | **A7** Customers inkl. Requests und Properties | L (15–40 PT) |  | Business | A1 (Property-Engine) |
-| [ ] | | **A8** Bulk Ops, Transfers, projektübergreifende Kopien | M (5–15 PT) |  | Pro | – |
-| [ ] | | **A9** Relationen & Abhängigkeiten (Gantt-Dependencies, Custom Relations, Implements, projektübergreifende Sub-Items) | L (15–40 PT) | 🧱 | Pro, Enterprise, unklar | – |
-| [ ] | | **A10** Time Tracking, Worklogs, Timesheets, Timesheet-Approvals | M (5–15 PT) |  | Pro, Business | – |
-| [ ] | | **A11** Advanced Estimates (Zeit-Schätzungen, Systemwechsel) | S (2–5 PT) |  | Pro | – |
-| [ ] | | **A12** Module Overview & Auto-Assignment | M (5–15 PT) |  | Pro | – |
-| [ ] | | **A13** Projekt-Organisation (Private/Secret Projects, Project States, Project Labels, Overview, Updates) | L (15–40 PT) |  | Pro, unklar | – |
-| [ ] | | **A14** Baselines & Deviations, Custom SLAs | L (15–40 PT) |  | Business | – |
-| [ ] | | **A15** Intake-Erweiterungen (Intake Forms, E-Mail-Intake, Intake Assignees) | L (15–40 PT) |  | Business | – |
-| [ ] | | **A16** Votes und Kommentar-Antworten an Work Items | S (2–5 PT) |  | unklar | – |
-| [ ] | | **A17** Workspace Governance für States und Labels | M (5–15 PT) | 🧱 | Enterprise | – |
+| [x] | | **A1** Work-Item-Types & Custom Properties (Projekt-Ebene) | XL (40–100 PT) | 🧱 | Pro | – |
+| [x] | | **A2** Workspace-weite Types/Properties, Typ-Hierarchie, Roll-ups, Property Contexts | L (15–40 PT) | 🧱 | Business, Enterprise | A1 |
+| [x] | | **A3** Epics (inkl. Fortschritt, Updates, Conversions) | M (5–15 PT) |  | Pro, unklar | A1 |
+| [x] | | **A4** Initiatives inkl. Labels, Checkpoints/Updates | M (5–15 PT) |  | Pro | A3 |
+| [x] | | **A5** Milestones | S (2–5 PT) |  | Pro | – |
+| [x] | | **A6** Releases (Tags, Labels, Links, Changelog) | M (5–15 PT) |  | Business | – |
+| [x] | | **A7** Customers inkl. Requests und Properties | L (15–40 PT) |  | Business | A1 (Property-Engine) |
+| [x] | | **A8** Bulk Ops, Transfers, projektübergreifende Kopien | M (5–15 PT) |  | Pro | – |
+| [x] | | **A9** Relationen & Abhängigkeiten (Gantt-Dependencies, Custom Relations, Implements, projektübergreifende Sub-Items) | L (15–40 PT) | 🧱 | Pro, Enterprise, unklar | – |
+| [x] | | **A10** Time Tracking, Worklogs, Timesheets, Timesheet-Approvals | M (5–15 PT) |  | Pro, Business | – |
+| [x] | | **A11** Advanced Estimates (Zeit-Schätzungen, Systemwechsel) | S (2–5 PT) |  | Pro | – |
+| [x] | | **A12** Module Overview & Auto-Assignment | M (5–15 PT) |  | Pro | – |
+| [x] | | **A13** Projekt-Organisation (Private/Secret Projects, Project States, Project Labels, Overview, Updates) | L (15–40 PT) |  | Pro, unklar | – |
+| [x] | | **A14** Baselines & Deviations, Custom SLAs | L (15–40 PT) |  | Business | – |
+| [x] | | **A15** Intake-Erweiterungen (Intake Forms, E-Mail-Intake, Intake Assignees) | L (15–40 PT) |  | Business | – |
+| [x] | | **A16** Votes und Kommentar-Antworten an Work Items | S (2–5 PT) |  | unklar | – |
+| [x] | | **A17** Workspace Governance für States und Labels | M (5–15 PT) | 🧱 | Enterprise | – |
 
 <details><summary><b>A1</b> – 6 Features</summary>
 
 _Hinweis:_ Erweitert Work-Item-Modell, Filter-/Gruppierungs-Engine, Spreadsheet, API. Basis für Epics, Customers, Templates, Importer mit Custom Props.
 
-- [ ] `EE-P04-001` Work Item Types auf Projekt-Ebene (Name, Beschreibung, Icon, Farbe, Default-Typ, aktiv/inaktiv, Typwechsel) — Plan: Pro · CE: teilweise im CE · Konfidenz: hoch · Detail: migration/features/23-paid-work-management.md#WM-01; migration/features/20-paid-spuren-im-repo.md#PF-05; migration/features/21-paid-api-referenz-developer-docs.md#F08
-- [ ] `EE-P04-003` Custom Properties auf Projekt-Ebene (Property-Engine, Werte am Work Item) — Plan: Pro · CE: Stub/UI-Hülle im CE · Konfidenz: hoch · Detail: migration/features/23-paid-work-management.md#WM-03; migration/features/20-paid-spuren-im-repo.md#PF-06; migration/features/21-paid-api-referenz-developer-docs.md#F09
-- [ ] `EE-P04-004` Property-Typen (Text, Number, Dropdown, Boolean, Date, Member picker, Relation, URL, Email, File, Release picker, Formula) — Plan: Pro · CE: fehlt · Konfidenz: mittel · Detail: migration/features/23-paid-work-management.md#WM-04
-- [ ] `EE-P04-005` Pflichtfelder, Default-Werte, Aktiv/Inaktiv und Optionen-Verwaltung von Properties — Plan: Pro · CE: fehlt · Konfidenz: mittel · Detail: migration/features/23-paid-work-management.md#WM-05
-- [ ] `EE-P04-006` Formula-Properties (`property_type=FORMULA`) — Plan: Pro · CE: fehlt · Konfidenz: mittel · Detail: migration/features/23-paid-work-management.md#WM-06; migration/features/21-paid-api-referenz-developer-docs.md#F10
-- [ ] `EE-P02-001` Work-Item-Type-Schema-Endpunkt (Standard- und Custom-Felder eines Typs für LLM/MCP) — Plan: Pro · CE: fehlt · Konfidenz: hoch · Detail: migration/features/21-paid-api-referenz-developer-docs.md#F11
+- [] `EE-P04-001` Work Item Types auf Projekt-Ebene (Name, Beschreibung, Icon, Farbe, Default-Typ, aktiv/inaktiv, Typwechsel) — Plan: Pro · CE: teilweise im CE · Konfidenz: hoch · Detail: migration/features/23-paid-work-management.md#WM-01; migration/features/20-paid-spuren-im-repo.md#PF-05; migration/features/21-paid-api-referenz-developer-docs.md#F08
+- [] `EE-P04-003` Custom Properties auf Projekt-Ebene (Property-Engine, Werte am Work Item) — Plan: Pro · CE: Stub/UI-Hülle im CE · Konfidenz: hoch · Detail: migration/features/23-paid-work-management.md#WM-03; migration/features/20-paid-spuren-im-repo.md#PF-06; migration/features/21-paid-api-referenz-developer-docs.md#F09
+- [] `EE-P04-004` Property-Typen (Text, Number, Dropdown, Boolean, Date, Member picker, Relation, URL, Email, File, Release picker, Formula) — Plan: Pro · CE: fehlt · Konfidenz: mittel · Detail: migration/features/23-paid-work-management.md#WM-04
+- [] `EE-P04-005` Pflichtfelder, Default-Werte, Aktiv/Inaktiv und Optionen-Verwaltung von Properties — Plan: Pro · CE: fehlt · Konfidenz: mittel · Detail: migration/features/23-paid-work-management.md#WM-05
+- [] `EE-P04-006` Formula-Properties (`property_type=FORMULA`) — Plan: Pro · CE: fehlt · Konfidenz: mittel · Detail: migration/features/23-paid-work-management.md#WM-06; migration/features/21-paid-api-referenz-developer-docs.md#F10
+- [] `EE-P02-001` Work-Item-Type-Schema-Endpunkt (Standard- und Custom-Felder eines Typs für LLM/MCP) — Plan: Pro · CE: fehlt · Konfidenz: hoch · Detail: migration/features/21-paid-api-referenz-developer-docs.md#F11
 
 </details>
 
@@ -194,14 +194,14 @@ _Hinweis:_ E-Mail-Intake braucht SMTP-Empfangsdienst.
 
 | ✓ | Prio | Paket | Aufwand | 🧱 | Plan im Original | Setzt voraus |
 |---|---|---|---|---|---|---|
-| [ ] | | **B1** Teamspaces (inkl. Work Items, Views, Pages, Kommentare, Member-Kontext, Feature-Schalter) | XL (40–100 PT) | 🧱 | Pro, unklar | – |
-| [ ] | | **B2** Dashboards & Widgets (inkl. Filter, Intake-/Property-Widgets, Einbettung in Pages) | L (15–40 PT) |  | Pro, Enterprise, unklar | Charts-Bibliothek |
-| [ ] | | **B3** Analytics-Erweiterungen, Custom Reports, Insights, Time Capsule | L (15–40 PT) |  | Pro, Business, unklar | – |
-| [ ] | | **B4** Cycle-Erweiterungen (Progress Charts, Reports, Auto-Schedule, Auto-Rollover, Active Cycles, Parallel Cycles, Complete/Start/End, Teamspace Cycles) | M (5–15 PT) |  | Pro, Business, unklar | B1 für Teamspace Cycles |
-| [ ] | | **B5** Shared Views und Publish Views | M (5–15 PT) |  | Pro | – |
-| [ ] | | **B6** Erweiterte Filter, PQL, Text-to-PQL, Advanced Search | L (15–40 PT) | 🧱 | Pro, Enterprise | G1 für Text-to-PQL |
-| [ ] | | **B7** Scheduled Comms (geplante Berichte/Nachrichten) | M (5–15 PT) |  | Business | Job-System |
-| [ ] | | **B8** Home-/Navigations-Erweiterungen, Product Tour | S (2–5 PT) |  | unklar | – |
+| [x] | | **B1** Teamspaces (inkl. Work Items, Views, Pages, Kommentare, Member-Kontext, Feature-Schalter) | XL (40–100 PT) | 🧱 | Pro, unklar | – |
+| [x] | | **B2** Dashboards & Widgets (inkl. Filter, Intake-/Property-Widgets, Einbettung in Pages) | L (15–40 PT) |  | Pro, Enterprise, unklar | Charts-Bibliothek |
+| [x] | | **B3** Analytics-Erweiterungen, Custom Reports, Insights, Time Capsule | L (15–40 PT) |  | Pro, Business, unklar | – |
+| [x] | | **B4** Cycle-Erweiterungen (Progress Charts, Reports, Auto-Schedule, Auto-Rollover, Active Cycles, Parallel Cycles, Complete/Start/End, Teamspace Cycles) | M (5–15 PT) |  | Pro, Business, unklar | B1 für Teamspace Cycles |
+| [x] | | **B5** Shared Views und Publish Views | M (5–15 PT) |  | Pro | – |
+| [x] | | **B6** Erweiterte Filter, PQL, Text-to-PQL, Advanced Search | L (15–40 PT) | 🧱 | Pro, Enterprise | G1 für Text-to-PQL |
+| [x] | | **B7** Scheduled Comms (geplante Berichte/Nachrichten) | M (5–15 PT) |  | Business | Job-System |
+| [x] | | **B8** Home-/Navigations-Erweiterungen, Product Tour | S (2–5 PT) |  | unklar | – |
 
 <details><summary><b>B1</b> – 7 Features</summary>
 
@@ -356,18 +356,18 @@ _Hinweis:_ Ohne Node: JavaScript-Sandbox in .NET (z. B. Jint) nötig.
 
 | ✓ | Prio | Paket | Aufwand | 🧱 | Plan im Original | Setzt voraus |
 |---|---|---|---|---|---|---|
-| [ ] | | **D1** Wiki & Collections (öffentlich/privat) | L (15–40 PT) | 🧱 | Pro, Business | – |
-| [ ] | | **D2** Nested Pages & Verschieben von Pages | M (5–15 PT) | 🧱 | Pro, Business | – |
-| [ ] | | **D3** Page-Versionen erweitert (Aufbewahrung, Vergleich, Highlight, Restore) | M (5–15 PT) |  | Pro, unklar | – |
-| [ ] | | **D4** Realtime-Presence (Avatare, Live-Cursor) | S (2–5 PT) |  | Pro | Realtime-Server |
-| [ ] | | **D5** Page-Publish & Exporte (PDF/Word/Markdown, Queue, ZIP) | L (15–40 PT) |  | Pro | – |
-| [ ] | | **D6** Work-Item-Verknüpfung (Embeds, Mentions, Link Pages, erweiterte Mentions/Backlinks) | M (5–15 PT) |  | Pro, Business, unklar | – |
-| [ ] | | **D7** Kommentare in Pages (inline, Page-Level, Moderation) | L (15–40 PT) |  | Business, unklar | – |
-| [ ] | | **D8** Page-Sharing, Page-Labels, Page-Benachrichtigungen | M (5–15 PT) |  | Business, unklar | E5 (Rechtemodell) |
-| [ ] | | **D9** Erweiterte Editor-Blöcke (Draw.io, Embeds, Attachments, Video, Columns, Tabs, Toggle, Status, Date, LaTeX, Mermaid, HTML-Artifact, TOC, Link pages, Page-Embed, Widget, Block-Links) | XL (40–100 PT) |  | Pro, Business, unklar | Editor-Port |
-| [ ] | | **D10** Databases + Formulas in Pages | XL (40–100 PT) |  | Business | A1 (Property-Typen) |
-| [ ] | | **D11** Advanced Pages Analytics | M (5–15 PT) |  | Business | – |
-| [ ] | | **D12** Pages-Public-API | M (5–15 PT) |  | unklar | D1, D2 |
+| [x] | | **D1** Wiki & Collections (öffentlich/privat) | L (15–40 PT) | 🧱 | Pro, Business | – |
+| [x] | | **D2** Nested Pages & Verschieben von Pages | M (5–15 PT) | 🧱 | Pro, Business | – |
+| [x] | | **D3** Page-Versionen erweitert (Aufbewahrung, Vergleich, Highlight, Restore) | M (5–15 PT) |  | Pro, unklar | – |
+| [x] | | **D4** Realtime-Presence (Avatare, Live-Cursor) | S (2–5 PT) |  | Pro | Realtime-Server |
+| [x] | | **D5** Page-Publish & Exporte (PDF/Word/Markdown, Queue, ZIP) | L (15–40 PT) |  | Pro | – |
+| [x] | | **D6** Work-Item-Verknüpfung (Embeds, Mentions, Link Pages, erweiterte Mentions/Backlinks) | M (5–15 PT) |  | Pro, Business, unklar | – |
+| [x] | | **D7** Kommentare in Pages (inline, Page-Level, Moderation) | L (15–40 PT) |  | Business, unklar | – |
+| [x] | | **D8** Page-Sharing, Page-Labels, Page-Benachrichtigungen | M (5–15 PT) |  | Business, unklar | E5 (Rechtemodell) |
+| [x] | | **D9** Erweiterte Editor-Blöcke (Draw.io, Embeds, Attachments, Video, Columns, Tabs, Toggle, Status, Date, LaTeX, Mermaid, HTML-Artifact, TOC, Link pages, Page-Embed, Widget, Block-Links) | XL (40–100 PT) |  | Pro, Business, unklar | Editor-Port |
+| [x] | | **D10** Databases + Formulas in Pages | XL (40–100 PT) |  | Business | A1 (Property-Typen) |
+| [x] | | **D11** Advanced Pages Analytics | M (5–15 PT) |  | Business | – |
+| [x] | | **D12** Pages-Public-API | M (5–15 PT) |  | unklar | D1, D2 |
 
 <details><summary><b>D1</b> – 3 Features</summary>
 
@@ -480,11 +480,11 @@ _Hinweis:_ Kaum öffentlich spezifiziert.
 
 | ✓ | Prio | Paket | Aufwand | 🧱 | Plan im Original | Setzt voraus |
 |---|---|---|---|---|---|---|
-| [ ] | | **E3** IdP Group Sync aus Keycloak-Gruppen/-Rollen (→ Workspace-/Projektrollen), SCIM optional | M (5–15 PT) | 🧱 | Enterprise | E5 |
-| [ ] | | **E5** Rollenmodell (RBAC, Custom Roles, GAC) | XL (40–100 PT) | 🧱 | Business, Enterprise | – |
-| [ ] | | **E6** Admin Interface, Workspace Activity Logs, Audit Logs (API) | M (5–15 PT) |  | Business, Enterprise | Event/Outbox |
-| [ ] | | **E7** God-Mode-Erweiterungen (User Management, Session-Einstellungen, System Checks, Multi-Workspace-Management) | M (5–15 PT) |  | Commercial-Free, Enterprise | – |
-| [ ] | | **E8** PII-/Sensitive-Data-Scanner (Argus) | L (15–40 PT) |  | unklar | – |
+| [x] | | **E3** IdP Group Sync aus Keycloak-Gruppen/-Rollen (→ Workspace-/Projektrollen), SCIM optional | M (5–15 PT) | 🧱 | Enterprise | E5 |
+| [x] | | **E5** Rollenmodell (RBAC, Custom Roles, GAC) | XL (40–100 PT) | 🧱 | Business, Enterprise | – |
+| [x] | | **E6** Admin Interface, Workspace Activity Logs, Audit Logs (API) | M (5–15 PT) |  | Business, Enterprise | Event/Outbox |
+| [x] | | **E7** God-Mode-Erweiterungen (User Management, Session-Einstellungen, System Checks, Multi-Workspace-Management) | M (5–15 PT) |  | Commercial-Free, Enterprise | – |
+| [x] | | **E8** PII-/Sensitive-Data-Scanner (Argus) | L (15–40 PT) |  | unklar | – |
 
 <details><summary><b>E3</b> – 2 Features</summary>
 
@@ -532,10 +532,10 @@ _Hinweis:_ Berechtigungskatalog statt fester Rollenwerte bereits in der CE.
 
 | ✓ | Prio | Paket | Aufwand | 🧱 | Plan im Original | Setzt voraus |
 |---|---|---|---|---|---|---|
-| [ ] | | **F1** Integrations-Framework (Connections, Webhook-Empfang, Sync-Engine) | L (15–40 PT) | 🧱 | Pro | H1 |
-| [ ] | | **F2** Forgejo-Integration (ADR-007): Instanz-/Org-Verbindung, persönliche Konten, Repo↔Projekt-Mapping, bidirektionaler Issue-Sync, PR-/Commit-Automation, Status in Work Items, Branch aus Work Item, Webhooks, Importer, Forgejo-Login | XL (40–100 PT) | 🧱 | neu (ADR-007) | F1 |
+| [x] | | **F1** Integrations-Framework (Connections, Webhook-Empfang, Sync-Engine) | L (15–40 PT) | 🧱 | Pro | H1 |
+| [x] | | **F2** Forgejo-Integration (ADR-007): Instanz-/Org-Verbindung, persönliche Konten, Repo↔Projekt-Mapping, bidirektionaler Issue-Sync, PR-/Commit-Automation, Status in Work Items, Branch aus Work Item, Webhooks, Importer, Forgejo-Login | XL (40–100 PT) | 🧱 | neu (ADR-007) | F1 |
 | [ ] | | **F5** Slack (Verbindung, Benachrichtigungen, Slash-Command, Thread-Sync, Unfurl) | L (15–40 PT) |  | Pro | F1 |
-| [ ] | | **F6** Sentry | M (5–15 PT) |  | Pro | F1 |
+| [x] | | **F6** Sentry | M (5–15 PT) |  | Pro | F1 |
 | [ ] | | **F7** Weitere SaaS-Connectoren (HubSpot, Cursor-Agent, Zapier, Zendesk, Freshdesk) | L (15–40 PT) |  | Pro, unklar | F1 |
 | [ ] | | **F8** Importer-Framework, CSV-Import (Work Items, Mitglieder) | M (5–15 PT) |  | Commercial-Free, unklar | – |
 | [ ] | | **F9** Jira-Importer (Cloud, Server/Data Center) | L (15–40 PT) |  | Commercial-Free, unklar | F8, A1 für Custom Props |
@@ -661,14 +661,14 @@ _Hinweis:_ Indexierungs-Pipeline in der CE vorsehen; lokaler Provider für Airga
 
 | ✓ | Prio | Paket | Aufwand | 🧱 | Plan im Original | Setzt voraus |
 |---|---|---|---|---|---|---|
-| [ ] | | **H1** OAuth-App-Plattform (Apps, Consent, Scopes, Bot-User, App-Mentions, Marketplace, OAuth Bridge) | L (15–40 PT) | 🧱 | unklar | – |
-| [ ] | | **H2** Agents-Plattform (Agent Runs, Activities, Signals) | L (15–40 PT) |  | unklar | H1 |
-| [ ] | | **H3** Public API v2 und API-Erweiterungen (Feature-APIs, Member entfernen, Views-API, Webhooks v2, Workspace-Tokens, GraphQL/Marketplace-Endpunkte) | L (15–40 PT) |  | Commercial-Free, unklar | – |
-| [ ] | | **H4** MCP-Server (OAuth-Transport, Tool-Gates) | M (5–15 PT) |  | unklar | H1 |
+| [x] | | **H1** OAuth-App-Plattform (Apps, Consent, Scopes, Bot-User, App-Mentions, Marketplace, OAuth Bridge) | L (15–40 PT) | 🧱 | unklar | – |
+| [x] | | **H2** Agents-Plattform (Agent Runs, Activities, Signals) | L (15–40 PT) |  | unklar | H1 |
+| [x] | | **H3** Public API v2 und API-Erweiterungen (Feature-APIs, Member entfernen, Views-API, Webhooks v2, Workspace-Tokens, GraphQL/Marketplace-Endpunkte) | L (15–40 PT) |  | Commercial-Free, unklar | – |
+| [x] | | **H4** MCP-Server (OAuth-Transport, Tool-Gates) | M (5–15 PT) |  | unklar | H1 |
 | [ ] | | **H5** Developer-Tools (Plane Compose, SDKs Node/Python) | M (5–15 PT) |  | unklar | H3 |
-| [ ] | | **H6** Realtime-Event-Server (Live-Updates für alle Objekte) | M (5–15 PT) | 🧱 | unklar | – |
-| [ ] | | **H7** Betrieb: Airgapped, FIPS, HA/Read-Replica/External Secrets, separater API-Pool, Installer/Backup | L (15–40 PT) |  | Commercial-Free, Enterprise | – |
-| [ ] | | **H8** Clients: Desktop-App, Mobile-Apps | XL (40–100 PT) |  | Commercial-Free, unklar | H3 |
+| [x] | | **H6** Realtime-Event-Server (Live-Updates für alle Objekte) | M (5–15 PT) | 🧱 | unklar | – |
+| [x] | | **H7** Betrieb: Airgapped, FIPS, HA/Read-Replica/External Secrets, separater API-Pool, Installer/Backup | L (15–40 PT) |  | Commercial-Free, Enterprise | – |
+| [x] | später | **H8** Clients: Desktop-App, Mobile-Apps | XL (40–100 PT) |  | Commercial-Free, unklar | H3 |
 
 <details><summary><b>H1</b> – 4 Features</summary>
 
