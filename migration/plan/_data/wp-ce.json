@@ -1,0 +1,2694 @@
+[
+ {
+  "wp": "WP-I0-001",
+  "title": "Schnitt 1: Anmeldung über Keycloak → JIT-Benutzer → Landing/leere Shell",
+  "phase": "I0",
+  "ce_ids": [
+   "CE-AUTH-001",
+   "CE-AUTH-012",
+   "CE-AUTH-014",
+   "CE-AUTH-016",
+   "CE-AUTH-022",
+   "CE-AUTH-023",
+   "CE-AUTH-024",
+   "CE-AUTH-025",
+   "CE-AUTH-027",
+   "CE-AUTH-029"
+  ],
+  "depends_on": [
+   "WP-I0-103",
+   "WP-I0-105",
+   "WP-I0-108",
+   "WP-I0-203",
+   "WP-I0-204"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I0-002",
+  "title": "Schnitt 2: Workspace anlegen (Formular, Slug-Prüfung, Admin-Mitgliedschaft)",
+  "phase": "I0",
+  "ce_ids": [
+   "CE-WS-001"
+  ],
+  "depends_on": [
+   "WP-I0-001",
+   "WP-I0-201",
+   "WP-I0-202",
+   "WP-I0-203"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I0-003",
+  "title": "Instanz-Bootstrap: Konfiguration, Instanz-Info, Erst-Einrichtung, God-Mode-Einstieg (inkl. Nachweis entfallener Admin-Logins)",
+  "phase": "I0",
+  "ce_ids": [
+   "CE-INST-001",
+   "CE-INST-002",
+   "CE-INST-003",
+   "CE-INST-004",
+   "CE-INST-005",
+   "CE-INST-006",
+   "CE-INST-007",
+   "CE-INST-020",
+   "CE-INST-021",
+   "CE-INST-022",
+   "CE-INST-023",
+   "CE-INST-024"
+  ],
+  "depends_on": [
+   "WP-I0-001",
+   "WP-I0-208"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I0-004",
+  "title": "Schnitt: Workspace-Shell 1:1 (Top-Navigation, Sidebar, Header, Workspace-Switcher, User-Menü)",
+  "phase": "I0",
+  "ce_ids": [
+   "CE-WS-005",
+   "CE-WS-013",
+   "CE-WS-016",
+   "CE-WS-018",
+   "CE-WS-019",
+   "CE-WS-020"
+  ],
+  "depends_on": [
+   "WP-I0-002",
+   "WP-I0-006",
+   "WP-I0-208"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I0-005",
+  "title": "Schnitt 3: Projekt anlegen (Identifier-Prüfung, Default-States, Mitgliedschaft)",
+  "phase": "I0",
+  "ce_ids": [
+   "CE-PRJ-004",
+   "CE-PRJ-005"
+  ],
+  "depends_on": [
+   "WP-I0-002",
+   "WP-I0-006"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I0-006",
+  "title": "Designsystem-Fundament: CSS-Pipeline, Schriften, Icons, erste Propel-Primitive, Toast, Galerie",
+  "phase": "I0",
+  "ce_ids": [
+   "CE-I18N-011",
+   "CE-I18N-012",
+   "CE-I18N-013",
+   "CE-I18N-021",
+   "CE-I18N-023",
+   "CE-I18N-024",
+   "CE-I18N-025",
+   "CE-I18N-026"
+  ],
+  "depends_on": [
+   "WP-I0-105",
+   "WP-I0-910"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I0-101",
+  "title": "Repository funk. aufsetzen (Lizenz, Plan-Spiegel, AGENTS.md, Grundgerüst)",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I0-102",
+  "title": "Aspire-AppHost und ServiceDefaults (Profile dev/test/prodlike)",
+  "phase": "I0",
+  "ce_ids": [
+   "CE-OPS-021"
+  ],
+  "depends_on": [
+   "WP-I0-900"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I0-103",
+  "title": "Gateway Funk.Gateway: Routen, statische Auslieferung, Base-URLs, Health, robots.txt, 413",
+  "phase": "I0",
+  "ce_ids": [
+   "CE-OPS-006",
+   "CE-OPS-007",
+   "CE-OPS-008",
+   "CE-OPS-009"
+  ],
+  "depends_on": [
+   "WP-I0-102",
+   "WP-I0-104"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I0-104",
+  "title": "Backend-Fundament: BuildingBlocks, Funk.Data, Migrator, Modul-Schablone, Architekturtests",
+  "phase": "I0",
+  "ce_ids": [
+   "CE-OPS-019"
+  ],
+  "depends_on": [
+   "WP-I0-900"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I0-105",
+  "title": "Frontend-Fundament: Angular-Workspace, Shared-Libs, Routing-Kern, Wrapper, Runtime-Config",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-900"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I0-106",
+  "title": "Test- und CI-Infrastruktur: Gates G0–G3, Lizenz-Gate, G-BRAND, Coverage- und Ledger-Werkzeuge",
+  "phase": "I0",
+  "ce_ids": [
+   "CE-OPS-022",
+   "CE-OPS-023"
+  ],
+  "depends_on": [
+   "WP-I0-101",
+   "WP-I0-900"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I0-107",
+  "title": "Realtime-Host-Gerüst Funk.Realtime (Health, Origin-Prüfung, /live-Fallback)",
+  "phase": "I0",
+  "ce_ids": [
+   "CE-RT-009"
+  ],
+  "depends_on": [
+   "WP-I0-103",
+   "WP-I0-104"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I0-108",
+  "title": "Keycloak-Realm als Code (dev/test/prod) inkl. Nachweis entfallener Auth-Funktionen",
+  "phase": "I0",
+  "ce_ids": [
+   "CE-AUTH-002",
+   "CE-AUTH-003",
+   "CE-AUTH-004",
+   "CE-AUTH-005",
+   "CE-AUTH-006",
+   "CE-AUTH-007",
+   "CE-AUTH-008",
+   "CE-AUTH-009",
+   "CE-AUTH-010",
+   "CE-AUTH-011",
+   "CE-AUTH-013",
+   "CE-AUTH-017",
+   "CE-AUTH-018",
+   "CE-AUTH-019",
+   "CE-AUTH-020",
+   "CE-AUTH-021",
+   "CE-PROF-007"
+  ],
+  "depends_on": [
+   "WP-I0-102",
+   "WP-I0-907"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I0-109",
+  "title": "Keycloak-Login-Themes funk und funk-space (1:1-Optik der Sign-in-Seite, funk.-Branding)",
+  "phase": "I0",
+  "ce_ids": [
+   "CE-AUTH-015"
+  ],
+  "depends_on": [
+   "WP-I0-108",
+   "WP-I0-006"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I0-201",
+  "title": "Erweiterungspunkt C3: Event-Katalog, Outbox/Inbox-Gerüst, Consumer-Registrierung, Recurring Jobs, Queues",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-104"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I0-202",
+  "title": "Erweiterungspunkt B1/A2: ScopeRef, ScopeLevel, IScopeResolver, IScopeAncestorContributor, RouterStore.teamspaceId",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-104",
+   "WP-I0-105"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I0-203",
+  "title": "Erweiterungspunkt E5: Permission-Katalog, roles/role_permissions, role_id, ISystemRoleGrantContributor, PermissionService",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-104",
+   "WP-I0-105"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I0-204",
+  "title": "Erweiterungspunkt H1/E3: FunkPrincipal, Policy-Scheme Cookies│ApiKey│Bearer, users.is_bot, Provisioning-Kette",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-104",
+   "WP-I0-907"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I0-205",
+  "title": "Erweiterungspunkt F1: Oberfläche Integrations, Webhook-Ingress, Verifier-Registry, integration_connections, Platzhalter-Contracts",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-104",
+   "WP-I0-201"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I0-206",
+  "title": "Erweiterungspunkt F2: Forgejo-Container, Keycloak-Client funk-forgejo, forgejo-init, SSO-Smoke",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-102",
+   "WP-I0-108"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I0-207",
+  "title": "Erweiterungspunkt H6: SignalR-Hub /live/events/, Gruppen, IRealtimePublisher, IRealtimeGroupAuthorizer, LiveEventsService",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-107",
+   "WP-I0-105",
+   "WP-I0-201"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I0-208",
+  "title": "Erweiterungspunkte Querschnitt: Reservierungen + Kollisionstests, R11/R12, Frontend-Registries (Routen, Sidebar, Admin), Fake-Extensions",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-104",
+   "WP-I0-105"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I0-900",
+  "title": "Spike S0 – Toolchain & Walking-Skeleton-Gerüst",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-101"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I0-901",
+  "title": "Spike S1 – YDotNet + Hocuspocus-Protokoll in .NET",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-900",
+   "WP-I0-107"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I0-902",
+  "title": "Spike S2 – Yjs → ProseMirror-JSON → HTML (und HTML → JSON) ohne Node",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-900"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I0-903",
+  "title": "Spike S3 – PDF-Export mit PDFsharp/MigraDoc",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-900"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I0-904",
+  "title": "Spike S4 – Kanban/Gantt-Drag-and-Drop in Angular (zoneless, virtualisiert)",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-900",
+   "WP-I0-105"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I0-905",
+  "title": "Spike S5 – Editor-NodeViews in Angular mit Tiptap 2.27 (Schema-Freeze)",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-900",
+   "WP-I0-105"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I0-906",
+  "title": "Spike S6 – Charts 1:1 mit D3 + Angular-SVG",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-105"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I0-907",
+  "title": "Spike S7 – Keycloak-BFF, Logout, Theme, Forgejo-SSO",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-102"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I0-908",
+  "title": "Spike S8 – Objektspeicher-Kompatibilität (Presigned POST/GET, Upload-Modus)",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-102"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I0-909",
+  "title": "Spike S9 – Work-Item-Listen-Performance & Filter-Engine (EF Core)",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-104"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I0-910",
+  "title": "Spike S10 – Designsystem-Parität (Angular Aria/CDK + floating-ui)",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-105"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I0-911",
+  "title": "Spike S11 – Paritäts-Harness (Original v1.4.2 starten, Seed, Record/Replay, Visual-Katalog)",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-101"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I0-912",
+  "title": "Spike S12 – Eigene Outbox/Job-Queue auf PostgreSQL",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-104",
+   "WP-I0-201"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I0-913",
+  "title": "Spike Scope-FK – zusammengesetzter Fremdschlüssel (project_id, workspace_id) inkl. nullable workspace_id",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-104"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I0-999",
+  "title": "Abnahme I0 – Walking Skeleton (G5)",
+  "phase": "I0",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-001",
+   "WP-I0-002",
+   "WP-I0-003",
+   "WP-I0-004",
+   "WP-I0-005",
+   "WP-I0-006",
+   "WP-I0-101",
+   "WP-I0-102",
+   "WP-I0-103",
+   "WP-I0-104",
+   "WP-I0-105",
+   "WP-I0-106",
+   "WP-I0-107",
+   "WP-I0-108",
+   "WP-I0-109",
+   "WP-I0-201",
+   "WP-I0-202",
+   "WP-I0-203",
+   "WP-I0-204",
+   "WP-I0-205",
+   "WP-I0-206",
+   "WP-I0-207",
+   "WP-I0-208",
+   "WP-I0-900",
+   "WP-I0-907",
+   "WP-I0-910",
+   "WP-I0-911"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I1-001",
+  "title": "Workspace-Einstellungen (General, Löschen, Settings-Rahmen, Stammdatenlisten, Themes-API)",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-WS-003",
+   "CE-WS-004",
+   "CE-WS-006",
+   "CE-WS-007",
+   "CE-WS-024"
+  ],
+  "depends_on": [
+   "WP-I0-999",
+   "WP-I1-203",
+   "WP-I1-103"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-002",
+  "title": "Mitglieder, Rollen, Einladungen (inkl. automatischer Beitritt beim Login)",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-WS-008",
+   "CE-WS-009",
+   "CE-WS-010",
+   "CE-WS-011",
+   "CE-WS-012",
+   "CE-AUTH-028"
+  ],
+  "depends_on": [
+   "WP-I0-999",
+   "WP-I1-102",
+   "WP-I1-203"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I1-003",
+  "title": "Shell-Ergänzungen und Navigation: Hilfe-Menü, What's new, Star-Link, Sidebar „More“, Customize navigation",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-WS-014",
+   "CE-WS-015",
+   "CE-WS-017",
+   "CE-WS-021",
+   "CE-WS-022"
+  ],
+  "depends_on": [
+   "WP-I0-999",
+   "WP-I1-203"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-004",
+  "title": "Favoriten mit Ordnern",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-WS-023"
+  ],
+  "depends_on": [
+   "WP-I1-005",
+   "WP-I1-203"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-005",
+  "title": "Projektliste, Projektkarten, Projekt-Statistiken",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-PRJ-001",
+   "CE-PRJ-002",
+   "CE-PRJ-003"
+  ],
+  "depends_on": [
+   "WP-I0-999",
+   "WP-I1-105"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-006",
+  "title": "Projekt-Detail, Zugriffsschutz, Beitreten/Verlassen, Projekt-Einladungen per E-Mail",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-PRJ-006",
+   "CE-PRJ-007",
+   "CE-PRJ-010"
+  ],
+  "depends_on": [
+   "WP-I1-002",
+   "WP-I1-005"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-007",
+  "title": "Projekt archivieren/wiederherstellen und löschen",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-PRJ-008",
+   "CE-PRJ-009"
+  ],
+  "depends_on": [
+   "WP-I1-005",
+   "WP-I1-101"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I1-008",
+  "title": "Projekt-Sidebar, Kontextmenü, erweiterte Sidebar, Feature-Navigation, Tabs",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-PRJ-011",
+   "CE-PRJ-012",
+   "CE-PRJ-013",
+   "CE-PRJ-014",
+   "CE-PRJ-015"
+  ],
+  "depends_on": [
+   "WP-I1-005",
+   "WP-I1-202"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-009",
+  "title": "Projekt-Settings-Rahmen, General, Benutzerpräferenzen",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-PRJ-016",
+   "CE-PRJ-017",
+   "CE-PRJ-018"
+  ],
+  "depends_on": [
+   "WP-I1-005",
+   "WP-I1-203"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-010",
+  "title": "Projekt-Features (Toggles), Disabled-Zustände, Projektmitglieder, Gastzugriff",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-PRJ-019",
+   "CE-PRJ-020",
+   "CE-PRJ-021",
+   "CE-PRJ-022"
+  ],
+  "depends_on": [
+   "WP-I1-009",
+   "WP-I1-202",
+   "WP-I1-002"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-011",
+  "title": "States: Gruppen, Anlage/Bearbeitung, Reihenfolge per DnD, Default-State, Löschen",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-PRJ-023",
+   "CE-PRJ-024",
+   "CE-PRJ-025",
+   "CE-PRJ-026",
+   "CE-PRJ-027"
+  ],
+  "depends_on": [
+   "WP-I1-009",
+   "WP-I1-201",
+   "WP-I0-913"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-012",
+  "title": "Labels – Referenzmodul (Hierarchie, Anlage, DnD-Gruppierung, Löschen, Bulk-Import)",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-PRJ-028",
+   "CE-PRJ-029",
+   "CE-PRJ-030",
+   "CE-PRJ-031",
+   "CE-PRJ-032",
+   "CE-PRJ-033"
+  ],
+  "depends_on": [
+   "WP-I1-009",
+   "WP-I1-201",
+   "WP-I1-204",
+   "WP-I0-913"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-013",
+  "title": "Estimates: Einstellungen, Schätzsystem anlegen/ändern/löschen, Validierung",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-PRJ-034",
+   "CE-PRJ-035",
+   "CE-PRJ-036",
+   "CE-PRJ-037",
+   "CE-PRJ-038"
+  ],
+  "depends_on": [
+   "WP-I1-009",
+   "WP-I1-203"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-014",
+  "title": "Profil und persönliche Einstellungen (inkl. angepasster E-Mail-Änderung und Konto-Deaktivierung)",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-PROF-001",
+   "CE-PROF-002",
+   "CE-PROF-003",
+   "CE-PROF-004",
+   "CE-PROF-005",
+   "CE-PROF-006"
+  ],
+  "depends_on": [
+   "WP-I0-999",
+   "WP-I1-103"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-015",
+  "title": "Onboarding",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-AUTH-030"
+  ],
+  "depends_on": [
+   "WP-I1-014",
+   "WP-I1-002"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-016",
+  "title": "Rate-Limits gegen Brute-Force und Missbrauch",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-AUTH-026"
+  ],
+  "depends_on": [
+   "WP-I1-104"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I1-017",
+  "title": "Sprachen de/en, Übersetzungen mit Fallback/ICU, Datums-/Zeitdarstellung, Zeitzonen",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-I18N-001",
+   "CE-I18N-002",
+   "CE-I18N-003",
+   "CE-I18N-004"
+  ],
+  "depends_on": [
+   "WP-I1-014"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-018",
+  "title": "Themes: Varianten, Auswahl mit Server-Persistenz, Custom Theme, High Contrast, Farb-Tokens",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-I18N-005",
+   "CE-I18N-006",
+   "CE-I18N-007",
+   "CE-I18N-008",
+   "CE-I18N-009"
+  ],
+  "depends_on": [
+   "WP-I1-014"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-019",
+  "title": "UI-Querschnitt 1: Seiten-Header, Breadcrumbs, Leerzustände, Modal-Hosts, Dialog-/Dropdown-Verhalten, Tab-Reihenfolge",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-UIX-001",
+   "CE-UIX-002",
+   "CE-UIX-003",
+   "CE-UIX-004",
+   "CE-UIX-005"
+  ],
+  "depends_on": [
+   "WP-I0-999",
+   "WP-I1-105",
+   "WP-I1-203"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-020",
+  "title": "UI-Querschnitt 2: LocalStorage-Präferenzen, Zwischenablage/CSV, ungespeicherte Änderungen, Fehlerseiten, Stale-Chunk, Legacy-Redirects, Link-Icons",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-UIX-006",
+   "CE-UIX-007",
+   "CE-UIX-008",
+   "CE-UIX-010",
+   "CE-UIX-011",
+   "CE-UIX-012",
+   "CE-UIX-013"
+  ],
+  "depends_on": [
+   "WP-I0-999"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-101",
+  "title": "Messaging produktiv: Retry, Dead-Letter, Worker-Pools, Beat-Plan, Soft-/Hard-Delete, Retention",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-OPS-014",
+   "CE-OPS-015",
+   "CE-OPS-016"
+  ],
+  "depends_on": [
+   "WP-I0-999",
+   "WP-I0-912"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-102",
+  "title": "Mail-Plattform: MailKit, Fluid-Templates, Mailpit, G-MAIL",
+  "phase": "I1",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-999",
+   "WP-I1-101"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-103",
+  "title": "Objektspeicher, Datei-Assets und Uploads mit Fortschritt (Image-Picker)",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-OPS-012",
+   "CE-OPS-013",
+   "CE-UIX-009"
+  ],
+  "depends_on": [
+   "WP-I0-999",
+   "WP-I0-908",
+   "WP-I0-913"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I1-104",
+  "title": "Valkey: HybridCache L2, verteilte Rate-Limits, TLS",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-OPS-011"
+  ],
+  "depends_on": [
+   "WP-I0-999"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I1-105",
+  "title": "Designsystem-Ausbau: Status-/Prioritäts-Icons, Datei-Icons, Logo-Picker, Illustrationen, Propel-Vollbestand, Blocks",
+  "phase": "I1",
+  "ce_ids": [
+   "CE-I18N-014",
+   "CE-I18N-015",
+   "CE-I18N-016",
+   "CE-I18N-018",
+   "CE-I18N-019",
+   "CE-I18N-020"
+  ],
+  "depends_on": [
+   "WP-I0-999"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I1-201",
+  "title": "Erweiterungspunkt A17: IStateCatalog/ILabelCatalog als einzige Lesewege, Catalog-Sources",
+  "phase": "I1",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-999"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I1-202",
+  "title": "Erweiterungspunkt Feature-Kataloge: IProjectFeatureCatalog, IWorkspaceFeatureCatalog, Contributors, PROJECT_FEATURES",
+  "phase": "I1",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-999"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I1-203",
+  "title": "Erweiterungspunkte UI-Registries I1: SETTINGS_PAGES, SIDEBAR_ITEMS (dynamisch), FAVORITE_ENTITY_RENDERERS, MEMBER_ROW_DECORATORS, ROLE_OPTIONS, GLOBAL_MODALS, ESTIMATE_SYSTEM_FLAGS",
+  "phase": "I1",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-999"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I1-204",
+  "title": "Erweiterungspunkt Activity-Grundgerüst: IActivityRecorder, IActivityFieldResolver-Registry, reservierte Felder",
+  "phase": "I1",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-999",
+   "WP-I0-201"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I1-205",
+  "title": "Erweiterungspunkte IInstanceConfigKeyProvider und B1-Schema-Vorhalte (teamspace_id)",
+  "phase": "I1",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-999"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I1-999",
+  "title": "Abnahme I1 – Workspace, Projekte, Konto (G5)",
+  "phase": "I1",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I1-001",
+   "WP-I1-002",
+   "WP-I1-003",
+   "WP-I1-004",
+   "WP-I1-005",
+   "WP-I1-006",
+   "WP-I1-007",
+   "WP-I1-008",
+   "WP-I1-009",
+   "WP-I1-010",
+   "WP-I1-011",
+   "WP-I1-012",
+   "WP-I1-013",
+   "WP-I1-014",
+   "WP-I1-015",
+   "WP-I1-016",
+   "WP-I1-017",
+   "WP-I1-018",
+   "WP-I1-019",
+   "WP-I1-020",
+   "WP-I1-101",
+   "WP-I1-102",
+   "WP-I1-103",
+   "WP-I1-104",
+   "WP-I1-105",
+   "WP-I1-201",
+   "WP-I1-202",
+   "WP-I1-203",
+   "WP-I1-204",
+   "WP-I1-205"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I2-001",
+  "title": "Work Item anlegen und bearbeiten (Modal, fortlaufende ID, Autosave, Toasts, Drafts-Rückfrage, Bestehende hinzufügen)",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-WI-001",
+   "CE-WI-002",
+   "CE-WI-003",
+   "CE-WI-004",
+   "CE-WI-005",
+   "CE-WI-006",
+   "CE-WI-007",
+   "CE-WI-008"
+  ],
+  "depends_on": [
+   "WP-I1-999",
+   "WP-I2-202",
+   "WP-I2-204",
+   "WP-I2-205",
+   "WP-I2-206",
+   "WP-I2-022"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I2-002",
+  "title": "Work-Item-Detailseite (Identifier, Detaildaten, Meta, Delta-Sync, Kopfaktionen)",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-WI-009",
+   "CE-WI-010",
+   "CE-WI-011",
+   "CE-WI-012",
+   "CE-WI-013",
+   "CE-WI-014"
+  ],
+  "depends_on": [
+   "WP-I2-001",
+   "WP-I2-205"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I2-003",
+  "title": "Peek-Overview und Hover-Vorschau",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-WI-015",
+   "CE-WI-016",
+   "CE-WI-017",
+   "CE-WI-018",
+   "CE-WI-019"
+  ],
+  "depends_on": [
+   "WP-I2-002"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I2-004",
+  "title": "Sidebar-Properties und Dropdowns (State, Priority, Assignees, Labels, Estimate, Projekt, Datum, Read-only-Labels)",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-WI-020",
+   "CE-WI-021",
+   "CE-WI-022",
+   "CE-WI-023",
+   "CE-WI-024",
+   "CE-WI-027",
+   "CE-WI-028",
+   "CE-WI-029",
+   "CE-WI-030"
+  ],
+  "depends_on": [
+   "WP-I2-001"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I2-005",
+  "title": "Hierarchie und Relationen (Parent, Sub-Work-Items, Relationen, Widget-Aktionsleiste)",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-WI-031",
+   "CE-WI-032",
+   "CE-WI-033",
+   "CE-WI-034"
+  ],
+  "depends_on": [
+   "WP-I2-002",
+   "WP-I2-203"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I2-006",
+  "title": "Links und Anhänge an Work Items",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-WI-035",
+   "CE-WI-036"
+  ],
+  "depends_on": [
+   "WP-I2-002",
+   "WP-I2-102"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I2-007",
+  "title": "Kommentare, Emoji-Reaktionen, Mentions",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-WI-037",
+   "CE-WI-038",
+   "CE-WI-044",
+   "CE-I18N-017"
+  ],
+  "depends_on": [
+   "WP-I2-008",
+   "WP-I2-021"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I2-008",
+  "title": "Aktivitätsverlauf, Activity-Filter, Beschreibungs-Versionen, Eigenschafts-Historie, Abonnements",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-WI-039",
+   "CE-WI-040",
+   "CE-WI-041",
+   "CE-WI-042",
+   "CE-WI-043"
+  ],
+  "depends_on": [
+   "WP-I2-002",
+   "WP-I2-024",
+   "WP-I1-204"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I2-009",
+  "title": "Work Items archivieren/wiederherstellen und löschen (einzeln und Bulk)",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-WI-045",
+   "CE-WI-046",
+   "CE-WI-047",
+   "CE-WI-048"
+  ],
+  "depends_on": [
+   "WP-I2-002"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I2-010",
+  "title": "Workspace-Drafts",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-WI-049"
+  ],
+  "depends_on": [
+   "WP-I2-001"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I2-011",
+  "title": "Layout-Umschaltung, Projekt-Work-Items-Seite und Kopf, Layout-Kontextmenü",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-LV-001",
+   "CE-LV-002",
+   "CE-LV-003"
+  ],
+  "depends_on": [
+   "WP-I2-012"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I2-012",
+  "title": "Work-Item-Liste mit Gruppierung/Pagination (Backend), Rich-Filter (AND/OR/NOT), Filterzeile, Filterwerte, Filterfelder",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-LV-005",
+   "CE-LV-006",
+   "CE-LV-007",
+   "CE-LV-008",
+   "CE-LV-009",
+   "CE-LV-010"
+  ],
+  "depends_on": [
+   "WP-I2-201",
+   "WP-I0-909",
+   "WP-I2-001"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I2-013",
+  "title": "Klassische Filter, Applied-Filter-Chips, Display-Dropdown, Anzeige-Einstellungen je Nutzer/Projekt und Workspace",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-LV-012",
+   "CE-LV-013",
+   "CE-LV-014",
+   "CE-LV-015"
+  ],
+  "depends_on": [
+   "WP-I2-012"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I2-014",
+  "title": "List-Layout mit Gruppierung, Inline-Properties, Sub-Work-Items aufklappen",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-LV-017",
+   "CE-LV-018",
+   "CE-LV-019"
+  ],
+  "depends_on": [
+   "WP-I2-011"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I2-015",
+  "title": "Kanban-Board, Swimlanes, Karte, Löschzone, Drag-and-Drop",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-LV-020",
+   "CE-LV-021",
+   "CE-LV-022",
+   "CE-LV-023",
+   "CE-LV-024"
+  ],
+  "depends_on": [
+   "WP-I2-011",
+   "WP-I0-904"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I2-016",
+  "title": "Calendar-Layout (Monat/Woche, Drag, Eintrag, Quick-Add)",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-LV-025",
+   "CE-LV-026",
+   "CE-LV-027",
+   "CE-LV-028"
+  ],
+  "depends_on": [
+   "WP-I2-011"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I2-017",
+  "title": "Gantt/Timeline (Verschieben, Dauer, Datum setzen, Sidebar-Reorder, Relationen)",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-LV-029",
+   "CE-LV-030",
+   "CE-LV-031",
+   "CE-LV-032",
+   "CE-LV-033"
+  ],
+  "depends_on": [
+   "WP-I2-011",
+   "WP-I0-904",
+   "WP-I2-203"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I2-018",
+  "title": "Spreadsheet (Tabelle, Sortierung, Tastaturnavigation, Mehrfachauswahl, Sprung zu Sub-Items)",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-LV-034",
+   "CE-LV-035",
+   "CE-LV-036",
+   "CE-LV-037"
+  ],
+  "depends_on": [
+   "WP-I2-011"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I2-019",
+  "title": "Inline-Property-Leiste, Quick-Add je Layout, Gruppen-„+“, Quick-Action- und Kontextmenü",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-LV-038",
+   "CE-LV-039",
+   "CE-LV-040",
+   "CE-LV-041"
+  ],
+  "depends_on": [
+   "WP-I2-014"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I2-020",
+  "title": "Layout-Zustände: Empty-States, Skeleton-Loader, Virtualisierung/Endlos-Laden, Fehlergrenze",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-LV-042",
+   "CE-LV-043",
+   "CE-LV-044",
+   "CE-LV-045"
+  ],
+  "depends_on": [
+   "WP-I2-014"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I2-021",
+  "title": "Editor ED-1: Lite-Text-Editor (Kommentare), Mentions, Emojis, Links",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-PAGE-022",
+   "CE-PAGE-034",
+   "CE-PAGE-035",
+   "CE-PAGE-036"
+  ],
+  "depends_on": [
+   "WP-I1-103",
+   "WP-I0-905",
+   "WP-I2-101",
+   "WP-I2-207"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I2-022",
+  "title": "Editor ED-2a: Rich-Text-Kern (Textstruktur, Listen, Formatierung/Farben, Markdown, Platzhalter, Deep-Links, Anzeige-Konfiguration)",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-PAGE-021",
+   "CE-PAGE-027",
+   "CE-PAGE-028",
+   "CE-PAGE-029",
+   "CE-PAGE-037",
+   "CE-PAGE-038",
+   "CE-PAGE-039",
+   "CE-PAGE-040",
+   "CE-I18N-010"
+  ],
+  "depends_on": [
+   "WP-I2-021"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I2-023",
+  "title": "Editor ED-2b: Menüs und Blöcke (Slash, Bubble, Drag-Handle/Block-Menü, Code-Block, Tabellen, Bilder, Callouts)",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-PAGE-024",
+   "CE-PAGE-025",
+   "CE-PAGE-026",
+   "CE-PAGE-030",
+   "CE-PAGE-031",
+   "CE-PAGE-032",
+   "CE-PAGE-033"
+  ],
+  "depends_on": [
+   "WP-I2-022"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I2-024",
+  "title": "Editor ED-3: Document-Editor read-only (Beschreibungs-Versionen)",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-PAGE-023"
+  ],
+  "depends_on": [
+   "WP-I2-023"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I2-101",
+  "title": "Funk.Documents Teil A: Server-Schema, HTML↔PM-JSON, Text-Extraktion, Sanitizing, Yjs-Update-Validierung",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-OPS-017"
+  ],
+  "depends_on": [
+   "WP-I0-999",
+   "WP-I0-902"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I2-102",
+  "title": "SSRF-sicherer HTTP-Client und Link-Crawler",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-OPS-018"
+  ],
+  "depends_on": [
+   "WP-I1-999"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I2-103",
+  "title": "Dummy-Daten-Generator und Volumen-Seeder (S/M/L/XL)",
+  "phase": "I2",
+  "ce_ids": [
+   "CE-OPS-024"
+  ],
+  "depends_on": [
+   "WP-I2-001"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I2-201",
+  "title": "Erweiterungspunkt B6/A1: Filter-AST, Parser-Liste, Feld-/Gruppen-/Sortier-Registries, Payload-Extension, Basismengen-Filter",
+  "phase": "I2",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I1-999",
+   "WP-I0-909"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I2-202",
+  "title": "Erweiterungspunkt A1: work_items.type_id, Minimal-Tabelle work_item_types, IWorkItemTypeResolver",
+  "phase": "I2",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I1-999"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I2-203",
+  "title": "Erweiterungspunkt A9: Relationstyp-Katalog, IWorkItemHierarchyPolicy, IRelatedScopeCheck, RELATION_TYPES, TIMELINE_FLAGS",
+  "phase": "I2",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I1-999"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I2-204",
+  "title": "Erweiterungspunkt C1: State-Change-Pipeline IWorkItemStateChanger mit Guards/Hooks, WORKFLOW_GUARD",
+  "phase": "I2",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I1-999",
+   "WP-I1-201"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I2-205",
+  "title": "Erweiterungspunkte Work-Item-Fassaden: IWorkItemReferenceResolver, IWorkItemCommands, IIntegrationLinkProvider + external_links, IExpandProvider",
+  "phase": "I2",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I1-999",
+   "WP-I0-205"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I2-206",
+  "title": "Erweiterungspunkte Work-Item-UI-Registries (Property-Renderer bis Duplicate-Detection)",
+  "phase": "I2",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I1-999"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I2-207",
+  "title": "Erweiterungspunkt Editor/Dokument-Schema: IDocumentNodeSpec/IDocumentMarkSpec, EDITOR_EXTENSIONS, EDITOR_FLAGS (Lite)",
+  "phase": "I2",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I0-999",
+   "WP-I0-905"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I2-999",
+  "title": "Abnahme I2 – Work Items & Layouts (G5)",
+  "phase": "I2",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I2-001",
+   "WP-I2-002",
+   "WP-I2-003",
+   "WP-I2-004",
+   "WP-I2-005",
+   "WP-I2-006",
+   "WP-I2-007",
+   "WP-I2-008",
+   "WP-I2-009",
+   "WP-I2-010",
+   "WP-I2-011",
+   "WP-I2-012",
+   "WP-I2-013",
+   "WP-I2-014",
+   "WP-I2-015",
+   "WP-I2-016",
+   "WP-I2-017",
+   "WP-I2-018",
+   "WP-I2-019",
+   "WP-I2-020",
+   "WP-I2-021",
+   "WP-I2-022",
+   "WP-I2-023",
+   "WP-I2-024",
+   "WP-I2-101",
+   "WP-I2-102",
+   "WP-I2-103",
+   "WP-I2-201",
+   "WP-I2-202",
+   "WP-I2-203",
+   "WP-I2-204",
+   "WP-I2-205",
+   "WP-I2-206",
+   "WP-I2-207"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I3-001",
+  "title": "Projekt-Archive und Layout-Kontexte (Cycle, Modul, View, Archiv, Profil)",
+  "phase": "I3",
+  "ce_ids": [
+   "CE-LV-004",
+   "CE-LV-046"
+  ],
+  "depends_on": [
+   "WP-I2-999"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I3-002",
+  "title": "Projekt-Views (Liste, Anlage/Bearbeitung, Löschen, Kontextmenü/Favoriten, Detail, Speichern aus Filtern)",
+  "phase": "I3",
+  "ce_ids": [
+   "CE-LV-011",
+   "CE-LV-047",
+   "CE-LV-048",
+   "CE-LV-049",
+   "CE-LV-050",
+   "CE-LV-051"
+  ],
+  "depends_on": [
+   "WP-I2-999",
+   "WP-I3-201"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I3-003",
+  "title": "Workspace-Views (Übersicht, Anlage/Bearbeitung/Löschen, All work items)",
+  "phase": "I3",
+  "ce_ids": [
+   "CE-LV-052",
+   "CE-LV-053",
+   "CE-LV-054"
+  ],
+  "depends_on": [
+   "WP-I3-002"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I3-004",
+  "title": "Cycle-Liste mit Gruppen, Suche/Filter, Inline-Dashboard, Workspace-weite Active Cycles",
+  "phase": "I3",
+  "ce_ids": [
+   "CE-CYC-001",
+   "CE-CYC-002",
+   "CE-CYC-003",
+   "CE-CYC-004"
+  ],
+  "depends_on": [
+   "WP-I3-005",
+   "WP-I3-101"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I3-005",
+  "title": "Cycles anlegen/bearbeiten, Datumsüberschneidung, archivieren, löschen, Kontextmenü, Favoriten",
+  "phase": "I3",
+  "ce_ids": [
+   "CE-CYC-005",
+   "CE-CYC-006",
+   "CE-CYC-012",
+   "CE-CYC-013",
+   "CE-CYC-014",
+   "CE-CYC-015"
+  ],
+  "depends_on": [
+   "WP-I2-999",
+   "WP-I3-201"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I3-006",
+  "title": "Cycle-Peek/Detail, Fortschritt, Verteilungen, Burndown, Anzeige je Cycle und Modul",
+  "phase": "I3",
+  "ce_ids": [
+   "CE-CYC-007",
+   "CE-CYC-008",
+   "CE-CYC-009",
+   "CE-LV-016"
+  ],
+  "depends_on": [
+   "WP-I3-005",
+   "WP-I3-101"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I3-007",
+  "title": "Work Items Cycles zuordnen, unvollständige übertragen, Cycle-Dropdown",
+  "phase": "I3",
+  "ce_ids": [
+   "CE-CYC-010",
+   "CE-CYC-011",
+   "CE-WI-025"
+  ],
+  "depends_on": [
+   "WP-I3-005"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I3-008",
+  "title": "Modul-Übersicht in drei Layouts, Suche/Filter/Sortierung, Kontextmenü und Favoriten",
+  "phase": "I3",
+  "ce_ids": [
+   "CE-MOD-001",
+   "CE-MOD-002",
+   "CE-MOD-011"
+  ],
+  "depends_on": [
+   "WP-I3-009"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I3-009",
+  "title": "Module anlegen/bearbeiten, Status, Links, Sidebar, archivieren, löschen",
+  "phase": "I3",
+  "ce_ids": [
+   "CE-MOD-003",
+   "CE-MOD-004",
+   "CE-MOD-005",
+   "CE-MOD-006",
+   "CE-MOD-009",
+   "CE-MOD-010"
+  ],
+  "depends_on": [
+   "WP-I2-999",
+   "WP-I3-201"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I3-010",
+  "title": "Modul-Detailseite, Work Items zuordnen, Module-Dropdown",
+  "phase": "I3",
+  "ce_ids": [
+   "CE-MOD-007",
+   "CE-MOD-008",
+   "CE-WI-026"
+  ],
+  "depends_on": [
+   "WP-I3-009",
+   "WP-I3-101"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I3-011",
+  "title": "Intake: je Projekt mit Triage-State, Seite Open/Closed, Filter/Sortierung, Detail, Anlage",
+  "phase": "I3",
+  "ce_ids": [
+   "CE-INT-001",
+   "CE-INT-002",
+   "CE-INT-003",
+   "CE-INT-004",
+   "CE-INT-005"
+  ],
+  "depends_on": [
+   "WP-I2-999"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I3-012",
+  "title": "Intake-Aktionen: annehmen, ablehnen, zurückstellen, Duplikat, bearbeiten/löschen, Navigation, Benachrichtigungs-Detail",
+  "phase": "I3",
+  "ce_ids": [
+   "CE-INT-006",
+   "CE-INT-007",
+   "CE-INT-008",
+   "CE-INT-009",
+   "CE-INT-010",
+   "CE-INT-011",
+   "CE-INT-012"
+  ],
+  "depends_on": [
+   "WP-I3-011"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I3-013",
+  "title": "Automationen Auto-Archive und Auto-Close",
+  "phase": "I3",
+  "ce_ids": [
+   "CE-PRJ-039",
+   "CE-PRJ-040"
+  ],
+  "depends_on": [
+   "WP-I2-999"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I3-101",
+  "title": "Chart-Bausteine (Bar, Pie, Area, Line, Radar, TreeMap, Burndown) und Farbpaletten",
+  "phase": "I3",
+  "ce_ids": [
+   "CE-I18N-022"
+  ],
+  "depends_on": [
+   "WP-I2-999",
+   "WP-I0-906"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I3-201",
+  "title": "Erweiterungspunkte Planung: ICycleSchedulingPolicy, CYCLE_FLAGS, ENTITY_QUICK_ACTIONS",
+  "phase": "I3",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I2-999"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I3-999",
+  "title": "Abnahme I3 – Planung (G5)",
+  "phase": "I3",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I3-001",
+   "WP-I3-002",
+   "WP-I3-003",
+   "WP-I3-004",
+   "WP-I3-005",
+   "WP-I3-006",
+   "WP-I3-007",
+   "WP-I3-008",
+   "WP-I3-009",
+   "WP-I3-010",
+   "WP-I3-011",
+   "WP-I3-012",
+   "WP-I3-013",
+   "WP-I3-101",
+   "WP-I3-201"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I4-001",
+  "title": "Page-Liste mit Tabs, Suche/Filter/Sortierung, Anlage, Favoriten",
+  "phase": "I4",
+  "ce_ids": [
+   "CE-PAGE-001",
+   "CE-PAGE-002",
+   "CE-PAGE-003",
+   "CE-PAGE-010"
+  ],
+  "depends_on": [
+   "WP-I3-999",
+   "WP-I4-201"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I4-002",
+  "title": "Page-Aktionen: Daten/Detail, sperren, Zugriff, archivieren, löschen, duplizieren, Referenzprotokoll",
+  "phase": "I4",
+  "ce_ids": [
+   "CE-PAGE-004",
+   "CE-PAGE-005",
+   "CE-PAGE-006",
+   "CE-PAGE-007",
+   "CE-PAGE-008",
+   "CE-PAGE-009",
+   "CE-PAGE-012"
+  ],
+  "depends_on": [
+   "WP-I4-001"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I4-003",
+  "title": "Page-Export als PDF und Markdown",
+  "phase": "I4",
+  "ce_ids": [
+   "CE-PAGE-011"
+  ],
+  "depends_on": [
+   "WP-I4-002",
+   "WP-I0-903",
+   "WP-I4-101"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I4-004",
+  "title": "Kollaborativer Page-Editor (Seite, Toolbar, Kopf, Outline, Info-, Assets-Panel, Anzeigeoptionen) – ED-4-Hüllen",
+  "phase": "I4",
+  "ce_ids": [
+   "CE-PAGE-013",
+   "CE-PAGE-014",
+   "CE-PAGE-015",
+   "CE-PAGE-016",
+   "CE-PAGE-017",
+   "CE-PAGE-018",
+   "CE-PAGE-020"
+  ],
+  "depends_on": [
+   "WP-I4-007",
+   "WP-I4-002"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I4-005",
+  "title": "Page-Versionshistorie",
+  "phase": "I4",
+  "ce_ids": [
+   "CE-PAGE-019"
+  ],
+  "depends_on": [
+   "WP-I4-006"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I4-006",
+  "title": "Realtime-Kollaborationsserver: Protokoll, Dokument-Lebenszyklus, Persistenz, Titel-Sync, Fehler/Force-Close, Konvertierung",
+  "phase": "I4",
+  "ce_ids": [
+   "CE-RT-001",
+   "CE-RT-005",
+   "CE-RT-006",
+   "CE-RT-008"
+  ],
+  "depends_on": [
+   "WP-I4-101",
+   "WP-I4-202",
+   "WP-I0-107",
+   "WP-I0-901"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I4-007",
+  "title": "Client-Kollaboration: Echtzeit-Editor-Bindung, Offline-Cache, REST-Fallback, Seitenereignisse (ED-4-Kern)",
+  "phase": "I4",
+  "ce_ids": [
+   "CE-RT-002",
+   "CE-RT-003",
+   "CE-RT-004"
+  ],
+  "depends_on": [
+   "WP-I4-006",
+   "WP-I2-024"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I4-008",
+  "title": "Horizontale Skalierung des Realtime-Servers (Valkey-Backplane, PostgreSQL-Signale)",
+  "phase": "I4",
+  "ce_ids": [
+   "CE-RT-007"
+  ],
+  "depends_on": [
+   "WP-I4-006"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I4-009",
+  "title": "Demo-Inhalte bei Workspace-Anlage (vollständiger Seed inkl. Cycles, Module, Views, Pages)",
+  "phase": "I4",
+  "ce_ids": [
+   "CE-WS-002"
+  ],
+  "depends_on": [
+   "WP-I4-002"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I4-101",
+  "title": "Funk.Documents Teil B: Yjs ⇄ ProseMirror, YjsUpdateWriter, Document-Variante, Markdown",
+  "phase": "I4",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I2-999",
+   "WP-I0-901",
+   "WP-I0-902"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I4-201",
+  "title": "Erweiterungspunkte D1/D2: Pages ohne Projektpflicht, project_pages, parent_id, IPageHierarchy(+Queries), IPageAccessExtension, PAGE_*-Tokens",
+  "phase": "I4",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I3-999"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I4-202",
+  "title": "Erweiterungspunkte Kollaboration: ICollaborationDocumentType, affectedPages, EDITOR_BLOCKS, EDITOR_MENTION_TYPES",
+  "phase": "I4",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I2-999",
+   "WP-I4-101"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I4-999",
+  "title": "Abnahme I4 – Pages & Realtime (G5)",
+  "phase": "I4",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I4-001",
+   "WP-I4-002",
+   "WP-I4-003",
+   "WP-I4-004",
+   "WP-I4-005",
+   "WP-I4-006",
+   "WP-I4-007",
+   "WP-I4-008",
+   "WP-I4-009",
+   "WP-I4-101",
+   "WP-I4-201",
+   "WP-I4-202"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I5-001",
+  "title": "Workspace-Analytics: Tabs, Kennzahlen, Project Insights, Active Projects, Created vs Resolved, Customized Insights, Insight-Tabelle mit CSV",
+  "phase": "I5",
+  "ce_ids": [
+   "CE-ANA-001",
+   "CE-ANA-002",
+   "CE-ANA-003",
+   "CE-ANA-004",
+   "CE-ANA-005",
+   "CE-ANA-006",
+   "CE-ANA-007"
+  ],
+  "depends_on": [
+   "WP-I4-999",
+   "WP-I3-101"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I5-002",
+  "title": "Analytics-Panel (Projekt, Cycle, Modul), Legacy-Analytics, gespeicherte Analytics-Views, Export per E-Mail",
+  "phase": "I5",
+  "ce_ids": [
+   "CE-ANA-008",
+   "CE-ANA-009"
+  ],
+  "depends_on": [
+   "WP-I5-001",
+   "WP-I1-102"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I5-003",
+  "title": "Workspace-Home: Widgets, Widget-Verwaltung, Quickstart, Quick links, Recents, Produkt-Tour, Legacy-Dashboard",
+  "phase": "I5",
+  "ce_ids": [
+   "CE-HOME-001",
+   "CE-HOME-002",
+   "CE-HOME-003",
+   "CE-HOME-004",
+   "CE-HOME-005",
+   "CE-HOME-006",
+   "CE-HOME-007"
+  ],
+  "depends_on": [
+   "WP-I4-999",
+   "WP-I5-202"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I5-004",
+  "title": "Stickies: Widget, Seite, Bearbeitung (ED-5)",
+  "phase": "I5",
+  "ce_ids": [
+   "CE-HOME-008",
+   "CE-HOME-009",
+   "CE-HOME-010"
+  ],
+  "depends_on": [
+   "WP-I5-003"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I5-005",
+  "title": "Benachrichtigungen erzeugen: In-App, Mentions, automatisches Abonnieren, Zähler-Push",
+  "phase": "I5",
+  "ce_ids": [
+   "CE-NOTIF-001",
+   "CE-NOTIF-002",
+   "CE-NOTIF-003"
+  ],
+  "depends_on": [
+   "WP-I4-999",
+   "WP-I5-202",
+   "WP-I0-207"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I5-006",
+  "title": "Inbox: Seite, Liste, Filter/Optionen, lesen/archivieren/snoozen, Detail",
+  "phase": "I5",
+  "ce_ids": [
+   "CE-NOTIF-004",
+   "CE-NOTIF-005",
+   "CE-NOTIF-006",
+   "CE-NOTIF-007"
+  ],
+  "depends_on": [
+   "WP-I5-005"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I5-007",
+  "title": "E-Mail-Benachrichtigungen mit 5-Minuten-Bündelung und Einstellungen",
+  "phase": "I5",
+  "ce_ids": [
+   "CE-NOTIF-008",
+   "CE-NOTIF-009"
+  ],
+  "depends_on": [
+   "WP-I5-005",
+   "WP-I1-102"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I5-008",
+  "title": "Suche: Globale Suche, Entity-Suche für Mentions/Picker, Work-Item-Picker",
+  "phase": "I5",
+  "ce_ids": [
+   "CE-SRCH-001",
+   "CE-SRCH-002",
+   "CE-SRCH-003"
+  ],
+  "depends_on": [
+   "WP-I5-201"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I5-009",
+  "title": "Power-K Command Palette mit Navigations-, Erstell-, Kontext-, Account-/Preferences-/Hilfebefehlen und Shortcuts",
+  "phase": "I5",
+  "ce_ids": [
+   "CE-SRCH-004",
+   "CE-SRCH-005",
+   "CE-SRCH-006",
+   "CE-SRCH-007",
+   "CE-SRCH-008",
+   "CE-SRCH-009"
+  ],
+  "depends_on": [
+   "WP-I5-008",
+   "WP-I5-202"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I5-010",
+  "title": "Your work: Summary, Work-Item-Tabs, Activity, Profil-Sidebar",
+  "phase": "I5",
+  "ce_ids": [
+   "CE-PROF-008",
+   "CE-PROF-009",
+   "CE-PROF-010",
+   "CE-PROF-011"
+  ],
+  "depends_on": [
+   "WP-I4-999"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I5-201",
+  "title": "Erweiterungspunkt G1/B6: ISearchProvider, IIndexingPipeline, search_documents, vector, NullEmbeddingGenerator, IIndexDocumentEnricher",
+  "phase": "I5",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I4-999"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I5-202",
+  "title": "Erweiterungspunkte UI I5: HOME_WIDGETS, POWER_K_COMMANDS, SEARCH_RESULT_RENDERERS, erste Nutzung LIVE_EVENT_HANDLERS",
+  "phase": "I5",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I4-999"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I5-999",
+  "title": "Abnahme I5 – Überblick (G5)",
+  "phase": "I5",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I5-001",
+   "WP-I5-002",
+   "WP-I5-003",
+   "WP-I5-004",
+   "WP-I5-005",
+   "WP-I5-006",
+   "WP-I5-007",
+   "WP-I5-008",
+   "WP-I5-009",
+   "WP-I5-010",
+   "WP-I5-201",
+   "WP-I5-202"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I6-001",
+  "title": "God Mode: Abmeldung, Fehleransicht, Dashboard-Shell, Header, Konto-Menü, Hilfe, Unsaved-Dialog, Kopierfelder, 404",
+  "phase": "I6",
+  "ce_ids": [
+   "CE-INST-008",
+   "CE-INST-009",
+   "CE-INST-010",
+   "CE-INST-011",
+   "CE-INST-012",
+   "CE-INST-013",
+   "CE-INST-014",
+   "CE-INST-015",
+   "CE-INST-016"
+  ],
+  "depends_on": [
+   "WP-I5-999",
+   "WP-I6-203"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I6-002",
+  "title": "God Mode: Allgemeine Einstellungen, SMTP, Test-E-Mail, AI-Einstellungen, Bildbibliotheken",
+  "phase": "I6",
+  "ce_ids": [
+   "CE-INST-017",
+   "CE-INST-018",
+   "CE-INST-019",
+   "CE-INST-025",
+   "CE-INST-026"
+  ],
+  "depends_on": [
+   "WP-I6-001",
+   "WP-I1-102"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I6-003",
+  "title": "God Mode: Workspace-Liste, Workspace-Anlage sperren, Workspace anlegen, Willkommens-Popup",
+  "phase": "I6",
+  "ce_ids": [
+   "CE-INST-027",
+   "CE-INST-028",
+   "CE-INST-029",
+   "CE-INST-030"
+  ],
+  "depends_on": [
+   "WP-I6-001"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I6-004",
+  "title": "Projekt veröffentlichen (Publish-Modal, Board-Einstellungen, Metadaten)",
+  "phase": "I6",
+  "ce_ids": [
+   "CE-SPACE-001",
+   "CE-SPACE-002"
+  ],
+  "depends_on": [
+   "WP-I5-999"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I6-005",
+  "title": "Space-App: Shell, Login-Einstieg über Keycloak, Fehler-/404-Seiten, Legacy-Redirects, Social-Meta, iframe, Badge (inkl. Nachweis entfallener Space-Logins)",
+  "phase": "I6",
+  "ce_ids": [
+   "CE-SPACE-008",
+   "CE-SPACE-009",
+   "CE-SPACE-010",
+   "CE-SPACE-011",
+   "CE-SPACE-012",
+   "CE-SPACE-013",
+   "CE-SPACE-014",
+   "CE-SPACE-015",
+   "CE-SPACE-016",
+   "CE-SPACE-017",
+   "CE-SPACE-029",
+   "CE-SPACE-031",
+   "CE-SPACE-032"
+  ],
+  "depends_on": [
+   "WP-I6-004",
+   "WP-I6-203"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I6-006",
+  "title": "Space-Board: öffentliche Issue-Liste, Stammdaten, Navbar, List/Kanban read-only, Chips, Filter-Popover, aktive Filter",
+  "phase": "I6",
+  "ce_ids": [
+   "CE-SPACE-003",
+   "CE-SPACE-005",
+   "CE-SPACE-018",
+   "CE-SPACE-019",
+   "CE-SPACE-020",
+   "CE-SPACE-021",
+   "CE-SPACE-022",
+   "CE-SPACE-023"
+  ],
+  "depends_on": [
+   "WP-I6-005"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I6-007",
+  "title": "Space: öffentliches Issue-Detail, Peek, Kommentarbilder/Asset-Auslieferung, Mentions (ED-6)",
+  "phase": "I6",
+  "ce_ids": [
+   "CE-SPACE-004",
+   "CE-SPACE-007",
+   "CE-SPACE-024",
+   "CE-SPACE-030"
+  ],
+  "depends_on": [
+   "WP-I6-006"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I6-008",
+  "title": "Space-Interaktionen: Kommentare, Reaktionen, Votes, öffentliche Intake-Einreichung",
+  "phase": "I6",
+  "ce_ids": [
+   "CE-SPACE-006",
+   "CE-SPACE-025",
+   "CE-SPACE-026",
+   "CE-SPACE-027",
+   "CE-SPACE-028"
+  ],
+  "depends_on": [
+   "WP-I6-007"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I6-009",
+  "title": "Public API v1: API-Key-Authentifizierung, Rate-Limit je Key, Aktivitätsprotokoll, OpenAPI, aktueller Benutzer",
+  "phase": "I6",
+  "ce_ids": [
+   "CE-API-001",
+   "CE-API-002",
+   "CE-API-003",
+   "CE-API-004",
+   "CE-API-005"
+  ],
+  "depends_on": [
+   "WP-I6-016",
+   "WP-I6-201"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I6-010",
+  "title": "Public API v1: Projekte, Archiv, Summary, States, Labels, Mitglieder, Einladungen",
+  "phase": "I6",
+  "ce_ids": [
+   "CE-API-006",
+   "CE-API-007",
+   "CE-API-008",
+   "CE-API-009",
+   "CE-API-010",
+   "CE-API-011",
+   "CE-API-012",
+   "CE-API-013"
+  ],
+  "depends_on": [
+   "WP-I6-009"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I6-011",
+  "title": "Public API v1: Stickies, User-Assets, Generic Workspace Assets",
+  "phase": "I6",
+  "ce_ids": [
+   "CE-API-014",
+   "CE-API-015",
+   "CE-API-016"
+  ],
+  "depends_on": [
+   "WP-I6-009"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I6-012",
+  "title": "Public API v1: Work Items, Identifier, Suche, Links, Kommentare, Aktivitäten, Anhänge, Relationen, Intake",
+  "phase": "I6",
+  "ce_ids": [
+   "CE-API-017",
+   "CE-API-018",
+   "CE-API-019",
+   "CE-API-020",
+   "CE-API-021",
+   "CE-API-022",
+   "CE-API-023",
+   "CE-API-024",
+   "CE-API-025"
+  ],
+  "depends_on": [
+   "WP-I6-010"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I6-013",
+  "title": "Public API v1: Cycles, Work Items in Cycles, Transfer, Cycle-Archiv, Modules, Work Items in Modulen, Modul-Archiv",
+  "phase": "I6",
+  "ce_ids": [
+   "CE-API-026",
+   "CE-API-027",
+   "CE-API-028",
+   "CE-API-029",
+   "CE-API-030",
+   "CE-API-031",
+   "CE-API-032"
+  ],
+  "depends_on": [
+   "WP-I6-012"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I6-014",
+  "title": "Webhook-Verwaltung: Liste, Anlage, Secret anzeigen/regenerieren/herunterladen, Bearbeitung, Löschung",
+  "phase": "I6",
+  "ce_ids": [
+   "CE-WH-002",
+   "CE-WH-003",
+   "CE-WH-004",
+   "CE-WH-005",
+   "CE-WH-006"
+  ],
+  "depends_on": [
+   "WP-I5-999"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I6-015",
+  "title": "Webhook-Zustellung: Datenmodell/Event-Typen, Zustellung, Payload, Deaktivierungs-Mail, Protokoll, SSRF-Schutz",
+  "phase": "I6",
+  "ce_ids": [
+   "CE-WH-001",
+   "CE-WH-007",
+   "CE-WH-008",
+   "CE-WH-009",
+   "CE-WH-010",
+   "CE-WH-011"
+  ],
+  "depends_on": [
+   "WP-I6-014",
+   "WP-I6-202"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I6-016",
+  "title": "API-Tokens: Liste, Anlage, Löschung",
+  "phase": "I6",
+  "ce_ids": [
+   "CE-WH-012",
+   "CE-WH-013",
+   "CE-WH-014"
+  ],
+  "depends_on": [
+   "WP-I5-999"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I6-017",
+  "title": "Work-Item-Export (CSV/XLSX/JSON), Export-Historie und Download",
+  "phase": "I6",
+  "ce_ids": [
+   "CE-EXP-001",
+   "CE-EXP-002"
+  ],
+  "depends_on": [
+   "WP-I6-202"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I6-018",
+  "title": "KI-Assistent im Work-Item-Modal und Unsplash-Bildsuche",
+  "phase": "I6",
+  "ce_ids": [
+   "CE-AI-001",
+   "CE-AI-002"
+  ],
+  "depends_on": [
+   "WP-I5-999"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I6-201",
+  "title": "Erweiterungspunkte Public API: IV1PayloadExtension, IV1FilterParameterBinding, erweiterbare OpenAPI-Gruppen",
+  "phase": "I6",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I5-999"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I6-202",
+  "title": "Erweiterungspunkte IWebhookEventSource und IExportTypeProvider",
+  "phase": "I6",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I5-999"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I6-203",
+  "title": "Erweiterungspunkte Space/Admin: SPACE_ROUTE_EXTENSIONS, EDITOR_EXTENSIONS (Space), ADMIN-Registries mit CE-Inhalt",
+  "phase": "I6",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I5-999"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I6-999",
+  "title": "Abnahme I6 – Außenwirkung & Administration (G5)",
+  "phase": "I6",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I6-001",
+   "WP-I6-002",
+   "WP-I6-003",
+   "WP-I6-004",
+   "WP-I6-005",
+   "WP-I6-006",
+   "WP-I6-007",
+   "WP-I6-008",
+   "WP-I6-009",
+   "WP-I6-010",
+   "WP-I6-011",
+   "WP-I6-012",
+   "WP-I6-013",
+   "WP-I6-014",
+   "WP-I6-015",
+   "WP-I6-016",
+   "WP-I6-017",
+   "WP-I6-018",
+   "WP-I6-201",
+   "WP-I6-202",
+   "WP-I6-203"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I7-101",
+  "title": "funk-cli: Self-Hosting-CLI, Backup/Restore, Betriebs-Commands",
+  "phase": "I7",
+  "ce_ids": [
+   "CE-OPS-001",
+   "CE-OPS-002",
+   "CE-OPS-020"
+  ],
+  "depends_on": [
+   "WP-I6-999"
+  ],
+  "size": "L"
+ },
+ {
+  "wp": "WP-I7-102",
+  "title": "Docker Compose (Aspire-Publisher) und Docker-Swarm-Deployment",
+  "phase": "I7",
+  "ce_ids": [
+   "CE-OPS-003"
+  ],
+  "depends_on": [
+   "WP-I6-999"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I7-103",
+  "title": "All-in-One-Container funk-aio",
+  "phase": "I7",
+  "ce_ids": [
+   "CE-OPS-004"
+  ],
+  "depends_on": [
+   "WP-I6-999"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I7-104",
+  "title": "Read-Replica-Unterstützung",
+  "phase": "I7",
+  "ce_ids": [
+   "CE-OPS-010"
+  ],
+  "depends_on": [
+   "WP-I6-999"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I7-105",
+  "title": "TLS-Modi und Reverse-Proxy mit automatischem HTTPS (ACME)",
+  "phase": "I7",
+  "ce_ids": [
+   "CE-OPS-005"
+  ],
+  "depends_on": [
+   "WP-I6-999"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I7-106",
+  "title": "Helm-Chart deploy/helm/funk",
+  "phase": "I7",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I6-999"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I7-107",
+  "title": "Airgapped-Bundle und Egress-gesperrter E2E-Lauf",
+  "phase": "I7",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I6-999"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I7-108",
+  "title": "Sicherheitshärtung: CSP-Enforce, ZAP, Permission-Matrix 100 %, Upgrade-Pfad",
+  "phase": "I7",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I6-999"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I7-109",
+  "title": "Last-, Soak- und Performance-Abnahme (LT-08, LT-13, LT-21, Worker-Kill-Tests)",
+  "phase": "I7",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I6-999"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I7-110",
+  "title": "Paritäts-Gesamtabnahme aller Screens, Endpunkt-Abdeckung 100 %, Abweichungsliste",
+  "phase": "I7",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I6-999",
+   "WP-I7-107",
+   "WP-I7-108"
+  ],
+  "size": "M"
+ },
+ {
+  "wp": "WP-I7-201",
+  "title": "Erweiterungspunkte stabilisieren: Contract-Snapshots aller Erweiterungs-Interfaces, Airgap-Test mit Forgejo",
+  "phase": "I7",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I6-999"
+  ],
+  "size": "S"
+ },
+ {
+  "wp": "WP-I7-999",
+  "title": "Abnahme I7 – CE-Release-Kandidat (G5 + G6)",
+  "phase": "I7",
+  "ce_ids": [],
+  "depends_on": [
+   "WP-I7-101",
+   "WP-I7-102",
+   "WP-I7-103",
+   "WP-I7-104",
+   "WP-I7-105",
+   "WP-I7-106",
+   "WP-I7-107",
+   "WP-I7-108",
+   "WP-I7-109",
+   "WP-I7-110",
+   "WP-I7-201"
+  ],
+  "size": "S"
+ }
+]
