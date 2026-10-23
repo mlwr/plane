@@ -1,4 +1,4 @@
-# Grundsatzentscheidungen (ADR-000 … ADR-008)
+# Grundsatzentscheidungen (ADR-000 … ADR-009)
 
 Dieses Dokument enthält die mit dem Auftraggeber abgestimmten Grundsatzentscheidungen. Sie sind **bindend** für alle weiteren Architektur-Dokumente und für jeden Implementierungs-Agenten. Weicht ein Dokument davon ab, gilt dieses Dokument.
 
@@ -13,6 +13,7 @@ Dieses Dokument enthält die mit dem Auftraggeber abgestimmten Grundsatzentschei
 | ADR-006 | **Das Original-Repo bleibt neben dem Plan liegen** und ist die maßgebliche Referenz für Verhalten, Texte (i18n), Styles und Edge-Cases. Implementierungs-Agenten lesen immer zuerst das zugehörige Analyse-Dokument in `migration/analysis/` bzw. `migration/features/` und dann den referenzierten Originalcode. | akzeptiert | Auftrag |
 | ADR-007 | **Forgejo ist die einzige Code-Hosting-Integration – und zwar eine starke.** Die GitHub-, GitLab- und Bitbucket-Integrationen des Originals werden **nicht** portiert. Stattdessen gibt es eine tiefe, bidirektionale Forgejo-Integration (Umfang siehe unten). Forgejo darf als Dienst in den Stack aufgenommen werden (Aspire-Ressource für Entwicklung, Tests und optional den Produktivbetrieb). | akzeptiert | Auftraggeber |
 | ADR-008 | **Anmeldung ausschließlich über Keycloak (OpenID Connect).** Plane hat keine eigene Benutzer-Authentifizierung mehr: kein Passwort-Login, keine Registrierung, kein Magic-Code, keine OAuth-Logins über Google/GitHub/GitLab/Gitea, kein separates God-Mode-Admin-Login. Web, God-Mode (Admin) und Space melden sich per OIDC Authorization Code Flow mit PKCE an Keycloak an. Keycloak ist Teil des Stacks (Aspire-Ressource, auch Airgapped). | akzeptiert | Auftraggeber |
+| ADR-009 | **Neues Repository `funk.`** für den gesamten neuen Code (Backend, Frontend, Infrastruktur, Tests). Das Original-Repo (dieses Repo mit dem Plan unter `migration/`) bleibt unverändert als Referenz bestehen. Für den God Mode gibt es keine erneute Anmeldung (Step-up) per Default; sie ist konfigurierbar. | akzeptiert | Auftraggeber |
 
 ## Konsequenzen
 

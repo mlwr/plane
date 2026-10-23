@@ -1347,8 +1347,8 @@ Dieses Dokument legt den Rahmen fest; Details gehören in die folgenden Dokument
 | O-04 | Forgejo-LTS-Tag für Dev/Test | aktuelle LTS zum I0-Start pinnen, Upgrade je LTS | Start I0 |
 | O-05 | Valkey in Produktion Pflicht? | Pflicht ab 2 Instanzen eines Hosts; Einzelknoten-Profil ohne Valkey wird getestet (CI-Matrix) | I7 |
 | O-06 | Keycloak-Clients: je App (web/admin/space) oder einer | je App (eigene Login-Theme-Variante, eigene Redirects); Session in Plane gemeinsam | Ende S7 |
-| O-07 | Name/Ort des neuen Repositories | `plane-net` als eigenes Repo neben dem Original | Start I0 |
-| O-08 | Step-up-Re-Authentisierung für God Mode (Original: eigene Admin-Session 1 h) | Default **aus** (ADR-008: kein separates God-Mode-Login); per `Plane:Auth:AdminStepUpMaxAgeSeconds` einschaltbar – Auftraggeber entscheidet | Ende S7 |
+| O-07 | Name/Ort des neuen Repositories | **Entschieden (23.10.2026): eigenes Repository `funk.`** neben dem Original | Start I0 |
+| O-08 | Step-up-Re-Authentisierung für God Mode (Original: eigene Admin-Session 1 h) | **Entschieden (23.10.2026):** Step-up Default **aus**, per `Plane:Auth:AdminStepUpMaxAgeSeconds` einschaltbar | Ende S7 |
 | O-09 | PDFsharp/MigraDoc ab 6.5.0 unter AGPL-3.0-only | bei MIT-Stand `[6.2.4]` bleiben; nur bei Sicherheitslücke ohne Backport auf ≥ 6.5 wechseln (AGPL-3.0-only ist mit dem AGPL-Gesamtwerk vereinbar, schränkt aber die Lizenzwahl „or later“ für das Gesamtwerk ein) | Ende S3 |
 | O-10 | TypeScript 6.0 (Angular 22) vs. 5.8.3 (Original-Quellen) | Quellen mechanisch anpassen, Abweichungsliste führen; keine Logikänderung | Ende S0 |
 | O-11 | CE-INST-004 (Instanz-Admins per API verwalten) ist durch ADR-008 faktisch „angepasst“, steht aber nicht in der Liste von `00` | in `00` als angepasst nachtragen (Spiegel der Keycloak-Rolle, Pflege in Keycloak) | Start I0 |
