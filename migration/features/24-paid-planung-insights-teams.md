@@ -43,7 +43,7 @@ Dieses Dokument vertieft den Cluster P05. Überschneidungen mit Schwesterdokumen
 | Auto-Schedule-Cycles (Querverweis „Cycle-Cluster“) | `migration/features/25-paid-workflows-automation-templates.md` F27 | **hier vollständig** (P05-21) |
 | Teamspace-Pages, Advanced Pages Analytics, Editor-Block „Link dashboard widgets“ | `migration/features/26-paid-wissen-pages-wiki.md` P07-17, P07-25, P07-42 | referenziert (P05-04, P05-13, P05-18) |
 | Workspace Activity Logs, API-Audit-Logs | `migration/features/27-paid-sicherheit-admin-lizenz.md` P08-17, P08-18 | referenziert, Cluster-Sicht ergänzt (P05-33) |
-| CE-Analytics (Endpunkte AN-01 … AN-16), CE-Cycles (Y1 … Y23), CE-Views (W1 …), CE-Suche (SR-01 … SR-03) | `migration/analysis/03-api-intern-workspace-projekt-user.md`, `migration/analysis/04-api-intern-arbeitsobjekte.md` | nur als Basis referenziert |
+| CE-Analytics (Endpunkte AN-01 … AN-16), CE-Cycles (Y1 … Y23), CE-Views (W1 … W16 in Dok. 04), CE-Suche (SR-01 … SR-03) | `migration/analysis/03-api-intern-workspace-projekt-user.md`, `migration/analysis/04-api-intern-arbeitsobjekte.md` | nur als Basis referenziert |
 
 ### 1.2 Quellen und Kürzel
 
@@ -97,6 +97,7 @@ Dieses Dokument vertieft den Cluster P05. Überschneidungen mit Schwesterdokumen
 | WS26 | https://plane.so/blog/whats-new-in-plane-august-2026 ; https://plane.so/changelog/2026-08-31-shared-views-tabs-in-pages-and-more | Shared Views: gespeicherte View an ausgewählte Personen geben, je Person **view-only oder edit** | WebSearch Verifikation (sekundär) |
 | WS27 | https://plane.so/blog/introducing-progress-charts ; https://docs.plane.so/core-concepts/cycles | Progress Charts in Cycles, Active Cycles, Modules und Home (Okt. 2024); ältere Cycles-Doku: „Only one active cycle is allowed in a project at a time“; Active Cycles aller Projekte an einer Stelle | WebSearch Verifikation (sekundär) |
 | WS28 | https://docs.plane.so/core-concepts/analytics | ältere Analytics-Doku mit den Tabs „Scope and Demand“ und „Custom Analytics“ (bestätigt K1) | WebSearch Verifikation (sekundär) |
+| WS29 | https://plane.so/pricing.md | Pro (8 $/Nutzer/Monat monatlich, 6 $ jährlich) enthält „dashboards with advanced widgets“ (die Such-Zusammenfassung nennt keine weiteren Pro-Inhalte vollständig) | WebSearch Verifikation (sekundär, nur Teilzitat) |
 
 ### 1.3 Methode
 
@@ -230,7 +231,7 @@ Aufbau je Feature: **Tier** · **Funktionsbeschreibung (belegt)** · **Ergänzen
 - **Ergänzender Entwurf (UNVERIFIZIERT):** Layouts wie Workspace-Views (List, Kanban, Calendar, Spreadsheet, Gantt), Filter wie `my_issues` plus `team_project`; Datenmenge = Work Items aller Projekte in `teamspace_projects`, auf die der Benutzer Zugriff hat; Tab „Team“ = zusätzlich `assignees ∩ teamspace_members`.
 - **UI-Hinweise:** identische Layout-Komponenten wie Projekt-/Workspace-Ansicht (`migration/analysis/09-frontend-arbeitsobjekte-layouts.md`).
 - **Datenmodell-Hinweise:** keine neue Fachtabelle; Benutzer-Ansichtseinstellungen in `teamspace_user_properties` (P05-01).
-- **API-Hinweise (Vorschlag):** `GET /api/workspaces/{slug}/teamspaces/{teamspace_id}/issues/?…` mit derselben Grouped-Pagination wie `GET /api/workspaces/{slug}/issues/` (CE-Workspace-Issues).
+- **API-Hinweise (Vorschlag):** `GET /api/workspaces/{slug}/teamspaces/{teamspace_id}/issues/` mit denselben Query-Parametern und derselben Grouped-Pagination wie `GET /api/workspaces/{slug}/issues/` (CE-Workspace-Issues).
 - **CE-Status:** Stub/UI-Hülle (Stores `teamIssues`/`teamIssuesFilter` werden im CE mit Projekt-Store-Klassen instanziiert, `W/store/issue/root.store.ts` Z. 80–81, 148–149, 242–243; Hook-Mapping `W/hooks/store/use-issues.ts` Z. 40, 106–109).
 - **Konfidenz:** hoch (Existenz, Gruppierung), mittel (Umfang).
 
@@ -281,7 +282,7 @@ Aufbau je Feature: **Tier** · **Funktionsbeschreibung (belegt)** · **Ergänzen
 - **Funktionsbeschreibung (belegt):** Workspace-Feature-Flags `{project_grouping, initiatives, teams, customers, wiki, pi}` (`DD/api-reference/workspace-features/get-workspace-features.md`; MCP `workspace update_features` mit `teams`, `DD/dev-tools/mcp-server-tools.md` Z. 430). Settings-Navigation „Features → Teamspaces“ (`IMG/webhooks/create-webhook.webp`).
 - **(Verifikation, korrigiert):** Laut Doku (WS17, sekundär) wird das Feature in Workspace Settings → Tab „Teamspaces“ eingeschaltet und kann **danach nicht mehr abgeschaltet werden** („Once on, the feature cannot be turned off in a workspace“). Die ursprüngliche Annahme eines beidseitigen Schalters ist damit widerlegt. API v2 führt das Flag als `is_teams_enabled` („Whether teamspaces are available“, `V2/workspace-features/overview.md`); v1/MCP als `teams`.
 - **Ergänzender Entwurf (UNVERIFIZIERT):** Settings-Seite „Teamspaces“ mit einmaligem Aktivierungs-Schalter (danach gesperrt) und Liste der Teamspaces; vor der Aktivierung sind Teamspace-Navigation und -Routen ausgeblendet. Ob `PATCH …/features/` mit `teams: false` serverseitig abgelehnt wird (z. B. 409), ist UNVERIFIZIERT.
-- **Datenmodell-Hinweise (Vorschlag):** `workspace_features(workspace_id PK, project_grouping bool, initiatives bool, teams bool, customers bool, wiki bool, pi bool, …)`.
+- **Datenmodell-Hinweise (Vorschlag):** `workspace_features(workspace_id PK, project_grouping bool, initiatives bool, teams bool, customers bool, wiki bool, pi bool)` nach v1-Feldliste; die v2-Feldliste ist vollständig `is_work_item_types_enabled`, `work_item_type_default_level`, `is_workitem_hierarchy_enabled`, `is_project_grouping_enabled`, `is_teams_enabled`, `is_wiki_enabled`, `is_initiative_enabled`, `is_customer_enabled`, `is_release_enabled`, `is_state_duration_enabled`, `is_pi_enabled` (`V2/workspace-features/overview.md`; Verifikation) – für P05 relevant ist nur `is_teams_enabled`, die übrigen Flags gehören zu anderen Clustern (Dok. 21 §4.11).
 - **API-Hinweise:** `GET/PATCH /api/v1/workspaces/{slug}/features/` (Scopes `workspaces.features:read|write`).
 - **CE-Status:** fehlt.
 - **Migrationshinweis:** Toggle bleibt (fachliche Einstellung, ADR-001), Default `false` mit einmaliger Aktivierung analog Original (Verifikation; vorher „Default `true`“ ohne Beleg).
@@ -303,13 +304,14 @@ Aufbau je Feature: **Tier** · **Funktionsbeschreibung (belegt)** · **Ergänzen
 
 #### P05-09 – Dashboards
 
-- **Tier:** Pro (R1 Z. 521–530: „Dashboards and Widgets – Create your own dashboards with custom widgets and data types.“, Free/One `false`, Pro/Business/Enterprise `true`; R2 `PRO_PLAN_FEATURES` „Dashboards + Reports“; Upgrade-Modal „Dashboards, Workflows, Approvals, Time Management, and other superpowers are just a click away.“ `W/components/license/modal/upgrade-modal.tsx` Z. 70).
+- **Tier:** Pro (R1 Z. 521–530: „Dashboards and Widgets – Create your own dashboards with custom widgets and data types.“, Free/One `false`, Pro/Business/Enterprise `true`; R2 `PRO_PLAN_FEATURES` „Dashboards + Reports“; Doku-PR-Badge „Pro“, WS20, und Preisseite „dashboards with advanced widgets“ in Pro, WS29 – Verifikation; Upgrade-Modal „Dashboards, Workflows, Approvals, Time Management, and other superpowers are just a click away.“ `W/components/license/modal/upgrade-modal.tsx` Z. 70).
 - **Funktionsbeschreibung (belegt):**
   - Navigation: Eintrag `{key: "dashboards", labelTranslationKey: "workspace_dashboards" („Dashboards“), href: "/{workspaceSlug}/dashboards/", access: [ADMIN, MEMBER], Icon: DashboardsOutline}` im (im CE nicht gerenderten) `SidebarUserMenu` zwischen „Home“ und „Your work“ (`W/components/workspace/sidebar/user-menu.tsx` Z. 26–62, Eintrag Z. 34–40) → Gäste sehen keine Dashboards.
   - Leerzustand der Dashboard-Liste: Titel „Visualize your progress with dashboards“, Beschreibung „Build customizable dashboards to track metrics, measure outcomes, and present insights effectively.“, CTA „Create new dashboard“ (`L/empty-state.json` Z. 184–188, `workspace_empty_state.dashboard.*`); Illustration `dashboard` (`B/empty-state/assets/asset-types.ts` Z. 50, Registry Z. 113).
   - Workspace-Slug `dashboard` ist reserviert (`C/workspace.ts` Z. 63; identisch `API/utils/constants.py` `RESTRICTED_WORKSPACE_SLUGS`).
   - Release-Historie (nur Titel): Dashboard-Neuerungen in Commercial v3.1.0 (WS4), „PQL in dashboards“ (WS5), „PQL dashboard filters“ (WS6), „dashboard intake widgets“ (WS7), „dashboard custom properties“ (WS8).
-- **Ergänzender Entwurf (UNVERIFIZIERT):** Liste aller Dashboards des Workspace (Name, Owner, Favorit), „Create new dashboard“-Modal (Name, optional Beschreibung, Projekt-Scope), Dashboard-Detailseite mit Raster aus Widgets (Hinzufügen, Bearbeiten, Verschieben, Größe ändern, Löschen, Duplizieren), Dashboard-Filter (P05-11) im Kopf, Favorisieren, Löschen mit Bestätigung. Sichtbarkeit: privat/öffentlich im Workspace analog `IssueView.access`.
+  - **(Verifikation, sekundär WS19/WS20/WS21/WS23):** Einstieg „Dashboards“ in der linken Sidebar; Button **„Add dashboard“** oben rechts; Anlegen mit Name und Auswahl der einzubeziehenden **Projekte**; danach „**+ Add widget**“ (Typ wählen, Daten konfigurieren, Widget benennen, per Drag & Drop positionieren). Dashboards können samt Widgets **dupliziert** werden. Sichtbarkeit privat/öffentlich mit Default „Public“ (nur Doku-PR-Entwurf). „Dashboards are viewable by every member“ (`V2/artifacts/overview.md` Z. 34). Mai 2026: neu gestaltete Dashboard-Oberfläche.
+- **Ergänzender Entwurf (UNVERIFIZIERT):** Liste aller Dashboards des Workspace (Name, Owner, Favorit), „Create new dashboard“-Modal (Name, Projekt-Auswahl – sekundär belegt; optional Beschreibung), Dashboard-Detailseite mit Raster aus Widgets (Hinzufügen, Bearbeiten, Verschieben, Größe ändern, Löschen, Duplizieren), Dashboard-Filter (P05-11) im Kopf, Favorisieren, Löschen mit Bestätigung. Sichtbarkeit: privat/öffentlich im Workspace analog `IssueView.access`.
 - **UI-Hinweise:** Icons `DashboardsOutline`/`DashboardsFilled` (`PROPEL/icons/workspace-features/dashboards-*`), `WidgetOutline`/`WidgetFilled` (`PROPEL/icons/miscellaneous/widget-*`), Diagramm-Icons `AreaOutline`, `BarOutline`, `DonutOutline`, `LineOutline`, `PieOutline` (+ `*Filled`) (`PROPEL/icons/charts/`). Chart-Komponenten liegen bereits im CE-Paket `@plane/blocks` (`B/charts/{area-chart,bar-chart,line-chart,pie-chart,radar-chart,tree-map,components}`).
 - **Datenmodell-Hinweise (Vorschlag):** `dashboards(id, workspace_id, name varchar(255), description text, logo_props jsonb, owned_by_id, access smallint (0 private, 1 public – UNVERIFIZIERT), project_ids uuid[] oder Join-Tabelle dashboard_projects, filters jsonb (Rich-Filter-Ausdruck), pql text NULL, sort_order double, created_*, deleted_at)`; Favoriten über bestehende `user_favorites.entity_type = "dashboard"` (CE-Favoritenmodell ist generisch, `API/db/models/favorite.py` Z. 20).
 - **API-Hinweise (Vorschlag):** `GET/POST /api/workspaces/{slug}/dashboards/`, `GET/PATCH/DELETE /api/workspaces/{slug}/dashboards/{dashboard_id}/`. **Kollisionsgefahr:** das CE kennt Legacy-Endpunkte des alten Home-Dashboards `GET /api/users/me/workspaces/{slug}/dashboard/` (`API/app/urls/user.py` Z. 80) und vom Frontend-Service `/api/workspaces/{slug}/dashboard/`, `/api/dashboard/{id}/widgets/{widgetId}/` (`W/services/dashboard.service.ts`, `packages/services/src/dashboard/dashboard.service.ts`) – diese sind **nicht** die Bezahl-Dashboards; neue Routen im Plural `dashboards`.
@@ -330,6 +332,7 @@ Aufbau je Feature: **Tier** · **Funktionsbeschreibung (belegt)** · **Ergänzen
   - **Farbpaletten** `TChartColorScheme` = `modern` | `horizon` | `earthen` mit je 10 Light-/Dark-Farben; i18n-Labels `dashboards.widget.color_palettes.{modern,horizon,earthen}` (**fehlen** in `L/*.json`) (`C/chart.ts` Z. 41–135; `T/charts/common.ts` Z. 7). Mehr Serien als 10 Farben → HSL-Interpolation `generateExtendedColors` (`W/components/chart/utils.ts` Z. 118–175).
   - Achsenbeschriftungen „X-axis“, „Y-axis“, „Metric“ (`L/common.json`, `chart.*`, ohne CE-Referenz); Achsenlabel-Klasse `uppercase text-tertiary/60 text-13 tracking-wide` (`C/chart.ts` Z. 10–11).
   - Chart-Primitive mit Widget-tauglichen Optionen: Balken-Varianten `bar` | `lollipop` | `lollipop-dotted` (`T/charts/index.ts` `TBarChartShapeVariant`), Area mit `comparisonLine`, Pie/Donut mit `innerRadius`, `centerLabel`, `customLegend`, TreeMap, Radar, Scatter (`T/charts/index.ts`; `B/charts/*`).
+- **(Verifikation) Widget-Katalog, sekundär belegt:** offizielle Doku nennt sechs Typen **Bar chart, Line chart, Area chart, Donut chart, Pie chart, Number** (WS19) – deckt sich mit der Spalte „Widget-Typ“ unten; zusätzlich seit Mai 2026 ein **Tabellen-Widget** (WS21, im Doku-PR WS20 ebenfalls) und interaktive Charts mit Aufschlüsselung nach Metrik/Dimension und **Drill-down** per Klick auf Segmente (WS21); weitere Spezial-Widgets „**Cycle Progress Bar**“ (ein oder mehrere Cycles verfolgen) und „**Work Item Type Progress**“ (Fortschritt je Work-Item-Typ) (WS23); Widget-Filter nach Assignee, Priority, State, Label oder beliebiger Work-Item-Property (WS19). Die Modell-Zuordnung je Typ bleibt Entwurf.
 - **Ergänzender Entwurf (UNVERIFIZIERT) – Widget-Typ × Modell:**
 
 | Widget-Typ (Icon) | zulässige Modelle | Darstellung |
@@ -340,10 +343,13 @@ Aufbau je Feature: **Tier** · **Funktionsbeschreibung (belegt)** · **Ergänzen
 | Donut (`DonutOutline`) | BASIC, PROGRESS | Ring; PROGRESS mit Mittelwert (`centerLabel`, z. B. „{completed}/{total}“) |
 | Pie (`PieOutline`) | BASIC | Torte |
 | Number | BASIC | große Kennzahl (`count`, vgl. `API/utils/build_chart.py` Z. 101–108 – Aggregat ohne X-Achse) |
+| Table (Verifikation, WS21) | – | Tabelle Dimension × Metrik (Spaltenaufbau UNVERIFIZIERT) |
+| Cycle Progress Bar (Verifikation, WS23) | PROGRESS | Fortschrittsbalken je ausgewähltem Cycle (Datenbasis wie P05-19, UNVERIFIZIERT) |
+| Work Item Type Progress (Verifikation, WS23) | PROGRESS | Fortschritt je Work-Item-Typ (UNVERIFIZIERT) |
 
   Konfiguration je Widget: Name, Typ, Modell, X-Achse, Y-Metrik, Gruppierung, Datumsgruppierung, Farbpalette, Legende/Tooltip an/aus, Widget-Filter; Layout `{x, y, w, h}` im Raster.
 - **Semantik der Y-Metriken (Vorschlag, aus Namen abgeleitet, UNVERIFIZIERT):** `WORK_ITEM_COUNT` = Anzahl; `ESTIMATE_POINT_COUNT` = Summe der Estimate-Werte (nur Estimate-Typ `points`, vgl. CE-Cycle-Progress `API/app/views/cycle/base.py` Z. 669–715); `PENDING_WORK_ITEM_COUNT` = State-Gruppe ∉ {completed, cancelled}; `COMPLETED_WORK_ITEM_COUNT` = Gruppe completed; `IN_PROGRESS_WORK_ITEM_COUNT` = Gruppe started; `WORK_ITEM_DUE_THIS_WEEK_COUNT` = `target_date` in aktueller Woche; `WORK_ITEM_DUE_TODAY_COUNT` = `target_date` = heute; `BLOCKED_WORK_ITEM_COUNT` = hat Relation „blocked_by“ zu nicht abgeschlossenem Work Item; `EPIC_WORK_ITEM_COUNT` = Anzahl Epics (Work-Item-Typ `is_epic`).
-- **Datenmodell-Hinweise (Vorschlag):** `dashboard_widgets(id, dashboard_id FK, workspace_id, name varchar(255), chart_type varchar (BAR_CHART|LINE_CHART|AREA_CHART|DONUT_CHART|PIE_CHART|NUMBER), chart_model varchar (EChartModels), x_axis_property varchar (ChartXAxisProperty) NULL, x_axis_date_grouping varchar NULL, y_axis_metric varchar (ChartYAxisMetric), group_by varchar NULL, config jsonb {color_scheme, show_legend, show_tooltip, orientation, bar_variant, …}, filters jsonb, layout jsonb {x,y,w,h}, sort_order, created_*, deleted_at)`.
+- **Datenmodell-Hinweise (Vorschlag):** `dashboard_widgets(id, dashboard_id FK, workspace_id, name varchar(255), chart_type varchar (BAR_CHART|LINE_CHART|AREA_CHART|DONUT_CHART|PIE_CHART|NUMBER), chart_model varchar (EChartModels), x_axis_property varchar (ChartXAxisProperty) NULL, x_axis_date_grouping varchar NULL, y_axis_metric varchar (ChartYAxisMetric), group_by varchar NULL, config jsonb {color_scheme, show_legend, show_tooltip, orientation, bar_variant} (Schlüsselliste Vorschlag, Original-Schema UNVERIFIZIERT), filters jsonb, layout jsonb {x,y,w,h}, sort_order, created_*, deleted_at)`.
 - **API-Hinweise (Vorschlag):** `GET/POST …/dashboards/{id}/widgets/`, `PATCH/DELETE …/widgets/{widget_id}/`, `GET …/widgets/{widget_id}/charts/?` → `TChart`; serverseitige Aggregation als Erweiterung des CE-Chart-Builders (`API/utils/build_chart.py`) um die EE-Achsen/Metriken.
 - **CE-Status:** teilweise (Infrastruktur und Typen vorhanden, keine Widgets).
 - **Migrationshinweis:** Aggregation in EF Core über `GroupBy` + `Sum/Count` bzw. Raw-SQL mit `date_trunc` für Datumsgruppierung (Zeitzone des Benutzers beachten, vgl. CE-Analytics `ANALYTICS_V2_DATE_KEYS`, `C/analytics/common.ts`). Angular: Chart-Bibliothek muss die Recharts-Optik (Achsen, Tooltip, Legende) 1:1 treffen (ADR-005).
@@ -352,23 +358,24 @@ Aufbau je Feature: **Tier** · **Funktionsbeschreibung (belegt)** · **Ergänzen
 #### P05-11 – Dashboard-Filter inkl. PQL
 
 - **Tier:** unklar (≥ Pro).
-- **Funktionsbeschreibung (belegt):** nur Changelog-Titel „PQL in dashboards“ (WS5) und „PQL dashboard filters“ (WS6).
-- **Ergänzender Entwurf (UNVERIFIZIERT):** Dashboard-weiter Filter (Projekte, Zeitraum, Rich-Filter) und optionaler PQL-Ausdruck (P05-29), der auf alle Widgets angewendet wird; Widget-Filter wirken zusätzlich (UND-Verknüpfung).
-- **Datenmodell/API:** Felder `dashboards.filters`, `dashboards.pql`, `dashboard_widgets.filters`; Widget-Daten-Endpunkt akzeptiert Overrides `?pql=` (Vorschlag).
+- **Funktionsbeschreibung (belegt):** Changelog-Titel „PQL in dashboards“ (WS5) und „PQL dashboard filters“ (WS6). **(Verifikation, sekundär WS21/WS23):** PQL wirkt in Dashboards auf **drei Ebenen – source, quick und widget filters**; die Widget-Konfiguration ist nach Projekt filterbar, wahlweise mit Standardfiltern oder PQL.
+- **Ergänzender Entwurf (UNVERIFIZIERT):** „source filter“ = Datenquelle des Dashboards (Projekte + Basisfilter), „quick filter“ = vom Betrachter umschaltbarer Filter in der Kopfzeile, „widget filter“ = Filter je Widget; Verknüpfung der Ebenen per UND.
+- **Datenmodell/API:** Felder `dashboards.filters`, `dashboards.pql` (source), `dashboards.quick_filters jsonb` (Verifikation, Vorschlag), `dashboard_widgets.filters`, `dashboard_widgets.pql`; Widget-Daten-Endpunkt akzeptiert Overrides `?pql=` (Vorschlag).
 - **CE-Status:** fehlt.
 - **Konfidenz:** niedrig.
 
 #### P05-12 – Dashboard-Widgets für Intake und Custom Properties
 
 - **Tier:** unklar.
-- **Funktionsbeschreibung (belegt):** nur Changelog-Titel „dashboard intake widgets“ (WS7) und „dashboard custom properties“ (WS8).
+- **Funktionsbeschreibung (belegt):** Changelog-Titel „dashboard intake widgets“ (WS7) und „dashboard custom properties“ (WS8). **(Verifikation, sekundär WS23):** vier Intake-Widgets – **accepted vs. declined**, **durchschnittliche Zeit bis Annahme/Ablehnung**, **request breakdown** (Aufschlüsselung der Warteschlange), **intake items aging** (Wartezeit) – sowie „**Intake volume by source**“ (Herkunft der Requests). Custom Properties: Widgets lassen sich nach beliebiger Work-Item-Property filtern (WS19).
+- **CE-Datenbasis (Verifikation):** „Intake volume by source“ kann auf dem CE-Feld `IntakeIssue.source` (Default `"IN_APP"`) bzw. `source_email` aufsetzen (`API/db/models/intake.py` Z. 76–77); Annahme-/Ablehnungszeiten aus `IntakeIssue.status`-Wechseln (Activity) – Berechnungsregel UNVERIFIZIERT.
 - **Ergänzender Entwurf (UNVERIFIZIERT):** Datenquelle „Intake“ (Intake-Work-Items nach Status `-2` Pending, `-1` Rejected, `0` Snoozed, `1` Accepted, `2` Duplicate – `IntakeIssueStatus` des CE-Modells, `API/db/models/intake.py` Z. 44–68) und X-Achse/Gruppierung nach Custom Properties (Work-Item-Properties, vgl. Dok. 20 PF-06) bzw. Y-Metrik „Summe einer numerischen Property“.
 - **CE-Status:** fehlt.
 - **Konfidenz:** niedrig.
 
 #### P05-13 – Dashboard-Widgets in Pages einbetten
 
-- **Tier:** Enterprise (Grid) laut Doku-Label (Dok. 26 P07-42, WS16; UNVERIFIZIERT).
+- **Tier:** Enterprise Grid (Verifikation: Doku-Label „Enterprise“ laut Dok. 26 P07-42/WS16; der Top-Plan heißt in der aktuellen Doku „Enterprise Grid“, `DD/self-hosting/self-hosting-101.md` Z. 54; Label selbst nur sekundär, UNVERIFIZIERT).
 - **Funktionsbeschreibung (sekundär):** Editor-Block „Link dashboard widgets“ bettet ein Widget (Chart, Tabelle, Zahl) eines bestehenden Dashboards in eine Seite ein, synchron mit den Daten; mindestens ein Dashboard mit Widgets erforderlich (Dok. 26 Z. 762).
 - **Migrationshinweis:** Tiptap-Node mit Attributen `dashboard_id`, `widget_id`; Rendering über denselben Widget-Daten-Endpunkt (P05-10). Persistenzformat nicht belegt (Dok. 26 OP-06).
 - **Konfidenz:** niedrig.
@@ -437,7 +444,7 @@ Aufbau je Feature: **Tier** · **Funktionsbeschreibung (belegt)** · **Ergänzen
     - v1: aus `distribution.completion_chart` (Datum → offene Menge) des CE-Analytics-Endpunkts (`formatV1Data`, Z. 103–137).
   - **Plot-Typ** `TCyclePlotType` = `"burndown" | "burnup"` (`T/cycle/cycle.ts` Z. 139), Store `plotType` je Cycle mit Default `burndown` (`W/store/cycle.store.ts` Z. 362, 380); Optionsliste `cycleChartOptions` = „Burn-down“, „Burn-up“ (`W/components/cycles/analytics-sidebar/issue-progress.tsx` Z. 40–43) – im CE **ohne UI**.
   - Nicht referenzierte Legenden: „Burndown chart“, „Ideal“, „Current“, „Trailing“, „Leading“ (`L/project.json`, `project_cycles.active_cycle.{chart,ideal,current,trailing,leading}`); Leerzustand „There're no progress metrics to show yet. – Start setting property values in work items to see progress metrics here.“ (`L/empty-state.json`, `common_empty_state.progress`).
-  - Matrix nennt neben Cycles auch **Module** und **Overviews** (Projekt-/Epic-/Initiative-Overview, andere Cluster).
+  - Matrix nennt neben Cycles auch **Module** und **Overviews** (Projekt-/Epic-/Initiative-Overview, andere Cluster). **(Verifikation, WS27):** Blog „Introducing brand new Progress Charts“ (Okt. 2024) nennt Cycles, Active Cycles, Modules und Home als Einsatzorte.
 - **Ergänzender Entwurf (UNVERIFIZIERT):** In Cycle-Sidebar und Active-Cycle-Karte Umschalter Burn-down/Burn-up neben dem bestehenden Umschalter Work items/Estimates; Linien „Ideal“ (gestrichelt), „Current“ (Fläche), „Scope“; Bereiche „Trailing“ (hinter Ideal) und „Leading“ (vor Ideal) farbig hervorgehoben; Tooltip mit Tageswerten (Backlog/Unstarted/Started/Completed/Cancelled).
 - **Datenmodell-Hinweise (Vorschlag):** `cycle_progress_snapshots(id, cycle_id FK, project_id, workspace_id, progress_date date, total_issues int, completed_issues, cancelled_issues, backlog_issues, started_issues, unstarted_issues, total_estimate_points double, completed_estimate_points, cancelled_estimate_points, backlog_estimate_points, started_estimate_points, unstarted_estimate_points, created_at)`, Unique `(cycle_id, progress_date)`; Erzeugung täglich (Scheduler, Zeitzone `Cycle.timezone`) und bei Änderungen des aktuellen Tages (Upsert); neue Cycles `version = 2`. Analog für Module `module_progress_snapshots` (UNVERIFIZIERT).
 - **API-Hinweise:** `GET …/cycles/{cycle_id}/cycle-progress/` → `TProgressSnapshot` + `progress: [...]` (Form aus `U/cycle.ts` abgeleitet; Antwortschema UNVERIFIZIERT).
@@ -457,7 +464,8 @@ Aufbau je Feature: **Tier** · **Funktionsbeschreibung (belegt)** · **Ergänzen
 
 #### P05-21 – Auto-schedule Cycles
 
-- **Tier:** unklar (keine Matrix-Zeile; Changelog „Recurring cycles“ Commercial v1.16.0, WS11).
+- **Tier:** Business (Verifikation; einzige Plan-Quelle: Plane-University-Kurs 201/09 „Cycle Automation (Auto-Schedule Cycles)“ als Business-Funktion, WS24 – Kurs-Entwurf, Konfidenz niedrig). Keine Matrix-Zeile; Changelog „Recurring cycles“ Commercial v1.16.0 (WS11). **Widerspruch** zu P05-22: R1 führt den Auto-Transfer ab Pro.
+- **Projekt-Flag (Verifikation):** API v2 `is_automated_cycle_enabled` (boolean, Default im Beispiel `false`, `V2/project-features/overview.md`); in v1/MCP/Plane Compose nicht vorhanden.
 - **Funktionsbeschreibung (belegt, `L/project-settings.json` `project_settings.cycles.auto_schedule.*`):**
   - Abschnitt in den Projekt-Einstellungen „Cycles“ unterhalb des Schalters „Enable cycles“: Überschrift „Auto-schedule cycles“, Beschreibung „Keep cycles moving without manual setup.“, Tooltip „Automatically create new cycles based on your chosen schedule.“, Button „Edit“.
   - Formularfelder und Validierung:
@@ -482,18 +490,19 @@ Aufbau je Feature: **Tier** · **Funktionsbeschreibung (belegt)** · **Ergänzen
 
 #### P05-22 – Auto-Rollover (Auto-transfer Cycle Work items)
 
-- **Tier:** Pro (R1 Z. 249–258: „Transfer incomplete work items from a completed cycle to the next cycle or to the default project state.“).
+- **Tier:** Pro (R1 Z. 249–258: „Transfer incomplete work items from a completed cycle to the next cycle or to the default project state.“). **Widerspruch (Verifikation):** University-Kurs WS24 beschreibt Rollover als Teil der Business-„Cycle Automation“; R1-Zeile ist spezifischer → Pro beibehalten.
 - **Funktionsbeschreibung (belegt):** Option „Auto-rollover work items – On the day a cycle completes, move all unfinished work items into the next cycle.“ im Auto-Schedule-Formular (P05-21). Matrix nennt alternativ „to the default project state“ (UNVERIFIZIERT, wann).
 - **CE-Basis:** manueller Transfer existiert (`POST …/cycles/{cycle_id}/transfer-issues/`, nur unvollständige Work Items, Snapshot wie P05-20; `API/utils/cycle_transfer_issues.py`; UI `W/components/cycles/transfer-issues-modal.tsx`).
 - **Migrationshinweis:** Rollover-Job ruft dieselbe Domänenlogik wie der manuelle Transfer auf (Snapshot schreiben, offene Work Items umhängen, Activity erzeugen).
-- **CE-Status:** fehlt.
+- **CE-Status:** teilweise im CE (Verifikation, vorher „fehlt“): Die Transfer-Domänenlogik inkl. Snapshot existiert (`TransferCycleIssueEndpoint`, `API/app/urls/cycle.py` Z. 72; `API/utils/cycle_transfer_issues.py`), nur der automatische Auslöser am Cycle-Ende und die Option „default project state“ fehlen. Einheitlich mit Dok. 20 PF-12 (`_data/P01.paid.json`) und Dok. 25 (`_data/P06.paid.json`).
 - **Konfidenz:** mittel.
 
 #### P05-23 – Workspace-weite Active Cycles
 
-- **Tier:** One (R1 Z. 194–203: Free `false`, One–Enterprise `true`; R1 `planHighlights.one` „Active cycles“; R2 `ONE_PLAN_FEATURES` „Active Cycles“). Da der Plan „One“ nicht mehr angeboten wird (`W/components/workspace/billing/comparison/base.tsx` Z. 30–31; Dok. 20 §1.2), ist die Funktion in aktuellen Plänen ab Pro enthalten.
+- **Tier:** One (R1 Z. 194–203: Free `false`, One–Enterprise `true`; R1 `planHighlights.one` „Active cycles“; R2 `ONE_PLAN_FEATURES` „Active Cycles“). Da der Plan „One“ nicht mehr angeboten wird (`W/components/workspace/billing/comparison/base.tsx` Z. 29–30; Dok. 20 §1.2), ist die Funktion in aktuellen Plänen ab Pro enthalten.
 - **Funktionsbeschreibung (belegt):**
-  - Seite `/:workspaceSlug/active-cycles` (`W/app/routes/core.ts` Z. 66–67), Seitentitel „{Workspace} - Active Cycles“ (`W/app/(all)/[workspaceSlug]/(projects)/active-cycles/page.tsx`), Sidebar-Eintrag „Cycles“ (`sidebar.cycles`) mit Icon `CyclesOutline` (Rotation `rotate-180` lt. Dok. 20 PF-04), sichtbar für ADMIN und MEMBER (`W/components/workspace/sidebar/workspace-menu.tsx` Z. 46–52); Power-K-Aktion „Go to all active cycles“ (`L/power-k.json` Z. 107).
+  - Seite `/:workspaceSlug/active-cycles` (`W/app/routes/core.ts` Z. 66–67), Seitentitel „{Workspace} - Active Cycles“ (`W/app/(all)/[workspaceSlug]/(projects)/active-cycles/page.tsx`); Kopfzeile mit Label `active_cycles` „Active cycles“ (`…/active-cycles/header.tsx` Z. 27). Power-K-Aktion „Go to all active cycles“ (`L/power-k.json` Z. 107, ohne CE-Referenz).
+  - **Navigation (Verifikation, korrigiert):** Im CE gibt es **keinen gerenderten** Sidebar-Eintrag. Belegt sind nur Hüllen: (a) nicht gerendertes `SidebarWorkspaceMenu` mit `{key: "active-cycles", labelTranslationKey: "sidebar.cycles", href: "/{ws}/active-cycles/", access: [ADMIN, MEMBER], Icon: CyclesOutline}` (`W/components/workspace/sidebar/workspace-menu.tsx` Z. 46–52; Rotation `rotate-180` für Key `active_cycles` in `workspace-menu-item.tsx` Z. 64 – der Key-Unterschied `active-cycles`/`active_cycles` ist eine Inkonsistenz, Dok. 20 PF-04); (b) Icon-Zuordnung `active_cycles` → `CyclesOutline` (`W/components/workspace/sidebar/helper.tsx` Z. 31–32) und `UpgradeBadge` für `active_cycles` in der anpassbaren Navigation (`W/components/workspace/sidebar/extended-sidebar-item.tsx` Z. 199–203); (c) Backend-Präferenz `WorkspaceUserPreference.UserPreferenceKeys.ACTIVE_CYCLES = "active_cycles"` (`API/db/models/workspace.py` Z. 420–427), die beim ersten Abruf ungepinnt angelegt wird (`API/app/views/workspace/user_preference.py` Z. 33–60). Die im CE gerenderte Workspace-Navigation enthält nur Views, Analytics, Archives (`C/workspace.ts` Z. 201–229). Ziel: Eintrag „Cycles“ (Active Cycles) als vierter dynamischer, anheftbarer Navigationspunkt (Reihenfolge laut `SidebarWorkspaceMenu`: Projects, Views, Cycles, Analytics).
   - Funktionsumfang laut Upsell (`W/components/active-cycles/workspace-active-cycles-upgrade.tsx` Z. 28–66; Texte `L/common.json` Z. 124–139): „On-demand snapshots of all your cycles“; „Monitor cycles across projects, track high-priority work items, and zoom in cycles that need attention.“; sechs Punkte „10,000-feet view of all active cycles.“, „Get a snapshot of each active cycle.“, „Compare burndowns.“, „Quickly see make-or-break work items.“, „Zoom into cycles that need attention.“, „Stay ahead of blockers.“ mit Beschreibungen (Anhang B).
   - Leerzustände: „No active cycles – You don't have any ongoing cycles right now. Active cycles appear here when they include today's date.“ (`workspace_empty_state.active_cycles`, `L/empty-state.json` Z. 180) und Variante „Cycles of your projects that includes any period that encompasses today's date within its range. Find the progress and details of all your active cycle here.“ (`workspace_cycles.empty_state.active`, `L/workspace.json`).
   - Kartenleerzustände (mit Zeilenumbruch): `active_cycle_analytics.empty_state.{progress,priority,assignee,label}.title` (`L/cycle.json`).
@@ -508,8 +517,8 @@ Aufbau je Feature: **Tier** · **Funktionsbeschreibung (belegt)** · **Ergänzen
 #### P05-24 – Parallel Cycles
 
 - **Tier:** unklar.
-- **Funktionsbeschreibung (belegt):** Projekt-Feature-Flag `parallel_cycles` „Allows multiple active cycles to run simultaneously.“ (`DD/dev-tools/plane-compose.md` Z. 1259, Beispiel `parallel_cycles: false`; MCP `project update_features` Parameter `parallel_cycles`, `DD/dev-tools/mcp-server-tools.md` Z. 377). Die Public-API-Projekt-Features (`DD/api-reference/project-features/overview.md`: `epics`, `modules`, `cycles`, `views`, `pages`, `intakes`, `work_item_types`) nennen es nicht.
-- **CE-Basis:** Überlappende Cycles sind verboten (Date-Check, Fehlertext „You already have a cycle on the given dates, if you want to create a draft cycle, you can do that by removing both the dates.“, `L/project.json` `project_cycles.action.update.error.already_exists`); CE-Frontend kennt genau einen aktiven Cycle je Projekt (`currentProjectActiveCycleId`, `W/store/cycle.store.ts`).
+- **Funktionsbeschreibung (belegt):** Projekt-Feature-Flag `parallel_cycles` „Allows multiple active cycles to run simultaneously.“ (`DD/dev-tools/plane-compose.md` Z. 1259, Beispiel `parallel_cycles: false` Z. 1272; MCP `project update_features` Parameter `parallel_cycles`, `DD/dev-tools/mcp-server-tools.md` Z. 377); API v2 `is_parallel_cycles_enabled` (`V2/project-features/overview.md`; Verifikation). Ältere Nutzer-Doku: „Only one active cycle is allowed in a project at a time“ (WS27) – beschreibt den Zustand ohne Flag. Die Public-API-Projekt-Features (`DD/api-reference/project-features/overview.md`: `epics`, `modules`, `cycles`, `views`, `pages`, `intakes`, `work_item_types`) nennen es nicht.
+- **CE-Basis:** Überlappende Cycles sind verboten (Date-Check `POST …/projects/{project_id}/cycles/date-check/`, `CycleDateCheckEndpoint`, `API/app/urls/cycle.py` Z. 57–58, `API/app/views/cycle/base.py` Z. 521–557: Überlappung von `[start_date, end_date]` mit bestehenden Cycles → `{"status": false}`; Verifikation; Fehlertext „You already have a cycle on the given dates, if you want to create a draft cycle, you can do that by removing both the dates.“, `L/project.json` `project_cycles.action.update.error.already_exists`); CE-Frontend kennt genau einen aktiven Cycle je Projekt (`currentProjectActiveCycleId`, `W/store/cycle.store.ts`).
 - **Ergänzender Entwurf (UNVERIFIZIERT):** Bei aktivem Flag entfällt die Überlappungsprüfung; die Projekt-Cycle-Liste zeigt mehrere „Active cycle“-Blöcke; Active-Cycles-Seite (P05-23) listet alle.
 - **Datenmodell:** `projects.parallel_cycles bool` bzw. Projekt-Feature-Tabelle.
 - **CE-Status:** fehlt.
@@ -518,8 +527,9 @@ Aufbau je Feature: **Tier** · **Funktionsbeschreibung (belegt)** · **Ergänzen
 #### P05-25 – Cycle-Aktionen „Complete“ und Archivieren laufender Cycles
 
 - **Tier:** unklar.
-- **Funktionsbeschreibung (belegt):** MCP-Tool `cycle` Aktion `complete` „sets end_date to today“; `archive` „ends the cycle first if it is still running“; Status-Filter `current, upcoming, completed, draft, incomplete` (`DD/dev-tools/mcp-server-tools.md` Z. 240–254). CE erlaubt Archivieren nur beendeter Cycles („Only completed cycles can be archived“, `L/project.json`; Dok. 21 §5).
-- **API-Hinweise (Vorschlag):** `POST …/cycles/{cycle_id}/complete/` (setzt `end_date` = heute in `Cycle.timezone`, schreibt Snapshot, löst ggf. Auto-Rollover P05-22 aus).
+- **Funktionsbeschreibung (belegt):** MCP-Tool `cycle` Aktion `complete` „sets end_date to today“ (Z. 250; Alias `complete_cycle`, Z. 590); `archive` „ends the cycle first if it is still running“ (Z. 251); Status-Filter `current, upcoming, completed, draft, incomplete` (Z. 254) (`DD/dev-tools/mcp-server-tools.md`). **(Verifikation, ergänzt):** API v2 kennt das Projekt-Flag `is_manually_start_end_cycles_enabled` („Whether is manually start end cycles enabled“, `V2/project-features/overview.md`) → Projekte können auf manuelles Starten/Beenden von Cycles umgestellt werden; Semantik (Start/Ende per Aktion statt per Datum) UNVERIFIZIERT; im CE keine Texte dazu. CE erlaubt Archivieren nur beendeter Cycles („Only completed cycles can be archived“, `L/project.json`; Dok. 21 §5).
+- **API-Hinweise (Vorschlag):** `POST …/cycles/{cycle_id}/complete/` (setzt `end_date` = heute in `Cycle.timezone`, schreibt Snapshot, löst ggf. Auto-Rollover P05-22 aus); bei `is_manually_start_end_cycles_enabled` zusätzlich `POST …/cycles/{cycle_id}/start/` (UNVERIFIZIERT).
+- **Datenmodell-Hinweise (Vorschlag):** Projekt-Feature-Spalte `is_manually_start_end_cycles_enabled bool default false`.
 - **CE-Status:** fehlt.
 - **Konfidenz:** mittel.
 
@@ -527,7 +537,7 @@ Aufbau je Feature: **Tier** · **Funktionsbeschreibung (belegt)** · **Ergänzen
 
 - **Tier:** unklar; **Existenz UNVERIFIZIERT.**
 - **Befund:** Das generische Updates-Modul (`L/update.json`: „Add Update“, „Add your update here“, Fortschritt „Progress“ / „Since last update“ / „{count} Comments“, Reaktionen, Löschen „Are you sure you want to delete this update? This is an irreversible action.“; Status `EUpdateStatus` `OFF-TRACK`, `ON-TRACK`, `AT-RISK`, `T/enums.ts` Z. 87–91; Labels „On-Track“, „Off-Track“, „At risk“, `L/common.json` Z. 588–590; Leerzustand „No updates yet. – Once project members add updates it will appear here“) ist für **Project Updates** belegt (`project_settings.project_updates.*` „Project Updates – Consolidated tracking and progress monitoring for this project“; Projekt-Feature `project_updates`, `DD/dev-tools/plane-compose.md` Z. 1260). Für Cycles gibt es im Repo und in den Developer-Docs **keinen** Beleg.
-- **Empfehlung:** Updates-Modul generisch bauen (`entity_type` ∈ {project, epic, initiative, …}) – Cycle-Unterstützung erst nach Nachrecherche (O-08). Project Updates gehören zum Projekt-Cluster.
+- **Empfehlung:** Updates-Modul generisch bauen (`entity_type` ∈ {project, epic, initiative}; Teamspace/Cycle nur nach Nachrecherche) – Cycle-Unterstützung erst nach Nachrecherche (O-08). Project Updates gehören zum Projekt-Cluster.
 - **Konfidenz:** niedrig.
 
 ### 3.5 Views
@@ -536,15 +546,16 @@ Aufbau je Feature: **Tier** · **Funktionsbeschreibung (belegt)** · **Ergänzen
 
 - **Tier:** Pro (R1 Z. 499–508: „Choose a few members to share a view with.“). Changelog-Titel „shared views“ Cloud 31.08.2026 (WS9).
 - **Funktionsbeschreibung (belegt):** CE-Views kennen nur `access` 0 = Private, 1 = Public (`API/db/models/view.py` Z. 66; `T/views.ts` `EViewAccess { PRIVATE, PUBLIC }` Z. 15–18; UI-Optionen „Public“/„Private“ `C/views.ts` Z. 9–15); Tooltip „Public“/„Private“ mit `GlobeOutline`/`LockOutline` in der View-Liste (`W/components/views/view-list-item-action.tsx` Z. 92–96; Tooltip Z. 93). Text „Save custom sorts, filters, and display options or share them with your team.“ (`L/common.json` Z. 228, `views_description`, ohne CE-Referenz).
-- **Ergänzender Entwurf (UNVERIFIZIERT):** Private Views können ausgewählten Projekt-/Workspace-Mitgliedern freigegeben werden (Dialog mit Member-Auswahl); geteilte Views erscheinen bei den Empfängern in der View-Liste; nur Owner/Admin ändern die Freigabe. Analog Page-Sharing (Dok. 26 P07-16: Stufen „Can view“/„Can comment“/„Can edit“ – für Views vermutlich nur Lesen).
-- **Datenmodell-Hinweise (Vorschlag):** `issue_view_members(id, view_id FK, member_id FK, access smallint NULL, created_*, deleted_at)`, Unique `(view_id, member_id)`; Sichtbarkeit: `access = public` ∨ `owned_by = me` ∨ Eintrag in `issue_view_members`.
+- **(Verifikation, sekundär WS26/WS18):** Release August 2026: eine gespeicherte View an genau die Personen geben, die sie brauchen, **je Person „view-only“ oder „edit“**. Die frühere Annahme „für Views vermutlich nur Lesen“ ist damit widerlegt.
+- **Ergänzender Entwurf (UNVERIFIZIERT):** Private Views können ausgewählten Projekt-/Workspace-Mitgliedern freigegeben werden (Dialog mit Member-Auswahl und Rechte-Dropdown view-only/edit); geteilte Views erscheinen bei den Empfängern in der View-Liste; nur Owner/Admin ändern die Freigabe; „edit“ erlaubt Ändern von Filtern/Display-Optionen/Name.
+- **Datenmodell-Hinweise (Vorschlag):** `issue_view_members(id, view_id FK, member_id FK, access smallint NOT NULL (0 = view, 1 = edit; Verifikation), created_*, deleted_at)`, Unique `(view_id, member_id)`; Sichtbarkeit: `access = public` ∨ `owned_by = me` ∨ Eintrag in `issue_view_members`.
 - **API-Hinweise (Vorschlag):** `GET/POST/DELETE /api/workspaces/{slug}/projects/{project_id}/views/{view_id}/members/` bzw. Workspace-Variante `…/workspace-views/{view_id}/members/`.
 - **CE-Status:** fehlt. (Hinweis K2: `project_views.empty_state.shared.*` ist ein Page-Text.)
 - **Konfidenz:** mittel (Existenz), niedrig (Details).
 
 #### P05-28 – Publish Views
 
-- **Tier:** Pro laut R1 Z. 510–519 („Put a view on the Internet and let your customers interact with them.“). **Widerspruch:** R2 `ONE_PLAN_FEATURES` „Real-time collab + public views and page“ und `FREE_PLAN_UPGRADE_FEATURES` „Public Views and Pages“ legen „One“ nahe.
+- **Tier:** Pro laut R1 Z. 510–519 („Put a view on the Internet and let your customers interact with them.“); bestätigt durch Plane-University-Kurs 302/03 „How to Publish (Pro)“ (Ablauf: View anlegen → öffnen → „Publish“ → Einstellungen → URL teilen; WS25, Verifikation). **Widerspruch:** R2 `ONE_PLAN_FEATURES` „Real-time collab + public views and page“ und `FREE_PLAN_UPGRADE_FEATURES` „Public Views and Pages“ legen „One“ nahe.
 - **Funktionsbeschreibung (belegt):**
   - `DeployBoard.TYPE_CHOICES` enthält `("view", "View")`; Felder `entity_identifier`, `entity_name`, `anchor` (uuid4-hex, unique), `is_comments_enabled`, `is_reactions_enabled`, `is_votes_enabled`, `view_props`, `is_activity_enabled`, `is_disabled`, `intake` (`API/db/models/deploy_board.py` Z. 19–39).
   - Frontend-Typen: `IProjectView.anchor?` (`T/views.ts` Z. 39), `IPublishedProjectView` (View mit `filters` statt `rich_filters`, Z. 43–45), `TPublishViewSettings {is_comments_enabled, is_reactions_enabled, is_votes_enabled}` (Z. 47–51), `TPublishViewDetails = TPublishViewSettings & {id, anchor}` (Z. 53–56).
@@ -564,9 +575,10 @@ Aufbau je Feature: **Tier** · **Funktionsbeschreibung (belegt)** · **Ergänzen
 
 #### P05-29 – PQL (Plane Query Language)
 
-- **Tier:** Pro (R1 Z. 658–668: „Write Plane Query Language in search with support for Boolean operators. Soon, you can write natural language queries.“). Commercial v2.6.0 (WS10).
+- **Tier (Verifikation, korrigiert):** **Enterprise Grid** – die Nutzer-Doku trägt den Titel „Plane Query Language (PQL) Enterprise Grid“ (WS22, zwei unabhängige Such-Zusammenfassungen); der Launch-Blog vom 12.05.2026 (WS21) ordnet PQL bzw. „Text to PQL“ dem Enterprise-Plan zu. **Widerspruch:** R1 Z. 658–668 („Write Plane Query Language in search with support for Boolean operators. Soon, you can write natural language queries.“) nennt Pro/Business/Enterprise; R1 ist die ältere Quelle (vgl. Legende Kap. 2), die Doku 2026 die aktuellere und spezifischere → Enterprise Grid. Für die Portierung ohne Bedeutung (ADR-001). Commercial v2.6.0 (WS10).
 - **Funktionsbeschreibung (belegt):**
-  - **Einsatzorte:** Suche (R1), Public-API/MCP-Listen `workitem list`, `list_archived`, `count`, `cycle list_workitems`, `module list_workitems` mit Parameter `pql` (`DD/dev-tools/mcp-server-tools.md` Z. 44–48, 78–83, 247, 267), Webhook-Filter „Work item v2 filters“ mit Modi **Basic** (Picker) und **PQL** (Text), „Switching between modes is lossless“, Auswertung zur Zustellzeit, Fehler ⇒ Zustellung übersprungen (`DD/dev-tools/intro-webhooks.md` Z. 60–102), Dashboards (WS5, WS6).
+  - **Einsatzorte (Verifikation, WS22):** laut Nutzer-Doku in **Work items, Cycles, Modules, Views, Teamspace work items und Workspace views** („PQL is available wherever work items are listed“); Views speichern PQL im Feld `pql_filters` (string, nullable; `V2/project-views/overview.md` Z. 70–72, `V2/workspace-views/overview.md` Z. 70–72). Editor mit geführter Eingabe: Dropdown zuerst Felder, dann Operatoren, dann Werte.
+  - **Einsatzorte (Developer-Docs):** Suche (R1), Public-API/MCP-Listen `workitem list`, `list_archived`, `count`, `cycle list_workitems`, `module list_workitems` mit Parameter `pql` (`DD/dev-tools/mcp-server-tools.md` Z. 44–48, 78–83, 247, 267), Webhook-Filter „Work item v2 filters“ mit Modi **Basic** (Picker) und **PQL** (Text), „Switching between modes is lossless“, Auswertung zur Zustellzeit, Fehler ⇒ Zustellung übersprungen (`DD/dev-tools/intro-webhooks.md` Z. 60–102), Dashboards (WS5, WS6).
   - **Felder (MCP-Dialekt):** `project`, `assignee`, `state`, `stateGroup`, `label`, `cycle`, `module`, `type`, `milestone`, `createdBy` (bzw. „creator“), `priority`, Custom Property `cf["<property id>"]` (OPTION-Wert = Option-ID) (`DD/dev-tools/mcp-server-tools.md` Z. 48, 212, 254, 272). UUID-basierte Felder verlangen UUIDs.
   - **Funktionen:** `currentUser()`, `openStates()`, `isOverdue()`, `childOf("PROJ-12")` (lesbarer Identifier) (`DD/dev-tools/mcp-server-tools.md` Z. 58, 254; `DD/dev-tools/mcp-server.md` Z. 29, 703).
   - **Operatoren/Syntax:** `=`, `IN`, `AND`, `OR`, Klammern, Zeichenketten in doppelten Anführungszeichen; Beispiele `priority = "urgent" AND assignee = currentUser()`, `stateGroup IN openStates() AND isOverdue()`, `assignee = currentUser() AND (stateGroup = "started" OR isOverdue())`, `type = "<type id>"`, `stateGroup = "started"`.
@@ -590,21 +602,30 @@ field      = IDENT | "cf" "[" STRING "]" ;
 funcCall   = IDENT "(" [ value { "," value } ] ")" ;
 ```
 
-  Schlüsselwörter case-insensitiv; Feld-Aliase camelCase ↔ snake_case (`stateGroup`/`state_group`, `assignee`/`assignee_id`, `label`/`label_id`, `project`/`project_id`, `type`/`type_id`, `createdBy`/`created_by`, `startDate`/`start_date`, `dueDate`/`target_date`). `NOT`, `!=` und Vergleichsoperatoren sind nicht belegt.
+  Schlüsselwörter case-insensitiv; Feld-Aliase camelCase ↔ snake_case (`stateGroup`/`state_group`, `assignee`/`assignee_id`, `label`/`label_id`, `project`/`project_id`, `type`/`type_id`, `createdBy`/`created_by`, `startDate`/`start_date`, `dueDate`/`target_date`). **(Verifikation, WS22, sekundär):** Operatoren sind feldabhängig; belegt sind für `id` und `title` exakter Vergleich, Ungleich (`!=`) und `~` („contains text“), für `type` `IN` und `NOT IN`; die Felder `id` und `title` sind damit ebenfalls PQL-Felder. Der Operator `~` ist in der Grammatik oben zu ergänzen (`op = … | "~"`). Präfix-`NOT` sowie `>`, `>=`, `<`, `<=` bleiben unbelegt; die vollständige Operator-Tabelle je Feld (State, Priority, Assignee, Datumsfelder) ist nicht erhoben (O-10).
 - **Datenmodell-Hinweise:** Speicherung als Text (`pql text`) neben dem Rich-Filter-JSON; für verlustfreies Umschalten Basic ↔ PQL kanonischer Printer.
 - **API-Hinweise:** `?pql=` an Work-Item-Listen (Projekt- und Workspace-Ebene), Cycle-/Modul-Work-Item-Listen, `count`; Fehler 400 mit Positionsangabe (Vorschlag).
 - **CE-Status:** Stub/UI-Hülle.
 - **Migrationshinweis:** .NET-Parser (handgeschrieben rekursiv-absteigend oder Parser-Kombinator) → AST → Übersetzung in den CE-Rich-Filter-Baum (`{"and": [...]}`, `{"or": [...]}`, `{"not": {...}}`, Blattknoten `feld__operator: wert`), den das CE-Backend bereits auswertet (`API/utils/filters/filter_backend.py` Z. 147–210, 350–422) → EF-Core-Expression. Funktionen werden serverseitig aufgelöst (`currentUser()` = angemeldeter Benutzer, `openStates()` = States der Gruppen backlog/unstarted/started, `isOverdue()` = `target_date < heute ∧ Gruppe ∉ {completed, cancelled}`, `childOf(id)` = `parent_id` = Work Item mit Identifier) – Semantik UNVERIFIZIERT.
-- **Konfidenz:** mittel (Syntaxbeispiele, Felder, Funktionen), niedrig (vollständige Grammatik).
+- **Konfidenz:** mittel (Syntaxbeispiele, Felder, Funktionen, Einsatzorte), mittel (Tier Enterprise Grid, nur sekundär), niedrig (vollständige Grammatik).
 
 #### P05-30 – Operator-Kapseln und erweiterte Filteroperatoren
 
-- **Tier:** Pro (auskommentierte R1-Zeile „Search – Search via natural-language queries, operators, or PQL“: Free/One „Basic text search“, Pro/Business/Enterprise „COMING SOON – Operator capsules from text or PQL“, R1 Z. 626–656).
+- **Tier:** Pro (auskommentierte R1-Zeile „Search – Search via natural-language queries, operators, or PQL“: Free/One „Basic text search“, Pro/Business/Enterprise „COMING SOON – Operator capsules from text or PQL“, R1 Z. 626–656). **Hinweis (Verifikation):** Soweit die Kapseln aus PQL erzeugt werden, gilt der PQL-Plan (P05-29, Enterprise Grid); die Negations-/OR-Operatoren der Standard-Filterleiste haben keine eigene Plan-Quelle – Konfidenz niedrig.
 - **Funktionsbeschreibung (belegt):** Die CE-Rich-Filter-Architektur hat leere EE-Erweiterungspunkte: `EXTENDED_LOGICAL_OPERATOR`, `EXTENDED_EQUALITY_OPERATOR`, `EXTENDED_COLLECTION_OPERATOR`, `EXTENDED_COMPARISON_OPERATOR`, `EXTENDED_MULTI_VALUE_OPERATORS`, `EXTENDED_OPERATORS` (`T/rich-filters/operators/extended.ts`), `EXTENDED_FILTER_FIELD_TYPE` und `TExtendedFilterFieldConfigs = never` (`T/rich-filters/field-types/extended.ts`), weitere in `T/rich-filters/operator-configs/extended.ts`, `T/rich-filters/derived/extended.ts`, Labels in `C/rich-filters/operator-labels/extended.ts` (Dok. 20 PF-52). CE-Operatoren: logisch nur `and`; `exact`, `in`, `range` (`T/rich-filters/operators/core.ts`); Filter-Gruppen nur `AND` (`T/rich-filters/expression.ts` `TFilterAndGroupNode`). `useFiltersOperatorConfigs` liefert `allowedOperators = CORE_OPERATORS`, `allowNegative: false` (`W/hooks/rich-filters/use-filters-operator-configs.ts`). Das CE-**Backend** wertet `or` und `not` bereits aus (`API/utils/filters/filter_backend.py` Z. 147–210).
 - **Ergänzender Entwurf (UNVERIFIZIERT):** Pro+ schaltet negierte Operatoren („is not“, „is not any of“, „not between“), OR-Gruppen und weitere Operatoren frei; „Operator capsules from text“ = Eingabe von Text/PQL in der Filterleiste wird in Filter-Kapseln (Chips) umgewandelt.
 - **CE-Status:** Stub/UI-Hülle.
 - **Migrationshinweis:** Angular-Filterleiste mit `allowNegative = true` und OR-Gruppen; Labels der negierten Operatoren sind im CE leer (`NEGATED_OPERATOR_LABELS_MAP = {}`) → Texte neu festlegen (O-10).
 - **Konfidenz:** mittel (Erweiterungspunkte), niedrig (Operatorkatalog).
+
+#### P05-35 – Text to PQL (Verifikation, neu)
+
+- **Tier:** Enterprise Grid (Launch-Blog „Introducing PQL and enhanced dashboards“, 12.05.2026: „Text to PQL“ als Enterprise-only markiert, WS21; der Top-Plan heißt in der Doku „Enterprise Grid“, `DD/self-hosting/self-hosting-101.md` Z. 54). Matrix-Vorläufer: R1 Z. 658–668 „Soon, you can write natural language queries.“ und die auskommentierte R1-Zeile „Search via natural-language queries, operators, or PQL“ (Z. 625–656).
+- **Funktionsbeschreibung (sekundär, WS21):** AI-Funktion, die eine Beschreibung in natürlicher Sprache in eine PQL-Abfrage übersetzt; Ergebnis ist eine normale PQL-Abfrage (P05-29), die anschließend im PQL-Editor bearbeitet werden kann (UNVERIFIZIERT).
+- **Ergänzender Entwurf (UNVERIFIZIERT):** Eingabefeld/Umschalter im PQL-Editor („Ask in plain English“), Server-Endpunkt `POST /api/workspaces/{slug}/pql/translate/` mit `{prompt, project_id?}` → `{pql}`; Validierung des erzeugten Ausdrucks mit dem PQL-Parser vor Rückgabe; Kontext für das LLM: Feldliste inkl. Custom Properties (`cf["<id>"]`) und Funktionen (`currentUser()`, `openStates()`, `isOverdue()`, `childOf()`).
+- **Migrationshinweis:** Abhängig von der AI-Infrastruktur (Dok. 28, Plane AI); nach ADR-004 mit lokal betreibbarem LLM bzw. abschaltbar im Airgapped-Betrieb.
+- **CE-Status:** fehlt (keine Code- oder Textspur außer den Matrix-Texten).
+- **Konfidenz:** niedrig.
 
 ### 3.7 Advanced Search
 
@@ -617,7 +638,7 @@ funcCall   = IDENT "(" [ value { "," value } ] ")" ;
 - **CE-Basis:** Power-K-Suche über `GET /api/workspaces/{slug}/search/?search=&workspace_search=&project_id=` (500 ms Debounce, Ergebnisgruppen `workspace`, `project`, `issue`, `cycle`, `module`, `issue_view`, `page`; Kopfzeile „Search results for "{term}" in workspace|project:“) (`W/components/power-k/ui/modal/search-menu.tsx`; `C/workspace.ts` `WORKSPACE_DEFAULT_SEARCH_RESULT`; Dok. 03 SR-01).
 - **Ergänzender Entwurf (UNVERIFIZIERT):** Eigene Seite „Advanced search“ (aus Power-K erreichbar) mit Suchfeld, Entitätstyp-Tabs (Work items, Comments, Projects, Cycles, Modules, Pages, Views, Teamspaces), Filtern (Projekt, State, Assignee, Priorität, Datum) und Treffer-Hervorhebung; Autocomplete im Power-K.
 - **Datenmodell/Migration (ADR-004):** kein OpenSearch; je Entität generierte `tsvector`-Spalte (`setweight(name,'A') || setweight(description_stripped,'B')`) mit GIN-Index, `websearch_to_tsquery`, `pg_trgm` (GIN `gin_trgm_ops`) für Fuzzy/Autocomplete, Ranking `ts_rank_cd` + `similarity`; optional pgvector für semantische Suche (Dok. 22 §4.11). Kommentare (`issue_comments.comment_stripped`) mit indexieren. Sichtbarkeitsfilter wie CE-Suche.
-- **CE-Status:** fehlt.
+- **CE-Status:** fehlt. **Widerspruch (Verifikation):** Dok. 22 P03-F11 (`_data/P03.paid.json`) wertet „teilweise im CE“, weil die Commercial Edition ohne OpenSearch auf eine „Postgres-based search“ zurückfällt (`DD/self-hosting/self-hosting-101.md` Z. 130). Hier beibehalten „fehlt“ wie Dok. 20 PF-53 (`_data/P01.paid.json`) und Dok. 21 F20: Die CE-Basissuche (`/search/`) liefert keine der Bezahl-Eigenschaften (Volltext-Ranking, Fuzzy, Autocomplete, Kommentar-/Teamspace-Index, `advanced-search`-Endpunkt); sie ist Basis (Anhang E), nicht Teilfunktion.
 - **Konfidenz:** hoch (Umfang, API), niedrig (eigene Such-UI).
 
 ### 3.8 Scheduled Comms
@@ -650,14 +671,15 @@ funcCall   = IDENT "(" [ value { "," value } ] ")" ;
 
 - **Tier:** unklar (teilweise Cloud-Inhalte).
 - **Funktionsbeschreibung (belegt):**
-  - **Home-Widgets:** `THomeWidgetKeys` = `quick_links`, `recents`, `my_stickies`, `quick_tutorial`, `new_at_plane` (`T/home.ts` Z. 11; Backend `WorkspaceHomePreference.HomeWidgetKeys`, `API/db/models/workspace.py` Z. 377–382). Im CE haben `new_at_plane` („New at Plane“) und `quick_tutorial` („Quick tutorial“) **keine Komponente** (`component: null`, `W/components/home/home-dashboard-widgets.tsx` Z. 49–58) und werden vom Backend beim Anlegen der Präferenzen ausgelassen (`API/app/views/workspace/home.py` Z. 29–33). Präferenz je Benutzer/Workspace: `key`, `is_enabled`, `config` (jsonb), `sort_order`; Verwaltung im Modal „Manage widgets“ mit Drag & Drop, Toasts „Widget reordered successfully.“ / „Error occurred while reordering widget.“ (`L/home.json`).
+  - **Home-Widgets:** `THomeWidgetKeys` = `quick_links`, `recents`, `my_stickies`, `quick_tutorial`, `new_at_plane` (`T/home.ts` Z. 11; Backend `WorkspaceHomePreference.HomeWidgetKeys`, `API/db/models/workspace.py` Z. 377–382). Im CE haben `new_at_plane` („New at Plane“) und `quick_tutorial` („Quick tutorial“) **keine Komponente** (`component: null`, `W/components/home/home-dashboard-widgets.tsx` Z. 49–58) und werden vom Backend beim Anlegen der Präferenzen ausgelassen (`API/app/views/workspace/home.py` Z. 31–35). Präferenz je Benutzer/Workspace: `key`, `is_enabled`, `config` (jsonb), `sort_order`; Verwaltung im Modal „Manage widgets“ mit Drag & Drop, Toasts „Widget reordered successfully.“ / „Error occurred while reordering widget.“ (`L/home.json`).
   - **Business-Trial-Banner** auf Home: „Your 14-day Business plan trial is live!“, „Explore all Business features. When you're ready, choose to subscribe. You'll not be billed automatically.“, „Trial ends today“, „Trial ends in {days} day(s)“, „Start subscription“, „Explore Business features“ (`L/home.json`, `home.business_trial_banner.*`) → **entfällt** (ADR-001).
   - **Sidebar-Benutzermenü** der Commercial Edition (`W/components/workspace/sidebar/user-menu.tsx` Z. 26–62, im CE nicht gerendert): Reihenfolge Home (`/{ws}/`, alle Rollen) → **Dashboards** (`/{ws}/dashboards/`, Admin/Member) → Your work (`/{ws}/profile/{userId}/`, Admin/Member) → Drafts (`/{ws}/drafts/`, Admin/Member, mit Zähler `draft_issue_count`) → Plane AI (`/{ws}/pi-chat/`, alle Rollen, Icon `PiChatLogo`).
-  - **Workspace-Menü** (CE gerendert, `W/components/workspace/sidebar/workspace-menu.tsx` Z. 31–60): Projects, Views (`/workspace-views/all-issues/`), Cycles (`/active-cycles/`, P05-23), Analytics (`/analytics/`).
+  - **Workspace-Menü der Commercial Edition** (Verifikation, korrigiert: im CE **nicht** gerendert, `W/components/workspace/sidebar/workspace-menu.tsx` Z. 31–60, nirgends importiert): Projects (`/{ws}/projects/`, alle Rollen), Views (`/{ws}/workspace-views/all-issues/`, alle Rollen), Cycles (`/{ws}/active-cycles/`, Admin/Member, P05-23), Analytics (`/{ws}/analytics/`, Admin/Member).
+  - **Im CE gerenderte Sidebar** (Verifikation, Abgrenzung): `W/components/workspace/sidebar/sidebar-menu-items.tsx` mit statischen Einträgen Home (`C/workspace.ts` `WORKSPACE_SIDEBAR_STATIC_NAVIGATION_ITEMS_LINKS`), persönlichen Einträgen Inbox/Your work/Stickies/Drafts je nach Präferenz, angeheftetem Projects (`WORKSPACE_SIDEBAR_STATIC_PINNED_NAVIGATION_ITEMS_LINKS`) und dynamischen Views/Analytics/Archives (`WORKSPACE_SIDEBAR_DYNAMIC_NAVIGATION_ITEMS_LINKS`, `C/workspace.ts` Z. 201–229) plus „More“/„Hide“ für die erweiterte Sidebar. Die EE-Einträge Dashboards, Active Cycles, Teamspaces fehlen dort; Ziel ist die Ergänzung im gerenderten Navigationsmodell (Präferenz-Keys wie `active_cycles`).
   - **Power-K:** „Go to all active cycles“ (P05-23), „Go to project overview“ (Projekt-Cluster), „Go to advanced search“ (P05-31) (`L/power-k.json` Z. 107, 108, 174).
   - **Your work** (Profilseiten Summary/Assigned/Created/Subscribed/Activity, `C/profile.ts` Z. 10–44; Routen `W/app/routes/core.ts` Z. 91–99) ist CE; EE-Erweiterungen sind **nicht** belegt.
 - **Ergänzender Entwurf (UNVERIFIZIERT):** „New at Plane“ = Feed von Produktneuigkeiten (Changelog), „Quick tutorial“ = Einstiegsvideos/-schritte; beide sind in der Cloud an externe Inhalte gebunden.
-- **Migrationshinweis (ADR-004):** „New at Plane“ nur mit gebündeltem, offline verfügbarem Inhalt (z. B. Release-Notes der eigenen Plattform) oder deaktiviert; „Quick tutorial“ mit gebündelten Assets. Sidebar-Benutzermenü und Teamspaces-Navigation rendern (Reihenfolge s. o.; Position der Teamspaces in der Sidebar UNVERIFIZIERT, O-03).
+- **Migrationshinweis (ADR-004):** „New at Plane“ nur mit gebündeltem, offline verfügbarem Inhalt (z. B. Release-Notes der eigenen Plattform) oder deaktiviert; „Quick tutorial“ mit gebündelten Assets. Dashboards-, Active-Cycles- und Teamspaces-Navigation im gerenderten Navigationsmodell ergänzen (Reihenfolge der Commercial-Menüs s. o.; Position der Teamspaces in der Sidebar UNVERIFIZIERT, O-03; Dashboards laut Doku „in the left sidebar“, WS19).
 - **Konfidenz:** hoch (Widget-Keys, Menüstruktur), niedrig (Widget-Inhalte).
 
 ---
@@ -666,23 +688,26 @@ funcCall   = IDENT "(" [ value { "," value } ] ")" ;
 
 | Nr. | Thema | Unklarheit | Vorschlag / Nachrecherche |
 |---|---|---|---|
-| O-01 | Recherche-Lücke | WebSearch-Budget in diesem Lauf erschöpft (erster Aufruf abgewiesen); `docs.plane.so`/`plane.so` nicht abrufbar; GitHub-Doku-Repo nicht freigegeben. Viele Detailangaben sind daher „UNVERIFIZIERT“. | Folgelauf mit Budget, gezielt: https://docs.plane.so/core-concepts/workspaces/teamspaces , https://docs.plane.so/core-concepts/issues/plane-query-language , https://docs.plane.so/core-concepts/dashboards (Pfad UNVERIFIZIERT), https://docs.plane.so/core-concepts/cycles (Active cycles, Progress, Reports; Pfad UNVERIFIZIERT), https://docs.plane.so/core-concepts/views (Shared/Publish; Pfad UNVERIFIZIERT), https://plane.so/changelog (WS4–WS12 Inhalte), https://plane.so/pricing |
-| O-02 | Teamspaces – Rechte | Wer darf Teamspaces anlegen/löschen (nur Workspace-Admin?), Rolle des Leads, Sichtbarkeit von Projekten/Work Items für Teamspace-Mitglieder ohne Projektmitgliedschaft | Nachrecherche WS1/WS2; bis dahin: Admin legt an, Lead/Admin verwaltet, Daten nur aus Projekten mit Mitgliedschaft |
-| O-03 | Teamspaces – Navigation/Routen | Position in der Sidebar, exakte Routen (`/:ws/teamspaces/:teamspaceId/...`), Tabs | Route-Parameter `teamspaceId`, `viewId`, `projectId` sind belegt (`W/hooks/use-issue-layout-store.ts`); Pfadsegmente UNVERIFIZIERT |
+| O-01 | Recherche-Lücke | Autorenlauf ohne WebSearch-Budget; `docs.plane.so`/`plane.so` nicht direkt abrufbar. **(Verifikation)** 13 gezielte WebSearch-Abfragen haben Teamspaces (WS17/WS18), Dashboards (WS19–WS21, WS23), PQL (WS21/WS22), Auto-Schedule (WS24), Publish/Shared Views (WS25/WS26), Progress Charts (WS27) teilweise geschlossen – alle nur als Such-Zusammenfassung (sekundär). | Offen bleiben: Cycle Reports, Active-Cycles-Doku-Label, Scheduled Comms, Insights/Custom Reports, Advanced-Search-UI, vollständige PQL-Operator-Tabelle; Nachrecherche https://docs.plane.so/core-concepts/issues/plane-query-language , https://docs.plane.so/dashboards , https://docs.plane.so/core-concepts/cycles , https://plane.so/pricing |
+| O-02 | Teamspaces – Rechte | Wer darf Teamspaces anlegen/löschen (nur Workspace-Admin?); **(Verifikation)** belegt (sekundär): Lead hat keine besonderen Workspace-Rechte; Teamspace-Mitglieder erhalten automatisch Member-Zugriff auf verknüpfte Projekte (WS17). Offen: Rechte des Leads innerhalb des Teamspace, Verhalten beim Entfernen einer Projekt-Verknüpfung oder eines Mitglieds (Projektmitgliedschaft entziehen?) | Nachrecherche WS1/WS2/WS17; bis dahin: Admin legt an, Lead/Admin verwaltet; Entfernen der Verknüpfung entzieht automatisch erzeugte Mitgliedschaften nicht (konservativ) |
+| O-03 | Teamspaces – Navigation/Routen | Position in der Sidebar, exakte Routen (`/:ws/teamspaces/:teamspaceId/...`); **(Verifikation)** Tabs Overview/Work items (Team/Project)/Cycles/Views/Pages sekundär belegt (WS18) | Route-Parameter `teamspaceId`, `viewId`, `projectId` sind belegt (`W/hooks/use-issue-layout-store.ts`); Pfadsegmente UNVERIFIZIERT |
 | O-04 | Teamspace-Cycles | Eigene UI oder Aggregation der Projekt-Cycles? | Aggregation (Entwurf P05-05) |
-| O-05 | Dashboards – Widget-Katalog | Exakte Widget-Typen (Number? Table? Text?), Editor-UI, Rasterlogik, Sichtbarkeit/Teilen von Dashboards | Nachrecherche WS4–WS8 und Nutzer-Doku Dashboards |
+| O-05 | Dashboards – Widget-Katalog | **(Verifikation)** belegt (sekundär): Bar, Line, Area, Donut, Pie, Number (WS19), Table (WS21), Cycle Progress Bar, Work Item Type Progress, vier Intake-Widgets, Intake volume by source (WS23), Duplizieren, Sichtbarkeit privat/öffentlich (Default Public, nur Doku-PR). Offen: Editor-UI im Detail, Rasterlogik (Spalten, Mindestgrößen), Drill-down-Verhalten | Nachrecherche https://docs.plane.so/dashboards |
 | O-06 | Y-Metriken | Semantik von `BLOCKED_WORK_ITEM_COUNT`, `WORK_ITEM_DUE_THIS_WEEK_COUNT` (Wochenbeginn), `ESTIMATE_POINT_COUNT` bei Kategorien-/Zeit-Estimates | Vorschlag P05-10; Wochenbeginn aus Benutzer-Einstellung `start_of_the_week` (CE-Profilfeld, Dok. 03) |
 | O-07 | Progress v2 | Antwortschema `…/cycle-progress/`; Erzeugungsrhythmus der Tageswerte; Bedeutung „Trailing“/„Leading“ | Entwurf P05-19 |
 | O-08 | Cycle Updates | Existenz nicht belegt | erst nach Nachrecherche umsetzen; Updates-Modul generisch |
 | O-09 | Publish Views – Tier | R1 sagt Pro, R2 legt One nahe | für die Portierung irrelevant (ADR-001) |
-| O-10 | PQL – Grammatik | Vollständige Feld-/Funktionsliste, `NOT`, `!=`, Datumsvergleiche, Fehlermeldungen; zwei Dialekte (MCP camelCase vs. Webhook snake_case) | Parser mit Aliasen (P05-29); Nachrecherche WS13 |
+| O-10 | PQL – Grammatik | **(Verifikation)** zusätzlich belegt (sekundär): `!=`, `~` (contains) für `id`/`title`, `IN`/`NOT IN` für `type`; Editor mit Feld→Operator→Wert-Dropdown. Offen: vollständige Feld-/Operator-Tabelle (State, Priority, Assignee, Datumsfelder), Präfix-`NOT`, Vergleichsoperatoren, Fehlermeldungen; zwei Dialekte (MCP camelCase vs. Webhook snake_case) | Parser mit Aliasen (P05-29); Nachrecherche WS13/WS22 |
 | O-11 | Advanced Search – UI | Eigene Seite oder nur erweitertes Power-K? | Nachrecherche WS12; Minimal: Power-K-Ergebnisse aus FTS + Link „Go to advanced search“ auf Suchseite |
 | O-12 | Insights, Custom Reports, Time Capsule, Scheduled Comms | nur Matrix-Texte, teils „Coming soon“/auskommentiert | Insights und Custom Reports als niedrig priorisierte Erweiterung der Widget-Engine; Time Capsule nicht portieren (nicht ausgeliefert) |
 | O-13 | Analytics-Tabs | Welche zusätzlichen Tabs EE heute zeigt | Entwurf P05-15; Texte vorhanden |
-| O-14 | Auto-Schedule | Zeitpunkt der Nachproduktion künftiger Cycles; Verhalten bei manuell angelegten Cycles; Wechselwirkung mit Parallel Cycles | Entwurf P05-21 |
+| O-14 | Auto-Schedule | Zeitpunkt der Nachproduktion künftiger Cycles; Verhalten bei manuell angelegten Cycles; Wechselwirkung mit Parallel Cycles und mit `is_manually_start_end_cycles_enabled` (Verifikation); Tier nur aus University-Kurs (Business) | Entwurf P05-21 |
 | O-15 | Home-Widgets | Inhalte „New at Plane“/„Quick tutorial“ im Airgapped-Betrieb | gebündelte Inhalte oder ausblenden (ADR-004) |
 | O-16 | `dashboards.widget.color_palettes.*` | i18n-Schlüssel referenziert, aber in keiner Locale vorhanden | Texte „Modern“, „Horizon“, „Earthen“ (aus den Keys abgeleitet, UNVERIFIZIERT) in alle Locales aufnehmen |
 | O-17 | Orphan-Heuristik | Referenzstatus in Anhang B ist heuristisch (dynamische Schlüssel können fälschlich als unreferenziert erscheinen; 7 Fälle manuell korrigiert) | bei Implementierung je Schlüssel prüfen |
+| O-18 | PQL – Plan (Verifikation) | R1 (Pro) widerspricht Doku-Label (Enterprise Grid, WS22) und Blog (Enterprise, WS21) | für die Portierung irrelevant (ADR-001); in der Feature-Liste Enterprise Grid mit dokumentiertem Widerspruch |
+| O-19 | Teamspaces – Abschaltbarkeit (Verifikation) | Laut Doku nach Aktivierung nicht abschaltbar (WS17); Verhalten der API bei `teams: false`/`is_teams_enabled: false` unbelegt | UI: Schalter nach Aktivierung gesperrt; API: 409 bei Deaktivierungsversuch (Vorschlag) |
+| O-20 | Manuelles Starten/Beenden von Cycles (Verifikation) | Nur das v2-Flag `is_manually_start_end_cycles_enabled` ist belegt; UI, Statuslogik und Zusammenspiel mit Datumsfeldern unbekannt | Nachrecherche Cycles-Doku; bis dahin nur Flag + Aktion „Complete“ (P05-25) |
 
 ---
 
@@ -732,12 +757,16 @@ funcCall   = IDENT "(" [ value { "," value } ] ")" ;
 | A-40 | `T/rich-filters/operators/extended.ts`, `T/rich-filters/field-types/extended.ts`, `T/rich-filters/operator-configs/extended.ts`, `T/rich-filters/derived/extended.ts`, `C/rich-filters/operator-labels/extended.ts`, `W/hooks/rich-filters/use-filters-operator-configs.ts` | leere EE-Operator-Erweiterungen, `allowNegative: false` | P05-30 |
 | A-41 | `API/utils/filters/filter_backend.py` Z. 147–210, 350–422 | Backend wertet `and`/`or`/`not` aus | P05-29, P05-30 |
 | A-42 | `L/power-k.json` Z. 107, 108, 174 | Power-K-Ziele ohne CE-Referenz | P05-23, P05-31, P05-34 |
-| A-43 | `W/components/home/home-dashboard-widgets.tsx` Z. 27–59; `API/app/views/workspace/home.py` Z. 29–33; `API/db/models/workspace.py` Z. 374–383 | Widgets `new_at_plane`, `quick_tutorial` ohne Komponente / vom Backend ausgelassen | P05-34 |
+| A-43 | `W/components/home/home-dashboard-widgets.tsx` Z. 27–59; `API/app/views/workspace/home.py` Z. 31–35; `API/db/models/workspace.py` Z. 374–383 | Widgets `new_at_plane`, `quick_tutorial` ohne Komponente / vom Backend ausgelassen | P05-34 |
 | A-44 | `W/store/workspace/index.ts` Z. 385–391 | `mutateWorkspaceMembersActivity` No-op | P05-33 |
-| A-45 | `W/components/workspace/sidebar/workspace-menu.tsx` Z. 46–52 | Sidebar-Eintrag Active Cycles (ADMIN/MEMBER) | P05-23 |
-| A-46 | `W/app/routes/extended.ts` | `extendedRoutes = []` (Routen für Teamspaces, Dashboards u. a. fehlen) | alle |
+| A-45 | `W/components/workspace/sidebar/workspace-menu.tsx` Z. 46–52; `W/components/workspace/sidebar/workspace-menu-item.tsx` Z. 64 | Eintrag Active Cycles (ADMIN/MEMBER) im **nicht gerenderten** `SidebarWorkspaceMenu`; `rotate-180` für Key `active_cycles` (Verifikation, korrigiert: nicht „immer gerendert“) | P05-23 |
+| A-46 | `W/app/routes/extended.ts` | `extendedRoutes = []` (in diesem Cluster fehlen die Routen für Teamspaces und Dashboards; EE-Routen anderer Cluster siehe Dok. 20) | alle |
 | A-47 | `C/subscription.ts` Z. 7–49 | Feature-Listen der Upgrade-Karten (entfallen, ADR-001) | Tier-Belege |
-| A-48 | `W/components/license/modal/upgrade-modal.tsx` Z. 70 | Upsell-Text „Dashboards, Workflows, Approvals, Time Management …“ (entfällt) | P05-09 |
+| A-48 | `W/components/license/modal/upgrade-modal.tsx` Z. 70 | Upsell-Text „Dashboards, Workflows, Approvals, Time Management, and other superpowers are just a click away. Upgrade today to unlock features your teams need yesterday.“ (entfällt) | P05-09 |
+| A-49 | `W/components/workspace/sidebar/sidebar-menu-items.tsx` Z. 82–121; `C/workspace.ts` Z. 201–229 | (Verifikation) gerenderte CE-Navigation: dynamische Einträge nur Views, Analytics, Archives – kein Active Cycles, keine Dashboards, keine Teamspaces | P05-23, P05-34 |
+| A-50 | `W/components/workspace/sidebar/extended-sidebar-item.tsx` Z. 199–203; `W/components/workspace/sidebar/helper.tsx` Z. 31–32 | (Verifikation) `UpgradeBadge` und Icon für Navigations-Key `active_cycles` (im CE unerreichbar) | P05-23 |
+| A-51 | `API/db/models/workspace.py` Z. 420–427; `API/app/views/workspace/user_preference.py` Z. 33–60 | (Verifikation) Navigations-Präferenz `ACTIVE_CYCLES = "active_cycles"`, wird ungepinnt angelegt | P05-23 |
+| A-52 | `W/components/dropdowns/cycle/cycle-select.tsx` Z. 62–63; `W/components/dropdowns/module/module-select.tsx` Z. 55–56; `W/components/dropdowns/state/state-select.tsx` Z. 53–55 | (Verifikation) Kommentare „EE reads a paginated … lite resource (and supports `scopedProjectIds`)“ – projektübergreifende Auswahl | P05-08 |
 
 ---
 
@@ -793,9 +822,9 @@ Spalte „im CE referenziert“: Ergebnis der heuristischen Analyse (P01-Orphan-
 | `empty-state.json` | `common_empty_state.progress.description` | Start setting property values in work items to see progress metrics here. | nein (Kandidat EE/Legacy) |
 | `empty-state.json` | `common_empty_state.updates.title` | No updates yet. | nein (Kandidat EE/Legacy) |
 | `empty-state.json` | `common_empty_state.updates.description` | Once project members add updates it will appear here | nein (Kandidat EE/Legacy) |
-| `empty-state.json` | `workspace_empty_state.views.title` | No Views yet | nein (Kandidat EE/Legacy) |
-| `empty-state.json` | `workspace_empty_state.views.description` | Add work items to your project and use views to filter, sort, and monitor progress effortlessly. | nein (Kandidat EE/Legacy) |
-| `empty-state.json` | `workspace_empty_state.views.cta_primary` | Add work item | nein (Kandidat EE/Legacy) |
+| `empty-state.json` | `workspace_empty_state.views.title` | No Views yet | ja (Verifikation: `W/components/issues/issue-layouts/empty-states/global-view.tsx` Z. 54–60; CE-Leerzustand globaler Views, kein Cluster-EE-Text) |
+| `empty-state.json` | `workspace_empty_state.views.description` | Add work items to your project and use views to filter, sort, and monitor progress effortlessly. | ja (Verifikation: `W/components/issues/issue-layouts/empty-states/global-view.tsx` Z. 54–60; CE-Leerzustand globaler Views, kein Cluster-EE-Text) |
+| `empty-state.json` | `workspace_empty_state.views.cta_primary` | Add work item | ja (Verifikation: `W/components/issues/issue-layouts/empty-states/global-view.tsx` Z. 54–60; CE-Leerzustand globaler Views, kein Cluster-EE-Text) |
 | `empty-state.json` | `workspace_empty_state.analytics_projects.title` | Create projects to visualize project metrics here. | nein (Kandidat EE/Legacy) |
 | `empty-state.json` | `workspace_empty_state.analytics_work_items.title` | Create projects with work items and assignees to start tracking performance, progress, and team impact here. | ja |
 | `empty-state.json` | `workspace_empty_state.analytics_no_cycle.title` | Create cycles to organise work into time-bound phases and track progress across sprints. | nein (Kandidat EE/Legacy) |
@@ -976,6 +1005,8 @@ Spalte „im CE referenziert“: Ergebnis der heuristischen Analyse (P01-Orphan-
 | `settings.json` | `account_settings.activity.heading` | Activity | nein (Kandidat EE/Legacy) |
 | `settings.json` | `account_settings.activity.description` | Track your recent actions and changes across all projects and work items. | nein (Kandidat EE/Legacy) |
 
+**Zählung nach Verifikation:** 228 Schlüssel, davon 56 „ja“ und 172 „nein“.
+
 **Nicht vorhandene, aber referenzierte Schlüssel:** `dashboards.widget.color_palettes.modern`, `dashboards.widget.color_palettes.horizon`, `dashboards.widget.color_palettes.earthen` (`C/chart.ts` Z. 49, 77, 105 – in keiner Locale-Datei vorhanden, O-16).
 
 ---
@@ -1016,7 +1047,7 @@ Legende Status: **CE** = im CE-Backend vorhanden; **fehlt (CE-FE ruft)** = vom C
 | E-12 | GET | `/api/v1/workspaces/{slug}/projects/{project_id}/work-items/?pql=&filters=` | PQL-/Strukturfilter | CE lehnt ab (400) / EE-Public (MCP) | `API/api/views/issue.py` Z. 324–335; `DD/dev-tools/mcp-server-tools.md` |
 | E-13 | GET | `/api/workspaces/{slug}/search/` | einfache Suche (Basis P05-31) | CE | Dok. 03 SR-01 |
 | E-14 | GET | `/api/workspaces/{slug}/advance-analytics/`, `…-stats/`, `…-charts/` (+ Projekt-Varianten unter `…/projects/{project_id}/`) | Analytics (Basis P05-15) | CE | `API/app/urls/analytic.py` Z. 60–88 |
-| E-15 | GET/POST/PATCH/DELETE | `/api/workspaces/{slug}/analytic-view/…`, `saved-analytic-view/{id}/` | Legacy-Analytics-Ansichten (Basis P05-16) | CE | `API/app/urls/analytic.py` Z. 31–43 |
+| E-15 | GET/POST/PATCH/DELETE | `/api/workspaces/{slug}/analytic-view/`, `/api/workspaces/{slug}/analytic-view/{pk}/`, `/api/workspaces/{slug}/saved-analytic-view/{analytic_id}/` | Legacy-Analytics-Ansichten (Basis P05-16) | CE | `API/app/urls/analytic.py` Z. 31–43 |
 | E-16 | GET | `/api/workspaces/{slug}/user-activity/{user_id}/` (+ `export/`) | Aktivität je Benutzer (Basis P05-33) | CE | Dok. 27 P08-17 |
 | E-17 | GET, PATCH | `/api/workspaces/{slug}/home-preferences/`, `/api/workspaces/{slug}/home-preferences/{key}/` | Home-Widgets (Basis P05-34) | CE | `API/app/urls/workspace.py` Z. 230–236; `API/app/views/workspace/home.py` |
 | E-18 | GET/POST | `/api/workspaces/{slug}/teamspaces/` (+ Detail, `members/`, `projects/`, `issues/`, `projects/{project_id}/issues/`, `cycles/`, `views/`, `views/{view_id}/issues/`, `pages/`, `comments/`, `activities/`) | interne App-API Teamspaces | Vorschlag | P05-01 … P05-06 |
@@ -1028,9 +1059,14 @@ Legende Status: **CE** = im CE-Backend vorhanden; **fehlt (CE-FE ruft)** = vom C
 | E-24 | POST | `…/projects/{project_id}/cycles/{cycle_id}/complete/` | Cycle abschließen | Vorschlag | P05-25 |
 | E-25 | GET/POST/DELETE | `…/projects/{project_id}/views/{view_id}/members/`, `…/workspace-views/{view_id}/members/` | Shared Views | Vorschlag | P05-27 |
 | E-26 | GET/POST/PATCH/DELETE | `…/projects/{project_id}/views/{view_id}/publish/`; öffentlich `/api/public/anchor/{anchor}/views/…` | Publish Views | Vorschlag | P05-28 |
-| E-27 | GET/POST/PATCH/DELETE | `/api/workspaces/{slug}/reports/…` | Custom Reports | Vorschlag | P05-16 |
-| E-28 | GET/POST/PATCH/DELETE | `/api/workspaces/{slug}/scheduled-communications/…` | Scheduled Comms | Vorschlag | P05-32 |
+| E-27 | GET/POST/PATCH/DELETE | `/api/workspaces/{slug}/reports/` (+ `{report_id}/`) | Custom Reports | Vorschlag | P05-16 |
+| E-28 | GET/POST/PATCH/DELETE | `/api/workspaces/{slug}/scheduled-communications/` (+ `{id}/`, `{id}/runs/`) | Scheduled Comms | Vorschlag | P05-32 |
 | E-29 | GET | `/api/workspaces/{slug}/activities/?actor=&project=&entity_type=&verb=&from=&to=&cursor=` | Workspace Activity Logs | Vorschlag (Dok. 27) | P05-33 |
+| E-30 | GET/POST, GET/PATCH/DELETE | `/api/v2/workspaces/{slug}/teamspaces/`, `/api/v2/workspaces/{slug}/teamspaces/{pk}/` | Teamspaces v2 (`member_ids`/`project_ids` im Objekt, PATCH ersetzt Mengen) | EE-Public v2 (Verifikation) | `V2/teamspaces/overview.md`, `V2/teamspaces/update-teamspace.md` |
+| E-31 | GET/PATCH | `/api/v2/workspaces/{slug}/features/` | Workspace-Features v2 inkl. `is_teams_enabled` | EE-Public v2 (Verifikation) | `V2/workspace-features/overview.md` |
+| E-32 | GET/PATCH | `/api/v2/workspaces/{slug}/projects/{project_id}/features/` | Projekt-Features v2 inkl. `is_automated_cycle_enabled`, `is_manually_start_end_cycles_enabled`, `is_parallel_cycles_enabled`, `is_project_updates_enabled` | EE-Public v2 (Verifikation) | `V2/project-features/overview.md` |
+| E-33 | GET/POST, GET/PATCH/DELETE | `/api/v2/workspaces/{slug}/projects/{project_id}/views/` (+ `{pk}/`), `/api/v2/workspaces/{slug}/views/` (+ `{pk}/`) | Projekt-/Workspace-Views v2 mit Feld `pql_filters` | EE-Public v2 (Verifikation) | `V2/project-views/overview.md`, `V2/workspace-views/overview.md` |
+| E-34 | POST | `/api/workspaces/{slug}/projects/{project_id}/cycles/date-check/` | Überlappungsprüfung `{start_date, end_date, cycle_id?}` → `{status}` (Basis P05-24) | CE (Verifikation) | `API/app/urls/cycle.py` Z. 57–58; `API/app/views/cycle/base.py` Z. 521–557 |
 
 ---
 
@@ -1051,3 +1087,145 @@ Diese Funktionen sind **keine** Bezahl-Features und werden über die Analyse-Dok
 | Your work (Profil: Summary, Assigned, Created, Subscribed, Activity) | `C/profile.ts` Z. 10–44; `W/app/routes/core.ts` Z. 91–99 | Basis P05-34 |
 | Power-K-Suche (Workspace/Projekt) | `W/components/power-k/ui/modal/search-menu.tsx` | Basis P05-31 |
 | Rich-Filter (AND, `exact`/`in`/`range`), Backend mit `and`/`or`/`not` | `T/rich-filters/*`; `API/utils/filters/filter_backend.py` | Basis P05-29/30 |
+
+---
+
+## Verifikations-Protokoll
+
+> Skeptiker-/Verifikationslauf zum Cluster P05 (Stand 22.10.2026). Geprüft wurden (a) jede Tier-Zuordnung gegen `apps/web/components/workspace/billing/comparison/plans.tsx` (R1, vollständig gelesen, 1 311 Zeilen), `packages/constants/src/subscription.ts` (R2), die Schwester-Dokumente `migration/features/20-*.md` bis `28-*.md` einschließlich `_data/P01.paid.json`, `_data/P03.paid.json`, `_data/P06.paid.json` und der Autorenlisten `_data/P02…P09.author.json` sowie 13 gezielte WebSearch-Abfragen; (b) jeder CE-Status per `grep`/Lesen im Repo `/home/user/plane`; (c) die Vollständigkeit des Clusters gegen Developer-Docs v1 (`DD/`), API v2 (`V2/`), i18n und Web-Quellen; (d) Beschreibungen auf unbelegte oder übertriebene Aussagen. Korrekturen stehen direkt im Text (Markierung „Verifikation“). Die finale, deduplizierte Feature-Liste liegt in `migration/features/_data/P05.paid.json`.
+
+### V.1 Methode
+
+| Prüfschritt | Vorgehen | Ergebnis |
+|---|---|---|
+| Matrix-Abgleich | R1 vollständig gelesen; alle zitierten Zeilenbereiche (Z. 194–203, 249–258, 381–390, 414–423, 499–530, 538–606, 626–668, 740–749) und `planHighlights` (Z. 1303–1309) gegengeprüft; R2 Z. 7–49 | alle Zellwerte und Zeilennummern korrekt übertragen |
+| Plan-Konflikte | Abgleich jeder P05-Zeile mit Dok. 20 (PF-04, PF-12, PF-13, PF-30, PF-31, PF-33, PF-43 … PF-53, PF-58), Dok. 21 (F05, F16/F17, F20, F25), Dok. 22 (P03-F11), Dok. 23 (WM-28, WM-29, WM-40), Dok. 25 (Auto-Schedule/Auto-Transfer), Dok. 26 (P07-17, P07-25, P07-42), Dok. 27 (P08-17) und den JSON-Listen | Widersprüche in V.5 |
+| CE-Status | `grep` nach jedem in Anhang A genannten Symbol; Lesen der Fundstellen; zusätzlich Sidebar-Rendering (`grep -rn "SidebarWorkspaceMenu\|SidebarUserMenu"`), `scopedProjectIds`, `UserPreferenceKeys`, `CycleDateCheckEndpoint`, `is_teams_enabled\|project_grouping` (kein CE-Treffer) | 1 falsche Aussage (K6/P05-23/P05-34), 1 CE-Status-Korrektur (P05-22), 4 neue Spuren (A-49 … A-52) |
+| i18n | Skript über alle 228 Zeilen aus Anhang B: Volltextsuche des Schlüssels in `apps/` und `packages/` (ohne `locales/`), Gegenprobe dynamischer Template-Literale (`grep 'empty_state\.\${'`) | 3 Schlüssel fälschlich „nein“ (`workspace_empty_state.views.*`), 6 dynamische `_description`-Schlüssel korrekt als „ja (dynamisch)“ |
+| Developer-Docs | `DD/dev-tools/mcp-server-tools.md` Z. 44–58, 76–91, 239–254, 377, 430, 515–523, 590; `DD/dev-tools/plane-compose.md` Z. 1250–1273; `DD/self-hosting/govern/advanced-search.md` Z. 1–30, 261, 281–289; `DD/self-hosting/self-hosting-101.md` Z. 48–60, 130; `V2/teamspaces/*`, `V2/workspace-features/overview.md`, `V2/project-features/overview.md`, `V2/project-views/*`, `V2/workspace-views/*`, `V2/cycles/overview.md`, `V2/audit-logs/overview.md`, `V2/artifacts/overview.md` | Ergänzungen P05-01, P05-07, P05-21, P05-24, P05-25, P05-29 |
+| Screenshots | `IMG/webhooks/create-webhook.webp` (konvertiert und angesehen): Settings-Gruppe „Features“ = Projects, Integrations, Plane Runner, Connections, Teamspaces, Initiatives, Customers, Releases, Templates, Relations, Plane AI, Automations; `IMG/cycles/active-cycles-ui.png`; `W/app/assets/workspace-active-cycles/cta-r-2-light.webp` | Aussagen P05-01 und P05-23 (Kartenaufbau, Fälligkeitsdatum, „View more“) bestätigt |
+| WebSearch | 13 Abfragen (Kontingent 15) | V.2 |
+
+### V.2 WebSearch im Verifikationslauf
+
+| Nr. | Suchanfrage (sinngemäß) | Ergebnis (Such-Zusammenfassung, sekundär) | Verwendung |
+|---|---|---|---|
+| S1 | docs.plane.so teamspaces plan Pro Business lead members | Doku-Label „Pro“; Aktivierung in Workspace Settings, danach nicht abschaltbar; Felder Name/Team lead/Team members; Teamspace-Mitglieder erhalten Member-Zugriff auf verknüpfte Projekte; Leads ohne besondere Workspace-Rechte | WS17; P05-01, P05-07, O-02, O-19 |
+| S2 | docs.plane.so dashboards widgets create dashboard plan | Ablauf „Add dashboard“ → Name + Projekte → „+ Add widget“; sechs Widget-Typen; Doku-PR-Spiegel mit Badge „Pro“, privat/öffentlich (Default Public), Tabellen-Widget | WS19, WS20; P05-09, P05-10 |
+| S3 | docs.plane.so plane query language PQL operators functions plan | Seitentitel „Plane Query Language (PQL) Enterprise Grid“; Einsatzorte; Operatoren je Feld (`!=`, `~`, `IN`, `NOT IN`) | WS22; P05-29 |
+| S4 | „Plane Query Language“ „Enterprise Grid“ NOT IN contains | bestätigt S3; Blog vom Mai 2026 nennt PQL als Enterprise-Funktion | WS21, WS22; P05-29 |
+| S5 | plane.so blog „Introducing PQL and enhanced dashboards“ | 12.05.2026; Text to PQL Enterprise-only; PQL in source/quick/widget filters; Tabellen-Widget; interaktive Charts mit Drill-down | WS21; P05-10, P05-11, P05-35 |
+| S6 | docs.plane.so cycles auto-schedule / recurring / parallel cycles plan | University 201/09: Cycle Automation (Auto-Schedule) = Business, Projekt-Einstellungen, Cooldown, Rollover; keine Plane-Quelle zu Parallel Cycles | WS24; P05-21, P05-22 |
+| S7 | docs.plane.so views publish view share view plan | University 302/03 „How to Publish (Pro)“; Shared Views view-only/edit (August 2026) | WS25, WS26; P05-27, P05-28 |
+| S8 | docs.plane.so active cycles progress burndown cycle report plan | ältere Cycles-Doku „Only one active cycle … at a time“; Active Cycles aller Projekte an einer Stelle; Progress Charts in Cycles, Active Cycles, Modules, Home (Blog Okt. 2024); kein Beleg zu Cycle Reports | WS27; P05-19, P05-24 |
+| S9 | Plane teamspace overview tab work items cycles views pages progress comments | Overview, Tabs, Team/Project-Tabs, konsolidierte Cycles, View-Tab-Wechsel, Pages, Team-Updates-Feed, Kommentar-Ausblenden (v3.2.0) | WS18; P05-02, P05-04 … P05-06 |
+| S10 | plane.so changelog dashboard intake widgets custom properties table drill down | vier Intake-Widgets + Intake volume by source; Widget-Filter per Standardfilter oder PQL; Dashboard duplizieren; Cycle Progress Bar, Work Item Type Progress | WS23; P05-09 … P05-12 |
+| S11 | docs.plane.so analytics tabs … plan | ältere Analytics-Doku „Scope and Demand“/„Custom Analytics“; Preisseite: Pro „dashboards with advanced widgets“ | WS28, WS29; K1, P05-09 |
+| S12 | plane.so pricing.md … teamspaces dashboards PQL activity logs | nur Drittquellen-Preise, keine Feature-Zuordnung | nicht verwendet |
+| S13 | docs.plane.so workspace cycles active cycles sidebar Pro label | keine verwertbaren Treffer | nicht verwendet |
+
+### V.3 Korrekturen (vollständig)
+
+| Nr. | Stelle | Vorher | Nachher | Beleg |
+|---|---|---|---|---|
+| K01 | Kopf | – | Verifikationsstand und Verweis auf `P05.paid.json` | – |
+| K02 | 1.2 | ohne API v2, WS1–WS16 | Kürzel `V2/`; WS17–WS29 aus dem Verifikationslauf | V.2 |
+| K03 | 1.4 K6 | Sidebar-Eintrag „Cycles“ werde im CE **immer** gerendert | im CE **nicht** gerendert (`SidebarWorkspaceMenu` ohne Import; gerenderte Navigation nur Views/Analytics/Archives) | `W/components/workspace/sidebar/sidebar-menu-items.tsx` Z. 82–121; `C/workspace.ts` Z. 201–229; Dok. 20 V.1 |
+| K04 | 1.5 | 34 Features, 48 Spuren, 175 „nein“, 9 „unklar“ | 35 Features, 52 Spuren, 172 „nein“/56 „ja“, 8 „unklar“, Kategorien neu ausgezählt | V.1 |
+| K05 | Kap. 2 Legende | – | Regel „aktuellere/spezifischere Quelle gewinnt“ mit Begründung (R1 erkennbar älter) | R1 Z. 272–282 (Initiatives CS), Z. 585–595 (Advanced Pages Analytics CS, laut Dok. 26 ausgeliefert), `base.tsx` Z. 29–30 |
+| K06 | P05-01 | Tier-Beleg nur R2/WS3 | zusätzlich Doku-Label „Pro“ (WS17); belegte Verhaltensregeln (Member-Zugriff auf verknüpfte Projekte, Lead ohne Workspace-Rechte, Anlage-Felder); API v2 mit Ersetzungs-Semantik; Seiteneffekt-Hinweis | WS17, WS18; `V2/teamspaces/overview.md`, `update-teamspace.md` |
+| K07 | P05-02 | nur Code-Plumbing | Tabs „Team“/„Project“ (ältere Doku) | WS18 |
+| K08 | P05-04 | – | View-Tab-Wechsel eigene/alle Projekt-Views; Pages als Team-Wissensbasis | WS18 |
+| K09 | P05-05 | nur Matrix-Text | konsolidierte Cycles + Beitrag je Person | WS18 |
+| K10 | P05-06 | Existenz nur über Asset-Enum | Teamspace-Kommentare im Changelog v3.2.0 genannt; Ausblende-Felder als Anforderung; Team-Update-Feed | WS18 |
+| K11 | P05-07 | Entwurf mit Schalter Aktivieren/**Deaktivieren**, Default `true` | einmalige Aktivierung, danach nicht abschaltbar (Doku); Default `false`; v2-Flag `is_teams_enabled`; vollständige v2-Flagliste statt „…“ | WS17; `V2/workspace-features/overview.md` |
+| K12 | P05-08 | nur Member-Dropdown | zusätzlich `scopedProjectIds` in Cycle-, Modul-, State-Auswahl | A-52 |
+| K13 | P05-09 | Detail-UI nur Entwurf | Anlage-Ablauf, Duplizieren, Sichtbarkeit, Doku-Badge „Pro“, „viewable by every member“ | WS19, WS20, WS23, WS29; `V2/artifacts/overview.md` Z. 34 |
+| K14 | P05-10 | Widget-Typ-Katalog UNVERIFIZIERT | sechs Typen belegt (sekundär); Table, Cycle Progress Bar, Work Item Type Progress, Drill-down ergänzt; `config`-Liste ohne „…“ | WS19, WS21, WS23 |
+| K15 | P05-11 | nur Changelog-Titel; „≥ Pro, da PQL Pro“ | drei Filter-Ebenen source/quick/widget; Tier-Details angepasst an P05-29 | WS21, WS23 |
+| K16 | P05-12 | nur Changelog-Titel | vier Intake-Widgets + Volume by source; CE-Feld `IntakeIssue.source` | WS23; `API/db/models/intake.py` Z. 76–77 |
+| K17 | P05-13 | „Enterprise (Grid)“ | Enterprise Grid (Planname der aktuellen Doku) | `DD/self-hosting/self-hosting-101.md` Z. 54; Dok. 26 P07-42 |
+| K18 | P05-19 | – | Einsatzorte laut Blog (Cycles, Active Cycles, Modules, Home) | WS27 |
+| K19 | P05-21 | Tier unklar | **Business** (University-Kurs, niedrig); v2-Flag `is_automated_cycle_enabled` | WS24; `V2/project-features/overview.md` |
+| K20 | P05-22 | CE-Status „fehlt“ | **teilweise im CE** (manueller Transfer + Snapshot); Tier-Widerspruch dokumentiert | `API/app/urls/cycle.py` Z. 72; `API/utils/cycle_transfer_issues.py` Z. 410–432; `_data/P01.paid.json` PF-12; `_data/P06.paid.json` |
+| K21 | P05-23 | Sidebar-Eintrag „sichtbar für ADMIN und MEMBER“ | nur Hüllen (nicht gerendertes Menü, `UpgradeBadge`, Icon, Backend-Präferenz); Kopfzeilen-Label | A-45, A-49 … A-51; `…/active-cycles/header.tsx` Z. 27 |
+| K22 | P05-24 | – | v2-Flag `is_parallel_cycles_enabled`; CE-Date-Check-Endpunkt mit Zeilen; Doku-Satz „Only one active cycle“ | `V2/project-features/overview.md`; `API/app/views/cycle/base.py` Z. 521–557; WS27 |
+| K23 | P05-25 | nur MCP `complete`/`archive` | v2-Flag `is_manually_start_end_cycles_enabled`; MCP-Alias `complete_cycle`; exakte Zeilen 250/251/254 | `V2/project-features/overview.md`; `DD/dev-tools/mcp-server-tools.md` Z. 590 |
+| K24 | P05-27 | „für Views vermutlich nur Lesen“ | **view-only oder edit** je Person; `access` NOT NULL (0/1) | WS26 |
+| K25 | P05-28 | – | University „How to Publish (Pro)“; Zeilenangabe `TYPE_CHOICES` Z. 20–28 | WS25; `API/db/models/deploy_board.py` |
+| K26 | P05-29 | Tier **Pro** | **Enterprise Grid** (Widerspruch zu R1 dokumentiert); Einsatzorte laut Nutzer-Doku; `pql_filters` an Views (v2); Operatoren `!=`, `~`, `NOT IN` belegt; Aussage „`!=` nicht belegt“ korrigiert | WS21, WS22; `V2/project-views/overview.md` Z. 70–72 |
+| K27 | P05-30 | – | Tier-Hinweis (PQL-Anteil folgt P05-29) | – |
+| K28 | P05-31 | – | CE-Status-Widerspruch zu Dok. 22 begründet | `DD/self-hosting/self-hosting-101.md` Z. 130 |
+| K29 | P05-34 | Workspace-Menü „CE gerendert“ | nicht gerendert; tatsächlich gerenderte CE-Navigation beschrieben; `home.py` Z. 31–35 (statt 29–33) | A-49; `API/app/views/workspace/home.py` |
+| K30 | neu P05-35 | – | Text to PQL (Enterprise Grid, fehlt) | WS21; R1 Z. 658–668 |
+| K31 | Kap. 4 | O-01, O-02, O-03, O-05, O-10, O-14 | aktualisiert; O-18 … O-20 neu | V.2 |
+| K32 | Anhang A | A-45 „Sidebar-Eintrag“ | A-45 präzisiert; A-49 … A-52 neu | V.1 |
+| K33 | Anhang B | `workspace_empty_state.views.*` „nein“ | „ja“ (`global-view.tsx` Z. 54–60); Zählzeile | V.1 |
+| K34 | Anhang D | E-01 … E-29 | E-30 … E-34 (API v2, CE-Date-Check) | `V2/`; `API/app/urls/cycle.py` Z. 57–58 |
+| K35 | vage Aufzählungen | „CE-Views (W1 …)“, `workspace_features(…)` mit Auslassung, `config {…}` mit Auslassung, `entity_type`-Menge mit Auslassung, Anhang A-46 „Routen für Teamspaces, Dashboards und weitere“ (Abkürzung) | vollständige bzw. ausdrücklich begrenzte Listen | jeweilige Quelle |
+| K36 | P05-23 Tier-Text | `base.tsx` Z. 30–31 | Z. 29–30 | `W/components/workspace/billing/comparison/base.tsx` |
+
+### V.4 Bestätigte Kernaussagen (geprüfte Belege)
+
+| Aussage | Beleg (gelesen) |
+|---|---|
+| Store-Typen `TEAM`, `TEAM_VIEW`, `TEAM_PROJECT_WORK_ITEMS`; Ableitung aus `teamspaceId`/`viewId`/`projectId` | `packages/types/src/issues/issue.ts` Z. 29–43; `apps/web/hooks/use-issue-layout-store.ts` Z. 16–40 |
+| Team-Stores mit Projekt-Store-Klassen instanziiert | `apps/web/store/issue/root.store.ts` Z. 242–243, 251–252, 257–258 |
+| `isWorkspaceLevel` enthält die drei Team-Typen; `getTeamProjectColumns` liefert `undefined` | `apps/web/components/issues/issue-layouts/utils.tsx` Z. 95–104, 846 |
+| Gruppierung `team_project` → `project_id` | `packages/constants/src/issue/common.ts` Z. 39, 120 |
+| Asset-Typen `TEAM_SPACE_DESCRIPTION`, `TEAM_SPACE_COMMENT_DESCRIPTION`; Backend ohne | `packages/types/src/enums.ts` Z. 71, 74, 82, 85; `apps/api/plane/db/models/asset.py` Z. 36–46 |
+| `documentType: "team_page"` mit `teamId`; Realtime-Feld `teamspace_id` | `packages/types/src/page/core.ts` Z. 78–83; `packages/editor/src/types/document-collaborative-events.ts` Z. 35–80 |
+| Dashboards-Eintrag im nicht gerenderten Benutzermenü (Admin/Member) | `apps/web/components/workspace/sidebar/user-menu.tsx` Z. 34–40 |
+| Chart-Enums, Paletten mit fehlenden i18n-Schlüsseln, 16 X-Achsen, 9 Y-Metriken; CE-Backend 13 X-Achsen und nur `WORK_ITEM_COUNT` | `packages/constants/src/chart.ts` Z. 13–39, 41–135; `packages/types/src/analytics.ts` Z. 9–38; `apps/api/plane/utils/build_chart.py` Z. 19–41 |
+| `/active-cycles/` und `/cycle-progress/` vom Frontend gerufen, im Backend fehlend; `fetchActiveCycleProgressPro` No-op; Aufruf bei `version === 2` und offener Sidebar | `apps/web/services/cycle.service.ts` Z. 52–78; `apps/web/store/cycle.store.ts` Z. 504; `apps/web/store/issue/cycle/issue.store.ts` Z. 146–156; `apps/api/plane/app/urls/cycle.py` Z. 96–105 |
+| Berechnungen `scope`, `ideal` (inklusive Tageszählung), `formatV1Data`, `formatV2Data`, `uniqBy`, Zukunftstage bis `end_date + 2` | `packages/utils/src/cycle.ts` Z. 79–190; `packages/utils/src/datetime.ts` Z. 111–127, 392–412 |
+| `progress_snapshot`-Format beim Transfer | `apps/api/plane/utils/cycle_transfer_issues.py` Z. 410–432 |
+| `DeployBoard.TYPE_CHOICES` mit `view`; Publish-Stub; „Live“-Badge; Link `/views/{anchor}`; `TPublishEntityType` ohne `view`; Space ohne `views/:anchor` | `apps/api/plane/db/models/deploy_board.py` Z. 20–28; `apps/web/components/views/publish/use-view-publish.tsx`; `apps/web/components/views/view-list-item-action.tsx` Z. 98–107; `packages/utils/src/project-views.ts` Z. 105–110; `packages/types/src/publish.ts` Z. 10; `apps/space/app/routes.ts` |
+| Public-API lehnt `pql`/`filters` mit 400 ab (Wortlaut) | `apps/api/plane/api/views/issue.py` Z. 324–335 |
+| Backend wertet `or`/`not` aus; Frontend `allowNegative: false`, `EXTENDED_*` leer, `NEGATED_OPERATOR_LABELS_MAP = {}` | `apps/api/plane/utils/filters/filter_backend.py` Z. 147–210; `apps/web/hooks/rich-filters/use-filters-operator-configs.ts` Z. 20–21; `packages/types/src/rich-filters/operators/extended.ts`; `packages/constants/src/rich-filters/operator-labels/extended.ts` Z. 22 |
+| Home-Widgets `new_at_plane`/`quick_tutorial` ohne Komponente, vom Backend ausgelassen | `apps/web/components/home/home-dashboard-widgets.tsx` Z. 49–58; `apps/api/plane/app/views/workspace/home.py` Z. 31–35 |
+| `mutateWorkspaceMembersActivity` No-op | `apps/web/store/workspace/index.ts` Z. 385–391 |
+| Analytics-Tabs nur `overview`/`work-items`, sonst 400 „Invalid tab“; ungenutzter Parameter `_workspaceSlug` | `apps/api/plane/app/views/analytic/advance.py` Z. 111–121; `apps/web/components/analytics/use-analytics-tabs.tsx` |
+| Advanced Search Badge „Pro“, 9 Indizes, Batching alle 5 s | `DD/self-hosting/govern/advanced-search.md` Z. 7, 261, 281–289 |
+| Workspace-Feature `teams`, Projekt-Feature `parallel_cycles`, MCP-Cycle-Aktionen | `DD/dev-tools/mcp-server-tools.md` Z. 250–254, 377, 430; `DD/dev-tools/plane-compose.md` Z. 1259–1260 |
+
+### V.5 Widersprüche (dokumentiert)
+
+| Feature | Dieses Dokument | Gegenquelle | Begründung der hier gewählten Angabe |
+|---|---|---|---|
+| PQL (P05-29) – Tier | Enterprise Grid | R1 Z. 658–668 (Pro); Dok. 20 PF-52, Dok. 21 F25, `_data/P01.paid.json` PF-52 (Pro) | Doku-Label 2026 (WS22) und Launch-Blog (WS21) sind aktueller und spezifischer als R1; Schwester-Dokumente sollten bei ihrer nächsten Überarbeitung angeglichen werden |
+| Auto-schedule Cycles (P05-21) – Tier | Business (niedrig) | Dok. 20 PF-13, Dok. 23 WM-29, `_data/P06.paid.json`: unklar | einzige Plan-Quelle ist der University-Kurs WS24 |
+| Auto-Rollover (P05-22) – Tier | Pro | University WS24: Teil der Business-„Cycle Automation“ | R1-Zeile „Auto-transfer Cycle Work items“ ist spezifischer |
+| Auto-Rollover (P05-22) – CE-Status | teilweise im CE | Dok. 23 WM-28: „fehlt (manueller Transfer vorhanden)“ | Regel „Teilfunktion vorhanden“; einheitlich mit `_data/P01.paid.json` und `_data/P06.paid.json` |
+| Advanced Search (P05-31) – CE-Status | fehlt | Dok. 22 P03-F11 / `_data/P03.paid.json`: teilweise im CE | CE-Basissuche ist Basis (Anhang E), keine Teilfunktion der OpenSearch-Suche; einheitlich mit Dok. 20/21 |
+| Teamspace-Pages (P05-04) – CE-Status | Stub/UI-Hülle im CE | Dok. 26 P07-17: fehlt | CE enthält Typ `team_page`, Realtime-Feld `teamspace_id` und Move-Texte (A-15, A-16) |
+| PQL (P05-29) – CE-Status | Stub/UI-Hülle im CE | `_data/P02.author.json`: fehlt | Public-API-Ablehnung mit eigenem Fehlertext ist eine Hülle; einheitlich mit Dok. 21 F25 (verifiziert) |
+| Teamspaces – Abstufung | Pro ohne Abstufung (nur Teamspace Cycles Business) | `_data/P02.author.json`: „Pro: Basic; Business/Enterprise: Advanced“ | in keiner Quelle belegt; bereits in Dok. 21 K04 entfernt |
+| Active Cycles – Sidebar (P05-23) | kein gerenderter Eintrag | Autorenfassung K6 dieses Dokuments | Repo-Befund V.1; einheitlich mit Dok. 20 V.1 |
+| Publish Views (P05-28) – Tier | Pro | R2 `ONE_PLAN_FEATURES` „public views“ | R1-Zeile und University-Kurs (WS25) spezifischer |
+| Custom Reports / Analytics-Tabs | getrennt: P05-15 unklar, P05-16 Business | Dok. 20 PF-50 fasst beide als Business zusammen | Tabs-Texte haben keine Plan-Angabe; nur „Custom Reports“ steht in R1/R2 |
+
+### V.6 Ergänzungen (Vollständigkeit)
+
+| Ergänzung | Art | Beleg |
+|---|---|---|
+| P05-35 Text to PQL | neues Feature | WS21 |
+| Manuelles Starten/Beenden von Cycles (`is_manually_start_end_cycles_enabled`) | in P05-25 integriert | `V2/project-features/overview.md` |
+| Auto-Schedule-Flag `is_automated_cycle_enabled`, Parallel-Flag `is_parallel_cycles_enabled` | in P05-21/P05-24 | `V2/project-features/overview.md` |
+| PQL-Feld `pql_filters` an Projekt- und Workspace-Views | in P05-29 | `V2/project-views/overview.md`, `V2/workspace-views/overview.md` |
+| Dashboard duplizieren, Tabellen-Widget, Cycle Progress Bar, Work Item Type Progress, Drill-down, Filter-Ebenen | in P05-09 … P05-11 | WS21, WS23 |
+| Intake-Widgets im Detail | in P05-12 | WS23 |
+| Teamspace-Verhaltensregeln (Auto-Member-Zugriff, nicht abschaltbar), Teamspace-Tabs | in P05-01 … P05-07 | WS17, WS18 |
+| Shared-View-Rechte view-only/edit | in P05-27 | WS26 |
+| `scopedProjectIds` in Cycle-/Modul-/State-Auswahl | in P05-08 | A-52 |
+| Bewusst **nicht** aufgenommen (andere Cluster): Module Overview, Project Overview, State of Projects, Baselines and Deviations (Dok. 23 WM-30, WM-39, WM-42; Dok. 20 PF-18, PF-21, PF-22, PF-32), Project Updates (Dok. 23 WM-40), Time in State `is_state_duration_enabled` (Dok. 25 F06), Kommentar-Moderation (Governance, Dok. 27), AI-Dashboards/Artifacts „Applets“ (Dok. 28 P09-F44) | Abgrenzung | jeweilige Schwester-Dokumente |
+
+### V.7 Verbleibende UNVERIFIZIERT-Punkte
+
+- Alle Web-Belege WS17–WS29 sind Such-Zusammenfassungen, nicht wortgetreu gelesene Seiten (docs.plane.so/plane.so per Netzwerk-Policy gesperrt).
+- PQL-Tier Enterprise Grid beruht auf Seitentitel und Blog-Zusammenfassung; eine Plan-Tabelle der Preisseite wurde nicht gefunden.
+- Auto-Schedule-Tier Business beruht auf einem Kurs-Entwurf.
+- Cycle Reports (P05-20), Insights (P05-14), Custom Reports (P05-16), Scheduled Comms (P05-32): weiterhin nur Matrix-Texte, keine Doku-/Changelog-Bestätigung gefunden.
+- Dashboard-Sichtbarkeit privat/öffentlich und Default „Public“ stammen aus einem Doku-PR-Spiegel (Entwurf).
+- Semantik von `is_manually_start_end_cycles_enabled` und der Teamspace-Deaktivierung über die API.
+- Rechte des Teamspace-Leads innerhalb des Teamspace; Folgen des Entfernens von Projekt-Verknüpfungen.

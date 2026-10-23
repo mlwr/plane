@@ -1,0 +1,1120 @@
+[
+  {
+    "name": "P09-F01 Integrations-Framework „Silo“, Integrations-Übersicht, Workspace-/persönliche Connections",
+    "cluster": "P09 Integrationen",
+    "tier": "Pro",
+    "tier_details": "Cloud-Matrix: Sektion „Integrations“ Pro/Business/Enterprise ✓, Free/One ✗; die gesamte Sektion trägt comingSoon: true (plans.tsx Z. 964–967, Rendering base.tsx Z. 86); PRO_PLAN_FEATURES „Popular integrations“ (packages/constants/src/subscription.ts Z. 31); Doku-Badges „Pro“ der Self-hosting-Integrationsseiten; nach ADR-001 immer aktiv",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Workspace Settings → Integrations (Karten je Anbieter, Zustände Not configured/not enabled, Detailseiten, „Build your own“), Profil → Connections (persönliche Konten), Projekt-Settings-Integrations; ein externes Konto nur mit einem Workspace verbindbar (silo_errors.cannot_create_multiple_connections); Silo als Integrations-Engine mit AES-verschlüsselten Tokens, HMAC zur API, Batch/Dedup; Integrationen handeln als Marketplace-App mit Bot-User.",
+    "data_model_hints": "IntegrationProvider, WorkspaceConnection (unique provider+external_account_id), UserConnection, EntityConnection (config jsonb), ExternalLink, InboundWebhookEvent; Secrets via Data Protection",
+    "api_hints": "Externe Callback-Pfade /silo/api/... identisch übernehmen (Anhang C); interne App-API nicht dokumentiert (Neuentwurf); Health /silo/health/, /silo/health/check-hmac, /silo/health/check-db",
+    "ui_hints": "Propel-Brand-Icons other-products/*, IntegrationsOutline, ConnectionsOutline; CE-Altkarte als Stilreferenz; aktuelle EE-Screenshots fehlen",
+    "sources": [
+      "packages/i18n/src/locales/en/integration.json",
+      "packages/i18n/src/locales/en/workspace-settings.json",
+      "packages/i18n/src/locales/en/settings.json",
+      "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/(workspace)/integrations/page.tsx",
+      "apps/api/plane/db/models/integration/base.py",
+      "DD/self-hosting/manage/health-checks.md",
+      "HC/values.yaml",
+      "HC/templates/config-secrets/silo.yaml",
+      "apps/web/components/workspace/billing/comparison/plans.tsx",
+      "apps/web/components/workspace/billing/comparison/base.tsx",
+      "packages/constants/src/subscription.ts",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F02 GitHub: Organisation verbinden, persönliches Konto, Repository-Mapping",
+    "cluster": "P09 Integrationen",
+    "tier": "Pro",
+    "tier_details": "Pro/Business/Enterprise ✓ (plans.tsx Z. 969); Self-hosting-Badge Pro",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "GitHub-App-Installation auf Org (Callback/Setup /silo/api/github/auth/callback), persönliches Konto (OAuth User, /silo/api/github/auth/user/callback), Repository↔Projekt-Mapping; App-Rechte Issues/PR r/w, Metadata r, Email r, Profile r/w; Events Installation target, Meta, Issue comment, Issues, PR, PR review, PR review comment, PR review thread, Push, Repository sub issues.",
+    "data_model_hints": "WorkspaceConnection(github), UserConnection, EntityConnection(repository); CE-Alt GithubRepository/GithubRepositorySync(label)",
+    "api_hints": "Webhook POST /silo/api/github/github-webhook; Env GITHUB_CLIENT_ID/SECRET/APP_NAME/APP_ID/PRIVATE_KEY(Base64)/WEBHOOK_SECRET",
+    "ui_hints": "Texte github_integration.connect_org*, connect_personal_account*, repo_mapping*, link, choose_repository",
+    "sources": [
+      "packages/i18n/src/locales/en/integration.json",
+      "DD/self-hosting/govern/integrations/github.md",
+      "HC/values.yaml",
+      "apps/api/plane/db/models/integration/github.py",
+      "apps/web/hooks/use-integration-popup.tsx",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P09-F03 GitHub: Pull-Request-Automation (PR-State-Mapping)",
+    "cluster": "P09 Integrationen",
+    "tier": "Pro",
+    "tier_details": "wie GitHub-Integration",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Je Projekt Ziel-State pro PR-Ereignis DRAFT_MR_OPENED, MR_OPENED, MR_REVIEW_REQUESTED, MR_READY_FOR_MERGE, MR_MERGED, MR_CLOSED; Option „Prevent issues from moving to an earlier state due to PR updates“; PR↔Work-Item-Verknüpfungsregel UNVERIFIZIERT.",
+    "data_model_hints": "EntityConnection.config.pr_state_map + skip_backward_state_movement; ExternalLink(pull_request)",
+    "api_hints": "Eingang Webhook POST /silo/api/github/github-webhook (Events pull_request, pull_request_review, pull_request_review_comment, pull_request_review_thread); State-Wechsel über den regulären Work-Item-Update-Pfad; interne Mapping-API nicht dokumentiert (Neuentwurf)",
+    "ui_hints": "Dialoge add/edit_pr_state_mapping, Leerzustand „Mapped PR states will appear here“",
+    "sources": [
+      "packages/i18n/src/locales/en/integration.json",
+      "DD/self-hosting/govern/integrations/github.md",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F04 GitHub: Project Issue Sync (bi-/unidirektional inkl. Kommentare, Sub-Issues)",
+    "cluster": "P09 Integrationen",
+    "tier": "Pro",
+    "tier_details": "Cloud-Matrix: „Sync Plane work items and states to GitHub … and vice-versa“ Pro+",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Repo-Issues ↔ Work Items; Richtung Bidirectional (Issues+Kommentare beidseitig) oder Unidirectional (GitHub→Plane, überschreibt verknüpfte Daten); State-Mapping ISSUE_OPEN/ISSUE_CLOSED; Start Sync; Sub-Issues über Event „Repository sub issues“.",
+    "data_model_hints": "ExternalLink für Work Items/Kommentare (ersetzt GithubIssueSync/GithubCommentSync); external_source/external_id am Issue",
+    "api_hints": "Eingang GitHub-Webhook (Events Issues, Issue comment, Repository sub issues); Ausgang GitHub REST/GraphQL; Plane-Änderungen über Outbox-Events an den Integrations-Consumer",
+    "ui_hints": "Abschnitt „Project Issue Sync“, Radio-Auswahl Bidirectional/Unidirectional mit Warn-Callout, State-Dropdowns „Issue Open“/„Issue Closed“, Button „Start Sync“ (github_integration.project_issue_sync*)",
+    "sources": [
+      "packages/i18n/src/locales/en/integration.json",
+      "apps/web/components/workspace/billing/comparison/plans.tsx",
+      "apps/api/plane/db/models/integration/github.py",
+      "DD/self-hosting/govern/integrations/github.md",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F05 GitHub Enterprise (Server und Enterprise Cloud ghe.com)",
+    "cluster": "P09 Integrationen",
+    "tier": "Pro",
+    "tier_details": "Badge Pro gilt für gesamte GitHub-Seite inkl. GHE; separater höherer Plan nicht belegt",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "In-App-Formular „GitHub Enterprise Configuration“: App ID, App Slug, Base URL, Client ID, Client Secret, Webhook Secret, Private Key (Base64), „Connect App“; Callbacks /silo/api/oauth/github-enterprise/auth/callback (+/user/callback), Webhook /silo/api/github-enterprise/github-webhook; airgapped-relevant.",
+    "data_model_hints": "WorkspaceConnection(github_enterprise, base_url, verschlüsselte app_config)",
+    "api_hints": "Callbacks /silo/api/oauth/github-enterprise/auth/callback und …/auth/user/callback; Webhook /silo/api/github-enterprise/github-webhook; Octokit mit Base-URL + /api/v3/",
+    "ui_hints": "Formular „GitHub Enterprise Configuration“ mit Feldern App ID, App Slug, Base URL, Client ID, Client Secret, Webhook Secret, Private Key (Base64), Button „Connect App“; Pflichtfeld- und URL-Validierung (github_enterprise_integration.*)",
+    "sources": [
+      "packages/i18n/src/locales/en/integration.json",
+      "DD/self-hosting/govern/integrations/github.md",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P09-F06 GitLab (gitlab.com): MR-State-Mapping, Issue Sync",
+    "cluster": "P09 Integrationen",
+    "tier": "Pro",
+    "tier_details": "Self-hosting-Badge Pro",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Org verbinden, Projektverbindungen (Choose Entity/Choose Project), MR-Automation „On draft MR open/MR open/review requested/ready for merge/merged/closed, set the state to“, Issue Sync wie GitHub; OAuth-App Redirect /silo/api/gitlab/auth/callback, Scopes api, read_api, read_user, read_repository, profile, email.",
+    "data_model_hints": "WorkspaceConnection(provider=gitlab), EntityConnection(entity_type=gitlab_project, config.pr_state_map, config.issue_sync)",
+    "api_hints": "Env GITLAB_CLIENT_ID/SECRET; Webhook-Pfad UNVERIFIZIERT",
+    "ui_hints": "Abschnitte „Gitlab Project Connections“, „Pull Request Automation“ (Zeilen „On … set the state to“), „Project Issue Sync“; Dialog „Link Gitlab repository to Plane project“ (gitlab_integration.*)",
+    "sources": [
+      "packages/i18n/src/locales/en/integration.json",
+      "DD/self-hosting/govern/integrations/gitlab.md",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F07 GitLab Self-managed („Gitlab Enterprise“)",
+    "cluster": "P09 Integrationen",
+    "tier": "Pro",
+    "tier_details": "Badge Pro gilt für gesamte GitLab-Seite",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "In-App-Formular: Base URL, App ID, Client Secret, Webhook Secret, „Connect App“; Redirect /silo/api/oauth/gitlab-enterprise/auth/callback; Funktionsumfang wie GitLab Cloud; airgapped-relevant.",
+    "data_model_hints": "WorkspaceConnection(provider=gitlab_enterprise, base_url, app_config{app_id, client_secret, webhook_secret} verschlüsselt)",
+    "api_hints": "Redirect /silo/api/oauth/gitlab-enterprise/auth/callback; Scopes api, read_api, read_user, read_repository, profile, email",
+    "ui_hints": "Formular „Gitlab Enterprise Configuration“ mit Base URL, App ID, Client Secret, Webhook Secret, Button „Connect App“ (gitlab_enterprise_integration.*)",
+    "sources": [
+      "packages/i18n/src/locales/en/integration.json",
+      "DD/self-hosting/govern/integrations/gitlab.md",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P09-F08 Bitbucket Cloud und Bitbucket Data Center",
+    "cluster": "P09 Integrationen",
+    "tier": "Pro",
+    "tier_details": "Self-hosting-Badge Pro",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Sync von PRs/Commits mit Work Items; Cloud-OAuth-Consumer (/silo/api/oauth/bitbucket/auth/callback, Scopes Account/Repos/PR/Projects/Issues/Webhooks), DC Application Link (/silo/api/oauth/bitbucket-dc/auth/callback); Detailverhalten UNVERIFIZIERT.",
+    "data_model_hints": "WorkspaceConnection(provider=bitbucket|bitbucket_dc), EntityConnection(entity_type=repository)",
+    "api_hints": "Env BITBUCKET_CLIENT_ID/SECRET/WEBHOOK_SECRET",
+    "ui_hints": "Karte „Bitbucket Data Center – Connect and sync your Bitbucket Data Center repositories with Plane.“ (bitbucket_dc_integration.*); DC-Formularfelder UNVERIFIZIERT",
+    "sources": [
+      "DD/self-hosting/govern/integrations/bitbucket.md",
+      "packages/i18n/src/locales/en/integration.json",
+      "HC/values.yaml",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P09-F09 Slack: Workspace verbinden, persönliches Konto, DM-Alerts",
+    "cluster": "P09 Integrationen",
+    "tier": "Pro",
+    "tier_details": "Pro/Business/Enterprise ✓ (plans.tsx Z. 981); Badge Pro",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Connected Slack workspaces (Connected on {date}, Disconnect), persönliches Konto (User-OAuth), DM-Benachrichtigungen; Bot-/User-Scopes laut Manifest, Token-Rotation.",
+    "data_model_hints": "WorkspaceConnection(provider=slack, external_account_id=team_id, credentials{bot_token, refresh_token, expires_at}), UserConnection(provider=slack); CE-Altmodell SlackProjectSync",
+    "api_hints": "/silo/api/slack/team/auth/callback/, /silo/api/slack/user/auth/callback/; Env SLACK_CLIENT_ID/SECRET/SIGNING_SECRET/BASE_URL",
+    "ui_hints": "Liste „Connected Slack workspaces“ mit „Connected on {date}“ und „Disconnect {name} workspace“; Text DM-Alerts (slack_integration.*)",
+    "sources": [
+      "packages/i18n/src/locales/en/integration.json",
+      "DD/self-hosting/govern/integrations/slack.md",
+      "apps/api/plane/db/models/integration/slack.py",
+      "HC/values.yaml",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F10 Slack: Projekt-Benachrichtigungen (Projekt ↔ Channel)",
+    "cluster": "P09 Integrationen",
+    "tier": "Pro",
+    "tier_details": "wie Slack",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "1:1-Zuordnung Projekt↔Channel; Nachricht im Channel beim Anlegen eines Work Items; Toasts create/update/delete/upsert.",
+    "data_model_hints": "EntityConnection(slack_channel) mit Unique je Projekt und je Channel",
+    "api_hints": "Interne CRUD-API für Projekt↔Channel-Verbindungen nicht dokumentiert (Neuentwurf); Slack-Kanäle über Slack-API laden",
+    "ui_hints": "Abschnitt „Project Notifications“, Button „Add new project notifications“, Formular „Configure Slack Channel“ mit Dropdowns „Plane Project“/„Slack Channel“, Toasts create/update/delete/upsert (slack_integration.project_updates.*)",
+    "sources": [
+      "packages/i18n/src/locales/en/integration.json",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P09-F11 Slack: /plane-Slash-Command, Message-Shortcuts, Thread-Sync, Link-Unfurl",
+    "cluster": "P09 Integrationen",
+    "tier": "Pro",
+    "tier_details": "Cloud-Matrix „use / commands in Slack“",
+    "ce_status": "fehlt",
+    "description": "/plane „Create issue in Plane“, Shortcuts „Create new issue“ (issue_shortcut) und „Link Work Item“ (link_work_item), Thread-Sync über message.channels/message.im, Unfurl von Work-Item-/Cycle-/Modul-Links; Detailverhalten UNVERIFIZIERT.",
+    "data_model_hints": "ExternalLink(provider=slack, entity_type=thread, external_id=channel_id:thread_ts), ExternalLink(entity_type=comment, external_id=message_ts)",
+    "api_hints": "POST /silo/api/slack/command/, /events, /action/, /options/",
+    "ui_hints": "UI liegt in Slack (Slash-Command-Modal, Message-Shortcuts „Create new issue“/„Link Work Item“, Unfurl-Karten); Layout UNVERIFIZIERT",
+    "sources": [
+      "DD/self-hosting/govern/integrations/slack.md",
+      "apps/web/components/workspace/billing/comparison/plans.tsx",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F12 Sentry-Integration",
+    "cluster": "P09 Integrationen",
+    "tier": "Pro",
+    "tier_details": "Doku-Badge „Pro“ (DD/self-hosting/govern/integrations/sentry.md); WebSearch Verifikation: Sentry-Seite der Nutzer-Doku als Pro-Feature gekennzeichnet",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Work Item aus Sentry-Issue erstellen/verknüpfen (Felder Title, Description, Project, Assignees, Priorities, Labels, State, Module, Cycle), Alert-Rule-Action „Create Plane Work Item or Intake Issue“, State-Mapping resolved/unresolved, Sync von created/resolved/assigned/archived/unresolved.",
+    "data_model_hints": "WorkspaceConnection(provider=sentry, external_account_id=org_slug), EntityConnection(entity_type=sentry_state_mapping, config{resolved_state_id, unresolved_state_id}), ExternalLink(provider=sentry, entity_type=work_item)",
+    "api_hints": "/silo/api/sentry/sentry-webhook/, /silo/api/oauth/sentry/auth/callback, Komponenten /api/sentry/{issues,issues/link,issues/create,users,priorities,labels,states,modules,cycles,projects,alert-rule}",
+    "ui_hints": "Liste „Connected Sentry workspaces“, Abschnitt „State Mapping“ mit „Add new state mapping“ und Lade-/Fehlertexten (sentry_integration.*)",
+    "sources": [
+      "DD/self-hosting/govern/integrations/sentry.md",
+      "packages/i18n/src/locales/en/integration.json",
+      "HC/values.yaml",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F13 HubSpot-Connector",
+    "cluster": "P09 Integrationen",
+    "tier": "unklar",
+    "tier_details": "nur Helm-Connector belegt",
+    "ce_status": "fehlt",
+    "description": "Silo-Connector mit HUBSPOT_CLIENT_ID/SECRET; fachlicher Zweck UNVERIFIZIERT (vermutlich Customers).",
+    "data_model_hints": "Silo-Connector; Datenmodell UNVERIFIZIERT",
+    "api_hints": "Env HUBSPOT_CLIENT_ID/HUBSPOT_CLIENT_SECRET (HC/templates/config-secrets/silo.yaml Z. 87–89)",
+    "ui_hints": "keine UI-Texte im Repo",
+    "sources": [
+      "HC/values.yaml",
+      "HC/README.md",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P09-F14 Cursor-Agent-Integration",
+    "cluster": "P09 Integrationen",
+    "tier": "unklar",
+    "tier_details": "nur Silo-Secret belegt",
+    "ce_status": "fehlt",
+    "description": "CURSOR_WEBHOOK_SECRET „Webhook secret for the Cursor agent integration“; Verhalten UNVERIFIZIERT.",
+    "data_model_hints": "UNVERIFIZIERT (vermutlich Agent-Run-Bezug, vgl. P09-F50)",
+    "api_hints": "Silo-Secret CURSOR_WEBHOOK_SECRET (HC/templates/config-secrets/silo.yaml Z. 20); Endpunkt UNVERIFIZIERT",
+    "ui_hints": "nur Propel-Logo cursor",
+    "sources": [
+      "HC/README.md",
+      "HC/values.yaml",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P09-F15 Zapier",
+    "cluster": "P09 Integrationen",
+    "tier": "Pro",
+    "tier_details": "Pro/Business/Enterprise ✓, Free/One ✗ (plans.tsx); gesamte Sektion „Integrations“ comingSoon: true (Z. 966); Verifikations-Suche ohne Beleg einer Auslieferung",
+    "ce_status": "fehlt",
+    "description": "„Run if-then-else automations using Zapier.“; Auslieferung nicht belegt.",
+    "data_model_hints": "keine Originalvorlage",
+    "api_hints": "keine Originalvorlage; Vorschlag über OAuth-App (F47) + Webhooks v2 (F51) bzw. eingehende Webhooks",
+    "ui_hints": "nur Matrix-Zeile in plans.tsx",
+    "sources": [
+      "apps/web/components/workspace/billing/comparison/plans.tsx",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P09-F16 Zendesk",
+    "cluster": "P09 Integrationen",
+    "tier": "Pro",
+    "tier_details": "Pro/Business/Enterprise ✓, Free/One ✗ (plans.tsx); gesamte Sektion „Integrations“ comingSoon: true (Z. 966); Verifikations-Suche ohne Beleg einer Auslieferung",
+    "ce_status": "fehlt",
+    "description": "„Create Plane work items from Zendesk tickets.“; Auslieferung nicht belegt.",
+    "data_model_hints": "keine Originalvorlage",
+    "api_hints": "keine Originalvorlage; Vorschlag über OAuth-App (F47) + Webhooks v2 (F51) bzw. eingehende Webhooks",
+    "ui_hints": "nur Matrix-Zeile in plans.tsx",
+    "sources": [
+      "apps/web/components/workspace/billing/comparison/plans.tsx",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P09-F17 Freshdesk",
+    "cluster": "P09 Integrationen",
+    "tier": "Pro",
+    "tier_details": "Pro/Business/Enterprise ✓, Free/One ✗ (plans.tsx); gesamte Sektion „Integrations“ comingSoon: true (Z. 966); Verifikations-Suche ohne Beleg einer Auslieferung",
+    "ce_status": "fehlt",
+    "description": "„Create Plane work items from Freshdesk tickets.“; Auslieferung nicht belegt.",
+    "data_model_hints": "keine Originalvorlage",
+    "api_hints": "keine Originalvorlage; Vorschlag über OAuth-App (F47) + Webhooks v2 (F51) bzw. eingehende Webhooks",
+    "ui_hints": "nur Matrix-Zeile in plans.tsx",
+    "sources": [
+      "apps/web/components/workspace/billing/comparison/plans.tsx",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P09-F18 Microsoft Teams",
+    "cluster": "P09 Integrationen",
+    "tier": "unklar",
+    "tier_details": "in keiner Quelle belegt (Negativbefund; Verifikations-Suche ohne Treffer)",
+    "ce_status": "fehlt",
+    "description": "Keine Spur in i18n, Helm, Doku, Plan-Matrix.",
+    "data_model_hints": "keine Vorlage",
+    "api_hints": "keine Vorlage",
+    "ui_hints": "keine Spur",
+    "sources": [
+      "packages/i18n/src/locales/en/*.json",
+      "HC/values.yaml",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P09-F19 Discord",
+    "cluster": "P09 Integrationen",
+    "tier": "unklar",
+    "tier_details": "nur Logo-Icon",
+    "ce_status": "fehlt",
+    "description": "Nur Propel-Icon Discord; keine Integration belegt.",
+    "data_model_hints": "keine Vorlage",
+    "api_hints": "keine Vorlage",
+    "ui_hints": "nur Propel-Logo discord",
+    "sources": [
+      "PROPEL/other-products/discord.d.ts",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P09-F20 OAuth Bridge (externe IdP-JWTs als API-Credentials)",
+    "cluster": "P09 Integrationen/Plattform",
+    "tier": "unklar",
+    "tier_details": "keine Plan-Angabe",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Token Providers mit Name, Issuer, JWKS URL (HTTPS), Audience, User claims (E-Mail-Match, first wins), erlaubte asymmetrische Algorithmen, JWKS-Cache-TTL ≥60 s (Default 24 h), Rate limit, Enable; Test „JWKS Reachable/Unreachable“.",
+    "data_model_hints": "OAuthBridgeProvider",
+    "api_hints": "Validierung externer JWTs (Authorization: Bearer) gegen JWKS des Providers; Verwaltungs-API nicht dokumentiert (Neuentwurf); API v2 kennt eine eigene Rate-Limit-Klasse „External-Tokens“ (Dok. 21)",
+    "ui_hints": "Karte „OAuth Bridge“, Liste „Token Providers“, Dialog „Edit Provider“ mit Feldern Name, Issuer, JWKS URL, Audience, User claims, Allowed signing algorithms, JWKS cache TTL, Rate limit, „Enable this provider“; Aktion „Test“ (oauth_bridge_integration.*)",
+    "sources": [
+      "packages/i18n/src/locales/en/integration.json",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F21 Importer-Framework (Imports-Seite, Job-Status, Historie, Importer-Worker)",
+    "cluster": "P09 Importer",
+    "tier": "Pro",
+    "tier_details": "Basis-Import bereits ab Free in Cloud/Commercial (nicht CE): Jira/GitHub Free/One „Without custom props“, Pro+ „With custom props“ (plans.tsx Z. 940–960); Linear, Asana und CSV laut Nutzer-Doku „all plans of the Commercial Edition“; Flatfile nur Cloud. JSON-Tier Pro = Konvention für den vollständigen Import (konsistent mit P01 PF-83, P03-F22); Enum kennt keinen Wert „Free“",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Settings → Imports, Historie mit Download/Refresh, Status queued/created/initiated/pulling/timed_out/pulled/progressing/transforming/transformed/pushing/finished/error/cancelled, Assistent (Configure → Quelle/Ziel → Datenübersicht → Users Map/Invite/Do not import → Confirm, Legacy-belegt), eigener Importer-Worker.",
+    "data_model_hints": "ImportJob (13 Status), ImportJobItem/Log, external_source/external_id-Idempotenz",
+    "api_hints": "CE-Altrouten (Backend fehlt): GET /api/workspaces/{slug}/importers/, GET …/importers/{service}/, POST …/projects/importers/{service}/, DELETE …/importers/{service}/{id}/; Ziel-Vorschlag /api/workspaces/{slug}/imports/ (+ cancel, report, preview) – Neuentwurf",
+    "ui_hints": "Workspace Settings → Imports („Imports“, Leerzustand „No imports yet“), Import-Kacheln je Quelle, Historie mit Status-Badges (13 Werte import_status.*), Legacy-Assistent (Configure → Quelle/Ziel → Datenübersicht → Users → Confirm)",
+    "sources": [
+      "packages/i18n/src/locales/en/workspace-settings.json",
+      "packages/i18n/src/locales/en/integration.json",
+      "apps/api/plane/db/models/importer.py",
+      "IMG/importers/**",
+      "HC/README.md",
+      "apps/web/components/workspace/billing/comparison/plans.tsx",
+      "https://docs.plane.so/importers/github (WEB Verifikation)",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F22 Jira-Cloud-Importer (inkl. Custom Properties)",
+    "cluster": "P09 Importer",
+    "tier": "Pro",
+    "tier_details": "Free/One „Without custom props“ (Cloud/Commercial, nicht CE), Pro/Business/Enterprise „With custom props“ (plans.tsx Z. 940–949)",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Eingaben cloud_hostname, api_token, project_key, email; Vorschau issues/modules/labels/states/users; Option epics_to_modules; Nutzer-Mapping invite/map/false.",
+    "data_model_hints": "ImportJob(source=jira, config{epics_to_modules, mappings}), external_source/external_id-Idempotenz",
+    "api_hints": "Jira REST v3 (Cloud); Eingaben cloud_hostname, api_token, project_key, email (IJiraMetadata)",
+    "ui_hints": "Legacy-Formular „Jira Personal Access Token“, „Jira Project Key“, „Jira Email Address“, „Jira Installation or Cloud Host Name“, Schalter „Import Epics – Import epics as modules“",
+    "sources": [
+      "apps/web/components/workspace/billing/comparison/plans.tsx",
+      "packages/types/src/importer/jira-importer.ts",
+      "apps/web/services/integrations/jira.service.ts",
+      "IMG/importers/jira/*.png",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F23 Jira-Server/Data-Center-Importer",
+    "cluster": "P09 Importer",
+    "tier": "unklar",
+    "tier_details": "Plan nicht genannt; Importer-Übersicht der Nutzer-Doku: Cloud und Commercial Edition, Jira Server als eigener Importer (WEB Verifikation)",
+    "ce_status": "fehlt",
+    "description": "Belegt über JIRA_SERVER_ISSUES_PAGE_SIZE (50) und JIRA_SERVER_ISSUES_PARALLEL_PAGES (1); airgapped-relevant.",
+    "data_model_hints": "ImportJob(source=jira_server)",
+    "api_hints": "Jira-DC-REST v2 mit Paging startAt/maxResults; Seitengröße JIRA_SERVER_ISSUES_PAGE_SIZE (50), Parallelität JIRA_SERVER_ISSUES_PARALLEL_PAGES (1)",
+    "ui_hints": "UNVERIFIZIERT",
+    "sources": [
+      "HC/README.md",
+      "HC/templates/config-secrets/silo.yaml",
+      "https://docs.plane.so/importers/github (WEB Verifikation)",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F24 Linear-Importer",
+    "cluster": "P09 Importer",
+    "tier": "unklar",
+    "tier_details": "ab Free in Cloud/Commercial (nicht CE): „available on Plane Cloud and on all plans of the Commercial Edition“ (WEB Verifikation); Enum kennt keinen Wert „Free“",
+    "ce_status": "fehlt",
+    "description": "Workspace settings → Imports → „Import“ bei Linear → Personal Access Token → „Connect Linear“; Rolle Workspace-Admins; Marketplace: Migration von „projects, issues, and docs“; P03 nennt Issues, States, Labels, Prioritäten, Nutzer und geführtes State-Mapping (UNVERIFIZIERT); Feld-Mapping im Detail UNVERIFIZIERT.",
+    "data_model_hints": "ImportJob(source=linear), State-Mapping in config",
+    "api_hints": "Linear GraphQL-API mit Personal Access Token",
+    "ui_hints": "Import-Kachel Linear, Verbindungsschritt „Connect Linear“, Logo Propel linear",
+    "sources": [
+      "DD/self-hosting/manage/health-checks.md",
+      "PROPEL/other-products/linear.d.ts",
+      "https://docs.plane.so/importers/linear (WEB Verifikation)",
+      "https://plane.so/marketplace/linear (WEB Verifikation)",
+      "migration/features/22-paid-architektur-selfhosting-dienste.md P03-F22",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F25 Asana-Importer",
+    "cluster": "P09 Importer",
+    "tier": "unklar",
+    "tier_details": "ab Free in Cloud/Commercial (nicht CE): „available on Plane Cloud and on all plans of the Commercial Edition“ (WEB Verifikation); Enum kennt keinen Wert „Free“",
+    "ce_status": "fehlt",
+    "description": "Personal Access Token → Plane-Zielprojekt sowie Asana-Workspace und -Projekt wählen → Asana-Sections auf Plane-States und Prioritäten auf Plane-Prioritäten mappen → Zusammenfassung → „Confirm“; nachträgliche Synchronisation neuer/geänderter Asana-Einträge erwähnt (Mechanismus UNVERIFIZIERT); Marketplace: „projects, tasks, users, and workflows“.",
+    "data_model_hints": "ImportJob(source=asana, config{section_state_map, priority_map})",
+    "api_hints": "Asana REST-API mit Personal Access Token",
+    "ui_hints": "Assistent: Verbindung → Projektwahl → Section-/Prioritäten-Mapping → Summary → Confirm",
+    "sources": [
+      "DD/self-hosting/manage/health-checks.md",
+      "PROPEL/other-products/asana.d.ts",
+      "https://docs.plane.so/importers/asana (WEB Verifikation)",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F26 ClickUp-Importer",
+    "cluster": "P09 Importer",
+    "tier": "unklar",
+    "tier_details": "Plan nicht genannt; Importer-Übersicht „available on Plane Cloud and the Commercial Edition“ (WEB Verifikation)",
+    "ce_status": "fehlt",
+    "description": "Belegt (Korrektur, vorher „nicht belegt“): importiert Projekte, Tasks, Team-Mitglieder, Custom Fields, Anhänge und Kommentare; ClickUp Personal Access Token; Auswahl Workspace, Space und Folders; Prioritäten-Mapping per Dropdown; ohne Nutzer-Import bleibt Assignees leer.",
+    "data_model_hints": "ImportJob(source=clickup, config{workspace, space, folders, priority_map})",
+    "api_hints": "ClickUp REST-API mit Personal Access Token",
+    "ui_hints": "Import-Kachel ClickUp, Auswahl Workspace/Space/Folders, Prioritäten-Dropdowns; Logo Propel clickup",
+    "sources": [
+      "https://docs.plane.so/importers/clickup (WEB Verifikation)",
+      "migration/features/22-paid-architektur-selfhosting-dienste.md P03-F22",
+      "migration/features/26-paid-wissen-pages-wiki.md S3",
+      "PROPEL/other-products/clickup.d.ts",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F27 Notion-Importer",
+    "cluster": "P09 Importer",
+    "tier": "unklar",
+    "tier_details": "Plan nicht genannt (Cloud/Commercial)",
+    "ce_status": "fehlt",
+    "description": "Import von Notion-Seiten/Wikis in Plane Pages (Marketplace-Text, WEB Verifikation); Unterseiten als Nested Pages (P07); Changelog 2025-09-01 „Notion-/Confluence-Import“; Importformat und Schritte UNVERIFIZIERT.",
+    "data_model_hints": "ImportJob(source=notion, project_id null bei Wiki-Ziel)",
+    "api_hints": "UNVERIFIZIERT (Notion-API oder ZIP-Export)",
+    "ui_hints": "Import-Kachel Notion; Details UNVERIFIZIERT",
+    "sources": [
+      "migration/features/26-paid-wissen-pages-wiki.md",
+      "https://plane.so/changelog/2025-09-01-recurring-items-doc-imports-nested-pages",
+      "https://plane.so/marketplace/integrations (WEB Verifikation)",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P09-F28 Confluence-Importer",
+    "cluster": "P09 Importer",
+    "tier": "unklar",
+    "tier_details": "Plan nicht genannt (Cloud/Commercial)",
+    "ce_status": "fehlt",
+    "description": "Nutzer-Doku: „Only HTML exports from Confluence are supported“ – Space als HTML-ZIP exportieren, unter Workspace settings → Imports hochladen; Seiten werden Wiki-Pages mit erhaltener Unterseiten-Hierarchie. Widerspruch: Helm-Kommentar nennt entities.xml (XML-Export); für den Nachbau gilt die Nutzer-Doku. CPU-intensive Verarbeitung in Silo; airgapped-relevant (Datei-Upload).",
+    "data_model_hints": "ImportJob(source=confluence), Pages/Wiki-Hierarchie, Anhänge als Assets",
+    "api_hints": "Datei-Upload (multipart, ZIP)",
+    "ui_hints": "Import-Kachel Confluence mit ZIP-Upload",
+    "sources": [
+      "HC/values.yaml",
+      "migration/features/26-paid-wissen-pages-wiki.md",
+      "https://docs.plane.so/importers/confluence (WEB Verifikation)",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F29 CSV-Importer für Work Items",
+    "cluster": "P09 Importer",
+    "tier": "unklar",
+    "tier_details": "ab Free in Cloud/Commercial (nicht CE): „available on Plane Cloud and on all plans of the Commercial Edition“ (WEB Verifikation); Enum kennt keinen Wert „Free“",
+    "ce_status": "fehlt",
+    "description": "Belegt (Korrektur, vorher „nicht belegt“): Felder Title (Pflicht), Description, Work Item Type, State, Assignee, Priority, Created by, Start date, Due date, Modules, Cycle, Labels, Created At; Assignee/Created by als E-Mail-Adressen; Description nur als reiner Text; Changelog v3.3.0 „work item CSV imports“. Spaltenzuordnungs-Dialog UNVERIFIZIERT.",
+    "data_model_hints": "ImportJob(source=csv), Zeilenergebnisse in ImportJobItem",
+    "api_hints": "Upload multipart CSV; Ziel-Vorschlag POST /api/workspaces/{slug}/imports/csv/ (Neuentwurf)",
+    "ui_hints": "Import-Kachel CSV, eigener Spalten-Mapping-Dialog (ersetzt Flatfile, airgapped)",
+    "sources": [
+      "https://docs.plane.so/importers/csv (WEB Verifikation)",
+      "https://plane.so/changelog/release-v3-3-0-work-item-csv-imports-wiki-reordering (WEB Verifikation)",
+      "migration/features/22-paid-architektur-selfhosting-dienste.md P03-F22, O17",
+      "packages/constants/src/workspace.ts",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F30 GitHub-Importer",
+    "cluster": "P09 Importer",
+    "tier": "Pro",
+    "tier_details": "Free/One „Without custom props“ (Cloud/Commercial, nicht CE), Pro/Business/Enterprise „With custom props“ (plans.tsx Z. 950–960)",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Repo-Issues und Mitglieder importieren; Formular metadata{owner,name,repository_id,url}, data.users, config.sync; Vorschau issue_count/labels/collaborators; Legacy-Assistent belegt.",
+    "data_model_hints": "ImportJob(source=github, config.sync), external_source=github/external_id",
+    "api_hints": "CE-Altservice github.service.ts: Vorschau ?owner&repo → IGithubRepoInfo {issue_count, labels, collaborators[]}",
+    "ui_hints": "Legacy-Assistent Configure → Select Repository/Project/„Sync Issues“ → Datenübersicht → Users (Map/Invite/Do not import) → Confirm",
+    "sources": [
+      "apps/web/components/workspace/billing/comparison/plans.tsx",
+      "packages/types/src/importer/github-importer.ts",
+      "IMG/importers/github/*.png",
+      "https://docs.plane.so/importers/github",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F31 Monday.com-Importer",
+    "cluster": "P09 Importer",
+    "tier": "unklar",
+    "tier_details": "nicht belegt (nur Icon; Verifikations-Suchen ohne Monday-Treffer)",
+    "ce_status": "fehlt",
+    "description": "Existenz UNVERIFIZIERT.",
+    "data_model_hints": "keine Vorlage",
+    "api_hints": "keine Vorlage",
+    "ui_hints": "nur Propel-Logo monday",
+    "sources": [
+      "PROPEL/other-products/monday.d.ts",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P09-F32 Mitglieder-Import per CSV (Workspace und Projekt)",
+    "cluster": "P09 Importer",
+    "tier": "unklar",
+    "tier_details": "keine Plan-Angabe; Seat-Limit-Hinweis entfällt (ADR-001)",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Workspace: Modal „Import Members from CSV“, Spalten Email, Display Name, First Name, Last Name, Role (5/15/20), Ergebnis Successful/Failed + „Download errors“; Projekt: Spalten Email, Role, nur bestehende Workspace-Mitglieder, Ergebnis Added/Reactivated/Already Members/Skipped, „Download sample CSV“. CE: nur i18n (24 + 25 Schlüssel) ohne Code-Referenz und ohne Route.",
+    "data_model_hints": "kein eigenes Modell; Ergebnis-CSV als temporäres Asset",
+    "api_hints": "Vorschlag POST /api/workspaces/{slug}/members/import/ und …/projects/{id}/members/import/ (multipart), Antwort {added, reactivated, already_members, skipped, failed, errors_csv_url} – UNVERIFIZIERT",
+    "ui_hints": "Dropzone „Drop CSV file here“/„Drag & drop or click to upload“, Buttons Cancel/Import/Try Again/Close/Done, Fortschritt Uploading/Importing (workspace.members_import.*, project.members_import.*)",
+    "sources": [
+      "packages/i18n/src/locales/en/workspace.json",
+      "packages/i18n/src/locales/en/project.json",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P09-F33 Plane AI: Dienst „PI“, Workspace-Feature pi, Settings-Seite „Plane AI“",
+    "cluster": "P09 AI",
+    "tier": "Pro",
+    "tier_details": "Cloud: Credits je bezahltem Seat ab Pro (1,000/Seat/Monat laut plane.so/pro, WEB P01); Doku „included credits are assigned per paid seat“, nicht gepoolt, Overage optional, nur Cloud; Drittquellen nennen zusätzlich Free 500 (Widerspruch, UNVERIFIZIERT); Self-hosted Badge „Commercial Edition“ seit v2.4.0; Credits entfallen (ADR-001)",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Chat, Duplikaterkennung, Suche über Work Items/Pages/Projekte; eigener FastAPI-Dienst (pi-api/worker/beat/migrator) mit eigener DB, Follower-DB, OpenSearch, OAuth-Client von Plane, Live-Server-Zugriff; Workspace-Feature pi; Settings-Seite „Plane AI“ mit Illustrationen Agents/Skills/Memory. CE (korrigiert auf Stub): nur Sidebar-Key pi_chat, ungenutztes Menü-Item, i18n; der lauffähige Basis-GPT-Assistent ist in P09-F40/F45 erfasst.",
+    "data_model_hints": "WorkspaceFeature.pi (bool); Schema ai in der Haupt-DB (pgvector) statt separater plane_pi-DB",
+    "api_hints": "Original: /pi/live/, /pi/ready/, /pi/health/, /pi/api/v1/oauth/callback/, /pi/api/v1/attachments/ (Upload), /pi/api/v1/chat/stream-answer/ (SSE) (HC/templates/ingress-traefik.yaml Z. 113–133); Ziel /api/workspaces/{slug}/ai/… oder Dienst ai hinter YARP /pi",
+    "ui_hints": "Workspace Settings → Features → „Plane AI“ („See your work get smarter and faster with AI …“), Sub-Brand-Icons PlaneAi/PlaneAiAlt/PlaneAiTwo; Illustrationen ai-agents, ai-skills, memory",
+    "sources": [
+      "DD/self-hosting/govern/plane-ai/configure-plane-ai.md",
+      "DD/api-reference/workspace-features/overview.md",
+      "packages/i18n/src/locales/en/workspace-settings.json",
+      "HC/templates/config-secrets/pi-api-env.yaml",
+      "apps/api/plane/app/views/external/base.py",
+      "https://docs.plane.so/ai/plane-ai-credits (WEB Verifikation)",
+      "HC/templates/ingress-traefik.yaml",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P09-F34 Pi-Chat („Plane AI“-Chat)",
+    "cluster": "P09 AI",
+    "tier": "Pro",
+    "tier_details": "wie Plane AI",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Sidebar „Plane AI“ → /{slug}/pi-chat/ (Admin/Member/Guest), eigener App-Bereich (isAiPath); Key in user-menu.tsx „pi-chat“, im Static-Array von sidebar-item.tsx „pi_chat“ (Schreibweise der EE UNVERIFIZIERT); Modellwahl (GPT-5.4, GPT-5.2, Claude Sonnet 4.5/4.6, Custom LLM), Spracheingabe (Groq STT), Dateianhänge, @-Mentions im Chat-Editor; Verlauf/Feedback UNVERIFIZIERT. CE: Menü-Item ungenutzt, keine Route.",
+    "data_model_hints": "AiChat, AiMessage, AiAttachment",
+    "api_hints": "Original belegt: /pi/api/v1/chat/stream-answer/ (SSE), /pi/api/v1/attachments/; Ziel: /api/workspaces/{slug}/ai/chats/…, Messages als SSE-Stream, /ai/models/, /ai/transcriptions/",
+    "ui_hints": "PiChatLogo, PlaneAi-Sub-Brands, NewChat, Mic/Voice-Icons",
+    "sources": [
+      "apps/web/components/workspace/sidebar/user-menu.tsx",
+      "apps/web/components/workspace/sidebar/sidebar-item.tsx",
+      "apps/web/hooks/use-workspace-paths.ts",
+      "packages/i18n/src/locales/en/navigation.json",
+      "DD/self-hosting/govern/plane-ai/configure-plane-ai.md",
+      "HC/templates/ingress-traefik.yaml",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F35 Plane AI: Connectors (MCP)",
+    "cluster": "P09 AI",
+    "tier": "Pro",
+    "tier_details": "wie Plane AI (P09-F33); keine eigene Plan-Angabe",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "MCP-Connectoren für den Plane-AI-Chat: Einrichtung unter Workspace Settings → Integrations → Connectors, Authentifizierung je Nutzer (jedes Mitglied verbindet sein eigenes Konto), Beispiele GitHub, Sentry, Granola; Tour-Text „Link GitHub, Slack to track PRs and summarize chats directly in Plane AI.“; Changelog v2.5.0 „MCP connectors“. Bedeutung des Settings-Eintrags „Connections“ offen.",
+    "data_model_hints": "AiConnector(workspace_id, user_id, provider, transport, server_url, verschlüsselte Tokens, enabled_tools[])",
+    "api_hints": "MCP-Client (C#-SDK ModelContextProtocol); Verwaltungs-API Neuentwurf",
+    "ui_hints": "Integrations → Connectors; Logos github, sentry, granola; Produkt-Tour mcp_connectors",
+    "sources": [
+      "packages/i18n/src/locales/en/tour.json",
+      "https://docs.plane.so/ai/mcp-connectors (WEB Verifikation)",
+      "https://plane.so/changelog/release-v2-5-0-new-widgets-mcp-connectors-plane-ai-for-self-hosted (WEB Verifikation)",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F36 Plane AI: Skills",
+    "cluster": "P09 AI",
+    "tier": "Pro",
+    "tier_details": "wie Plane AI („available when Plane AI is enabled for your workspace“)",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Gespeicherte, wiederverwendbare Anweisungen, im Plane-AI-Chat per Slash-Command ausgeführt; Scopes personal, workspace (von Workspace-Admins angelegt, für alle Mitglieder) und system (eingebaut, nicht editier-/löschbar); verfügbar, sobald Plane AI aktiv ist; auf Mobile als Auswahl (Changelog v2.4.0). Verwaltungsort UNVERIFIZIERT.",
+    "data_model_hints": "AiSkill(id, workspace_id, user_id nullable, scope personal|workspace|system, name, slash_command, instructions, is_editable)",
+    "api_hints": "Neuentwurf /api/workspaces/{slug}/ai/skills/",
+    "ui_hints": "Illustration ai-skills; Slash-Menü im Chat-Eingabefeld",
+    "sources": [
+      "packages/blocks/src/empty-state/assets/horizontal-stack/ai-skills.tsx",
+      "https://plane.so/changelog/release-v3-1-0-audit-logs-skills-in-plane-ai-dashboards-and-more",
+      "https://docs.plane.so/ai/ai-skills (WEB Verifikation)",
+      "https://plane.so/changelog/release-v2-4-0-ai-autopilot-skills-catch-up-widget (WEB Verifikation)",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F37 Plane AI: Memory",
+    "cluster": "P09 AI",
+    "tier": "Pro",
+    "tier_details": "wie Plane AI (UNVERIFIZIERT)",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Nur Illustration memory, Icons MemoryOutline/Filled und Changelog-Titel „AI memory“ belegt; Verifikations-Suche ohne Doku-Treffer; Agents-Blog nennt „memory that carries context between runs“ für Agents. Funktion UNVERIFIZIERT.",
+    "data_model_hints": "Vorschlag AiMemory(workspace_id, user_id nullable, content, source_chat_id, created_at)",
+    "api_hints": "Neuentwurf",
+    "ui_hints": "Illustration memory; Icons MemoryOutline/Filled",
+    "sources": [
+      "packages/blocks/src/empty-state/assets/horizontal-stack/memory.tsx",
+      "https://plane.so/changelog/release-v3-2-0-workspace-governance-ai-memory-pii-scanning-and-more",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P09-F38 Plane AI: eingebaute Agents",
+    "cluster": "P09 AI",
+    "tier": "Pro",
+    "tier_details": "wie Plane AI; Beta; Plan nicht genannt",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Agents (Beta) mit Playbook, Skills, über MCP angebundenen Tools, Scope (Projekte), Triggern (Zuweisung, Erwähnung, Work-Item-Änderung, Zeitplan) und Memory zwischen Runs; Lebenszyklus created → completed/failed; Admins konfigurieren, Mitglieder erwähnen/weisen zu (Blog, WEB Verifikation). Konfigurations-UI UNVERIFIZIERT.",
+    "data_model_hints": "AiAgent als OAuth-App/Installation mit Bot-User (P09-F47/F49) plus playbook, skill_ids, tool/connector_ids, project_scope_ids, triggers jsonb; Runs über AgentRun (P09-F50)",
+    "api_hints": "Agent Runs/Activities wie P09-F50; Agent-Verwaltung Neuentwurf",
+    "ui_hints": "Illustration ai-agents; Icons AgentOutline/Filled, AgentAltOutline/Filled; Mention-Picker",
+    "sources": [
+      "packages/blocks/src/empty-state/assets/horizontal-stack/ai-agents.tsx",
+      "packages/i18n/src/locales/en/workspace-settings.json",
+      "https://plane.so/blog/agents-are-now-live-in-plane (WEB Verifikation)",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F39 AI-Assistent im Editor (Ask Pi, Selection-Aktionen, AI-Block, Page-Proposals)",
+    "cluster": "P09 AI",
+    "tier": "Pro",
+    "tier_details": "Selection-Aktionen und Seitenzusammenfassung Pro (Dok. 26 P07-27); AI-Block /ai und Prompt/Proposals Business (Dok. 26 P07-28/P07-29, Doku/Guide gegenüber älterem Blog „Pro+“ bevorzugt)",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Spezifikation in Dok. 26 §3.27–3.29. CE (korrigiert auf Stub): Menü EditorAIMenu mit Aufgabe ASK_ANYTHING „Ask Pi“ und Tönen ist in editor-body.tsx eingebunden, die Editor-Extension „ai“ ist aber für alle Editoren deaktiviert und POST /api/workspaces/{slug}/rephrase-grammar/ hat keine Backend-Route – nicht lauffähig.",
+    "data_model_hints": "keine eigene Entität (AI-Block-Inhalte im Page-Dokument, Dok. 26)",
+    "api_hints": "POST /api/workspaces/{slug}/rephrase-grammar/ {casual_score?, formal_score?, task, text_input} → {response} (Route fehlt im CE)",
+    "ui_hints": "EditorAIMenu (Breite 210 px → 700 px), Töne Default/„💼 Professional“/„😃 Casual“, Icon AiStar1Outline; AI-Block-Texte editor.json ai_block.*",
+    "sources": [
+      "migration/features/26-paid-wissen-pages-wiki.md",
+      "apps/web/components/pages/editor/ai/menu.tsx",
+      "apps/web/hooks/use-editor-flagging.ts",
+      "packages/i18n/src/locales/en/editor.json",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F40 AI-Work-Creation (Text → Work Items) und Beschreibungs-Generierung",
+    "cluster": "P09 AI",
+    "tier": "unklar",
+    "tier_details": "nur Changelog-Titel",
+    "ce_status": "teilweise im CE",
+    "description": "CE: „I'm feeling lucky“ und GPT-Popover im Work-Item-Modal; EE: Text→Work Items (UNVERIFIZIERT).",
+    "data_model_hints": "keine neue Entität (Work Items über reguläre Domänen-Services)",
+    "api_hints": "CE: POST /api/workspaces/{slug}/ai-assistant/ und …/projects/{project_id}/ai-assistant/ (Body task, prompt; Antwort response, response_html); EE-Text→Work-Items-API UNVERIFIZIERT",
+    "ui_hints": "Work-Item-Modal: Button „I'm feeling lucky“ (bei has_llm_configured), „Generating response“, Button „AI“ → GptAssistantPopover („Use this response“)",
+    "sources": [
+      "apps/web/components/issues/issue-modal/components/description-editor.tsx",
+      "apps/web/components/core/modals/gpt-assistant-popover.tsx",
+      "https://plane.so/changelog/release-v-2-1-0-text-to-work-items-video-attachments-and-block-links",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P09-F41 AI-Suche / Semantic Search (Embeddings, Vektorsuche)",
+    "cluster": "P09 AI",
+    "tier": "unklar",
+    "tier_details": "Commercial Edition, optional; ohne Embedding-Modell BM25",
+    "ce_status": "fehlt",
+    "description": "Vektorsuche, semantisches Retrieval über Work Items/Pages; 10 unterstützte Embedding-Modelle (Cohere/OpenAI/Bedrock, 1024–4096 Dim.), Reindex bei Dimensionswechsel.",
+    "data_model_hints": "ai.embeddings mit vector(dim), HNSW, hybride Suche mit tsvector (pgvector, ADR-004)",
+    "api_hints": "keine öffentliche API; Reindex über manage_search_index (Original); Ziel: interne Retrieval-Services",
+    "ui_hints": "Retrieval im Chat und für Duplikaterkennung; globale semantische Suche UNVERIFIZIERT",
+    "sources": [
+      "DD/self-hosting/govern/plane-ai/configure-embedding-model.md",
+      "DD/self-hosting/govern/environment-variables.md",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F42 Duplicate Detection",
+    "cluster": "P09 AI",
+    "tier": "unklar",
+    "tier_details": "Commercial Edition, benötigt Embedding-Modell",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Semantisch ähnliche Work Items beim Erstellen von Work Items und Intake-Requests erkennen (entprellt aus Titel/Beschreibung), Fundhinweis „Duplicate work item(s) found“ öffnet ein Duplikat-Modal; benötigt Embedding-Modell. CE-Stubs: Typen de-dupe.ts, No-op-Hook useDebouncedDuplicateIssues, Modal-State in Work-Item- und Intake-Create-Modal, i18n ohne Referenz. Schwellwert/Modal-Aktionen UNVERIFIZIERT.",
+    "data_model_hints": "keine neue Entität (ai.embeddings + IssueRelation relation_type=duplicate)",
+    "api_hints": "Request TDuplicateIssuePayload {title, workspace_id, issue_id?, project_id?, description_stripped?} → TDuplicateIssueResponse {dupes: TDeDupeIssue[]}; Endpunkt im CE nicht benannt",
+    "ui_hints": "Hinweis „Duplicate work item found“/„Duplicate work items found“ (common.json), Duplikat-Modal im Work-Item- und Intake-Create-Modal",
+    "sources": [
+      "DD/self-hosting/govern/plane-ai/configure-plane-ai.md",
+      "DD/self-hosting/govern/plane-ai/configure-embedding-model.md",
+      "packages/types/src/de-dupe.ts",
+      "apps/web/hooks/use-debounced-duplicate-issues.tsx",
+      "apps/web/components/issues/issue-modal/base.tsx",
+      "apps/web/components/inbox/modals/create-modal/modal.tsx",
+      "packages/i18n/src/locales/en/common.json",
+      "migration/features/20-paid-spuren-im-repo.md PF-104",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F43 AI-Aktionen Summary/Catch-up/Copy-as-prompt/AI-Filter",
+    "cluster": "P09 AI",
+    "tier": "unklar",
+    "tier_details": "keine Plan-Angabe; Text to PQL laut Dok. 24 Enterprise Grid",
+    "ce_status": "fehlt",
+    "description": "Icons AiSummary, Catchup, CopyAsPrompt, AiFilter, Ask (nur externes Paket @makeplane/propel, kein CE-Code). Belegt: Catch Up auf Mobile (Widget und In-App-Liste, Wischen rechts = gelesen, links = ungelesen; Changelog Mobile v2.4.0) und eine Work-Item-Sofortzusammenfassung („comments, activity, and linked items condensed into a single status update“, plane.so/issues). AI-Filter vgl. „Text to PQL“ (Dok. 24 P05-35). Copy as prompt, Ask: UNVERIFIZIERT.",
+    "data_model_hints": "Catch Up: Lesestatus je Update/Nutzer (Vorschlag analog Inbox-Read-State); übrige keine",
+    "api_hints": "Neuentwurf",
+    "ui_hints": "Icons AiSummaryOutline/Filled, CatchupOutline/Filled, CopyAsPromptOutline/Filled, AiFilterOutline/Filled, AskOutline/Filled",
+    "sources": [
+      "PROPEL/index.d.ts",
+      "https://plane.so/changelog/release-v2-4-0-ai-autopilot-skills-catch-up-widget (WEB Verifikation)",
+      "https://plane.so/issues (WEB Verifikation)",
+      "migration/features/24-paid-planung-insights-teams.md P05-35",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P09-F44 Applets / Artifacts (AI-generierte HTML-Dashboards)",
+    "cluster": "P09 AI",
+    "tier": "unklar",
+    "tier_details": "Plan-Feature „Applets“ (sonst 402 payment_required), nur Workspace-Admin/Owner (403, auch Lesen); Plan nicht genannt",
+    "ce_status": "fehlt",
+    "description": "Versioniertes HTML-Dokument je Workspace für von Plane Intelligence erzeugte Dashboards; data_mode snapshot (Default) oder live; Publish erzeugt Anker, der der aktuellen Version folgt; ausdrücklich „POC surface“ ohne List-, Delete- und Unpublish-Endpunkt (per direktem Abruf verifiziert). Abgrenzung: Page-Block „HTML artifact“ (Dok. 26 P07-37) ist ein anderes Feature.",
+    "data_model_hints": "Artifact(id, workspace_id, project_id, name ≤255, description ≤2000, data_mode snapshot|live, current_version, is_published, anchor unique), ArtifactVersion(artifact_id, version, html)",
+    "api_hints": "POST/GET /api/v2/workspaces/{slug}/artifacts/…, PATCH …/update/, POST …/publish/",
+    "ui_hints": "nicht belegt (vermutlich Erzeugung im Plane-AI-Chat, Anzeige als Dashboard/öffentlicher Link); HTML nur in sandboxed iframe",
+    "sources": [
+      "https://raw.githubusercontent.com/makeplane/developer-docs/docs/api-reference-v2/docs/api-reference/v2/artifacts/overview.md",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P09-F45 LLM-Provider- und Embedding-Konfiguration",
+    "cluster": "P09 AI",
+    "tier": "unklar",
+    "tier_details": "Commercial Edition (Env/Helm)",
+    "ce_status": "teilweise im CE",
+    "description": "OpenAI/Claude/Groq/Cohere-Keys + Base-URLs, ein Custom LLM (OpenAI-kompatibel oder Bedrock inkl. Inference Profile), Embedding-Variablen; CE nur LLM_API_KEY/LLM_PROVIDER/LLM_MODEL im God Mode.",
+    "data_model_hints": "Instanz-Konfiguration AI (Provider, Modelle, Embedding, STT, Budget) verschlüsselt in der DB, Env als Initialwerte",
+    "api_hints": "Original Env: OPENAI_*, CLAUDE_*, GROQ_*, COHERE_*, CUSTOM_LLM_* (ENABLED, PROVIDER openai|bedrock, MODEL_KEY, BASE_URL, API_KEY, NAME, DESCRIPTION, MAX_TOKENS, AWS_REGION), EMBEDDING_MODEL, OPENSEARCH_EMBEDDING_DIMENSION, BR_AWS_*; CE: LLM_API_KEY, LLM_PROVIDER, LLM_MODEL",
+    "ui_hints": "CE God-Mode-Seite „Artificial Intelligence Settings“ (Felder „LLM Model“, „API key“), in der Commercial-Navigation „(deprecated)“; Ziel: God-Mode-Seite „Plane AI“",
+    "sources": [
+      "DD/self-hosting/govern/plane-ai/configure-plane-ai.md",
+      "DD/self-hosting/govern/environment-variables.md",
+      "HC/values.yaml",
+      "apps/admin/app/(all)/(dashboard)/ai/form.tsx",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P09-F46 AI-Usage, Credits, Token-Budget",
+    "cluster": "P09 AI",
+    "tier": "Pro",
+    "tier_details": "Cloud-Credits ab Pro je bezahltem Seat (entfällt ADR-001); Commercial-Schalter AI_USAGE_ENFORCEMENT_ENABLED (Default true), AI_USAGE_AGENT_MAX_TOKENS_BUDGET (HC/values.yaml Z. 1401–1402)",
+    "ce_status": "fehlt",
+    "description": "Credit-Verbrauch und Usage-Ansicht (Cloud); Token-Budget je Agent-Lauf.",
+    "data_model_hints": "Vorschlag AiUsage(workspace_id, user_id, model_key, input_tokens, output_tokens, agent_run_id, created_at)",
+    "api_hints": "keine öffentliche API belegt",
+    "ui_hints": "Ziel: Nutzungsübersicht im God Mode ohne Credits/Upsell",
+    "sources": [
+      "HC/values.yaml",
+      "https://docs.plane.so/ai/ai-usage",
+      "https://plane.so/pro",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F47 OAuth-App-Plattform (Build your own app, Consent, Tokens, Scopes, Installationen)",
+    "cluster": "P09 Plattform",
+    "tier": "unklar",
+    "tier_details": "Beta; „Plane Cloud and Plane Commercial Edition; Community Edition does not include it“; Plan nicht dokumentiert",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "App-Formular (20+ Felder), Client-ID/Secret mit CSV-Export und Regenerate, Consent-Screen, Bot-Token (client_credentials + app_installation_id, pln_bot_, 86400 s) und User-Token (authorization_code + refresh), Installationsdetails mit app_bot.",
+    "data_model_hints": "OAuthApplication, AppInstallation, OpenIddict-Tokens",
+    "api_hints": "/auth/o/authorize-app/, /auth/o/token/, /auth/o/app-installation/?id=",
+    "ui_hints": "Workspace Settings → Integrations → „Build your own“; Bereich Applications mit „Installed apps“, „All apps“, „Internal apps“, „Your apps“, „Third-party apps“; App-Formular, Credentials-Dialog mit „Export as CSV“, „Regenerate client secret“, Consent-Screen (workspace_settings.settings.applications.*)",
+    "sources": [
+      "DD/dev-tools/build-plane-app/*.md",
+      "DD/dev-tools/mcp-server-self-host.md",
+      "packages/i18n/src/locales/en/workspace-settings.json",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P09-F48 App-Marketplace",
+    "cluster": "P09 Plattform",
+    "tier": "unklar",
+    "tier_details": "Supported-Plans-Filter entfällt",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Listing mit Kategorien, Langbeschreibung, Screenshots, Video, Privacy/Terms/Support, Review-Status; API-Route /marketplace/.",
+    "data_model_hints": "OAuthApplication-Marketplace-Felder (categories[], long description, attachments, video_url, privacy/terms/support URLs, is_verified/is_published)",
+    "api_hints": "Ingress /marketplace/ → API (HC/templates/ingress-nginx.yaml Z. 92–94); Management-Command reset_marketplace_app_secrets",
+    "ui_hints": "Kategorien, Langbeschreibung „for marketplace“, Screenshots, Review-Hinweis „This app hasn't been reviewed or approved by Plane yet.“; Marketplace seit Oktober 2025 (WEB Verifikation)",
+    "sources": [
+      "packages/i18n/src/locales/en/workspace-settings.json",
+      "HC/templates/ingress-nginx.yaml",
+      "https://plane.so/blog/introducing-the-plane-marketplace (WEB Verifikation)",
+      "https://plane.so/marketplace/integrations (WEB Verifikation)",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F49 App-Mentions / Bot-User",
+    "cluster": "P09 Plattform",
+    "tier": "unklar",
+    "tier_details": "Agents zählen nicht als abrechenbare Nutzer",
+    "ce_status": "teilweise im CE",
+    "description": "„Enable App Mentions“: App erwähn- und zuweisbar; Bot-User je Installation; CE hat User.is_bot/bot_type und filtert Bots aus Mitgliederlisten.",
+    "data_model_hints": "User.is_bot + neuer bot_type für App-Bots; AppInstallation.bot_user_id",
+    "api_hints": "Installationsdetails GET /auth/o/app-installation/?id= → app_bot",
+    "ui_hints": "Option „Enable App Mentions“; Mention-Picker und Assignee-Dropdown schließen Bots erwähnbarer Apps ein; CE zeigt Bots als „{first_name} Bot“",
+    "sources": [
+      "packages/i18n/src/locales/en/workspace-settings.json",
+      "DD/dev-tools/agents/overview.md",
+      "apps/api/plane/db/models/user.py",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P09-F50 Agents-Plattform (Agent Runs, Activities, Signals)",
+    "cluster": "P09 Plattform",
+    "tier": "unklar",
+    "tier_details": "Beta; Commercial/Cloud",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "@-Mention im Kommentar erzeugt Agent Run; Status created/in_progress/awaiting/completed/stopping/stopped/failed/stale; Activities prompt/thought/action/response/elicitation/error; Signals continue/stop/auth_request/select; Webhooks agent_run_create/agent_run_user_prompt.",
+    "data_model_hints": "AgentRun(agent_user, comment, source_comment, creator, status, type comment_thread, started_at, ended_at, stopped_at, stopped_by, external_link, error_metadata, issue, project, workspace), AgentRunActivity(agent_run, type, content, content_metadata, ephemeral, signal, signal_metadata, comment, actor)",
+    "api_hints": "POST/GET /api/v1/workspaces/{slug}/runs/, …/runs/{id}/activities/",
+    "ui_hints": "Agent im Mention-Picker, Run-Verlauf im Kommentar-Thread, ephemere Statuszeile, Stop-Aktion, Auswahl bei signal select, Link-Button bei auth_request; Gestaltung UNVERIFIZIERT",
+    "sources": [
+      "DD/dev-tools/agents/*.md",
+      "https://raw.githubusercontent.com/makeplane/plane-node-sdk/main/src/models/AgentRun.ts",
+      "HC/values.yaml",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P09-F51 Webhooks v2",
+    "cluster": "P09 Plattform",
+    "tier": "unklar",
+    "tier_details": "keine Plan-Angabe (Screenshot aus Business-Workspace)",
+    "ce_status": "teilweise im CE",
+    "description": "Titel, 39 Dot-Events, V1-Scopes deprecated, Work-Item-Filter Basic/PQL, Payload mit delivery_id/event_id/previous_attributes, Custom-Header (reservierte Liste), form-urlencoded, Delivery-Statistik, API v2 webhooks/webhook-logs.",
+    "data_model_hints": "Webhook + name, version v1|v2, scopes text[], filter_pql, filter_basic jsonb, content_type, custom_headers jsonb; WebhookDelivery(event_id, delivery_id, duration_ms, status_text, error_message)",
+    "api_hints": "API v2: GET/POST /api/v2/workspaces/{slug}/webhooks/, GET/PATCH/DELETE …/{pk}/, POST …/{pk}/regenerate/, GET /api/v2/workspaces/{slug}/webhook-logs/{webhook_id}/; Payload v2 {version, delivery_id, event_id, entity_id, entity_type, event, webhook_id, workspace_id, data, previous_attributes}",
+    "ui_hints": "Formular „Create webhook“ mit „Webhook title“, „Payload URL“, Blöcke „V1 scopes (deprecated)“/„V2 scopes“, „Advanced configurations“ (Basic/PQL-Filter); Delivery-Kennzahlen Total/Successful/Failed/Success rate (Screenshot IMG/webhooks/create-webhook.webp)",
+    "sources": [
+      "DD/dev-tools/intro-webhooks.md",
+      "IMG/webhooks/create-webhook.webp",
+      "https://raw.githubusercontent.com/makeplane/developer-docs/docs/api-reference-v2/docs/api-reference/v2/webhooks/overview.md",
+      "apps/api/plane/db/models/webhook.py",
+      "apps/api/plane/bgtasks/webhook_task.py",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P09-F52 Workspace-Access-Tokens",
+    "cluster": "P09 Plattform",
+    "tier": "unklar",
+    "tier_details": "keine Plan-Angabe",
+    "ce_status": "teilweise im CE",
+    "description": "Workspace Settings → Developer → „Access Tokens“: workspace-gebundene Tokens mit Rolle („minimum role needed for automations“); Texte „Add access token“, „Never expires“, Löschdialog. CE (korrigiert auf teilweise): lauffähige persönliche Tokens (CRUD users/api-tokens/, X-Api-Key, gleiche UI-Texte), APIToken.workspace-FK und user_type Bot vorhanden; die Workspace-Route leitet auf Profil-Tokens um. Es fehlen Workspace-Bindung, Rolle und Settings-Seite.",
+    "data_model_hints": "APIToken mit workspace_id + Bot-User + role (5/15/20) + optional expires_at",
+    "api_hints": "Header X-Api-Key; API v2 führt Workspace-Tokens als eigene Rate-Limit-Klasse (Dok. 21); Verwaltungs-API Neuentwurf",
+    "ui_hints": "workspace_settings.settings.api_tokens.*, settings_empty_state.workspace_tokens.*, workspace_settings.empty_state.api_tokens.*; Illustration token",
+    "sources": [
+      "packages/i18n/src/locales/en/workspace-settings.json",
+      "packages/i18n/src/locales/en/empty-state.json",
+      "DD/dev-tools/mcp-server.md",
+      "apps/api/plane/db/models/api.py",
+      "apps/api/plane/app/urls/api.py",
+      "apps/web/components/api-token/delete-token-modal.tsx",
+      "apps/web/app/routes/core.ts",
+      "migration/features/21-paid-api-referenz-developer-docs.md",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F53 MCP-Server",
+    "cluster": "P09 Plattform",
+    "tier": "unklar",
+    "tier_details": "OAuth-Transport nur Cloud/Commercial; CE nur stdio + PAT; Tool-Gates für work_log, workitem_type, workitem_property",
+    "ce_status": "teilweise im CE",
+    "description": "28 Tools/183 Aktionen, Transporte Streamable HTTP (OAuth/PAT), stdio, SSE (deprecated); Helm-Prefix /mcp mit Well-known-Routen.",
+    "data_model_hints": "Token-Ablage Redis/Valkey im Original; Ziel ohne eigenes Schema (OAuth über OpenIddict, F47)",
+    "api_hints": "Streamable HTTP …/http/mcp (OAuth), …/http/api-key/mcp (Authorization: Bearer <PAT>, x-workspace-slug), stdio (PLANE_API_KEY, PLANE_WORKSPACE_SLUG, PLANE_BASE_URL), SSE deprecated; Well-known /.well-known/oauth-protected-resource/mcp, /.well-known/oauth-authorization-server/mcp",
+    "ui_hints": "keine Plane-UI; Client-Konfiguration in externen Tools",
+    "sources": [
+      "DD/dev-tools/mcp-server.md",
+      "DD/dev-tools/mcp-server-self-host.md",
+      "DD/dev-tools/mcp-server-tools.md",
+      "HC/values.yaml",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P09-F54 Plane Runner",
+    "cluster": "P09 Plattform",
+    "tier": "Enterprise Grid",
+    "tier_details": "nur Enterprise Grid (Dok. 25 W24/W25)",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Skripte in Sandbox (Automation/Transition/Cron), Limits 10 s/5 s/128 MB; Details in Dok. 25 F19.",
+    "data_model_hints": "siehe Dok. 25 F19 (Scripts, Functions, Variablen)",
+    "api_hints": "Health GET /api/workspaces/{slug}/runnerctl/health/ → {is_available}; Env EXECUTION_TIMEOUT_MS 10000, INIT_TIMEOUT_MS 5000, ISOLATE_MEMORY_MB 128",
+    "ui_hints": "Workspace Settings → „Plane Runner“ („Scripts“, „New Script“); Illustrationen runner-functions, runner-scripts, script; Icons ScriptsOutline, FunctionOutline, VariableOutline, SandboxOutline",
+    "sources": [
+      "migration/features/25-paid-workflows-automation-templates.md",
+      "packages/i18n/src/locales/en/workspace-settings.json",
+      "HC/templates/config-secrets/runner-env.yaml",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F55 Plane Compose",
+    "cluster": "P09 Plattform",
+    "tier": "unklar",
+    "tier_details": "CLI ohne eigenen Plan; Workspace-WIT „(Enterprise)“",
+    "ce_status": "fehlt",
+    "description": "Project-as-code-CLI (YAML für Schema/Work Items, push/pull/clone/diff, ws-Befehle, Exit-Codes 0/1/2); externer Client.",
+    "data_model_hints": "keine Plattform-Entität (CLI-Zustand lokal .plane/state.json)",
+    "api_hints": "nutzt öffentliche API v1/v2 (Work-Item-Types, Properties, Workflows, Features, Milestones, Templates); genaue Endpunktliste UNVERIFIZIERT",
+    "ui_hints": "keine (CLI)",
+    "sources": [
+      "DD/dev-tools/plane-compose.md",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F56 Offizielle SDKs (Node, Python)",
+    "cluster": "P09 Plattform",
+    "tier": "unklar",
+    "tier_details": "kein Plan",
+    "ce_status": "fehlt",
+    "description": "@makeplane/plane-node-sdk 0.3.1, plane-sdk; OAuth-Helfer; /api/v1, X-Api-Key oder Bearer.",
+    "data_model_hints": "keine",
+    "api_hints": "Basis /api/v1, X-Api-Key oder Authorization: Bearer; OAuth-Helfer getAuthorizationUrl, getBotToken, exchangeCodeForToken, getRefreshToken",
+    "ui_hints": "keine",
+    "sources": [
+      "DD/dev-tools/build-plane-app/sdks.md",
+      "https://github.com/makeplane/plane-node-sdk",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P09-F57 Desktop-App",
+    "cluster": "P09 Plattform",
+    "tier": "unklar",
+    "tier_details": "nicht in Plan-Matrix; Self-managed ab Plane Commercial v3.0.0 (WEB Verifikation); Plan nicht genannt",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Eigene App für macOS (ab 12) und 64-bit-Linux (Windows laut Download-Seite „Coming soon“); lädt die vollständige Web-App mit Browser-artigen Tabs, mehreren Fenstern, Badge für ungelesene Benachrichtigungen, Deep Links und Auto-Update; beim ersten Start Wahl Cloud oder Self-managed; Self-managed ab Commercial v3.0.0. CE: Device.DeviceType.DESKTOP, reservierter Slug desktop.",
+    "data_model_hints": "Device(device_type=DESKTOP), DeviceSession",
+    "api_hints": "keine eigene API belegt (Web-App im Wrapper)",
+    "ui_hints": "Wrapper um die Angular-SPA (Tauri/Electron) mit Tabs, Mehrfenstern, Badge, Deep Links",
+    "sources": [
+      "https://plane.so/changelog/release-v3-0-0-desktop-app-smarter-workflows-powerful-plane-ai-upgrades",
+      "apps/api/plane/db/models/device.py",
+      "https://docs.plane.so/devices/desktop (WEB Verifikation)",
+      "https://plane.so/download (WEB Verifikation)",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F58 Mobile-Apps (iOS/Android)",
+    "cluster": "P09 Plattform",
+    "tier": "unklar",
+    "tier_details": "nicht in Plan-Matrix; Cloud (Free-Workspace genügt) und Self-hosted „all plans of the Commercial Edition“ ab v1.5.0 (WEB Verifikation); Push-Benachrichtigungen nur Plane Cloud",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "iOS 13+/Android 10+; keine Registrierung in der App; Benachrichtigungen zu Zuweisungen, Erwähnungen, Kommentaren; Projekte, Cycles, Modules; Plane AI mit Skills und Autopilot, Catch-Up-Widget (v2.4.0), Homescreen-Widgets, MCP-Connectoren, Plane AI für Self-hosted (v2.5.0). CE (korrigiert auf Stub): Device/DeviceSession und Mobile-Profilfelder ungenutzt, i18n mobile_details ohne Referenz.",
+    "data_model_hints": "Device(device_type ANDROID|IOS, device_id, push_token, is_active), DeviceSession; Profil is_mobile_onboarded, mobile_onboarding_step, mobile_timezone_auto_set",
+    "api_hints": "Geräte-/Push-Token-Registrierung UNVERIFIZIERT; mögliche Nutzung der Commercial-Route /graphql/ (Dok. 22 P03-F40) UNVERIFIZIERT",
+    "ui_hints": "native Apps nicht im Repo; SSO-Setup-Abschnitt „Mobile details“ (auth.json)",
+    "sources": [
+      "apps/api/plane/db/models/device.py",
+      "apps/api/plane/db/models/user.py",
+      "packages/i18n/src/locales/en/auth.json",
+      "https://docs.plane.so/devices/mobile (WEB Verifikation)",
+      "https://plane.so/changelog/mobile (WEB Verifikation)",
+      "https://apps.apple.com/in/app/plane-projects-wiki-ai/id6657986465 (WEB Verifikation)",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F59 draw.io-Integration (Diagramme/Boards in Pages; Aktivierung über Integrations) – Querverweis",
+    "cluster": "P09 Integrationen",
+    "tier": "Business",
+    "tier_details": "Dok. 26 P07-21 (Verifikation 2): Draw.io unter „Advanced Page blocks“ = Business; Widerspruch Dok. 22 P03-F31 „Pro“ (ältere, nicht reproduzierbare Angabe) – P07 als spezifischere, aktuellere Quelle gewählt",
+    "ce_status": "fehlt",
+    "description": "Native Integration laut Nutzer-Doku („Embed Draw.io diagrams directly in Plane pages …“); Aktivierung durch Workspace-Admin unter Workspace Settings → Integrations → draw.io → „Configure“; Editor-Blöcke „Draw.io diagram“/„Draw.io board“ (/draw) in Dok. 26 P07-21, Infrastruktur (makeplane/drawio:v2.5.0, /drawio/, DRAWIO_EMBED_URL) in Dok. 22 P03-F31. CE: nur CSS-Selektor .editor-drawio-component.",
+    "data_model_hints": "siehe Dok. 26 P07-21 (Diagramm-XML + Vorschau als Asset)",
+    "api_hints": "DRAWIO_EMBED_URL; postMessage-Embed-Protokoll (Dok. 26)",
+    "ui_hints": "Integrationskarte draw.io mit „Configure“; Editor-Blöcke siehe Dok. 26",
+    "sources": [
+      "https://docs.plane.so/integrations (WEB Verifikation)",
+      "migration/features/26-paid-wissen-pages-wiki.md P07-21",
+      "migration/features/22-paid-architektur-selfhosting-dienste.md P03-F31",
+      "packages/editor/src/plugins/drag-handle.ts",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F60 Flatfile-Importer (CSV über Flatfile, Beta)",
+    "cluster": "P09 Importer",
+    "tier": "Cloud-only",
+    "tier_details": "„The Flatfile importer is only available on Plane Cloud“; Self-hosted soll den CSV-Importer (P09-F29) nutzen",
+    "ce_status": "fehlt",
+    "description": "Import von Work Items aus CSV über den SaaS-Dienst Flatfile mit interaktivem Feld-Mapping; Kachel in den Imports-Einstellungen mit Badge „Beta“; Spaltensatz UNVERIFIZIERT. Im Ziel durch den CSV-Importer mit eigenem Mapping-Dialog ersetzt (ADR-004, Abweichung von ADR-005 dokumentieren).",
+    "data_model_hints": "keine eigene Entität (ImportJob source=csv im Ziel)",
+    "api_hints": "SaaS Flatfile – entfällt",
+    "ui_hints": "Import-Kachel „Flatfile“ mit Badge „Beta“ (nur Cloud)",
+    "sources": [
+      "https://docs.plane.so/importers/flatfile (WEB Verifikation)",
+      "migration/features/22-paid-architektur-selfhosting-dienste.md P03-F22, O17",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P09-F61 Plane AI: Autopilot-Modus (Ausführung ohne Einzelbestätigung)",
+    "cluster": "P09 AI",
+    "tier": "Pro",
+    "tier_details": "wie Plane AI (P09-F33); belegt für Mobile (Changelog Mobile v2.4.0); keine eigene Plan-Angabe",
+    "ce_status": "fehlt",
+    "description": "„Plane AI on mobile can run trusted workflows without asking for confirmation after each step“; Rückschalten auf manuelle Prüfung möglich; Icons AutopilotGoOutline/Filled. Web-Variante und Ebene des Schalters UNVERIFIZIERT.",
+    "data_model_hints": "Nutzer-/Chat-Einstellung autopilot_enabled (Vorschlag)",
+    "api_hints": "Bestätigungspflicht für schreibende AIFunction-Aufrufe als Standard; Autopilot überspringt sie (Vorschlag)",
+    "ui_hints": "Umschalter Autopilot/manuell im Plane-AI-Chat; Icons AutopilotGoOutline/Filled",
+    "sources": [
+      "https://plane.so/changelog/release-v2-4-0-ai-autopilot-skills-catch-up-widget (WEB Verifikation)",
+      "PROPEL/index.d.ts",
+      "migration/features/28-paid-integrationen-importer-ai.md"
+    ],
+    "confidence": "niedrig"
+  }
+]

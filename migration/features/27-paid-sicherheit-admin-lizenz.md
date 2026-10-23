@@ -1,6 +1,6 @@
 # 27 – Bezahl-Features Cluster P08 „Sicherheit, Administration, Lizenz“ – IST-Analyse
 
-> **Phase:** IST-Analyse (keine Implementierung). **Stand der Recherche:** 2026-10-21.
+> **Phase:** IST-Analyse (keine Implementierung). **Stand der Recherche:** 2026-10-21; **Verifikationslauf:** 2026-10-22 (Korrekturen im Text mit „Verifikation“ markiert, Protokoll am Dokumentende).
 > **Basis-Repo:** `/home/user/plane` = Plane Community Edition v1.4.2 (AGPL-3.0). Alle Repo-Pfade sind relativ zum Repo-Root.
 > **Bindend:** `migration/architecture/00-grundsatzentscheidungen.md` (ADR-000 … ADR-006). Für diesen Cluster besonders relevant: **ADR-001** (eine Edition, alle Features immer aktiv, kein Lizenzschlüssel, keine Seats, kein Billing, keine Upgrade-CTAs), **ADR-004** (Self-hosted inkl. Airgapped, keine Pflicht-SaaS), **ADR-005** (UI 1:1, Upsell-Elemente entfallen), **ADR-003** (Greenfield, Semantik bleibt).
 > **Schwester-Dokumente (nicht duplizieren, nur verweisen):** `migration/features/20-paid-spuren-im-repo.md` (P01: Repo-Spuren, PF-54…PF-59, PF-93…PF-103), `migration/features/21-paid-api-referenz-developer-docs.md` (P02: IdP-Group-Sync-API §2.6/§4.8, Rollen-Slugs F26, Member-Remove F23), `migration/features/22-paid-architektur-selfhosting-dienste.md` (P03: Dienste, Monitor/Prime, SSO/LDAP-Architektur – in Arbeit), `migration/features/25-paid-workflows-automation-templates.md` (P06: Approval-Flows F03/F08, Workspace-Governance F07), `migration/features/26-paid-wissen-pages-wiki.md` (P07: Page-Berechtigungen), `migration/analysis/03-api-intern-workspace-projekt-user.md` (CE-Rollen/Permissions §2.4, Mitglieder-Endpunkte W-09…W-21), `migration/analysis/11-frontend-admin-space.md` (CE-God-Mode), `migration/analysis/01-gesamtarchitektur-infrastruktur.md` (Instanz-Registrierung, Telemetrie, `SKIP_ENV_VAR`).
@@ -15,7 +15,7 @@
 4. Feature-Abschnitte
    - 4.1 Authentifizierung & Identität: P08-01 SAML, P08-02 OIDC, P08-03 Workspace-Identity/verifizierte Domains, P08-04 LDAP, P08-05 IdP Group Sync, P08-06 SCIM
    - 4.2 Kontoschutz: P08-07 Zwei-Faktor-Authentifizierung, P08-08 Passkeys, P08-09 Password Policy, P08-10 Domain Security
-   - 4.3 Rollen & Zugriff: P08-11 Pre-defined Roles, P08-12 RBAC (Custom Roles), P08-13 GAC, P08-14 Guests, P08-15 Approvals
+   - 4.3 Rollen & Zugriff: P08-11 System-Rollen/RBAC, P08-12 Custom Roles, P08-13 GAC (Permission Schemes, effektive Berechtigungen), P08-14 Guests, P08-15 Approvals
    - 4.4 Administration & Nachvollziehbarkeit: P08-16 Admin Interface, P08-17 Workspace Activity Logs, P08-18 API-enabled Audit Logs, P08-27 God-Mode User Management, P08-28 Session-Expiry, P08-29 Argus PII-Scanner
    - 4.5 Lizenz, Seats, Pläne: P08-19 Workspace-Lizenz & Billing-Seite, P08-20 Enterprise-Grid-Instanzlizenz, P08-21 Airgapped-Lizenzdatei, P08-22 Prime/Monitor, P08-23 Self-hosted-Pläne & Deployment-Varianten (One, Airgapped, Private/Managed, FIPS), P08-24 Member-Limits & Seat-Berechnung, P08-25 Storage-Limits, P08-26 Support/SLA
    - 4.6 Querbezüge: P08-30 IdP-Profil-Sync (CE), P08-31 Mitglieder-CSV-Import mit Seat-Limit
@@ -48,6 +48,7 @@ Für jedes Feature wird zusätzlich der CE-Ausgangszustand belegt (grep/Lesen de
 | Commercial Edition | closed-source, „Full feature parity with our Cloud“, **12 freie User-Seats je Workspace**, Upgrade-Flow berechnet Seats aus „users with paid roles“ | `editions-and-versions.md` Z. 31–37; `self-hosting-101.md` Z. 60 |
 | Airgapped Edition | Commercial ohne Internet, Offline-Lizenzdatei, „exclusively for Enterprise Grid customers with a minimum commitment of 100 seats“ | `/home/user/makeplane/developer-docs/docs/self-hosting/methods/airgapped-requirements.md` Z. 10 |
 | Lizenzbindung | Pro/Business: an **einen Workspace und eine Maschine** gebunden (Workspace Settings → Billing and plans); Enterprise Grid: **Instanz**-Lizenz (God Mode → Billing), gilt für alle Workspaces | `…/manage/manage-licenses/activate-pro-and-business.md` Z. 9, 51; `…/activate-enterprise.md` Z. 9, 23 |
+| Aktuelle Pläne (Verifikation) | „Plans are Free, Pro, Business, and Enterprise Grid.“ – One ist nicht mehr erhältlich (`isActive: false`, Kommentar „Plane one plan is not longer available“). **Tier-Regel dieses Dokuments (Verifikation, wie Dok. 20/21/22):** Wo `plans.tsx` nur One nennt, aktuellere/spezifischere Quellen (Docs-Badges, docs.plane.so-Labels) aber einen aktuellen Plan, gilt der aktuelle Plan; der Widerspruch wird dokumentiert. | `self-hosting-101.md` Z. 54; `plans.tsx` Z. 1274; `apps/web/components/workspace/billing/comparison/base.tsx` Z. 29 |
 
 **Hinweis Aktualität:** Die Matrix `plans.tsx` ist ein älterer Stand als die heutige öffentliche Doku (Schwester-Dok. 25 §1.2 belegt Umgruppierungen, z. B. Approvals 2026 unter Enterprise Grid). Für die Portierung ist die Tier-Zuordnung wegen ADR-001 irrelevant; sie wird zur Nachvollziehbarkeit vollständig dokumentiert.
 
@@ -88,7 +89,7 @@ Für jedes Feature wird zusätzlich der CE-Ausgangszustand belegt (grep/Lesen de
 | R29 | `packages/constants/src/settings/workspace.ts`, `packages/types/src/settings.ts`, `apps/web/components/settings/workspace/sidebar/item-icon.tsx` | Workspace-Settings-Navigation (`billing-and-plans`) |
 | R30 | `apps/api/bin/docker-entrypoint-api.sh` Z. 10–24, `apps/api/plane/license/management/commands/register_instance.py` | `MACHINE_SIGNATURE` (SHA-256 aus Host-Merkmalen), Instanz-Registrierung |
 | R31 | `apps/api/plane/settings/common.py` Z. 389, 403, 425, 432; `apps/api/plane/license/api/views/instance.py` Z. 142; `apps/web/hooks/use-file-size.ts` | `FILE_SIZE_LIMIT`, `SESSION_COOKIE_AGE`, `ADMIN_SESSION_COOKIE_AGE` |
-| R32 | npm `@makeplane/propel@0.7.3` (entpackt, nur gelesen) `dist/icons/**` | Icons `Saml`, `Oidc` (`other-products/`), `AuditLogsOutline`, `AccessAndRolesOutline`, `ShieldOutline`, `ShieldMinusOutline`, `KeyOutline`, `BillingsOutline`, `ApproverOutline`, `UpgradeOutline`, `DeactivatedUserOutline`, `UserCogOutline`, `LockKeyholeCircleOutline`, `FileKeyOutline`, `LogsOutline`, `LogsAltOutline`, `LogConfigOutline`, `ActivityOutline`, `MessageSupportOutline`, `FolderLockOutline` (`miscellaneous/`), jeweils mit `*Filled`-Variante |
+| R32 | npm `@makeplane/propel@0.7.3` (entpackt, nur gelesen) `dist/icons/**` | Icons `Saml`, `Oidc` (`other-products/`), `AuditLogsOutline`, `AccessAndRolesOutline`, `ShieldOutline`, `ShieldMinusOutline`, `KeyOutline`, `BillingsOutline`, `ApproverOutline`, `UpgradeOutline`, `DeactivatedUserOutline`, `LockKeyholeCircleOutline`, `FileKeyOutline`, `LogsOutline`, `LogsAltOutline`, `LogConfigOutline`, `ActivityOutline`, `MessageSupportOutline`, `FolderLockOutline`, **`GroupSyncOutline`**, **`PiiScannerOutline`** (`miscellaneous/`), jeweils mit `*Filled`-Variante; **Ausnahmen (Verifikation):** `UserCogOutline` ohne Filled-Variante, `UpgradeAltFilled` ohne Outline-Variante (`dist/icons/index.d.ts` Z. 545–546, 623–624, 690, 695) |
 | R33 | `packages/blocks/src/empty-state/assets/horizontal-stack/group-syncing.tsx`, `packages/blocks/src/empty-state/assets/asset-registry.tsx` Z. 75–77 | Illustration „group-syncing“ |
 | R34 | `deployments/cli/community/restore-airgapped.sh` | CE-Skript zum Restore in eine Airgapped-Commercial-Instanz |
 
@@ -118,6 +119,7 @@ Für jedes Feature wird zusätzlich der CE-Ausgangszustand belegt (grep/Lesen de
 | D20 | `dev-tools/mcp-server.md` Z. 729–752 | „audit API token events in the workspace audit log“ |
 | D21 | `dev-tools/agents/overview.md` Z. 38 | „Agents … do not count as billable users“ |
 | D22 | `self-hosting/govern/environment-variables.md` Z. 111–121 | `MACHINE_SIGNATURE`, `SECRET_KEY`, `AES_SECRET_KEY` |
+| D23 (Verifikation) | Branch `docs/api-reference-v2` der Developer-Docs (Commit `b89c72c`, 11.08.2026; lokaler Klon `/tmp/claude-0/-home-user-plane/fe89ae79-d9fa-54e4-b848-1dc9726b58d0/scratchpad/devdocs-v2/repo/docs/api-reference/v2/`, wie Dok. 21 Kap. 9 „`V2/`“): `audit-logs/{overview,list-audit-logs,get-audit-log}.md`, `roles/{overview,list-roles,get-role}.md`, `permission-schemes/{overview,list-permission-schemes,get-permission-scheme}.md`, `permissions/{overview,get-workspace-permissions,get-project-permissions}.md`, `members/overview.md`, `group-sync/overview.md`, `invitations/overview.md`, `authentication.md` Z. 280–287, `errors.md` Z. 200, 276–297 | Audit-Log-Objekt und -Filter, Rollen-/Permission-Scheme-/Effektiv-Berechtigungs-API, Rollen-Slugs, Scopes, Feature-Gating `402` |
 
 **Screenshots der Commercial-UI (B)** – Basis `/home/user/makeplane/developer-docs/docs/public/images/` (gesichtet; maßgebliche 1:1-Referenz, soweit vorhanden; vollständiges Inventar in Anhang C)
 
@@ -145,7 +147,7 @@ Für jedes Feature wird zusätzlich der CE-Ausgangszustand belegt (grep/Lesen de
 | H4 | `templates/config-secrets/argus-env.yaml`, `README.md` Z. 1090–1146 | Argus PII-Scanner |
 | H5 | `README.md` Z. 1688–1700, `templates/NOTES.txt` Z. 127 | DB-residente Secrets (OIDC-Client-Secret, SAML-Zertifikat, `LDAP_BIND_PASSWORD`) |
 
-**Web (W) – nur sekundär.** Eigene WebSearch-Abfragen waren in diesem Lauf **nicht möglich**: Das WebSearch-Budget des gesamten Workflow-Laufs (200 Abfragen je Turn, über alle Agenten geteilt) war beim Start dieser Analyse bereits erschöpft; `plane.so`/`docs.plane.so` sind per Netzwerk-Policy nicht abrufbar; ein GitHub-Quell-Repo der Nutzer-Doku war nicht erreichbar (`https://github.com/makeplane/docs` → HTTP 404). Die folgenden URLs stammen aus Schwester-Dokumenten, deren Agenten WebSearch-Zusammenfassungen gelesen haben. Aussagen daraus sind mit „(W, sekundär)“ markiert und gelten als **mittel** belastbar.
+**Web (W) – nur sekundär (W1–W14).** Eigene WebSearch-Abfragen waren im Autorenlauf **nicht möglich** (der Verifikationslauf hat eigene Abfragen ergänzt, W15–W23 unten): Das WebSearch-Budget des gesamten Workflow-Laufs (200 Abfragen je Turn, über alle Agenten geteilt) war beim Start dieser Analyse bereits erschöpft; `plane.so`/`docs.plane.so` sind per Netzwerk-Policy nicht abrufbar; ein GitHub-Quell-Repo der Nutzer-Doku war nicht erreichbar (`https://github.com/makeplane/docs` → HTTP 404). Die folgenden URLs stammen aus Schwester-Dokumenten, deren Agenten WebSearch-Zusammenfassungen gelesen haben. Aussagen daraus sind mit „(W, sekundär)“ markiert und gelten als **mittel** belastbar.
 
 | Kürzel | URL | Über Schwester-Dokument |
 |---|---|---|
@@ -164,6 +166,22 @@ Für jedes Feature wird zusätzlich der CE-Ausgangszustand belegt (grep/Lesen de
 | W13 | https://www.idenhq.com/scim-tax/plane | 22 (Q29) |
 | W14 | https://docs.plane.so/workspaces-and-users/billing-and-plans | 20 (Q10) |
 
+**Web (W) – eigene WebSearch-Abfragen des Verifikationslaufs (2026-10-22, 13 Tool-Aufrufe bzw. 14 Abfragen, nur Suchmaschinen-Zusammenfassungen; Seiten selbst nicht abrufbar → Konfidenz höchstens „mittel“):**
+
+| Kürzel | URL | Befund (Zusammenfassung) |
+|---|---|---|
+| W15 | https://docs.plane.so/workspaces-and-users/audit-logs | Seitentitel „Workspace Audit Logs **Enterprise Grid**“; Ort Settings → Audit logs; nur Admins und Owners sehen/exportieren; neueste Ereignisse zuerst, Filter und Export oben; Einträge unveränderlich (auch nicht durch Admins löschbar); erfasst laut Zusammenfassung Sign-ins, Mitgliedschafts-/Rollenänderungen, Einstellungsänderungen, Integrations- und Sicherheitsereignisse, Workspace-Feature an/aus, Planwechsel; Lesen und Exportieren des Logs werden selbst protokolliert |
+| W16 | https://docs.plane.so/authentication/sso | Domain-Verifizierung vor SSO-Konfiguration; Workspace Settings → Identity; TXT-Record; Status „Pending“ möglich, später „Verify“; Prüftipp `dig TXT yourdomain.com`; **eine Domain kann nur in einem Workspace gleichzeitig verifiziert sein** (vorher dort entfernen); Plan im Snippet nicht genannt |
+| W17 | https://plane.so/business | Business ($13/Seat/Monat jährlich, 14-Tage-Trial) nennt „SSO on Cloud“ |
+| W18 | https://docs.plane.so/roles-and-permissions/overview, https://docs.plane.so/roles-and-permissions/member-roles, https://docs.plane.so/roles-and-permissions/permissions-matrix | Owner, Member, Guest auf allen Plänen; weitere System-Rollen (Admin, Contributor, Commenter) „exclusive to the Business plan and higher“; Umbenennungen „Workspace Admin“ → „Workspace Owner“, „Project Member“ → „Contributor“; Owner allein darf Workspace löschen und Ownership übertragen; Commenter = Lesen + Kommentieren + Intake; ältere Seite https://docs.plane.so/workspaces-and-users/roles kennt nur Admin/Member/Guest |
+| W19 | https://docs.plane.so/roles-and-permissions/custom-roles, https://docs.plane.so/roles-and-permissions/permission-schemes | Workspace settings → „Roles and permissions schemes“, Tab „Roles“ (Projektrollen im Tab „Project“); Custom Roles aus Permission Schemes zusammengesetzt; effektive Rechte = Vereinigung aller Schemes; System-Schemes (z. B. „Workspace Member“, „Workspace Admin“) vorgefertigt, nicht editierbar; Custom Roles nur Enterprise Grid; dürfen weder Workspace-Löschung noch Ownership-Transfer enthalten |
+| W20 | https://plane.so/changelog/2026-04-25-custom-roles-granular-access-permissions-redesign | RBAC bleibt Standard in jedem Workspace; **GAC = Enterprise-Add-on** (Custom Roles aus wiederverwendbaren Permission Schemes); drei System-Rollen umbenannt; neue Rolle **Workspace Admin** zwischen Owner und Member auf Business und Enterprise; bedingte Rechte (z. B. nur selbst erstellte Items löschen); bestehende Zuweisungen automatisch gemappt |
+| W21 | https://forum.plane.so/t/plane-commercial-v3-0-0-is-live-desktop-app-workspace-governance-rbac-and-more/281 | Commercial v3.0.0 „… workspace governance, RBAC, and more“ (nur Titel) |
+| W22 | https://plane.so/blog/introducing-granular-access-control-gac-ldap-idp-group-sync (10.06.2026), https://plane.so/blog/introducing-enterprise-grid | GAC und LDAP unter Enterprise Grid; LDAP für Active Directory, OpenLDAP, FreeIPA; Group Sync: IdP-Gruppe → Projekt mit Default-Rolle Admin/Member/Guest, Offline-Sync alle 6 h; Workspace-Mitgliedschaft bleibt beim Entfernen immer erhalten; alleinige Projekt-Admins und manuell hinzugefügte Mitglieder werden nie entfernt; mehrere Gruppen → höchste passende Rolle; manuell vergebene Rollen werden nie herabgestuft |
+| W23 | https://docs.plane.com/…, https://help.plane.com/… | **Anderes Unternehmen** (Plane, Lohn-/Zahlungsplattform; Treffer erwähnen Bankkonto-Änderungen, „administrators and managers“). Die dortigen Aussagen zu 2FA, Passkeys, Geräte-Sessions gehören **nicht** zu makeplane/Plane und werden **nicht** verwendet (gleiche Feststellung Dok. 22, Verifikations-Protokoll) |
+
+Ohne Plane-Treffer blieben die Suchen zu Password Policy/erlaubten Domains, Workspace Activity Logs, Audit-Log-Aufbewahrung und SCIM.
+
 ### 1.4 Methode
 
 1. Plan-Matrix R1 für die Sektionen `workspace-user-management`, `storage`, `security`, `self-hosted`, `support` zeilengenau übertragen (Kap. 2).
@@ -177,11 +195,11 @@ Für jedes Feature wird zusätzlich der CE-Ausgangszustand belegt (grep/Lesen de
 1. **Instanzweites SSO (SAML, OIDC, LDAP)** ist in der Commercial Edition eine Erweiterung der God-Mode-Seite „Authentication“: drei zusätzliche Karten mit „Configure“/„Edit“ + Schalter und je einer Konfigurationsseite mit zweispaltigem Layout „IdP-provided details for Plane“ / „Plane-provided details for your IdP“ (B1, B2, B4, B5). Das CE hat dafür fertige Extension-Points (R15–R18).
 2. **Workspace-Identity** (verifizierte Domains per DNS-TXT, Workspace-SSO mit genau einem aktiven Provider) ist ein **zweiter, workspace-bezogener SSO-Weg** (Cloud). Alle UI-Texte liegen vollständig im CE (`sso.*`, 115 Schlüssel, R3), Code fehlt.
 3. **IdP Group Sync** (Gruppen-Claim → Workspace-/Projektrollen, Sync on login, Offline-Sync alle 6 h, Auto-remove) ist über API (D17) und UI-Texte (R4) gut spezifiziert.
-4. **2FA, Passkeys, Password Policy, Domain Security, Approvals, Admin Interface, Activity Logs, Audit Logs** sind im CE nur als Matrix-Zeilen belegt; öffentliche Detailspezifikationen waren in diesem Lauf nicht abrufbar. Die Abschnitte geben das Belegbare wieder und kennzeichnen Entwurfsvorschläge als **Vorschlag (UNVERIFIZIERT)**.
-5. **Rollenmodell der Commercial Edition:** Rollen sind Objekte mit `namespace` (`workspace`: Owner/Admin/Member/Guest; `project`: Admin/Contributor/Commenter/Guest) und stabilem `slug` (D19). CE kennt nur Integer-Rollen 20/15/5 (R21, R22).
+4. **2FA, Passkeys, Password Policy, Domain Security, Approvals, Admin Interface, Activity Logs** sind im CE nur als Matrix-Zeilen belegt; öffentliche Detailspezifikationen waren nicht abrufbar. Die Abschnitte geben das Belegbare wieder und kennzeichnen Entwurfsvorschläge als **Vorschlag (UNVERIFIZIERT)**. **Audit Logs** sind seit dem Verifikationslauf über die v2-API-Doku (D23: Objekt, Filter, Kategorien, Scopes) und die Nutzer-Doku (W15: Ort, Rollen, Unveränderlichkeit) belegt; Tier laut Doku **Enterprise Grid**.
+5. **Rollenmodell der Commercial Edition (Verifikation erweitert):** Zwei Schichten. **RBAC** mit System-Rollen ist Standard in jedem Workspace; Owner, Member, Guest gibt es auf allen Plänen, die Rollen Workspace Admin, Contributor und Commenter ab Business (W18, W20). **GAC** (Enterprise Grid) ergänzt Custom Roles aus wiederverwendbaren Permission Schemes (W19, W20). Rollen sind Objekte mit `namespace` (`instance`, `workspace`, `project`), `slug`, `level`, `is_system`, `status` (D19, D23). Das CE kennt nur Integer-Rollen 20/15/5 (R21, R22).
 6. **Lizenz/Seats/Billing** (Workspace-Lizenzschlüssel, Instanzlizenz, Lizenzdatei, Sync/Delink, Seat-Berechnung, Trial, Monitor/Prime) ist vollständig dokumentiert, **entfällt aber nach ADR-001** komplett. Die neue Plattform zeigt keine Billing-Seite, kein Editions-Badge und kein Upgrade-Modal.
 7. **Airgapped** ist im Original eine Enterprise-Grid-Edition; in der neuen Plattform ist Airgapped-Fähigkeit **Grundeigenschaft** (ADR-004). FIPS ist ein Betriebsprofil (Krypto-Policy), kein Feature-Gate.
-8. **God-Mode-Erweiterungen** der Commercial Edition in diesem Cluster: „User Management“ (Instanz-Benutzer, Instanz-Admins einladen), „Billing“ (entfällt), Session-Expiry-Einstellungen, „Chat with us“-Schalter (entfällt, ADR-004).
+8. **God-Mode-Erweiterungen** der Commercial Edition in diesem Cluster: „User Management“ (Instanz-Benutzer, Instanz-Admins einladen), „Billing“ (entfällt), Session-Expiry-Einstellungen, „Chat with us“-Schalter (entfällt, ADR-004). Die God-Mode-Seite „System checks“ (Health-Übersicht aller Dienste) ist in Dok. 22 (P03-F03, P03-F34) spezifiziert und wird hier nicht dupliziert (Verifikation).
 
 ---
 
@@ -260,46 +278,47 @@ Darstellung: `✓` = `true`, `–` = `false`, Text = String-Wert, „CS“ = `co
 ## 3. Feature-Tabelle
 
 Legende **CE-Status** (per `grep`/Lesen geprüft, Belege in Anhang B):
-- **fehlt** – keine funktionale Spur außer Matrix-Zeile, Texten oder Icons.
-- **Stub/UI-Hülle im CE** – Extension-Point, leerer Typ, No-op-Funktion oder vollständige UI-Texte vorhanden, Funktion fehlt.
-- **teilweise im CE** – Datenmodell oder Teilfunktion vorhanden, Bezahl-Abstufung fehlt.
+- **fehlt** – keine funktionale Spur außer Matrix-Zeile, i18n-Texten, Icons oder Illustrationen.
+- **Stub/UI-Hülle im CE** – Extension-Point, leerer Typ/Enum, No-op-Funktion, ungenutztes Modellfeld, leere Komponente, toter Service-Aufruf oder Upsell-Seite vorhanden, Funktion fehlt.
+- **teilweise im CE** – im CE erreichbare Teilfunktion oder produktiv genutztes Datenmodell vorhanden, Bezahl-Abstufung fehlt.
 - **im CE vorhanden (nur Cloud-Gating)** – Funktion im CE vollständig, nur Kontingent/Plan-Gate ist Cloud-/Commercial-seitig.
+- **Verifikation:** Legende an die verifizierte Abgrenzungsregel aus Dok. 20 (Abschnitt 3, „Abgrenzungsregel“) angeglichen; vorher zählten „vollständige UI-Texte“ als Stub. Betroffen: P08-05 (Stub → fehlt), P08-22 und P08-26 (teilweise → Stub).
 
 Legende **Portierung** (ADR-001/004): **portieren** = neue Plattform baut die Funktion, immer aktiv · **entfällt** = Billing/Limit/Vertrieb, wird nicht gebaut · **Instanz-Einstellung** = Limit wird frei konfigurierbar mit großzügigem Default.
 
 | ID | Feature | ab Plan | Abstufung je Plan | CE-Status | Portierung | Quelle |
 |---|---|---|---|---|---|---|
-| P08-01 | SAML-SSO, instanzweit (God Mode → Authentication → SAML), inkl. Login in God Mode per SSO | One (Matrix); Docs-Badges „Pro“, „Business“ | Free –; One/Pro/Business/Enterprise ✓ | Stub/UI-Hülle im CE (Extension-Points R15–R18, Icon `Saml` R32) | portieren | R1 Z. 1060; R2 Z. 35, 44; D1; B2; B4; W8 (W, sekundär) |
-| P08-02 | OIDC-SSO, instanzweit (God Mode → Authentication → OIDC) | One (Matrix, `selfHostedOnly`); Docs-Badges „Pro“, „Business“ | Free –; One/Pro/Business/Enterprise ✓ | Stub/UI-Hülle im CE (wie P08-01, Icon `Oidc`) | portieren | R1 Z. 1071; D2; B1; B4 |
-| P08-03 | Workspace-Identity: verifizierte E-Mail-Domains (DNS-TXT) + Workspace-SSO (SAML **oder** OIDC, genau ein aktiver Provider, „Switch“-Dialog) | unklar (Cloud-Variante von P08-01/02; Matrix ordnet SAML/OIDC One zu) – **UNVERIFIZIERT** | – | Stub/UI-Hülle im CE (115 Texte `sso.*`, 3 Texte `workspace_settings.settings.identity.*`, keine Route, kein Modell) | portieren (als Workspace-SSO zusätzlich zum Instanz-SSO; siehe offene Frage O1) | R3 Z. 2–207; R4 Z. 253–257; W3 (W, sekundär) |
+| P08-01 | SAML-SSO, instanzweit (God Mode → Authentication → SAML), inkl. Login in God Mode per SSO | **Pro** (Verifikation, vorher One): Docs-Badges „Pro“, „Business“ (aktuellere, self-hosting-spezifische Quelle; One nicht mehr erhältlich); Matrix: One | Matrix: Free –; One/Pro/Business/Enterprise ✓ | Stub/UI-Hülle im CE (generische Extension-Points R15–R18, Icon `Saml` R32); **Widerspruch:** Dok. 22 P03-F04 wertet als „fehlt“ (Dok. 22 O33) | portieren | R1 Z. 1060; R2 Z. 35, 44; D1 Z. 7; B2; B4; W8 (W, sekundär); Dok. 22 P03-F04 |
+| P08-02 | OIDC-SSO, instanzweit (God Mode → Authentication → OIDC) | **Pro** (Verifikation, vorher One): Docs-Badges „Pro“, „Business“; Matrix: One (`selfHostedOnly`) | Matrix: Free –; One/Pro/Business/Enterprise ✓ | Stub/UI-Hülle im CE (wie P08-01, Icon `Oidc`); Widerspruch Dok. 22 P03-F05 „fehlt“ | portieren | R1 Z. 1071–1073; D2 Z. 7; B1; B4; Dok. 22 P03-F05 |
+| P08-03 | Workspace-Identity: verifizierte E-Mail-Domains (DNS-TXT) + Workspace-SSO (SAML **oder** OIDC, genau ein aktiver Provider, „Switch“-Dialog) | **Business** (Verifikation, vorher „unklar“; Cloud): plane.so/business nennt „SSO on Cloud“ (W17, nur Suchzusammenfassung, mittel) | – | Stub/UI-Hülle im CE (115 Texte `sso.*`, 3 Texte `workspace_settings.settings.identity.*`, Login-Extension-Points R15–R17; keine Route, kein Modell) | portieren (als Workspace-SSO zusätzlich zum Instanz-SSO; siehe offene Frage O1) | R3 Z. 2–207; R4 Z. 253–257; W3, W16, W17 (W) |
 | P08-04 | LDAP-Authentifizierung (Bind-DN-Suche + User-Bind, Profilabgleich) | Enterprise (Matrix, Coming soon); Docs: Enterprise Grid | nur Enterprise / Enterprise Grid | Stub/UI-Hülle im CE (`auth.ldap.header.*`, `auth.common.username.*`) | portieren | R1 Z. 1117; R2 Z. 10; R3 Z. 278–281, 361–366; D3; D14; B4; B5; B6 |
-| P08-05 | IdP Group Sync (IdP-Gruppen → Workspace-Rolle bzw. Projekt + Projektrolle; Sync on login, Offline-Sync alle 6 h, Auto remove, Group attribute key) | Enterprise Grid (W2, sekundär; Whitepaper-Snippet in Dok. 20 PF-98); Docs: nur Commercial Self-hosted, nur OIDC (W1, sekundär) | – | Stub/UI-Hülle im CE (33 Texte R4, Empty-State R5, Illustration R33) | portieren | D17; R4 Z. 192–252; R5; R33; Dok. 21 §2.6/§4.8 |
+| P08-05 | IdP Group Sync (IdP-Gruppen → Workspace-Rolle bzw. Projekt + Projektrolle; Sync on login, Offline-Sync alle 6 h, Auto remove, Group attribute key) | Enterprise Grid (Doku-Seite mit Tag „Enterprise Grid“, Dok. 21 V.2 S3; W2, W22; Whitepaper-Snippet in Dok. 20 PF-98); Docs: nur Commercial Self-hosted, nur OIDC (W1) | – | **fehlt** (Verifikation, vorher Stub): nur 33 Texte R4, 1 Empty-State-Text R5, registrierte, aber unbenutzte Illustration R33, Propel-Icon `GroupSyncOutline` (R32); kein Code-Verweis. Konsistent mit Dok. 20 PF-98 und Dok. 21 F12 (K09); Widerspruch Dok. 22 P03-F08 „Stub“ | portieren | D17; D23; R4 Z. 192–252; R5; R33; Dok. 21 §2.6/§4.8 |
 | P08-06 | SCIM-Provisioning | „Business Plus“ (Cloud) / „Available on plans (Commercial and Airgapped)“ (D12); Enterprise Grid laut Whitepaper-Snippet (Dok. 20 PF-98, W12) | – | fehlt | portieren (UNVERIFIZIERT im Umfang, O7) | `self-hosting-101.md` Z. 42; W12, W13 (W, sekundär) |
 | P08-07 | Zwei-Faktor-Authentifizierung (geräteabhängig) | Pro | Free/One –; Pro/Business/Enterprise ✓ | fehlt | portieren | R1 Z. 1095 |
 | P08-08 | Passkeys | Pro | wie P08-07 (gleiche Matrix-Zeile) | fehlt | portieren | R1 Z. 1095 |
-| P08-09 | Password Policy (eigene Passwortrichtlinien) | Pro | Free/One –; Pro/Business/Enterprise ✓ | teilweise im CE (feste Regeln: zxcvbn-Score ≥ 3 im Backend, 8 Zeichen + Zeichenklassen im Frontend; ungenutzte Felder `is_password_expired`, `is_password_reset_required`) | portieren | R1 Z. 1106; R12; R13; R14 (`utils/password.py`); R16; R19 |
+| P08-09 | Password Policy (eigene Passwortrichtlinien) | Pro | Free/One –; Pro/Business/Enterprise ✓ | teilweise im CE (erreichbare feste Regeln: zxcvbn-Score ≥ 3 im Backend, 8 Zeichen + Zeichenklassen im Frontend; ungenutzte Felder `is_password_expired`, `is_password_reset_required`); **Widerspruch:** Dok. 20 PF-96 „fehlt“, Dok. 22 P03-F10 „teilweise“ – beibehalten, weil die Durchsetzungspunkte im CE erreichbar sind | portieren | R1 Z. 1106; R12; R13; R14 (`utils/password.py`); R16; R19 |
 | P08-10 | Domain Security (weitere zugelassene Domains / alle außer einer Domain sperren) | Pro | Free/One –; Pro/Business/Enterprise ✓ | fehlt (`Instance.whitelist_emails` ungenutztes Altfeld; verwandt: `GITHUB_ORGANIZATION_ID`) | portieren | R1 Z. 1083; R10 |
-| P08-11 | Rollen: „Pre-defined roles“ (vier vordefinierte Rollen je Ebene: Workspace Owner/Admin/Member/Guest, Projekt Admin/Contributor/Commenter/Guest) | Pro | Free/One „Basic“ (= CE Admin/Member/Guest); Pro „Pre-defined roles“ | teilweise im CE (Integer-Rollen 20/15/5) | portieren | R1 Z. 695; D19; R21; R22; W7 (W, sekundär) |
-| P08-12 | RBAC – benutzerdefinierte Rollen | Business | Business „RBAC“ | fehlt | portieren | R1 Z. 695, 1307 |
-| P08-13 | GAC – Granular Access Control | Enterprise | Enterprise „GAC“ | fehlt | portieren | R1 Z. 695, 1308; R2 Z. 9; W2 (W, sekundär) |
-| P08-14 | Guests (Kontingent „5 per paid member“, Pro-Text „1:5 Guests“) | One | Free –; One–Enterprise „5 per paid member“ | im CE vorhanden (nur Cloud-Gating): Rolle Guest 5, `guest_view_all_features`, ohne Kontingent | Funktion portieren (über A03); Kontingent entfällt | R1 Z. 706; B9; R22 |
+| P08-11 | Rollen (RBAC mit System-Rollen): Workspace Owner/Admin/Member/Guest, Projekt Admin/Contributor/Commenter/Guest; Owner allein darf Workspace löschen und Ownership übertragen | **Business** (Verifikation, vorher Pro): Workspace Admin, Contributor, Commenter laut Doku ab Business, Owner/Member/Guest auf allen Plänen (W18, W20) | Matrix: Free/One „Basic“, Pro „Pre-defined roles“, Business „RBAC“; **Widerspruch** Matrix (Pro) ↔ Doku 2026 (Business) – aktuellere Quelle gewinnt | teilweise im CE (Integer-Rollen 20/15/5 = Owner/Member/Guest-Äquivalent) | portieren | R1 Z. 695; D19; D23; R21; R22; W7, W18, W20 (W) |
+| P08-12 | Custom Roles (benutzerdefinierte Rollen aus Permission Schemes) | **Enterprise Grid** (Verifikation, vorher Business): Doku „Custom roles … Enterprise“, Changelog „GAC = Enterprise add-on“ (W19, W20) | Matrix Business „RBAC“ mit Text „… or create custom ones with RBAC“; **Widerspruch** – aktuellere Doku gewinnt | fehlt | portieren | R1 Z. 695–703, 1307; D23; W19, W20 (W) |
+| P08-13 | GAC – Granular Access Control: Permission Schemes (System- und Custom-Schemes), bedingte Rechte, effektive Berechtigungen | **Enterprise Grid** (Verifikation, vorher Enterprise; Synonym, Doku-Name) | Matrix Enterprise „GAC“ | fehlt | portieren | R1 Z. 695, 1308; R2 Z. 9; D23; W2, W19, W20, W22 (W) |
+| P08-14 | Guests (Kontingent „5 per paid member“, Pro-Text „1:5 Guests“) | **Pro** für das Kontingent (Verifikation, vorher One; One nicht mehr erhältlich, B9 nennt „1:5 Guests“ bei Pro); die Gast-Rolle selbst gibt es laut Doku auf allen Plänen (W18) | Matrix: Free –; One–Enterprise „5 per paid member“ | im CE vorhanden (nur Cloud-Gating): Rolle Guest 5, `guest_view_all_features`, ohne Kontingent | Funktion portieren (über A03); Kontingent entfällt | R1 Z. 706; B9; R22; W18 |
 | P08-15 | Approvals (Workspace-, Projekt-, Work-Item-Type-Approvals durch „designated admins“) | Business (Matrix, Coming soon); 2026 Workflow-Approvals Enterprise Grid (Dok. 25 F03) | Business/Enterprise ✓ | fehlt (Icon `ApproverOutline`, Upsell-Text) | portieren (Spezifikation fehlt, O4) | R1 Z. 717; R2 Z. 18; R27; Dok. 25 F03/F08 |
 | P08-16 | Admin Interface (Admin-Übersicht über Workspace- und Projekteinstellungen) | Business | Business/Enterprise ✓ | fehlt (CE: Workspace-Settings nur für Admin/Member, keine projektübergreifende Admin-Übersicht) | portieren (Spezifikation fehlt, O5) | R1 Z. 729; W10 (W, sekundär) |
 | P08-17 | Workspace Activity Logs (filterbar, ganzer Workspace) | Business | Business/Enterprise ✓ | teilweise im CE (Aktivität je User: `GET /api/workspaces/{slug}/user-activity/{user_id}/` + Export; No-op `mutateWorkspaceMembersActivity`) | portieren | R1 Z. 740; R24; R25 |
-| P08-18 | API-enabled Audit Logs (Workspace-Audit-Log + API) | Business (Matrix, Coming soon); Cloud „Business Plus“ (D12); seit Commercial v3.1.0 ausgeliefert (W5, sekundär) | – | fehlt | portieren | R1 Z. 751; `self-hosting-101.md` Z. 42; D20; W4, W5, W6 (W, sekundär) |
+| P08-18 | API-enabled Audit Logs (Workspace-Audit-Log in Settings + v2-API `audit-logs`) | **Enterprise Grid** (Verifikation, vorher Business): Doku-Seitentitel „Workspace Audit Logs Enterprise Grid“ (W15); Matrix Business (Coming soon, älterer Stand); Cloud „Business Plus“ (D12); seit Commercial v3.1.0 ausgeliefert (W5) | Matrix Business/Enterprise ✓ (CS); **Widerspruch** zu Dok. 21 F34 und Dok. 22 P03-F44 (dort Matrix „Business“ beibehalten) – spezifischere Doku-Seite gewinnt | fehlt | portieren | R1 Z. 751; `self-hosting-101.md` Z. 42; D20; D23; W4–W6, W15 (W) |
 | P08-19 | Workspace-Lizenz & Billing-Seite (Activate this workspace, Lizenzschlüssel, Sync plan, Delink, Billable seats, Manage subscription, Trial 14 Tage Business, Plan-Vergleich) | Commercial Edition (Mechanik aller Bezahlpläne) | Pro/Business workspace-gebunden | Stub/UI-Hülle im CE (Billing-Seite nur mit Plan-Vergleich; Upgrade-Modal; Editions-Badge) | entfällt (ADR-001) | D8; D11; D12; B8; B9; R4; R6; R26; R27; R28 |
 | P08-20 | Enterprise-Grid-Instanzlizenz (God Mode → Billing „Activate Enterprise license“) | Enterprise Grid | gilt für alle Workspaces der Instanz | fehlt | entfällt (ADR-001) | D9; B7 |
 | P08-21 | Offline-Lizenzdatei (Airgapped; `.json`-Upload in Workspace bzw. God Mode) | Airgapped Edition (Pro/Business: D10 `activate-airgapped.md`; Enterprise Grid: `activate-airgapped-enterprise.md`) | – | fehlt | entfällt (ADR-001) | D10; B7; B8 |
-| P08-22 | Prime-Portal & Monitor-Dienst (Lizenzvalidierung, Feature-Flag-Resync alle 300 min, Health-Prober alle 5 min, `MACHINE_SIGNATURE`) | Commercial Edition | – | teilweise im CE (`MACHINE_SIGNATURE` wird berechnet, nur Präsenz geprüft; `Instance.edition` fest `PLANE_COMMUNITY`) | entfällt (ADR-001); Health-Checks siehe Dok. 22 | D15; H1–H3; R10; R30 |
-| P08-23 | Self-hosted-Pläne & Deployment-Varianten: One (Legacy), One-click/DO/Heroku/AWS AMI, Airgapped (≥ 100 Seats), Private/Managed Deployments, FIPS-140-3-Images | One (Deployment-Apps); Enterprise (Private deployments, Coming soon); Enterprise Grid (Airgapped, FIPS) | siehe Kap. 2.4 | teilweise im CE (Docker Compose, Kubernetes, Swarm, AIO unter `deployments/`; `restore-airgapped.sh`) | Airgapped = Grundeigenschaft (ADR-004); FIPS = Betriebsprofil; Private/Managed, Marktplatz-Apps entfallen | R1 Z. 1131–1202; R34; D13; D14 |
-| P08-24 | Member-Limits & Seat-Berechnung (Cloud Free 12; Commercial Free 12 Seats/Workspace; Self-hosted-Richtwerte ~50/~200/Unlimited; Billable seats = User mit bezahlten Rollen; Agents nicht billable) | Free/One begrenzt | Cloud: Free 12, Pro+ Unlimited; Self-hosted: ~50/~50/~200/~200/Unlimited | im CE ohne Limit | entfällt (ADR-001) | R1 Z. 676; D12; D18; D21; B8; B9 |
+| P08-22 | Prime-Portal & Monitor-Dienst (Lizenzvalidierung, Feature-Flag-Resync alle 300 min, Health-Prober alle 5 min, `MACHINE_SIGNATURE`) | Commercial Edition | – | Stub/UI-Hülle im CE (Verifikation, vorher teilweise): Enum `InstanceEdition` nur `PLANE_COMMUNITY`, Typ-Altfelder `license_key`/`is_activated`/`user_count`; `MACHINE_SIGNATURE` wird im CE anders berechnet als im EE-Chart und nur auf Präsenz geprüft (keine Lizenzprüfung erreichbar) | entfällt (ADR-001); Health-Checks siehe Dok. 22 | D15; H1–H3; R10; R30; Dok. 22 Verifikations-Protokoll |
+| P08-23 | Self-hosted-Pläne & Deployment-Varianten: One (Legacy), One-click/DO/Heroku/AWS AMI, Airgapped (≥ 100 Seats), Private/Managed Deployments, FIPS-140-3-Images | One (Deployment-Apps); Enterprise (Private deployments, Coming soon); Enterprise Grid (Airgapped, FIPS) | siehe Kap. 2.4 | teilweise im CE (Docker Compose, Kubernetes, Swarm, AIO unter `deployments/`; `restore-airgapped.sh`) | Airgapped = Grundeigenschaft (ADR-004); FIPS = Betriebsprofil; Private/Managed, Marktplatz-Apps entfallen. In `_data/P08.paid.json` in vier Einträge P08-23a (One/Installationskanäle, One), P08-23b (Airgapped, Enterprise Grid, teilweise), P08-23c (FIPS, Enterprise Grid, fehlt), P08-23d (Private/Managed, Enterprise, fehlt) aufgeteilt (Verifikation) | R1 Z. 1131–1202; R34; D13; D14 |
+| P08-24 | Member-Limits & Seat-Berechnung (Cloud Free 12; Commercial Free 12 Seats/Workspace; Self-hosted-Richtwerte ~50/~200/Unlimited; Billable seats = User mit bezahlten Rollen; Agents nicht billable) | Pro (Aufhebung der Mitgliedergrenze; Free/One begrenzt; Verifikation präzisiert) | Cloud: Free 12, Pro+ Unlimited; Self-hosted: ~50/~50/~200/~200/Unlimited | im CE vorhanden (nur Cloud-Gating): CE hat kein Mitgliederlimit (entspricht „Unlimited“); Seat-Berechnung/-Abrechnung fehlt und entfällt (Verifikation: Wert an die Legende und an Dok. 20 PF-55 angeglichen, vorher „im CE ohne Limit“) | entfällt (ADR-001) | R1 Z. 676; D12; D18; D21; B8; B9 |
 | P08-25 | Storage-Limits (Workspace-Speicher, Max file size je Plan) | Cloud-only | Free 5GB/5 MB; Pro 1 TB/100 MB; Business 5 TB/200 MB; Enterprise Custom | teilweise im CE (`FILE_SIZE_LIMIT` instanzweit, Default 5 242 880 Byte) | Instanz-Einstellung (Max file size); Speicherquote entfällt | R1 Z. 1032, 1043; R31 |
-| P08-26 | Support-Kanäle, SLA, „Chat with us“ | Pro (SLA); Kanäle gestaffelt | Free Forum; One Mail+Forum; Pro Mail+Forum+Chat; Business/Enterprise „Full-suite professional services“ | teilweise im CE (`Instance.is_support_required` ohne UI) | entfällt (Vertrieb; ADR-004: kein externer Chat) | R1 Z. 1209, 1235; R10; B11; D5 |
+| P08-26 | Support-Kanäle, SLA, „Chat with us“ | Pro (SLA); Kanäle gestaffelt | Free Forum; One Mail+Forum; Pro Mail+Forum+Chat; Business/Enterprise „Full-suite professional services“ | Stub/UI-Hülle im CE (Verifikation, vorher teilweise): ungenutztes Modellfeld `Instance.is_support_required` und Typfeld `IInstance.is_support_required`, keine UI | entfällt (Vertrieb; ADR-004: kein externer Chat) | R1 Z. 1209, 1235; R10; B11; D5 |
 | P08-27 | God Mode → User Management (alle Instanz-User, Instanz-Admins einladen, Admin-Rechte vergeben/entziehen, User entfernen) | Commercial Edition (kein Plan-Badge) | – | teilweise im CE (`InstanceAdmin`-Modell, `GET/POST /api/instances/admins/`; keine UI; `is_password_reset_required` ungenutzt) | portieren | D5; D7; B10; R10; R12; R13 |
 | P08-28 | God Mode → Session-Einstellungen (Session expiry Tage, Admin session expiry Stunden) | Commercial Edition | – | teilweise im CE (nur ENV `SESSION_COOKIE_AGE`, `ADMIN_SESSION_COOKIE_AGE`) | portieren | D6; R31 |
-| P08-29 | Argus – Sensitive-Data-/PII-Scanner | unklar (Feature-Flag `PII_SCANNER`); Changelog v3.2.0 „PII scanning“ (W9, sekundär) | – | fehlt | portieren (Umfang UNVERIFIZIERT, O9) | H1 Z. 700–720; H4; W9 |
+| P08-29 | Argus – Sensitive-Data-/PII-Scanner | unklar (Feature-Flag `PII_SCANNER`); Changelog v3.2.0 „PII scanning“ (W9, sekundär) | – | fehlt (nur Propel-Icon `PiiScannerOutline`/`PiiScannerFilled`, R32; Verifikation ergänzt) | portieren (Umfang UNVERIFIZIERT, O9) | H1 Z. 700–720; H4; W9; Dok. 22 P03-F33 |
 | P08-30 | IdP-Profil-Sync beim Login (`ENABLE_GOOGLE_SYNC`, `ENABLE_GITHUB_SYNC`, `ENABLE_GITLAB_SYNC`, `ENABLE_GITEA_SYNC`) – Basis für SSO-/LDAP-Profilabgleich | kein Bezahl-Feature | – | im CE vorhanden | portieren (Basis, A03/D05) | R14 (`adapter/base.py` `check_sync_enabled`, `sync_user_data`); R15 |
-| P08-31 | Mitglieder-CSV-Import (Workspace, Projekt) mit Seat-Limit-Fehler | unklar (Dok. 20 PF-60) | – | fehlt (nur Texte R8, `project.members_import.*`) | portieren ohne Seat-Limit (Querbezug, Detail in Admin-/Mitglieder-Cluster) | R8; `packages/i18n/src/locales/en/project.json` Z. 370 ff. |
+| P08-31 | Mitglieder-CSV-Import (Workspace, Projekt) mit Seat-Limit-Fehler | unklar (Dok. 20 PF-60) | – | fehlt (nur Texte R8, `project.members_import.*`) | portieren ohne Seat-Limit (Querbezug; gleiches Feature als P09-F32 in Dok. 28 – dort maßgeblich, hier nur Seat-Aspekt) | R8; `packages/i18n/src/locales/en/project.json` Z. 370 ff.; Dok. 28 P09-F32 |
 
 ---
 ## 4. Feature-Abschnitte
@@ -414,7 +433,7 @@ Konventionen: `{base}` = Instanz-Basis-URL (`WEB_URL`), API-Präfix der CE-Auth-
     | MOBILE | Logout URI | `{base}/auth/mobile/oidc/logout/` | wie WEB |
 
     D2 nennt dieselben drei Web-URLs (Tabelle „Origin URL / Callback URL / Logout URL“).
-- **Verhalten (D2):** Authorization-Code-Flow mit den manuell eingetragenen Endpunkten (kein Discovery-Dokument-Feld; Werte stammen aus `.well-known/`). `email` ist Pflicht im Userinfo-Response; `first_name`/`last_name` optional. Login-Button „Login with {IdP name}“ bzw. „Sign up with {IdP name}“. Benutzeranlage/-sperren wie P08-01. Gruppen-Claim wird für P08-05 ausgewertet („group attribute key“, Default `groups`).
+- **Verhalten (D2):** Authorization-Code-Flow mit den manuell eingetragenen Endpunkten (kein Discovery-Dokument-Feld; Werte stammen aus `.well-known/`). `email` ist Pflicht im Userinfo-Response; `first_name`/`last_name` optional. Login-Button „Login with {IdP name}“ bzw. „Sign up with {IdP name}“. Benutzeranlage/-sperren wie P08-01. Gruppen-Claim wird für P08-05 ausgewertet („group attribute key“; API-Beispielwert `groups`, UI-Platzhalter „Groups“ – ein Default-Wert ist nicht belegt; Verifikation korrigiert, vorher „Default `groups`“).
 
 **Datenmodell-Hinweise:** wie P08-01; Vorschlag (UNVERIFIZIERT): `IS_OIDC_ENABLED`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET` (verschlüsselt, laut H5 DB-resident), `OIDC_AUTHORIZE_URL`, `OIDC_TOKEN_URL`, `OIDC_USERINFO_URL`, `OIDC_LOGOUT_URL`, `OIDC_PROVIDER_NAME`. `Account`-Eintrag (`provider = "oidc"`, `access_token`, `refresh_token`, `id_token`) analog CE (R12) – Vorschlag.
 
@@ -446,9 +465,11 @@ Konventionen: `{base}` = Instanz-Basis-URL (`WEB_URL`), API-Präfix der CE-Auth-
   - Toasts SAML: „SAML provider created successfully.“ / „SAML provider updated successfully.“ / Fehler „Error!“ + „Failed to save SAML provider. Please try again.“; OIDC analog.
   - **Umschalt-Dialog** (genau ein aktiver Provider): Titel „Switch SSO Method to {newProviderShortName}?“, Text „You are about to enable {newProviderLongName} ({newProviderShortName}). This action will automatically disable {activeProviderLongName} ({activeProviderShortName}). Users attempting to sign in via {activeProviderShortName} will no longer be able to access the platform until they switch to the new method. Are you sure you want to proceed?“; Buttons „Switch“/„Switching“, „Cancel“.
 - **Regeln (aus Texten ableitbar):** Domain-Status `pending → verified | failed`; SSO erst nach mindestens einer verifizierten Domain; je Workspace höchstens **ein** aktiver SSO-Provider; Aktivieren des anderen deaktiviert den bisherigen.
+- **Ergänzung (Verifikation, W16, nur Suchzusammenfassung):** Die Domain-Verifizierung soll sicherstellen, dass nur berechtigte Admins SSO konfigurieren. **Eine Domain kann nur in einem Workspace gleichzeitig verifiziert sein**; ist sie anderswo verifiziert, muss sie dort zuerst entfernt werden → serverseitige Eindeutigkeit über alle Workspaces (nicht nur je Workspace). Eine Domain darf im Status „Pending“ bleiben; „Verify“ kann später erneut ausgelöst werden; DNS-Propagation kann Minuten dauern (Doku-Tipp `dig TXT yourdomain.com`).
+- **Tier (Verifikation):** Business (Cloud) – plane.so/business listet „SSO on Cloud“ (W17). Schwach belegt (Suchzusammenfassung), Konfidenz mittel.
 - **Nicht belegt (UNVERIFIZIERT):** Format des TXT-Werts, Recheck-Intervall, ob Login mit E-Mail einer verifizierten Domain automatisch an SSO weitergeleitet wird (Erzwingung), ob Workspace-SSO auch in Self-hosted angeboten wird (Dok. 22 P03-F06 markiert „unklar (Cloud)“).
 
-**Datenmodell-Hinweise (Vorschlag, UNVERIFIZIERT):** `workspace_domains(id, workspace_id, domain citext, status enum pending|verified|failed, verification_token, last_checked_at, verified_at, created_by, created_at, …)`, eindeutig `(workspace_id, domain)`; `workspace_sso_providers(id, workspace_id, type saml|oidc, is_enabled, config jsonb verschlüsselt, created_at, …)`, Constraint „max. ein `is_enabled = true` je Workspace“.
+**Datenmodell-Hinweise (Vorschlag, UNVERIFIZIERT):** `workspace_domains(id, workspace_id, domain citext, status enum pending|verified|failed, verification_token, last_checked_at, verified_at, created_by, created_at, updated_at)`, eindeutig `(workspace_id, domain)` und zusätzlich partiell eindeutig `(domain) WHERE status = 'verified'` (eine Domain nur in einem Workspace verifiziert, W16); `workspace_sso_providers(id, workspace_id, type saml|oidc, is_enabled, config jsonb verschlüsselt, created_at, …)`, Constraint „max. ein `is_enabled = true` je Workspace“.
 
 **API-Hinweise (Vorschlag, UNVERIFIZIERT):** `GET/POST {W}/domains/`, `POST {W}/domains/{id}/verify/`, `DELETE {W}/domains/{id}/`, `GET/POST/PATCH {W}/sso-providers/…`, `POST {W}/sso-providers/{id}/enable/` (deaktiviert andere). Workspace-Admin-only.
 
@@ -456,7 +477,7 @@ Konventionen: `{base}` = Instanz-Basis-URL (`WEB_URL`), API-Präfix der CE-Auth-
 
 **Migrationshinweis:** DNS-TXT-Prüfung per `DnsClient.NET`; in Airgapped-Umgebungen gegen internen DNS (ADR-004). Siehe offene Frage O1 (Verhältnis Instanz-SSO ↔ Workspace-SSO).
 
-**Quellen:** R3 Z. 2–207; R4 Z. 253–257; W3 (W, sekundär); Dok. 22 P03-F06. **Konfidenz:** hoch für UI-Texte; niedrig für Backend-Semantik.
+**Quellen:** R3 Z. 2–207; R4 Z. 253–257; W3 (W, sekundär); W16, W17 (W, Verifikation); Dok. 22 P03-F06. **Konfidenz:** hoch für UI-Texte; mittel für Domain-Eindeutigkeit und Tier; niedrig für übrige Backend-Semantik.
 
 ---
 
@@ -493,7 +514,9 @@ Konventionen: `{base}` = Instanz-Basis-URL (`WEB_URL`), API-Präfix der CE-Auth-
 
 **Migrationshinweis:** `System.DirectoryServices.Protocols` (plattformübergreifend, LDAPS); Rate-Limit wie CE-Login (`apps/api/plane/authentication/rate_limit.py`).
 
-**Quellen:** R1 Z. 1117; R2 Z. 10; R3 Z. 278–281, 361–366; D3; D14; B4; B5; B6; H1; H5. **Konfidenz:** hoch.
+**Ergänzung (Verifikation, W22):** Laut GAC-/LDAP-Blog (10.06.2026) werden Active Directory, OpenLDAP, FreeIPA und jeder LDAP-kompatible Server unterstützt; Tier Enterprise Grid bestätigt.
+
+**Quellen:** R1 Z. 1117; R2 Z. 10; R3 Z. 278–281, 361–366; D3; D14; B4; B5; B6; H1; H5; W22. **Konfidenz:** hoch.
 
 ---
 
@@ -513,15 +536,23 @@ Konventionen: `{base}` = Instanz-Basis-URL (`WEB_URL`), API-Präfix der CE-Auth-
 - **Lösch-Modal:** „Delete group sync“ – „New users from this identity group will no longer be added to the project. Users already added will keep their current role.“
 - **Semantik (D17 `overview.md`):** Config-Objekt `is_enabled`, `sync_on_login`, `auto_remove` („remove users from projects/workspace when they are removed from the IdP group“), `sync_offline`, `group_attribute_key`, `default_workspace_role` (Rollen-**Slug**, z. B. `member`). Projekt-Mapping `idp_group_name`, `project` **xor** `all_projects`, `role` (Projektrollen-Slug). Workspace-Mapping `idp_group_name`, `role` (Workspace-Rollen-Slug, z. B. `admin`). Alle Endpunkte workspace-scoped, nur Workspace-Admins. Laut Doku-Snippet nur Commercial Self-hosted und nur OIDC (Gruppen-Claim), SAML/LDAP „coming soon“ (W1, sekundär; Dok. 21 §4.8).
 - **Abgeleitete Regeln:** Beim Login (OIDC) Gruppen aus Claim `group_attribute_key` lesen → Workspace-Mitgliedschaft mit Rolle aus Workspace-Mapping bzw. `default_workspace_role` sicherstellen → je Projekt-Mapping (oder alle Projekte) Projektmitgliedschaft mit Rolle anlegen. `auto_remove` entfernt Projektzugänge, wenn keine Gruppe mehr passt. Mapping löschen entzieht **keine** bestehenden Zugänge (Lösch-Text).
-- **Nicht belegt (UNVERIFIZIERT):** Konfliktregel bei mehreren passenden Gruppen (Vorschlag: höchste Rolle gewinnt), Verhalten von Offline-Sync ohne IdP-API (Dok. 21 O12).
+- **Regeln aus dem GAC-/Group-Sync-Blog (Verifikation, W22, nur Suchzusammenfassung, mittel):**
+  - Mehrere passende Gruppen → der Nutzer erhält die **höchste** passende Rolle.
+  - **Manuell vergebene Rollen werden nie herabgestuft.**
+  - Beim Entfernen (Auto remove) bleibt die **Workspace-Mitgliedschaft immer erhalten**; **alleinige Projekt-Admins** und **manuell hinzugefügte Mitglieder** werden nie aus Projekten entfernt. (Präzisiert die Aussage der v1-Doku „remove users from projects/workspace“, D17, für die Projektebene; Widerspruch bzgl. Workspace dokumentiert – Blog ist spezifischer.)
+  - Default-Rolle je Projekt-Mapping: Admin, Member oder Guest.
+- **v2-Abweichung (Verifikation, D23 `group-sync/overview.md`):** Das Config-Feld heißt in v2 `default_workspace_role_slug` (v1: `default_workspace_role`); Pfade `/api/v2/workspaces/{slug}/group-sync/config/`, `…/project-mappings/`, `…/workspace-mappings/` (je List/Create/Get/Patch/Delete; Config nur Get/Patch); Scopes `workspaces.group_sync:read`, `workspaces.group_sync:write` (D23 `authentication.md` Z. 283–284).
+- **Nicht belegt (UNVERIFIZIERT):** Verhalten von Offline-Sync ohne IdP-API (Dok. 21 O12).
 
-**Datenmodell- und API-Hinweise:** vollständig in Dok. 21 §2.6 (G1–G12) und §4.8; Scopes `workspaces.group_sync:read/write`. G1 legt die Config bei erstem Zugriff mit Defaults an.
+**Datenmodell- und API-Hinweise:** vollständig in Dok. 21 §2.6 (G1–G12) und §4.8; Scopes `workspaces.group_sync:read/write`. G1 legt die Config bei erstem Zugriff mit Defaults an. Zusätzliche Spalten aus den Blog-Regeln: Projekt-/Workspace-Mitgliedschaften brauchen eine Herkunftsmarkierung (`source = manual | group_sync`, Vorschlag), damit „manuell vergebene Rollen nie herabstufen“ und „manuell hinzugefügte Mitglieder nie entfernen“ durchsetzbar sind.
 
-**UI-Hinweise:** Settings-Eintrag im Bereich „Administration“; Icon-Vorschlag `UserCogOutline` (R32, UNVERIFIZIERT). Rollen-Dropdowns verwenden die Rollen-Slugs aus P08-11.
+**UI-Hinweise:** Settings-Eintrag im Bereich „Administration“; Icon: Propel bietet ein eigenes `GroupSyncOutline`/`GroupSyncFilled` (R32; Verifikation – ersetzt den früheren Vorschlag `UserCogOutline`; Zuordnung zum Settings-Eintrag weiterhin UNVERIFIZIERT). Rollen-Dropdowns verwenden die Rollen-Slugs aus P08-11.
 
 **Migrationshinweis:** Hook im OIDC-Callback; Hintergrundjob alle 6 h nur mit konfiguriertem Provider-Adapter (z. B. Keycloak-Admin-API, Microsoft Graph) – sonst Schalter „Offline sync“ deaktiviert anzeigen (Vorschlag, O6).
 
-**Quellen:** R4 Z. 192–252; R5; R33; D17; Dok. 21; W1, W2 (W, sekundär). **Konfidenz:** hoch (UI/API); mittel (Ablaufregeln).
+**CE-Status (Verifikation):** **fehlt** – `grep` nach `group_sync`/`group_syncing` außerhalb von `locales/` ohne Treffer; vorhanden sind nur die Illustration `GroupSyncingHorizontalStackIllustration` (registriert in `packages/blocks/src/empty-state/assets/asset-registry.tsx` Z. 75–77 und `asset-types.ts` Z. 14, nirgends verwendet) und das Propel-Icon.
+
+**Quellen:** R4 Z. 192–252; R5; R32; R33; D17; D23; Dok. 21; W1, W2 (W, sekundär); W22 (W, Verifikation). **Konfidenz:** hoch (UI/API); mittel (Ablaufregeln).
 
 ---
 
@@ -554,7 +585,9 @@ Konventionen: `{base}` = Instanz-Basis-URL (`WEB_URL`), API-Präfix der CE-Auth-
 
 **API-Hinweise (Vorschlag):** `POST /api/users/me/2fa/setup/` → `{secret, otpauth_uri}`; `POST /api/users/me/2fa/verify/` `{code}` → `{recovery_codes}`; `DELETE /api/users/me/2fa/`; `POST /auth/2fa/` `{code | recovery_code}` im Login-Flow; neue Fehlercodes im freien Bereich (z. B. 5026–5029) – UNVERIFIZIERT.
 
-**Quellen:** R1 Z. 1095; R20. **Konfidenz:** Tier hoch; Funktionsdetails niedrig (O2).
+**Warnung (Verifikation):** Websuchen nach „Plane 2FA/Passkeys“ liefern Hilfeartikel und Changelogs von `help.plane.com` bzw. `docs.plane.com` (TOTP mit Recovery-Codes, „Verify code and activate“, Passkey-Anlage bei Registrierung, Geräte-Sessions). Diese gehören zu einem **anderen Unternehmen** (Plane, Lohn-/Zahlungsplattform; W23) und dürfen **nicht** als Spezifikation für makeplane/Plane verwendet werden. Für makeplane/Plane bleibt die Matrix-Zeile der einzige Beleg.
+
+**Quellen:** R1 Z. 1095; R20; W23 (Ausschluss). **Konfidenz:** Tier mittel (nur Matrix, keine Doku-Seite gefunden); Funktionsdetails niedrig (O2).
 
 ---
 
@@ -580,7 +613,8 @@ Konventionen: `{base}` = Instanz-Basis-URL (`WEB_URL`), API-Präfix der CE-Auth-
 
 | Stelle | Regel | Quelle |
 |---|---|---|
-| Backend Sign-up/Set/Reset/Change | `is_password_strong(password)`: zxcvbn-Score ≥ 3 auf den ersten **und/oder** letzten 128 Zeichen (Fenster-Menge; stark, wenn eines der Fenster stark ist); sonst `PASSWORD_TOO_WEAK` (5021) | `apps/api/plane/authentication/utils/password.py`; `apps/api/plane/authentication/adapter/base.py` Z. 88–97 |
+| Backend Sign-up/Set/Reset/Change | `is_password_strong(password)`: zxcvbn-Score ≥ 3 auf den ersten **und/oder** letzten 128 Zeichen (Fenster-Menge; stark, wenn eines der Fenster stark ist); sonst `PASSWORD_TOO_WEAK` (5021) | `apps/api/plane/authentication/utils/password.py` Z. 10–15; `apps/api/plane/authentication/adapter/base.py` Z. 88–97, 363 |
+| Weitere Aufrufstellen (Verifikation, vollständig per `grep is_password_strong`) | Passwort ändern/setzen (`apps/api/plane/authentication/views/common.py` Z. 86, 124), Passwort-Reset Web (`apps/api/plane/authentication/views/app/password_management.py` Z. 145) und Space (`apps/api/plane/authentication/views/space/password_management.py` Z. 139), **God-Mode-Admin-Sign-up** (`apps/api/plane/license/api/views/admin.py` Z. 197), Management-Command `reset_password` (`apps/api/plane/db/management/commands/reset_password.py` Z. 54) | dto. – alle Stellen müssen eine konfigurierbare Policy anwenden |
 | Frontend Web/Admin | `getPasswordStrength`: leer → `EMPTY`; `< 8` → `LENGTH_NOT_VALID`; Groß- **und** Kleinbuchstabe **und** Ziffer **und** Sonderzeichen `[!@#$%^&*()\-_+=\[\]{}\|;:'",.<>?/]` → `STRENGTH_VALID`, sonst `STRENGTH_NOT_VALID` | `packages/utils/src/auth.ts` Z. 26–46 |
 | Kriterienliste (Indikator) | „Min 8 characters“, „Min 1 upper-case letter“, „Min 1 lower-case letter“, „Min 1 number“, „Min 1 special character“ | `packages/utils/src/auth.ts` Z. 57–83; `packages/blocks/src/auth/password/indicator.tsx` |
 | Space-App | nur „Min 8 characters“ (`SPACE_PASSWORD_CRITERIA`, weitere Kriterien auskommentiert) | `packages/constants/src/auth/index.ts` Z. 18–41 |
@@ -612,10 +646,19 @@ Konventionen: `{base}` = Instanz-Basis-URL (`WEB_URL`), API-Präfix der CE-Auth-
 
 ### 4.3 Rollen & Zugriff
 
-#### P08-11 – Pre-defined Roles (Pro)
+#### P08-11 – Rollen: System-Rollen / RBAC (Business; Verifikation, vorher „Pre-defined Roles (Pro)“)
 
 **Funktionsbeschreibung**
-- Matrix: „Roles – Choose from one of four pre-defined roles or create custom ones with RBAC.“; Free/One „Basic“, Pro „Pre-defined roles“ (R1 Z. 695–704).
+- Matrix: „Roles – Choose from one of four pre-defined roles or create custom ones with RBAC.“; Free/One „Basic“, Pro „Pre-defined roles“, Business „RBAC“ (R1 Z. 695–704).
+- **Doku-Stand 2026 (Verifikation, W18, W20, nur Suchzusammenfassungen, mittel):**
+  - Zwei Schichten: **RBAC ist Standard in jedem Workspace**; GAC (Custom Roles) ist ein Enterprise-Add-on (→ P08-12/P08-13).
+  - **Owner, Member und Guest** gibt es auf **allen Plänen**; die übrigen System-Rollen (**Workspace Admin, Contributor, Commenter**) sind „exclusive to the Business plan and higher“. Die Rolle **Workspace Admin** ist neu und liegt **zwischen Owner und Member** (Business und Enterprise).
+  - Umbenennungen (Changelog 2026-04-25): „Workspace Admin“ → **„Workspace Owner“**, „Project Member“ → **„Contributor“**; bestehende Zuweisungen wurden automatisch gemappt. Für das CE-Mapping heißt das: CE-Workspace-Rolle 20 entspricht **Owner**, CE-Projektrolle 15 entspricht **Contributor**.
+  - **Owner** ist die höchste Workspace-Rolle mit Vollzugriff; nur der Owner darf den Workspace löschen und die Ownership übertragen.
+  - **Commenter** = Lesen + Kommentieren + Intake einreichen; **Guest** (Projekt) = externe Mitarbeitende mit Interaktion über Intake (Wortlaut der Zusammenfassung; Abgleich mit der CE-Gastsemantik `guest_view_all_features` in P08-14 offen).
+  - **Widerspruch:** „Contributor ab Business“ vs. „Project Member wurde zu Contributor umbenannt“ (dann wäre Contributor auch im Free-Plan vorhanden). UNVERIFIZIERT, siehe O8.
+  - **Tier-Entscheidung:** Business (aktuellere Doku) statt Pro (Matrix „Pre-defined roles“).
+- **v2-API (Verifikation, D23 `members/overview.md`):** `role` ist ein **Slug-String ohne Enum** („Roles are an open set“); als eingebaute Slugs genannt sind `owner`, `member`, `contributor` (eine vollständige Liste ist nicht dokumentiert); derselbe Nutzer kann im Workspace `member` und im Projekt `contributor` sein; `role = null` nur bei Altdaten vor Einführung der Slugs; v1 lieferte numerische Level (Vergleich `role >= 15`), v2 Slugs (Vergleich `role == "member"`).
 - Rollenkatalog der Commercial Edition (D19 `mcp-server-tools.md` Z. 409–421): Rollen sind abfragbare Objekte (`list_roles` mit optionalem `namespace`, `retrieve_role` per `role_id`). Namespaces:
   - **`workspace`: Owner, Admin, Member, Guest**
   - **`project`: Admin, Contributor, Commenter, Guest**
@@ -637,35 +680,50 @@ Konventionen: `{base}` = Instanz-Basis-URL (`WEB_URL`), API-Präfix der CE-Auth-
 
 - **CE-Ausgangslage:** Integer-Rollen Admin 20 / Member 15 / Guest 5 auf Workspace- und Projektebene (`ROLE_CHOICES` R22; `EUserPermissions`, `EUserWorkspaceRoles`, `EUserProjectRoles` R21), numerische Vergleiche, Decorator `allow_permission`, Permission-Klassen – vollständig in `migration/analysis/03-api-intern-workspace-projekt-user.md` §2.4. Texte: Guest „External members of organizations can be invited as guests.“, Member „Ability to read, write, edit, and delete entities inside projects, cycles, and modules“, Admin „All permissions set to true within the workspace.“ (R7 `role_details.*`). `USER_ALLOWED_PERMISSIONS` enthält nur `workspace.dashboard.read` (R21 `packages/constants/src/user.ts`). CE kennt **keine** Owner-Rolle (nur Feld `Workspace.owner`) und **keine** Commenter-Rolle.
 
-**Datenmodell-Hinweise (Vorschlag):** `roles(id, workspace_id NULL für System-Rollen, namespace workspace|project, slug, name, description, is_system, sort_order, created_at, …)`, eindeutig `(workspace_id, namespace, slug)`; `workspace_members.role_id`, `project_members.role_id`; Mapping der CE-Integer: 20→`admin`, 15→`member` (Workspace) bzw. `member`/Contributor (Projekt), 5→`guest`; Owner = Workspace-Ersteller bzw. eigener Slug `owner`; Commenter neu (Slug-Vorschlag `commenter`).
+**Datenmodell-Hinweise (Vorschlag; Verifikation korrigiert):** `roles(id, workspace_id NULL für System-Rollen, namespace instance|workspace|project, slug, name, description, level, is_system, status, sort_order, created_at, updated_at)` – Felder `level`, `is_system`, `status`, `namespace` mit Wert `instance` laut v2-Rollen-Objekt (D23 `roles/overview.md`, `roles/list-roles.md`); eindeutig `(workspace_id, namespace, slug)`; `workspace_members.role_id`, `project_members.role_id`. Mapping der CE-Integer (korrigiert nach W18/W20): Workspace 20→`owner`, 15→`member`, 5→`guest`; Projekt 20→`admin`, 15→`contributor` (v2-Slug, D23; v1-Group-Sync-Beispiel nutzt `member`, siehe O8), 5→`guest`; neu: Workspace `admin` (zwischen Owner und Member), Projekt `commenter` (Slug-Vorschlag). Der CE-Wert `Workspace.owner` (Ersteller) ist nicht identisch mit der Owner-Rolle (mehrere Owner möglich? – UNVERIFIZIERT).
 
-**API-Hinweise:** `GET {W}/roles/?namespace=`, `GET {W}/roles/{role_id}/` (D19); Mitglieder-Filter `role_slug`, `is_active`, `is_bot` (D19 `list_workspace`). JSON-Feld `role` (Integer) der CE-Verträge bleibt für Contract-Kompatibilität parallel bestehen (Vorschlag; ADR-003).
+**API-Hinweise:** `GET {W}/roles/?namespace=`, `GET {W}/roles/{role_id}/` (D19); v2: `GET /api/v2/workspaces/{slug}/roles/` (Filter `is_system`, `namespace` ∈ `instance|workspace|project`, `slug`, `search`; Pagination `per_page` ≤ 200, `offset`, `paginate=cursor`, `count`; `fields` ∈ `description,id,is_system,level,name,namespace,slug,status`) und `GET …/roles/{pk}/`, Scope `workspaces.roles:read` („Read access to workspace roles (system + custom)“) (D23). Mitglieder-Filter `role_slug`, `is_active`, `is_bot` (D19 `list_workspace`). JSON-Feld `role` (Integer) der CE-Verträge bleibt für Contract-Kompatibilität parallel bestehen (Vorschlag; ADR-003). Workspace-Access-Tokens tragen ebenfalls eine Rolle („Use a workspace access token with the minimum role needed“, `DD/dev-tools/mcp-server.md` Z. 750) – Feature in Dok. 28 P09-F52.
 
 **UI-Hinweise:** Rollen-Dropdowns in Mitgliederlisten (CE `apps/web/components/workspace/settings/member-columns.tsx` `ROLE_OPTIONS`) zeigen die Rollen-Namen des Namespaces; Settings-Header zeigt Rollentitel (CE `ROLE_DETAILS` in `apps/web/components/settings/workspace/sidebar/header.tsx` Z. 57).
 
-**Quellen:** R1 Z. 695; R7; R21; R22; D17; D19; W7 (W, sekundär); Dok. 03 §2.4. **Konfidenz:** Rollennamen hoch; Rechte-Matrix mittel (nur Fragmente).
+**Quellen:** R1 Z. 695; R7; R21; R22; D17; D19; D23; W7 (W, sekundär); W18, W20, W21 (W, Verifikation); Dok. 03 §2.4. **Konfidenz:** Rollennamen hoch; Tier und Umbenennungen mittel; Rechte-Matrix mittel (nur Fragmente).
 
 ---
 
-#### P08-12 – RBAC: benutzerdefinierte Rollen (Business)
+#### P08-12 – Custom Roles (Enterprise Grid; Verifikation, vorher „RBAC: benutzerdefinierte Rollen (Business)“)
 
-**Funktionsbeschreibung (belegbar):** Matrix Business „RBAC“ zu „… or create custom ones with RBAC.“ (R1 Z. 695–704); `planHighlights.business` „RBAC“ (R1 Z. 1307). Keine EE-Texte im CE, keine API-Referenz (D19 kennt nur Lesen von Rollen).
+**Funktionsbeschreibung (belegbar):**
+- Matrix Business „RBAC“ zu „… or create custom ones with RBAC.“ (R1 Z. 695–704); `planHighlights.business` „RBAC“ (R1 Z. 1307). Keine EE-Texte im CE.
+- **Doku-Stand 2026 (Verifikation, W19, W20, nur Suchzusammenfassungen, mittel):** Custom Roles gehören zu **GAC** („extends RBAC for Enterprise customers, unlocking custom roles composed of reusable permission schemes“) und sind **Enterprise Grid**. Ort: **Workspace settings → „Roles and permissions schemes“ → Tab „Roles“** (Workspace-Rollen); Projektrollen im selben Ablauf unter dem Tab **„Project“**. Eine Custom Role wird aus **einem oder mehreren Permission Schemes** zusammengesetzt (P08-13); die effektiven Rechte sind die **Vereinigung** aller Schemes. Workspace-Owner und -Admins dürfen Custom Roles anlegen. Custom Roles dürfen **weder Workspace-Löschung noch Ownership-Transfer** enthalten.
+- **Tier-Entscheidung:** Enterprise Grid (aktuellere Doku) statt Business (Matrix-Text „create custom ones with RBAC“). RBAC im Sinne der Matrix = System-Rollen-Modell (P08-11).
+- v2-API: Rollen nur lesbar (`GET …/roles/`, Scope `workspaces.roles:read` „system + custom“; D23). Ein Audit-Beispiel zeigt eine Custom Role mit Slug `release-manager` und Anzeigename „Release manager“ (D23 `audit-logs/list-audit-logs.md`, Ereignis `role.permissions_updated`).
 
-**Vorschlag (UNVERIFIZIERT):** Workspace-Admins legen zusätzliche Rollen je Namespace an (Name, Beschreibung, Basis-Rolle zum Kopieren), setzen Berechtigungen aus einem Katalog `resource × action` (z. B. `work_item:create|read|update|delete`, `cycle:*`, `module:*`, `page:*`, `view:*`, `member:invite`, `settings:manage`), weisen sie Mitgliedern zu; System-Rollen nicht löschbar; Löschen einer benutzten Rolle erfordert Ersatzrolle. Ort: Workspace Settings → „Roles“ (Icon `AccessAndRolesOutline`, R32 – im CE nur im God-Mode-Dropdown verwendet, `apps/admin/app/(all)/(dashboard)/sidebar-dropdown.tsx` Z. 106).
+**Vorschlag (UNVERIFIZIERT) für die Portierung:** CRUD für Custom Roles je Namespace (Name, Beschreibung, Slug, zugeordnete Schemes); System-Rollen nicht lösch-/editierbar; Löschen einer benutzten Rolle erfordert Ersatzrolle. Icon für den Settings-Eintrag: `AccessAndRolesOutline` (R32 – im CE nur im God-Mode-Dropdown verwendet, `apps/admin/app/(all)/(dashboard)/sidebar-dropdown.tsx` Z. 106; Zuordnung UNVERIFIZIERT).
 
-**Datenmodell (Vorschlag):** `role_permissions(role_id, permission_key)`; Permission-Katalog als Code-Konstante (Single Source für ASP.NET-Policies und Angular-Guards).
+**Datenmodell (Vorschlag):** `roles` (P08-11) mit `is_system = false`; `role_permission_schemes(role_id, scheme_id)`; Permission-Katalog als Code-Konstante (Single Source für ASP.NET-Policies und Angular-Guards).
 
-**Quellen:** R1. **Konfidenz:** Tier hoch; Funktion niedrig (O4).
+**Quellen:** R1; D23; W19, W20 (W, Verifikation). **Konfidenz:** Tier mittel; Ort/Zusammensetzung mittel; Permission-Katalog niedrig (O4).
 
 ---
 
-#### P08-13 – GAC: Granular Access Control (Enterprise)
+#### P08-13 – GAC: Granular Access Control – Permission Schemes und effektive Berechtigungen (Enterprise Grid)
 
-**Funktionsbeschreibung (belegbar):** Matrix Enterprise „GAC“ (R1 Z. 702); `planHighlights.enterprise` und `ENTERPRISE_PLAN_FEATURES` „GAC“ (R1 Z. 1308; R2 Z. 9); Blog-Titel „Introducing Granular Access Control (GAC), LDAP, IdP group sync“ (W2, sekundär; Dok. 22 P03-F45) – GAC wurde zusammen mit LDAP und Group Sync eingeführt.
+**Funktionsbeschreibung (belegbar):**
+- Matrix Enterprise „GAC“ (R1 Z. 702); `planHighlights.enterprise` und `ENTERPRISE_PLAN_FEATURES` „GAC“ (R1 Z. 1308; R2 Z. 9); Blog „Introducing Granular Access Control (GAC), LDAP, IdP group sync“ (10.06.2026) ordnet GAC und LDAP **Enterprise Grid** zu (W2, W22).
+- **Permission Schemes (Verifikation, W19, W20):** benannte Bündel von Berechtigungen, die an eine oder mehrere Custom Roles (P08-12) gehängt werden. **System-Schemes** (genannt: „Workspace Member“, „Workspace Admin“) sind vorgefertigt und **nicht editierbar**; **Custom Schemes** können angelegt und geändert werden. Custom Schemes sind Enterprise-only. **Bedingte Rechte**: eine Rolle kann Regeln wie „nur selbst erstellte Items löschen“ ausdrücken (Changelog 2026-04-25).
+- **v2-API (Verifikation, D23):**
 
-**Vorschlag (UNVERIFIZIERT):** GAC erweitert RBAC um feingranulare Vergaben auf Objekt-/Scope-Ebene (z. B. Rolle je Projekt, Teamspace, Wiki-Collection; Berechtigung je Property/Work-Item-Type; Gruppen als Träger) – genaue Semantik nicht belegt.
+  | Ressource | Methode/Pfad | Felder | Scope |
+  |---|---|---|---|
+  | Permission Scheme | `GET /api/v2/workspaces/{slug}/permission-schemes/`, `GET …/permission-schemes/{pk}/` (Filter `search`; Pagination wie Rollen) | `id`, `name`, `slug`, `description`, `namespace` (Beispiel `instance`), `permissions` (Array von Strings), `is_system`, `sort_order` (Default-Beispiel 65535, kleiner = weiter vorn) | `workspaces.roles:read` |
+  | Effektive Berechtigungen | `GET /api/v2/workspaces/{slug}/permissions/me/`, `GET /api/v2/workspaces/{slug}/projects/{project_id}/permissions/me/` (`project_id` = UUID oder Identifier wie `ENG`) | `permission_grants` (Array von Strings), `relation` (String) | von feingranularen Scope-Prüfungen ausgenommen |
 
-**Quellen:** R1; R2; W2. **Konfidenz:** niedrig (O4).
+  Alle Endpunkte antworten mit `402 payment_required`, wenn das Feature im Plan nicht enthalten oder abgeschaltet ist (D23 `errors.md` Z. 276–297) – entfällt nach ADR-001. Format der Permission-Strings: nicht dokumentiert; ein Audit-Beispiel nennt `metadata.requested = "projects.states:write"` (Scope-artige Notation, D23) – UNVERIFIZIERT, ob identisch mit Permission-Keys.
+- **Namespace `instance`:** Rollen und Schemes kennen neben `workspace` und `project` den Namespace `instance` (D23). Semantik (Instanz-Rollen im God Mode?) **UNVERIFIZIERT**.
+
+**Vorschlag (UNVERIFIZIERT) für die Portierung:** Permission-Katalog aus den CE-Permission-Prüfungen (Dok. 03 §2.4) und den Fragmenten der Permissions-Matrix (P08-11) ableiten; Schemes als Tabelle `permission_schemes(id, workspace_id NULL für System, namespace, slug, name, description, is_system, sort_order)` + `permission_scheme_grants(scheme_id, permission_key, condition jsonb NULL)` für bedingte Rechte; effektive Rechte = Vereinigung über alle Schemes der Rolle; Endpunkt `permissions/me` liefert die Liste für Angular-Guards.
+
+**Quellen:** R1; R2; D23; W2, W19, W20, W22 (W). **Konfidenz:** Objektmodell/API mittel (Doku-Schema mit Platzhalterbeispielen); Permission-Katalog niedrig (O4).
 
 ---
 
@@ -674,11 +732,11 @@ Konventionen: `{base}` = Instanz-Basis-URL (`WEB_URL`), API-Präfix der CE-Auth-
 **Funktionsbeschreibung**
 - Matrix: „Guests – Let some users see everything or just their work items in a project.“; Free –, One/Pro/Business/Enterprise „5 per paid member“ (R1 Z. 706–715). Billing-Karte Pro: „Unlimited members, **1:5 Guests**, Issue Types, Active Cycles, and more“ (B9).
 - **CE-Funktion vollständig vorhanden:** Rolle Guest (5) auf Workspace- und Projektebene (R22); Projekt-Einstellung (Projekt → Members) mit Switch „Guest access“ – „This will allow guests to have view access to all the project work items.“ (Texte im CE fest kodiert, nur Projekt-Admin schaltbar; Feld `Project.guest_view_all_features`; `apps/web/components/project/project-settings-member-defaults.tsx` Z. 127, 197–210). Die i18n-Variante `project_settings.members.guest_super_permissions.*` („Grant view access to all work items for guest users:“ / „This will allow guests to have view access to all the project work items.“) ist im CE unreferenziert; Sichtbarkeitsfilter für Gäste in Suche, Export, Pages, Favoriten (`apps/api/plane/app/views/search/base.py` Z. 96–100, 177–182, 229–234, 266–270; `apps/api/plane/bgtasks/export_task.py` Z. 149–153; `apps/api/plane/app/permissions/page.py` Z. 62–63; `apps/api/plane/app/serializers/favorite.py` Z. 74–97); Herabstufung zum Gast setzt alle Projektrollen auf 5 (`apps/api/plane/app/views/workspace/member.py` Z. 116–130; Dok. 03 W-20).
-- **Bezahl-Anteil = Kontingent:** max. 5 Gäste je bezahltem Mitglied; Free-Plan der Cloud ohne Gäste (Matrix). Widerspruch zur CE (Free-Parität, aber Gäste unbegrenzt) – im CE gibt es kein Gast-Kontingent.
+- **Bezahl-Anteil = Kontingent:** max. 5 Gäste je bezahltem Mitglied; Free-Plan der Cloud ohne Gäste (Matrix). Widerspruch zur CE (Free-Parität, aber Gäste unbegrenzt) – im CE gibt es kein Gast-Kontingent. **Verifikation:** Die Doku 2026 nennt die Rolle Guest „auf allen Plänen“ (W18); damit ist die Matrix-Angabe „Free –“ überholt und das CE-Verhalten bestätigt (O16 erledigt). Tier des Kontingents: Pro (One nicht mehr erhältlich; B9 „1:5 Guests“ bei Pro).
 
 **Portierung:** Funktion portieren (A03), Kontingent entfällt (ADR-001).
 
-**Quellen:** R1 Z. 706; B9; R22; Dok. 03. **Konfidenz:** hoch.
+**Quellen:** R1 Z. 706; B9; R22; Dok. 03; W18 (W, Verifikation). **Konfidenz:** hoch.
 
 ---
 
@@ -701,7 +759,7 @@ Konventionen: `{base}` = Instanz-Basis-URL (`WEB_URL`), API-Präfix der CE-Auth-
 
 **Kandidaten aus angrenzenden Belegen:**
 - Workspace-Einstellung „Projects“ – „Manage project states, and enable project labels, and other configuration.“ mit Tabs „Project states“, „Project labels“ (`workspace_settings.settings.projects.*`, R4) – gehört zum Feature „State of Projects“ (Dok. 20 PF-21).
-- **Workspace Governance** (Enterprise Grid, Self-hosted ab v3.2.0, irreversibel): zentrale Verwaltung von States, Labels und Workflows auf Workspace-Ebene; Projekt-Admins sehen Labels „free/constrained/mandated/pinned“ (Dok. 25 F07; W10, sekundär).
+- **Workspace Governance** (Enterprise Grid, Self-hosted ab v3.2.0, irreversibel): zentrale Verwaltung von States, Labels und Workflows auf Workspace-Ebene; Projekt-Admins sehen Labels „free/constrained/mandated/pinned“ (Dok. 25 F07; Dok. 23 WM-51; W10, sekundär). Commercial v3.0.0 wurde mit „workspace governance, RBAC“ angekündigt (W21).
 - Permissions-Matrix: Owner/Admin dürfen privaten Projekten selbst beitreten (Dok. 25 Z. 449; W7, sekundär).
 
 **Vorschlag (UNVERIFIZIERT):** Workspace Settings → Bereich „Administration“ um eine Projektübersicht ergänzen: Tabelle aller Projekte (auch nicht beigetretene, inkl. archivierter), Spalten Name, Identifier, Lead, Mitgliederzahl, Netzwerk (Public/Private/Secret), Erstellt am; Aktionen „Join“, „Settings öffnen“, „Archive“, „Delete“, „Manage members“ – nur Workspace-Admin. Zuordnung zu Governance klären (O5).
@@ -712,7 +770,7 @@ Konventionen: `{base}` = Instanz-Basis-URL (`WEB_URL`), API-Präfix der CE-Auth-
 
 #### P08-17 – Workspace Activity Logs
 
-**Funktionsbeschreibung (belegbar):** „See filterable activity logs for your entire workspace.“ (R1 Z. 740–749; Business/Enterprise; **nicht** Coming soon → ausgeliefert).
+**Funktionsbeschreibung (belegbar):** „See filterable activity logs for your entire workspace.“ (R1 Z. 740–749; Business/Enterprise; **nicht** Coming soon → ausgeliefert). **Abgrenzung (Verifikation):** Dok. 20 (`_data/P01.paid.json`, PF-59) zitiert einen Changelog v2.2.0 „audit logs for workspace and member activity“ (WebSearch, UNVERIFIZIERT); möglicherweise sind „Workspace Activity Logs“ und das Audit-Log (P08-18) im heutigen Produkt dieselbe Oberfläche. Die Audit-Log-Doku (W15) beschreibt nur Sicherheits-/Admin-Ereignisse, keine Work-Item-Änderungen; deshalb bleiben beide Features getrennt (O20). Plane-Doku zu „Activity Logs“ wurde per Websuche nicht gefunden.
 
 **CE-Ausgangslage (wird portiert):**
 - `IssueActivity`-Modell (Work-Item-Historie) mit Activity-Erzeugung im Celery-Task `issue_activities_task` (Details: `migration/analysis/04-api-intern-arbeitsobjekte.md`).
@@ -735,18 +793,62 @@ Konventionen: `{base}` = Instanz-Basis-URL (`WEB_URL`), API-Präfix der CE-Auth-
 - Matrix: „See a full-workspace audit log and use APIs to flag Plane activity in compliance systems.“ (R1 Z. 751–760; Business/Enterprise, Coming soon).
 - „Audit logs, SCIM, advanced auth – Cloud: Business Plus; Self-hosted: Available on plans (Commercial and Airgapped)“ (`self-hosting-101.md` Z. 42).
 - MCP-Doku: „Revoke tokens in Plane settings and audit API token events in the workspace audit log.“ (D20 Z. 751) → Audit-Log enthält **API-Token-Ereignisse** (Anlegen/Widerrufen/Nutzung – Umfang UNVERIFIZIERT).
-- Ausgeliefert mit Commercial v3.1.0 bzw. Cloud-Release 2026-07-31 („audit logs“ im Changelog-Titel; W5, W6, sekundär); Nutzer-Doku `docs.plane.so/workspaces-and-users/audit-logs` existiert (W4, sekundär). Inhalt dieser Seiten war nicht abrufbar.
+- Ausgeliefert mit Commercial v3.1.0 bzw. Cloud-Release 2026-07-31 („audit logs“ im Changelog-Titel; W5, W6, sekundär); Nutzer-Doku `docs.plane.so/workspaces-and-users/audit-logs` existiert (W4, sekundär).
 - Verwandt: Argus schreibt eigene „audit rows“ mit Client-IP (H4 README Z. 1145; P08-29).
+- **Tier (Verifikation):** Der Seitentitel der Nutzer-Doku lautet „Workspace Audit Logs **Enterprise Grid**“ (W15) → Enterprise Grid; Matrix „Business“ (Coming soon) ist der ältere Stand. Widerspruch zu Dok. 21 F34 und Dok. 22 P03-F44 (dort Business beibehalten) dokumentiert.
 
-**Vorschlag (UNVERIFIZIERT):**
-- Unveränderliches, append-only Audit-Log je Workspace für sicherheitsrelevante Ereignisse: Login/Logout/fehlgeschlagene Logins (sofern workspace-zuordenbar), Mitglieder (eingeladen, beigetreten, Rolle geändert, entfernt, deaktiviert), Rollen/Permissions (P08-11…13), SSO/Identity/Domain-Änderungen (P08-03), Group-Sync-Konfiguration (P08-05), API-Tokens und Webhooks (angelegt/widerrufen), Projekt anlegen/archivieren/löschen, Export-Downloads, Workspace-Einstellungen; je Eintrag Akteur (User, Bot, API-Token, App), Aktion, Ziel, Änderungsdiff, IP, User-Agent, Zeitpunkt.
-- UI: Workspace Settings → „Audit logs“ (Icon `AuditLogsOutline`, R32 – im CE ungenutzt): Tabelle mit Filter (Zeitraum, Akteur, Aktion, Ressource), Detail-Drawer mit JSON-Diff, Export (CSV/JSON).
-- API: `GET /api/v1/workspaces/{slug}/audit-logs/?…` (Public-API, Scope-Vorschlag `workspaces.audit_logs:read`), Cursor-Pagination wie Public-API v1; optional Webhook-Event `audit_log.created` für Compliance-Systeme („use APIs to flag Plane activity in compliance systems“).
+**UI und Verhalten (Verifikation, W15, nur Suchzusammenfassung, mittel):**
+- Ort: **Settings → „Audit logs“** (Workspace). Sichtbar und exportierbar **nur für Admins und Owners**, nicht für Members/Guests.
+- Liste mit den **neuesten Ereignissen zuerst**; **Filter** und **Export** oben auf der Seite.
+- Einträge werden einmal geschrieben und können **von niemandem** (auch nicht von Admins) bearbeitet oder gelöscht werden.
+- Erfasste Ereignisse (laut Zusammenfassung): Sign-ins, Mitgliedschafts- und Rollenänderungen, Einstellungsänderungen, Integrationsaktivität, Sicherheitsereignisse, Aktivieren/Deaktivieren von Workspace-Features, Planwechsel; **das Lesen und Exportieren des Audit-Logs wird selbst protokolliert**. API-Token-Ereignisse sind enthalten (D20).
+- Nicht belegt: Spalten der Tabelle, Filter-UI, Exportformat, Aufbewahrungsdauer (UNVERIFIZIERT, O9). Icon-Vorschlag `AuditLogsOutline` (R32 – im CE ungenutzt; Zuordnung UNVERIFIZIERT).
+
+**API (Verifikation, D23 `audit-logs/*.md`, belegt):**
+
+| Methode | Pfad | Zweck | Scope |
+|---|---|---|---|
+| GET | `/api/v2/workspaces/{slug}/audit-logs/` | Liste/Abfrage/Export | `workspaces.audit_logs:read` |
+| GET | `/api/v2/workspaces/{slug}/audit-logs/{pk}/` | Einzeleintrag | `workspaces.audit_logs:read` |
+
+Kein `POST`/`PATCH`/`DELETE` – Einträge schreibt nur Plane. Kein workspace-übergreifendes Abfragen.
+
+**Audit-Log-Objekt (D23 `audit-logs/overview.md`):**
+
+| Feld | Typ | Bedeutung |
+|---|---|---|
+| `id` | uuid | ID des Eintrags |
+| `event_id` | uuid | ID des Ereignisses; Idempotenzschlüssel beim Import in Fremdsysteme |
+| `sequence_number` | integer | fortlaufende Schreibreihenfolge; Tiebreaker bei gleichem `created_at` |
+| `event_name` | string | konkretes Ereignis; belegte Beispiele: `member.role_updated`, `auth.sign_in`, `role.permissions_updated` (vollständiger Katalog nicht dokumentiert) |
+| `category` | string | `auth`, `member`, `role`, `settings`, `integration`, `webhook`, `security`, `instance` |
+| `outcome` | string | `success`, `failure` (Fehlversuche werden protokolliert) |
+| `source` | string | `platform` (Plane-App), `api` (REST-Client), `graphql`, `auth`, `system` (Plane selbst) |
+| `actor_type` | string | `user`, `api_token`, `system`, `anonymous` |
+| `actor_id` | uuid, nullable | handelnder Nutzer (= `member_id` der Mitgliederlisten); `null` bei `system`/`anonymous` |
+| `actor_display_name`, `actor_email` | string | Schnappschuss zum Ereigniszeitpunkt (spätere Umbenennung ändert alte Einträge nicht) |
+| `target_type` | string | Art des Ziels, Beispiele `workspace_member`, `user`, `role` |
+| `target_id` | string | ID des Ziels (bei Custom Roles der Slug, Beispiel `release-manager`) |
+| `target_display_name` | string | Schnappschuss-Bezeichnung des Ziels |
+| `old_value`, `new_value` | beliebig, nullable | Zustand vorher/nachher, freies Schema je `event_name` (Beispiel `{ "role": "member" }` → `{ "role": "owner" }`); bei Sign-in beide `null` |
+| `reason` | string | Begründung, v. a. bei `failure` (Beispiele `invalid_credentials`, `insufficient_permissions`) |
+| `metadata` | beliebig | Zusatzkontext je `event_name` (Beispiele `{ "workspace_slug": … }`, `{ "attempt": 3 }`, `{ "requested": "projects.states:write" }`) |
+| `ip_address` | string, nullable | Client-IP; `null` bei `system` |
+| `user_agent` | string | User-Agent |
+| `workspace_id` | uuid | Workspace |
+| `project_id` | uuid, nullable | Projekt, falls projektbezogen |
+| `created_at` | date-time (UTC) | Zeitpunkt; Basis der Datumsfilter |
+
+**Listen-Parameter (D23 `audit-logs/list-audit-logs.md`):** Filter (UND-verknüpft) `created_after`, `created_before` (ISO-8601, UTC), `actor_id` (schließt `system`/`anonymous` aus), `event_name`, `category`, `outcome`, `target_type`, `target_id`, `ip_address`, `search` (Freitext); Sortierung `order_by` ∈ `-created_at` (Default für Untersuchungen), `created_at`, `id`, `-id` (unbekannte Werte fallen still auf die Default-Sortierung zurück); Pagination `per_page` (Default 50, Max 200), `offset` (Max 10 000), `paginate=cursor` (Envelope mit `next_cursor`/`has_more` statt `next`/`total_count`, ohne `COUNT`, stabil bei neuen Einträgen), `count` (Default `true`; `false` lässt `total_count` weg); `fields` (Sparse Fields, `all` = alle; unbekannter Name → `400` mit Liste gültiger Felder; `id` immer enthalten). Offset-Envelope: `data`, `next`, `previous`, `total_count`, `pagination.style = "offset"`. Fehler: `401 unauthorized`, `402 payment_required` (Feature nicht im Plan/abgeschaltet – entfällt nach ADR-001), `403 forbidden` (Rolle oder Token-Scope), `404 not_found`, `406 not_acceptable`, `429 rate_limited` (mit `Retry-After`). Hinweis der Doku: der Scope legt E-Mails, IPs und User-Agents des ganzen Workspaces offen.
+
+**Vorschlag (UNVERIFIZIERT) für die Portierung:**
+- Append-only-Tabelle, beschrieben von allen sicherheitsrelevanten Pfaden (Auth inkl. Fehlversuche, Mitglieder, Rollen/Schemes P08-11…13, Einstellungen, Integrationen, Webhooks, Sicherheit inkl. SSO/Identity/Domains P08-03 und Group Sync P08-05, Instanz-Ereignisse, API-Token-Ereignisse, Lesen/Export des Logs selbst).
+- Optional Webhook-Event für Compliance-Systeme („use APIs to flag Plane activity in compliance systems“) – nicht belegt.
 - Aufbewahrung: Instanz-Einstellung (ADR-001: keine Plan-Limits).
 
-**Datenmodell (Vorschlag):** `audit_logs(id uuid, workspace_id, occurred_at timestamptz, actor_type, actor_id, actor_display, action text, resource_type, resource_id, project_id null, changes jsonb, ip inet, user_agent text, request_id)`; Partitionierung nach Monat; kein Update/Delete außer Retention-Job.
+**Datenmodell (Vorschlag, an das belegte Objekt angelehnt):** `audit_logs(id uuid, event_id uuid unique, sequence_number bigint identity, event_name, category, outcome, source, actor_type, actor_id null, actor_display_name, actor_email, target_type, target_id text, target_display_name, old_value jsonb null, new_value jsonb null, reason, metadata jsonb, ip_address inet null, user_agent, workspace_id, project_id null, created_at timestamptz)`; Indizes `(workspace_id, created_at desc)`, `(workspace_id, actor_id)`, `(workspace_id, category)`, `(workspace_id, target_type, target_id)`; Partitionierung nach Monat; kein Update/Delete außer Retention-Job.
 
-**Quellen:** R1 Z. 751; D12; D20; H4; W4–W6 (W, sekundär). **Konfidenz:** Existenz hoch; Inhalt niedrig (O9).
+**Quellen:** R1 Z. 751; D12; D20; D23; H4; W4–W6 (W, sekundär); W15 (W, Verifikation). **Konfidenz:** Existenz hoch; API-Objekt und Filter hoch (Doku-Branch, Stand 11.08.2026); UI mittel; Ereigniskatalog niedrig (O9).
 
 ---
 
@@ -798,10 +900,11 @@ Konventionen: `{base}` = Instanz-Basis-URL (`WEB_URL`), API-Präfix der CE-Auth-
 - „Audit rows“ protokollieren Client-IPs (`ARGUS_TRUSTED_PROXIES`).
 - Browser-Routen unter `/argus/` (Web-Build `VITE_ARGUS_BASE_PATH`), d. h. eigene UI-Seiten in der Web-App.
 - Changelog v3.2.0 „PII scanning“ (W9, sekundär). UI-Texte, Plan-Tier und Erkennungsregeln: **nicht belegt**.
+- **Ergänzung (Verifikation):** Laut Dok. 22 P03-F33 (Suchzusammenfassung des v3.2.0-Changelogs, UNVERIFIZIERT) kam Argus mit Commercial v3.2.0 (10.09.2026); gescannt werden Work-Item-Beschreibungen, Kommentare, Pages und Anhänge; Kategorien E-Mail-Adressen, Telefonnummern, Kartennummern, Ausweis-/Regierungs-IDs, Adressen, Secrets, API-Keys; Funde nach Kategorie und Fundort; Schwärzung (Redaction) kann vor dem Teilen oder Exportieren erzwungen werden; Inhalte verlassen den Workspace nicht. Belegte Scan-Run-Status: `running`, `pausing`. Weitere Architekturdetails (Reaper, `/healthz`, `/admin-health`, Session-Prüfung über `GET <API_INTERNAL_URL>/api/users/session/`) stehen in Dok. 22 P03-F33. Propel liefert die Icons `PiiScannerOutline`/`PiiScannerFilled` (R32), im CE ungenutzt.
 
 **Migrationshinweis:** Als .NET-Hintergrunddienst im Aspire-AppHost; Erkennungsregeln (E-Mail, Telefonnummern, IBAN, Kreditkarten mit Luhn, API-Keys) als Vorschlag (UNVERIFIZIERT, O9).
 
-**Quellen:** H1; H4; W9. **Konfidenz:** Infrastruktur hoch; Produktfunktion niedrig.
+**Quellen:** H1; H4; R32; W9; Dok. 22 P03-F33. **Konfidenz:** Infrastruktur hoch; Produktfunktion niedrig.
 
 ---
 ### 4.5 Lizenz, Seats, Pläne (Dokumentation des Originals; **entfällt nach ADR-001**, außer wo „Portierung“ etwas anderes sagt)
@@ -857,6 +960,8 @@ Konventionen: `{base}` = Instanz-Basis-URL (`WEB_URL`), API-Präfix der CE-Auth-
 - **Telemetrie für Abrechnung** (D16): „Plane tracks the number of workspaces, members, and roles to bill you correctly and ensure accurate reporting in your workspace's Billing and plans screen and the Prime portal.“
 - **CE-Spuren:** `MACHINE_SIGNATURE` = SHA-256 über Hostname, erste MAC-Adresse, `/proc/cpuinfo`, `free -h`, `df -h` (R30 `docker-entrypoint-api.sh` Z. 10–24); `register_instance` prüft nur, dass die Signatur nicht leer ist, legt `Instance` mit `instance_id = secrets.token_hex(12)`, `edition = PLANE_COMMUNITY` an und stößt Telemetrie an (R30). `Instance.edition` ist immer `PLANE_COMMUNITY` (R10).
 
+**CE-Status (Verifikation):** Stub/UI-Hülle im CE statt „teilweise“ – im CE ist keine Lizenzvalidierung und kein Feature-Flag-Abruf erreichbar; vorhanden sind nur Enum/Typ-Spuren und die Präsenzprüfung der Signatur (Dok. 22 Verifikations-Protokoll: `MACHINE_SIGNATURE` im CE „anders berechnet als im EE-Chart“; Dok. 22 P03-F02 „fehlt“).
+
 **Portierung:** entfällt (ADR-001, ADR-004: keine Pflicht-Verbindung nach außen). Health-Checks/System-Checks: siehe Dok. 22 (P03-F34). `MACHINE_SIGNATURE` nicht nötig. **Quellen:** D8; D10; D12; D13; D15; D16; H1–H3; R10; R30. **Konfidenz:** hoch.
 
 ---
@@ -911,6 +1016,7 @@ Konventionen: `{base}` = Instanz-Basis-URL (`WEB_URL`), API-Präfix der CE-Auth-
 
 - Matrix: Kanäle Free Forum-Icon; One Mail + Forum; Pro Mail + Forum + Chat; Business/Enterprise „Full-suite professional services“; SLA Pro+ („SLAs are by priority of work item and tiers can be requested“, Link Talk-to-Sales) (R1 Z. 1209–1252); `ENTERPRISE_PLAN_FEATURES` „Full-suite professional services“ (R2 Z. 13).
 - God Mode → General (Commercial, B11; D5): Abschnitt „Chat + telemetry“ mit „Chat with us – Let your users chat with us. Toggling Telemetry off turns this off automatically.“ und „Let Plane collect anonymous usage data – No PII is collected. This anonymized data is used to understand how you use Plane and build new features in line with our Telemetry Policy.“; Button „Save changes“. CE: nur der Telemetrie-Schalter (`apps/admin/app/(all)/(dashboard)/general/form.tsx` Z. 119–140); Modellfeld `Instance.is_support_required` (Default `true`) ohne UI (R10). Hilfe-Texte „Support“, „Message support“ (`common.json`).
+- **CE-Status (Verifikation):** Stub/UI-Hülle im CE statt „teilweise“ – `is_support_required` kommt nur in `apps/api/plane/license/models/instance.py` Z. 36 und `packages/types/src/instance/base.ts` Z. 36 vor (`grep`), ohne Lese- oder Schreibzugriff.
 - **Portierung:** entfällt (Vertrag/Organisation; ADR-004: kein externer Chat-Dienst, Telemetrie nach außen abgeschaltet – siehe Architektur). **Konfidenz:** hoch.
 
 ---
@@ -930,23 +1036,27 @@ EE-Texte im CE (R8, `project.json` Z. 370 ff.): Workspace „Import Members from
 
 | Nr. | Thema | Unklarheit | Auswirkung / Vorschlag |
 |---|---|---|---|
-| O1 | Instanz-SSO vs. Workspace-SSO | Self-hosted-Doku beschreibt SSO **instanzweit** im God Mode (D1, D2, D3); die EE-Texte `sso.*` beschreiben **workspace-bezogenes** SSO mit verifizierten Domains (P08-03), vermutlich Cloud. Ob beides in derselben Edition koexistiert, ist nicht belegt. | **Rückfrage an den Auftraggeber:** beide Varianten bauen (Instanz-SSO für Self-hosted-Betrieb, Workspace-Identity für Mandantentrennung) oder nur Instanz-SSO? Vorschlag: beide, Workspace-Identity optional. |
+| O1 | Instanz-SSO vs. Workspace-SSO | Self-hosted-Doku beschreibt SSO **instanzweit** im God Mode (D1, D2, D3); die EE-Texte `sso.*` beschreiben **workspace-bezogenes** SSO mit verifizierten Domains (P08-03), vermutlich Cloud. Ob beides in derselben Edition koexistiert, ist nicht belegt. | **Rückfrage an den Auftraggeber:** beide Varianten bauen (Instanz-SSO für Self-hosted-Betrieb, Workspace-Identity für Mandantentrennung) oder nur Instanz-SSO? Vorschlag: beide, Workspace-Identity optional. Verifikation: Workspace-SSO ist laut plane.so/business ein Cloud-Merkmal („SSO on Cloud“, W17); eine verifizierte Domain gilt instanzweit nur für einen Workspace (W16). |
 | O2 | 2FA und Passkeys | Kein öffentlicher Detail-Spec erreichbar (Faktoren, Recovery-Codes, Erzwingung je Workspace, Geltung für SSO-Logins, God-Mode). | Entwurf in P08-07/08 als Vorschlag; Nachrecherche (siehe O12). |
 | O3 | Password Policy, Domain Security | Konfigurierbare Parameter, Geltungsbereich (Instanz/Workspace) und Durchsetzungspunkte nicht belegt. | Entwurf in P08-09/10; Nachrecherche. |
-| O4 | RBAC, GAC, Approvals | Permission-Katalog der Custom Roles, GAC-Semantik und Matrix-Zeile „Approvals“ (Workspace/Projekt/WIT) ohne Spezifikation. Nur Fragmente der Permissions-Matrix (W7, sekundär). | Permission-Katalog aus CE-Code (Dok. 03 §2.4) + Fragmenten ableiten (Aufgabe D05); Approvals = Dok. 25 F03. |
+| O4 | RBAC, GAC, Approvals | Verifikation: GAC-Struktur (Custom Roles aus Permission Schemes, System-Schemes nicht editierbar, bedingte Rechte, Lese-API) jetzt belegt (P08-12/13). Offen: konkreter Permission-Katalog (Strings in `permissions`/`permission_grants`), vollständige Permissions-Matrix, Matrix-Zeile „Approvals“ (Workspace/Projekt/WIT). Nur Fragmente der Permissions-Matrix (W7, sekundär). | Permission-Katalog aus CE-Code (Dok. 03 §2.4) + Fragmenten ableiten (Aufgabe D05); Approvals = Dok. 25 F03. |
 | O5 | Admin Interface | Bedeutung von „admin overview to manage workspace and project settings“ unbelegt; mögliche Überschneidung mit Workspace Governance (Dok. 25 F07). | Vorschlag P08-16; mit D13c abstimmen. |
 | O6 | Offline-Group-Sync | Wie Gruppen ohne Login abgefragt werden (reines OIDC liefert Gruppen nur im Token). | Provider-Adapter optional; ohne Adapter Schalter „Offline sync“ deaktiviert (Dok. 21 O12). |
 | O7 | SCIM | Nur Nennungen (D12, W12, W13); Endpunkte, Token-Verwaltung, Scope (Instanz/Workspace) unbekannt. | SCIM 2.0 Standard als Vorschlag; Nachrecherche. |
-| O8 | Rollen-Slugs | D17 nutzt Projekt-Slug `member`, D19 nennt Rolle „Contributor“; Slugs für Owner/Commenter unbekannt. | Vorschlag: `owner`, `admin`, `member`, `guest` (Workspace); `admin`, `member` (= Contributor), `commenter`, `guest` (Projekt). |
-| O9 | Audit-Log-Inhalt, Argus-Regeln | Ereigniskatalog, Felder, API-Pfade des Audit-Logs (W4–W6 nicht lesbar); Erkennungsregeln/UI von Argus. | Vorschläge in P08-18/29; Nachrecherche. |
+| O8 | Rollen-Slugs | D17 (v1-Group-Sync) nutzt Projekt-Slug `member`, D19 nennt Rolle „Contributor“. **Verifikation:** v2-Doku nennt die eingebauten Slugs `owner`, `member`, `contributor` und zeigt denselben Nutzer als Workspace-`member` und Projekt-`contributor` (D23); Changelog: „Project Member“ → „Contributor“ (W20). Widerspruch: Doku-Zusammenfassung „Contributor ab Business“ vs. Umbenennung der Free-Rolle (W18). Slugs für Workspace-Admin und Commenter weiterhin nicht belegt. | Vorschlag (korrigiert): Workspace `owner`, `admin`, `member`, `guest`; Projekt `admin`, `contributor`, `commenter`, `guest`; v1-Wert `member` für Projektrollen als Alias von `contributor` akzeptieren. |
+| O9 | Audit-Log-Inhalt, Argus-Regeln | Verifikation: Felder, Kategorien, Filter und API-Pfade des Audit-Logs sind jetzt über D23 belegt. Offen: vollständiger `event_name`-Katalog (belegt nur `member.role_updated`, `auth.sign_in`, `role.permissions_updated`), Tabellenspalten/Exportformat der UI, Aufbewahrung; Erkennungsregeln/UI von Argus. | Vorschläge in P08-18/29; Nachrecherche. |
 | O10 | God-Mode „Remove“ | Löschen vs. Deaktivieren eines Instanz-Users nicht beschrieben (nur „remove the user from the instance entirely“, Status „Suspended“ existiert). | Vorschlag: Deaktivieren (Soft), Daten bleiben. |
 | O11 | UI 1:1 vs. ADR-001 | Wegfall von „Billing & Plans“-Eintrag, Editions-Badge (inkl. Versions-Tooltip „Version: v…“), Upgrade-Modal, Trial-Banner; Wort „seats“ im God-Mode-Untertitel „View and manage seats for all the members active in this instance“. | **Rückfrage an den Auftraggeber:** Versionsanzeige an anderer Stelle (z. B. Hilfe-Menü)? Untertitel neutralisieren („… all the members …“)? |
-| O12 | Recherche-Lücke | WebSearch-Budget des Laufs war erschöpft (Limit 200/Turn, geteilt); `docs.plane.so`/`plane.so` nicht abrufbar; GitHub-Doku-Repo nicht verfügbar. | Nachrecherche in einem Folgelauf mit Budget: `docs.plane.so/authentication/sso`, `…/authentication/group-sync`, `…/authentication/two-factor-authentication` (Pfad UNVERIFIZIERT), `…/workspaces-and-users/audit-logs`, `…/roles-and-permissions/permissions-matrix`, `…/roles-and-permissions/member-roles`, `…/workspace-administration/workspace-governance`, `plane.so/blog/introducing-granular-access-control-gac-ldap-idp-group-sync`, `plane.so/changelog/release-v3-1-0-audit-logs-skills-in-plane-ai-dashboards-and-more`, `plane.so/changelog/release-v3-2-0-workspace-governance-ai-memory-pii-scanning-and-more`, `plane.so/pricing`, `plane.so/enterprise-grid`. |
+| O12 | Recherche-Lücke (Verifikation: teilweise geschlossen durch W15–W22; offen bleiben 2FA/Passkeys, Password Policy, Domain Security, Activity Logs, SCIM, Audit-Log-Aufbewahrung) | WebSearch-Budget des Autorenlaufs war erschöpft (Limit 200/Turn, geteilt); `docs.plane.so`/`plane.so` nicht abrufbar; GitHub-Doku-Repo nicht verfügbar. | Nachrecherche in einem Folgelauf mit Budget: `docs.plane.so/authentication/sso`, `…/authentication/group-sync`, `…/authentication/two-factor-authentication` (Pfad UNVERIFIZIERT), `…/workspaces-and-users/audit-logs`, `…/roles-and-permissions/permissions-matrix`, `…/roles-and-permissions/member-roles`, `…/workspace-administration/workspace-governance`, `plane.so/blog/introducing-granular-access-control-gac-ldap-idp-group-sync`, `plane.so/changelog/release-v3-1-0-audit-logs-skills-in-plane-ai-dashboards-and-more`, `plane.so/changelog/release-v3-2-0-workspace-governance-ai-memory-pii-scanning-and-more`, `plane.so/pricing`, `plane.so/enterprise-grid`. |
 | O13 | SAML Entity ID | D1: `…/auth/saml/`; B2: `…/auth/saml/metadata/`. | Vorschlag in P08-01 (Metadaten-URL als Entity ID). |
 | O14 | Airgapped-Pläne | D13 „exclusively for Enterprise Grid“ vs. D10 „Activate Pro or Business on Airgapped Edition“. | Irrelevant nach ADR-001/004 (Airgapped ist Grundeigenschaft). |
 | O15 | „Business Plus“ | Einzige Nennung in `self-hosting-101.md` Z. 42; kein Enum, keine Matrix-Spalte. | Nur dokumentarisch; nach ADR-001 irrelevant. |
-| O16 | Gäste im Free-Plan | Matrix: Free ✗ Gäste; CE (= Free-Parität) hat die Gast-Rolle ohne Einschränkung. | Funktion bleibt (CE-Verhalten), Kontingent entfällt. |
+| O16 | Gäste im Free-Plan (Verifikation: **erledigt**) | Matrix: Free ✗ Gäste; CE (= Free-Parität) hat die Gast-Rolle ohne Einschränkung. Doku 2026: Guest „auf allen Plänen“ (W18). | Funktion bleibt (CE-Verhalten), Kontingent entfällt. |
 | O17 | Ort der Session-Einstellungen | D6 nennt „System Configurations → Session settings“; auf keinem Screenshot sichtbar. | God-Mode-Seite „System Configurations“ neu anlegen oder in „General“ integrieren (Entscheidung D13c). |
+| O18 | Tier-Widersprüche (Verifikation) | SAML/OIDC: Matrix One vs. Badges Pro; Rollen: Matrix Pro „Pre-defined roles“ vs. Doku Business; Custom Roles: Matrix Business „RBAC“ vs. Doku Enterprise Grid; Audit Logs: Matrix Business vs. Doku-Titel Enterprise Grid. In allen Fällen wurde die aktuellere/spezifischere Quelle gewählt; Dok. 21 F34 und Dok. 22 P03-F44 führen Audit Logs noch als Business. | Nach ADR-001 ohne Auswirkung auf die Portierung; die Schwester-Dokumente sollten beim nächsten Lauf angeglichen werden. |
+| O19 | Rolle „Workspace Admin“ vs. CE-„Admin“ | Changelog: CE-„Workspace Admin“ heißt jetzt „Owner“, die neue Rolle „Workspace Admin“ liegt darunter (W20). Rechteumfang der neuen Admin-Rolle gegenüber Owner (außer Löschen/Ownership-Transfer) und Anzahl möglicher Owner sind nicht belegt. | Rechte-Matrix in Architektur D05 festlegen; Default: Admin = Owner-Rechte ohne Workspace-Löschung, Ownership-Transfer und Billing (Billing entfällt). |
+| O20 | Workspace Activity Logs vs. Audit Logs | Unklar, ob die Matrix-Zeile „Workspace Activity Logs“ (Business) im heutigen Produkt eine eigene Oberfläche ist oder im Audit-Log (Enterprise Grid) aufging (Changelog v2.2.0 „audit logs for workspace and member activity“, nur über Dok. 20). | Getrennt portieren (P08-17 Work-Item-/Entitätsaktivität, P08-18 Sicherheits-/Admin-Audit); Zusammenlegung in der Architektur prüfen. |
+| O21 | Namespace `instance` bei Rollen/Schemes | Die v2-Doku erlaubt `namespace = instance` (D23); Bedeutung (Instanz-Rollen für God Mode, z. B. Instance Admin) nicht beschrieben. | Vorerst nicht portieren; God-Mode-Rechte bleiben über `InstanceAdmin` (P08-27). |
 
 ---
 
@@ -1351,7 +1461,7 @@ Automatisch extrahiert (Skript liest nur JSON, führt keinen Repo-Code aus). Spa
 | B-23 | `apps/web/components/workspace/billing/root.tsx`, `comparison/*.tsx`; `apps/web/components/license/modal/upgrade-modal.tsx`, `modal/card/{base-paid-plan-card,checkout-button,discount-info,free-plan,plan-upgrade,talk-to-sales}.tsx`; `apps/web/components/workspace/edition-badge.tsx` | Billing-Seite, Upgrade-Modal („Upgrade to a paid plan and unlock missing features.“), Editions-Badge „Community“ | entfällt (ADR-001) |
 | B-24 | `packages/constants/src/subscription.ts`, `packages/constants/src/payment.ts`, `packages/types/src/payment.ts`, `packages/utils/src/subscription.ts`, `packages/constants/src/endpoints.ts` Z. 31–33 | Plan-Listen, Preise, Redirect-URLs, Marketing-Links | entfällt |
 | B-25 | `packages/blocks/src/empty-state/assets/horizontal-stack/group-syncing.tsx`; Registry `asset-registry.tsx` Z. 75–77 | Illustration `GroupSyncingHorizontalStackIllustration` | Leerzustand Group syncing (P08-05) |
-| B-26 | `@makeplane/propel@0.7.3` `dist/icons/other-products/{oidc,saml}.d.ts`; `dist/icons/miscellaneous/{audit-logs,access-and-roles,shield,shield-minus,key,billings,approver,upgrade,upgrade-alt,deactivated-user,user-cog,lock-keyhole-circle,file-key,logs,logs-alt,log-config,activity,message-support,folder-lock}-{outline,filled}.d.ts` | Icons `Oidc`, `Saml`, `AuditLogsOutline`, `AccessAndRolesOutline`, `ShieldOutline`, `ShieldMinusOutline`, `KeyOutline`, `BillingsOutline`, `ApproverOutline`, `UpgradeOutline`, `DeactivatedUserOutline`, `UserCogOutline`, `LockKeyholeCircleOutline`, `FileKeyOutline`, `LogsOutline`, `LogsAltOutline`, `LogConfigOutline`, `ActivityOutline`, `MessageSupportOutline`, `FolderLockOutline` (+ `*Filled`). Im CE verwendet: `AccessAndRolesOutline` (God-Mode-Dropdown), `KeyOutline` (Admin-Auth „Passwords“, Profil „API tokens“), `BillingsOutline` (Settings „Billing & Plans“), `DeactivatedUserOutline` (Mitgliederliste), `ActivityOutline` (Power K); übrige ungenutzt | Icon-Quelle für 1:1-UI |
+| B-26 | `@makeplane/propel@0.7.3` `dist/icons/other-products/{oidc,saml}.d.ts`; `dist/icons/miscellaneous/{audit-logs,access-and-roles,shield,shield-minus,key,billings,approver,upgrade,deactivated-user,lock-keyhole-circle,file-key,logs,logs-alt,log-config,activity,message-support,folder-lock,group-sync,pii-scanner}-{outline,filled}.d.ts`, zusätzlich nur `user-cog-outline.d.ts` und nur `upgrade-alt-filled.d.ts` (Verifikation korrigiert; `group-sync`, `pii-scanner` ergänzt) | Icons `Oidc`, `Saml`, `AuditLogsOutline`, `AccessAndRolesOutline`, `ShieldOutline`, `ShieldMinusOutline`, `KeyOutline`, `BillingsOutline`, `ApproverOutline`, `UpgradeOutline`, `DeactivatedUserOutline`, `LockKeyholeCircleOutline`, `FileKeyOutline`, `LogsOutline`, `LogsAltOutline`, `LogConfigOutline`, `ActivityOutline`, `MessageSupportOutline`, `FolderLockOutline`, `GroupSyncOutline`, `PiiScannerOutline` (+ `*Filled`); `UserCogOutline` (ohne Filled), `UpgradeAltFilled` (ohne Outline). Im CE verwendet: `AccessAndRolesOutline` (God-Mode-Dropdown), `KeyOutline` (Admin-Auth „Passwords“, Profil „API tokens“), `BillingsOutline` (Settings „Billing & Plans“), `DeactivatedUserOutline` (Mitgliederliste), `ActivityOutline` (Power K); übrige ungenutzt | Icon-Quelle für 1:1-UI |
 | B-27 | `deployments/cli/community/restore-airgapped.sh` | Restore-Skript für Airgapped-Commercial | Airgapped-Migration (entfällt) |
 | B-28 | i18n (Anhang A) | 251 Schlüssel, davon EE-only siehe Methode §1.4 | UI-Texte 1:1 |
 
@@ -1386,3 +1496,134 @@ Alle Dateien unter `/home/user/makeplane/developer-docs/docs/public/images/` (nu
 | `activate-license/activate-pro-license.webp`, `copy-license-key.webp`, `download-license.webp`, `workspace-settings.webp` | 2499×1704, 2708×1174, 2907×934, 3000×838 | Prime-Portal bzw. Navigation zu Workspace Settings (`workspace-settings.webp` gesichtet: Workspace-Dropdown mit „Workspace settings“) | P08-19/22 |
 
 **Hinweis zur Optik:** Die Screenshots stammen aus unterschiedlichen Versionen (z. B. Sidebar-Reihenfolge „Workspaces“ vor/nach „Email“; SSO-Button unter bzw. über dem E-Mail-Feld). Maßgeblich für die 1:1-UI ist die **CE-Komponentenbasis v1.4.2** (Propel 0.7.3, `apps/admin`), in die die EE-Elemente im Stil der jeweils neuesten Screenshots (B4, B5, B6, B10) eingefügt werden.
+
+---
+
+## Verifikations-Protokoll
+
+Verifikationslauf vom 22.10.2026 (Skeptiker/Verifizierer Cluster P08). Geprüft wurden (a) jede Tier-Zuordnung gegen `apps/web/components/workspace/billing/comparison/plans.tsx`, `packages/constants/src/subscription.ts`, die Schwester-Dokumente `migration/features/20-*.md` bis `28-*.md` (einschließlich der verifizierten Listen `_data/P01.paid.json`, `P02.paid.json`, `P03.paid.json`, `P05.paid.json`, `P06.paid.json`) und gezielte WebSearch-Abfragen, (b) jeder CE-Status per `grep`/Lesen im Repo `/home/user/plane`, (c) die Vollständigkeit des Clusters gegen Developer-Docs (Branch `master` offline und Branch `docs/api-reference-v2`, D23), Helm-Chart und Propel-Icons, (d) Beschreibungen auf erfundene oder übertriebene Aussagen. Korrekturen sind direkt im Text eingearbeitet und mit „Verifikation“ markiert. Außerhalb von `migration/` wurde nichts geändert; kein Commit.
+
+### V.1 Bestätigte Aussagen (Stichproben mit Beleg)
+
+| Aussage im Dokument | Prüfung | Ergebnis |
+|---|---|---|
+| Matrix-Zeilen Kap. 2 (Z. 676, 695, 706, 717/719, 729, 740, 751/753, 1032, 1043, 1060, 1071/1073, 1083, 1095, 1106, 1117/1119, 1136–1193, 1209, 1235) und Zellwerte | `grep -n 'title:\|comingSoon\|selfHostedOnly\|cloudOnly'` und Lesen `plans.tsx` Z. 660–1311 | bestätigt, alle Zellwerte stimmen |
+| `planHighlights` Z. 1304–1308, `PLANE_PLANS` Z. 1266–1301, Pro 8/6 $, Business/Enterprise „Talk to Sales“, „Quote on request“, Badge „Popular“ | `plans.tsx`; `plan-detail.tsx` Z. 41, 63 | bestätigt |
+| `ENTERPRISE_PLAN_FEATURES` Z. 7–14, `BUSINESS_PLAN_FEATURES` Z. 16–23, `ONE_PLAN_FEATURES` Z. 34–41, `FREE_PLAN_UPGRADE_FEATURES` Z. 43–48 inkl. Einzelzeilen 8, 9, 10, 13, 18, 35, 44 | `cat -n packages/constants/src/subscription.ts` | bestätigt |
+| Extension-Points `TExtendedLoginMediums = never`, `TExtendedInstanceAuthenticationModeKeys = never`, `EXTENDED_LOGIN_MEDIUM_LABELS = {}`, `useExtendedOAuthConfig` (Web und Space funktional identisch), `EXTENDED_HEADER_SEGMENT_LABELS = {}`, Prop `unavailable` | Lesen der Dateien | bestätigt |
+| Keine 2FA-/Passkey-Spur im CE | `grep -rniE "two_factor\|two-factor\|twofactor\|\b2fa\b\|totp\|\bmfa\b\|passkey\|webauthn"` über `apps`, `packages` | nur `plans.tsx` – bestätigt |
+| `is_password_expired`, `is_password_reset_required` ungenutzt; `whitelist_emails` ungenutzt; `is_support_required` ungenutzt | `grep` ohne Migrationen | nur Modell (+ Typ) – bestätigt |
+| `mutateWorkspaceMembersActivity` No-op | `apps/web/store/workspace/index.ts` Z. 66, 385–391 | bestätigt; ergänzend: **kein Aufrufer** im gesamten Repo |
+| `user-activity`-Endpunkte | `apps/api/plane/app/urls/workspace.py` Z. 137–146 | bestätigt |
+| `InstanceAdminEndpoint` (POST nur für existierende User, `role` Default 20; DELETE mit `pk`) | `apps/api/plane/license/api/views/admin.py` Z. 47–88; `apps/api/plane/license/urls.py` Z. 25, 37 | bestätigt |
+| CE-God-Mode: 6 Sidebar-Einträge, Routen | `apps/admin/hooks/use-sidebar-menu/core.ts`; `apps/admin/app/routes.ts` Z. 11–26 | bestätigt |
+| `FILE_SIZE_LIMIT` Z. 389, `DATA_UPLOAD_MAX_MEMORY_SIZE` Z. 403, `SESSION_COOKIE_AGE` Z. 425, `ADMIN_SESSION_COOKIE_AGE` Z. 432, `file_size_limit` Z. 142, Session-Middleware Z. 64, `login.py` Z. 19 | `grep -n` | bestätigt |
+| Fehlercode-Lücken 5106–5109, 5113–5114, 5116–5119; 5015, 5019, 5021, 5065, 5122 | Skript über `apps/api/plane/authentication/adapter/error.py` | bestätigt |
+| `RESTRICTED_URLS` = `RESTRICTED_WORKSPACE_SLUGS`, je 65 Einträge, Dubletten `monitor`, `config`, `mobile` | Python-Vergleich der Listen | bestätigt |
+| i18n-Zeilenangaben (`auth.json` Z. 2/278/361, `workspace-settings.json` Z. 21/68/192/253/282, `workspace.json` Z. 331, `project.json` Z. 370, `home.json` Z. 68, `empty-state.json` Z. 252) und „EE-Texte im CE unreferenziert“ | `grep -n`; `grep` der Schlüssel außerhalb `locales/` (0 Treffer für `group_syncing`, `settings.identity`, `sso.`, `auth.ldap`, `members_import`, `business_trial_banner`, `cancel_trial`, `add_seats`, `upgrade_request`, `sidebar.upgrade`, `sidebar.plane_pro`, `higher_subscription`, `guest_super_permissions`) | bestätigt; 17 von 251 referenzierte Schlüssel nachgezählt |
+| Gast-Logik im CE (`project-settings-member-defaults.tsx` Z. 127, 199–208; Suche Z. 96–100, 177–182, 229–234, 266; Export Z. 149–153; Page-Permission Z. 62–63; Favoriten-Serializer; Herabstufung `member.py` Z. 116–130) | Lesen | bestätigt |
+| Passwortregeln (`password.py` Z. 10–15, `packages/utils/src/auth.ts`, `SPACE_PASSWORD_CRITERIA`), `EAuthSteps` Z. 64–68, Aktionstext `auth-root.tsx` Z. 55, Mitgliederspalte „Authentication“ `useMemberColumns.tsx` Z. 112–118 | Lesen | bestätigt |
+| Screenshot B2 `saml-oauth.png` (Felder, Platzhalter, Hilfetexte, WEB/MOBILE-URLs, MAPPING, Buttons) und B10 `user-management.webp` (Spalten, Untertitel mit „seats“, Sidebar-Reihenfolge General, Email, Authentication, Workspaces, Billing, User Management, Artificial intelligence (deprecated), Images in Plane) | Bild gesichtet | bestätigt |
+| Docs-Badges (SAML/OIDC Pro+Business, LDAP/Airgapped/FIPS Enterprise Grid) | `grep -rn '<Badge'` über Developer-Docs (33 Treffer) | bestätigt |
+| Session-Expiry-Tabelle, User-Management-Tabelle/Modal/Status, LDAP-Defaults und Ablauf, FIPS-Defaults (`fips-deployment.md` Z. 46, 72, 163, 196–199), Lizenzfehlertexte, Monitor 5 min/300 min, `plane-architecture.md` Z. 46–47, `airgapped-requirements.md` Z. 10, `editions-and-versions.md` Z. 35/37, `self-hosting-101.md` Z. 42/54/60/80 | Lesen | bestätigt |
+| Helm-README: OIDC-Client-Secret, SAML-Zertifikat, `LDAP_BIND_PASSWORD` DB-resident bei `SKIP_ENV_VAR=1`; Argus-Werte | `README.md` Abschnitt „Secrets that live in the database“; `values.yaml` Z. 700–722 | bestätigt |
+| CE-Nutzung der Propel-Icons (`AccessAndRolesOutline`, `KeyOutline`, `BillingsOutline`, `DeactivatedUserOutline`, `ActivityOutline`) | `grep` | bestätigt |
+
+Keine Funktionsbeschreibung wurde als erfunden erkannt. Übertreibungen bzw. unbelegte Präzisierungen wurden korrigiert (K15, K16).
+
+### V.2 WebSearch-Abfragen (13 Tool-Aufrufe; S4 lief intern als Doppelabfrage, damit 14 von höchstens 15 verbraucht)
+
+| # | Abfrage | Befund | Wirkung |
+|---|---|---|---|
+| S1 | docs.plane.so audit logs workspace settings plan Enterprise Grid | Seite „Workspace Audit Logs Enterprise Grid“ mit Ort, Rollen, Unveränderlichkeit, Ereignisarten | W15; P08-18 Tier → Enterprise Grid, UI ergänzt |
+| S2 | Plane docs.plane.so two-factor authentication passkeys workspace | nur `docs.plane.com`-Changelog (anderes Unternehmen) | W23; P08-07/08 Warnung |
+| S3 | plane.so "two-factor" OR "2FA" OR "passkeys" … | nur `help.plane.com` (anderes Unternehmen) | W23 |
+| S4 | docs.plane.so single sign-on SSO workspace domain verification plan (intern 2 Abfragen) | docs.plane.so/authentication/sso: Domain nur in einem Workspace verifizierbar, Pending, `dig TXT` | W16; P08-03 ergänzt |
+| S5 | docs.plane.so custom roles permission schemes workspace settings roles Plane | Custom Roles aus Permission Schemes, Ort „Roles and permissions schemes“, System-Schemes, GAC Enterprise | W19; P08-12/13 |
+| S6 | "docs.plane.so/roles-and-permissions" member roles … | Owner/Member/Guest alle Pläne, Admin/Contributor/Commenter ab Business, Umbenennungen, Owner-Exklusivrechte, Custom Roles Enterprise Grid | W18; P08-11/12/14 |
+| S7 | plane.so changelog 2026-04-25 custom roles granular access permissions redesign | RBAC Standard, GAC Enterprise-Add-on, neue Rolle Workspace Admin (Business+), bedingte Rechte; Forum v3.0.0 „workspace governance, RBAC“ | W20, W21 |
+| S8 | docs.plane.so workspace security settings password policy allowed email domains restrict sign-ups | keine Plane-Treffer | O12 bleibt offen |
+| S9 | plane.so Enterprise Grid SCIM provisioning LDAP IdP group sync audit logs | GAC-/LDAP-Blog (10.06.2026): LDAP-Server-Typen, Group-Sync-Regeln; kein SCIM | W22; P08-04/05 |
+| S10 | "docs.plane.so/workspaces-and-users/audit-logs" export filters events tracked retention | keine Plane-Treffer | O9 bleibt offen |
+| S11 | plane.so pricing Pro Business Enterprise Grid SSO SAML OIDC "domain" … | plane.so/business „SSO on Cloud“ | W17; P08-03 Tier → Business |
+| S12 | plane.so changelog "two-factor" OR "passkey" OR "password policy" OR "session management" makeplane | nur `docs.plane.com`/`help.plane.com` (anderes Unternehmen) | W23 bestätigt |
+| S13 | docs.plane.so workspace activity log filter members projects Business plan Plane | keine Plane-Treffer | O20 |
+
+### V.3 Korrekturen (vorher → nachher)
+
+| # | Stelle | vorher | nachher | Beleg |
+|---|---|---|---|---|
+| K01 | P08-01 SAML Tier | One | **Pro** (Matrix One als Widerspruch) | `saml-sso.md` Z. 7; `plans.tsx` Z. 1274; Dok. 22 P03-F04 (verifiziert) |
+| K02 | P08-02 OIDC Tier | One | **Pro** | `oidc-sso.md` Z. 7; Dok. 22 P03-F05 |
+| K03 | P08-03 Workspace-Identity Tier | unklar | **Business** (Cloud, mittel) | W17 |
+| K04 | P08-05 Group Sync CE-Status | Stub/UI-Hülle | **fehlt** | `grep group_sync` nur `locales/`; Dok. 20 PF-98; Dok. 21 F12 (K09) |
+| K05 | P08-05 Icon-Vorschlag | `UserCogOutline` | `GroupSyncOutline` (eigenes Propel-Icon) | `dist/icons/index.d.ts` Z. 545–546 |
+| K06 | P08-11 Tier und Titel | Pro, „Pre-defined Roles“ | **Business**, „System-Rollen / RBAC“ | W18, W20 |
+| K07 | P08-11 CE-Mapping | Workspace 20→`admin`, Projekt 15→`member` | Workspace 20→`owner`; Projekt 15→`contributor` (v1-Alias `member`); neue Rollen Workspace `admin`, Projekt `commenter` | W20 (Umbenennungen); D23 `members/overview.md` |
+| K08 | P08-12 Tier und Inhalt | Business, „RBAC: benutzerdefinierte Rollen“ (nur Vorschlag) | **Enterprise Grid**, „Custom Roles“ mit belegtem Ort, Zusammensetzung aus Schemes, Ausschlussregeln | W19, W20 |
+| K09 | P08-13 Tier und Inhalt | Enterprise, nur Nennungen | **Enterprise Grid**; Permission Schemes, bedingte Rechte, v2-API `permission-schemes`, `permissions/me` | W19, W20, W22; D23 |
+| K10 | P08-14 Tier | One | **Pro** (Kontingent); Gast-Rolle laut Doku auf allen Plänen | B9; W18 |
+| K11 | P08-18 Tier | Business | **Enterprise Grid** | W15 (Seitentitel) |
+| K12 | P08-18 Inhalt | Ereignisse, Felder, API nur als Vorschlag (v1-Pfad `GET /api/v1/…/audit-logs/`) | belegtes v2-Objekt (23 Felder), Kategorien/Outcome/Source/Actor-Enums, Filter, Pagination, Fehler, Scope; UI-Verhalten aus W15 | D23 `audit-logs/*.md`; W15 |
+| K13 | P08-22 CE-Status | teilweise | **Stub/UI-Hülle** | Legende; Dok. 22 Verifikation (`MACHINE_SIGNATURE` anders berechnet) |
+| K14 | P08-22 Tier (JSON) | Cloud-only | **unklar** (Commercial-Edition-Mechanik, auch Self-hosted) | `plane-architecture.md` Z. 46–47 |
+| K15 | P08-02 „Default `groups`“ | Default `groups` | Beispielwert `groups`, UI-Platzhalter „Groups“, kein belegter Default | D17; R4 |
+| K16 | P08-07 Konfidenz Tier | hoch | mittel (nur Matrix) | keine Doku-Seite auffindbar |
+| K17 | P08-24 CE-Status | „im CE ohne Limit“ (kein Legendenwert); JSON „fehlt“ | **im CE vorhanden (nur Cloud-Gating)** | Legende; Dok. 20 PF-55 |
+| K18 | P08-24 Tier (JSON) | Cloud-only | **Pro** (Aufhebung der Grenze; Seats gelten auch Self-hosted) | `plans.tsx` Z. 676–693; `editions-and-versions.md` Z. 35 |
+| K19 | P08-26 CE-Status | teilweise | **Stub/UI-Hülle** (nur ungenutztes Feld) | `grep is_support_required` |
+| K20 | Legende CE-Status | „vollständige UI-Texte“ = Stub | Texte/Icons/Illustrationen = fehlt; ungenutzte Felder/Typen = Stub; teilweise nur bei erreichbarer Teilfunktion | Dok. 20 Abschnitt 3 (Abgrenzungsregel) |
+| K21 | R32 / Anhang B-26 | alle Icons mit Filled-Variante; ohne GroupSync/PiiScanner | `UserCogOutline` ohne Filled, `UpgradeAltFilled` ohne Outline; `GroupSync*`, `PiiScanner*` ergänzt | `dist/icons/miscellaneous/` |
+| K22 | §1.3 Web-Quellen | „Eigene WebSearch-Abfragen waren in diesem Lauf nicht möglich“ | auf den Autorenlauf präzisiert; W15–W23 ergänzt | V.2 |
+| K23 | Kernaussagen 4, 5 | Audit Logs nur Matrix; Rollenmodell nur Namespaces workspace/project | Audit Logs belegt; RBAC/GAC-Schichten, Namespace `instance`, Felder `level`/`status` | D23; W18–W20 |
+| K24 | Offene Punkte O4, O8, O9, O12, O16 | offen | präzisiert bzw. O16 erledigt | V.2 |
+
+### V.4 Ergänzungen
+
+| # | Ergänzung | Ort |
+|---|---|---|
+| E01 | Quelle D23 (Developer-Docs-Branch `docs/api-reference-v2`, Commit `b89c72c`) | §1.3 |
+| E02 | Web-Quellen W15–W23 inkl. Ausschluss von `plane.com` (anderes Unternehmen) | §1.3 |
+| E03 | Aktuelle Plan-Liste und Tier-Regel (One → aktueller Plan) | §1.2 |
+| E04 | Domain nur in einem Workspace verifizierbar; Datenmodell mit partiellem Unique-Index | P08-03 |
+| E05 | LDAP-Server-Typen (AD, OpenLDAP, FreeIPA) | P08-04 |
+| E06 | Group-Sync-Regeln (höchste Rolle, keine Herabstufung manueller Rollen, Workspace-Mitgliedschaft bleibt, alleinige Projekt-Admins/manuelle Mitglieder bleiben), v2-Feld `default_workspace_role_slug`, v2-Pfade, Herkunftsmarkierung | P08-05 |
+| E07 | Vollständige Liste der CE-Durchsetzungspunkte der Passwortprüfung | P08-09 |
+| E08 | Rollen-Doku 2026 (Owner/Admin/Member/Guest, Contributor/Commenter, Umbenennungen, Owner-Exklusivrechte), v2-Rollen-API, Querverweis Workspace-Access-Tokens (Dok. 28 P09-F52) | P08-11 |
+| E09 | Custom Roles (Ort, Zusammensetzung, Ausschlüsse) | P08-12 |
+| E10 | Permission Schemes, bedingte Rechte, effektive Berechtigungen, Namespace `instance` | P08-13 |
+| E11 | Abgrenzung Activity Logs ↔ Audit Logs | P08-17, O20 |
+| E12 | Audit-Log-UI, -Objekt, -Filter, -API, -Fehler | P08-18 |
+| E13 | Argus-Scanumfang (Dok. 22), Propel-Icons | P08-29 |
+| E14 | Querverweis God-Mode „System checks“ (Dok. 22) | §1.5 Punkt 8 |
+| E15 | Querverweis Mitglieder-CSV-Import = Dok. 28 P09-F32 | P08-31 |
+| E16 | Offene Punkte O18–O21 | Kap. 5 |
+| E17 | Finale Feature-Liste mit 33 Einträgen (30 Autoren-Einträge korrigiert; P08-23 in vier Einträge P08-23a–d aufgeteilt) | `migration/features/_data/P08.paid.json` |
+
+### V.5 Dokumentierte Widersprüche zwischen Quellen bzw. Schwester-Dokumenten
+
+| Thema | Quelle A | Quelle B | Entscheidung |
+|---|---|---|---|
+| SAML/OIDC Tier | `plans.tsx` Z. 1060/1071 One; Dok. 20 PF-93 One | Docs-Badges Pro/Business; Dok. 22 P03-F04/F05 Pro | Pro (aktueller, self-hosting-spezifisch) |
+| SAML/OIDC CE-Status | Dok. 22 P03-F04/F05 „fehlt“ | Dok. 20 PF-93 (K25), Dok. 27 „Stub“ | Stub (generische Extension-Points sind nach Legende Stub); Dok. 22 O33 |
+| Group Sync CE-Status | Dok. 22 P03-F08 „Stub“ | Dok. 20 PF-98, Dok. 21 F12 „fehlt“ | fehlt (nur Texte/Illustration/Icon) |
+| Rollen Tier | `plans.tsx` Pro „Pre-defined roles“; Dok. 20 PF-54 Pro | Doku 2026 Business (W18, W20); Dok. 21 F26 Business | Business |
+| Custom Roles Tier | `plans.tsx` Business „RBAC … custom ones“; Dok. 21 F26 Business | Doku/Changelog Enterprise Grid (W19, W20) | Enterprise Grid |
+| Audit Logs Tier | `plans.tsx` Business (CS); Dok. 21 F34, Dok. 22 P03-F44 Business | Doku-Seitentitel Enterprise Grid (W15); Dok. 20 PF-59 WebSearch „Enterprise Grid API audit logs“ | Enterprise Grid |
+| Password Policy CE-Status | Dok. 20 PF-96 „fehlt“ | Dok. 22 P03-F10, Dok. 27 „teilweise“ | teilweise (erreichbare feste Regeln) |
+| Group Sync Auto remove | v1-Doku: „remove users from projects/workspace“ (D17) | Blog: Workspace-Mitgliedschaft bleibt immer erhalten (W22) | Blog (spezifischer); UNVERIFIZIERT |
+| Contributor-Verfügbarkeit | Doku-Zusammenfassung „Contributor ab Business“ | Changelog „Project Member → Contributor“ (Free-Rolle) | offen (O8) |
+| Gäste im Free-Plan | `plans.tsx` Free „–“ | Doku: Guest auf allen Plänen; CE ohne Einschränkung | Doku/CE |
+| Projekt-Rollen-Slug | v1-Group-Sync-Beispiel `member` | v2 `contributor` | `contributor` mit Alias `member` |
+| `docs.plane.com` | Dok. 21 V.2 S1 wertet `docs.plane.com` als „Hinweis auf neue Domain plane.com“ | Treffer beschreiben Bankkonto-Änderungen und „administrators and managers“ (anderes Unternehmen); Dok. 22 Verifikation verwirft `docs.plane.com` ebenfalls | `plane.com` gehört **nicht** zu makeplane/Plane; Hinweis an Dok. 21 |
+| Airgapped-Pläne | `airgapped-requirements.md` „exclusively for Enterprise Grid“ | `activate-airgapped.md` Pro/Business | irrelevant (O14) |
+| SAML Entity ID | `saml-sso.md` `…/auth/saml/` | Screenshot `…/auth/saml/metadata/` | O13 |
+
+### V.6 Restunsicherheiten
+
+- Alle Web-Befunde W15–W22 sind Suchmaschinen-Zusammenfassungen; die Seiten selbst waren nicht abrufbar (Konfidenz höchstens „mittel“).
+- Der v2-Doku-Branch (D23) ist ein unveröffentlichter Stand (11.08.2026); ob er dem ausgelieferten Produkt entspricht, ist nicht belegt (Dok. 21 O18). Die Beispielwerte der Rollen-/Scheme-Objekte sind Platzhalter („Example name“, Slug „my-team“).
+- Für 2FA, Passkeys, Password Policy, Domain Security, Admin Interface und Workspace Activity Logs existiert weiterhin kein öffentlicher Spec; die Abschnitte bleiben Entwürfe (UNVERIFIZIERT).
+- SCIM: kein Beleg über die Nennungen hinaus.
+- Vollständiger `event_name`-Katalog des Audit-Logs, Exportformat, Aufbewahrung: nicht belegt.
+- Schwester-Dokumente 20, 21, 22 führen Audit Logs, Custom Roles bzw. Rollen noch mit abweichendem Tier (O18) – bei deren nächster Überarbeitung angleichen.

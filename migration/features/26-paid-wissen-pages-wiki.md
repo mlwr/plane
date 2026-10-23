@@ -15,12 +15,12 @@
 | Community Edition (CE) | AGPL-3.0, dieses Repo (v1.4.2). „The Community Edition is at par with the Free tier of the Cloud edition in its feature availability.“ | `/home/user/makeplane/developer-docs/docs/self-hosting/editions-and-versions.md` |
 | Commercial Edition / Airgapped Edition | closed-source, „Full feature parity with our Cloud“; Upgrade auf Pro/Business/Enterprise | ebd. |
 | Plan-IDs im Repo | `free`, `one`, `pro`, `business`, `enterprise` (`TPlanePlans`) | `apps/web/components/workspace/billing/comparison/plans.tsx` (Typ `TPlanePlans`, `PLANS_LIST`) |
-| „One“ | historischer Self-hosted-Plan (Highlights „Upto 50 users“, „OIDC and SAML“, „Active cycles“, „Limited time tracking“); **nicht mehr erhältlich**: `planDetails.one.isActive: false`, Kommentar „Plane one plan is not longer available“ in `shouldRenderPlanDetail` (Spalte wird in der Vergleichsansicht nicht gerendert); das Upgrade-Modal zeigt nur Pro/Business/Enterprise | `plans.tsx` (`planHighlights.one`, `planDetails.one`), `apps/web/components/workspace/billing/comparison/base.tsx` (`shouldRenderPlanDetail`), `apps/web/components/license/modal/upgrade-modal.tsx` |
+| „One“ | historischer Self-hosted-Plan (Highlights „Upto 50 users“, „OIDC and SAML“, „Active cycles“, „Limited time tracking“; Preis 799 „per workspace“); **nicht mehr erhältlich**: Kommentar „Plane one plan is not longer available“ in `shouldRenderPlanDetail` (Spalte wird in der Vergleichsansicht nicht gerendert); das Upgrade-Modal zeigt nur Pro/Business/Enterprise. **Korrektur (Verifikation 2)**: `planDetails.one.isActive: false` ist **kein** Beleg für die Einstellung des Plans – `business.isActive` und `enterprise.isActive` sind ebenfalls `false`; `isActive` steuert in `plan-detail.tsx` nur, ob ein Preis oder „Quote on request“ angezeigt wird | `plans.tsx` (`planHighlights.one`, `planDetails.*.isActive`), `apps/web/components/workspace/billing/comparison/base.tsx` (`shouldRenderPlanDetail`), `apps/web/components/workspace/billing/comparison/plan-detail.tsx` (`isSubscriptionActive`, `pricingDescription`), `apps/web/components/license/modal/upgrade-modal.tsx` |
 | Aktuelle Cloud-Pläne | Free, Pro ($6/Seat/Monat jährlich), Business ($13), **Enterprise Grid** (Top-Lizenz, Preis auf Anfrage) | https://plane.so/pricing, https://plane.so/enterprise-grid (via WebSearch) |
 
 **Top-Lizenz** im Sinne des Auftrags = „Enterprise“ (Repo-Matrix) bzw. „Enterprise Grid“ (aktuelle Preisseite). Im Cluster Wissensmanagement sind die **nur in der Top-Lizenz** enthaltenen Merkmale: unbegrenzte Page-Versionen (P07-05; Matrix „Unlimited“ nur Enterprise) und der Editor-Block „Link dashboard widgets“ (P07-42; nur Doku-Label aus Such-Zusammenfassung, UNVERIFIZIERT). **Strittig**: „Databases + Formulas“ (P07-20) – Upgrade-Modal (`ENTERPRISE_PLAN_FEATURES`) und `planHighlights.enterprise` nennen es als Enterprise-Merkmal, die feature-spezifische Matrix-Zeile markiert dagegen Business ✓ und Enterprise ✓ (`comingSoon: true`); nach der Regel „spezifischere Quelle gewinnt“ gilt Business+, der Widerspruch ist in OP-03 dokumentiert; das Feature ist ohnehin nicht ausgeliefert.
 
-**Tier-Regel „One“**: Für Merkmale, die die Matrix ab „One“ führt (Real-time Collab, Work item Embeds, Link-to-work items, Publish, Wiki), ist der niedrigste **heute erhältliche** Plan **Pro**, da „One“ nicht mehr angeboten wird (`base.tsx`, s. o.). Das CE-Upsell-Modal (v1.4.2) bestätigt Pro: „Unlock public pages, version history, shared pages, real-time collaboration, and workspace pages … with Plane Pro.“ (`packages/i18n/src/locales/en/wiki.json` `wiki.upgrade_flow.description`).
+**Tier-Regel „One“ (in Verifikation 2 präzisiert)**: Für Merkmale, die die Matrix ab „One“ führt (Real-time Collab, Work item Embeds, Link-to-work items, Publish, Wiki), gilt als **Tier-Feld „One“** (= niedrigster Plan laut der einzigen Quelle, die „One“ überhaupt abdeckt, R1); der niedrigste **heute erhältliche** Plan ist **Pro**, da „One“ nicht mehr angeboten wird (`base.tsx`, s. o.). Das ist kein Widerspruch zu den Pro-Angaben: Das CE-Upsell-Modal (v1.4.2) „Unlock public pages, version history, shared pages, real-time collaboration, and workspace pages … with Plane Pro.“ (`packages/i18n/src/locales/en/wiki.json` `wiki.upgrade_flow.description`) und die aktuelle Pro-Seite („Wiki and Collections, reusable Page Templates, deeper connections between Pages and Work Items, external publishing, richer editor blocks, and AI-assisted writing“, W43, Such-Zusammenfassung) beschreiben nur die heute erhältlichen Pläne. Die Spalte „ab Plan“ in Kap. 2 nennt deshalb beides („One (historisch) / heute Pro“). Abgleich: `migration/features/_data/P01.paid.json` führt PF-70/71/72/73 ebenfalls als „One“, PF-74 Wiki aber als „Pro“; `P02.paid.json` führt Work-Item↔Page-Links und Wiki als „Pro“ – Abweichung im Verifikations-Protokoll dokumentiert. Nach ADR-001 ohne Auswirkung.
 
 ### 1.2 Quellen-Inventar (alle in diesem Dokument verwendeten Quellen)
 
@@ -29,7 +29,7 @@ Repo-Quellen (relativ zu `/home/user/plane`):
 | ID | Pfad | Inhalt / Relevanz |
 |---|---|---|
 | R1 | `apps/web/components/workspace/billing/comparison/plans.tsx` | Offizielle Feature×Plan-Matrix; Sektion `knowledge-management` (Pages, Real-time Collab, Work item Embeds, Link-to-work items, Publish, Wiki, Exports, Templates, Versions, Databases + Formulas, Nested Pages) und Sektion `analytics-reports` („Advanced Pages Analytics“); `planHighlights` |
-| R2 | `packages/constants/src/subscription.ts` | `ENTERPRISE_PLAN_FEATURES` („Databases + Formulas“), `BUSINESS_PLAN_FEATURES` („Nested Pages“), `PRO_PLAN_FEATURES` („Teamspaces“, „Wikis“), `ONE_PLAN_FEATURES` („Real-time collab + public views and page“, „Link pages in issues and vice-versa“), `FREE_PLAN_UPGRADE_FEATURES` („Public Views and Pages“) |
+| R2 | `packages/constants/src/subscription.ts` | `ENTERPRISE_PLAN_FEATURES` („Databases + Formulas“), `BUSINESS_PLAN_FEATURES` („Nested Pages“), `PRO_PLAN_FEATURES` („Teamspaces“, „Wikis“), `ONE_PLAN_FEATURES` („Real-time collab + public views and page“, „Link pages in issues and vice-versa“), `FREE_PLAN_UPGRADE_FEATURES` („Public Views and Pages“). Verwendung (Verifikation 2, grep): `PRO_/BUSINESS_/ENTERPRISE_PLAN_FEATURES` in `apps/web/components/license/modal/upgrade-modal.tsx`; `FREE_PLAN_UPGRADE_FEATURES` in `apps/web/components/license/modal/card/free-plan.tsx` (Liste mit rotem `CloseCircleOutline` = im Free-Plan **nicht** enthalten); `ONE_PLAN_FEATURES` wird im Code **nirgends** verwendet (tote Konstante) |
 | R3 | `packages/i18n/src/locales/en/wiki.json` | EE-Texte `wiki_collections.*` (Collections-UI vollständig), `wiki.upgrade_flow.*`, `wiki.nested_pages_download_banner.title` |
 | R4 | `packages/i18n/src/locales/en/page.json` | `page_navigation_pane.tabs.comments.*`, `page_navigation_pane.tabs.info.version_history.highlight_changes`, `page_actions.move_page.*`, `page_actions.remove_from_collection.*`, `page_content_limit_banner.message` |
 | R5 | `packages/i18n/src/locales/en/editor.json` | EE-Editor-Texte `attachmentComponent.*`, `externalEmbedComponent.*`, `ai_block.*` |
@@ -86,6 +86,7 @@ Offline-Quellen:
 | H4 | `/home/user/makeplane/helm-charts/charts/plane-enterprise/templates/workloads/{drawio,iframely,live-exporter}.deployment.yaml` | Images `makeplane/drawio:v2.5.0` (Port 8080), `makeplane/iframely:v2.5.4` (Port 8061, `node server.js`), Exporter `LIVE_MODE=exporter` |
 | H5 | `/home/user/makeplane/helm-charts/charts/plane-enterprise/README.md` (Zeilen 944–966) | „RabbitMQ queue name for background PDF/DOCX export jobs consumed by the `live-exporter` service“; Exporter „pure queue consumer, no HTTP port“, „PDF render footprint is 500MB–2GB per job“ |
 | H6 | `/home/user/makeplane/helm-charts/charts/plane-enterprise/templates/ingress-nginx.yaml` | `/live/`, `/drawio/(.*)` |
+| H7 | `/home/user/makeplane/helm-charts/charts/plane-enterprise/templates/workloads/live-exporter.deployment.yaml` (Kommentar im `env`-Block) | „Redis comes too: the exporter shares live's RedisManager for job state.“; `LIVE_MODE=exporter`; Image-Default `makeplane/live-commercial:{planeVersion}` (Verifikation 2) |
 
 Per WebFetch von GitHub geladene Dokumentationsquellen (Branches des Repos `makeplane/developer-docs`):
 
@@ -158,6 +159,11 @@ Web-Quellen (docs.plane.so / plane.so / developers.plane.so sind nicht direkt ab
 | W45 | https://plane.so/blog/introducing-plane-wiki-and-pages |
 | W46 | https://docs.plane.so/support/keyboard-shortcuts |
 | W47 | https://plane.so/changelog/release-v2-6-0-plane-ai-across-app-workspace-switcher-updates |
+| W48 | https://plane.so/changelog/release-v3-3-0-work-item-csv-imports-wiki-reordering (Self-hosted v3.3.0, 2026-09-24; Verifikation 2) |
+| W49 | https://plane.so/changelog/cloud-may-23-2025, https://plane.so/changelog/new-on-plane-october-1st-2025 (Einführung Nested Pages; Verifikation 2) |
+| W50 | https://plane.so/blog/plane-vs-confluence-which-should-you-choose-in-2026, https://plane.so/blog/plane-vs-asana-which-should-you-choose-in-2026, https://plane.so/blog/plane-vs-wrike-which-should-you-choose-in-2026 (Vergleichsblogs mit Plan-Angaben zu Kommentaren; Verifikation 2) |
+
+**Hinweis Verifikation 2**: Alle W-Quellen wurden ausschließlich über WebSearch-Zusammenfassungen gelesen. In Verifikation 2 wurden 14 gezielte Suchen ausgeführt; Ergebnisse und nicht reproduzierbare Angaben stehen im Verifikations-Protokoll am Dokumentende.
 
 ### 1.3 Bewertung der Quellenlage
 
@@ -174,50 +180,50 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 
 | ID | Feature | ab Plan | Abstufung je Plan | CE-Status | Quelle |
 |---|---|---|---|---|---|
-| P07-01 | Wiki (Workspace-Seiten ohne Projekt) inkl. Wiki-Home, Sidebar, Feature-Toggle | Pro | Matrix: Free ✗, One/Pro/Business/Enterprise ✓ („One“ nicht mehr erhältlich, R36); `PRO_PLAN_FEATURES` „Wikis“ (Upgrade-Modal); Upsell-Text „…with Plane Pro“; Doku „Wiki Pro“ | Stub/UI-Hülle im CE | R1, R2, R3, R36, W1 |
-| P07-02 | Wiki-Collections (öffentlich, Default „General“) | Pro | Doku: „Wiki and Collections are available on Pro and above“; Blog: Collections Pro+ | fehlt | W1, W10, R3 |
+| P07-01 | Wiki (Workspace-Seiten ohne Projekt) inkl. Wiki-Home, Sidebar, Feature-Toggle | One (historisch) / heute Pro | Matrix: Free ✗, One/Pro/Business/Enterprise ✓ („One“ nicht mehr erhältlich, R36); `PRO_PLAN_FEATURES` „Wikis“ (Upgrade-Modal); Upsell-Text „…with Plane Pro“; Doku „Wiki Pro“; Pro-Seite „Wiki and Collections“ (W43) | Stub/UI-Hülle im CE | R1, R2, R3, R36, W1, W43 |
+| P07-02 | Wiki-Collections (öffentlich, Default „General“) inkl. Drag-and-drop-Reordering in der Sidebar | Pro | Doku: „Wiki and Collections are available on Pro and above“; Blog: Collections Pro+; Pro-Seite „Wiki and Collections“ (W43, Verifikation 2) | fehlt | W1, W10, W43, W48, R3 |
 | P07-03 | Private Collections (nur eingeladene Mitglieder) | Business | Doku/Blog: Business+; Anlage nur durch Workspace-Admins | fehlt | W1, W10, W11, G7 |
-| P07-04 | Nested Pages (Unterseiten, Hierarchie, Drag-Umhängen) | Business | Matrix: Business/Enterprise (COMING SOON; Zellwert fehlerhaft „Word-compatible + other format downloads“); `BUSINESS_PLAN_FEATURES` „Nested Pages“; Doku/Blog Business+ | teilweise im CE | R1, R2, R12, R25, W1, W2, W11 |
+| P07-04 | Nested Pages (Unterseiten, Hierarchie, Drag-Umhängen) | Business | Matrix: Business/Enterprise (COMING SOON; Zellwert fehlerhaft „Word-compatible + other format downloads“); `BUSINESS_PLAN_FEATURES` „Nested Pages“; Doku/Blog Business+; plane.so/pro und plane.so/business: „Business adds … nested pages“ (W43, Verifikation 2). Gegenstimme: eine Such-Zusammenfassung von plane.so/pricing.md nannte Nested Pages unter Pro (W12, nicht reproduzierbar) | teilweise im CE | R1, R2, R12, R25, W1, W2, W11, W43 |
 | P07-05 | Page-Versionen: Aufbewahrung | Pro | Matrix: Pro „2 days“, Business „3 months“, Enterprise „Unlimited“; aktuelle Preisseite: Pro „20 versions / 30 days“, Business „60 versions / 90 days“, Enterprise Grid „Unlimited“ | teilweise im CE | R1, W12, R13 |
-| P07-06 | Page-Versionen: „Highlight changes“, Vergleich zweier Versionen, Server-Restore | unklar (vermutlich wie P07-05, UNVERIFIZIERT) | keine Plan-Angabe gefunden | fehlt | R4, R33, W5, W19, W42 |
-| P07-07 | Real-time Collaboration: Presence-Avatare + Live-Cursor (Abgrenzung: CRDT-Sync ist CE) | Pro | Matrix: Free ✗, One+ ✓ (historisch; „One“ nicht mehr erhältlich, R36); Upsell-Text v1.4.2 „real-time collaboration … with Plane Pro“; `ONE_PLAN_FEATURES` „Real-time collab + public views and page“ | teilweise im CE | R1, R2, R3, R10, R34, R36, D4, W5, W45 |
-| P07-08 | Page-Publish (öffentlicher Link, Kommentare Externer, Report) | Pro | Matrix: Free ✗, One+ ✓ (historisch, R36); Doku: Publish erfordert Pro; Upsell-Text „public pages … with Plane Pro“; `FREE_PLAN_UPGRADE_FEATURES` „Public Views and Pages“ | Stub/UI-Hülle im CE | R1, R2, R3, R22, R36, W5, W25, W26 |
+| P07-06 | Page-Versionen: „Highlight changes“, Vergleich zweier Versionen, Server-Restore | unklar (vermutlich wie P07-05, UNVERIFIZIERT) | keine Plan-Angabe gefunden | Stub/UI-Hülle im CE (korrigiert in Verifikation 2: Service-Methode `restoreVersion` + verdrahteter Handler + ungenutzter i18n-Key `highlight_changes`, ohne API-Route) | R4, R33, W5, W19, W42 |
+| P07-07 | Real-time Collaboration: Presence-Avatare + Live-Cursor (Abgrenzung: CRDT-Sync ist CE) | One (historisch) / heute Pro | Matrix: Free ✗, One+ ✓ (historisch; „One“ nicht mehr erhältlich, R36); Upsell-Text v1.4.2 „real-time collaboration … with Plane Pro“; `ONE_PLAN_FEATURES` „Real-time collab + public views and page“ (im Code ungenutzt) | teilweise im CE | R1, R2, R3, R10, R34, R36, D4, W5, W45 |
+| P07-08 | Page-Publish (öffentlicher Link, Kommentare Externer, Report) | One (historisch) / heute Pro | Matrix: Free ✗, One+ ✓ (historisch, R36); Doku: Publish erfordert Pro; Pro-Seite „external publishing“ (W43); Upsell-Text „public pages … with Plane Pro“; `FREE_PLAN_UPGRADE_FEATURES` „Public Views and Pages“ | Stub/UI-Hülle im CE | R1, R2, R3, R22, R36, W5, W25, W26, W43 |
 | P07-09 | Page-Exports PDF/Word/Markdown, Queue, ZIP inkl. Unterseiten | Pro | Matrix: Free ✗, One ✗, Pro „One download at a time“, Business/Enterprise „Queued downloads“ | teilweise im CE | R1, R21, H1, H2, H5, W5, W14, W15, W16, W17 |
 | P07-10 | Page Templates (Workspace- und Projekt-Ebene) | Pro | Matrix: Pro/Business/Enterprise ✓; Blog Pro+ | fehlt | R1, R6, W11, W23, W24 |
-| P07-11 | Work-Item-Embeds (Block) | Pro | Matrix: One+ ✓ (historisch, R36); Doku-Label „Work item Pro“ | Stub/UI-Hülle im CE | R1, R19, R36, W4 |
-| P07-12 | Work-Item-Mentions in Pages, „Create work item from selection“ | Business | Doku-Labels „Business“ (nur Such-Zusammenfassung) | Stub/UI-Hülle im CE | R30, R38, W5, W37 |
-| P07-13 | Link Pages ↔ Work Items (Pages-Sektion im Work Item) | Pro | Matrix: One+ ✓ (historisch, R36); `ONE_PLAN_FEATURES` „Link pages in issues and vice-versa“; Changelog Pro | fehlt | R1, R2, R7, R36, D2, W38, W39 |
-| P07-14 | Inline-Kommentare (an markiertem Text, Threads, Resolve) | Business | Blog: „Inline Page comments are available on Business“ | fehlt | R4, W7, W9, W11 |
-| P07-15 | Page-Level-Kommentare + Kommentar-Filter + Moderation (hide/unhide) | unklar | keine Plan-Angabe gefunden | fehlt | W8, W32 |
-| P07-16 | Page-Sharing / Access-Control (Mitglieder, can view/comment/edit) | Business | Doku: „On the Business plan and above, you can selectively share private Wiki pages…“ | Stub/UI-Hülle im CE | R8, R9, R11, W1, W5, W29 |
-| P07-17 | Teamspace-Pages | Pro (UNVERIFIZIERT) | `PRO_PLAN_FEATURES` „Teamspaces“ | fehlt | R2, R15, W5, W30 |
-| P07-18 | Page Labels (eigene Workspace-Labels) | Business | Blog/Doku: Business+ | teilweise im CE | R12, W1, W11, W31 |
-| P07-19 | Moving Pages (Projekt ↔ Projekt ↔ Teamspace ↔ Wiki/Collection) | Pro | Doku: „Moving is marked as a Pro feature“ | Stub/UI-Hülle im CE | R4, R11, R12, R32, W3 |
+| P07-11 | Work-Item-Embeds (Block) | One (historisch) / heute Pro | Matrix: One+ ✓ (historisch, R36); Doku-Label „Work item Pro“ | Stub/UI-Hülle im CE | R1, R19, R36, W4 |
+| P07-12 | Work-Item-Mentions in Pages, „Create work item from selection“ | Business | Doku-Labels „Business“; Business-Seite „work-item mentions and creation from Page content“ (W43, Verifikation 2; Such-Zusammenfassungen) | Stub/UI-Hülle im CE | R30, R38, W5, W37, W43 |
+| P07-13 | Link Pages ↔ Work Items (Pages-Sektion im Work Item) | One (historisch) / heute Pro | Matrix: One+ ✓ (historisch, R36); `ONE_PLAN_FEATURES` „Link pages in issues and vice-versa“ (im Code ungenutzt); Changelog Pro; Pro-Seite „deeper connections between Pages and Work Items“ (W43) | fehlt | R1, R2, R7, R36, D2, W38, W39, W43 |
+| P07-14 | Inline-Kommentare (an markiertem Text, Threads, Resolve) | Business | Blog W11: „Inline Page comments · Business“ (in Verifikation 2 per Suche bestätigt); Gegenstimme: Vergleichsblog nennt „inline and page-level comments“ als Teil des Wiki „on Pro and above“ (W50), anderer Vergleichsblog (Confluence) wieder Business – Business als spezifischere Angabe beibehalten | fehlt | R4, W7, W9, W11, W50 |
+| P07-15 | Page-Level-Kommentare + Kommentar-Filter + Moderation (hide/unhide) | unklar | keine Plan-Angabe gefunden; Changelog-Eintrag W8 („Page-level comments, custom-property dashboards, and more“, 2026-10-15) in Verifikation 2 bestätigt, Moderationsteil (W32) nicht reproduzierbar | fehlt | W8, W32, W50 |
+| P07-16 | Page-Sharing / Access-Control (Mitglieder, can view/comment/edit) | Business | Doku: „On the Business plan and above, you can selectively share private Wiki pages…“; Business-Seite „selective sharing of private Wiki pages“ (W43, Verifikation 2). Widerspruch: CE-Upsell v1.4.2 nennt „shared pages … with Plane Pro“ (R3) – ältere, unspezifische Quelle, Business gewinnt | Stub/UI-Hülle im CE | R3, R8, R9, R11, W1, W5, W29, W43 |
+| P07-17 | Teamspace-Pages | Pro (UNVERIFIZIERT) | `PRO_PLAN_FEATURES` „Teamspaces“ | Stub/UI-Hülle im CE (korrigiert in Verifikation 2: nur Typ-Spuren `documentType: "team_page"`, `teamId`, R15; konsistent mit `P05.author.json` „Teamspace-Views und Teamspace-Pages“) | R2, R15, W5, W30 |
+| P07-18 | Page Labels (eigene Workspace-Labels) | Business | Blog/Doku: Business+ („Page Labels · Business“, in Verifikation 2 per Suche bestätigt) | teilweise im CE (nur Backend: `PageLabel` auf Work-Item-Labels, Serializer schreibt `labels`; keine UI) | R12, W1, W11, W31 |
+| P07-19 | Moving Pages (Projekt ↔ Projekt ↔ Teamspace ↔ Wiki/Collection) | Pro (UNVERIFIZIERT) | Doku: „Moving is marked as a Pro feature“ (nur Autoren-Suche; in Verifikation 2 nicht reproduziert) | Stub/UI-Hülle im CE | R4, R11, R12, R32, W3 |
 | P07-20 | Databases + Formulas in Pages | Business (Matrix-Zeile, spezifischer) – strittig | Matrix: Business/Enterprise ✓ (COMING SOON); Upgrade-Modal (`ENTERPRISE_PLAN_FEATURES`) und `planHighlights.enterprise` nennen es Enterprise; nicht ausgeliefert | fehlt | R1, R2, R36 |
-| P07-21 | Draw.io-Diagramme und -Boards | Pro (Integrationsdoku) / Business (Blog) | widersprüchlich | fehlt | R17, H1, H3, H4, G13, W4, W11, W27, W28 |
-| P07-22 | Externe Embeds / Rich Cards (Iframely), Medien per URL | Pro | Doku-Label „Embed Pro“ | Stub/UI-Hülle im CE | R5, R16, R17, H1, H2, H3, W4, W13, W33 |
-| P07-23 | Attachments in Pages (inkl. Office-Bearbeitung) | Pro | Doku-Label „Attachment Pro“; max. Dateigröße planabhängig (Cloud) | Stub/UI-Hülle im CE | R5, R16, R18, R27, R1 (Storage), W4, W36, G1, G6 |
-| P07-24 | Video-Block | Pro | Doku-Label „Video Pro“ | fehlt | W4, W37 |
-| P07-25 | Advanced Pages Analytics (Page + Collection) | Business | Matrix: Business/Enterprise (COMING SOON); Doku: Business | fehlt | R1, W6, W18 |
+| P07-21 | Draw.io-Diagramme und -Boards | Business (korrigiert in Verifikation 2; vorher Pro) | Doku Editor-Blöcke: Draw.io gehört zu den „Advanced Page blocks“ (Business) neben Tabs, Toggles, Gleichungen, Table of contents (W4, Such-Zusammenfassung Verifikation 2); Blog W11 Business; die frühere Angabe „Integrationsdoku Pro“ (W27) war in Verifikation 2 **nicht reproduzierbar** (Zusammenfassung von docs.plane.so/integrations/draw-io nennt keinen Plan) | fehlt | R17, H1, H3, H4, G13, W4, W11, W27, W28 |
+| P07-22 | Externe Embeds / Rich Cards (Iframely), Medien per URL | Pro | Doku-Label „Embed Pro“ („Rich Page blocks such as embeds, attachments, columns, video, Date, and Status are available on Pro“, in Verifikation 2 per Suche bestätigt) | Stub/UI-Hülle im CE | R5, R16, R17, H1, H2, H3, W4, W13, W33 |
+| P07-23 | Attachments in Pages (inkl. Office-Bearbeitung) | Pro | Doku-Label „Attachment Pro“ (Verifikation 2 bestätigt, s. P07-22); max. Dateigröße planabhängig (Cloud) | Stub/UI-Hülle im CE | R5, R16, R18, R27, R1 (Storage), W4, W36, G1, G6 |
+| P07-24 | Video-Block | Pro | Doku-Label „Video Pro“ (Verifikation 2 bestätigt, s. P07-22) | fehlt | W4, W37 |
+| P07-25 | Advanced Pages Analytics (Page + Collection) | Business | Matrix: Business/Enterprise (COMING SOON); Doku: Business; Guide W11 „Page Analytics … available on Business“ (Verifikation 2) | fehlt | R1, W6, W11, W18 |
 | P07-26 | Stickies-Erweiterungen | kein Bezahl-Gate belegbar | Matrix enthält keine Stickies-Zeile | im CE vorhanden (nur Cloud-Gating) | R28, D6, W35, W36 |
-| P07-27 | Plane AI im Editor: Selection-Aktionen (Paraphrase, Simplify, Elaborate, Summarize, Get title, Ton) | unklar (Plane AI, UNVERIFIZIERT) | – | Stub/UI-Hülle im CE | R10, R24, W22 |
-| P07-28 | Plane AI: AI-Block (`/ai`) | Business (Doku, UNVERIFIZIERT) | widersprüchlich: Doku/Guide Business, Blog Pro+; Doku als spezifischere/aktuellere Quelle gewählt (Blog W10 datiert vor dem Launch des AI-Blocks am 2026-06-15, W21) | fehlt | R5, W4, W10, W21, W22 |
-| P07-29 | Plane AI: Prompt/Agent in Pages mit Proposals (accept/reject) | Business (Doku, UNVERIFIZIERT) | widersprüchlich: Doku Business, Blog Pro+; Doku gewählt | fehlt | W10, W22 |
-| P07-30 | Editor-Block Columns (2/3/4 Spalten) | Pro | Doku-Label „Columns Pro“ | fehlt | W4, W44 |
-| P07-31 | Editor-Block Tabs (horizontal/vertikal) | Business | Doku-Label „Tabs Business“ | fehlt | W4, W18 |
-| P07-32 | Editor-Block Toggle (aufklappbar) | Business | Doku-Label „Toggle Business“ | fehlt | W4, W17 |
-| P07-33 | Editor-Inline Status (farbiges Label) | Pro | Doku-Label „Status Pro“ | fehlt | W4, W19 |
-| P07-34 | Editor-Inline Date | Pro | Doku-Label „Date Pro“ | fehlt | W4, G1 |
-| P07-35 | Block- und Inline-Gleichungen (LaTeX) | Business | Doku-Label „Business“ | fehlt | W4, W40, G1 |
-| P07-36 | Mermaid-Diagramm-Block | unklar | – | fehlt | W4, W20, W15 |
-| P07-37 | HTML-Artifact-Block (sandboxed) | Business | Doku-Label „Business“ | fehlt | W4, W19 |
-| P07-38 | Table-of-contents-Block | unklar | – | fehlt (nur Outline im Navigation-Pane) | W4, R31 |
-| P07-39 | „Link pages“-Block (Live-Liste von Wiki-Seiten) | Business | Doku-Label „Business“, nur Wiki-Seiten | fehlt | W4, W5, W18 |
+| P07-27 | Plane AI im Editor: Selection-Aktionen (Paraphrase, Simplify, Elaborate, Summarize, Get title, Ton) | Pro (korrigiert in Verifikation 2; vorher unklar; UNVERIFIZIERT) | Guide W11: „Page-level AI writing assistance and summaries start on Pro“; Pro-Seite „AI-assisted writing“ (W43) – beide nur Such-Zusammenfassungen | Stub/UI-Hülle im CE | R10, R24, W11, W22, W43 |
+| P07-28 | Plane AI: AI-Block (`/ai`) | Business | widersprüchlich: Doku/Guide Business, Blog Pro+; Doku als spezifischere/aktuellere Quelle gewählt (Blog W10 datiert vor dem Launch des AI-Blocks am 2026-06-15, W21); Guide W11 „Free-form Page editing, AI Blocks, and Page Analytics are available on Business“ in Verifikation 2 bestätigt | fehlt | R5, W4, W10, W11, W21, W22 |
+| P07-29 | Plane AI: Prompt/Agent in Pages mit Proposals (accept/reject) | Business (UNVERIFIZIERT) | widersprüchlich: Doku Business, Blog Pro+; Doku gewählt; Guide W11 „Free-form Page editing … Business“ (Verifikation 2; Gleichsetzung „Free-form Page editing“ = Proposals UNVERIFIZIERT) | fehlt | W10, W11, W22 |
+| P07-30 | Editor-Block Columns (2/3/4 Spalten) | Pro | Doku-Label „Columns Pro“ (Verifikation 2 bestätigt, „Rich Page blocks … Pro“) | fehlt | W4, W44 |
+| P07-31 | Editor-Block Tabs (horizontal/vertikal) | Business | Doku-Label „Tabs Business“ (Verifikation 2 bestätigt, „Advanced Page blocks … Business“) | fehlt | W4, W18 |
+| P07-32 | Editor-Block Toggle (aufklappbar) | Business | Doku-Label „Toggle Business“ (Verifikation 2 bestätigt) | fehlt | W4, W17 |
+| P07-33 | Editor-Inline Status (farbiges Label) | Pro | Doku-Label „Status Pro“ (Verifikation 2 bestätigt) | fehlt | W4, W19 |
+| P07-34 | Editor-Inline Date | Pro | Doku-Label „Date Pro“ (Verifikation 2 bestätigt) | fehlt | W4, G1 |
+| P07-35 | Block- und Inline-Gleichungen (LaTeX) | Business | Doku-Label „Business“ („mathematical notation“, Verifikation 2 bestätigt) | fehlt | W4, W40, G1 |
+| P07-36 | Mermaid-Diagramm-Block | unklar | weder Doku noch Changelog W20 nennen einen Plan (Verifikation 2) | fehlt | W4, W20, W15 |
+| P07-37 | HTML-Artifact-Block (sandboxed) | Business (UNVERIFIZIERT) | Doku-Label „Business“ (nur Autoren-Suche; in Verifikation 2 nicht reproduzierbar) | fehlt | W4, W19 |
+| P07-38 | Table-of-contents-Block | Business (korrigiert in Verifikation 2; vorher unklar) | Doku: „Table of contents“ unter „Advanced Page blocks“ (Business), Such-Zusammenfassung | fehlt (nur Outline im Navigation-Pane) | W4, R31 |
+| P07-39 | „Link pages“-Block (Live-Liste von Wiki-Seiten) | Business (UNVERIFIZIERT) | Doku-Label „Business“, nur Wiki-Seiten (nur Autoren-Suche) | fehlt | W4, W5, W18 |
 | P07-40 | Page-Embed-Block (`/page` = neue Unterseite) und „Linked page embed“ | Business (mit Nested Pages, UNVERIFIZIERT) | – | fehlt | G1, W2, W4, W15 |
 | P07-41 | Widget-Block (Chart aus Work-Item-Daten) | unklar | – | fehlt | W4 |
-| P07-42 | „Link dashboard widgets“-Block | Enterprise (Grid) | Doku-Label „Enterprise“ | fehlt | W4, W19 |
-| P07-43 | Block-Links (Link auf einen Block kopieren) | unklar | – | fehlt | W37 |
-| P07-44 | Page-Benachrichtigungen (Freigabe-Mail, Page-Subscriber) | unklar | – | fehlt | W13, W32 |
+| P07-42 | „Link dashboard widgets“-Block | Enterprise (Grid) (UNVERIFIZIERT) | Doku-Label „Enterprise“ (nur Autoren-Suche; in Verifikation 2 nennt keine Quelle einen Plan); Dashboards selbst Pro (`PRO_PLAN_FEATURES` „Dashboards + Reports“, R2) | fehlt | W4, W19, R2 |
+| P07-43 | Block-Links (Link auf einen Block kopieren) | unklar | – | fehlt (Basis vorhanden: CE-Extension `UniqueID` vergibt Block-IDs `data-id`, `packages/editor/src/extensions/unique-id/extension.ts`) | W37 |
+| P07-44 | Page-Benachrichtigungen (Freigabe-Mail, Page-Subscriber) | unklar | – (W32-Inhalt in Verifikation 2 nicht reproduzierbar) | fehlt | W13, W32 |
 | P07-45 | Pages-Public-API (v1/v2: Pages, Collections, Templates, Published Pages, Attachments, Work-Item-Pages) | je Ressource wie Feature | v2 liefert `402 payment_required`, wenn das Feature nicht im Plan **oder abgeschaltet** ist; die 402-Zeile steht als Standardtabelle in 388 von 454 v2-Dokumenten (auch States, Stickies) und ist **kein** Tier-Beleg | fehlt | D1, D2, D5, G1–G15, W24, W25, W39 |
 | P07-46 | Upgrade-/Downgrade-Flows des Wissensmanagements | – (Billing) | entfällt nach ADR-001 | Stub/UI-Hülle im CE | R3, R5, R1 |
 | P07-47 | Erweiterte Mentions im Document-Editor (Seiten/Projekte/Zyklen/Module) und Backlinks (Verifikations-Ergänzung) | unklar | keine Plan-Angabe gefunden | Stub/UI-Hülle im CE | R12, R29, R30, R38 |
@@ -256,6 +262,7 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 - **Feature-Toggle**: standardmäßig an; Workspace-Admin schaltet unter *Workspace settings › Wiki* („Turn on wiki for this workspace“) (W1); API-Flag `wiki` in Workspace-Features (D3; MCP `update_features` D5).
 - Leerzustände (R8 `workspace_pages.empty_state`): `general` („Write a note, a doc, or a full knowledge base. Get Galileo, Plane's AI assistant, to help you get started“), `private`, `public` („No workspace pages yet“), `archived`, `shared` („No shared pages yet“ / „Pages that others have shared with you will appear here.“). Zusätzlich `workspace_empty_state.wiki` in `packages/i18n/src/locales/en/empty-state.json`. Bild-Assets für Wiki-Leerzustände existieren im CE: `apps/web/app/assets/empty-state/wiki/{all,archived,private,public}-{dark,light}.webp`, `{all-filters,name-filter}-{dark,light}.svg`, `navigation-pane/{assets,outline}-{dark,light}.webp`.
 - Wiki-Seiten unterstützen alle Seitenfunktionen der Projektseiten plus: Collections, Teilen mit Mitgliedern, „Link pages“-Block (nur Wiki) (W5 Vergleichstabelle).
+- **Tier (Verifikation 2)**: Tier-Feld „One“ (Matrix-Zeile „Wiki“ One ✓, R1; One nicht mehr erhältlich, R36), heute erhältlich ab Pro (`PRO_PLAN_FEATURES` „Wikis“, R2; „Upgrade to unlock Wiki … with Plane Pro“, R3; Pro-Seite „Wiki and Collections“, W43). Abweichung: `P01.paid.json` PF-74 und `P02.paid.json` führen Wiki als „Pro“ (dort als Widerspruch zur Matrix gewertet); nach der Tier-Regel in Kap. 1.1 liegt kein Widerspruch vor.
 
 **Datenmodell-Hinweise**
 - CE-Feld `Page.is_global` (R12) = „Seite lebt auf Workspace-Ebene“ (v2: „`true` if the page is at workspace level rather than inside a project“, G12). Wiki-Seite = `is_global = true` und keine `ProjectPage`-Zeile (v2: `project_ids` ist für Wiki-Seiten leer, W25).
@@ -295,6 +302,7 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
   - Toasts: created, create_error, renamed, rename_error, transferred_deleted „Pages transferred and collection deleted.“, deleted_with_pages „Collection and its pages deleted.“, delete_error, target_required „Please select a collection to move pages to.“, create_page_error, create_page_in_collection_error, collection_link_copied.
   - Seitenaktion „Remove from collection“ (R4 `page_actions.remove_from_collection`).
 - Eingeführt im Changelog v2.6.0 / 2026-04-15 (W41).
+- **Wiki-Reordering** (Ergänzung Verifikation 2): Self-hosted v3.3.0 (2026-09-24) – Collections, Seiten innerhalb einer Collection und Nested Pages lassen sich in der Wiki-Sidebar per Drag-and-drop umsortieren (W48, Such-Zusammenfassung). Technisch entspricht das `sort_order` der Collection bzw. der Membership (`page_collection_id`) und `placement` aus G8; ein eigener interner Endpunkt für die Sidebar ist nicht dokumentiert (UNVERIFIZIERT).
 
 **Datenmodell-Hinweise** (Public-API-Objekt, G7/G11)
 - Collection: `id`, `name`, `owned_by_id`, `access` (`0` public, `1` private, **nach Anlage unveränderlich**), `current_user_access` (`null` bei public; bei private Rolle des Aufrufers `0`/`1`/`2`), `has_pages`, `is_default` (Setzen entfernt Flag der bisherigen Default-Collection), `is_global`, `logo_props` (v1 Objekt z. B. Emoji, v2 String „editor-owned“), `sort_order` (Default `65535`), `page_ids` (v2), `workspace`, `created_at`, `updated_at`, `created_by`, `updated_by`.
@@ -333,7 +341,7 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 ### 3.4 P07-04 – Nested Pages
 
 **Funktionsbeschreibung**
-- Eltern-Kind-Hierarchie wie Ordner/Dateien, in Wiki-, Projekt- und Teamspace-Seiten (W2; W13: „Nested pages are now in Wiki, Projects, and Teamspaces“; Projektseiten seit 2025-09-01, W40).
+- Eltern-Kind-Hierarchie wie Ordner/Dateien, in Wiki-, Projekt- und Teamspace-Seiten (W2; W13: „Nested pages are now in Wiki, Projects, and Teamspaces“). **Korrektur (Verifikation 2)**: Die frühere Angabe „Projektseiten seit 2025-09-01 (W40)“ ist nicht belegt – der Eintrag W40 nennt Nested Pages nur im Titel, der Text behandelt Recurring Work Items, Notion-/Confluence-Importe und ClickUp; eingeführt wurden Nested Pages laut Such-Zusammenfassung im Cloud-Changelog vom 2025-05-23, die Ausweitung auf Wiki, Projekte und Teamspaces steht im Eintrag vom 2025-10-01 (W49).
 - **Anlegen**: `/page` im Editor erzeugt eine Unterseite der aktuellen Seite und fügt einen Link-Block (Page-Embed) ein; im Wiki zusätzlich „+“ neben dem Seitennamen in der Sidebar (W2, W4). Per API (G14 `add-workspace-page.md`, wörtlich geprüft): „To create a child page, pass `parent_id`; Plane creates the page and inserts a page embed into the parent document. The parent must be visible, editable, unlocked, and active.“; `parent_id` darf nicht mit `collection_id` kombiniert werden; Antworten `201` (Kind angelegt und im Eltern-Dokument verlinkt), `202` (Kind angelegt, Eltern-Link wird noch nachversucht; `parent_id` steht bereits in der Antwort), `400` (Parent gesperrt/archiviert oder `parent_id`+`collection_id`), `403` (kein Edit-Recht am Parent), `404` (Parent nicht verfügbar), `502` (Eltern-Link abgelehnt, das neue Kind wurde wieder entfernt). Embed-Vertrag: G1 `page-embed-component`.
 - **Sperren**: Store-API `lock`/`unlock({ shouldSync, recursive })` hat einen Parameter `recursive`, den das CE ignoriert (R39) → Hinweis auf rekursives Sperren/Entsperren eines Seitenbaums in der EE (UNVERIFIZIERT).
 - **Wiederherstellen aus Archiv**: EE-API v1: „If its parent is archived, restore the parent before restoring the child; otherwise the API returns `400`.“ (G14 `restore-workspace-page.md`, Restore = `DELETE …/pages/{id}/archive/`). **Abweichung zum CE**: CE-`unarchive` löst stattdessen die Eltern-Beziehung (`page.parent = None`), wenn der Parent archiviert ist (R25). Ziel folgt dem dokumentierten EE-Vertrag (400) für die Public-API; für die interne UI ist das Verhalten im Original nicht belegt (UNVERIFIZIERT).
@@ -342,7 +350,7 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 - **Sichtbarkeit**: Unterseiten erben die Sichtbarkeit **nicht**; private Unterseite unter öffentlicher Elternseite bleibt eingeschränkt; wer die Elternseite nicht sehen darf, sieht keine Unterseiten (W2).
 - **Archivieren**: Elternseite archivieren archiviert Unterseiten (W2; G4 „Archive a workspace page and its subpages“). **Löschen**: Option, Kinder zu behalten, indem sie eine Ebene hochrücken (W2). CE-Vergleich: Löschen ist nur für archivierte Seiten erlaubt (400 „The page should be archived before deleting“), die Kinder werden per `update(parent=None)` zu **Wurzelseiten** (nicht eine Ebene höher) und bleiben archiviert, weil das Archivieren rekursiv war (R25). „Eine Ebene hoch“ (= Großeltern als neuer Parent) ist EE-Verhalten laut W2 (UNVERIFIZIERT, nur Such-Zusammenfassung).
 - **Verschieben**: Unterseiten wandern mit (W3).
-- Import: Notion/Confluence-Importer übernehmen Unterseiten als Nested Pages (Querverweis Importer-Cluster; W-Suche).
+- Import: Notion/Confluence-Importer übernehmen Unterseiten als Nested Pages („migrate whole Notion and Confluence spaces, keeping their structure. Page hierarchies, tables, and embedded content“, W40) – Feature gehört in den Importer-Cluster (`migration/features/_data/P09.author.json` „Notion-Importer“, „Confluence-Importer“; `P03.paid.json` P03-F22).
 - Collections-Tabelle zeigt Spalte „Nested pages“ (R3); Analytics zählt „nested pages“ (W6).
 - **Inhaltslimit**: CE-Banner „Content limit reached and live sync is off. Create a new page or use nested pages to continue syncing.“ (R4 `page_content_limit_banner`, ausgelöst durch Fehlercode `content_too_large`, `apps/web/components/pages/editor/page-root.tsx`).
 - Downgrade-Banner „Nested pages require a paid plan. Upgrade to unlock.“ (R3) → entfällt (ADR-001).
@@ -385,6 +393,7 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 - 2026-07-31 / v3.1.0: Vergleich **beliebiger zweier Versionen** („Compare page versions“) (W19, W15). Bedienablauf zur Auswahl zweier Versionen nicht dokumentiert (UNVERIFIZIERT).
 - Server-Restore: CE-Web-Service **definiert** `restoreVersion` → `POST /api/workspaces/{slug}/projects/{project_id}/pages/{page_id}/versions/{version_id}/restore/` (R33) und verdrahtet es als Handler `restoreVersion` in `apps/web/app/(all)/[workspaceSlug]/(projects)/projects/(detail)/[projectId]/pages/(detail)/[pageId]/page.tsx`; **aufgerufen wird der Handler im CE nirgends** (Verifikation per grep). Die CE-API hat die Route nicht (R35); der CE stellt rein clientseitig wieder her (`handleRestoreVersion`: `clearEditor()` + `setEditorValue(descriptionHTML)`, an `PageVersionsOverlay.handleRestore` übergeben, R33). → EE hat vermutlich den Server-Endpunkt (UNVERIFIZIERT).
 - Realtime-Ereignis `restore` (Client-Name `restored`) mit `RestoredPayload { deleted_page_ids?: string[] }` existiert in den CE-Konstanten, ohne CE-Handler (R37) → Indiz, dass ein Restore in der EE gelöschte Unterseiten wiederherstellt bzw. meldet (passt zu `PageVersion.sub_pages_data`; UNVERIFIZIERT).
+- **CE-Status (korrigiert in Verifikation 2)**: „Stub/UI-Hülle im CE“ statt „fehlt“ – im CE existieren die Service-Methode `restoreVersion` (`apps/web/services/page/project-page-version.service.ts`), der verdrahtete Handler (`…/[pageId]/page.tsx`, Typ `TPageRootHandlers.restoreVersion` in `page-root.tsx`) und der ungenutzte i18n-Key `highlight_changes` (R4); es fehlen API-Route, Diff-Darstellung und Versionsvergleich.
 
 **Datenmodell**: keine zusätzlichen Tabellen nötig; Diff wird aus `description_json`/`description_binary` zweier Versionen berechnet. **Vorschlag**: Diff auf ProseMirror-JSON-Ebene im Angular-Client (Mark-Dekorationen „added/removed“), Restore serverseitig über Yjs-Update auf dem Live-Dokument (damit verbundene Clients konsistent bleiben, analog G2 „Body mutations … are applied to Plane's collaborative document“).
 
@@ -398,7 +407,7 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 - Mehrere Personen bearbeiten eine Seite gleichzeitig; **Profilbilder** der Anwesenden erscheinen oben im Dokument; **farbiger Cursor** pro Kollaborator mit Live-Bewegung (W5, Suchzusammenfassung „Plane pages real-time collaboration“; W45: „cursors show where your teammates are typing“, Yjs-CRDT über WebSocket).
 - Live-Dienst „Handles cursor positions, live updates, and presence indicators“ (D4).
 - Matrix-Text: „Edit a page together with members in your project, team, or workspace.“ (R1).
-- **Tier (Verifikation)**: Pro. Die Matrix führt das Merkmal ab „One“, dieser Plan ist aber nicht mehr erhältlich (R36); das CE-Upsell nennt „real-time collaboration“ als Pro-Freischaltung (R3).
+- **Tier (Verifikation, präzisiert in Verifikation 2)**: Tier-Feld „One“ (Matrix R1), heute erhältlich ab Pro. Die Matrix führt das Merkmal ab „One“, dieser Plan ist aber nicht mehr erhältlich (R36); das CE-Upsell nennt „real-time collaboration“ als Pro-Freischaltung (R3). Siehe Tier-Regel in Kap. 1.1.
 
 **Abgrenzung CE (teilweise)**
 - CE hat **CRDT-Sync** (Tiptap `Collaboration` auf `provider.document`, Felder `default` und `title`, `use-collaborative-editor.ts`), Hocuspocus-Server, Offline-/Sync-Badges (`apps/web/components/pages/header/offline-badge.tsx`, `syncing-badge.tsx`), Statusmaschine `CollabStage` (`packages/editor/src/types/collaboration.ts`). Gleichzeitiges Bearbeiten funktioniert also im CE.
@@ -422,7 +431,7 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 **Funktionsbeschreibung**
 - „Publish“-Button oben rechts; erzeugt eindeutigen Link; jeder mit Link öffnet die Seite ohne Login; Betrachter können **ohne Workspace-Konto** kommentieren (W5; Matrix: „Put your pages on the web for external users and let them comment without signing into your workspace.“, R1).
 - Projekt- und Wiki-Seiten publizierbar, **Teamspace-Seiten nicht** (W5).
-- **Tier (Verifikation)**: Pro (Doku, Upsell „public pages … with Plane Pro“, R3); Matrix „One+“ ist historisch (R36).
+- **Tier (Verifikation, präzisiert in Verifikation 2)**: Tier-Feld „One“ (Matrix R1, historisch, R36), heute erhältlich ab Pro (Doku, Upsell „public pages … with Plane Pro“, R3; Pro-Seite „external publishing“, W43).
 - Berechtigung: Projektseiten – Admin jede Seite, Contributor nur eigene, Commenter/Guest nicht; Wiki – Owner/Admin jede, Member eigene (W29).
 - **Archivieren hebt die Veröffentlichung auf**, Wiederherstellen veröffentlicht **nicht** erneut (W5, W25).
 - Published-Seite zeigt Tabs (umschaltbar, nicht editierbar) (W4 Tabs-Block); Fußzeile „Powered by Plane Pages“ (i18n-Key `powered_by_plane_pages`, im CE unbenutzt, R9).
@@ -430,7 +439,7 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 
 **CE-Stand (Stub)**: `DeployBoard.TYPE_CHOICES` enthält `page` (R22), `TPublishEntityType = "project" | "page"`, `TPublishSettings { anchor, entity_identifier, entity_name, is_comments_enabled, is_reactions_enabled, is_votes_enabled, … }` (R22); Space-App hat nur Routen `/:workspaceSlug/:projectId` und `/issues/:anchor` (`apps/space/app/routes.ts`).
 
-**Datenmodell**: `deploy_boards` mit `entity_name='page'`, `entity_identifier=page_id`, `anchor` = 32-stelliges Hex (CE `get_anchor = uuid4().hex`, R22; W25 „32-character hex string“), `is_comments_enabled`, `is_reactions_enabled`, `is_disabled` (für Moderation). Kommentare Externer: Ziel-Tabelle siehe P07-15 mit `actor` = Space-Benutzer oder anonym (OP-09).
+**Datenmodell**: `deploy_boards` mit `entity_name='page'`, `entity_identifier=page_id`, `anchor` = 32-stelliges Hex (CE `get_anchor = uuid4().hex`, R22; W25 „32-character hex string“), `is_comments_enabled`, `is_reactions_enabled`, `is_disabled` (Feld existiert im CE-Modell neben `is_votes_enabled`, `is_activity_enabled`, `view_props`, `intake`; Nutzung für die Moderation „Seite deaktivieren“ aus W26 ist eine Ableitung, UNVERIFIZIERT – Verifikation 2). Kommentare Externer: Ziel-Tabelle siehe P07-15 mit `actor` = Space-Benutzer oder anonym (OP-09).
 
 **API**: v2 `GET /api/v2/workspaces/{slug}/published-pages/{anchor}/` (read-only; es gibt **keine** Publish/Unpublish-Operation in der Public-API; Anchor gewährt Lesezugriff ohne Mitgliedschafts-/Access-Prüfung; 404 bei unbekanntem Anchor, fremdem Workspace, Nicht-Page-Entität, gelöschter/unveröffentlichter/archivierter Seite; `collection_id` immer `null`; `project_ids` leer für Wiki-Seiten; v1 war projektgebunden) (W25). Interne Publish-Endpunkte **Vorschlag** analog Projekt-Publish (`/api/workspaces/{slug}/projects/{pid}/pages/{id}/publish/` bzw. `/api/workspaces/{slug}/pages/{id}/publish/`).
 
@@ -447,7 +456,7 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 - Matrix: Pro „One download at a time“, Business/Enterprise „Queued downloads“ (R1).
 - v3.1.0 / August 2026: PDF- und DOCX-Exporte laufen **im Hintergrund**; Export einer Seite **mit allen Unterseiten als ein ZIP** (W15, W16, W17); Mitglieder öffnen die Export-Seite und laden **eigene** Exporte herunter (W15).
 - Berechtigung „Export Pages“ für alle Rollen inkl. Guest (W11; Projekt-Matrix: Commenter darf sichtbare exportieren, Guest nur eigene, W29).
-- Infrastruktur (H1, H2, H5): RabbitMQ-Queue `EXPORT_QUEUE_NAME` (Default `plane-exports`), Konsument `live-exporter` (gleiches Image wie live, `LIVE_MODE=exporter`, „pure queue consumer, no HTTP port“, 500 MB–2 GB RAM pro PDF-Job, horizontal skalieren), Job-Status in Redis, `EXPORT_DOWNLOAD_BASE_URL` (Basis-URL für Download-Redirects, Default `<scheme>://<licenseDomain>`).
+- Infrastruktur (H1, H2, H5, H7): RabbitMQ-Queue `EXPORT_QUEUE_NAME` (Default `plane-exports`), Konsument `live-exporter` (gleiches Image wie live, `LIVE_MODE=exporter`, „pure queue consumer, no HTTP port“, 500 MB–2 GB RAM pro PDF-Job, horizontal skalieren), Job-Status in Redis (Beleg: Kommentar „the exporter shares live's RedisManager for job state“ in H7; Quellenangabe in Verifikation 2 präzisiert), `EXPORT_DOWNLOAD_BASE_URL` (Basis-URL für Download-Redirects, Default `<scheme>://<licenseDomain>`).
 
 **CE-Stand (teilweise)**
 - Export-Modal (R21): Format `pdf` | `markdown`; Seitenformat `A4`, `A3`, `A2`, `LETTER` („Letter“), `LEGAL` („Legal“), `TABLOID` („Tabloid“); Inhalt `everything` („Everything“) | `no-assets` („No images“); Defaults `pdf`/`A4`/`everything`. Dateiname: Titel klein, `[^a-z0-9-_]`→`-`, Mehrfach-`-` zusammengefasst; PDF `{name}-{seitenformat klein}.pdf` (z. B. `meeting-notes-a4.pdf`, `${fileName}-${selectedPageFormat.toString().toLowerCase()}.pdf`), Markdown `{name}.md`. PDF clientseitig via `@react-pdf/renderer` mit `<h1 class="page-title">${pageTitle}</h1>` + Dokument-HTML; Custom-Komponenten werden vorher ersetzt (`useParseEditorContent`, `apps/web/hooks/use-parse-editor-content.ts`): HTML-Pfad ersetzt `mention-component` durch `<span data-node-type="mention-block">` mit Anzeigetext (User-Mentions; andere `entity_name` über `parseAdditionalEditorContent`, im CE `undefined`), ersetzt `image-component` durch `<img>` (bei „No images“ werden `image-component` und `img` entfernt), wandelt Bilder in Base64, ersetzt `input[type='checkbox']` durch `div` (Klasse für „checked“), entfernt `issue-embed-component`, entfernt `background-color: null`/`color: null`; Markdown-Pfad ersetzt Mentions durch `[display_name](redirect_url)` und `image-component` durch `<img src>` (bzw. entfernt bei „No images“) und entfernt `issue-embed-component`.
@@ -473,9 +482,9 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 - Templates in Projekt-, Wiki- und Teamspace-Seiten verfügbar (W23 via Suche).
 - Marketplace-Publish von Templates (R6 `form.publish.*`) ist Cloud-Marketplace (Cross-Cluster Templates).
 
-**Datenmodell** (W24): Template-Objekt `id`, `name` (≤255), `description_html` (Beschreibung des Templates), `short_description` (nullable), `template_type` (immer `"page"`), `project_id` (`null` für Workspace-Templates), `template_data` (Seiten-Seed: Titel, HTML-Body, Anzeigeeinstellungen; `parent` – wenn nicht leer, Pflichtschlüssel `id`, `project_id`, `project_identifier`; nur Formprüfung), `created_at`, `updated_at`. Workspace- und Projekt-Templates sind getrennte Scopes.
+**Datenmodell** (W24): Template-Objekt `id`, `name` (≤255), `description_html` (Beschreibung des Templates), `short_description` (nullable), `template_type` (immer `"page"`), `project_id` (`null` für Workspace-Templates), `template_data` (Seiten-Seed; `parent` – wenn nicht leer, Pflichtschlüssel `id`, `project_id`, `project_identifier`; nur Formprüfung), `created_at`, `updated_at`. Workspace- und Projekt-Templates sind getrennte Scopes. **Abgleich Dok. 25 F22 (Verifikation 2)**: Dort ist der Seed als `{ description_html (Seiteninhalt), logo_props, view_props, color, parent {id, project_id, project_identifier} }` aufgeschlüsselt, zusätzlich Feld `is_published`; „PATCH auf `template_data` ersetzt den Seed vollständig, ausgelassene Keys gehen auf Default (`{}`)“. Ein Seitentitel im Seed (frühere Angabe „Titel“) ist dort nicht belegt → UNVERIFIZIERT; das CE-Formular hat aber ein eigenes Feld „Untitled page“ (`templates.settings.form.page.name.placeholder`, R6), das auf einen Seitennamen im Seed hindeutet.
 
-**API** (W24): `GET/POST /api/v2/workspaces/{slug}/page-templates/`, `GET/PATCH/DELETE …/{id}/`; Projekt-Variante analog unter `…/projects/{project_id}/page-templates/` (UNVERIFIZIERT exakter Pfad).
+**API** (W24; ergänzt aus Dok. 25 F22, Quelle dort W39): `GET/POST /api/v2/workspaces/{slug}/page-templates/`, `GET/PATCH/DELETE …/{id}/`; Projekt-Variante `/api/v2/workspaces/{slug}/projects/{project_id}/page-templates/` (Such-Zusammenfassung); unter Workspace-Governance liefert die Projekt-Route `409 templates_managed_at_workspace`; v1-Pfad `/pages/templates/` (nicht paginiert) laut Dok. 25. Ein Endpunkt „Seite aus Template erzeugen“ ist nicht dokumentiert (Dok. 25: Anwendung clientseitig, UNVERIFIZIERT).
 
 **Konfidenz**: hoch (Objekt), mittel (UI-Fluss).
 
@@ -486,7 +495,7 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 **Funktionsbeschreibung**
 - Block „Work item“ (nur Pages) platziert eine Karte eines Work Items mit dessen aktuellen Details; Alternative inline per `@` (W4). Matrix: „Embed work items from any project you are a member of.“ (R1).
 - Archivierte eingebettete Work Items öffnen in Nur-Lese-Peek-View (W33).
-- **Tier (Verifikation)**: Pro (Doku-Label „Work item Pro“); Matrix „One+“ historisch (R36).
+- **Tier (Verifikation, präzisiert in Verifikation 2)**: Tier-Feld „One“ (Matrix R1, historisch, R36), heute erhältlich ab Pro (Doku-Label „Work item Pro“).
 - CE-Export entfernt `issue-embed-component` vollständig aus PDF und Markdown (`apps/web/hooks/use-parse-editor-content.ts`), der CE-Live-PDF-Renderer hat keinen Renderer dafür (`apps/live/src/lib/pdf/node-renderers.tsx`) → Ziel-Exporter (P07-09) muss eine Darstellung der Karte definieren (Vorschlag: Identifier + Titel als Link).
 
 **CE-Stand (Stub)**: Node `issue-embed-component` (`CORE_EXTENSIONS.WORK_ITEM_EMBED`), `group: block`, `atom`, `draggable`; Attribute `entity_identifier`, `project_identifier`, `workspace_identifier`, `id`, `entity_name` (R19). NodeView `WorkItemEmbedExtension({ widgetCallback({issueId, projectId, workspaceSlug}) })` existiert, wird aber nirgends registriert; nur `WorkItemEmbedExtensionConfig` in `DocumentEditorExtensionsWithoutProps` (Parsing) (R19). Typ `TIssueEmbedConfig` (`packages/editor/src/types/issue-embed.ts`); `TEmbedItem {id, title, subTitle, icon, projectId, workspaceSlug}` (`packages/editor/src/types/embed.ts`). Drag-Selektor `.issue-embed` (R17). Kein Slash-Befehl.
@@ -521,7 +530,7 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 - Abschnitt **„Pages“** in den Work-Item-Details; Button **„Link pages“** sucht in Projektseiten und Wiki, Mehrfachauswahl (W38). Matrix: „Link pages in work items in a separate section in work item details.“ (R1).
 - i18n (R7): `issue.pages.link_pages` „Link pages“, `show_wiki_pages` „Show Wiki pages“ (Umschalter im Auswahl-Modal, UNVERIFIZIERT), `link_pages_to` „Link pages to“, `linked_pages` „Linked pages“, `no_description` („This is an empty page. Why don't you write something inside and see it show up here like this placeholder“ = Vorschau-Platzhalter für leere Seiten), Toasts `link.success` „Pages updated“, `remove.success` „Page removed“ und Fehlervarianten.
 - Teamspace-Seiten nicht verlinkbar (W5 Tabelle „Link to a work item“: Projekt ✓, Wiki ✓, Teamspace –).
-- **Tier (Verifikation)**: Pro (Changelog W38); Matrix „One+“ historisch (R36). v1-Request-Body: `page_id` (Pflicht) (D2 `add-work-item-page.md`).
+- **Tier (Verifikation, präzisiert in Verifikation 2)**: Tier-Feld „One“ (Matrix R1, historisch, R36), heute erhältlich ab Pro (Changelog W38; Pro-Seite „deeper connections between Pages and Work Items“, W43). v1-Request-Body: `page_id` (Pflicht) (D2 `add-work-item-page.md`).
 
 **Datenmodell** (D2, W39): Link-Objekt `id`, `page {id, name, description_html, created_at, updated_at, created_by, is_global, logo_props}`, `issue`, `project`, `workspace`, `created_at`, `updated_at`, `created_by`. Jede Seite höchstens einmal je Work Item (sonst `409 conflict`); beliebige Seite des Workspace verlinkbar (eigenes Projekt, anderes Projekt, Wiki) (W39). **Vorschlag**: `work_item_pages(id, issue_id, page_id, project_id, workspace_id, …)`, partieller Unique-Index (`issue_id`, `page_id`) `WHERE deleted_at IS NULL`.
 
@@ -539,6 +548,7 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 - Mentions in Kommentaren, Resolve per Häkchen › „Mark as resolved“; aufgelöste Threads verschwinden aus der Standardansicht; „Mark as unresolved“ öffnet erneut; Filter „Show active“ (Default), „Show resolved“, „Show all“ (W7, W8).
 - Nur Autor darf eigenen Kommentar bearbeiten/löschen (W7); Teamspace-Lead darf jeden Kommentar löschen (W29, W30); Guests dürfen Projekt-Kommentare reagieren, nicht resolven (W29); Guest kommentiert nur eigene Seiten (W29).
 - Reaktionen auf Seitenkommentare: nicht seitenspezifisch belegt (UNVERIFIZIERT; Work-Item-Kommentare haben Reaktionen).
+- **Tier (Verifikation 2)**: Business – „Inline Page comments · Business“ (W11) per Suche bestätigt. Widerspruch: ein Vergleichsblog beschreibt das Wiki „available on Pro and above“ inklusive „inline and page-level comments“, der Confluence-Vergleichsblog ordnet Inline-Kommentare wieder Business zu (W50). Business bleibt (spezifischere Plan-Aufstellung).
 - Teamspace-Kommentare bleiben im Teamspace sichtbar (W30).
 
 **Datenmodell (Vorschlag)**: `page_comments(id, workspace_id, page_id, actor_id, parent_id (Thread), comment_type 'inline'|'page', anchor_id (ID der Kommentar-Markierung im Dokument), reference_text (Snapshot des markierten Texts), comment_html, comment_json, comment_stripped, is_resolved, resolved_by_id, resolved_at, edited_at, is_hidden, hidden_reason, hidden_by_id, hidden_at, created_at, updated_at, deleted_at)`; `page_comment_reactions(comment_id, actor_id, reaction)`. Anker als Tiptap-Mark mit Kommentar-ID im Yjs-Dokument (UNVERIFIZIERT – clean-room-Entwurf).
@@ -550,13 +560,13 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 ### 3.15 P07-15 – Page-Level-Kommentare, Filter, Moderation
 
 **Funktionsbeschreibung**
-- 2026-10-15: Kommentare zur ganzen Seite ohne Textauswahl; Umschalter **„Page“ / „Inline“**; Filter nach Status (active/resolved/beide) **und Autor**; „Copy link“ eines Kommentars öffnet beim Empfänger den Thread (W8).
-- v3.2.0: Admins können Kommentare auf Work Items, Pages und Teamspaces **verbergen/einblenden** mit Begründung (W32).
+- 2026-10-15: Kommentare zur ganzen Seite ohne Textauswahl; Umschalter **„Page“ / „Inline“**; Filter nach Status (active/resolved/beide) **und Autor**; „Copy link“ eines Kommentars öffnet beim Empfänger den Thread (W8). Verifikation 2: Existenz des Eintrags („Page-level comments, custom-property dashboards, and more“) sowie „comment on an entire page without selecting specific text“ und der Page/Inline-Umschalter per Suche bestätigt; Autorenfilter und „Copy link“ nicht reproduziert (UNVERIFIZIERT).
+- v3.2.0: Admins können Kommentare auf Work Items, Pages und Teamspaces **verbergen/einblenden** mit Begründung (W32). Verifikation 2: Die Suche zu v3.2.0 (2026-09-10, „Governance, AI memory, PII scans, and more“) lieferte keinen Hinweis auf Kommentar-Moderation → UNVERIFIZIERT.
 - Upsell-Tabs in `wiki.upgrade_flow.tabs`: „Nested Pages“, „Add embeds“, „Publish pages“, „Comments“ (R3) – bestätigt Kommentare als Bezahl-Merkmal.
 
 **Datenmodell**: siehe P07-14 (`comment_type='page'`, `anchor_id=null`, `is_hidden`…).
 
-**Konfidenz**: mittel.
+**Konfidenz**: mittel (Page-Level-Kommentare), niedrig (Moderation, Autorenfilter).
 
 ---
 
@@ -568,6 +578,7 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 - E-Mail-Benachrichtigung, wenn man zu einer geteilten Seite hinzugefügt wird (W13).
 - i18n: „Members & Teamspaces“ (R9, vermutlich Abschnittsüberschrift im Share-/Move-Dialog, UNVERIFIZIERT); Move-Dialog-Regel „Private and shared pages cannot be moved to a teamspace.“ (R4).
 - Listenfilter `type=shared` = „private pages explicitly shared with the user“; `private` = „pages owned by the user and not shared“ (D1).
+- **Tier (Verifikation 2)**: Business – Doku (W1) und Business-Seite „selective sharing of private Wiki pages“ (W43) per Suche bestätigt. Widerspruch: Das CE-Upsell v1.4.2 nennt „shared pages“ unter den Pro-Freischaltungen (R3 `wiki.upgrade_flow.description`); die feature-spezifischen Quellen (Doku, Plan-Seite) gewinnen. Gleiche Wertung in `P02.paid.json` („Geteilte private Seiten“, Business).
 
 **CE-Stand (Stub)**: `usePageFlag().isPageSharingEnabled = false` (R11); keine Share-UI, keine Tabelle.
 
@@ -602,7 +613,7 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 - Filter in Seitenliste/Collection: mehrere Labels → Seiten mit **irgendeinem** gewählten Label (OR) (W31).
 - Wer ändert Labels: Wiki – Owner der Seite und Workspace-Admins (Member nur eigene); Projekt/Teamspace – jeder mit Edit-Recht (W31, W29).
 
-**CE-Stand (teilweise)**: `Page.labels` M2M über `PageLabel` auf **Work-Item-`Label`** (R12); Annotation `label_ids` (R25); Filter `labels` in `TPageFilterProps` (`packages/types/src/page/core.ts`).
+**CE-Stand (teilweise)**: `Page.labels` M2M über `PageLabel` auf **Work-Item-`Label`** (R12); Annotation `label_ids` (R25); Filter `labels` in `TPageFilterProps` (`packages/types/src/page/core.ts`). Ergänzung (Verifikation 2): `PageSerializer` (`apps/api/plane/app/serializers/page.py`) nimmt `labels` als Liste an und schreibt `PageLabel`-Zeilen bei Create/Update (Löschen + `bulk_create`); in `apps/web/components/pages/**` gibt es **keine** Label-UI (grep ohne Treffer) → „teilweise“ bedeutet nur Backend-Persistenz mit falschem Label-Ziel.
 
 **Datenmodell (Vorschlag)**: `page_label_definitions(id, workspace_id, name unique, color, sort_order)`, `page_label_assignments(page_id, label_id)`.
 
@@ -651,7 +662,7 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 
 **CE-Stand**: nur Drag-Selektor `.editor-drawio-component` (R17).
 
-**Tier (Verifikation)**: Pro nach der Integrationsdoku (W27) als spezifischerer Quelle; Blog W11 nennt Business (UNVERIFIZIERT, Such-Zusammenfassungen). Helm-Defaults (H1): `services.drawio.local_setup: false`, `services.iframely.enabled: false`, `services.live_exporter.enabled: true` (Image `makeplane/live-commercial`). Helm beschreibt draw.io als „Self-hosted draw.io for the Wiki editor's diagram extension“ (H1, H5) – Geltungsbereich siehe OP-20.
+**Tier (korrigiert in Verifikation 2)**: **Business**. Die Suche zur Editor-Block-Doku (W4) ergab: „Rich Page blocks such as embeds, attachments, columns, video, Date, and Status are available on Pro, while Advanced Page blocks such as Tabs, Toggles, mathematical notation, Draw.io, and a Table of contents block are listed under Business“; Blog W11 nennt ebenfalls Business. Die frühere Angabe „Pro nach der Integrationsdoku (W27)“ war nicht reproduzierbar (die Zusammenfassung von docs.plane.so/integrations/draw-io nennt nur „Connect Draw.io to create and edit powerful diagrams and whiteboards directly inside Plane Pages and Wiki“ und Admin-Pflicht, keinen Plan). Abweichung: `P03.paid.json` P03-F31 und Dok. 22 (Zeile P03-F31) übernehmen noch „Pro“ aus der früheren Fassung dieses Dokuments. Alle Angaben UNVERIFIZIERT (Such-Zusammenfassungen). Helm-Defaults (H1): `services.drawio.local_setup: false`, `services.iframely.enabled: false`, `services.live_exporter.enabled: true` (Image `makeplane/live-commercial`). Helm beschreibt draw.io als „Self-hosted draw.io for the Wiki editor's diagram extension“ (H1, H5) – Geltungsbereich siehe OP-20.
 
 **Datenmodell (Vorschlag, clean-room)**: Node `drawio-component` mit Attributen `id`, `data-mode` (`diagram`|`board`), `data-xml-asset-id` (Diagramm-XML als `FileAsset`), `data-image-asset-id` (SVG/PNG-Vorschau); Speicherung über `FileAsset` (`entity_type=PAGE_DESCRIPTION`, R27). HTML-Vertrag des Originals nicht dokumentiert (UNVERIFIZIERT).
 
@@ -738,6 +749,8 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 
 **Funktionsbeschreibung**: Für markierten Text feste Aktionen **Paraphrase, Simplify, Elaborate, Summarize, Get title**; „Replace selection“ ersetzt den Text; Ton-Einstellung vor Neugenerierung (W22). Übersetzen nicht im Selection-Menü belegt (W22).
 
+**Tier (korrigiert in Verifikation 2)**: Pro statt „unklar“ – Guide W11: „Page-level AI writing assistance and summaries start on Pro“; Pro-Seite nennt „AI-assisted writing“ (W43). Beide Angaben nur aus Such-Zusammenfassungen (UNVERIFIZIERT); AI-Credits je Plan (Cloud: Pro 1.000, Business 2.000 je Seat/Monat laut W11) entfallen nach ADR-001. Abgleich: `P09.author.json` „AI-Assistent im Editor“ führt Pro (konsistent).
+
 **CE-Stand (Stub)**: `EditorAIMenu` (`apps/web/components/pages/editor/ai/menu.tsx`, eingebunden in `editor-body.tsx`) mit einziger Aufgabe `AI_EDITOR_TASKS.ASK_ANYTHING` „Ask Pi“; Töne (definiert in `menu.tsx`, nicht in den Konstanten) `default` (casual 5/formal 5), `professional` „💼 Professional“ (casual 0/formal 10), `casual` „😃 Casual“ (10/0); Antwort mit „Replace selection“, „Add to next line“, „Re-generate response“ (`menu.tsx`, `ask-pi-menu.tsx`); Ladetext „Pi is generating response“ (`packages/constants/src/ai.ts`). Service `POST /api/workspaces/{slug}/rephrase-grammar/` – Route existiert im CE-API nicht (nur `ai-assistant/`, `apps/api/plane/app/urls/external.py`). AI-Handle (Sparkles-Icon im Side-Menü, `packages/editor/src/plugins/ai-handle.ts`) nur aktiv, wenn `"ai"` nicht deaktiviert ist – CE deaktiviert es (R10).
 
 **Migrationshinweis (ADR-004)**: OpenAI-kompatibler, lokal betreibbarer Provider; AI-Credits entfallen (ADR-001). Workspace-Feature `pi` (D3) als fachlicher Schalter.
@@ -752,7 +765,7 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 
 **Datenmodell (Vorschlag)**: Node `ai-block-component` mit `block_type` (`summarize_page`|`custom_prompt`), `prompt`, `generated_html`, `generated_at`, `source_hash` (für Stale-Erkennung). Original-Vertrag UNVERIFIZIERT.
 
-**Tier (Verifikation)**: Business nach Doku-Label (W4, W22) als spezifischerer/aktuellerer Quelle; der Blog W10 (Collections-Launch, April 2026) nennt Pro+, ist aber älter als der Launch des AI-Blocks (2026-06-15, W21). Beide Angaben stammen aus Such-Zusammenfassungen (UNVERIFIZIERT).
+**Tier (Verifikation)**: Business nach Doku-Label (W4, W22) als spezifischerer/aktuellerer Quelle; der Blog W10 (Collections-Launch, April 2026) nennt Pro+, ist aber älter als der Launch des AI-Blocks (2026-06-15, W21). Beide Angaben stammen aus Such-Zusammenfassungen (UNVERIFIZIERT). Verifikation 2: Guide W11 „Free-form Page editing, AI Blocks, and Page Analytics are available on Business“ bestätigt Business; die Block-Typen „Summarize Page“ / „Custom Prompt“ sind zusätzlich im CE-i18n belegt (R5 `ai_block.block_types`). Abweichung: `P09.author.json` „AI-Assistent im Editor (… AI-Block …)“ fasst den Block unter Pro zusammen.
 
 **Konfidenz**: mittel.
 
@@ -764,7 +777,7 @@ Legende CE-Status: `fehlt` | `Stub/UI-Hülle im CE` | `teilweise im CE` | `im CE
 
 **Migrationshinweis**: Vorschlag-Darstellung als Tiptap-Dekorationen/Suggestion-Marks; Ausführung über Plane-AI-Backend (anderer Cluster).
 
-**Tier (Verifikation)**: Business (Doku W22) statt Pro (Blog W10); Regel „spezifischere/aktuellere Quelle gewinnt“, UNVERIFIZIERT.
+**Tier (Verifikation)**: Business (Doku W22) statt Pro (Blog W10); Regel „spezifischere/aktuellere Quelle gewinnt“, UNVERIFIZIERT. Verifikation 2: Guide W11 ordnet „Free-form Page editing“ Business zu; dass damit genau die Proposals gemeint sind, ist eine Ableitung (UNVERIFIZIERT).
 
 **Konfidenz**: niedrig–mittel (Doku widersprüchlich).
 
@@ -783,25 +796,27 @@ Gruppen des `/`-Menüs laut Doku: **Basics** (Text, Headings 1–6, Quote, Callo
 | P07-34 | Date (inline) | `/date`, `/calendar`, `/deadline`, `/due` | Pill, Klick öffnet Kalender, read-only als Text | Pro | `<inline-date-component id="…" date="2026-08-18"></inline-date-component>` | W4, G1 |
 | P07-35 | Equation block / inline | `/`-Menü, `$$…$$` (Block), `$…$` (inline) | LaTeX, Block zentriert, Fehleranzeige bei nicht renderbarem LaTeX | Business | `<block-math-component id="…" latex="…">`, `<inline-math-component id="…" latex="…">` | W4, G1, W40 |
 | P07-36 | Mermaid diagram | `/mermaid` | Flowcharts, Sequenz, Graphen; Umschalter Preview/Code; Mermaid-Code einfügen rendert | unklar | UNVERIFIZIERT | W4, W20, W15 |
-| P07-37 | HTML artifact | `/`-Menü (Advanced) | hochgeladene `.html`/`.htm` live und interaktiv (Skripte laufen), isolierter Frame ohne Zugriff auf Session/Workspace/Seite; Block löschen löscht Datei, außer anderweitig auf derselben Seite verwendet | Business | UNVERIFIZIERT | W4, W19 |
-| P07-38 | Table of contents | `/`-Menü (Layout) | Inhaltsverzeichnis aus Überschriften; nur Pages | unklar | UNVERIFIZIERT | W4 |
-| P07-39 | Link pages | `/link pages` | Live-Liste von Wiki-Seiten; Quelle „Parent pages“ (Kinder einer gewählten Seite), Tiefe „All“ oder 1–6; aktualisiert bei Anlegen/Umbenennen/Archivieren/Löschen; archivierte nicht gelistet; nur Wiki-Seiten; 2026-08-31 auch Elternseite einfügbar | Business | UNVERIFIZIERT | W4, W5, W18 |
+| P07-37 | HTML artifact | `/`-Menü (Advanced) | hochgeladene `.html`/`.htm` live und interaktiv (Skripte laufen), isolierter Frame ohne Zugriff auf Session/Workspace/Seite; Block löschen löscht Datei, außer anderweitig auf derselben Seite verwendet | Business (UNVERIFIZIERT; in Verifikation 2 lieferte die Suche keinen Treffer zu „HTML artifact“) | UNVERIFIZIERT | W4, W19 |
+| P07-38 | Table of contents | `/`-Menü (Layout) | Inhaltsverzeichnis aus Überschriften; nur Pages | Business (Verifikation 2: „Advanced Page blocks“) | UNVERIFIZIERT | W4 |
+| P07-39 | Link pages | `/link pages` | Live-Liste von Wiki-Seiten; Quelle „Parent pages“ (Kinder einer gewählten Seite), Tiefe „All“ oder 1–6; aktualisiert bei Anlegen/Umbenennen/Archivieren/Löschen; archivierte nicht gelistet; nur Wiki-Seiten; 2026-08-31 auch Elternseite einfügbar | Business (UNVERIFIZIERT) | UNVERIFIZIERT | W4, W5, W18 |
 | P07-40 | Page embed / Linked page embed | `/page` (neue Unterseite + Link-Block); „Linked page embed“ referenziert bestehende Seite | Unterseiten-Link bzw. Referenz auf andere Seite | Business (UNVERIFIZIERT) | `<page-embed-component id="…" entity_identifier="PAGE_UUID" workspace_identifier="WORKSPACE_SLUG" entity_name="sub_page"></page-embed-component>` | G1, W2, W4, W15 |
 | P07-41 | Widget | `/`-Menü | Chart direkt aus Work-Item-Daten (Projekt- und Wiki-Seiten) | unklar | UNVERIFIZIERT | W4 |
-| P07-42 | Link dashboard widgets | `/`-Menü | bettet ein Widget (Chart, Tabelle, Zahl) eines bestehenden Dashboards ein, synchron mit Daten; mindestens ein Dashboard mit Widgets erforderlich | Enterprise (Grid) | UNVERIFIZIERT | W4, W19 |
-| P07-43 | Block-Links | Kontextmenü eines Blocks | Link auf einen Block kopieren | unklar | UNVERIFIZIERT | W37 |
+| P07-42 | Link dashboard widgets | `/`-Menü | bettet ein Widget (Chart, Tabelle, Zahl) eines bestehenden Dashboards ein, synchron mit Daten („link a dashboard widget so your metrics stay current“, W19, in Verifikation 2 bestätigt); mindestens ein Dashboard mit Widgets erforderlich | Enterprise (Grid) (UNVERIFIZIERT; W19 nennt keinen Plan) | UNVERIFIZIERT | W4, W19 |
+| P07-43 | Block-Links | Kontextmenü eines Blocks | Link auf einen Block kopieren; CE-Basis: Extension `UniqueID` vergibt jedem Block-Node (`COMBINED_BLOCK_NODE_TYPES`) ein `id`-Attribut, serialisiert als `data-id` (`packages/editor/src/extensions/unique-id/extension.ts`, registriert in `packages/editor/src/extensions/extensions.ts`) | unklar | UNVERIFIZIERT | W37 |
 
 Weitere im CE bereits vorhandene Komponenten (Referenz, keine Bezahl-Features): Callout `<div data-block-type="callout-component" data-background="#eff6ff" data-logo-in-use="emoji" data-emoji-unicode="128161">…</div>`, Bild `<image-component id src width height alignment status>` (G1; CE-Extensions `packages/editor/src/extensions/callout`, `custom-image`).
 
 **Migrationshinweis**: Alle Renderer (KaTeX, Mermaid, draw.io-Viewer) gebündelt ausliefern (ADR-004); HTML-Artifact in `<iframe sandbox="allow-scripts">` ohne `allow-same-origin`, ausgeliefert von separater Asset-Origin mit restriktiver CSP; PDF/DOCX-Exporter (P07-09) müssen jeden Node-Typ abbilden (CE-PDF-Renderer `nodeRenderers` kennt genau: `doc`, `text`, `paragraph`, `heading`, `blockquote`, `codeBlock`, `bulletList`, `orderedList`, `listItem`, `taskList`, `taskItem`, `table`, `tableRow`, `tableHeader`, `tableCell`, `horizontalRule`, `hardBreak`, `image`, `imageComponent`, `calloutComponent`, `mention` – `apps/live/src/lib/pdf/node-renderers.tsx`; Marks in `apps/live/src/lib/pdf/mark-renderers.ts`). Für Nodes ohne Originalvertrag definiert der Implementierungs-Agent einen eigenen, dokumentierten HTML-Vertrag im Stil von G1 (Custom-Element `<name>-component` + `data-*`-Attribute).
 
-**Konfidenz**: hoch (Existenz, Tiers laut Doku-Labels), niedrig (HTML-Verträge der mit UNVERIFIZIERT markierten Blöcke).
+**Tier-Bestätigung (Verifikation 2)**: Eine Such-Zusammenfassung der Editor-Block-Doku bestätigt die Zweiteilung „Rich Page blocks“ (Pro: Embeds, Attachments, Columns, Video, Date, Status) und „Advanced Page blocks“ (Business: Tabs, Toggles, mathematische Notation, Draw.io, Table of contents). Nicht reproduzierbar blieben die Tiers für HTML artifact, Link pages, Link dashboard widgets; für Mermaid, Widget und Block-Links nennt keine Quelle einen Plan.
+
+**Konfidenz**: mittel (Existenz und Tiers der in der Zweiteilung genannten Blöcke; Such-Zusammenfassungen), niedrig (Tiers von P07-37/39/42, HTML-Verträge der mit UNVERIFIZIERT markierten Blöcke). Korrigiert in Verifikation 2 (vorher „hoch“ für alle Tiers, obwohl nur Such-Zusammenfassungen vorliegen).
 
 ---
 
 ### 3.31 P07-44 – Page-Benachrichtigungen
 
-**Funktionsbeschreibung**: E-Mail, wenn man zu einer geteilten Seite hinzugefügt wird (W13); Page-Subscriber erhalten E-Mail bei Veröffentlichung einer neuen Version oder Erwähnung (v3.2.0, W32). Subscribe-Mechanik für Seiten nicht dokumentiert (Suche nur Work Items).
+**Funktionsbeschreibung**: E-Mail, wenn man zu einer geteilten Seite hinzugefügt wird (W13); Page-Subscriber erhalten E-Mail bei Veröffentlichung einer neuen Version oder Erwähnung (v3.2.0, W32). Subscribe-Mechanik für Seiten nicht dokumentiert (Suche nur Work Items). Verifikation 2: Die Suche zu v3.2.0 bestätigte nur Governance, AI-Memory, PII-Scans, Microsoft-Teams-Anbindung und Dashboard-Widgets; Page-Subscriber wurden nicht gefunden → W32-Angabe UNVERIFIZIERT.
 
 **Datenmodell (Vorschlag)**: `page_subscribers(page_id, subscriber_id)`; Benachrichtigungen über bestehendes Notification-Subsystem (anderer Cluster).
 
@@ -859,7 +874,7 @@ Im CE vorhandene Upsell-/Downgrade-Texte, die nach ADR-001 **nicht** portiert we
 | ID | Thema | Beschreibung | Vorschlag / Rückfrage |
 |---|---|---|---|
 | OP-01 | UI-Referenz für EE-only-Oberflächen | Für Wiki-Sidebar, Collections-Tabelle, Share-Dialog, Move-Dialog, Kommentar-Panel, Analytics-Panel, Export-Dialog (EE), Template-Picker und alle Blöcke aus 3.30 gibt es **keinen** CE-Code und keine Referenz-Screenshots im Repo; ADR-005 verlangt 1:1. | **Rückfrage an Auftraggeber**: Steht eine Commercial-/Cloud-Instanz (Trial) für Referenz-Screenshots und Verhaltensaufnahmen zur Verfügung? Sonst Design aus Doku-Screenshots + CE-Designsystem ableiten und als Abweichung dokumentieren. |
-| OP-02 | Widersprüchliche Tiers | Wiki One (R1) vs. Pro (R2, W1); Real-time/Publish/Work-Item-Embeds/Link One (R1) vs. Pro (R3, W4, W5, W38); Draw.io Pro (W27) vs. Business (W11); AI-Block/Agent Pro (W10) vs. Business (W21, W22); Versionen 2 Tage/3 Monate (R1) vs. 20 Versionen/30 Tage, 60/90 (W12). **Aufgelöst in der Verifikation**: „One“ ist nicht mehr erhältlich (R36) → Pro für alle „One+“-Zeilen; Draw.io Pro (Integrationsdoku spezifischer als Blog); AI-Block/Agent Business (Doku spezifischer/aktueller als Blog). | Nach ADR-001 ohne Auswirkung; nur Dokumentation. |
+| OP-02 | Widersprüchliche Tiers | Wiki One (R1) vs. Pro (R2, W1); Real-time/Publish/Work-Item-Embeds/Link One (R1) vs. Pro (R3, W4, W5, W38); Draw.io Pro (W27) vs. Business (W11); AI-Block/Agent Pro (W10) vs. Business (W21, W22); Versionen 2 Tage/3 Monate (R1) vs. 20 Versionen/30 Tage, 60/90 (W12); Sharing Pro (R3) vs. Business (W1, W43); Inline-Kommentare Pro (W50) vs. Business (W11). **Aufgelöst**: „One“ ist nicht mehr erhältlich (R36) → Tier-Feld „One“, heute erhältlich ab Pro (Regel Kap. 1.1, Verifikation 2); Draw.io **Business** (Verifikation 2: Editor-Block-Doku „Advanced Page blocks“ + Blog; Integrationsdoku-Pro nicht reproduzierbar); AI-Block/Agent Business (Doku spezifischer/aktueller als Blog, W11 bestätigt); Sharing und Inline-Kommentare Business (spezifischere Quellen). | Nach ADR-001 ohne Auswirkung; nur Dokumentation. |
 | OP-03 | Databases + Formulas | Nur als „COMING SOON“ in R1, im Upgrade-Modal (R2, R36) als Enterprise-Merkmal; kein Auslieferungsnachweis; Tier Business (Matrix-Zeile) vs. Enterprise (Highlights/Upgrade-Modal). | **Rückfrage**: Soll ein eigenes Feature (Notion-artige Datenbanken in Pages) entworfen werden oder entfällt es mangels Original? |
 | OP-04 | Matrix-Fehler | `Nested Pages` hat bei Business/Enterprise den Zellwert „Word-compatible + other format downloads“ (Copy-Paste aus Exports) (R1). | Ignorieren; Nested Pages = vollständiges Feature. |
 | OP-05 | Collection löschen | UI: „Transfer pages and delete collection“ / „Delete collection with pages“ (R3) vs. API v1: `archive_pages` true/false (G9). | Ziel unterstützt alle drei Varianten (Transfer, Archivieren, endgültig Löschen); Abgleich gegen Original nötig. |
@@ -873,8 +888,132 @@ Im CE vorhandene Upsell-/Downgrade-Texte, die nach ADR-001 **nicht** portiert we
 | OP-13 | Server-Restore von Versionen | Web ruft `…/versions/{id}/restore/`, CE-API fehlt die Route (R33, R35). | Ziel bietet Server-Endpunkt mit Yjs-Anwendung. |
 | OP-14 | Share-/Move-/Comment-/Analytics-Endpunkte der internen App-API | Nicht dokumentiert. | Endpunkte nach CE-Muster entwerfen (Vorschläge in 3.x), Contract-Tests nur für dokumentierte Public-API. |
 | OP-15 | Teamspace-Pages-Tier | Nur indirekt über „Teamspaces“ Pro (R2) belegt. | Ohne Auswirkung (ADR-001). |
-| OP-16 | Mermaid/TOC/Widget/Block-Links-Tiers | Nicht belegt. | Ohne Auswirkung (ADR-001). |
+| OP-16 | Mermaid/Widget/Block-Links-Tiers | Nicht belegt (TOC in Verifikation 2 Business zugeordnet). | Ohne Auswirkung (ADR-001). |
 | OP-17 | Draw.io-Fallback | Original fällt bei leerem `DRAWIO_EMBED_URL` auf diagrams.net-Cloud zurück (G13) – widerspricht Airgapped-Ziel. | Ziel: gebündelte draw.io-Webapp als Default; Cloud-Fallback nur per Konfiguration. |
 | OP-18 | Iframely-Ersatz | Iframely ist Node (H4) – ADR-002 verbietet Node zur Laufzeit; Provider-Abdeckung des Originals unbekannt. | .NET-Unfurl-Dienst (3.22); Abdeckung YouTube, Figma, Google Docs, Loom als Mindestumfang (W4, W13). |
 | OP-19 | Restore bei archiviertem Parent | CE löst den Parent (`page.parent = None`, R25), EE-Public-API v1 antwortet `400` (G14). | Ziel: Public-API `400` gemäß Doku; UI-Verhalten im Original prüfen (OP-01). |
 | OP-20 | Draw.io-Geltungsbereich | Helm-Chart beschreibt draw.io als „diagram extension“ des „Wiki editor“ (H1 `values.yaml`, H5 README, G13); Doku nennt Blöcke für Pages allgemein (W4, W27). | Ziel: in allen Seitentypen anbieten (ADR-001); Abgleich mit Original (OP-01). |
+
+---
+
+## Verifikations-Protokoll
+
+> Skeptiker-/Verifikationslauf 2 für Cluster P07 (Stand 2026-10-22). Grundlage: Autoren-Ergebnis `migration/features/_data/P07.author.json` und die vorliegende Fassung dieses Dokuments (sie trug bereits Marker „(Verifikation)“ eines früheren Durchgangs, aber noch kein Protokoll). Ergebnisliste: `migration/features/_data/P07.paid.json` (finale, deduplizierte Feature-Liste). Außerhalb von `migration/` wurde nichts geändert; kein Commit.
+
+### V.1 Methode und Umfang
+
+| Prüfschritt | Vorgehen | Ergebnis |
+|---|---|---|
+| (a) Tier-Belege | Matrix `apps/web/components/workspace/billing/comparison/plans.tsx` Zeilen 585–595 („Advanced Pages Analytics“), 805–935 (Sektion `knowledge-management`), 1027–1050 (`storage`), 1257–1311 (`PLANE_PLANS`) vollständig gelesen; `packages/constants/src/subscription.ts` vollständig; Verwendung der Konstanten per grep; `base.tsx`, `plan-detail.tsx`, `upgrade-modal.tsx`, `card/free-plan.tsx` gelesen; Abgleich mit `20-*.md` bis `28-*.md` und `_data/P01.paid.json`, `P02.paid.json`, `P03.paid.json`, `P06.paid.json`, `P04/P05/P08/P09.author.json` | alle Matrix-Zitate im Dokument wörtlich korrekt; Korrekturen K-01 bis K-08 |
+| (b) CE-Status | grep/Lesen im Repo (Belege je Feature in V.3) | zwei CE-Status-Korrekturen (K-09, K-10), Rest bestätigt |
+| (c) Vollständigkeit | Matrix-Zeilen, i18n-Namespaces (`wiki`, `page`, `editor`, `template`, `work-item`, `workspace`, `common`, `empty-state`, `project`, `tour`, `power-k`, `navigation`, `home`, `workspace-settings`) nach EE-Texten zu Pages/Wiki durchsucht; Changelog-Titel per WebSearch | keine neue eigenständige Bezahl-Funktion; Ergänzung Wiki-Reordering (K-11); P07-47 in die JSON-Liste übernommen |
+| (d) Übertreibungen | Behauptungen mit Code/Helm abgeglichen, Web-Behauptungen stichprobenartig per WebSearch nachgesucht | Korrekturen K-12 bis K-16 |
+| WebSearch | 14 Suchen (Budget 15) | Ergebnisse in V.4 |
+
+### V.2 Korrekturen (in diesem Lauf direkt im Dokument vorgenommen)
+
+| Nr. | Stelle | Vorher | Nachher | Beleg |
+|---|---|---|---|---|
+| K-01 | Kap. 1.1, Zeile „One“ | „nicht mehr erhältlich: `planDetails.one.isActive: false`“ | `isActive` ist kein Beleg (auch `business`/`enterprise` haben `false`; steuert nur Preis vs. „Quote on request“); Beleg allein der Kommentar in `shouldRenderPlanDetail` | `plans.tsx` Z. 1257–1302, `plan-detail.tsx` (`isSubscriptionActive`, `pricingDescription`), `base.tsx` Z. 26–32 |
+| K-02 | Kap. 1.1 Tier-Regel; Kap. 2 Zeilen P07-01/07/08/11/13; Abschnitte 3.1, 3.7, 3.8, 3.11, 3.13 | „ab Plan: Pro“ | „One (historisch) / heute Pro“; Tier-Feld in `P07.paid.json` = „One“ (Definition „niedrigster Plan, ab dem verfügbar“; einzige One-Quelle ist R1). Kein Widerspruch zu den Pro-Angaben, da diese nur die heute erhältlichen Pläne beschreiben | R1 Z. 820–874, R36, R3, W43 |
+| K-03 | Kap. 1.2, R2 | Konstanten ohne Verwendungsnachweis | `ONE_PLAN_FEATURES` ist im Code ungenutzt; `FREE_PLAN_UPGRADE_FEATURES` = Liste fehlender Features auf der Free-Karte | grep über `apps`, `packages` |
+| K-04 | P07-21 Draw.io | Pro (Integrationsdoku) | **Business** (Editor-Block-Doku „Advanced Page blocks“, Blog W11); Integrationsdoku-Pro nicht reproduzierbar | WebSearch S5, S6, S7 |
+| K-05 | P07-38 Table of contents | unklar | Business (UNVERIFIZIERT) | WebSearch S7 |
+| K-06 | P07-27 AI-Selection-Aktionen | unklar | Pro (UNVERIFIZIERT) | WebSearch S11, S13 (W11, W43) |
+| K-07 | P07-37, P07-39, P07-42 | Tier ohne Einschränkung | „(UNVERIFIZIERT)“ – in diesem Lauf nicht reproduzierbar | WebSearch S6, S12 |
+| K-08 | P07-14, P07-16, Kap. 2, OP-02 | Gegenstimmen nicht dokumentiert | Widerspruch Upsell „shared pages … with Plane Pro“ (R3) vs. Business; Vergleichsblog „inline and page-level comments“ im Pro-Wiki (W50) vs. Business – jeweils Business beibehalten | R3, W1, W11, W43, W50 |
+| K-09 | P07-06 CE-Status | fehlt | Stub/UI-Hülle im CE (Service `restoreVersion`, Handler `TPageRootHandlers.restoreVersion`, i18n `highlight_changes`) | `apps/web/services/page/project-page-version.service.ts` Z. 40–42, `apps/web/components/pages/editor/page-root.tsx` Z. 30–37, `…/[pageId]/page.tsx` Z. 90–91, R4 |
+| K-10 | P07-18 CE-Status | „teilweise im CE“ ohne Präzisierung | nur Backend (`PageSerializer` schreibt `labels` → `PageLabel` auf Work-Item-Labels), keine UI | `apps/api/plane/app/serializers/page.py` Z. 27–128; grep `apps/web/components/pages` |
+| K-11 | P07-02 | Reordering nur als allgemeiner Changelog-Hinweis | Wiki-Reordering v3.3.0 (Collections, Seiten in Collections, Nested Pages per Drag-and-drop) | W48 (WebSearch S4) |
+| K-12 | P07-04 | „Projektseiten seit 2025-09-01, W40“ | nicht belegt; Einführung Cloud 2025-05-23, Ausweitung 2025-10-01 (W49); W40 behandelt Notion/Confluence-Import | WebSearch S3 |
+| K-13 | P07-09 | „Job-Status in Redis“ mit H1/H2/H5 belegt | Beleg ist der Kommentar in `live-exporter.deployment.yaml` (neu H7) | H7 |
+| K-14 | P07-08 | `is_disabled` „für Moderation“ | Feld existiert, Moderationszweck abgeleitet (UNVERIFIZIERT) | `apps/api/plane/db/models/deploy_board.py` Z. 30–39 |
+| K-15 | P07-15, P07-44 | W32-Inhalte (Kommentar-Moderation, Page-Subscriber) als Fakten | UNVERIFIZIERT (Suche zu v3.2.0 ohne Treffer); W8 (Page-Level-Kommentare, Page/Inline-Umschalter) bestätigt; Konfidenz P07-15 differenziert | WebSearch S1, S2, S10, S14 |
+| K-16 | 3.30 Konfidenz | „hoch (… Tiers laut Doku-Labels)“ | „mittel“ bzw. „niedrig“ – alle Block-Tiers stammen nur aus Such-Zusammenfassungen | WebSearch S6, S7 |
+| K-17 | P07-10 Datenmodell/API | `template_data` mit „Titel“; Projekt-Pfad UNVERIFIZIERT | Abgleich mit Dok. 25 F22: Seed `{description_html, logo_props, view_props, color, parent}`, `is_published`, Projekt-Pfad, `409 templates_managed_at_workspace`, v1 `/pages/templates/`; „Titel“ im Seed UNVERIFIZIERT | `25-paid-workflows-automation-templates.md` F22 (Z. 831–842) |
+| K-18 | P07-17 CE-Status | fehlt | Stub/UI-Hülle im CE (Typ-Spuren `team_page`, `teamId`; gleiche Wertung wie bei P07-01/P07-08 und in `P05.author.json`) | `packages/types/src/page/core.ts` Z. 79 |
+
+### V.3 Bestätigte Repo-Belege (Stichproben, alle ohne Abweichung)
+
+| Behauptung | Geprüfte Stelle |
+|---|---|
+| Matrix-Zeilen und Zellwerte (inkl. fehlerhafter Nested-Pages-Zelle, `comingSoon` bei Databases/Nested/Analytics) | `plans.tsx` Z. 585–595, 805–935 |
+| `planHighlights.enterprise` enthält „Databases + Formulas“ | `plans.tsx` Z. 1308 |
+| Upsell-/Collections-/Move-/Kommentar-/Assets-/AI-Block-/Attachment-/Embed-Texte | `packages/i18n/src/locales/en/wiki.json`, `page.json`, `editor.json` (vollständig gelesen) |
+| Template-Texte inkl. „Use template“/„Applying“, „Derived from …“, „Contact your … admin …“ | `template.json` |
+| `issue.pages.*`, `workspace_pages.empty_state.*` (inkl. „Galileo“), `powered_by_plane_pages`, `members_and_teamspaces`, OAuth-Scope `wiki`, Tour „16 block types“ | `work-item.json` Z. 237–257, `workspace.json` Z. 290–319, `common.json` Z. 248/715, `workspace-settings.json` Z. 469, `tour.json` Z. 80 |
+| CE deaktiviert `ai`, `collaboration-cursor` in allen drei Editoren | `apps/web/hooks/use-editor-flagging.ts` |
+| `isMovePageEnabled`/`isPageSharingEnabled` = `false` | `apps/web/hooks/use-page-flag.ts` |
+| `Page`-/`PageLog`-/`PageVersion`-Felder inkl. `is_global`, `moved_to_*`, `sub_pages_data` | `apps/api/plane/db/models/page.py` |
+| Versionierungs-Bug `page.description` (Z. 45, 63), 600 s, >20 → älteste löschen; Cleanup-Window 20 je Seite | `apps/api/plane/bgtasks/page_version_task.py`, `cleanup_task.py` Z. 107–125 |
+| `TDocumentTypes = "project_page"`; `documentType`-Union mit `team_page`/`workspace_page`; Hinweis „enterprise repository“ | `apps/live/src/types/index.ts` Z. 26, `packages/types/src/page/core.ts` Z. 79, `apps/live/src/services/page/extended.service.ts` Z. 12 |
+| Drag-Selektoren `.issue-embed`, `.editor-embed-component`, `.editor-drawio-component` | `packages/editor/src/plugins/drag-handle.ts` Z. 18–32 |
+| leerer Attachment-Zweig | `packages/editor/src/plugins/drop.ts` Z. 129–130 |
+| `TEditorCommands` mit `issue-embed`, `attachment`, `external-embed`; `TExtensions` | `packages/editor/src/types/editor.ts` Z. 40–69, `types/extensions.ts` |
+| `WorkItemEmbedExtension` nirgends registriert, nur `WorkItemEmbedExtensionConfig` | grep; `packages/editor/src/extensions/core-without-props.ts` Z. 28, 66 |
+| Export-Modal-Optionen und Dateinamen; Live-`/pdf-export` vom Web ungenutzt | `apps/web/components/pages/modals/export-page-modal.tsx`, `apps/live/src/controllers/pdf-export.controller.ts` |
+| `DeployBoard.TYPE_CHOICES` mit `page`, `get_anchor = uuid4().hex`; Space-Routen | `deploy_board.py`, `packages/types/src/publish.ts`, `apps/space/app/routes.ts` |
+| Navigation-Pane 294 px, `paneTab`, `version`; Aktionsreihenfolgen; `move` nur bei Flag und in keinem `optionsOrder` | `navigation-pane/index.ts`, `options-dropdown.tsx` Z. 136–146, `block-item-action.tsx` Z. 84–92, `actions.tsx` Z. 158–164 |
+| Realtime-Events `move`/`duplicate`/`restore` ohne CE-Handler | `packages/editor/src/constants/document-collaborative-events.ts`, `apps/web/hooks/use-realtime-page-events.tsx` |
+| `enableAdvancedMentions: true` nur Document-Editor + Export-Parser | `editor-body.tsx` Z. 141, `components/editor/document/editor.tsx` Z. 69, `use-parse-editor-content.ts` Z. 29 |
+| `lock`/`unlock` mit `recursive?`; `TAdditionalEditorAsset = never` | `apps/web/store/pages/base-page.ts` Z. 36–37, `packages/editor/src/types/asset.ts` Z. 10, 20 |
+| `rephrase-grammar/` nur im Web-Service, API nur `ai-assistant/` | `apps/web/services/ai.service.ts` Z. 43, `apps/api/plane/app/urls/external.py` |
+| Wiki-Route und Empty-State-Assets | `use-workspace-paths.ts` Z. 18, `search-results-map.tsx` Z. 104, `apps/web/app/assets/empty-state/wiki/*` |
+| `parent__isnull`, rekursives Archiv, `page.parent = None`, 400 vor Löschen | `apps/api/plane/app/views/page/base.py` Z. 61, 99, 330, 356, 373, 397 |
+| CE ohne Mermaid/KaTeX, ohne Work-Item-Page-Modell, ohne Block-Link-Code | grep `mermaid|katex`, `IssuePage|WorkItemPage`, `block.?link` ohne Treffer |
+| Helm: `iframely.enabled: false`, `drawio.local_setup: false`, `live_exporter.enabled: true`, Images, `export_queue_name` „plane-exports“, Env-Namen | `values.yaml` Z. 334–364, 463–480, 1218–1282; `templates/config-secrets/{live-env,app-env}.yaml`; `templates/workloads/*.deployment.yaml`; `README.md` Z. 944–964, 1411 |
+| Offline-Doku: `type`-Filter, `per_page`, `cursor`; keine Plan-Angaben in `page/*`, `work-item-pages/*`, `workspace-features/overview.md`, `sticky/overview.md` | `/home/user/makeplane/developer-docs/docs/api-reference/…` |
+
+### V.4 WebSearch-Protokoll (14 Suchen, nur Zusammenfassungen)
+
+| Nr. | Anfrage (Kurzform) | Ergebnis für P07 |
+|---|---|---|
+| S1 | Changelog 2026-10-15 page comments | Eintrag nicht gefunden (nur 2025-10-15 Inline-Kommentare) |
+| S2 | „page-level comments“ Filter nach Autor | nur Inline-Kommentar-Doku; kein Autorenfilter |
+| S3 | Changelog 2025-09-01 | Inhalt = Recurring Items, Notion-/Confluence-Import, ClickUp, GitHub Enterprise; Nested Pages nur im Titel; Einführung 2025-05-23, Ausweitung 2025-10-01 (K-12) |
+| S4 | v3.3.0 wiki reordering | Drag-and-drop-Reordering von Collections, Seiten, Nested Pages (K-11) |
+| S5 | draw.io Plan | Integrationsdoku ohne Plan-Angabe |
+| S6 | Editor-Blöcke mit Plan-Labels | ohne Treffer auf docs.plane.so |
+| S7 | Editor-Blöcke (Domain-Filter plane.so/docs.plane.so) | „Rich Page blocks … Pro“, „Advanced Page blocks … Business“ inkl. Draw.io und TOC (K-04, K-05) |
+| S8 | „Advanced/Rich page blocks“ Pricing | Pricing-Auszug nennt „Nested Pages and Embeds“ unter Pro (Gegenstimme zu P07-04) |
+| S9 | Pricing/Pro/Business (extended) | plane.so/pro und /business: „Business adds … nested pages“; Versionen „20 versions / 30 days · 60 versions / 90 days · Unlimited“ bestätigt |
+| S10 | Inline-Kommentare/Labels Business | „Page Labels · Business“, „Inline Page comments · Business“; W8-Eintrag „Page-level comments, custom-property dashboards“ existiert; Gegenstimme Vergleichsblog (W50) |
+| S11 | AI-Block Plan | AI-Block Business; „Page-level AI writing assistance and summaries start on Pro“; „Free-form Page editing, AI Blocks, and Page Analytics … Business“ |
+| S12 | Mermaid/Widget/Dashboard-Widgets | kein Plan für Mermaid und „link a dashboard widget“ |
+| S13 | Sharing/Move | „selective sharing of private Wiki pages“ Business; Pro: „Wiki and Collections, reusable Page Templates, deeper connections between Pages and Work Items, external publishing, richer editor blocks, and AI-assisted writing“; Business: „nested Pages, work-item mentions and creation from Page content, selective sharing …“ |
+| S14 | v3.2.0 Pages/Subscriber/Moderation | v3.2.0 = Governance, AI-Memory, PII-Scans, MS Teams, Dashboard-Widgets; nichts zu Pages (K-15) |
+
+### V.5 Abgleich mit Schwester-Dokumenten und Cluster-Listen
+
+| Feature | Dieses Dokument (final) | Andere Stelle | Bewertung |
+|---|---|---|---|
+| Real-time Collab, Work item Embeds, Link-to-work items, Publish | One (heute Pro) | `P01.paid.json` PF-70/71/72/73: One | konsistent |
+| Wiki | One (heute Pro) | `P01.paid.json` PF-74: Pro; `P02.paid.json` „Pages-Public-API und Wiki“: Pro | Abweichung nur in der Konvention (P01/P02 werten Matrix-One als Widerspruch); fachlich identisch |
+| Work-Item↔Page-Links | One (heute Pro) | `P02.paid.json`: Pro (mit Hinweis „historisch One“) | wie oben |
+| Draw.io | Business | `P03.paid.json` P03-F31 und `22-paid-architektur-selfhosting-dienste.md` (Zeile P03-F31): Pro, übernommen aus der früheren Fassung dieses Dokuments | Abweichung; neuere/spezifischere Quelle (S7) gewinnt; Dok. 22/P03 sollten nachgezogen werden |
+| Iframely-Embeds | Pro | `P03.paid.json` P03-F32: Pro | konsistent |
+| Page-Export (Queue, DOCX) | Pro | `P03.paid.json` P03-F30, `P01.paid.json` PF-75: Pro | konsistent |
+| Page Templates | Pro | `P01.paid.json` PF-27, `P06.paid.json`, Dok. 25 F22: Pro | konsistent; Detailangaben aus Dok. 25 übernommen (K-17) |
+| Nested Pages | Business | `P01.paid.json` PF-78, Dok. 20: Business | konsistent |
+| Databases + Formulas | Business (strittig) | `P01.paid.json` PF-77: Business | konsistent |
+| Advanced Pages Analytics | Business | `P01.paid.json` PF-49, `P05.author.json`: Business | konsistent |
+| Page-Sharing | Business | `P02.paid.json`: Business; `P01.paid.json` PF-80 fasst Move (Pro) + Sharing (Business) unter Pro zusammen | P01 gröber gegliedert; hier getrennt |
+| Kommentare | Inline Business, Page-Level unklar | `P01.paid.json` PF-79: Business (gesamt) | P01 gröber gegliedert |
+| Plane AI im Editor | Selection Pro, AI-Block Business, Proposals Business | `P09.author.json` „AI-Assistent im Editor (…)“: Pro gesamt | P09 gröber; hier differenziert |
+| Link dashboard widgets | Enterprise Grid (UNVERIFIZIERT) | `P05.author.json`: Enterprise (sekundär über dieses Dokument) | konsistent |
+| Teamspace-Pages | Pro (UNVERIFIZIERT) | `P05.author.json` „Teamspace-Views und Teamspace-Pages“: Pro | konsistent |
+| Notion-/Confluence-Import von Seitenbäumen | nicht in P07 (Querverweis) | `P09.author.json`, `P03.paid.json` P03-F22 | gehört in den Importer-Cluster |
+
+### V.6 Ergebnis der Vollständigkeitsprüfung (c)
+
+- Alle 11 Zeilen der Matrix-Sektion `knowledge-management` und die Zeile „Advanced Pages Analytics“ sind abgedeckt: „Pages“ (Free ✓) = CE-Basis (Kap. 3.0), die übrigen zehn Zeilen = P07-01, 04, 05, 07, 08, 09, 10, 11, 13, 20; „Advanced Pages Analytics“ = P07-25; die Storage-Zeile „Max file size“ ist in P07-23 referenziert.
+- Alle EE-Texte der i18n-Namespaces `wiki`, `page`, `editor` und die seitenbezogenen Texte aus `template`, `work-item`, `workspace`, `common` sind einem Feature zugeordnet. In den übrigen Namespaces fand die Suche nur `empty-state.json` `workspace_empty_state.wiki` (im CE-Web ungenutzt, grep ohne Treffer; bereits in P07-01 genannt) und CE-Texte zu Projektseiten.
+- Neu aufgenommen: Wiki-Reordering (als Teil von P07-02, K-11). In `P07.paid.json` zusätzlich übernommen: P07-47 (erweiterte Mentions/Backlinks) – stand im Dokument, fehlte in der Autoren-Liste.
+- Nicht in `P07.paid.json`: P07-46 (Upgrade-/Downgrade-Flows) – nach ADR-001 kein portierbares Merkmal.
+- P07-26 (Stickies) bleibt als Abgrenzungseintrag in der Liste; ein Bezahl-Gate ist nicht nachweisbar, der CE-Status-Wert „im CE vorhanden (nur Cloud-Gating)“ ist der nächstliegende Enum-Wert, ein Cloud-Gating selbst ist **nicht** belegt.
+
+### V.7 Verbleibende Unsicherheiten
+
+- Alle W-Quellen sind Such-Zusammenfassungen; wörtliche Zitate daraus sind nicht garantiert.
+- Nicht reproduzierbar blieben: Moving-Tier „Pro“ (W3), HTML-artifact-/Link-pages-Tier „Business“, Link-dashboard-widgets-Tier „Enterprise“, Kommentar-Moderation und Page-Subscriber (W32), Autorenfilter für Kommentare (W8), „Fix 2026-10-15 Draw.io-Vorschau“ (W8), Office-Bearbeitung von Anhängen (W36).
+- Der Versionierungs-Bug (OP-08) ist statisch erneut bestätigt, aber nicht ausgeführt.

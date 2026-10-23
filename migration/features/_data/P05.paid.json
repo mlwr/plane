@@ -1,0 +1,700 @@
+[
+  {
+    "name": "P05-01 Teamspaces (Kern: Anlegen/Ändern/Löschen, Lead, Beschreibung, Logo, Mitglieder, Projekte)",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Pro",
+    "tier_details": "Free/One –; Pro/Business/Enterprise ✓ (PRO_PLAN_FEATURES „Teamspaces“, packages/constants/src/subscription.ts Z. 25–32; Doku-Label „Pro“ und Plane-University-Kurs 201/08 „Pro-tier“, WebSearch-Verifikation); keine eigene Zeile in plans.tsx; nur „Teamspace Cycles“ erst ab Business",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Gruppiert Mitglieder und Projekte eines Workspace zu Teams („organize teams, projects, and members within a workspace … manage access at a team level“). Teamspace hat Name (Pflicht, max. 255), Rich-Text-Beschreibung mit Assets, Logo, Lead; Mitglieder und Projekte per ID-Listen. Anlegen mit Name, Team lead, Team members. Beim Verknüpfen eines Projekts erhalten alle Teamspace-Mitglieder automatisch Member-Zugriff auf das Projekt; Team Leads erhalten keine besonderen Workspace-Rechte (Doku, sekundär). Settings-Eintrag „Teamspaces“ unter Features (zwischen Connections und Initiatives); auffindbar über Advanced Search (Index teamspaces).",
+    "data_model_hints": "teamspaces(id, workspace_id, name varchar(255) NOT NULL, description_json jsonb, description_html, description_stripped, description_binary bytea, logo_props jsonb, lead_id NULL, sort_order, Audit, deleted_at), Unique (workspace_id, lower(name)) WHERE deleted_at IS NULL (UNVERIFIZIERT); teamspace_members(teamspace_id, member_id), teamspace_projects(teamspace_id, project_id); teamspace_user_properties(filters, display_filters, display_properties); Seiteneffekt: Projekt-Verknüpfung erzeugt Projektmitgliedschaften (Rolle Member) für alle Teamspace-Mitglieder; CE-Legacy-Modell Team (apps/api/plane/db/models/workspace.py Z. 261–283) nicht portieren",
+    "api_hints": "Public-API v1: GET/POST /api/v1/workspaces/{slug}/teamspaces/ (cursor, per_page 20/max 100), GET/PATCH/DELETE …/{teamspace_id}/, GET/POST/DELETE …/members/ (member_ids), …/projects/ (project_ids); Scopes teamspaces:*, teamspaces.members:*, teamspaces.projects:*. API v2: GET/POST /api/v2/workspaces/{slug}/teamspaces/, GET/PATCH/DELETE …/{pk}/ mit Objekt {id, name, description_html, lead_id, logo_props, member_ids[], project_ids[], created_at, created_by_id}; PATCH member_ids/project_ids ersetzt die Menge; ?expand=lead; 409 bei Geschäftsregel-Verstoß. Interne App-API (Vorschlag) spiegelbildlich unter /api/workspaces/{slug}/teamspaces/…",
+    "ui_hints": "Icons TeamspacesOutline/TeamspacesFilled (@makeplane/propel icons/workspace-features), Illustration vertical-stack/teamspace (packages/blocks/src/empty-state/assets/asset-registry.tsx Z. 134); Teamspace-Ansicht mit Overview (Aktivitäten aller verknüpften Projekte) und Navigation Work items/Cycles/Views/Pages (sekundär belegt); Routen UNVERIFIZIERT",
+    "sources": [
+      "packages/constants/src/subscription.ts Z. 25–32",
+      "/home/user/makeplane/developer-docs/docs/api-reference/teamspace/*.md",
+      "developer-docs public/images/webhooks/create-webhook.webp",
+      "packages/types/src/enums.ts Z. 71, 82",
+      "https://docs.plane.so/core-concepts/workspaces/teamspaces (sekundär)",
+      "https://docs.plane.so/core-concepts/workspaces/teamspaces (WebSearch-Zusammenfassung Verifikation)",
+      "https://university.plane.so/courses/201-the-growth/08-intro-to-teamspaces.html (WebSearch-Zusammenfassung)",
+      "https://docs.plane.so/introduction/quickstart/growing-teams (WebSearch-Zusammenfassung)",
+      "developer-docs Branch docs/api-reference-v2 (b89c72c) teamspaces/overview.md, update-teamspace.md",
+      "migration/features/24-paid-planung-insights-teams.md P05-01"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P05-02 Teamspace-Work-Items (Tabs „Team“/„Project“, Gruppierung „Team project“)",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Pro",
+    "tier_details": "abgeleitet aus Teamspaces (Pro), UNVERIFIZIERT",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Workspace-level-Ansicht aller Work Items der Teamspace-Projekte (Store EIssuesStoreType.TEAM, isWorkspaceLevel) mit Zusatzgruppierung „Team project“ (team_project → project_id), Anlage und Drag & Drop vorgesehen; viewType team_issues ohne CE-Display-Filter-Konfiguration. Laut älterer Doku (sekundär) zwei Tabs: „Team“ (Work Items der Teamspace-Mitglieder) und „Project“ (alle Work Items der verknüpften Projekte); PQL verfügbar.",
+    "data_model_hints": "keine Fachtabelle; Ansichtseinstellungen in teamspace_user_properties",
+    "api_hints": "Vorschlag GET /api/workspaces/{slug}/teamspaces/{id}/issues/ mit Grouped-Pagination wie Workspace-Issues",
+    "ui_hints": "Layouts wie Workspace-Views; Group-by-Option „Team project“ (common.team_project)",
+    "sources": [
+      "packages/types/src/issues/issue.ts Z. 32",
+      "apps/web/hooks/use-issue-layout-store.ts Z. 40",
+      "packages/constants/src/issue/common.ts Z. 39, 102–111, 120",
+      "apps/web/store/issue/root.store.ts Z. 80–81, 242–243",
+      "packages/utils/src/work-item/base.ts Z. 104–113",
+      "apps/web/components/issues/issue-layouts/utils.tsx Z. 95–104, 846",
+      "https://github.com/makeplane/docs/pull/324/files (WebSearch-Zusammenfassung)",
+      "migration/features/24-paid-planung-insights-teams.md P05-02"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P05-03 Teamspace-Projekt-Work-Items",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Pro",
+    "tier_details": "UNVERIFIZIERT",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Work Items eines einzelnen Teamspace-Projekts im Teamspace-Kontext (Route mit teamspaceId und projectId), eigener Store TEAM_PROJECT_WORK_ITEMS.",
+    "data_model_hints": "Ansichtseinstellungen je (teamspace, project, user)",
+    "api_hints": "Vorschlag GET …/teamspaces/{id}/projects/{project_id}/issues/",
+    "ui_hints": "wie Projekt-Work-Items",
+    "sources": [
+      "packages/types/src/issues/issue.ts Z. 42",
+      "apps/web/hooks/use-issue-layout-store.ts Z. 28",
+      "apps/web/store/issue/root.store.ts Z. 95–96, 257–258",
+      "migration/features/24-paid-planung-insights-teams.md P05-03"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P05-04 Teamspace-Views und Teamspace-Pages",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Pro",
+    "tier_details": "UNVERIFIZIERT (folgt Teamspaces, Pro)",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Gespeicherte Views im Teamspace (Store TEAM_VIEW; eigene Teamspace-Views oder alle Views der verknüpften Projekte per Tab-Wechsel, sekundär) und Seiten im Tab „Pages“ (Team-Wissensbasis getrennt von Wiki und Projekt-Pages), nur für Teamspace-Mitglieder, immer öffentlich im Teamspace; private/geteilte Seiten nicht in Teamspaces verschiebbar; Lead darf jede Seite/jeden Kommentar archivieren/löschen. CE-Status-Widerspruch: Dok. 26 P07-17 „fehlt“; hier Stub, da CE den Live-Dokumenttyp team_page, das Realtime-Feld teamspace_id und Move-Texte enthält.",
+    "data_model_hints": "issue_views.teamspace_id, pages.teamspace_id (Scope-Erweiterung)",
+    "api_hints": "Vorschlag …/teamspaces/{id}/views/, …/views/{view_id}/issues/, …/pages/",
+    "ui_hints": "Realtime-Dokumenttyp team_page mit teamId (YDotNet)",
+    "sources": [
+      "packages/types/src/issues/issue.ts Z. 36",
+      "packages/types/src/page/core.ts Z. 78–83",
+      "packages/editor/src/types/document-collaborative-events.ts Z. 43, 60, 75",
+      "packages/i18n/src/locales/en/page.json Z. 85–91",
+      "migration/features/26-paid-wissen-pages-wiki.md P07-17",
+      "https://docs.plane.so/core-concepts/workspaces/teamspaces (WebSearch-Zusammenfassung)",
+      "migration/features/24-paid-planung-insights-teams.md P05-04"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P05-05 Teamspace Cycles",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Business",
+    "tier_details": "Free/One/Pro –; Business/Enterprise ✓ (plans.tsx Z. 381–390)",
+    "ce_status": "fehlt",
+    "description": "„See multiple cycles in multiple projects at once.“ – konsolidierte Ansicht der Cycles aller verknüpften Teamspace-Projekte, laut Produktseite inkl. Beitrag je Person zum Cycle (sekundär); Entwurf: nach Status gruppiert, laufende Cycles mit Progress/Burndown-Karten; keine eigenen Teamspace-Cycle-Entitäten.",
+    "data_model_hints": "keine eigenen Entitäten",
+    "api_hints": "Vorschlag GET …/teamspaces/{id}/cycles/?cycle_view=current|upcoming|completed|draft",
+    "ui_hints": "Karten wie Workspace-Active-Cycles",
+    "sources": [
+      "apps/web/components/workspace/billing/comparison/plans.tsx Z. 381–390",
+      "https://plane.so/teamspaces (WebSearch-Zusammenfassung)",
+      "migration/features/24-paid-planung-insights-teams.md P05-05"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P05-06 Teamspace-Kommentare/-Updates",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "unklar",
+    "tier_details": "keine Plan-Quelle",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Kommentar-Feed im Teamspace mit Rich-Text und Assets (EFileAssetType TEAM_SPACE_COMMENT_DESCRIPTION); Kommentare bleiben im Teamspace sichtbar; Teamspace-Kommentare im Changelog v3.2.0 genannt (Admins können Kommentare an Work Items, Pages und Teamspaces mit Grund abuse/spam/off-topic/sensitive info/other aus-/einblenden); Overview-Feed mit „real-time team updates, collated from across projects“ (Produktseite). Status-Updates (On-Track/Off-Track/At-Risk) für Teamspaces nicht belegt.",
+    "data_model_hints": "teamspace_comments(teamspace_id, actor_id, comment_json, comment_html, comment_stripped, parent_id, edited_at, is_hidden, hidden_reason, hidden_by_id, hidden_at), teamspace_comment_reactions, teamspace_activities; FileAsset.EntityTypeContext um TEAM_SPACE_DESCRIPTION, TEAM_SPACE_COMMENT_DESCRIPTION erweitern (CE-Backend ohne, apps/api/plane/db/models/asset.py Z. 36–46)",
+    "api_hints": "Vorschlag …/teamspaces/{id}/comments/, …/activities/",
+    "ui_hints": "Overview-Feed analog Work-Item-Activity (UNVERIFIZIERT)",
+    "sources": [
+      "packages/types/src/enums.ts Z. 74, 85",
+      "apps/api/plane/db/models/asset.py Z. 36–46 (Backend ohne Typ)",
+      "https://plane.so/changelog/release-v3-2-0-workspace-governance-ai-memory-pii-scanning-and-more (WebSearch-Zusammenfassung)",
+      "migration/features/24-paid-planung-insights-teams.md P05-06"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P05-07 Workspace-Feature „Teamspaces“ (teams / is_teams_enabled) inkl. Settings-Seite",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Pro",
+    "tier_details": "folgt Teamspaces (Pro)",
+    "ce_status": "fehlt",
+    "description": "Workspace-Feature-Flag teams (v1/MCP, neben project_grouping, initiatives, customers, wiki, pi) bzw. is_teams_enabled (API v2: „Whether teamspaces are available“); Settings-Navigation Features → Teamspaces. Laut Doku (sekundär) wird das Feature einmalig aktiviert und kann danach nicht mehr abgeschaltet werden.",
+    "data_model_hints": "workspace_features(workspace_id PK, project_grouping, initiatives, teams, customers, wiki, pi) bzw. v2-Spalten is_teams_enabled; Default false, einmalige Aktivierung",
+    "api_hints": "GET/PATCH /api/v1/workspaces/{slug}/features/ (workspaces.features:*); GET/PATCH /api/v2/workspaces/{slug}/features/ (is_teams_enabled); Verhalten bei Deaktivierungsversuch UNVERIFIZIERT (Vorschlag 409)",
+    "ui_hints": "Schalter in Workspace Settings → Teamspaces, nach Aktivierung gesperrt; Toggle bleibt als fachliche Einstellung (ADR-001)",
+    "sources": [
+      "/home/user/makeplane/developer-docs/docs/api-reference/workspace-features/get-workspace-features.md",
+      "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md Z. 430",
+      "developer-docs public/images/webhooks/create-webhook.webp",
+      "developer-docs Branch docs/api-reference-v2 (b89c72c) workspace-features/overview.md",
+      "https://docs.plane.so/core-concepts/workspaces/teamspaces (WebSearch-Zusammenfassung: „Once on, the feature cannot be turned off“)",
+      "migration/features/24-paid-planung-insights-teams.md P05-07"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P05-08 Teamspace-bezogene Member-Auswahl, Suche, Realtime-Kontext",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Pro",
+    "tier_details": "UNVERIFIZIERT",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Member-Dropdown mit serverseitig paginierter Lite-Ressource und Scopes (scope, teamspaceId, scopedProjectIds, getPage); Cycle-, Modul- und State-Auswahl lesen in EE ebenfalls paginierte Lite-Ressourcen mit scopedProjectIds (projektübergreifende Auswahl, Teamspace-Bezug UNVERIFIZIERT); Filter-Entitätstyp teamspace; Router-Getter teamspaceId; Suchindex teamspaces.",
+    "data_model_hints": "–",
+    "api_hints": "Vorschlag GET /api/workspaces/{slug}/members/lite/?scope=&teamspace_id=&project_ids=&cursor=&search=",
+    "ui_hints": "Suspendierte Mitglieder als deaktivierte Zeilen (CE-Verhalten)",
+    "sources": [
+      "apps/web/components/dropdowns/member/member-select.tsx Z. 55–65",
+      "apps/web/store/router.store.ts Z. 18, 45, 80–84",
+      "apps/web/components/work-item-filters/filters-hoc/shared.ts Z. 13",
+      "/home/user/makeplane/developer-docs/docs/self-hosting/govern/advanced-search.md",
+      "apps/web/components/dropdowns/cycle/cycle-select.tsx Z. 62–63",
+      "apps/web/components/dropdowns/module/module-select.tsx Z. 55–56",
+      "apps/web/components/dropdowns/state/state-select.tsx Z. 53–55",
+      "migration/features/24-paid-planung-insights-teams.md P05-08"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P05-09 Dashboards",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Pro",
+    "tier_details": "Free/One –; Pro/Business/Enterprise ✓ (plans.tsx Z. 521–530; PRO_PLAN_FEATURES „Dashboards + Reports“; Doku-PR-Badge „Pro“; Preisseite Pro „dashboards with advanced widgets“ – WebSearch-Verifikation)",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Eigene Workspace-Dashboards mit Widgets („Create your own dashboards with custom widgets and data types.“). Einstieg „Dashboards“ in der linken Sidebar (CE-Hülle: nicht gerendertes Benutzermenü, Eintrag /{ws}/dashboards/ für Admin+Member zwischen Home und Your work); Button „Add dashboard“ oben rechts, Anlegen mit Name und Projekt-Auswahl, danach „+ Add widget“; Dashboards samt Widgets duplizierbar; Sichtbarkeit privat/öffentlich mit Default Public (nur Doku-PR-Entwurf); „Dashboards are viewable by every member“ (API-v2-Doku). Leerzustand „Visualize your progress with dashboards“ / „Build customizable dashboards to track metrics, measure outcomes, and present insights effectively.“ / CTA „Create new dashboard“.",
+    "data_model_hints": "dashboards(workspace_id, name, description, logo_props, owned_by, access (privat/öffentlich, Default öffentlich – UNVERIFIZIERT), project_ids bzw. dashboard_projects, filters, pql, quick_filters, sort_order); Favoriten über user_favorites entity_type dashboard",
+    "api_hints": "Vorschlag GET/POST /api/workspaces/{slug}/dashboards/, GET/PATCH/DELETE …/{id}/, POST …/{id}/duplicate/; nicht mit Legacy /api/users/me/workspaces/{slug}/dashboard/ bzw. /api/workspaces/{slug}/dashboard/ (altes Home-Dashboard) verwechseln",
+    "ui_hints": "Icons DashboardsOutline/Filled, WidgetOutline/Filled; Illustration vertical-stack/dashboard; reservierter Slug dashboard (packages/constants/src/workspace.ts Z. 63); Widget-Platzierung per Drag & Drop",
+    "sources": [
+      "apps/web/components/workspace/billing/comparison/plans.tsx Z. 521–530",
+      "packages/constants/src/subscription.ts Z. 25–32",
+      "apps/web/components/workspace/sidebar/user-menu.tsx Z. 34–40",
+      "packages/i18n/src/locales/en/empty-state.json Z. 184–188",
+      "https://plane.so/changelog/release-v3-1-0-audit-logs-skills-in-plane-ai-dashboards-and-more (nur Titel)",
+      "https://docs.plane.so/dashboards (WebSearch-Zusammenfassung)",
+      "https://identichosting.duckdns.org/makeplane/docs/pull/452/files (Doku-PR-Spiegel, Entwurf)",
+      "https://plane.so/pricing.md (WebSearch-Zusammenfassung)",
+      "developer-docs Branch docs/api-reference-v2 (b89c72c) artifacts/overview.md Z. 34",
+      "migration/features/24-paid-planung-insights-teams.md P05-09"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P05-10 Dashboard-Widgets (Typen, Chart-Modelle, Achsen/Metriken, Farbpaletten)",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Pro",
+    "tier_details": "wie Dashboards",
+    "ce_status": "teilweise im CE",
+    "description": "Widget-Typen laut Doku (sekundär): Bar chart, Line chart, Area chart, Donut chart, Pie chart, Number; seit Mai 2026 zusätzlich Tabellen-Widget und interaktive Charts mit Aufschlüsselung nach Metrik/Dimension und Drill-down; Spezial-Widgets Cycle Progress Bar und Work Item Type Progress; Widget-Filter nach Assignee, Priority, State, Label oder beliebiger Work-Item-Property. CE-Grundlagen: EChartModels BASIC/STACKED/GROUPED/MULTI_LINE/COMPARISON/PROGRESS, ChartXAxisProperty (16 Werte, davon WORK_ITEM_TYPES, PROJECTS, EPICS nicht im CE-Backend), ChartYAxisMetric (9 Werte; CE-UI nur Work item/Estimate/Epic, CE-Backend nur WORK_ITEM_COUNT), Datumsgruppierung DAY/WEEK/MONTH/YEAR, Paletten modern/horizon/earthen (je 10 Light/Dark-Farben, HSL-Erweiterung), Datenformat TChart {data, schema} mit 0-Auffüllung.",
+    "data_model_hints": "dashboard_widgets(dashboard_id, name, chart_type (BAR|LINE|AREA|DONUT|PIE|NUMBER|TABLE|CYCLE_PROGRESS|WORK_ITEM_TYPE_PROGRESS – Bezeichner Vorschlag), chart_model, x_axis_property, x_axis_date_grouping, y_axis_metric, group_by, config jsonb {color_scheme, show_legend, show_tooltip, orientation, bar_variant}, filters, pql, layout {x,y,w,h}, sort_order)",
+    "api_hints": "Vorschlag …/dashboards/{id}/widgets/ CRUD, …/widgets/{widget_id}/charts/ → TChart; CE-Chart-Builder um EE-Achsen/Metriken erweitern",
+    "ui_hints": "Chart-Icons Area/Bar/Donut/Line/Pie (@makeplane/propel icons/charts); Chart-Primitive in packages/blocks/src/charts; i18n dashboards.widget.color_palettes.{modern,horizon,earthen} fehlt in allen Locales (packages/constants/src/chart.ts Z. 49, 77, 105)",
+    "sources": [
+      "packages/constants/src/chart.ts Z. 10–135",
+      "packages/types/src/analytics.ts Z. 9–38",
+      "packages/types/src/charts/common.ts Z. 7–18",
+      "apps/web/components/chart/utils.ts Z. 19–175",
+      "apps/api/plane/utils/build_chart.py Z. 19–41",
+      "https://docs.plane.so/dashboards (WebSearch-Zusammenfassung)",
+      "https://plane.so/blog/introducing-pql-and-enhanced-dashboards (WebSearch-Zusammenfassung)",
+      "https://plane.so/blog/whats-new-in-plane-august-2026 (WebSearch-Zusammenfassung)",
+      "migration/features/24-paid-planung-insights-teams.md P05-10"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P05-11 Dashboard-Filter inkl. PQL (Ebenen source, quick, widget)",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "unklar",
+    "tier_details": "unklar: Standard-Filter vermutlich mit Dashboards (Pro); PQL-Anteil folgt PQL (Doku-Label Enterprise Grid); Changelog-Titel 2026-05-15 „PQL in dashboards“, 2026-06-30 „PQL dashboard filters“",
+    "ce_status": "fehlt",
+    "description": "PQL wirkt in Dashboards auf drei Ebenen: source filters, quick filters und widget filters (Launch-Blog 12.05.2026, sekundär); die Widget-Konfiguration ist nach Projekt filterbar, wahlweise mit Standardfiltern oder PQL. Semantik der Ebenen (Datenquelle, Schnellfilter der Kopfzeile, Widget-Filter, UND-Verknüpfung) ist Entwurf.",
+    "data_model_hints": "dashboards.filters, dashboards.pql (source), dashboards.quick_filters, dashboard_widgets.filters, dashboard_widgets.pql",
+    "api_hints": "Override ?pql= am Widget-Daten-Endpunkt (Vorschlag)",
+    "ui_hints": "Filterleiste im Dashboard-Kopf mit Quick-Filtern; PQL-Editor (P05-29) in Dashboard- und Widget-Konfiguration (UNVERIFIZIERT)",
+    "sources": [
+      "https://plane.so/changelog/2026-05-15-embed-media-in-the-editor-pql-in-dashboards-and-more (nur Titel)",
+      "https://plane.so/changelog/2026-06-30-mermaid-js-diagrams-pql-dashboard-filters (nur Titel)",
+      "https://plane.so/blog/introducing-pql-and-enhanced-dashboards (WebSearch-Zusammenfassung)",
+      "migration/features/24-paid-planung-insights-teams.md P05-11"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P05-12 Dashboard-Widgets für Intake und Custom Properties",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "unklar",
+    "tier_details": "unklar; Changelog 2026-08-14 „dashboard intake widgets“, Commercial v3.1.0, 2026-10-15 „dashboard custom properties“",
+    "ce_status": "fehlt",
+    "description": "Intake-Widgets: accepted vs. declined, durchschnittliche Zeit bis Annahme/Ablehnung, request breakdown, intake items aging sowie „Intake volume by source“ (sekundär); Custom Properties als Filter/Dimension der Widgets. CE-Basis: IntakeIssue.status (-2 Pending, -1 Rejected, 0 Snoozed, 1 Accepted, 2 Duplicate) und IntakeIssue.source/source_email.",
+    "data_model_hints": "Widget-Konfiguration um Datenquelle intake und property_id erweitern; Herkunft aus IntakeIssue.source (Default IN_APP); Annahme-/Ablehnungszeiten aus Status-Wechseln (Berechnungsregel UNVERIFIZIERT)",
+    "api_hints": "–",
+    "ui_hints": "vier Intake-Widget-Vorlagen im „Add widget“-Dialog (UNVERIFIZIERT)",
+    "sources": [
+      "https://plane.so/changelog/2026-08-14-collapsible-toggle-blocks-dashboard-intake-widgets (nur Titel)",
+      "https://plane.so/changelog/2026-10-15-page-comments-dashboard-custom-properties (nur Titel)",
+      "apps/api/plane/db/models/intake.py Z. 44–68",
+      "apps/api/plane/db/models/intake.py Z. 76–77",
+      "https://plane.so/changelog/release-v3-1-0-audit-logs-skills-in-plane-ai-dashboards-and-more (WebSearch-Zusammenfassung)",
+      "https://plane.so/blog/whats-new-in-plane-august-2026 (WebSearch-Zusammenfassung)",
+      "migration/features/24-paid-planung-insights-teams.md P05-12"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P05-13 Dashboard-Widgets in Pages einbetten („Link dashboard widgets“)",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Enterprise Grid",
+    "tier_details": "Doku-Label „Enterprise“ (sekundär über Dok. 26 P07-42); der Top-Plan heißt in der aktuellen Doku „Enterprise Grid“ (developer-docs self-hosting/self-hosting-101.md Z. 54); UNVERIFIZIERT",
+    "ce_status": "fehlt",
+    "description": "Editor-Block bettet ein Widget eines bestehenden Dashboards synchron in eine Seite ein.",
+    "data_model_hints": "Tiptap-Node-Attribute dashboard_id, widget_id",
+    "api_hints": "nutzt Widget-Daten-Endpunkt",
+    "ui_hints": "Slash-Menü-Eintrag",
+    "sources": [
+      "migration/features/26-paid-wissen-pages-wiki.md P07-42",
+      "https://docs.plane.so/core-concepts/pages/editor-blocks (sekundär)",
+      "/home/user/makeplane/developer-docs/docs/self-hosting/self-hosting-101.md Z. 54",
+      "migration/features/24-paid-planung-insights-teams.md P05-13"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P05-14 Insights (Hindsight, On-demand insights, Foresights)",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Pro",
+    "tier_details": "Pro/Business/Enterprise ✓, Coming soon (plans.tsx Z. 561–571)",
+    "ce_status": "fehlt",
+    "description": "Nur Matrix-Text; Entwurf: rückblickende Auswertungen, On-demand-Zusammenfassungen, Prognosen.",
+    "data_model_hints": "–",
+    "api_hints": "–",
+    "ui_hints": "–",
+    "sources": [
+      "apps/web/components/workspace/billing/comparison/plans.tsx Z. 561–571",
+      "migration/features/24-paid-planung-insights-teams.md P05-14"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P05-15 Erweiterte Analytics-Tabs (Cycles, Modules, Intake, Projects/Users) mit Tab-Gating",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "unklar",
+    "tier_details": "Text „Upgrade to {plan} to unlock {tab}“ belegt planabhängige Tabs; Plan je Tab unbekannt",
+    "ce_status": "teilweise im CE",
+    "description": "CE hat Tabs Overview/Work items mit isDisabled-Flag; unreferenzierte Texte für „Work items resolved vs pending“, „Projects by status“, „Active users“, „Intake Trends“ und Leerzustände Cycle/Module-Progress und Intake-Trends deuten auf weitere Tabs.",
+    "data_model_hints": "keine",
+    "api_hints": "CE-Muster advance-analytics/?tab=… erweitern (CE antwortet 400 „Invalid tab“)",
+    "ui_hints": "isDisabled immer false (ADR-001); Texte Scope and Demand/Custom Analytics sind Legacy-CE",
+    "sources": [
+      "packages/i18n/src/locales/en/workspace.json Z. 134–151",
+      "packages/i18n/src/locales/en/empty-state.json Z. 156–170",
+      "packages/types/src/analytics.ts Z. 40–47",
+      "apps/web/components/analytics/use-analytics-tabs.tsx",
+      "migration/features/24-paid-planung-insights-teams.md P05-15",
+      "https://docs.plane.so/core-concepts/analytics (WebSearch-Zusammenfassung: ältere Tabs „Scope and Demand“/„Custom Analytics“ = Legacy-CE)"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P05-16 Custom Reports",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Business",
+    "tier_details": "Business/Enterprise ✓, Coming soon (plans.tsx Z. 597–606; planHighlights.business; BUSINESS_PLAN_FEATURES)",
+    "ce_status": "fehlt",
+    "description": "„Generate reports by any dimension and metric across your project or workspace.“ – Entwurf: gespeicherte Dimension×Metrik-Auswertungen (Widget-Engine) mit CSV-Export; CE-Legacy AnalyticView als Ausgangspunkt.",
+    "data_model_hints": "reports(workspace_id, project_id, name, chart_type, chart_model, x_axis_property, y_axis_metric, group_by, filters, pql, access)",
+    "api_hints": "Vorschlag /api/workspaces/{slug}/reports/",
+    "ui_hints": "–",
+    "sources": [
+      "apps/web/components/workspace/billing/comparison/plans.tsx Z. 597–606",
+      "packages/constants/src/subscription.ts Z. 16–23",
+      "apps/api/plane/app/urls/analytic.py Z. 31–43",
+      "migration/features/24-paid-planung-insights-teams.md P05-16"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P05-17 Time Capsule",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Business",
+    "tier_details": "Zeile auskommentiert, Coming soon (plans.tsx Z. 573–583)",
+    "ce_status": "fehlt",
+    "description": "„Go back in your project's timeline and see point-in-time snapshots.“ – nicht ausgeliefert, nicht portieren.",
+    "data_model_hints": "–",
+    "api_hints": "–",
+    "ui_hints": "–",
+    "sources": [
+      "apps/web/components/workspace/billing/comparison/plans.tsx Z. 573–583",
+      "migration/features/24-paid-planung-insights-teams.md P05-17"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P05-18 Advanced Pages Analytics",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Business",
+    "tier_details": "Business/Enterprise ✓ (CS in plans.tsx; lt. Doku ausgeliefert)",
+    "ce_status": "fehlt",
+    "description": "Views/Unique views/Nested pages/Attachments je Zeitraum, Viewer-Liste, Collection-Analytics – vollständig in Dok. 26 P07-25.",
+    "data_model_hints": "siehe Dok. 26",
+    "api_hints": "siehe Dok. 26",
+    "ui_hints": "siehe Dok. 26",
+    "sources": [
+      "apps/web/components/workspace/billing/comparison/plans.tsx Z. 585–595",
+      "migration/features/26-paid-wissen-pages-wiki.md P07-25",
+      "https://docs.plane.so/pages/page-analytics (sekundär)",
+      "migration/features/24-paid-planung-insights-teams.md P05-18"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P05-19 Progress Charts (Cycle-Fortschritt v2, Scope-Linie, Burn-down/Burn-up)",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Pro",
+    "tier_details": "Pro/Business/Enterprise ✓ (plans.tsx Z. 538–547)",
+    "ce_status": "teilweise im CE",
+    "description": "Tägliche Fortschrittsreihe je Cycle (version 2) mit Feldern total/completed/cancelled/backlog/started/unstarted (_issues und _estimate_points); Diagramm mit scope, ideal = floor(Resttage/Gesamttage×scope), actual = pending (Burn-down) oder completed (Burn-up); Legenden Ideal/Current/Trailing/Leading. CE enthält Datenaufbereitung ohne Aufrufer und No-op-Fetch.",
+    "data_model_hints": "cycle_progress_snapshots(cycle_id, progress_date, *_issues, *_estimate_points), Unique (cycle_id, progress_date); täglicher Job je Cycle-Zeitzone; Cycle.version=2",
+    "api_hints": "GET …/projects/{project_id}/cycles/{cycle_id}/cycle-progress/ (vom CE-Frontend aufgerufen, im CE-Backend fehlend)",
+    "ui_hints": "Umschalter Burn-down/Burn-up neben Work items/Estimates; Burndown nach Points/Issues selbst ist CE",
+    "sources": [
+      "packages/utils/src/cycle.ts Z. 79–190",
+      "packages/types/src/cycle/cycle.ts Z. 53–64, 112–113, 139, 147–158",
+      "apps/web/store/issue/cycle/issue.store.ts Z. 146–156",
+      "apps/web/store/cycle.store.ts Z. 245–252, 504",
+      "apps/web/components/cycles/analytics-sidebar/issue-progress.tsx Z. 40–43",
+      "https://plane.so/blog/introducing-progress-charts (WebSearch-Zusammenfassung: Cycles, Active Cycles, Modules, Home)",
+      "packages/utils/src/datetime.ts Z. 111–127, 392–412",
+      "migration/features/24-paid-planung-insights-teams.md P05-19"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P05-20 Cycle Reports (On-demand, Permalinks)",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Pro",
+    "tier_details": "Pro/Business/Enterprise ✓ (plans.tsx Z. 550–559)",
+    "ce_status": "teilweise im CE",
+    "description": "On-demand-Berichte während und nach dem Cycle, jederzeit über Permalinks abrufbar. CE schreibt beim Transfer progress_snapshot (Zähler + distribution/estimate_distribution mit labels, assignees, completion_chart).",
+    "data_model_hints": "cycle_reports(cycle_id, kind, generated_by, generated_at, snapshot jsonb)",
+    "api_hints": "Vorschlag GET/POST …/cycles/{id}/reports/, GET …/reports/{report_id}/",
+    "ui_hints": "Permalink /:ws/projects/:pid/cycles/:cid/reports/:rid (Vorschlag)",
+    "sources": [
+      "apps/web/components/workspace/billing/comparison/plans.tsx Z. 550–559",
+      "apps/api/plane/utils/cycle_transfer_issues.py Z. 410–432",
+      "apps/api/plane/db/models/cycle.py Z. 74",
+      "migration/features/24-paid-planung-insights-teams.md P05-20"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P05-21 Auto-schedule Cycles (wiederkehrende Cycles)",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Business",
+    "tier_details": "nur Plane-University-Kurs 201/09 „Cycle Automation (Auto-Schedule Cycles)“ als Business-Funktion (Kurs-Entwurf, WebSearch-Verifikation); keine Matrix-Zeile; Changelog v1.16.0 „Recurring cycles“ (nur Titel); Widerspruch zu Auto-Rollover (plans.tsx Pro)",
+    "ce_status": "fehlt",
+    "description": "Projekt-Einstellung „Auto-schedule cycles – Keep cycles moving without manual setup.“ (Tooltip „Automatically create new cycles based on your chosen schedule.“, Button „Edit“) mit Feldern Cycle Title (Pflicht, ≤255, Nummerierung „Design - 1/2/3“), Cycle Duration (1–30 Wochen), Cooldown Period (≥0 Tage, „Pause between cycles before the next begins.“), Cycle starts day (nicht in der Vergangenheit), Number of future cycles (1–3), Auto-rollover work items; Toasts für Toggle und Save (create/update). API v2 führt das Projekt-Flag is_automated_cycle_enabled. Zeitpunkt der Nachproduktion künftiger Cycles UNVERIFIZIERT.",
+    "data_model_hints": "project_cycle_schedules(project_id UNIQUE, is_enabled, cycle_title varchar(255), cycle_duration_weeks 1–30, cooldown_days ≥0, start_date, number_of_cycles 1–3, auto_rollover, next_sequence); Projekt-Feature is_automated_cycle_enabled; erzeugte Cycles mit schedule_id",
+    "api_hints": "Vorschlag GET/POST/PATCH /api/workspaces/{slug}/projects/{project_id}/cycle-schedule/ (+ toggle/); Projekt-Feature-Flag über GET/PATCH /api/v2/workspaces/{slug}/projects/{project_id}/features/ (is_automated_cycle_enabled)",
+    "ui_hints": "Block unter „Enable cycles“, nur Projekt-Admins, Button „Edit“",
+    "sources": [
+      "packages/i18n/src/locales/en/project-settings.json (project_settings.cycles.auto_schedule.*)",
+      "apps/web/app/(all)/[workspaceSlug]/(settings)/settings/projects/[projectId]/features/cycles/page.tsx",
+      "https://plane.so/changelog/release-v-1-16-0-introducing-milestones-and-recurring-cycles (nur Titel)",
+      "https://university.plane.so/courses/201-the-growth/09-intro-to-cycle-automation.html (WebSearch-Zusammenfassung)",
+      "developer-docs Branch docs/api-reference-v2 (b89c72c) project-features/overview.md",
+      "migration/features/24-paid-planung-insights-teams.md P05-21"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P05-22 Auto-Rollover (Auto-transfer Cycle Work items)",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Pro",
+    "tier_details": "Pro/Business/Enterprise ✓ (plans.tsx Z. 249–258, nicht Coming soon); Widerspruch: University-Kurs 201/09 ordnet Rollover der Business-„Cycle Automation“ zu – spezifischere Matrix-Zeile gewinnt",
+    "ce_status": "teilweise im CE",
+    "description": "„On the day a cycle completes, move all unfinished work items into the next cycle.“ bzw. lt. Matrix alternativ „to the default project state“ (wann, UNVERIFIZIERT). CE besitzt die Transfer-Domänenlogik (manueller Transfer POST …/cycles/{cycle_id}/transfer-issues/, nur unvollständige Work Items, Schreiben von progress_snapshot); es fehlen der automatische Auslöser am Cycle-Ende und die Option Default-State.",
+    "data_model_hints": "Flag auto_rollover in project_cycle_schedules",
+    "api_hints": "interner Job ruft Transfer-Domänenlogik (CE TransferCycleIssueEndpoint, apps/api/plane/app/urls/cycle.py Z. 72); kein eigener Endpunkt",
+    "ui_hints": "Schalter im Auto-Schedule-Formular",
+    "sources": [
+      "apps/web/components/workspace/billing/comparison/plans.tsx Z. 249–258",
+      "packages/i18n/src/locales/en/project-settings.json (auto_rollover)",
+      "apps/api/plane/utils/cycle_transfer_issues.py",
+      "apps/api/plane/app/urls/cycle.py Z. 72",
+      "apps/api/plane/utils/cycle_transfer_issues.py Z. 410–432",
+      "migration/features/_data/P01.paid.json PF-12; migration/features/_data/P06.paid.json (CE-Status teilweise)",
+      "migration/features/24-paid-planung-insights-teams.md P05-22"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P05-23 Workspace-weite Active Cycles",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "One",
+    "tier_details": "One–Enterprise ✓ (plans.tsx Z. 194–203; ONE_PLAN_FEATURES); One nicht mehr verkauft → faktisch ab Pro",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Seite /:ws/active-cycles mit allen laufenden Cycles (start ≤ heute ≤ end) aller Projekte: je Projekt Kopf (Logo, Name), Cycle-Zeile (Zeitraum, „n days left“, Lead, „View Cycle“), Karten Progress („x/y Issues closed“, segmentierter Balken, Completed/Started/Unstarted mit Anzahl, Hinweis ausgeschlossener Cancelled-Items), Issue burndown (Ideal/Current, „Pending issues - n“), High-priority issues (Prioritäts-Icon, Identifier, Titel, State, Fälligkeitsdatum, „View more“). CE zeigt nur eine Upsell-Seite; die Route ist nur per URL erreichbar – der Sidebar-Eintrag „Cycles“ liegt im nicht gerenderten SidebarWorkspaceMenu, die gerenderte CE-Navigation enthält nur Views/Analytics/Archives; Hüllen: UpgradeBadge und Icon für Navigations-Key active_cycles, Backend-Präferenz ACTIVE_CYCLES.",
+    "data_model_hints": "keine neue Tabelle",
+    "api_hints": "GET /api/workspaces/{slug}/active-cycles/?per_page=&cursor= → IWorkspaceActiveCyclesResponse (im CE-Backend fehlend); Karten über …/cycles/{id}/progress/ und …/analytics/?type=",
+    "ui_hints": "Navigationseintrag „Cycles“ (CyclesOutline, rotate-180, Admin/Member) als anheftbarer dynamischer Punkt nach Views; Power-K „Go to all active cycles“; Kartenkomponenten wie CE-Projekt-Active-Cycle; Upsell-Assets cta-* entfallen",
+    "sources": [
+      "apps/web/components/active-cycles/workspace-active-cycles-upgrade.tsx Z. 28–66",
+      "apps/web/services/cycle.service.ts Z. 64–78",
+      "packages/types/src/workspace.ts Z. 219–228",
+      "packages/i18n/src/locales/en/empty-state.json Z. 180",
+      "developer-docs public/images/cycles/active-cycles-ui.png",
+      "apps/web/components/workspace/sidebar/workspace-menu.tsx Z. 46–52",
+      "apps/web/components/workspace/sidebar/sidebar-menu-items.tsx Z. 82–121",
+      "packages/constants/src/workspace.ts Z. 201–229",
+      "apps/web/components/workspace/sidebar/extended-sidebar-item.tsx Z. 199–203",
+      "apps/api/plane/db/models/workspace.py Z. 420–427",
+      "apps/web/app/assets/workspace-active-cycles/cta-r-2-light.webp",
+      "migration/features/24-paid-planung-insights-teams.md P05-23"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P05-24 Parallel Cycles",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "unklar",
+    "tier_details": "keine Plan-Quelle",
+    "ce_status": "fehlt",
+    "description": "Projekt-Feature parallel_cycles „Allows multiple active cycles to run simultaneously.“ (Plane Compose, MCP) bzw. is_parallel_cycles_enabled (API v2). CE verbietet überlappende Cycles (CycleDateCheckEndpoint POST …/cycles/date-check/) und kennt genau einen aktiven Cycle je Projekt (currentProjectActiveCycleId); ältere Nutzer-Doku: „Only one active cycle is allowed in a project at a time“.",
+    "data_model_hints": "Projekt-Feature-Spalte is_parallel_cycles_enabled bool default false",
+    "api_hints": "Projekt-Features: MCP project update_features parallel_cycles; v2 PATCH /api/v2/workspaces/{slug}/projects/{project_id}/features/ is_parallel_cycles_enabled; Date-Check entfällt bei aktivem Flag (Vorschlag)",
+    "ui_hints": "mehrere Active-cycle-Blöcke (UNVERIFIZIERT)",
+    "sources": [
+      "/home/user/makeplane/developer-docs/docs/dev-tools/plane-compose.md Z. 1259",
+      "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md Z. 377",
+      "developer-docs Branch docs/api-reference-v2 (b89c72c) project-features/overview.md",
+      "apps/api/plane/app/views/cycle/base.py Z. 521–557",
+      "https://docs.plane.so/core-concepts/cycles (WebSearch-Zusammenfassung)",
+      "migration/features/24-paid-planung-insights-teams.md P05-24"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P05-25 Cycle-Aktionen „Complete“, manuelles Starten/Beenden und Archivieren laufender Cycles",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "unklar",
+    "tier_details": "keine Plan-Quelle",
+    "ce_status": "fehlt",
+    "description": "MCP-Tool cycle: complete „sets end_date to today“ (Alias complete_cycle), archive „ends the cycle first if it is still running“, Status-Filter current/upcoming/completed/draft/incomplete; API v2 Projekt-Flag is_manually_start_end_cycles_enabled (Semantik UNVERIFIZIERT). CE erlaubt Archivieren nur beendeter Cycles („Only completed cycles can be archived“).",
+    "data_model_hints": "Projekt-Feature-Spalte is_manually_start_end_cycles_enabled bool default false",
+    "api_hints": "Vorschlag POST …/cycles/{id}/complete/ (end_date = heute in Cycle.timezone, Snapshot, ggf. Auto-Rollover); bei is_manually_start_end_cycles_enabled zusätzlich POST …/cycles/{id}/start/ (UNVERIFIZIERT)",
+    "ui_hints": "–",
+    "sources": [
+      "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md Z. 250–254, 590",
+      "developer-docs Branch docs/api-reference-v2 (b89c72c) project-features/overview.md",
+      "packages/i18n/src/locales/en/project.json Z. 18",
+      "migration/features/21-paid-api-referenz-developer-docs.md §5",
+      "migration/features/24-paid-planung-insights-teams.md P05-25"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P05-26 Cycle Updates (Status-Updates an Cycles)",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "unklar",
+    "tier_details": "Existenz UNVERIFIZIERT; Updates-Modul nur für Project Updates belegt",
+    "ce_status": "fehlt",
+    "description": "Generisches Updates-Modul (On-Track/Off-Track/At-Risk, Add Update, Reaktionen, Progress since last update) existiert für Projekte; für Cycles kein Beleg.",
+    "data_model_hints": "generisch entity_type-basiert bauen",
+    "api_hints": "–",
+    "ui_hints": "Illustration horizontal-stack/update",
+    "sources": [
+      "packages/i18n/src/locales/en/update.json",
+      "packages/types/src/enums.ts Z. 87–91",
+      "/home/user/makeplane/developer-docs/docs/dev-tools/plane-compose.md Z. 1260",
+      "migration/features/24-paid-planung-insights-teams.md P05-26"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P05-27 Shared Views",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Pro",
+    "tier_details": "Free/One –; Pro/Business/Enterprise ✓ (plans.tsx Z. 499–508); Cloud-Changelog 2026-08-31 „shared views“ (Titel)",
+    "ce_status": "fehlt",
+    "description": "„Choose a few members to share a view with.“ – gespeicherte View an ausgewählte Personen freigeben, je Person view-only oder edit (Release August 2026, sekundär); CE kennt nur access 0 Private / 1 Public.",
+    "data_model_hints": "issue_view_members(view_id, member_id, access smallint NOT NULL 0=view/1=edit), Unique (view_id, member_id); Sichtbarkeit: public ∨ Owner ∨ Eintrag",
+    "api_hints": "Vorschlag …/views/{view_id}/members/ (Projekt- und Workspace-Views)",
+    "ui_hints": "Freigabe-Dialog mit Member-Auswahl und Rechte-Dropdown view-only/edit (UNVERIFIZIERT); project_views.empty_state.shared ist ein Page-Text, nicht verwenden",
+    "sources": [
+      "apps/web/components/workspace/billing/comparison/plans.tsx Z. 499–508",
+      "apps/api/plane/db/models/view.py Z. 66",
+      "packages/i18n/src/locales/en/common.json Z. 228",
+      "https://plane.so/blog/whats-new-in-plane-august-2026 (WebSearch-Zusammenfassung)",
+      "https://plane.so/changelog/2026-08-31-shared-views-tabs-in-pages-and-more (WebSearch-Zusammenfassung)",
+      "migration/features/24-paid-planung-insights-teams.md P05-27"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P05-28 Publish Views",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Pro",
+    "tier_details": "Pro lt. plans.tsx Z. 510–519 und Plane-University-Kurs 302/03 „How to Publish (Pro)“; widersprüchlich One lt. ONE_PLAN_FEATURES „public views“",
+    "ce_status": "teilweise im CE",
+    "description": "View öffentlich im Space-App unter /views/{anchor} mit Schaltern Kommentare/Reaktionen/Votes; CE hat DeployBoard-Typ view, anchor, Live-Badge, Link-Helper und Stub-Hook, aber keine Space-Route und kein Modal.",
+    "data_model_hints": "deploy_boards entity_name=view; TPublishEntityType um view erweitern",
+    "api_hints": "Vorschlag …/views/{view_id}/publish/ CRUD; öffentlich /api/public/anchor/{anchor}/views/…",
+    "ui_hints": "Publish-Modal analog Projekt-Publish ohne Layout-Auswahl; grünes „Live“-Badge",
+    "sources": [
+      "apps/web/components/workspace/billing/comparison/plans.tsx Z. 510–519",
+      "apps/api/plane/db/models/deploy_board.py Z. 20–28",
+      "packages/types/src/views.ts Z. 39–56",
+      "apps/web/components/views/publish/use-view-publish.tsx",
+      "apps/web/components/views/view-list-item-action.tsx Z. 98–107",
+      "packages/utils/src/project-views.ts Z. 105–110",
+      "apps/space/app/routes.ts",
+      "https://university.plane.so/courses/302-the-ecosystem/03-intro-to-plane-publish.html (WebSearch-Zusammenfassung)",
+      "migration/features/24-paid-planung-insights-teams.md P05-28"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P05-29 PQL (Plane Query Language)",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Enterprise Grid",
+    "tier_details": "Doku-Titel „Plane Query Language (PQL) Enterprise Grid“ und Launch-Blog 12.05.2026 (Enterprise) – aktueller und spezifischer; Widerspruch: plans.tsx Z. 658–668 Pro/Business/Enterprise (ältere Matrix), ebenso Dok. 20 PF-52 und Dok. 21 F25 (Pro); Commercial v2.6.0",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Textuelle Abfragesprache (Feld–Operator–Wert, AND/OR, Klammern) mit geführtem Editor (Dropdown Feld → Operator → Wert); verfügbar in Work items, Cycles, Modules, Views, Teamspace work items und Workspace views, außerdem API-/MCP-Listen (workitem list/list_archived/count, cycle/module list_workitems), Webhook-Filter (Basic↔PQL verlustfrei) und Dashboards. Felder project, assignee, state, stateGroup, label, cycle, module, type, milestone, createdBy, priority, id, title, cf[\"<property id>\"]; Funktionen currentUser(), openStates(), isOverdue(), childOf(\"KEY-N\"); Operatoren =, !=, ~ (contains, id/title), IN, NOT IN (type); Webhook-Dialekt snake_case mit in [..]. Views speichern PQL in pql_filters.",
+    "data_model_hints": "pql als Text neben Rich-Filter-JSON speichern (issue_views.pql_filters, dashboards.pql, webhooks); Parser → AST → Rich-Filter and/or/not (CE-Backend wertet and/or/not bereits aus, apps/api/plane/utils/filters/filter_backend.py Z. 147–210)",
+    "api_hints": "?pql= an Work-Item-, Cycle- und Modul-Work-Item-Listen und count (MCP/Public-API); Views v2 Feld pql_filters (Projekt- und Workspace-Views); CE-Public-API antwortet 400 {\"pql\": \"PQL and structured filters are not supported on this Plane edition. …\", \"unsupported_parameters\": [...]}",
+    "ui_hints": "PQL-Editor mit Autovervollständigung Feld/Operator/Wert in Filterleiste, Views, Webhook-Formular, Dashboards",
+    "sources": [
+      "https://docs.plane.so/core-concepts/issues/plane-query-language (WebSearch-Zusammenfassung, Titel mit „Enterprise Grid“)",
+      "https://plane.so/blog/introducing-pql-and-enhanced-dashboards (WebSearch-Zusammenfassung)",
+      "apps/web/components/workspace/billing/comparison/plans.tsx Z. 658–668",
+      "apps/api/plane/api/views/issue.py Z. 324–335",
+      "/home/user/makeplane/developer-docs/docs/dev-tools/mcp-server-tools.md Z. 44–58, 91, 212, 254, 517–523",
+      "/home/user/makeplane/developer-docs/docs/dev-tools/intro-webhooks.md Z. 60–102",
+      "developer-docs Branch docs/api-reference-v2 (b89c72c) project-views/overview.md Z. 70–72; workspace-views/overview.md Z. 70–72",
+      "migration/features/24-paid-planung-insights-teams.md P05-29"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P05-30 Operator-Kapseln und erweiterte Filteroperatoren (Negation, OR)",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Pro",
+    "tier_details": "auskommentierte Matrix-Zeile „Search“ (plans.tsx Z. 625–656): Free/One „Basic text search“, Pro+ „Operator capsules from text or PQL“ (Coming soon); soweit Kapseln aus PQL entstehen, gilt der PQL-Plan (Enterprise Grid); Negation/OR der Standard-Filterleiste ohne eigene Plan-Quelle",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "EE schaltet zusätzliche/negierte Operatoren und OR-Gruppen frei und wandelt Text/PQL in Filter-Kapseln um; CE: EXTENDED_* leer, allowNegative false, nur AND-Gruppen.",
+    "data_model_hints": "–",
+    "api_hints": "Rich-Filter-JSON mit or/not",
+    "ui_hints": "Labels der negierten Operatoren fehlen im CE (NEGATED_*_LABELS_MAP = {})",
+    "sources": [
+      "apps/web/components/workspace/billing/comparison/plans.tsx Z. 626–656",
+      "packages/types/src/rich-filters/operators/extended.ts",
+      "apps/web/hooks/rich-filters/use-filters-operator-configs.ts",
+      "apps/api/plane/utils/filters/filter_backend.py Z. 147–210",
+      "migration/features/24-paid-planung-insights-teams.md P05-30"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P05-31 Advanced Search (OpenSearch)",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Pro",
+    "tier_details": "Doku-Badge [Pro] (developer-docs self-hosting/govern/advanced-search.md Z. 7); Commercial v2.2.0 „enhanced search“; CE-Status-Widerspruch: Dok. 22 P03-F11 „teilweise im CE“ (Postgres-Fallback der Commercial Edition), hier „fehlt“ wie Dok. 20/21",
+    "ce_status": "fehlt",
+    "description": "Volltext, Fuzzy, Autocomplete, Multi-Entity über 9 Indizes (issues, issue_comments, projects, cycles, modules, pages, workspaces, issue_views, teamspaces) via Cmd/Ctrl+K; Power-K „Go to advanced search“.",
+    "data_model_hints": "ADR-004: Postgres tsvector + GIN, websearch_to_tsquery, pg_trgm, optional pgvector statt OpenSearch",
+    "api_hints": "POST /api/v1/workspaces/{slug}/work-items/advanced-search/ Body query, filters, limit, workspace_search, project_id",
+    "ui_hints": "eigene Such-Seite UNVERIFIZIERT; CE-Power-K-Suche als Basis",
+    "sources": [
+      "/home/user/makeplane/developer-docs/docs/self-hosting/govern/advanced-search.md",
+      "/home/user/makeplane/developer-docs/docs/api-reference/issue/advanced-search-work-items.md",
+      "packages/i18n/src/locales/en/power-k.json Z. 174",
+      "/home/user/makeplane/developer-docs/docs/self-hosting/self-hosting-101.md Z. 130",
+      "migration/features/24-paid-planung-insights-teams.md P05-31"
+    ],
+    "confidence": "hoch"
+  },
+  {
+    "name": "P05-32 Scheduled Comms",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Business",
+    "tier_details": "Business/Enterprise ✓ (plans.tsx Z. 414–423)",
+    "ce_status": "fehlt",
+    "description": "„Schedule reports, notifications, and messages to third-party tools.“ – nur Matrix-Text; Entwurf mit Zeitplan-Modi Fixed/Cron analog Automations.",
+    "data_model_hints": "scheduled_communications(source_type, source_id, channel, channel_config, recipients, schedule_mode, schedule, timezone, next_run_at) + runs",
+    "api_hints": "Vorschlag /api/workspaces/{slug}/scheduled-communications/",
+    "ui_hints": "–",
+    "sources": [
+      "apps/web/components/workspace/billing/comparison/plans.tsx Z. 414–423",
+      "packages/i18n/src/locales/en/automation.json Z. 19–46",
+      "migration/features/24-paid-planung-insights-teams.md P05-32"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P05-33 Workspace Activity Logs",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Business",
+    "tier_details": "Business/Enterprise ✓ (plans.tsx Z. 740–749), nicht Coming soon",
+    "ce_status": "teilweise im CE",
+    "description": "Filterbare Aktivitätslogs des gesamten Workspace; CE hat nur Aktivität je Benutzer und No-op mutateWorkspaceMembersActivity; Details Dok. 27 P08-17.",
+    "data_model_hints": "Union über Activity-Tabellen oder workspace_activities",
+    "api_hints": "CE GET /api/workspaces/{slug}/user-activity/{user_id}/; Vorschlag GET …/activities/?actor=&project=&entity_type=&verb=&from=&to=",
+    "ui_hints": "Icons ActivityOutline, LogsOutline, AuditLogsOutline, HistoryOutline",
+    "sources": [
+      "apps/web/components/workspace/billing/comparison/plans.tsx Z. 740–749",
+      "apps/web/store/workspace/index.ts Z. 385–391",
+      "migration/features/27-paid-sicherheit-admin-lizenz.md P08-17",
+      "migration/features/_data/P01.paid.json PF-58",
+      "migration/features/24-paid-planung-insights-teams.md P05-33"
+    ],
+    "confidence": "niedrig"
+  },
+  {
+    "name": "P05-34 Home-, Your-Work- und Navigations-Erweiterungen",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "unklar",
+    "tier_details": "teils Cloud-Inhalte; Business-Trial-Banner Cloud-only (entfällt)",
+    "ce_status": "Stub/UI-Hülle im CE",
+    "description": "Home-Widgets new_at_plane („New at Plane“) und quick_tutorial („Quick tutorial“) im CE ohne Komponente und vom Backend beim Anlegen der Präferenzen ausgelassen; Commercial-Sidebar-Menüs (im CE nicht gerendert): Benutzermenü Home → Dashboards → Your work → Drafts → Plane AI, Workspace-Menü Projects → Views → Cycles (Active Cycles) → Analytics; im CE gerendert sind nur Home, Projects, Views, Analytics, Archives und persönliche Einträge Inbox/Your work/Stickies/Drafts; Power-K-Ziele für Active Cycles, Project Overview, Advanced Search. Business-Trial-Banner entfällt. Your work selbst ist CE.",
+    "data_model_hints": "workspace_user_home_preferences(key, is_enabled, config, sort_order)",
+    "api_hints": "CE /api/workspaces/{slug}/home-preferences/ (+ {key})",
+    "ui_hints": "„New at Plane“ nur mit gebündelten Inhalten (ADR-004); Trial-Banner entfällt (ADR-001)",
+    "sources": [
+      "apps/web/components/home/home-dashboard-widgets.tsx Z. 49–58",
+      "apps/api/plane/app/views/workspace/home.py Z. 31–35",
+      "apps/web/components/workspace/sidebar/user-menu.tsx Z. 26–62",
+      "apps/web/components/workspace/sidebar/workspace-menu.tsx Z. 31–60",
+      "apps/web/components/workspace/sidebar/sidebar-menu-items.tsx Z. 82–121",
+      "packages/constants/src/workspace.ts Z. 201–229, 231–282",
+      "packages/i18n/src/locales/en/home.json",
+      "packages/i18n/src/locales/en/power-k.json Z. 107–108, 174",
+      "migration/features/24-paid-planung-insights-teams.md P05-34"
+    ],
+    "confidence": "mittel"
+  },
+  {
+    "name": "P05-35 Text to PQL (natürliche Sprache → PQL, AI)",
+    "cluster": "P05 Planung, Insights, Teams",
+    "tier": "Enterprise Grid",
+    "tier_details": "Launch-Blog „Introducing PQL and enhanced dashboards“ (12.05.2026): „Text to PQL“ Enterprise-only (sekundär); Top-Plan heißt in der Doku „Enterprise Grid“; Matrix-Vorläufer plans.tsx Z. 658–668 „Soon, you can write natural language queries.“ und auskommentierte Zeile „Search via natural-language queries“ (Z. 625–656)",
+    "ce_status": "fehlt",
+    "description": "AI-Funktion, die eine Beschreibung in natürlicher Sprache in eine PQL-Abfrage übersetzt; das Ergebnis ist eine normale PQL-Abfrage (P05-29). UI und Bearbeitbarkeit des Ergebnisses UNVERIFIZIERT.",
+    "data_model_hints": "keine eigene Tabelle; optional Protokoll der Prompts (UNVERIFIZIERT)",
+    "api_hints": "Vorschlag POST /api/workspaces/{slug}/pql/translate/ {prompt, project_id?} → {pql}; Validierung mit dem PQL-Parser; LLM-Kontext Feldliste inkl. cf[\"<id>\"] und Funktionen",
+    "ui_hints": "Eingabe in natürlicher Sprache im PQL-Editor (UNVERIFIZIERT); im Airgapped-Betrieb nur mit lokalem LLM bzw. abschaltbar (ADR-004)",
+    "sources": [
+      "https://plane.so/blog/introducing-pql-and-enhanced-dashboards (WebSearch-Zusammenfassung)",
+      "apps/web/components/workspace/billing/comparison/plans.tsx Z. 625–668",
+      "migration/features/28-paid-integrationen-importer-ai.md (AI-Infrastruktur)",
+      "migration/features/24-paid-planung-insights-teams.md P05-35"
+    ],
+    "confidence": "niedrig"
+  }
+]
