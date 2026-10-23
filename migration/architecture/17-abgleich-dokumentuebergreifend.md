@@ -413,3 +413,34 @@ Erledigte Aufträge werden im Zieldokument im Review-Protokoll mit „ABG-1xx um
 | N2-18 | Branding (BR-01): Fließtext von 05 (u. a. D05-ADR-01/-04/-08/-09/-12/-13/-14, §3.5, §3.7, §3.8, §3.15, §3.17.5, Matrix-Tabellen CE-AUTH/CE-PROF/CE-INST, R-05), 01 (P4 „Plane-Images“, §3.4 Datenbank `plane` „Plane-Daten“, S7 „Plane-Session“, O-06), 14 (D14-ADR-03, §3.2.1, §4.7.2 `ENABLE_SIGNUP`, D14-ADR-*, O-14-11) und 16 (§3.4 OAuth-Callbacks, Issue-Sync, Nutzerzuordnung) bezeichnete die **Zielplattform** als „Plane“ („Wirkung in Plane“, „Plane-Session“, „Plane-Benutzer“, „Plane-Clients“, „Plane-Konto“, „Plane-Images“, „Plane-intern“ …). | ABG-148, BR-01 | 05, 01, 14, 16 → „funk.“ bzw. „funk.-…“; **unverändert** (BR-02): Aussagen über das Original (07 Hocuspocus-Defaults, 05 SEC-47 Magic-Codes, CE-Katalogtitel „Kopierfelder für Plane-URLs“, Original-Locale-Codes, „Plane-Variante“ von `strip_tags`, Original-Assets mit Plane-Logo), interne Bezeichner (Policy-Scheme `"Plane"`, Client-IDs `plane-*`, „Plane-Hosts“ = `Plane.*`-Host-Projekte, Kubernetes-Job `plane-migrator-r<rev>` wie Secret-/ConfigMap-Namen nach ABG-149) |
 
 **Weiterhin offen (keine Festlegung ohne Auftraggeber möglich):** Z-110 (Protokollbezeichner `X-Plane-*`, `plane_api_`, `plane_wh_`), Z-112 (Bestätigung `MaskInstanceSecrets = true`), Z-113 (Freigabe der BR-10-Ausnahmetabellen) – unverändert nach §2.4.
+
+
+## Entscheidungen des Auftraggebers zu Teil 2 (23.10.2026)
+
+| Punkt | Entscheidung |
+|---|---|
+| Z-110 | **Direkt auf funk** (ADR-009C): Header `X-Funk-*`, Präfixe `funk_api_`/`funk_wh_`, Realm `funk`, Client-IDs `funk-*`, Cookies, `FUNK_`/`Funk:`, Metriken `funk.*`, Code `Funk.*`/`@funk/*`. Kein Umbenennungspaket. |
+| Z-112 | **MaskInstanceSecrets = true** (Secrets im God Mode maskiert). OpenAPI in Produktion standardmäßig aus, im God Mode einschaltbar. |
+| Z-113 | **Nur `de` und `en`** (ADR-009D); Übersetzungsprüfung nur für diese beiden. |
+| Z-109 | **collaboration-cursor an** (Paket D4), sobald Spike S1 (Awareness) grün ist. |
+
+### Umbenennungstabelle für Zielbezeichner (ADR-009C, verbindlich)
+
+Die Architektur-Dokumente 01–16 verwenden noch die Schreibweise `Plane…` für Zielbezeichner. **Bei der Umsetzung gilt diese Tabelle**; Plan-Dokumente ab Schritt 4 verwenden bereits die neuen Namen.
+
+| In den Dokumenten 01–16 | Im Code / Betrieb von `funk.` |
+|---|---|
+| Solution/Projekte/Namespaces `Plane.*` (z. B. `Plane.Api`, `Plane.Data`, `Plane.Collaboration`) | `Funk.*` (z. B. `Funk.Api`, `Funk.Data`, `Funk.Collaboration`) |
+| `PlaneDbContext`, `PlaneErrors`, `Plane…Options` und andere Typen mit Präfix `Plane` | `FunkDbContext`, `FunkErrors`, `Funk…Options` |
+| Konfigurationswurzel `Plane:` / ENV `Plane__…` / `PLANE_…` | `Funk:` / `Funk__…` / `FUNK_…` |
+| Analyzer-IDs `PLANE0001…` | `FUNK0001…` |
+| Header `X-Plane-*` | `X-Funk-*` |
+| Präfixe `plane_api_`, `plane_wh_` | `funk_api_`, `funk_wh_` |
+| Keycloak-Realm `plane`, Clients `plane-web`, `plane-admin`, `plane-space`, `plane-backend`, `plane-forgejo`, Rolle `plane-instance-admin`, Theme `plane`/`plane-space` | Realm `funk`, Clients `funk-web`, `funk-admin`, `funk-space`, `funk-backend`, `funk-forgejo`, Rolle `funk-instance-admin`, Theme `funk`/`funk-space` |
+| Cookies (Session-Cookie `session-id`, sonstige `plane-*`) | Session-Cookie `funk-session`, sonstige `funk-*` |
+| Metriken `plane.*`, Locks `PlaneLocks`, NOTIFY-Kanäle `plane_*` | `funk.*`, `FunkLocks`, `funk_*` |
+| Event-Namen `plane.<aggregat>.<ereignis>.v1` | `funk.<aggregat>.<ereignis>.v1` |
+| Frontend-Pakete `@plane/*` (übernommene Packages) | `@funk/*` |
+| Images/Charts/CLI | bereits `funk-*` (Teil 2) |
+
+Ausnahmen: Verweise auf das Original (Pfade, Module, Header, Cookies des Originals) und Kompatibilitätstests, die das Original-Verhalten beschreiben.
